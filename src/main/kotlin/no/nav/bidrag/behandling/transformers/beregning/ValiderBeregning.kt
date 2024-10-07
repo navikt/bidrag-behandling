@@ -36,7 +36,7 @@ import java.nio.charset.Charset
 import java.time.LocalDate
 
 @Component
-class ValiderBeregningV2(
+class ValiderBeregning(
     val særbidragValidering: ValiderSærbidragForBeregningService = ValiderSærbidragForBeregningService(),
 ) {
     fun Behandling.validerForBeregning() {

@@ -80,6 +80,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubPersonConsumer()
         stubKodeverkProvider()
         stubUtils.stubUnleash()
+        stubUtils.stubHentePersonInfoForTestpersoner()
         stubUtils.stubHentSaksbehandler()
         stubUtils.stubOpprettForsendelse()
         stubUtils.stubSlettForsendelse()

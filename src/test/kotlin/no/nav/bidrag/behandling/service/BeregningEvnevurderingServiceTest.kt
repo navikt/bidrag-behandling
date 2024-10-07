@@ -12,7 +12,7 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_løpende_bidrag
@@ -82,18 +82,18 @@ class BeregningEvnevurderingServiceTest {
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
     lateinit var behandlingTilGrunnlagMapping: BehandlingTilGrunnlagMappingV2
     lateinit var personService: PersonService
-    lateinit var validerBeregningV2: ValiderBeregningV2
+    lateinit var validerBeregning: ValiderBeregning
 
     @BeforeEach
     fun init() {
         clearAllMocks(recordedCalls = true)
         personService = PersonService(stubPersonConsumer())
-        validerBeregningV2 = ValiderBeregningV2()
+        validerBeregning = ValiderBeregning()
         behandlingTilGrunnlagMapping = BehandlingTilGrunnlagMappingV2(personService)
 
         evnevurderingService =
             BeregningEvnevurderingService(bidragStønadConsumer, bidragVedtakConsumer, bidragBBMConsumer, beregingVedtaksfiltrering)
-        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregningV2, evnevurderingService, personService)
+        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregning, evnevurderingService, personService)
         stubSjablonProvider()
         initMockTestdata()
     }

@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.repository.UtgiftRepository
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.transformers.Dtomapper
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -45,13 +45,13 @@ class UtgiftserviceMockTest {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     lateinit var utgiftService: UtgiftService
-    lateinit var validering: ValiderBeregningV2
+    lateinit var validering: ValiderBeregning
     lateinit var mapper: Dtomapper
 
     @BeforeEach
     fun initMock() {
         stubSjablonProvider()
-        validering = ValiderBeregningV2()
+        validering = ValiderBeregning()
         mapper = Dtomapper(tilgangskontrollService, validering)
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
         every { utgiftRepository.save<Utgift>(any()) } answers {

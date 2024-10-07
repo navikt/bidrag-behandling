@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.transformers.Dtomapper
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -44,7 +44,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     lateinit var mapper: Dtomapper
-    lateinit var validering: ValiderBeregningV2
+    lateinit var validering: ValiderBeregning
 
     @BeforeEach
     fun initMocks() {
@@ -52,7 +52,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         stubKodeverkProvider()
         stubSjablonProvider()
         stubSaksbehandlernavnProvider()
-        validering = ValiderBeregningV2()
+        validering = ValiderBeregning()
         mapper = Dtomapper(tilgangskontrollService, validering)
     }
 

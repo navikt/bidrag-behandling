@@ -13,7 +13,7 @@ import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
@@ -83,7 +83,7 @@ class BeregningServiceTest {
         vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService),
-                ValiderBeregningV2(),
+                ValiderBeregning(),
                 evnevurderingService,
                 personService,
             )

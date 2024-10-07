@@ -27,7 +27,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
@@ -168,7 +168,7 @@ class GrunnlagMappingTest {
         personStub = stubPersonConsumer()
         val personService = PersonService(personStub)
         behandlingTilGrunnlagMapping = BehandlingTilGrunnlagMappingV2(personService)
-        val validering = ValiderBeregningV2()
+        val validering = ValiderBeregning()
 
         every { evnevurderingService.hentLøpendeBidragForBehandling(any()) } returns
             opprettEvnevurderingResultat(

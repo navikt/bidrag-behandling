@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -39,12 +39,12 @@ import java.time.YearMonth
 val virkningstidspunkt = YearMonth.now()
 
 class ValiderBeregningSærbidragTest {
-    lateinit var validering: ValiderBeregningV2
+    lateinit var validering: ValiderBeregning
 
     @BeforeEach
     fun initMocks() {
         stubSjablonProvider()
-        validering = ValiderBeregningV2()
+        validering = ValiderBeregning()
     }
 
     @Test

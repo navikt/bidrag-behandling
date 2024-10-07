@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.tilType
@@ -42,7 +42,7 @@ fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
 @Component
 class VedtakGrunnlagMapper(
     private val mapper: BehandlingTilGrunnlagMappingV2,
-    val validering: ValiderBeregningV2,
+    val validering: ValiderBeregning,
     private val beregningEvnevurderingService: BeregningEvnevurderingService,
     private val personService: PersonService,
 ) {

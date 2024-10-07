@@ -20,7 +20,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
@@ -116,10 +117,12 @@ class VedtakserviceForskuddTest {
         personConsumer = stubPersonConsumer()
         val personService = PersonService(personConsumer)
 
+        val validerBeregning = ValiderBeregning()
+        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService),
-                ValiderBeregningV2(),
+                validerBeregning,
                 evnevurderingService,
                 personService,
             )
@@ -139,6 +142,7 @@ class VedtakserviceForskuddTest {
                 sakConsumer,
                 unleash,
                 vedtakGrunnlagMapper,
+                vedtakTilBehandlingMapping,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit

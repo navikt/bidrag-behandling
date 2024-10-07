@@ -8,7 +8,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -27,11 +27,11 @@ import java.time.YearMonth
 import kotlin.test.Test
 
 class ValiderBeregningForskuddTest {
-    lateinit var validering: ValiderBeregningV2
+    lateinit var validering: ValiderBeregning
 
     @BeforeEach
     fun init() {
-        validering = ValiderBeregningV2()
+        validering = ValiderBeregning()
     }
 
     @Test

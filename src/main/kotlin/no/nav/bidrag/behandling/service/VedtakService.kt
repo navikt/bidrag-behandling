@@ -16,9 +16,8 @@ import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultat
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatSærbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagGenerelt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggStønadsendringerForVedtak
@@ -70,22 +69,16 @@ class VedtakService(
     private val sakConsumer: BidragSakConsumer,
     private val unleashInstance: Unleash,
     private val mapper: VedtakGrunnlagMapper,
+    private val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
         try {
             LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
             val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-
-//            vedtak.behandlingId?.let {
-//                tilgangskontrollService.sjekkTilgangBehandling(
-//                    behandlingService.hentBehandlingById(
-//                        it,
-//                    ),
-//                )
-//            }
+            tilgangskontrollService.sjekkTilgangVedtak(vedtak)
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
-            return vedtak.tilBehandling(vedtakId, lesemodus = true)
+            return vedtakTilBehandlingMapping.run { vedtak.tilBehandling(vedtakId, lesemodus = true) }
         } catch (e: Exception) {
             LOGGER.error(e) { "Det skjedde en feil ved konvertering av vedtak $vedtakId for lesemodus" }
             throw e
@@ -159,19 +152,21 @@ class VedtakService(
                 "Vedtak $refVedtaksid er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
             )
         }
-        return vedtak.tilBehandling(
-            vedtakId = refVedtaksid,
-            søktFomDato = request.søktFomDato,
-            mottattdato = request.mottattdato,
-            soknadFra = request.søknadFra,
-            vedtakType = request.vedtakstype,
-            søknadRefId = request.søknadsreferanseid,
-            enhet = request.behandlerenhet,
-            søknadId = request.søknadsid,
-            lesemodus = false,
-            opprinneligVedtakstidspunkt = hentOpprinneligVedtakstidspunkt(vedtak).toSet(),
-            opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
-        )
+        return vedtakTilBehandlingMapping.run {
+            vedtak.tilBehandling(
+                vedtakId = refVedtaksid,
+                søktFomDato = request.søktFomDato,
+                mottattdato = request.mottattdato,
+                soknadFra = request.søknadFra,
+                vedtakType = request.vedtakstype,
+                søknadRefId = request.søknadsreferanseid,
+                enhet = request.behandlerenhet,
+                søknadId = request.søknadsid,
+                lesemodus = false,
+                opprinneligVedtakstidspunkt = hentOpprinneligVedtakstidspunkt(vedtak).toSet(),
+                opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
+            )
+        }
     }
 
     fun konverterVedtakTilBeregningResultat(vedtakId: Long): List<ResultatBeregningBarnDto> {
@@ -181,7 +176,7 @@ class VedtakService(
 
     fun konverterVedtakTilBeregningResultatSærbidrag(vedtakId: Long): ResultatSærbidragsberegningDto? {
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-        return vedtak.tilBeregningResultatSærbidrag()
+        return vedtakTilBehandlingMapping.run { vedtak.tilBeregningResultatSærbidrag() }
     }
 
     fun fatteVedtak(behandlingId: Long): Int {

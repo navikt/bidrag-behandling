@@ -44,7 +44,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -79,7 +79,7 @@ import java.time.LocalDateTime
 @Component
 class Dtomapper(
     val tilgangskontrollService: TilgangskontrollService,
-    val validering: ValiderBeregningV2,
+    val validering: ValiderBeregning,
 ) {
     fun tilDto(
         behandling: Behandling,

@@ -19,9 +19,10 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequ
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
@@ -91,11 +92,12 @@ class VedtakTilBehandlingForskuddTest {
     @BeforeEach
     fun initMocks() {
         val personService = createPersonServiceMock()
-
+        val validerBeregning = ValiderBeregning()
+        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService),
-                ValiderBeregningV2(),
+                validerBeregning,
                 evnevurderingService,
                 personService,
             )
@@ -115,6 +117,7 @@ class VedtakTilBehandlingForskuddTest {
                 sakConsumer,
                 unleash,
                 vedtakGrunnlagMapper,
+                vedtakTilBehandlingMapping,
             )
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

@@ -21,7 +21,8 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -104,11 +105,12 @@ class VedtakserviceTest : TestContainerRunner() {
         unleash.enableAll()
         bidragPersonConsumer = stubPersonConsumer()
         val personService = PersonService(bidragPersonConsumer)
-
+        val validerBeregning = ValiderBeregning()
+        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService),
-                ValiderBeregningV2(),
+                validerBeregning,
                 evnevurderingService,
                 personService,
             )
@@ -128,6 +130,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 sakConsumer,
                 unleash,
                 vedtakGrunnlagMapper,
+                vedtakTilBehandlingMapping,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
