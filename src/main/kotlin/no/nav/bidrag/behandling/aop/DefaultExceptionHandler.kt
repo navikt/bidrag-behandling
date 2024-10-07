@@ -3,8 +3,8 @@ package no.nav.bidrag.behandling.aop
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import no.nav.bidrag.behandling.BeregningAvResultatForBehandlingFeilet
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.security.token.support.spring.validation.interceptor.JwtTokenUnauthorizedException
 import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered

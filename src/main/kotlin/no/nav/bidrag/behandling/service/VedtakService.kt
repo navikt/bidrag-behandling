@@ -13,20 +13,15 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
-import no.nav.bidrag.behandling.transformers.beregning.erDirekteAvslagUtenBeregning
-import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
-import no.nav.bidrag.behandling.transformers.beregning.validerForBeregning
-import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbidrag
-import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
-import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
-import no.nav.bidrag.behandling.transformers.grunnlag.byggStønadsendringerForVedtak
-import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
+import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatSærbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagGenerelt
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggStønadsendringerForVedtak
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilBehandlingreferanseListe
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilSkyldner
@@ -211,14 +206,18 @@ class VedtakService(
                 "Fattevedtak er ikke aktivert",
             )
         }
-        behandling.validerTekniskForBeregningAvSærbidrag()
-        behandling.validerForBeregningSærbidrag()
+        mapper.validering.run {
+            behandling.validerTekniskForBeregningAvSærbidrag()
+            behandling.validerForBeregningSærbidrag()
+        }
 
         val request =
-            if (behandling.erDirekteAvslagUtenBeregning()) {
-                behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
-            } else {
-                behandling.byggOpprettVedtakRequestSærbidrag()
+            mapper.validering.run {
+                if (behandling.erDirekteAvslagUtenBeregning()) {
+                    behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
+                } else {
+                    behandling.byggOpprettVedtakRequestSærbidrag()
+                }
             }
         request.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $request" }
@@ -236,7 +235,7 @@ class VedtakService(
 
     fun fatteVedtakForskudd(behandling: Behandling): Int {
         val behandlingId = behandling.id!!
-        behandling.validerForBeregning()
+        mapper.validering.run { behandling.validerForBeregning() }
 
         val request =
             if (behandling.avslag != null) {
@@ -263,32 +262,33 @@ class VedtakService(
     }
 
     fun behandlingTilVedtakDto(behandlingId: Long): VedtakDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val request =
-            when (behandling.tilType()) {
-                TypeBehandling.SÆRBIDRAG ->
-                    if (behandling.erDirekteAvslagUtenBeregning()) {
-                        behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
-                    } else {
-                        behandling.byggOpprettVedtakRequestSærbidrag()
-                    }
+        mapper.validering.run {
+            val behandling = behandlingService.hentBehandlingById(behandlingId)
+            val request =
+                when (behandling.tilType()) {
+                    TypeBehandling.SÆRBIDRAG ->
+                        if (behandling.erDirekteAvslagUtenBeregning()) {
+                            behandling.byggOpprettVedtakRequestForAvslagSærbidrag()
+                        } else {
+                            behandling.byggOpprettVedtakRequestSærbidrag()
+                        }
 
-                TypeBehandling.FORSKUDD ->
-                    if (behandling.avslag !=
-                        null
-                    ) {
-                        behandling.byggOpprettVedtakRequestForAvslag()
-                    } else {
-                        behandling.byggOpprettVedtakRequestForskudd()
-                    }
+                    TypeBehandling.FORSKUDD ->
+                        if (behandling.avslag !=
+                            null
+                        ) {
+                            behandling.byggOpprettVedtakRequestForAvslag()
+                        } else {
+                            behandling.byggOpprettVedtakRequestForskudd()
+                        }
 
-                else -> throw HttpClientErrorException(
-                    HttpStatus.BAD_REQUEST,
-                    "Behandlingstype ${behandling.tilType()} støttes ikke",
-                )
-            }
-
-        return request.tilVedtakDto()
+                    else -> throw HttpClientErrorException(
+                        HttpStatus.BAD_REQUEST,
+                        "Behandlingstype ${behandling.tilType()} støttes ikke",
+                    )
+                }
+            return request.tilVedtakDto()
+        }
     }
 
     private fun Behandling.byggOpprettVedtakRequestObjekt(): OpprettVedtakRequestDto =
@@ -307,7 +307,7 @@ class VedtakService(
             opprettetAv = null,
         )
 
-    private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto {
+    private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto =
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val grunnlagListe = byggGrunnlagGenereltAvslag()
@@ -347,7 +347,6 @@ class VedtakService(
                     grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
                 )
         }
-    }
 
     private fun Behandling.byggOpprettVedtakRequestForskudd(): OpprettVedtakRequestDto {
         val behandling = this

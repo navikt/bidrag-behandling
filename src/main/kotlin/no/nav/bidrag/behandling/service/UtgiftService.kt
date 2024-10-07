@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.database.repository.UtgiftRepository
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
-import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftResponse
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftspost
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
@@ -29,6 +29,7 @@ class UtgiftService(
     private val behandlingRepository: BehandlingRepository,
     private val notatService: NotatService,
     private val utgiftRepository: UtgiftRepository,
+    private val mapper: Dtomapper,
 ) {
     @Transactional
     fun oppdatereUtgift(
@@ -78,7 +79,7 @@ class UtgiftService(
                     .utgiftsposter
                     .maxBy { it.id!! }
                     .id
-            return utgift.tilUtgiftResponse(utgiftspostId)
+            return mapper.run { utgift.tilOppdaterUtgiftResponse(utgiftspostId) }
         } else if (request.sletteUtgift != null) {
             utgift.lagreHistorikk()
             utgift.utgiftsposter.find { it.id == request.sletteUtgift }?.let {
@@ -95,7 +96,7 @@ class UtgiftService(
             behandling.utgift = utgift.gjenopprettHistorikk()
         }
 
-        return utgift.tilUtgiftResponse()
+        return mapper.run { utgift.tilOppdaterUtgiftResponse() }
     }
 
     private fun Utgift.oppdaterMaksGodkjentBeløp(request: OppdatereUtgiftRequest) {

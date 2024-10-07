@@ -14,7 +14,6 @@ import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndrin
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -26,6 +25,7 @@ import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRe
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

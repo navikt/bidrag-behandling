@@ -32,7 +32,6 @@ import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -74,6 +73,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

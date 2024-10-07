@@ -11,8 +11,8 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
-import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
@@ -44,6 +44,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     lateinit var mapper: Dtomapper
+    lateinit var validering: ValiderBeregningV2
 
     @BeforeEach
     fun initMocks() {
@@ -51,7 +52,8 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         stubKodeverkProvider()
         stubSjablonProvider()
         stubSaksbehandlernavnProvider()
-        mapper = Dtomapper(tilgangskontrollService)
+        validering = ValiderBeregningV2()
+        mapper = Dtomapper(tilgangskontrollService, validering)
     }
 
     @Test
@@ -94,7 +96,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
                 ),
             )
 
-        val utgiftDto = behandling.tilUtgiftDto()
+        val utgiftDto = mapper.run { behandling.tilUtgiftDto() }
 
         assertSoftly(utgiftDto!!.beregning!!) {
             beløpDirekteBetaltAvBp shouldBe BigDecimal(1000)
@@ -163,7 +165,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
                 ),
             )
 
-        val utgiftDto = behandling.tilUtgiftDto()
+        val utgiftDto = mapper.run { behandling.tilUtgiftDto() }
 
         assertSoftly(utgiftDto!!.beregning!!) {
             beløpDirekteBetaltAvBp shouldBe BigDecimal(1000)
@@ -223,7 +225,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
                 ),
             )
 
-        val utgiftDto = behandling.tilUtgiftDto()
+        val utgiftDto = mapper.run { behandling.tilUtgiftDto() }
 
         assertSoftly(utgiftDto!!) {
             beregning shouldBe null

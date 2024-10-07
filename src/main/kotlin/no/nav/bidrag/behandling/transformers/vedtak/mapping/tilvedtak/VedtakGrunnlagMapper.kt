@@ -7,12 +7,9 @@ import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregningV2
-import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
-import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -36,27 +33,36 @@ import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
 import org.springframework.stereotype.Component
+import java.time.LocalDate
+import java.time.YearMonth
+
+fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
+    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1))
 
 @Component
 class VedtakGrunnlagMapper(
-    val mapper: BehandlingTilGrunnlagMappingV2,
+    private val mapper: BehandlingTilGrunnlagMappingV2,
     val validering: ValiderBeregningV2,
-    val beregningEvnevurderingService: BeregningEvnevurderingService,
+    private val beregningEvnevurderingService: BeregningEvnevurderingService,
     private val personService: PersonService,
 ) {
-    fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
+    fun Behandling.tilSærbidragAvslagskode() = validering.run { tilSærbidragAvslagskode() }
+
+    fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null) = mapper.run { tilPersonobjekter(søknadsbarnRolle) }
 
     fun BidragssakDto.hentRolleMedFnr(fnr: String): RolleDto =
-        roller.firstOrNull { hentNyesteIdent(it.fødselsnummer?.verdi) == hentNyesteIdent(fnr) }
+        roller.firstOrNull { personService.hentNyesteIdent(it.fødselsnummer?.verdi) == personService.hentNyesteIdent(fnr) }
             ?: fantIkkeRolleISak(saksnummer.verdi, fnr)
 
     fun Behandling.byggGrunnlagForAvslagUgyldigUtgifter() =
-        listOf(
-            tilPersonobjekter() + byggGrunnlagUtgiftsposter() +
-                byggGrunnlagUtgiftDirekteBetalt() +
-                byggGrunnlagUtgiftMaksGodkjentBeløp(),
-            byggGrunnlagGenereltAvslag(),
-        )
+        mapper.run {
+            listOf(
+                tilPersonobjekter() + byggGrunnlagUtgiftsposter() +
+                    byggGrunnlagUtgiftDirekteBetalt() +
+                    byggGrunnlagUtgiftMaksGodkjentBeløp(),
+                byggGrunnlagGenereltAvslag(),
+            )
+        }
 
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
@@ -79,11 +85,11 @@ class VedtakGrunnlagMapper(
                         )
 
                     TypeBehandling.SÆRBIDRAG -> {
+                        grunnlagsliste.add(tilGrunnlagUtgift())
                         val grunnlagLøpendeBidrag =
                             beregningEvnevurderingService
                                 .hentLøpendeBidragForBehandling(behandling)
                                 .tilGrunnlagDto(grunnlagsliste)
-                        grunnlagsliste.add(tilGrunnlagUtgift())
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
 
@@ -133,25 +139,13 @@ class VedtakGrunnlagMapper(
         }
     }
 
-    fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
-        val grunnlagListe = (byggGrunnlagNotater() + byggGrunnlagSøknad()).toMutableSet()
-        when (tilType()) {
-            TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
-            TypeBehandling.SÆRBIDRAG ->
-                grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
-
-            else -> {}
-        }
-        return grunnlagListe
-    }
-
     fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
         val grunnlagListe = (byggGrunnlagNotaterDirekteAvslag() + byggGrunnlagSøknad()).toMutableSet()
         when (tilType()) {
             TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
             TypeBehandling.SÆRBIDRAG -> {
                 grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
-                if (validering.behandlingTilSærbidragAvslagskode(this) == Resultatkode.ALLE_UTGIFTER_ER_FORELDET) {
+                if (validering.run { tilSærbidragAvslagskode() } == Resultatkode.ALLE_UTGIFTER_ER_FORELDET) {
                     grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
                 }
             }
@@ -161,7 +155,7 @@ class VedtakGrunnlagMapper(
         return grunnlagListe
     }
 
-    private fun EvnevurderingBeregningResultat.tilGrunnlagDto(personGrunnlagListe: MutableSet<GrunnlagDto>): List<GrunnlagDto> {
+    fun EvnevurderingBeregningResultat.tilGrunnlagDto(personGrunnlagListe: MutableSet<GrunnlagDto>): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
         fun BidragBeregningResponsDto.BidragBeregning.tilPersonGrunnlag(): GrunnlagDto {

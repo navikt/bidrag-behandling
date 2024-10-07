@@ -6,13 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
-import no.nav.bidrag.behandling.transformers.beregning.erDirekteAvslagUtenBeregning
-import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
-import no.nav.bidrag.behandling.transformers.beregning.validerForBeregning
-import no.nav.bidrag.behandling.transformers.beregning.validerForBeregningSærbidrag
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
-import no.nav.bidrag.behandling.transformers.beregning.validerTekniskForBeregningAvSærbidrag
-import no.nav.bidrag.behandling.transformers.grunnlag.byggGrunnlagForBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
@@ -44,9 +38,9 @@ class BeregningService(
     private val beregnSærbidragApi = BeregnSærbidragApi()
 
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
-        mapper.run {
-            behandling.run {
-                validerForBeregning()
+        behandling.run {
+            mapper.run {
+                validering.run { validerForBeregning() }
                 return if (avslag != null) {
                     søknadsbarn.map {
                         tilResultatAvslag(it)
@@ -71,10 +65,13 @@ class BeregningService(
     }
 
     fun beregneSærbidrag(behandling: Behandling): BeregnetSærbidragResultat {
-        behandling.validerTekniskForBeregningAvSærbidrag()
-        behandling.validerForBeregningSærbidrag()
+        mapper.validering.run {
+            behandling.validerTekniskForBeregningAvSærbidrag()
+            behandling.validerForBeregningSærbidrag()
+        }
+
         val søknasdbarn = behandling.søknadsbarn.first()
-        return if (behandling.erDirekteAvslagUtenBeregning()) {
+        return if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
             behandling.tilResultatAvslagSærbidrag()
         } else {
             try {
@@ -111,7 +108,7 @@ class BeregningService(
                         resultat =
                             ResultatBeregningSærbidrag(
                                 beløp = BigDecimal.ZERO,
-                                resultatkode = tilSærbidragAvslagskode()!!,
+                                resultatkode = mapper.validering.run { tilSærbidragAvslagskode()!! },
                             ),
                     ),
                 ),

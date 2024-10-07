@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.rolleManglerIdent
-import no.nav.bidrag.behandling.transformers.grunnlag.StønadsendringPeriode
+import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto

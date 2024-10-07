@@ -7,13 +7,10 @@ import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
-import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagDto
-import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
@@ -33,11 +30,6 @@ class BeregningEvnevurderingService(
     private val beregingVedtaksfiltrering: Vedtaksfiltrering,
 ) {
     @Timed
-    fun opprettGrunnlagLøpendeBidrag(
-        behandling: Behandling,
-        personGrunnlagListe: List<GrunnlagDto> = behandling.tilPersonobjekter().toList(),
-    ): List<GrunnlagDto> = hentLøpendeBidragForBehandling(behandling).tilGrunnlagDto(personGrunnlagListe)
-
     fun hentLøpendeBidragForBehandling(behandling: Behandling): EvnevurderingBeregningResultat {
         try {
             log.info { "Henter evnevurdering for behandling ${behandling.id}" }

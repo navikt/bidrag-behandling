@@ -2,53 +2,35 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
-import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
-import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.transformers.grunnlag.finnBeregnTilDato
-import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
-import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
-import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
-import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
-import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
-import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
-import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
-import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
-import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
-import org.springframework.web.client.HttpClientErrorException
-import java.math.BigDecimal
 import java.time.LocalDate
 
 @Component
@@ -163,43 +145,6 @@ class BehandlingTilGrunnlagMappingV2(
         return grunnlagBosstatus + personobjekterHusstandsmedlem
     }
 
-    fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
-        val beregningUtgifter = utgift!!.tilBeregningDto()
-        return GrunnlagDto(
-            referanse = grunnlagsreferanse_delberegning_utgift,
-            type = Grunnlagstype.DELBEREGNING_UTGIFT,
-            innhold =
-                POJONode(
-                    DelberegningUtgift(
-                        periode =
-                            ÅrMånedsperiode(
-                                virkningstidspunkt!!,
-                                finnBeregnTilDato(virkningstidspunkt!!),
-                            ),
-                        sumBetaltAvBp = beregningUtgifter.totalBeløpBetaltAvBp,
-                        sumGodkjent =
-                            run {
-                                val maksGodkjentBeløp = utgift!!.maksGodkjentBeløp
-                                if (utgift!!.maksGodkjentBeløpTaMed && maksGodkjentBeløp != null && maksGodkjentBeløp > BigDecimal.ZERO) {
-                                    minOf(
-                                        beregningUtgifter.totalGodkjentBeløp,
-                                        maksGodkjentBeløp,
-                                    )
-                                } else {
-                                    beregningUtgifter.totalGodkjentBeløp
-                                }
-                            },
-                    ),
-                ),
-            grunnlagsreferanseListe =
-                listOfNotNull(
-                    grunnlagsreferanse_utgiftsposter,
-                    grunnlagsreferanse_utgift_direkte_betalt,
-                    utgift!!.maksGodkjentBeløpTaMed.ifTrue { grunnlagsreferanse_utgift_maks_godkjent_beløp },
-                ),
-        )
-    }
-
     fun Behandling.tilGrunnlagInntekt(
         personobjekter: Set<GrunnlagDto>,
         søknadsbarn: GrunnlagDto? = null,
@@ -262,56 +207,8 @@ class BehandlingTilGrunnlagMappingV2(
         )
     }
 
-    private fun Inntekt.tilInntektsrapporteringPeriode(
-        gjelder: GrunnlagDto,
-        søknadsbarn: GrunnlagDto?,
-        grunnlagListe: List<Grunnlag> = emptyList(),
-    ) = GrunnlagDto(
-        type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
-        referanse = tilGrunnlagreferanse(gjelder, søknadsbarn),
-        // Liste med referanser fra bidrag-inntekt
-        grunnlagsreferanseListe =
-            grunnlagListe.toSet().hentGrunnlagsreferanserForInntekt(
-                gjelder.personIdent!!,
-                this,
-            ),
-        gjelderReferanse = gjelder.referanse,
-        innhold =
-            POJONode(
-                InntektsrapporteringPeriode(
-                    beløp = belop,
-                    versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
-                    periode = ÅrMånedsperiode(datoFomEllerOpprinneligFom!!, datoTom?.plusDays(1)),
-                    opprinneligPeriode =
-                        if (kilde == Kilde.OFFENTLIG) {
-                            ÅrMånedsperiode(
-                                opprinneligFom!!,
-                                opprinneligTom?.plusDays(1),
-                            )
-                        } else {
-                            null
-                        },
-                    inntektsrapportering = type,
-                    manueltRegistrert = kilde == Kilde.MANUELL,
-                    valgt = taMed,
-                    inntekstpostListe =
-                        inntektsposter.map {
-                            InntektsrapporteringPeriode.Inntektspost(
-                                beløp = it.beløp,
-                                inntekstype = it.inntektstype,
-                                kode = it.kode,
-                            )
-                        },
-                    gjelderBarn =
-                        if (inntektsrapporteringSomKreverSøknadsbarn.contains(type)) {
-                            søknadsbarn?.referanse
-                                ?: inntektManglerSøknadsbarn(type)
-                        } else {
-                            null
-                        },
-                ),
-            ),
-    )
+    fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
+        filter { it.erPerson() }.find { it.personIdent == personService.hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
 
     fun finnFødselsdato(
         ident: String?,
@@ -322,67 +219,4 @@ class BehandlingTilGrunnlagMappingV2(
         } else {
             fødselsdato
         }
-
-    private fun opprettGrunnlagForBostatusperioder(
-        gjelderReferanse: String,
-        relatertTilPartReferanse: String,
-        bostatusperioder: Set<Bostatusperiode>,
-    ): Set<GrunnlagDto> =
-        bostatusperioder
-            .map {
-                GrunnlagDto(
-                    referanse = "bostatus_${gjelderReferanse}_${it.datoFom?.toCompactString()}",
-                    type = Grunnlagstype.BOSTATUS_PERIODE,
-                    gjelderReferanse = gjelderReferanse,
-                    grunnlagsreferanseListe =
-                        if (it.kilde == Kilde.OFFENTLIG) {
-                            listOf(
-                                opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
-                                    relatertTilPartReferanse,
-                                    referanseRelatertTil = gjelderReferanse,
-                                ),
-                            )
-                        } else {
-                            emptyList()
-                        },
-                    innhold =
-                        POJONode(
-                            BostatusPeriode(
-                                bostatus = it.bostatus,
-                                manueltRegistrert = it.kilde == Kilde.MANUELL,
-                                relatertTilPart = relatertTilPartReferanse,
-                                periode =
-                                    ÅrMånedsperiode(
-                                        it.datoFom!!,
-                                        it.datoTom?.plusDays(1),
-                                    ),
-                            ),
-                        ),
-                )
-            }.toSet()
-
-    private fun Inntekt.tilGrunnlagreferanse(
-        gjelder: GrunnlagDto,
-        søknadsbarn: GrunnlagDto? = null,
-    ): String {
-        val datoFomReferanse = (opprinneligFom ?: datoFom).toCompactString()
-        val datoTomReferanse = (opprinneligTom ?: datoTom)?.let { "_${it.toCompactString()}" } ?: ""
-        return if (!gjelderBarn.isNullOrEmpty()) {
-            val innektsposterType = inntektsposter.mapNotNull { it.inntektstype }.distinct().joinToString("", prefix = "_")
-            val barnReferanse = søknadsbarn?.referanse ?: gjelderBarn.hashCode()
-            "inntekt_${type}${innektsposterType}_${gjelder.referanse}_ba_${barnReferanse}_${datoFomReferanse}${datoTomReferanse}_$id"
-        } else {
-            "inntekt_${type}_${gjelder.referanse}_${datoFomReferanse}${datoTomReferanse}_$id"
-        }
-    }
-
-    private fun Person.valider(rolle: Rolletype? = null): Person {
-        if ((ident == null || ident!!.verdi.isEmpty()) && navn.isNullOrEmpty()) {
-            throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
-                "Person med fødselsdato $fødselsdato og rolle $rolle mangler ident men har ikke navn. Ident eller Navn må være satt",
-            )
-        }
-        return this
-    }
 }
