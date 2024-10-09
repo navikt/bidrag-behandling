@@ -31,6 +31,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusst
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHustand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -125,6 +126,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     maksGodkjentBeløp = maksGodkjentBeløp,
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
     delberegningBidragsevne = finnDelberegningBidragsevne(grunnlagsreferanseListe),
+    delberegningSumLøpendeBidrag = finnDelberegningSumLøpendeBidrag(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
     enesteVoksenIHusstandenErEgetBarn = finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe),
     erDirekteAvslag = resultatkode.erDirekteAvslag(),
@@ -188,6 +190,18 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
                 )
         } ?: return null
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndel>()
+}
+
+fun List<GrunnlagDto>.finnDelberegningSumLøpendeBidrag(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningSumLøpendeBidrag? {
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
+    val delberegning =
+        find {
+            it.type == Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG &&
+                sluttberegning.grunnlagsreferanseListe.contains(
+                    it.referanse,
+                )
+        } ?: return null
+    return delberegning.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
 }
 
 fun List<GrunnlagDto>.finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {
@@ -280,6 +294,8 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
         skatt =
             DelberegningBidragsevneDto.Skatt(
                 sumSkatt = delberegningBidragsevne.skatt.sumSkatt,
+                skattAlminneligInntekt = delberegningBidragsevne.skatt.skattAlminneligInntekt,
+                trinnskatt = delberegningBidragsevne.skatt.trinnskatt,
                 trygdeavgift = delberegningBidragsevne.skatt.trygdeavgift,
             ),
         underholdEgneBarnIHusstand =
