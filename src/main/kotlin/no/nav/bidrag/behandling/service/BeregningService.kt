@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
@@ -10,6 +11,9 @@ import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -62,6 +66,32 @@ class BeregningService(
                 }
             }
         }
+    }
+
+    fun beregnSærbidragInnteksgrense(behandling: Behandling): BigDecimal {
+        val bp = behandling.bidragspliktig ?: return BigDecimal.ZERO
+        behandling.inntekter
+            .filter { it.ident == bp.ident }
+            .forEach { it.taMed = false }
+        (10000000 downTo 100 step 100000).forEach {
+            val inntekt =
+                Inntekt(
+                    taMed = true,
+                    type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                    belop = it.toBigDecimal(),
+                    datoFom = behandling.virkningstidspunkt!!,
+                    datoTom = null,
+                    ident = bp.ident!!,
+                    kilde = Kilde.MANUELL,
+                    behandling = behandling,
+                )
+            behandling.inntekter.add(inntekt)
+            val beregning = beregneSærbidrag(behandling)
+            val resultat = beregning.beregnetSærbidragPeriodeListe.first().resultat
+            if (resultat.resultatkode == Resultatkode.SÆRBIDRAG_MANGLER_BIDRAGSEVNE) return it.toBigDecimal()
+            behandling.inntekter.remove(inntekt)
+        }
+        return BigDecimal.ZERO
     }
 
     fun beregneSærbidrag(behandling: Behandling): BeregnetSærbidragResultat {

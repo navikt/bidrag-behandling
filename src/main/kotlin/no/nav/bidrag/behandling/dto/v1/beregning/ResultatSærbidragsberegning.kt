@@ -6,10 +6,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
 
 data class ResultatSærbidragsberegningDto(
     val periode: ÅrMånedsperiode,
@@ -18,7 +19,7 @@ data class ResultatSærbidragsberegningDto(
     val inntekter: ResultatSærbidragsberegningInntekterDto? = null,
     val utgiftsposter: List<UtgiftspostDto> = emptyList(),
     val delberegningUtgift: DelberegningUtgift? = null,
-    val delberegningBidragsevne: DelberegningBidragsevne? = null,
+    val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
     val maksGodkjentBeløp: BigDecimal? = null,
     val resultat: BigDecimal,
     val resultatKode: Resultatkode,
@@ -29,6 +30,33 @@ data class ResultatSærbidragsberegningDto(
     val bpHarEvne: Boolean = resultatKode != Resultatkode.SÆRBIDRAG_IKKE_FULL_BIDRAGSEVNE,
 ) {
     val beløpSomInnkreves: BigDecimal get() = maxOf(resultat - (beregning?.totalBeløpBetaltAvBp ?: BigDecimal.ZERO), BigDecimal.ZERO)
+}
+
+data class DelberegningBidragsevneDto(
+    val bidragsevne: BigDecimal,
+    val skatt: Skatt,
+    val underholdEgneBarnIHusstand: UnderholdEgneBarnIHusstand,
+    val utgifter: BidragsevneUtgifterBolig,
+) {
+    data class UnderholdEgneBarnIHusstand(
+        val resultat: BigDecimal,
+        val sjablon: BigDecimal,
+        val antallBarnIHusstanden: Double,
+    )
+
+    data class Skatt(
+        val sumSkatt: BigDecimal,
+        val trygdeavgift: BigDecimal,
+    ) {
+        val skattResultat get() = sumSkatt.divide(BigDecimal(12), MathContext(2, RoundingMode.HALF_UP))
+        val trygdeavgiftResultat get() = sumSkatt.divide(BigDecimal(12), MathContext(2, RoundingMode.HALF_UP))
+    }
+
+    data class BidragsevneUtgifterBolig(
+        val borMedAndreVoksne: Boolean,
+        val boutgiftBeløp: BigDecimal,
+        val underholdBeløp: BigDecimal,
+    )
 }
 
 data class ResultatSærbidragsberegningInntekterDto(
