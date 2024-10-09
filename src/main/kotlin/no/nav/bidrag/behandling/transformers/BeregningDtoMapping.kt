@@ -90,6 +90,8 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
 fun List<GrunnlagDto>.byggResultatSærbidragInntekter(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
     ResultatSærbidragsberegningInntekterDto(
         inntektBarn = finnTotalInntektForRolle(grunnlagsreferanseListe, Rolletype.BARN),
+        barnEndeligInntekt = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)?.barnEndeligInntekt,
+        forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
         inntektBP =
             finnTotalInntektForRolle(
                 grunnlagsreferanseListe,
@@ -311,6 +313,26 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
                 borMedAndreVoksne = delberegningVoksneIHusstand.borMedAndreVoksne,
             ),
     )
+}
+
+fun List<GrunnlagDto>.finnForskuddssats(grunnlagsreferanseListe: List<Grunnlagsreferanse>): BigDecimal {
+    val sluttberegning =
+        finnSluttberegningIReferanser(grunnlagsreferanseListe)
+            ?: return BigDecimal.ZERO
+    val delberegningBidragspliktigesAndel =
+        find {
+            it.type == Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL &&
+                sluttberegning.grunnlagsreferanseListe.contains(
+                    it.referanse,
+                )
+        } ?: return BigDecimal.ZERO
+    return find {
+        it.type == Grunnlagstype.SJABLON &&
+            delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
+                it.referanse,
+            ) &&
+            it.innholdTilObjekt<SjablonSjablontallPeriode>().sjablon == SjablonTallNavn.FORSKUDDSSATS_BELØP
+    }?.innholdTilObjekt<SjablonSjablontallPeriode>()?.verdi ?: BigDecimal.ZERO
 }
 
 fun List<GrunnlagDto>.finnTotalInntektForRolle(
