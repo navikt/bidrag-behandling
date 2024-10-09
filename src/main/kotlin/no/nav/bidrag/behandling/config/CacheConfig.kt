@@ -24,6 +24,7 @@ class CacheConfig {
         const val SAK_CACHE = "SAK_CACHE"
         const val TILGANG_TEMA_CACHE = "TILGANG_TEMA_CACHE"
         const val TILGANG_PERSON_I_SAK_CACHE = "TILGANG_SAK_CACHE"
+        const val PERSON_HAR_BESKYTTELSE = "PERSON_HAR_BESKYTTELSE"
     }
 
     @Bean

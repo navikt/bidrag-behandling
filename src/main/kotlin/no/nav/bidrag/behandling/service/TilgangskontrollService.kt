@@ -64,4 +64,8 @@ class TilgangskontrollService(
         } catch (hcee: HttpClientErrorException) {
             false
         }
+
+    fun harBeskyttelse(personident: Personident): Boolean {
+        return tilgangskontrollConsumer.personHarBeskyttelse(personident)
+    }
 }
