@@ -69,4 +69,10 @@ data class ResultatSærbidragsberegningInntekterDto(
     val inntektBM: BigDecimal? = null,
     val inntektBP: BigDecimal? = null,
     val inntektBarn: BigDecimal? = null,
-)
+    val barnEndeligInntekt: BigDecimal? = null,
+    val forskuddssats: BigDecimal? = null,
+) {
+    val totalEndeligInntekt get() =
+        (inntektBM ?: BigDecimal.ZERO) + (inntektBP ?: BigDecimal.ZERO) +
+            (barnEndeligInntekt ?: BigDecimal.ZERO)
+}
