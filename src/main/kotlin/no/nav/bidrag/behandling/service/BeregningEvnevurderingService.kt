@@ -19,7 +19,6 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadsid
 import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
-import java.math.BigDecimal
 
 private val log = KotlinLogging.logger {}
 
@@ -49,42 +48,19 @@ class BeregningEvnevurderingService(
         }
     }
 
-    private fun List<VedtakForStønad>.hentBeregning(): BidragBeregningResponsDto {
-        val res =
-            bidragBBMConsumer.hentBeregning(
-                BidragBeregningRequestDto(
-                    map {
-                        BidragBeregningRequestDto.HentBidragBeregning(
-                            stønadstype = it.stønadsendring.type,
-                            søknadsid = it.behandlingsreferanser.søknadsid.toString(),
-                            saksnummer = it.stønadsendring.sak.verdi,
-                            personidentBarn = it.stønadsendring.kravhaver,
-                        )
-                    },
-                ),
-            )
-
-        return res.copy(
-            beregningListe =
-                res.beregningListe.map { b ->
-                    val vedtak = find { it.stønadsendring.kravhaver == b.personidentBarn }
-                    val reskode =
-                        vedtak
-                            ?.stønadsendring!!
-                            .periodeListe
-                            .first()
-                            .resultatkode
-                    if (reskode !in listOf("6MB", "7M", "101", "VO")) {
-                        b.copy(
-                            faktiskBeløp = BigDecimal.ZERO,
-                            beregnetBeløp = BigDecimal.ZERO,
-                        )
-                    } else {
-                        b
-                    }
+    private fun List<VedtakForStønad>.hentBeregning(): BidragBeregningResponsDto =
+        bidragBBMConsumer.hentBeregning(
+            BidragBeregningRequestDto(
+                map {
+                    BidragBeregningRequestDto.HentBidragBeregning(
+                        stønadstype = it.stønadsendring.type,
+                        søknadsid = it.behandlingsreferanser.søknadsid.toString(),
+                        saksnummer = it.stønadsendring.sak.verdi,
+                        personidentBarn = it.stønadsendring.kravhaver,
+                    )
                 },
+            ),
         )
-    }
 
     private fun hentSisteLøpendeStønader(bpIdent: Personident): List<LøpendeBidragssak> =
         bidragStønadConsumer.hentLøpendeBidrag(LøpendeBidragssakerRequest(skyldner = bpIdent)).bidragssakerListe

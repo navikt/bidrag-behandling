@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import java.math.BigDecimal
 import java.math.MathContext
@@ -20,6 +21,7 @@ data class ResultatSærbidragsberegningDto(
     val utgiftsposter: List<UtgiftspostDto> = emptyList(),
     val delberegningUtgift: DelberegningUtgift? = null,
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
+    val delberegningSumLøpendeBidrag: DelberegningSumLøpendeBidrag? = null,
     val maksGodkjentBeløp: BigDecimal? = null,
     val resultat: BigDecimal,
     val resultatKode: Resultatkode,
@@ -46,10 +48,14 @@ data class DelberegningBidragsevneDto(
 
     data class Skatt(
         val sumSkatt: BigDecimal,
+        val skattAlminneligInntekt: BigDecimal,
+        val trinnskatt: BigDecimal,
         val trygdeavgift: BigDecimal,
     ) {
-        val skattResultat get() = sumSkatt.divide(BigDecimal(12), MathContext(2, RoundingMode.HALF_UP))
-        val trygdeavgiftResultat get() = sumSkatt.divide(BigDecimal(12), MathContext(2, RoundingMode.HALF_UP))
+        val skattResultat get() = sumSkatt.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+        val trinnskattResultat get() = trinnskatt.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+        val skattAlminneligInntektResultat get() = skattAlminneligInntekt.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+        val trygdeavgiftResultat get() = trygdeavgift.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
     }
 
     data class BidragsevneUtgifterBolig(
