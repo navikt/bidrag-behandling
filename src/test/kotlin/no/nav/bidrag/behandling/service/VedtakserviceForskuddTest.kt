@@ -148,6 +148,7 @@ class VedtakserviceForskuddTest {
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         every {
             behandlingService.oppdaterVedtakFattetStatus(
                 any(),
