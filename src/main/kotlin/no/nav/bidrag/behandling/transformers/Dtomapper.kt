@@ -192,8 +192,10 @@ class Dtomapper(
         saksnummer: Saksnummer,
         skjuleIdentitietHvisBeskyttet: Boolean = false,
     ): Personinfo {
+        val erBeskytta = personinfo.ident?.let { tilgangskontrollService.harBeskyttelse(it) } ?: false
+
         personinfo.ident?.let {
-            if (!tilgangskontrollService.harTilgang(it, saksnummer) || skjuleIdentitietHvisBeskyttet) {
+            if (!tilgangskontrollService.harTilgang(it, saksnummer) || skjuleIdentitietHvisBeskyttet && erBeskytta) {
                 return Personinfo(
                     null,
                     "Person skjermet, født ${personinfo.fødselsdato?.year}",
@@ -207,6 +209,7 @@ class Dtomapper(
             personinfo.ident,
             personinfo.navn ?: hentPersonVisningsnavn(personinfo.ident?.verdi),
             personinfo.fødselsdato,
+            erBeskytta,
         )
     }
 
@@ -215,6 +218,7 @@ class Dtomapper(
             tilgangskontrollerePersoninfo(
                 this.tilPersoninfo(),
                 Saksnummer(this.behandling.saksnummer),
+                true,
             )
         return BoforholdBarn(
             gjelder =
@@ -271,12 +275,22 @@ class Dtomapper(
                                 NotatAndreVoksneIHusstandenDetaljerDto(
                                     henteAndreVoksneIHusstanden(grunnlag, periode, true).size,
                                     husstandsmedlemmer =
-                                        henteBegrensetAntallAndreVoksne(grunnlag, periode, true).map { voksne ->
+                                        henteBegrensetAntallAndreVoksne(grunnlag, periode, true).map { voksen ->
+
+                                            val navn =
+                                                if (voksen.erBeskyttet) {
+                                                    val fødselssår =
+                                                        voksen.fødselsdato?.let { ", født ${voksen.fødselsdato.year}" } ?: ""
+                                                    "Person skjermet$fødselssår"
+                                                } else {
+                                                    voksen.navn
+                                                }
+
                                             NotatVoksenIHusstandenDetaljerDto(
-                                                navn = voksne.navn!!,
-                                                fødselsdato = voksne.fødselsdato,
-                                                harRelasjonTilBp = voksne.harRelasjonTilBp,
-                                                erBeskyttet = voksne.erBeskyttet,
+                                                navn = navn,
+                                                fødselsdato = if (voksen.erBeskyttet) null else voksen.fødselsdato,
+                                                harRelasjonTilBp = voksen.harRelasjonTilBp,
+                                                erBeskyttet = voksen.erBeskyttet,
                                             )
                                         },
                                 ),

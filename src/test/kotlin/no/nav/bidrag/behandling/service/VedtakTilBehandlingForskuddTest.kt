@@ -136,6 +136,8 @@ class VedtakTilBehandlingForskuddTest {
     fun `Skal konvertere vedtak til behandling for lesemodus for FORSKUDD`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
+        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
+
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -168,6 +170,8 @@ class VedtakTilBehandlingForskuddTest {
     fun `Skal konvertere vedtak til behandling for lesemodus hvis resultat er avslag`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_respons_resultat_avslag")
         every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
+        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
+
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -497,6 +501,7 @@ class VedtakTilBehandlingForskuddTest {
     fun `skal konvertere vedtak avslag til behandling`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response_avslag")
         every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
+        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
