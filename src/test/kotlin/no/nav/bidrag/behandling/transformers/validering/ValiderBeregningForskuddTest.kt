@@ -19,18 +19,18 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.YearMonth
-import kotlin.test.Test
 
 class ValiderBeregningForskuddTest {
     lateinit var validering: ValiderBeregning
 
     @BeforeEach
-    fun init() {
+    fun initMocks() {
         validering = ValiderBeregning()
     }
 
