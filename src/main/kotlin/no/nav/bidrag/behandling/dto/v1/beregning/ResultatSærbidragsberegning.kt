@@ -23,6 +23,7 @@ data class ResultatSærbidragsberegningDto(
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
     val delberegningSumLøpendeBidrag: DelberegningSumLøpendeBidrag? = null,
     val maksGodkjentBeløp: BigDecimal? = null,
+    val forskuddssats: BigDecimal? = null,
     val resultat: BigDecimal,
     val resultatKode: Resultatkode,
     val antallBarnIHusstanden: Double? = null,
@@ -70,7 +71,6 @@ data class ResultatSærbidragsberegningInntekterDto(
     val inntektBP: BigDecimal? = null,
     val inntektBarn: BigDecimal? = null,
     val barnEndeligInntekt: BigDecimal? = null,
-    val forskuddssats: BigDecimal? = null,
 ) {
     val totalEndeligInntekt get() =
         (inntektBM ?: BigDecimal.ZERO) + (inntektBP ?: BigDecimal.ZERO) +
