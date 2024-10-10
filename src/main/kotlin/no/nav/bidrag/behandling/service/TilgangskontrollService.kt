@@ -65,7 +65,5 @@ class TilgangskontrollService(
             false
         }
 
-    fun harBeskyttelse(personident: Personident): Boolean {
-        return tilgangskontrollConsumer.personHarBeskyttelse(personident)
-    }
+    fun harBeskyttelse(personident: Personident): Boolean = tilgangskontrollConsumer.personHarBeskyttelse(personident)
 }

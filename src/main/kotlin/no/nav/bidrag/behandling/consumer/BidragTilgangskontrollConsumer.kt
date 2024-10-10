@@ -50,7 +50,7 @@ class BidragTilgangskontrollConsumer(
                 postForEntity(
                     createUri("/api/tilgang/person/sak"),
                     SjekkTilgangPersonISakRequest(personident, saksnummer),
-                    headers
+                    headers,
                 )
             harTilgangTilPersonISak ?: false
         } catch (e: HttpStatusCodeException) {
@@ -72,7 +72,9 @@ class BidragTilgangskontrollConsumer(
             headers.contentType = MediaType.APPLICATION_JSON
             val harTilgangTilPersonISak: Boolean? =
                 postForEntity(
-                    createUri("/api/tilgang/person/beskyttelse"), SjekkTilgangPerson(personident), headers
+                    createUri("/api/tilgang/person/beskyttelse"),
+                    personident,
+                    headers,
                 )
             harTilgangTilPersonISak ?: false
         } catch (e: HttpStatusCodeException) {
@@ -100,6 +102,11 @@ class BidragTilgangskontrollConsumer(
     }
 }
 
-data class SjekkTilgangPersonISakRequest(val personident: Personident, val saksnummer: Saksnummer)
+data class SjekkTilgangPersonISakRequest(
+    val personident: Personident,
+    val saksnummer: Saksnummer,
+)
 
-data class SjekkTilgangPerson(val personident: Personident)
+data class SjekkTilgangPerson(
+    val personident: Personident,
+)
