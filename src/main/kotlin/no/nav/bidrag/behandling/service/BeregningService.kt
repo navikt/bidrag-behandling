@@ -161,7 +161,7 @@ class BeregningService(
             beregninResultat.grunnlagListe.finnDelberegningSumLøpendeBidrag(
                 beregninResultat.beregnetSærbidragPeriodeListe.first().grunnlagsreferanseListe,
             )
-        (1..1000000 step 2).forEach {
+        (1000..10000000 step 1).forEach {
             val antallBarnIHusstand =
                 behandling.husstandsmedlem
                     .filter {
