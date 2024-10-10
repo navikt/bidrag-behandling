@@ -90,11 +90,11 @@ class BidragGrunnlagConsumer(
                 Personident(
                     behandling.bidragsmottaker!!.ident!!,
                 ) to
-                    oppretteGrunnlagsobjekter(
-                        Personident(behandling.bidragsmottaker!!.ident!!),
-                        Rolletype.BIDRAGSMOTTAKER,
-                        behandling,
-                    ),
+                        oppretteGrunnlagsobjekter(
+                            Personident(behandling.bidragsmottaker!!.ident!!),
+                            Rolletype.BIDRAGSMOTTAKER,
+                            behandling,
+                        ),
             )
         behandling.søknadsbarn
             .filter { sb -> sb.ident != null }
@@ -125,9 +125,22 @@ class BidragGrunnlagConsumer(
     }
 
     @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
-    fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentGrunnlagDto =
-        postForNonNullEntity(
-            bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
-            HentGrunnlagRequestDto(formaal = Formål.FORSKUDD, grunnlagRequestDtoListe = grunnlag),
-        )
+    fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentetGrunnlag {
+        return try {
+            HentetGrunnlag(
+                postForNonNullEntity(
+                    bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
+                    HentGrunnlagRequestDto(formaal = Formål.FORSKUDD, grunnlagRequestDtoListe = grunnlag),
+                )
+            )
+        } catch (e: Exception) {
+            log.error("Feil oppstod ved henting av grunnlag.")
+            return HentetGrunnlag(null, tekniskFeil = "Feil ved henting")
+        }
+    }
 }
+
+data class HentetGrunnlag(
+    val hentGrunnlagDto: HentGrunnlagDto?,
+    val tekniskFeil: String? = null
+)
