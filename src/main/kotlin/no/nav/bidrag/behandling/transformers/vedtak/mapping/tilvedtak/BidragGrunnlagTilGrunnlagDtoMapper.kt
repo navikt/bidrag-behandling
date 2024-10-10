@@ -1,17 +1,18 @@
-package no.nav.bidrag.behandling.transformers.grunnlag
+package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.hentNyesteIdent
-import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
+import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
-import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetArbeidsforhold
@@ -75,27 +76,6 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
                             fødselsdato,
                         ) // Avbryter prosesering dersom fødselsdato til husstandsmedlem er ukjent
                             ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
-                ).valider(),
-            ),
-    )
-}
-
-fun BidragBeregningResponsDto.BidragBeregning.tilPersonGrunnlag(): GrunnlagDto {
-    val fødselsdato = hentPersonFødselsdato(personidentBarn.verdi) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
-    val nyesteIdent = (hentNyesteIdent(personidentBarn.verdi) ?: personidentBarn)
-
-    return GrunnlagDto(
-        referanse =
-            Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
-                fødselsdato.toCompactString(),
-                (personidentBarn.verdi + 1).hashCode(),
-            ),
-        type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
-        innhold =
-            POJONode(
-                Person(
-                    ident = nyesteIdent,
-                    fødselsdato = fødselsdato,
                 ).valider(),
             ),
     )

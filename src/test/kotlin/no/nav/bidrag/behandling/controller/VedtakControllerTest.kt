@@ -57,6 +57,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubKodeverkProvider()
         stubPersonConsumer()
         stubUtils.stubOpprettNotat()
+        stubUtils.stubHentePersonInfoForTestpersoner()
         stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
         stubUtils.stubBidragStonadLøpendeSaker()

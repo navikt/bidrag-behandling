@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.service.tilSummerteInntekter
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
+import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -63,6 +64,7 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -73,6 +75,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
+import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
@@ -1500,3 +1503,33 @@ fun opprettLøpendeBidragGrunnlag(
     beregnetBeløp = BigDecimal(6334),
     saksnummer = Saksnummer(SAKSNUMMER),
 )
+
+fun opprettEvnevurderingResultat(sakerFor: List<Pair<TestDataPerson, Stønadstype>>) =
+    EvnevurderingBeregningResultat(
+        løpendeBidragsaker =
+            sakerFor.map {
+                LøpendeBidragssak(
+                    kravhaver = Personident(it.first.ident),
+                    type = it.second,
+                    løpendeBeløp = BigDecimal(5123),
+                    sak = Saksnummer(SAKSNUMMER),
+                )
+            },
+        beregnetBeløpListe =
+            BidragBeregningResponsDto(
+                beregningListe =
+                    sakerFor.map {
+                        BidragBeregningResponsDto.BidragBeregning(
+                            beløpSamvær = BigDecimal(5123),
+                            faktiskBeløp = BigDecimal(6555),
+                            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
+                            beregnetBeløp = BigDecimal(6334),
+                            saksnummer = SAKSNUMMER,
+                            datoSøknad = LocalDate.now(),
+                            gjelderFom = LocalDate.now(),
+                            personidentBarn = Personident(it.first.ident),
+                            stønadstype = it.second,
+                        )
+                    },
+            ),
+    )

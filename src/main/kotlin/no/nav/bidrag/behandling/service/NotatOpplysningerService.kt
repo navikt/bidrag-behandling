@@ -34,8 +34,6 @@ import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
-import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
@@ -54,6 +52,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.dokument.JournalpostType
 import no.nav.bidrag.transport.dokument.OpprettDokumentDto
 import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
+import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.Arbeidsforhold
 import no.nav.bidrag.transport.notat.InntekterPerRolle
 import no.nav.bidrag.transport.notat.NotatBegrunnelseDto
@@ -196,7 +195,7 @@ class NotatOpplysningerService(
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
-            utgift = behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling),
+            utgift = mapper.run { behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling) },
             boforhold =
                 NotatBoforholdDto(
                     begrunnelse = behandling.tilNotatBoforhold(),

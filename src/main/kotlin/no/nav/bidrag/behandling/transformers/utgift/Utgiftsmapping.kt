@@ -4,24 +4,15 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
-import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
-import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
-import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.MaksGodkjentBeløpValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
-import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
-import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
-import no.nav.bidrag.behandling.transformers.behandling.tilDto
-import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
-import no.nav.bidrag.behandling.transformers.erSærbidrag
-import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.sorterBeregnetUtgifter
 import no.nav.bidrag.behandling.transformers.validerUtgiftspost
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -29,7 +20,6 @@ import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 val kategorierSomKreverType = listOf(Særbidragskategori.ANNET, Særbidragskategori.KONFIRMASJON)
 val Utgift.totalGodkjentBeløpBp
@@ -77,48 +67,6 @@ fun Utgift.validerMaksGodkjentBeløp() =
         null
     }
 
-fun Behandling.tilUtgiftDto() =
-    utgift?.let { utgift ->
-        val valideringsfeil = utgift.hentValideringsfeil()
-        if (avslag != null) {
-            SærbidragUtgifterDto(
-                avslag = avslag,
-                kategori = tilSærbidragKategoriDto(),
-                begrunnelse = BegrunnelseDto(henteNotatinnhold(this, Notattype.UTGIFTER) ?: ""),
-                valideringsfeil = valideringsfeil,
-                totalBeregning = utgift.tilTotalBeregningDto(),
-            )
-        } else {
-            SærbidragUtgifterDto(
-                avslag = tilSærbidragAvslagskode(),
-                beregning = utgift.tilBeregningDto(),
-                kategori = tilSærbidragKategoriDto(),
-                maksGodkjentBeløp = utgift.tilMaksGodkjentBeløpDto(),
-                begrunnelse =
-                    BegrunnelseDto(
-                        innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
-                        gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
-                    ),
-                utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
-                valideringsfeil = valideringsfeil,
-                totalBeregning = utgift.tilTotalBeregningDto(),
-            )
-        }
-    } ?: if (erSærbidrag()) {
-        SærbidragUtgifterDto(
-            avslag = avslag,
-            kategori = tilSærbidragKategoriDto(),
-            begrunnelse =
-                BegrunnelseDto(
-                    innhold = henteNotatinnhold(this, Notattype.UTGIFTER),
-                    gjelder = this.henteRolleForNotat(Notattype.UTGIFTER, null).tilDto(),
-                ),
-            valideringsfeil = utgift.hentValideringsfeil(),
-        )
-    } else {
-        null
-    }
-
 fun Utgift.tilTotalBeregningDto() =
     utgiftsposter
         .groupBy {
@@ -140,26 +88,6 @@ fun Utgift.tilMaksGodkjentBeløpDto() =
         beløp = maksGodkjentBeløp,
         begrunnelse = maksGodkjentBeløpBegrunnelse,
     )
-
-fun Utgift.tilUtgiftResponse(utgiftspostId: Long? = null) =
-    if (behandling.avslag != null) {
-        OppdatereUtgiftResponse(
-            avslag = behandling.avslag,
-            begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
-            valideringsfeil = behandling.utgift.hentValideringsfeil(),
-        )
-    } else {
-        OppdatereUtgiftResponse(
-            avslag = behandling.tilSærbidragAvslagskode(),
-            oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
-            utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
-            maksGodkjentBeløp = tilMaksGodkjentBeløpDto(),
-            begrunnelse = henteNotatinnhold(behandling, Notattype.UTGIFTER),
-            beregning = tilBeregningDto(),
-            valideringsfeil = behandling.utgift.hentValideringsfeil(),
-            totalBeregning = behandling.utgift?.tilTotalBeregningDto() ?: emptyList(),
-        )
-    }
 
 fun Utgift.tilBeregningDto() =
     UtgiftBeregningDto(

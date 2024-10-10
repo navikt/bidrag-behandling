@@ -13,6 +13,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.sak.RolleDto
 
 val særbidragDirekteAvslagskoderSomKreverBeregning = listOf(Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS)
@@ -31,6 +32,12 @@ val inntektsrapporteringSomKreverSøknadsbarn =
         Inntektsrapportering.BARNETILSYN,
     )
 
+data class StønadsendringPeriode(
+    val barn: Rolle,
+    val perioder: List<OpprettPeriodeRequestDto>,
+    val grunnlag: Set<GrunnlagDto>,
+)
+
 fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
     filter { it.erPerson() }.find { it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
 
@@ -44,7 +51,5 @@ fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? = if (this == null || th
 fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
     if (this?.taMed == true) block(this)
 }
-
-fun <T> Boolean?.ifTrue(block: (Boolean) -> T?): T? = if (this == true) block(this) else null
 
 fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(this) else null

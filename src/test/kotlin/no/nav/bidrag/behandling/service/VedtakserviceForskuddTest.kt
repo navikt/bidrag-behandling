@@ -13,12 +13,17 @@ import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.slot
 import io.mockk.verify
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyperForReferanser
@@ -101,6 +106,7 @@ class VedtakserviceForskuddTest {
 
     lateinit var vedtakService: VedtakService
     lateinit var beregningService: BeregningService
+    lateinit var personConsumer: BidragPersonConsumer
 
     val unleash = FakeUnleash()
 
@@ -108,10 +114,22 @@ class VedtakserviceForskuddTest {
     fun initMocks() {
         clearAllMocks()
         unleash.enableAll()
+        personConsumer = stubPersonConsumer()
+        val personService = PersonService(personConsumer)
+
+        val validerBeregning = ValiderBeregning()
+        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
+        val vedtakGrunnlagMapper =
+            VedtakGrunnlagMapper(
+                BehandlingTilGrunnlagMappingV2(personService),
+                validerBeregning,
+                evnevurderingService,
+                personService,
+            )
         beregningService =
             BeregningService(
                 behandlingService,
-                evnevurderingService,
+                vedtakGrunnlagMapper,
             )
         vedtakService =
             VedtakService(
@@ -123,11 +141,14 @@ class VedtakserviceForskuddTest {
                 vedtakConsumer,
                 sakConsumer,
                 unleash,
+                vedtakGrunnlagMapper,
+                vedtakTilBehandlingMapping,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         every {
             behandlingService.oppdaterVedtakFattetStatus(
                 any(),
@@ -298,10 +319,10 @@ class VedtakserviceForskuddTest {
         val nyIdentBarn1 = "ny_ident_barn_1"
         val nyIdentBarn2 = "ny_ident_barn_2"
         val nyIdentHusstandsmedlem = "ny_ident_husstandsmedlem"
-        val mock = stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1)
-        stubHentPersonNyIdent(testdataBarn2.ident, nyIdentBarn2, mock)
-        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
-        stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, mock)
+        stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1, personConsumer)
+        stubHentPersonNyIdent(testdataBarn2.ident, nyIdentBarn2, personConsumer)
+        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, personConsumer)
+        stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, personConsumer)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         val husstandsmedlemUtenIdent =
             Husstandsmedlem(

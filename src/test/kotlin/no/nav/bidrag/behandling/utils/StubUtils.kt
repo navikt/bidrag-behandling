@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
@@ -70,6 +71,8 @@ fun stubTokenUtils() {
     every { TokenUtils.hentApplikasjonsnavn() } returns "bidrag-behandling"
     every { TokenUtils.hentSaksbehandlerIdent() } returns SAKSBEHANDLER_IDENT
 }
+
+fun createPersonServiceMock(): PersonService = PersonService(stubPersonConsumer())
 
 fun stubPersonConsumer(): BidragPersonConsumer {
     try {
@@ -363,11 +366,55 @@ class StubUtils {
         )
     }
 
+    fun stubPerson(
+        status: HttpStatus = HttpStatus.OK,
+        personident: String,
+        navn: String = "Navn Navnesen",
+        shouldContaintPersonIdent: Boolean = false,
+    ) {
+        var postRequest = WireMock.post(urlMatching("/bidrag-person/informasjon"))
+
+        if (shouldContaintPersonIdent) {
+            postRequest = postRequest.withRequestBody(ContainsPattern(personident))
+        }
+
+        WireMock.stubFor(
+            WireMock
+                .post(urlMatching("/bidrag-person/informasjon"))
+                .willReturn(
+                    aClosedJsonResponse()
+                        .withStatus(HttpStatus.OK.value())
+                        .withTransformers("example"),
+                ),
+        )
+    }
+
+    fun stubHentePersonInfoForTestpersoner() {
+        stubHentePersoninfo(shouldContaintPersonIdent = true, personident = testdataBM.ident, responseBody = testdataBM.tilPersonDto())
+        stubHentePersoninfo(
+            shouldContaintPersonIdent = true,
+            personident = testdataBarn1.ident,
+            responseBody = testdataBarn1.tilPersonDto(),
+        )
+        stubHentePersoninfo(
+            shouldContaintPersonIdent = true,
+            personident = testdataBarn2.ident,
+            responseBody = testdataBarn2.tilPersonDto(),
+        )
+        stubHentePersoninfo(shouldContaintPersonIdent = true, personident = testdataBP.ident, responseBody = testdataBP.tilPersonDto())
+        stubHentePersoninfo(
+            shouldContaintPersonIdent = true,
+            personident = testdataHusstandsmedlem1.ident,
+            responseBody = testdataHusstandsmedlem1.tilPersonDto(),
+        )
+    }
+
     fun stubHentePersoninfo(
         status: HttpStatus = HttpStatus.OK,
         personident: String,
         navn: String = "Navn Navnesen",
         shouldContaintPersonIdent: Boolean = false,
+        responseBody: PersonDto? = null,
     ) {
         var postRequest = WireMock.post(urlMatching("/bidrag-person/informasjon"))
 
@@ -382,7 +429,7 @@ class StubUtils {
                         .withStatus(status.value())
                         .withBody(
                             toJsonString(
-                                PersonDto(
+                                responseBody ?: PersonDto(
                                     ident = Personident(personident),
                                     fødselsdato = LocalDate.now().minusMonths(500),
                                     visningsnavn = navn,

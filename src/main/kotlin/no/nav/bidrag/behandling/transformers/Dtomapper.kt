@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
@@ -22,12 +23,15 @@ import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
+import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.erLik
@@ -40,9 +44,14 @@ import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
-import no.nav.bidrag.behandling.transformers.utgift.tilUtgiftDto
-import no.nav.bidrag.behandling.transformers.vedtak.ifTrue
+import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
+import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
+import no.nav.bidrag.behandling.transformers.utgift.tilDto
+import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
+import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
+import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.person.Familierelasjon
@@ -54,6 +63,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstandenDetaljerDto
@@ -69,6 +79,7 @@ import java.time.LocalDateTime
 @Component
 class Dtomapper(
     val tilgangskontrollService: TilgangskontrollService,
+    val validering: ValiderBeregning,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -113,6 +124,68 @@ class Dtomapper(
         ikkeAktiveGrunnlag: List<Grunnlag>,
         aktiveGrunnlag: List<Grunnlag>,
     ) = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
+
+    fun Utgift.tilOppdaterUtgiftResponse(utgiftspostId: Long? = null) =
+        if (behandling.avslag != null) {
+            OppdatereUtgiftResponse(
+                avslag = behandling.avslag,
+                begrunnelse = henteNotatinnhold(behandling, NotatType.UTGIFTER),
+                valideringsfeil = behandling.utgift.hentValideringsfeil(),
+            )
+        } else {
+            OppdatereUtgiftResponse(
+                avslag = validering.run { behandling.tilSærbidragAvslagskode() },
+                oppdatertUtgiftspost = utgiftsposter.find { it.id == utgiftspostId }?.tilDto(),
+                utgiftposter = utgiftsposter.sorter().map { it.tilDto() },
+                maksGodkjentBeløp = tilMaksGodkjentBeløpDto(),
+                begrunnelse = henteNotatinnhold(behandling, NotatType.UTGIFTER),
+                beregning = tilBeregningDto(),
+                valideringsfeil = behandling.utgift.hentValideringsfeil(),
+                totalBeregning = behandling.utgift?.tilTotalBeregningDto() ?: emptyList(),
+            )
+        }
+
+    fun Behandling.tilUtgiftDto() =
+        utgift?.let { utgift ->
+            val valideringsfeil = utgift.hentValideringsfeil()
+            if (avslag != null) {
+                SærbidragUtgifterDto(
+                    avslag = avslag,
+                    kategori = tilSærbidragKategoriDto(),
+                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.UTGIFTER) ?: ""),
+                    valideringsfeil = valideringsfeil,
+                    totalBeregning = utgift.tilTotalBeregningDto(),
+                )
+            } else {
+                SærbidragUtgifterDto(
+                    avslag = validering.run { tilSærbidragAvslagskode() },
+                    beregning = utgift.tilBeregningDto(),
+                    kategori = tilSærbidragKategoriDto(),
+                    maksGodkjentBeløp = utgift.tilMaksGodkjentBeløpDto(),
+                    begrunnelse =
+                        BegrunnelseDto(
+                            innhold = henteNotatinnhold(this, NotatType.UTGIFTER),
+                            gjelder = this.henteRolleForNotat(NotatType.UTGIFTER, null).tilDto(),
+                        ),
+                    utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
+                    valideringsfeil = valideringsfeil,
+                    totalBeregning = utgift.tilTotalBeregningDto(),
+                )
+            }
+        } ?: if (erSærbidrag()) {
+            SærbidragUtgifterDto(
+                avslag = avslag,
+                kategori = tilSærbidragKategoriDto(),
+                begrunnelse =
+                    BegrunnelseDto(
+                        innhold = henteNotatinnhold(this, NotatType.UTGIFTER),
+                        gjelder = this.henteRolleForNotat(NotatType.UTGIFTER, null).tilDto(),
+                    ),
+                valideringsfeil = utgift.hentValideringsfeil(),
+            )
+        } else {
+            null
+        }
 
     private fun tilgangskontrollerePersoninfo(
         personinfo: Personinfo,

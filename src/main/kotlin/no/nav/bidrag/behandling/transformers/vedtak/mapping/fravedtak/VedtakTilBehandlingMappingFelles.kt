@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers.vedtak
+package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
@@ -8,43 +8,28 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
-import no.nav.bidrag.behandling.database.datamodell.Utgift
-import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
-import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
-import no.nav.bidrag.behandling.transformers.behandling.tilNotat
-import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
-import no.nav.bidrag.behandling.transformers.beregning.tilSærbidragAvslagskode
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
-import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
-import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
-import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
-import no.nav.bidrag.commons.security.utils.TokenUtils
-import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
-import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
@@ -63,20 +48,10 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.særbidragskategori
-import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftDirekteBetalt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBeløp
-import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
-import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
-import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
-import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
-import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 fun manglerPersonGrunnlag(referanse: Grunnlagsreferanse?): Nothing =
     vedtakmappingFeilet(
@@ -124,118 +99,7 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
         )
     }
 
-fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto? =
-    engangsbeløpListe.firstOrNull()?.let { engangsbeløp ->
-        val behandling = tilBehandling(1)
-        grunnlagListe.byggResultatSærbidragsberegning(
-            behandling.virkningstidspunkt!!,
-            engangsbeløp.beløp,
-            Resultatkode.fraKode(engangsbeløp.resultatkode)!!,
-            engangsbeløp.grunnlagReferanseListe,
-            behandling.utgift?.tilBeregningDto() ?: UtgiftBeregningDto(),
-            behandling.utgift
-                ?.utgiftsposter
-                ?.sorter()
-                ?.map { it.tilDto() } ?: emptyList(),
-            behandling.utgift?.maksGodkjentBeløpTaMed.ifTrue { behandling.utgift?.maksGodkjentBeløp },
-        )
-    }
-
-fun VedtakDto.tilBehandling(
-    vedtakId: Long,
-    lesemodus: Boolean = true,
-    vedtakType: Vedtakstype? = null,
-    mottattdato: LocalDate? = null,
-    søktFomDato: LocalDate? = null,
-    soknadFra: SøktAvType? = null,
-    søknadRefId: Long? = null,
-    søknadId: Long? = null,
-    enhet: String? = null,
-    opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
-    opprinneligVedtakstype: Vedtakstype? = null,
-): Behandling {
-    val opprettetAv =
-        if (lesemodus) {
-            this.opprettetAv
-        } else {
-            TokenUtils.hentSaksbehandlerIdent()
-                ?: TokenUtils.hentApplikasjonsnavn()!!
-        }
-    val opprettetAvNavn =
-        if (lesemodus) {
-            this.opprettetAvNavn
-        } else {
-            TokenUtils
-                .hentSaksbehandlerIdent()
-                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
-        }
-    val behandling =
-        Behandling(
-            id = if (lesemodus) 1 else null,
-            vedtakstype = vedtakType ?: type,
-            opprinneligVedtakstype = opprinneligVedtakstype,
-            virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato,
-            kategori = grunnlagListe.særbidragskategori?.kategori?.name,
-            kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
-            opprinneligVirkningstidspunkt =
-                virkningstidspunkt
-                    ?: hentSøknad().søktFraDato,
-            opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
-            innkrevingstype =
-                this.stønadsendringListe.firstOrNull()?.innkreving
-                    ?: this.engangsbeløpListe.firstOrNull()?.innkreving
-                    ?: Innkrevingstype.MED_INNKREVING,
-            årsak = hentVirkningstidspunkt()?.årsak,
-            avslag = avslagskode(),
-            klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
-            søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
-            soknadFra = soknadFra ?: hentSøknad().søktAv,
-            mottattdato =
-                when (typeBehandling) {
-                    TypeBehandling.SÆRBIDRAG -> hentSøknad().mottattDato
-                    else -> mottattdato ?: hentSøknad().mottattDato
-                },
-            // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
-            stonadstype = stønadsendringListe.firstOrNull()?.type,
-            engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,
-            vedtaksid = null,
-            soknadRefId = søknadRefId,
-            refVedtaksid = vedtakId,
-            behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
-            opprettetAv = opprettetAv,
-            opprettetAvNavn = opprettetAvNavn,
-            kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
-            datoTom = null,
-            saksnummer = saksnummer!!,
-            soknadsid = søknadId ?: this.søknadId!!,
-        )
-
-    behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
-    behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
-    behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling)
-    behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
-    behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
-    behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
-
-    notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.BOFORHOLD, it))
-    }
-    notatMedType(Notattype.UTGIFTER, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UTGIFTER, it))
-    }
-    notatMedType(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false)?.let {
-        behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, it))
-    }
-    behandling.roller.forEach { r ->
-        notatMedType(NotatGrunnlag.NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-            behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.INNTEKT, it, r))
-        }
-    }
-
-    return behandling
-}
-
-private fun List<GrunnlagDto>.mapGrunnlag(
+internal fun List<GrunnlagDto>.mapGrunnlag(
     behandling: Behandling,
     lesemodus: Boolean,
 ): MutableSet<Grunnlag> =
@@ -247,7 +111,7 @@ private fun List<GrunnlagDto>.mapGrunnlag(
             ) + hentInnntekterBearbeidet(behandling, lesemodus)
     ).toMutableSet()
 
-private fun List<GrunnlagDto>.mapRoller(
+internal fun List<GrunnlagDto>.mapRoller(
     behandling: Behandling,
     lesemodus: Boolean,
 ): MutableSet<Rolle> =
@@ -255,14 +119,14 @@ private fun List<GrunnlagDto>.mapRoller(
         .mapIndexed { i, it -> it.tilRolle(behandling, if (lesemodus) i.toLong() else null) }
         .toMutableSet()
 
-private fun List<GrunnlagDto>.mapHusstandsmedlem(behandling: Behandling): MutableSet<Husstandsmedlem> =
+internal fun List<GrunnlagDto>.mapHusstandsmedlem(behandling: Behandling): MutableSet<Husstandsmedlem> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
         .groupBy { it.gjelderReferanse }
         .map {
             it.value.tilHusstandsmedlem(it.key!!, behandling, this)
         }.toMutableSet()
 
-private fun List<GrunnlagDto>.mapSivilstand(
+internal fun List<GrunnlagDto>.mapSivilstand(
     behandling: Behandling,
     lesemodus: Boolean,
 ): MutableSet<Sivilstand> =
@@ -271,42 +135,7 @@ private fun List<GrunnlagDto>.mapSivilstand(
             it.tilSivilstand(behandling, if (lesemodus) i.toLong() else null)
         }.toMutableSet()
 
-private fun List<GrunnlagDto>.mapUtgifter(
-    behandling: Behandling,
-    lesemodus: Boolean,
-): Utgift? {
-    if (behandling.tilType() !== TypeBehandling.SÆRBIDRAG ||
-        behandling.tilSærbidragAvslagskode()?.erAvslagSomInneholderUtgifter() == false
-    ) {
-        return null
-    }
-    val utgift =
-        Utgift(
-            behandling,
-            beløpDirekteBetaltAvBp = utgiftDirekteBetalt!!.beløpDirekteBetalt,
-            maksGodkjentBeløpTaMed = utgiftMaksGodkjentBeløp != null,
-            maksGodkjentBeløp = utgiftMaksGodkjentBeløp?.beløp,
-            maksGodkjentBeløpBegrunnelse = utgiftMaksGodkjentBeløp?.begrunnelse,
-        )
-    utgift.utgiftsposter =
-        utgiftsposter
-            .mapIndexed { index, it ->
-                Utgiftspost(
-                    id = if (lesemodus) index.toLong() else null,
-                    utgift = utgift,
-                    dato = it.dato,
-                    type = it.type,
-                    godkjentBeløp = it.godkjentBeløp,
-                    kravbeløp = it.kravbeløp,
-                    kommentar = it.kommentar,
-                    betaltAvBp = it.betaltAvBp,
-                )
-            }.toMutableSet()
-
-    return utgift
-}
-
-private fun List<GrunnlagDto>.mapInntekter(
+internal fun List<GrunnlagDto>.mapInntekter(
     behandling: Behandling,
     lesemodus: Boolean,
 ): MutableSet<Inntekt> {
@@ -581,7 +410,7 @@ fun Behandling.opprettGrunnlag(
     rolle = roller.find { it.ident == rolleIdent }!!,
 )
 
-private fun VedtakDto.notatMedType(
+internal fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
     medIVedtak: Boolean,
     gjelderReferanse: Grunnlagsreferanse? = null,
@@ -592,7 +421,7 @@ private fun VedtakDto.notatMedType(
     .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
     ?.innhold
 
-private fun VedtakDto.avslagskode(): Resultatkode? {
+internal fun VedtakDto.avslagskode(): Resultatkode? {
     val virkningstidspunkt = hentVirkningstidspunkt()
     return if (virkningstidspunkt == null && stønadsendringListe.all { it.periodeListe.size == 1 }) {
         Resultatkode.fraKode(
@@ -609,19 +438,19 @@ private fun VedtakDto.avslagskode(): Resultatkode? {
     }
 }
 
-private fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? =
+internal fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? =
     grunnlagListe
         .filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
         .firstOrNull()
         ?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
 
-private fun VedtakDto.hentSøknad(): SøknadGrunnlag =
+internal fun VedtakDto.hentSøknad(): SøknadGrunnlag =
     grunnlagListe
         .filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
         .first()
         .innholdTilObjekt<SøknadGrunnlag>()
 
-private fun List<BaseGrunnlag>.tilHusstandsmedlem(
+internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
     gjelderReferanse: Grunnlagsreferanse,
     behandling: Behandling,
     grunnlagsListe: List<GrunnlagDto>,

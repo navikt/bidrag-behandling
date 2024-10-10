@@ -1555,9 +1555,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val nyIdentBm = "ny_ident_bm"
         val nyIdentBp = "ny_ident_bp"
         val nyIdentBarn1 = "ny_ident_barn_1"
-        val mock = stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1)
-        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
-        stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, mock)
+        stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1, bidragPersonConsumer)
+        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, bidragPersonConsumer)
+        stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, bidragPersonConsumer)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.leggTilNotat(
             "Utgiftsbegrunnelse",

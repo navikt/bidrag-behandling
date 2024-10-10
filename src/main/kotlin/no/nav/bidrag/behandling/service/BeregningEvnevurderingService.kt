@@ -6,13 +6,11 @@ import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.transformers.grunnlag.opprettLøpendeBidragGrunnlag
-import no.nav.bidrag.behandling.transformers.grunnlag.tilPersonobjekter
+import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
@@ -29,13 +27,10 @@ class BeregningEvnevurderingService(
     private val bidragStønadConsumer: BidragStønadConsumer,
     private val bidragVedtakConsumer: BidragVedtakConsumer,
     private val bidragBBMConsumer: BidragBBMConsumer,
-    private val beregngVedtaksfiltrering: Vedtaksfiltrering,
+    private val beregingVedtaksfiltrering: Vedtaksfiltrering,
 ) {
     @Timed
-    fun opprettGrunnlagLøpendeBidrag(
-        behandling: Behandling,
-        personGrunnlagListe: List<GrunnlagDto> = behandling.tilPersonobjekter().toList(),
-    ): List<GrunnlagDto> {
+    fun hentLøpendeBidragForBehandling(behandling: Behandling): EvnevurderingBeregningResultat {
         try {
             log.info { "Henter evnevurdering for behandling ${behandling.id}" }
             val bpIdent = Personident(behandling.bidragspliktig!!.ident!!)
@@ -45,7 +40,7 @@ class BeregningEvnevurderingService(
             secureLogger.info { "Hentet siste løpende vedtak $sisteLøpendeVedtak for BP ${bpIdent.verdi} og behandling ${behandling.id}" }
             val beregnetBeløpListe = sisteLøpendeVedtak.hentBeregning()
             secureLogger.info { "Hentet beregnet beløp $beregnetBeløpListe og behandling ${behandling.id}" }
-            return opprettLøpendeBidragGrunnlag(beregnetBeløpListe, løpendeStønader, personGrunnlagListe)
+            return EvnevurderingBeregningResultat(beregnetBeløpListe, løpendeStønader)
         } catch (e: Exception) {
             log.error(e) { "Det skjedden en feil ved opprettelse av grunnlag for løpende bidrag for BP evnevurdering: ${e.message}" }
             throw e
@@ -81,6 +76,6 @@ class BeregningEvnevurderingService(
                             type = it.type,
                         ),
                     ).vedtakListe
-            beregngVedtaksfiltrering.finneSisteManuelleVedtak(vedtakListe, it.kravhaver)
+            beregingVedtaksfiltrering.finneSisteManuelleVedtak(vedtakListe, it.kravhaver)
         }
 }
