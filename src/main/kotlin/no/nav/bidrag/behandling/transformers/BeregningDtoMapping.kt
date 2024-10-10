@@ -91,7 +91,6 @@ fun List<GrunnlagDto>.byggResultatSærbidragInntekter(grunnlagsreferanseListe: L
     ResultatSærbidragsberegningInntekterDto(
         inntektBarn = finnTotalInntektForRolle(grunnlagsreferanseListe, Rolletype.BARN),
         barnEndeligInntekt = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)?.barnEndeligInntekt,
-        forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
         inntektBP =
             finnTotalInntektForRolle(
                 grunnlagsreferanseListe,
@@ -121,6 +120,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     resultat = resultat ?: BigDecimal.ZERO,
     resultatKode = resultatkode,
     beregning = beregning,
+    forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
     bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe),
     antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
     inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
@@ -319,20 +319,10 @@ fun List<GrunnlagDto>.finnForskuddssats(grunnlagsreferanseListe: List<Grunnlagsr
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
-    val delberegningBidragspliktigesAndel =
-        find {
-            it.type == Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL &&
-                sluttberegning.grunnlagsreferanseListe.contains(
-                    it.referanse,
-                )
-        } ?: return BigDecimal.ZERO
-    return find {
-        it.type == Grunnlagstype.SJABLON &&
-            delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
-                it.referanse,
-            ) &&
-            it.innholdTilObjekt<SjablonSjablontallPeriode>().sjablon == SjablonTallNavn.FORSKUDDSSATS_BELØP
-    }?.innholdTilObjekt<SjablonSjablontallPeriode>()?.verdi ?: BigDecimal.ZERO
+    return finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON, sluttberegning)
+        .find { it.innholdTilObjekt<SjablonSjablontallPeriode>().sjablon == SjablonTallNavn.FORSKUDDSSATS_BELØP }
+        ?.innholdTilObjekt<SjablonSjablontallPeriode>()
+        ?.verdi ?: BigDecimal.ZERO
 }
 
 fun List<GrunnlagDto>.finnTotalInntektForRolle(
