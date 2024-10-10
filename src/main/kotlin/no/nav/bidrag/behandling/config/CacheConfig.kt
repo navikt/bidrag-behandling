@@ -52,6 +52,11 @@ class CacheConfig {
             SAK_CACHE,
             Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
         )
+        caffeineCacheManager.registerCustomCache(
+            PERSON_HAR_BESKYTTELSE,
+            Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
+        )
+
         return caffeineCacheManager
     }
 }
