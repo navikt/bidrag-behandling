@@ -1306,7 +1306,7 @@
     },
     {
       "referanse": "Sjablon_Bidragsevne_20240701",
-      "type": "SJABLON",
+      "type": "SJABLON_BIDRAGSEVNE",
       "innhold": {
         "periode": {
           "fom": "2024-07",
@@ -1390,7 +1390,7 @@
     },
     {
       "referanse": "Sjablon_TrinnvisSkattesats_20240101",
-      "type": "SJABLON",
+      "type": "SJABLON_TRINNVIS_SKATTESATS",
       "innhold": {
         "periode": {
           "fom": "2024-01",
