@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_HAR_BESKYTTELSE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.TILGANG_PERSON_I_SAK_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.TILGANG_TEMA_CACHE
 import no.nav.bidrag.behandling.fantIkkeSak
@@ -46,11 +47,39 @@ class BidragTilgangskontrollConsumer(
             val headers = HttpHeaders()
             headers.contentType = MediaType.APPLICATION_JSON
             val harTilgangTilPersonISak: Boolean? =
-                postForEntity(createUri("/api/tilgang/person/sak"), SjekkTilgangPersonISakRequest(personident, saksnummer), headers)
+                postForEntity(
+                    createUri("/api/tilgang/person/sak"),
+                    SjekkTilgangPersonISakRequest(personident, saksnummer),
+                    headers,
+                )
             harTilgangTilPersonISak ?: false
         } catch (e: HttpStatusCodeException) {
             if (e.statusCode == HttpStatus.FORBIDDEN) return false
             if (e.statusCode == HttpStatus.NOT_FOUND) fantIkkeSak(saksnummer.verdi)
+            throw e
+        }
+    }
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    @BrukerCacheable(PERSON_HAR_BESKYTTELSE)
+    fun personHarBeskyttelse(personident: Personident): Boolean {
+        return try {
+            val headers = HttpHeaders()
+            headers.contentType = MediaType.APPLICATION_JSON
+            val harTilgangTilPersonISak: Boolean? =
+                postForEntity(
+                    createUri("/api/tilgang/person/beskyttelse"),
+                    personident,
+                    headers,
+                )
+            harTilgangTilPersonISak ?: false
+        } catch (e: HttpStatusCodeException) {
+            if (e.statusCode == HttpStatus.FORBIDDEN) return true
+            if (e.statusCode == HttpStatus.NOT_FOUND) return false
             throw e
         }
     }
@@ -76,4 +105,8 @@ class BidragTilgangskontrollConsumer(
 data class SjekkTilgangPersonISakRequest(
     val personident: Personident,
     val saksnummer: Saksnummer,
+)
+
+data class SjekkTilgangPerson(
+    val personident: Personident,
 )
