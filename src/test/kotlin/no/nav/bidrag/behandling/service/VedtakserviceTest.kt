@@ -135,6 +135,7 @@ class VedtakserviceTest : TestContainerRunner() {
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
+        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
