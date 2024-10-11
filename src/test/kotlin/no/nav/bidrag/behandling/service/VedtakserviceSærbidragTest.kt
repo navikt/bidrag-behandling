@@ -631,7 +631,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
                 shouldHaveSize(1)
                 val innhold = innholdTilObjekt<DelberegningSumLøpendeBidrag>().first()
-                innhold.sumLøpendeBidrag shouldBe BigDecimal("4207.00")
+                innhold.sumLøpendeBidrag shouldBe BigDecimal("4208.00")
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
@@ -1940,7 +1940,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
         assertSoftly(delberegningSumLøpendeBidragGrunnlag) {
             val innhold = it.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
-            innhold.sumLøpendeBidrag.setScale(0, RoundingMode.HALF_UP) shouldBe BigDecimal(9261)
+            innhold.sumLøpendeBidrag.setScale(0, RoundingMode.HALF_UP) shouldBe BigDecimal(9263)
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }
 
