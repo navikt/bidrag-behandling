@@ -39,11 +39,11 @@ class BidragGrunnlagConsumer(
                     Personident(
                         behandling.bidragsmottaker!!.ident!!,
                     ) to
-                            oppretteGrunnlagsobjekter(
-                                Personident(behandling.bidragsmottaker!!.ident!!),
-                                Rolletype.BIDRAGSMOTTAKER,
-                                behandling,
-                            ),
+                        oppretteGrunnlagsobjekter(
+                            Personident(behandling.bidragsmottaker!!.ident!!),
+                            Rolletype.BIDRAGSMOTTAKER,
+                            behandling,
+                        ),
                 )
             behandling.søknadsbarn
                 .filter { sb -> sb.ident != null }
@@ -131,7 +131,7 @@ class BidragGrunnlagConsumer(
                 postForNonNullEntity(
                     bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
                     HentGrunnlagRequestDto(formaal = Formål.FORSKUDD, grunnlagRequestDtoListe = grunnlag),
-                )
+                ),
             )
         } catch (e: Exception) {
             log.error("Feil oppstod ved henting av grunnlag.")
@@ -142,5 +142,5 @@ class BidragGrunnlagConsumer(
 
 data class HentetGrunnlag(
     val hentGrunnlagDto: HentGrunnlagDto?,
-    val tekniskFeil: String? = null
+    val tekniskFeil: String? = null,
 )

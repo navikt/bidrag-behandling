@@ -234,7 +234,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandlingDto.inntekter.årsinntekter
                     .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
                     .size shouldBe
-                        1
+                    1
                 behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(11)
             }
         }
@@ -1868,7 +1868,10 @@ class BehandlingServiceTest : TestContainerRunner() {
         return behandlingRepository.save(behandling)
     }
 
-    private fun kjøreStubber(behandling: Behandling, grunnlagUtilgjengelig: Boolean= false) {
+    private fun kjøreStubber(
+        behandling: Behandling,
+        grunnlagUtilgjengelig: Boolean = false,
+    ) {
         stubSjablonProvider()
         stubKodeverkProvider()
         stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling, grunnlagUtilgjengelig)

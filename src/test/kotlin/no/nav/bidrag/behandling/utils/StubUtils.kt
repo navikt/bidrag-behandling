@@ -103,13 +103,13 @@ fun stubHentPersonNyIdent(
     personConsumerMock: BidragPersonConsumer = stubPersonConsumer(),
 ): BidragPersonConsumer {
     every { personConsumerMock.hentPerson(eq(gammelIdent)) } returns
-            PersonDto(
-                Personident(
-                    nyIdent,
-                ),
-                navn = "Ola Nordmann",
-                fødselsdato = LocalDate.parse("2020-02-02"),
-            )
+        PersonDto(
+            Personident(
+                nyIdent,
+            ),
+            navn = "Ola Nordmann",
+            fødselsdato = LocalDate.parse("2020-02-02"),
+        )
     mockkObject(AppContext)
     every {
         AppContext.getBean<BidragPersonConsumer>(any())
@@ -393,7 +393,7 @@ class StubUtils {
         stubHentePersoninfo(
             shouldContaintPersonIdent = true,
             personident = testdataBM.ident,
-            responseBody = testdataBM.tilPersonDto()
+            responseBody = testdataBM.tilPersonDto(),
         )
         stubHentePersoninfo(
             shouldContaintPersonIdent = true,
@@ -408,7 +408,7 @@ class StubUtils {
         stubHentePersoninfo(
             shouldContaintPersonIdent = true,
             personident = testdataBP.ident,
-            responseBody = testdataBP.tilPersonDto()
+            responseBody = testdataBP.tilPersonDto(),
         )
         stubHentePersoninfo(
             shouldContaintPersonIdent = true,
@@ -651,7 +651,10 @@ class StubUtils {
         return WireMock.stubFor(wiremock.willReturn(respons))
     }
 
-    fun stubbeGrunnlagsinnhentingForBehandling(behandling: Behandling, grunnlagNede: Boolean = false) {
+    fun stubbeGrunnlagsinnhentingForBehandling(
+        behandling: Behandling,
+        grunnlagNede: Boolean = false,
+    ) {
         var barnNummer = 1
         behandling.roller.forEach {
             when (it.rolletype) {
@@ -660,7 +663,7 @@ class StubUtils {
                     stubHenteGrunnlag(
                         rolle = it,
                         navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
-                        grunnlagNede = grunnlagNede
+                        grunnlagNede = grunnlagNede,
                     )
 
                 Rolletype.BARN -> {

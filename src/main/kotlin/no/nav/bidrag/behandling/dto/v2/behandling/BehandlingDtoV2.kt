@@ -443,7 +443,7 @@ enum class Grunnlagsdatatype(
                 false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }
 
-        fun gjeldende() = Grunnlagsdatatype.entries.filter { it. erGjeldende}
+        fun gjeldende() = Grunnlagsdatatype.entries.filter { it.erGjeldende }
     }
 }
 
@@ -466,5 +466,3 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
         Grunnlagsdatatype.KONTANTSTØTTE -> Inntektsrapportering.KONTANTSTØTTE
         else -> null
     }
-
-
