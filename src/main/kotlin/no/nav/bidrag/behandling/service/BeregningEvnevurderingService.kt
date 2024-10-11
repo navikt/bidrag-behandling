@@ -11,6 +11,7 @@ import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
+import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
@@ -47,7 +48,7 @@ class BeregningEvnevurderingService(
         }
     }
 
-    private fun List<VedtakForStønad>.hentBeregning() =
+    private fun List<VedtakForStønad>.hentBeregning(): BidragBeregningResponsDto =
         bidragBBMConsumer.hentBeregning(
             BidragBeregningRequestDto(
                 map {
