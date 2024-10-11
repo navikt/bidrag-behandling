@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
@@ -37,6 +36,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
+import java.math.RoundingMode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatBeregning as ResultatBeregningSærbidrag
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatPeriode as ResultatPeriodeSærbidrag
 
@@ -154,14 +154,19 @@ class BeregningService(
 
     // TODO: For testing av evnevurdering. Skal fjernes når testing er ferdig
     fun beregnSærbidragInnteksgrense(behandling: Behandling): BigDecimal {
-        val beregning = BidragsevneBeregning()
+        val bidragsevneBeregning = BidragsevneBeregning()
         val sjablonListe = hentSjabloner()
         val beregninResultat = beregneSærbidrag(behandling)
         val delberegningSumLøpendeBidrag =
             beregninResultat.grunnlagListe.finnDelberegningSumLøpendeBidrag(
                 beregninResultat.beregnetSærbidragPeriodeListe.first().grunnlagsreferanseListe,
             )
-        (1000..10000000 step 1).forEach {
+        var low = 1
+        var high = 1000000000
+        var result = BigDecimal.ZERO
+        val sumLøpendeBidrag = delberegningSumLøpendeBidrag!!.sumLøpendeBidrag.setScale(0, RoundingMode.HALF_UP)
+        while (low <= high) {
+            val inntektBeløp = (low + high) / 2
             val antallBarnIHusstand =
                 behandling.husstandsmedlem
                     .filter {
@@ -209,20 +214,28 @@ class BeregningService(
                     sjablonTrinnvisSkattesatsListe = sjablonListe.sjablonTrinnvisSkattesatsResponse,
                 ),
             )
-            val resultat =
-                beregning.beregn(
+            val resultatBPsEvne =
+                bidragsevneBeregning.beregn(
                     GrunnlagBeregning(
                         inntekt =
                             no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo
-                                .Inntekt("", it.toBigDecimal()),
+                                .Inntekt("", inntektBeløp.toBigDecimal()),
                         antallBarnIHusstand = AntallBarnIHusstand("", antallBarnIHusstand.toDouble()),
                         bostatusVoksneIHusstand = BostatusVoksneIHusstand("", antallVoksneIHustand != 0),
                         sjablonListe = mapSjablonPeriodeListe(sjablonPeriodeCoreListe),
                     ),
                 )
-            if (resultat.beløp >= delberegningSumLøpendeBidrag!!.sumLøpendeBidrag) return it.toBigDecimal()
+            val beregnetBPsEvne = resultatBPsEvne.beløp.setScale(0, RoundingMode.HALF_UP)
+            if (beregnetBPsEvne == sumLøpendeBidrag) {
+                result = inntektBeløp.toBigDecimal()
+                high = inntektBeløp - 1
+            } else if (resultatBPsEvne.beløp < delberegningSumLøpendeBidrag.sumLøpendeBidrag) {
+                low = inntektBeløp + 1
+            } else {
+                high = inntektBeløp - 1
+            }
         }
-        return BigDecimal.ZERO
+        return result
     }
 
     protected fun mapSjablonPeriodeListe(sjablonPeriodeListeCore: List<SjablonPeriodeCore>): List<SjablonPeriode> {
