@@ -188,7 +188,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 106
+                request.grunnlagListe shouldHaveSize 108
             }
         }
 
@@ -511,7 +511,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 102
+            grunnlagsliste shouldHaveSize 105
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
@@ -610,7 +610,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
                 val innhold = grunnlag.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
-                innhold.sum shouldBe BigDecimal("4207.00")
+                innhold.sumLøpendeBidrag shouldBe BigDecimal("4207.00")
                 grunnlagsliste
                     .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                         Grunnlagstype.SJABLON_SAMVARSFRADRAG,
@@ -620,7 +620,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE)) {
                 shouldHaveSize(1)
                 val innhold = innholdTilObjekt<DelberegningBidragsevne>().first()
-                innhold.beløp shouldBe BigDecimal("14009")
+                innhold.beløp shouldBe BigDecimal("13939")
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL)) {
                 shouldHaveSize(1)
@@ -631,7 +631,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
                 shouldHaveSize(1)
                 val innhold = innholdTilObjekt<DelberegningSumLøpendeBidrag>().first()
-                innhold.sum shouldBe BigDecimal("4207.00")
+                innhold.sumLøpendeBidrag shouldBe BigDecimal("4207.00")
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
@@ -753,7 +753,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 107
+                request.grunnlagListe shouldHaveSize 109
             }
         }
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
@@ -899,7 +899,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 107
+                request.grunnlagListe shouldHaveSize 109
             }
         }
 
@@ -1927,7 +1927,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         assertSoftly(delberegningBidragsevne) {
             shouldHaveSize(1)
             val innhold = innholdTilObjekt<DelberegningBidragsevne>().first()
-            innhold.beløp shouldBe BigDecimal(14009)
+            innhold.beløp shouldBe BigDecimal(13939)
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }
 
@@ -1940,7 +1940,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
         assertSoftly(delberegningSumLøpendeBidragGrunnlag) {
             val innhold = it.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
-            innhold.sum.setScale(0, RoundingMode.HALF_UP) shouldBe BigDecimal(9261)
+            innhold.sumLøpendeBidrag.setScale(0, RoundingMode.HALF_UP) shouldBe BigDecimal(9261)
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }
 

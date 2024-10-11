@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -64,6 +65,45 @@ class BehandlingBeregnController(
             )
         }
         return beregningService.beregneForskudd(behandling.id!!).tilDto(behandling.vedtakstype)
+    }
+
+    @Suppress("unused")
+    @PostMapping("/behandling/{behandlingsid}/beregn/sarbidrag/bpslavesteinntektforevne")
+    @Operation(
+        description = "Beregn BPs laveste inntekt for evne",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Validering av grunnlag feilet for beregning",
+                content = [
+                    Content(
+                        schema = Schema(implementation = BeregningValideringsfeil::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun beregnBPsLavesteInntektForEvne(
+        @PathVariable behandlingsid: Long,
+    ): BigDecimal {
+        LOGGER.info { "Beregner BPs laveste inntekt for evne for behandling id $behandlingsid" }
+
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+
+        if (behandling.engangsbeloptype != Engangsbeløptype.SÆRBIDRAG) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Behandling $behandlingsid er ikke en særbidrag behandling",
+            )
+        }
+
+        return beregningService.beregnBPsLavesteInntektForEvne(behandling)
     }
 
     @Suppress("unused")

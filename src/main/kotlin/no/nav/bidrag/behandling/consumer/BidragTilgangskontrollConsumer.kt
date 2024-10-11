@@ -106,3 +106,7 @@ data class SjekkTilgangPersonISakRequest(
     val personident: Personident,
     val saksnummer: Saksnummer,
 )
+
+data class SjekkTilgangPerson(
+    val personident: Personident,
+)

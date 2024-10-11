@@ -123,8 +123,8 @@ class BidragGrunnlagConsumer(
             }
         }
     }
-
-    @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
+    
+    @Retryable(maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 500, multiplier = 2.0))
     fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentetGrunnlag {
         return try {
             HentetGrunnlag(
