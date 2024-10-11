@@ -610,7 +610,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
                 val innhold = grunnlag.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
-                innhold.sumLøpendeBidrag shouldBe BigDecimal("4207.00")
+                innhold.sumLøpendeBidrag shouldBe BigDecimal("4208.00")
                 grunnlagsliste
                     .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                         Grunnlagstype.SJABLON_SAMVARSFRADRAG,

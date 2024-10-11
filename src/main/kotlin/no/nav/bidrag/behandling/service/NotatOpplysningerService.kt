@@ -269,6 +269,7 @@ class NotatOpplysningerService(
                                     resultatKode = it.resultatKode,
                                     bpsAndel = it.bpsAndel,
                                     forskuddssats = it.forskuddssats,
+                                    maksGodkjentBeløp = it.maksGodkjentBeløp,
                                     beregning =
                                         it.beregning?.let {
                                             NotatResultatSærbidragsberegningDto.UtgiftBeregningDto(
