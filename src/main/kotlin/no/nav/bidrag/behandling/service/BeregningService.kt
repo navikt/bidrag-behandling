@@ -226,15 +226,22 @@ class BeregningService(
                     ),
                 )
             val beregnetBPsEvne = resultatBPsEvne.beløp.setScale(0, RoundingMode.HALF_UP)
-            if (sumLøpendeBidrag == BigDecimal.ZERO && beregnetBPsEvne > BigDecimal.ZERO) {
-                result = inntektBeløp.toBigDecimal()
-            } else if (beregnetBPsEvne == sumLøpendeBidrag) {
-                result = inntektBeløp.toBigDecimal()
-                high = inntektBeløp - 1
-            } else if (resultatBPsEvne.beløp < delberegningSumLøpendeBidrag.sumLøpendeBidrag) {
-                low = inntektBeløp + 1
+            if (sumLøpendeBidrag == BigDecimal.ZERO) {
+                if (beregnetBPsEvne > BigDecimal.ZERO) {
+                    result = inntektBeløp.toBigDecimal()
+                    high = inntektBeløp - 1
+                } else {
+                    low = inntektBeløp + 1
+                }
             } else {
-                high = inntektBeløp - 1
+                if (beregnetBPsEvne == sumLøpendeBidrag) {
+                    result = inntektBeløp.toBigDecimal()
+                    high = inntektBeløp - 1
+                } else if (resultatBPsEvne.beløp < delberegningSumLøpendeBidrag.sumLøpendeBidrag) {
+                    low = inntektBeløp + 1
+                } else {
+                    high = inntektBeløp - 1
+                }
             }
         }
         return result
