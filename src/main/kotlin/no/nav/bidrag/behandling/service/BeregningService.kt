@@ -226,7 +226,9 @@ class BeregningService(
                     ),
                 )
             val beregnetBPsEvne = resultatBPsEvne.beløp.setScale(0, RoundingMode.HALF_UP)
-            if (beregnetBPsEvne == sumLøpendeBidrag) {
+            if (sumLøpendeBidrag == BigDecimal.ZERO && beregnetBPsEvne > BigDecimal.ZERO) {
+                result = inntektBeløp.toBigDecimal()
+            } else if (beregnetBPsEvne == sumLøpendeBidrag) {
                 result = inntektBeløp.toBigDecimal()
                 high = inntektBeløp - 1
             } else if (resultatBPsEvne.beløp < delberegningSumLøpendeBidrag.sumLøpendeBidrag) {
