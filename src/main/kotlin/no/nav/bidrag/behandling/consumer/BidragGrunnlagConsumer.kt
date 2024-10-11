@@ -31,6 +31,48 @@ class BidragGrunnlagConsumer(
     private val bidragGrunnlagUri get() = UriComponentsBuilder.fromUri(bidragGrunnlagUrl)
 
     companion object {
+        fun henteGrunnlagRequestobjekterForBehandling(behandling: Behandling): MutableMap<Personident, List<GrunnlagRequestDto>> {
+            val behandlingstype = behandling.tilType()
+
+            val requestobjekterGrunnlag: MutableMap<Personident, List<GrunnlagRequestDto>> =
+                mutableMapOf(
+                    Personident(
+                        behandling.bidragsmottaker!!.ident!!,
+                    ) to
+                            oppretteGrunnlagsobjekter(
+                                Personident(behandling.bidragsmottaker!!.ident!!),
+                                Rolletype.BIDRAGSMOTTAKER,
+                                behandling,
+                            ),
+                )
+            behandling.søknadsbarn
+                .filter { sb -> sb.ident != null }
+                .map { Personident(it.ident!!) }
+                .forEach {
+                    requestobjekterGrunnlag[it] =
+                        oppretteGrunnlagsobjekter(
+                            Personident(it.verdi),
+                            Rolletype.BARN,
+                            behandling,
+                        )
+                    if (TypeBehandling.SÆRBIDRAG == behandlingstype) {
+                        requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
+                            oppretteGrunnlagsobjekter(
+                                Personident(behandling.bidragspliktig!!.ident!!),
+                                Rolletype.BIDRAGSPLIKTIG,
+                                behandling,
+                            )
+                    } else if (TypeBehandling.BIDRAG == behandlingstype) {
+                        throw HttpClientErrorException(
+                            HttpStatus.BAD_REQUEST,
+                            "Behandlingstype ${TypeBehandling.BIDRAG} støttes foreløpig ikke i denne løsningen.",
+                        )
+                    }
+                }
+
+            return requestobjekterGrunnlag
+        }
+
         fun oppretteGrunnlagsobjekter(
             personident: Personident,
             rolletype: Rolletype,
@@ -82,48 +124,6 @@ class BidragGrunnlagConsumer(
         }
     }
 
-    fun henteGrunnlagRequestobjekterForBehandling(behandling: Behandling): MutableMap<Personident, List<GrunnlagRequestDto>> {
-        val behandlingstype = behandling.tilType()
-
-        val requestobjekterGrunnlag: MutableMap<Personident, List<GrunnlagRequestDto>> =
-            mutableMapOf(
-                Personident(
-                    behandling.bidragsmottaker!!.ident!!,
-                ) to
-                        oppretteGrunnlagsobjekter(
-                            Personident(behandling.bidragsmottaker!!.ident!!),
-                            Rolletype.BIDRAGSMOTTAKER,
-                            behandling,
-                        ),
-            )
-        behandling.søknadsbarn
-            .filter { sb -> sb.ident != null }
-            .map { Personident(it.ident!!) }
-            .forEach {
-                requestobjekterGrunnlag[it] =
-                    oppretteGrunnlagsobjekter(
-                        Personident(it.verdi),
-                        Rolletype.BARN,
-                        behandling,
-                    )
-                if (TypeBehandling.SÆRBIDRAG == behandlingstype) {
-                    requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
-                        oppretteGrunnlagsobjekter(
-                            Personident(behandling.bidragspliktig!!.ident!!),
-                            Rolletype.BIDRAGSPLIKTIG,
-                            behandling,
-                        )
-                } else if (TypeBehandling.BIDRAG == behandlingstype) {
-                    throw HttpClientErrorException(
-                        HttpStatus.BAD_REQUEST,
-                        "Behandlingstype ${TypeBehandling.BIDRAG} støttes foreløpig ikke i denne løsningen.",
-                    )
-                }
-            }
-
-        return requestobjekterGrunnlag
-    }
-
     @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
     fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentetGrunnlag {
         return try {
@@ -135,7 +135,7 @@ class BidragGrunnlagConsumer(
             )
         } catch (e: Exception) {
             log.error("Feil oppstod ved henting av grunnlag.")
-            return HentetGrunnlag(null, tekniskFeil = "Feil ved henting")
+            return HentetGrunnlag(null, tekniskFeil = "Feil ved henting av grunnlag")
         }
     }
 }

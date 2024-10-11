@@ -99,8 +99,8 @@ class GrunnlagService(
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
-            val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
-            val feilrappo rteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
+            val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+            val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
             val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
                 tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
             behandling.grunnlagsinnhentingFeilet = null
@@ -582,7 +582,7 @@ class GrunnlagService(
                     .grunnlagsdatatypeobjekter(behandling.tilType())
                     .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g) }
                     .filterNot { it.value == null }
-            } ?: emptyMap()
+            } ?: Grunnlagsdatatype.gjeldende().map { it to null }.toMap()
 
         val rolleInnhentetFor = behandling.roller.find { it.ident == grunnlagsrequest.key.verdi }!!
         innhentetGrunnlag.hentGrunnlagDto?.let {
@@ -629,20 +629,22 @@ class GrunnlagService(
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
 
         // Husstandsmedlem og bostedsperiode
-        if (behandling.søknadsbarn.isNotEmpty() &&
-            behandling.rolleGrunnlagSkalHentesFor?.ident == grunnlagsrequest.key.verdi &&
-            !innhentingAvBoforholdFeilet
-        ) {
-            periodisereOgLagreBoforhold(
-                behandling,
-                innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
-            )
-
-            if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
-                periodisereOgLagreBpsBoforholdAndreVoksne(
+        innhentetGrunnlag.hentGrunnlagDto?.let {
+            if (behandling.søknadsbarn.isNotEmpty() &&
+                behandling.rolleGrunnlagSkalHentesFor?.ident == grunnlagsrequest.key.verdi &&
+                !innhentingAvBoforholdFeilet
+            ) {
+                periodisereOgLagreBoforhold(
                     behandling,
-                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                    it.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
+
+                if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
+                    periodisereOgLagreBpsBoforholdAndreVoksne(
+                        behandling,
+                        it.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                    )
+                }
             }
         }
 
@@ -650,8 +652,10 @@ class GrunnlagService(
             feilrapporteringer.filter { Grunnlagsdatatype.SIVILSTAND == it.key }.isNotEmpty()
 
         // Oppdatere sivilstandstabell med periodisert sivilstand
-        if (innhentetGrunnlag.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
-            periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
+        innhentetGrunnlag.hentGrunnlagDto?.let {
+            if (it.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
+                periodisereOgLagreSivilstand(behandling, it)
+            }
         }
 
         return feilrapporteringer

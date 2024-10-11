@@ -29,13 +29,13 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
     fun `skal hente grunnlag for behandling`() {
         // given
         val behandling = testdataManager.oppretteBehandling(false)
-        val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+        val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
 
         stubUtils.stubHenteGrunnlag()
 
         grunnlagRequestobjekter.forEach {
             // when
-            val returnertGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(it.value)
+            val returnertGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(it.value).hentGrunnlagDto!!
 
             // then
             assertSoftly {
@@ -51,7 +51,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
         val behandling = testdataManager.oppretteBehandling(false)
 
         // hvis
-        val grunnlagRequest = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+        val grunnlagRequest = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
 
         // så
         val periodeFra =
@@ -83,7 +83,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
         behandling.virkningstidspunkt = LocalDate.now().minusYears(6)
 
         // hvis
-        val grunnlagRequest = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+        val grunnlagRequest = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
 
         // så
         val periodeFra = LocalDate.now().minusYears(6)
