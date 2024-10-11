@@ -169,12 +169,13 @@ class BeregningService(
             val inntektBeløp = (low + high) / 2
             val antallBarnIHusstand =
                 behandling.husstandsmedlem
-                    .filter {
-                        it.perioder.any {
-                            it.bostatus == Bostatuskode.MED_FORELDER ||
-                                it.bostatus == Bostatuskode.DELT_BOSTED
-                        }
-                    }.count()
+                    .sumOf {
+                        it.perioder
+                            .count { it.bostatus == Bostatuskode.DELT_BOSTED }
+                            .toBigDecimal()
+                            .divide(BigDecimal.TWO) +
+                            it.perioder.count { it.bostatus == Bostatuskode.MED_FORELDER }.toBigDecimal()
+                    }
             val antallVoksneIHustand =
                 behandling.husstandsmedlem
                     .filter {
