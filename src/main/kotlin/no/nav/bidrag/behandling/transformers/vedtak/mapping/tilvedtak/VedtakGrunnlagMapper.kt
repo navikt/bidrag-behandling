@@ -182,7 +182,6 @@ class VedtakGrunnlagMapper(
         fun BidragBeregningResponsDto.BidragBeregning.opprettPersonGrunnlag(): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag()
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
-//            personGrunnlagListe.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
         }
 
@@ -196,17 +195,18 @@ class VedtakGrunnlagMapper(
                         LøpendeBidragGrunnlag(
                             løpendeBidragListe =
                                 beregnetBeløpListe.beregningListe.map { beregning ->
-                                    val løpendeBeløp = løpendeBidragsaker.find { it.kravhaver == beregning.personidentBarn }!!.løpendeBeløp
+                                    val løpendeStønad = løpendeBidragsaker.find { it.kravhaver == beregning.personidentBarn }!!
                                     val personObjekt =
                                         personGrunnlagListe.hentPerson(beregning.personidentBarn.verdi) ?: beregning.opprettPersonGrunnlag()
                                     LøpendeBidrag(
                                         faktiskBeløp = beregning.faktiskBeløp,
                                         samværsklasse = beregning.samværsklasse!!,
                                         beregnetBeløp = beregning.beregnetBeløp,
-                                        løpendeBeløp = løpendeBeløp,
+                                        løpendeBeløp = løpendeStønad.løpendeBeløp,
                                         type = beregning.stønadstype,
                                         gjelderBarn = personObjekt.referanse,
                                         saksnummer = Saksnummer(beregning.saksnummer),
+                                        valutakode = løpendeStønad.valutakode,
                                     )
                                 },
                         ),

@@ -153,7 +153,7 @@ class BeregningService(
         )
 
     // TODO: For testing av evnevurdering. Skal fjernes når testing er ferdig
-    fun beregnSærbidragInnteksgrense(behandling: Behandling): BigDecimal {
+    fun beregnBPsLavesteInntektForEvne(behandling: Behandling): BigDecimal {
         val bidragsevneBeregning = BidragsevneBeregning()
         val sjablonListe = hentSjabloner()
         val beregninResultat = beregneSærbidrag(behandling)

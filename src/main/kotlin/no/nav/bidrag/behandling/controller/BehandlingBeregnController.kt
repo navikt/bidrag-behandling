@@ -68,9 +68,9 @@ class BehandlingBeregnController(
     }
 
     @Suppress("unused")
-    @PostMapping("/behandling/{behandlingsid}/beregn/sarbidrag/innteksgrense")
+    @PostMapping("/behandling/{behandlingsid}/beregn/sarbidrag/bpslavesteinntektforevne")
     @Operation(
-        description = "Beregn særbidrag",
+        description = "Beregn BPs laveste inntekt for evne",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -89,10 +89,10 @@ class BehandlingBeregnController(
             ),
         ],
     )
-    fun beregmBpInnteksgrense(
+    fun beregnBPsLavesteInntektForEvne(
         @PathVariable behandlingsid: Long,
     ): BigDecimal {
-        LOGGER.info { "Beregner særbidrag for innteksgrense for BP med id $behandlingsid" }
+        LOGGER.info { "Beregner BPs laveste inntekt for evne for behandling id $behandlingsid" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
@@ -103,7 +103,7 @@ class BehandlingBeregnController(
             )
         }
 
-        return beregningService.beregnSærbidragInnteksgrense(behandling)
+        return beregningService.beregnBPsLavesteInntektForEvne(behandling)
     }
 
     @Suppress("unused")
