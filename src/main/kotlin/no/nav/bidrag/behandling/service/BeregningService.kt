@@ -161,7 +161,7 @@ class BeregningService(
             beregninResultat.grunnlagListe.finnDelberegningSumLøpendeBidrag(
                 beregninResultat.beregnetSærbidragPeriodeListe.first().grunnlagsreferanseListe,
             )
-        var low = 1
+        var low = 0
         var high = 1000000000
         var result = BigDecimal.ZERO
         val sumLøpendeBidrag = delberegningSumLøpendeBidrag!!.sumLøpendeBidrag.setScale(0, RoundingMode.HALF_UP)
