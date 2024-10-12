@@ -311,7 +311,7 @@ class NotatOpplysningerService(
                                                 underholdEgneBarnIHusstand =
                                                     NotatDelberegningBidragsevneDto.NotatUnderholdEgneBarnIHusstand(
                                                         antallBarnIHusstanden = it.underholdEgneBarnIHusstand.antallBarnIHusstanden,
-                                                        resultat = it.underholdEgneBarnIHusstand.resultat,
+                                                        årsbeløp = it.underholdEgneBarnIHusstand.årsbeløp,
                                                         sjablon = it.underholdEgneBarnIHusstand.sjablon,
                                                     ),
                                             )
