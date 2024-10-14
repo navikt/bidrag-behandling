@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.domene.util.årsbeløpTilMåndesbeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
@@ -42,10 +43,12 @@ data class DelberegningBidragsevneDto(
     val utgifter: BidragsevneUtgifterBolig,
 ) {
     data class UnderholdEgneBarnIHusstand(
-        val resultat: BigDecimal,
+        val årsbeløp: BigDecimal,
         val sjablon: BigDecimal,
         val antallBarnIHusstanden: Double,
-    )
+    ) {
+        val måndesbeløp get() = årsbeløp.årsbeløpTilMåndesbeløp()
+    }
 
     data class Skatt(
         val sumSkatt: BigDecimal,
@@ -53,10 +56,10 @@ data class DelberegningBidragsevneDto(
         val trinnskatt: BigDecimal,
         val trygdeavgift: BigDecimal,
     ) {
-        val skattResultat get() = sumSkatt.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
-        val trinnskattResultat get() = trinnskatt.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
-        val skattAlminneligInntektResultat get() = skattAlminneligInntekt.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
-        val trygdeavgiftResultat get() = trygdeavgift.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+        val skattMånedsbeløp get() = sumSkatt.årsbeløpTilMåndesbeløp()
+        val trinnskattMånedsbeløp get() = trinnskatt.årsbeløpTilMåndesbeløp()
+        val skattAlminneligInntektMånedsbeløp get() = skattAlminneligInntekt.årsbeløpTilMåndesbeløp()
+        val trygdeavgiftMånedsbeløp get() = trygdeavgift.årsbeløpTilMåndesbeløp()
     }
 
     data class BidragsevneUtgifterBolig(
@@ -75,4 +78,7 @@ data class ResultatSærbidragsberegningInntekterDto(
     val totalEndeligInntekt get() =
         (inntektBM ?: BigDecimal.ZERO) + (inntektBP ?: BigDecimal.ZERO) +
             (barnEndeligInntekt ?: BigDecimal.ZERO)
+    val inntektBPMånedlig get() = inntektBP?.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+    val inntektBMMånedlig get() = inntektBM?.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+    val inntektBarnMånedlig get() = inntektBarn?.divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
 }

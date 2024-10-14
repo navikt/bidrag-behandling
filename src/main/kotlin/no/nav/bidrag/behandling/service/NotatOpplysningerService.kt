@@ -59,6 +59,7 @@ import no.nav.bidrag.transport.notat.NotatBegrunnelseDto
 import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
 import no.nav.bidrag.transport.notat.NotatBeregnetInntektDto
 import no.nav.bidrag.transport.notat.NotatBoforholdDto
+import no.nav.bidrag.transport.notat.NotatDelberegningBidragsevneDto
 import no.nav.bidrag.transport.notat.NotatInntektDto
 import no.nav.bidrag.transport.notat.NotatInntekterDto
 import no.nav.bidrag.transport.notat.NotatInntektspostDto
@@ -267,6 +268,8 @@ class NotatOpplysningerService(
                                     resultat = it.resultat,
                                     resultatKode = it.resultatKode,
                                     bpsAndel = it.bpsAndel,
+                                    forskuddssats = it.forskuddssats,
+                                    maksGodkjentBeløp = it.maksGodkjentBeløp,
                                     beregning =
                                         it.beregning?.let {
                                             NotatResultatSærbidragsberegningDto.UtgiftBeregningDto(
@@ -283,9 +286,36 @@ class NotatOpplysningerService(
                                                 inntektBM = it.inntektBM,
                                                 inntektBP = it.inntektBP,
                                                 inntektBarn = it.inntektBarn,
+                                                barnEndeligInntekt = it.barnEndeligInntekt,
                                             )
                                         },
                                     delberegningUtgift = it.delberegningUtgift,
+                                    delberegningSumLøpendeBidrag = it.delberegningSumLøpendeBidrag,
+                                    delberegningBidragsevne =
+                                        it.delberegningBidragsevne?.let {
+                                            NotatDelberegningBidragsevneDto(
+                                                bidragsevne = it.bidragsevne,
+                                                utgifter =
+                                                    NotatDelberegningBidragsevneDto.NotatBidragsevneUtgifterBolig(
+                                                        boutgiftBeløp = it.utgifter.boutgiftBeløp,
+                                                        borMedAndreVoksne = it.utgifter.borMedAndreVoksne,
+                                                        underholdBeløp = it.utgifter.underholdBeløp,
+                                                    ),
+                                                skatt =
+                                                    NotatDelberegningBidragsevneDto.NotatSkattBeregning(
+                                                        skattAlminneligInntekt = it.skatt.skattAlminneligInntekt,
+                                                        sumSkatt = it.skatt.sumSkatt,
+                                                        trinnskatt = it.skatt.trinnskatt,
+                                                        trygdeavgift = it.skatt.trygdeavgift,
+                                                    ),
+                                                underholdEgneBarnIHusstand =
+                                                    NotatDelberegningBidragsevneDto.NotatUnderholdEgneBarnIHusstand(
+                                                        antallBarnIHusstanden = it.underholdEgneBarnIHusstand.antallBarnIHusstanden,
+                                                        årsbeløp = it.underholdEgneBarnIHusstand.årsbeløp,
+                                                        sjablon = it.underholdEgneBarnIHusstand.sjablon,
+                                                    ),
+                                            )
+                                        },
                                     antallBarnIHusstanden = it.antallBarnIHusstanden,
                                     voksenIHusstanden = it.voksenIHusstanden,
                                     enesteVoksenIHusstandenErEgetBarn = it.enesteVoksenIHusstandenErEgetBarn,

@@ -302,7 +302,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
             ),
         underholdEgneBarnIHusstand =
             DelberegningBidragsevneDto.UnderholdEgneBarnIHusstand(
-                resultat = delberegningBidragsevne.underholdBarnEgenHusstand,
+                årsbeløp = delberegningBidragsevne.underholdBarnEgenHusstand,
                 sjablon = sjablonUnderholdEgnebarnIHusstand.verdi,
                 antallBarnIHusstanden = delberegningBarnIHusstanden.antallBarn,
             ),
