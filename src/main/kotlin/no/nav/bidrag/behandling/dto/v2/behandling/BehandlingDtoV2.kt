@@ -344,6 +344,7 @@ data class AndreVoksneIHusstandenDetaljerDto(
 @Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype(
     val behandlinstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
+    val erGjeldende: Boolean = true,
 ) {
     ARBEIDSFORHOLD(
         mapOf(
@@ -399,31 +400,31 @@ enum class Grunnlagsdatatype(
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     @Schema(deprecated = true)
-    AINNTEKT,
+    AINNTEKT(erGjeldende = false),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     @Schema(deprecated = true)
-    SKATTEGRUNNLAG,
+    SKATTEGRUNNLAG(erGjeldende = false),
 
     @Deprecated("Erstattes av BOFORHOLD i kombiansjon med erBearbeidet = true")
     @Schema(deprecated = true)
-    BOFORHOLD_BEARBEIDET,
+    BOFORHOLD_BEARBEIDET(erGjeldende = false),
 
     @Deprecated("Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false")
     @Schema(description = "Erstattes av BOFORHOLD i kombinasjon med erBearbeidet = false", deprecated = true)
-    HUSSTANDSMEDLEMMER,
+    HUSSTANDSMEDLEMMER(erGjeldende = false),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
     @Schema(deprecated = true)
-    INNTEKT_BEARBEIDET,
+    INNTEKT_BEARBEIDET(erGjeldende = false),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = false")
     @Schema(deprecated = true)
-    INNTEKTSOPPLYSNINGER,
+    INNTEKTSOPPLYSNINGER(erGjeldende = false),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER i kombinasjon med erBearbeidet = true")
     @Schema(deprecated = true)
-    SUMMERTE_ÅRSINNTEKTER,
+    SUMMERTE_ÅRSINNTEKTER(erGjeldende = false),
 
     ;
 
@@ -441,6 +442,8 @@ enum class Grunnlagsdatatype(
 
                 false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }
+
+        fun gjeldende() = Grunnlagsdatatype.entries.filter { it.erGjeldende }
     }
 }
 

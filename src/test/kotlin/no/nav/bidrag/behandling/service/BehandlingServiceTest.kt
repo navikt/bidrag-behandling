@@ -135,6 +135,112 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal hente behandling selv om bidrag-grunnlag er utilgjengelig`() {
+            // gitt
+            val behandling = oppretteBehandling()
+            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+            behandling.inntekter =
+                mutableSetOf(
+                    Inntekt(
+                        Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
+                        BigDecimal.valueOf(1234),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = LocalDate.parse("2023-09-01"),
+                        behandling = behandling,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.BARNETILLEGG,
+                        BigDecimal.valueOf(2450),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.KONTANTSTØTTE,
+                        BigDecimal.valueOf(3500),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.UTVIDET_BARNETRYGD,
+                        BigDecimal.valueOf(3000),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = testdataBarn1.ident,
+                    ),
+                    Inntekt(
+                        Inntektsrapportering.SMÅBARNSTILLEGG,
+                        BigDecimal.valueOf(1850),
+                        LocalDate.parse("2023-01-01"),
+                        null,
+                        testdataBM.ident,
+                        Kilde.OFFENTLIG,
+                        true,
+                        opprinneligFom = LocalDate.parse("2023-01-01"),
+                        opprinneligTom = null,
+                        behandling = behandling,
+                        gjelderBarn = null,
+                    ),
+                )
+            testdataManager.lagreBehandling(behandling)
+
+            // Setter innhentetdato til før innhentetdato i stub-input-fil hente-grunnlagrespons.json
+            kjøreStubber(behandling, true)
+
+            // hvis
+            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+
+            // så
+            val ytelser =
+                setOf(
+                    Inntektsrapportering.BARNETILLEGG,
+                    Inntektsrapportering.KONTANTSTØTTE,
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                )
+
+            assertSoftly {
+                behandlingDto.inntekter.årsinntekter
+                    .filter { ytelser.contains(it.rapporteringstype) }
+                    .size shouldBe 0
+                behandlingDto.inntekter.barnetillegg.size shouldBe 1
+                behandlingDto.inntekter.kontantstøtte.size shouldBe 1
+                behandlingDto.inntekter.småbarnstillegg.size shouldBe 1
+                behandlingDto.inntekter.utvidetBarnetrygd.size shouldBe 1
+                behandlingDto.inntekter.årsinntekter
+                    .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
+                    .size shouldBe
+                    1
+                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(11)
+            }
+        }
+
+        @Test
+        @Transactional
         open fun `skal ikke oppdatere virkningstidspunkt på særbidrag hvis klage`() {
             // gitt
             var behandling =
@@ -1762,10 +1868,13 @@ class BehandlingServiceTest : TestContainerRunner() {
         return behandlingRepository.save(behandling)
     }
 
-    private fun kjøreStubber(behandling: Behandling) {
+    private fun kjøreStubber(
+        behandling: Behandling,
+        grunnlagUtilgjengelig: Boolean = false,
+    ) {
         stubSjablonProvider()
         stubKodeverkProvider()
-        stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+        stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling, grunnlagUtilgjengelig)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
         stubUtils.stubKodeverkSkattegrunnlag()
         stubUtils.stubKodeverkLønnsbeskrivelse()

@@ -1,14 +1,18 @@
 package no.nav.bidrag.behandling.service
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.every
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.HentetGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -20,6 +24,7 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.service.GrunnlagServiceTest.Companion.tilAinntektspostDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
@@ -53,7 +58,6 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
-import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -1647,69 +1651,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
                 stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
 
-                val skattegrunlagFraDato =
-                    behandling.søktFomDato
-                        .minusYears(1)
-                        .withMonth(1)
-                        .withDayOfMonth(1)
-
-                val skattepliktigeInntekter =
-                    SkattepliktigeInntekter(
-                        ainntekter =
-                            listOf(
-                                AinntektGrunnlagDto(
-                                    personId = behandling.bidragspliktig!!.ident!!,
-                                    periodeFra = YearMonth.now().minusMonths(2).atDay(1),
-                                    periodeTil = YearMonth.now().minusMonths(1).atDay(1),
-                                    ainntektspostListe =
-                                        listOf(
-                                            tilAinntektspostDto(
-                                                beskrivelse = "fastloenn",
-                                                beløp = BigDecimal(368000),
-                                                inntektstype = "FASTLOENN",
-                                                utbetalingsperiode =
-                                                    YearMonth
-                                                        .now()
-                                                        .minusMonths(2)
-                                                        .format(DateTimeFormatter.ofPattern("yyyy-MM")),
-                                            ),
-                                        ),
-                                ),
-                            ),
-                        skattegrunnlag =
-                            listOf(
-                                SkattegrunnlagGrunnlagDto(
-                                    personId = behandling.bidragspliktig!!.ident!!,
-                                    periodeFra = skattegrunlagFraDato,
-                                    periodeTil = skattegrunlagFraDato.plusYears(1),
-                                    skattegrunnlagspostListe =
-                                        listOf(
-                                            SkattegrunnlagspostDto(
-                                                skattegrunnlagType = "ORDINÆR",
-                                                beløp = BigDecimal(368000),
-                                                belop = BigDecimal(368000),
-                                                inntektType = "andelIFellesTapVedSalgAvAndelISDF",
-                                                kode = "andelIFellesTapVedSalgAvAndelISDF",
-                                            ),
-                                        ),
-                                ),
-                                SkattegrunnlagGrunnlagDto(
-                                    personId = behandling.bidragspliktig!!.ident!!,
-                                    periodeFra = skattegrunlagFraDato,
-                                    periodeTil = skattegrunlagFraDato.plusYears(1),
-                                    skattegrunnlagspostListe =
-                                        listOf(
-                                            SkattegrunnlagspostDto(
-                                                skattegrunnlagType = "ORDINÆR",
-                                                beløp = BigDecimal(1368000),
-                                                belop = BigDecimal(1368000),
-                                                inntektType = "samletLoennsinntekt",
-                                                kode = "samletLoennsinntekt",
-                                            ),
-                                        ),
-                                ),
-                            ),
-                    )
+                val skattepliktigeInntekter = oppretteSkattepliktigeInntekter(behandling)
 
                 testdataManager.oppretteOgLagreGrunnlag(
                     behandling = behandling,
@@ -3498,11 +3440,35 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste feilhåndtering")
     open inner class Feilhåndtering {
-        @MockBean
+        @MockkBean
         lateinit var bidragGrunnlagConsumerMock: BidragGrunnlagConsumer
 
         @Autowired
         lateinit var grunnlagServiceMock: GrunnlagService
+
+        @Test
+        @Transactional
+        open fun `skal håndtere at bidrag-grunnlag er nede`() {
+            // gitt
+            val behandling = testdataManager.oppretteBehandling(false, false, false)
+
+            behandling.grunnlag shouldBe emptySet()
+
+            every { bidragGrunnlagConsumerMock.henteGrunnlag(any()) } returns (
+                HentetGrunnlag(null, "Teknisk feil ved henting av grunnlag")
+            )
+
+            // hvis
+            grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
+
+            // så
+            assertSoftly(behandling) { b ->
+                b.grunnlag shouldHaveSize 0
+                b.grunnlagsinnhentingFeilet shouldNotBe null
+                b.grunnlagSistInnhentet shouldNotBe null
+                b.grunnlagSistInnhentet!!.toLocalDate() shouldBe LocalDate.now()
+            }
+        }
 
         @Test
         @Transactional
@@ -3512,20 +3478,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             behandling.grunnlag shouldBe emptySet()
 
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
-
             val innhentingMedFeil =
                 opprettHentGrunnlagDto().copy(
-                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                    feilrapporteringListe = oppretteFeilrapporteringerForPerson(behandling.bidragsmottaker!!.ident!!),
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any())) } returns (HentetGrunnlag(innhentingMedFeil))
 
             // hvis
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
@@ -3539,26 +3498,37 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal ikke lagre`() {
+        open fun `skal slette grunnlagsinnhentingFeilet hvis ny innhenting ikke inneholder feil`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false, false, false)
 
             behandling.grunnlag shouldBe emptySet()
 
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
-
             val innhentingMedFeil =
                 opprettHentGrunnlagDto().copy(
-                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                    feilrapporteringListe = oppretteFeilrapporteringerForPerson(behandling.bidragsmottaker!!.ident!!),
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             // hvis
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
@@ -3570,16 +3540,46 @@ class GrunnlagServiceTest : TestContainerRunner() {
             }
 
             // gitt
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList()))
-                .thenReturn(opprettHentGrunnlagDto())
+            val innhentingUtenFeil =
+                opprettHentGrunnlagDto().copy(
+                    ainntektListe =
+                        oppretteSkattepliktigeInntekter(
+                            behandling,
+                            behandling.bidragsmottaker!!,
+                        ).ainntekter,
+                    skattegrunnlagListe =
+                        oppretteSkattepliktigeInntekter(
+                            behandling,
+                            behandling.bidragsmottaker!!,
+                        ).skattegrunnlag,
+                )
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingUtenFeil))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             // hvis
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
 
             // så
             assertSoftly(behandling) { b ->
-                b.grunnlag shouldHaveSize 2
+                b.grunnlag shouldHaveSize 5
                 b.grunnlagsinnhentingFeilet shouldBe null
             }
         }
@@ -3596,13 +3596,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     inkludereInntektsgrunnlag = true,
                 )
 
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
-
             val arbeidsforhold =
                 behandling.grunnlag
                     .first { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
@@ -3615,11 +3608,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val innhentingMedFeil =
                 opprettHentGrunnlagDto().copy(
                     arbeidsforholdListe = listOf(nyttArbeidsforhold!!),
-                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                    feilrapporteringListe = oppretteFeilrapporteringerForPerson(behandling.bidragsmottaker!!.ident!!),
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
 
@@ -3650,13 +3661,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     inkludereInntektsgrunnlag = true,
                 )
 
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
-
             val arbeidsforhold =
                 behandling.grunnlag
                     .first { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
@@ -3670,14 +3674,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 opprettHentGrunnlagDto().copy(
                     arbeidsforholdListe = listOf(nyttArbeidsforhold!!),
                     feilrapporteringListe =
-                        oppretteFeilrapporteringer(
+                        oppretteFeilrapporteringerForPerson(
                             behandling.bidragsmottaker!!.ident!!,
                             HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
                         ),
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any())) } returns (HentetGrunnlag(innhentingMedFeil))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
 
@@ -3688,8 +3692,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             behandling.grunnlagsinnhentingFeilet shouldNotBe null
 
             assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }) { si ->
-                si shouldHaveSize 2
-                assertSoftly(si.maxBy { it.innhentet }) {
+                si shouldHaveSize 4
+                assertSoftly(si.filter { it.rolle == behandling.bidragsmottaker!! }.maxBy { it.innhentet }) {
                     it.aktiv shouldBe null
                     it
                         .konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
@@ -3705,13 +3709,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal ikke lagre ny innhenting av skattegrunnlag med teknisk feil dersom forrige innhenting var OK`() {
             // gitt
             val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
-
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -3729,11 +3726,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val innhentingMedFeil =
                 opprettHentGrunnlagDto().copy(
                     skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
-                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                    feilrapporteringListe = oppretteFeilrapporteringerForPerson(behandling.bidragsmottaker!!.ident!!),
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
 
@@ -3758,14 +3773,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre ny innhenting av skattegrunnlag med funksjonell feil dersom forrige innhenting var OK`() {
             // gitt
-            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
-
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
+            val behandling =
+                oppretteBehandling(true, inkludereBp = true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -3785,13 +3794,35 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
                     feilrapporteringListe =
                         oppretteFeilrapporteringer(
-                            behandling.bidragsmottaker!!.ident!!,
+                            setOf(
+                                behandling.bidragsmottaker!!.ident!!,
+                                behandling.bidragspliktig!!.ident!!,
+                                behandling.søknadsbarn.first().ident!!,
+                            ),
                             HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
                         ),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 30
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
 
@@ -3821,13 +3852,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
             // gitt
             val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
-
             val skattegrunnlag =
                 behandling.grunnlag
                     .first { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
@@ -3844,11 +3868,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
             val innhentingMedFeil =
                 opprettHentGrunnlagDto().copy(
                     skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
-                    feilrapporteringListe = oppretteFeilrapporteringer(behandling.bidragsmottaker!!.ident!!),
+                    feilrapporteringListe = oppretteFeilrapporteringerForPerson(behandling.bidragsmottaker!!.ident!!),
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet =
                 "{\"SKATTEPLIKTIGE_INNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"},\n" +
@@ -3878,14 +3920,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre endret skattegrunnlag med funksjonell feil dersom forrige innhenting hadde teknisk feil`() {
             // gitt
-            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
-
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
+            val behandling =
+                oppretteBehandling(true, inkludereBp = true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -3904,14 +3940,32 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 opprettHentGrunnlagDto().copy(
                     skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
                     feilrapporteringListe =
-                        oppretteFeilrapporteringer(
+                        oppretteFeilrapporteringerForPerson(
                             behandling.bidragsmottaker!!.ident!!,
                             HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
                         ),
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet =
                 "{\"SKATTEPLIKTIGE_INNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"},\n" +
@@ -3941,15 +3995,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre endret skattegrunnlag med funksjonell feil dersom forrige innhenting ikke hadde feil`() {
             // gitt
-            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
-
-            val mockRequest =
-                mutableMapOf(Personident(behandling.bidragsmottaker!!.ident!!) to emptyList<GrunnlagRequestDto>())
-
-            Mockito
-                .`when`(bidragGrunnlagConsumerMock.henteGrunnlagRequestobjekterForBehandling(behandling))
-                .thenReturn(mockRequest)
-
+            val behandling =
+                oppretteBehandling(true, inkludereBp = true, inkludereInntektsgrunnlag = true, setteDatabaseider = true)
             val skattegrunnlag =
                 behandling.grunnlag
                     .first { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
@@ -3968,13 +4015,39 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     skattegrunnlagListe = listOf(nyttSkattegrunnlagselement),
                     feilrapporteringListe =
                         oppretteFeilrapporteringer(
-                            behandling.bidragsmottaker!!.ident!!,
+                            setOf(
+                                behandling.bidragsmottaker!!.ident!!,
+                                behandling.bidragspliktig!!.ident!!,
+                                behandling.søknadsbarn.first().ident!!,
+                            ),
                             HentGrunnlagFeiltype.FUNKSJONELL_FEIL,
                         ),
                 )
 
-            innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            Mockito.`when`(bidragGrunnlagConsumerMock.henteGrunnlag(Mockito.anyList())).thenReturn(innhentingMedFeil)
+            innhentingMedFeil.feilrapporteringListe shouldHaveSize 30
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId == behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
+
+            every {
+                bidragGrunnlagConsumerMock.henteGrunnlag(
+                    match {
+                        it.find { request ->
+                            request.personId != behandling.bidragsmottaker?.ident!!
+                        } != null
+                    },
+                )
+            } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
+
+            behandling.grunnlagsinnhentingFeilet =
+                "{\"SKATTEPLIKTIGE_INNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"},\n" +
+                "\"SUMMERTE_MÅNEDSINNTEKTER\":{\"grunnlagstype\":\"SKATTEGRUNNLAG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
 
             // hvis
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
@@ -4136,32 +4209,39 @@ fun opprettHentGrunnlagDto() =
         tilleggsstønadBarnetilsynListe = emptyList(),
     )
 
-fun oppretteFeilrapporteringer(
+fun oppretteFeilrapporteringerForPerson(
     personident: String,
+    feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+): List<FeilrapporteringDto> = oppretteFeilrapporteringer(setOf(personident), feiltype)
+
+fun oppretteFeilrapporteringer(
+    personidenter: Set<String>,
     feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
 ): List<FeilrapporteringDto> {
     val feilrapporteringer = mutableListOf<FeilrapporteringDto>()
 
-    GrunnlagRequestType.entries.filter { GrunnlagRequestType.BARNETILSYN != it }.forEach {
-        feilrapporteringer +=
-            FeilrapporteringDto(
-                feilmelding = "Ouups!",
-                grunnlagstype = it,
-                feiltype = feiltype,
-                periodeFra =
-                    LocalDate
-                        .now()
-                        .minusYears(1)
-                        .withMonth(1)
-                        .withDayOfMonth(1),
-                periodeTil =
-                    LocalDate
-                        .now()
-                        .minusYears(1)
-                        .withMonth(12)
-                        .withDayOfMonth(31),
-                personId = personident,
-            )
+    personidenter.forEach { personident ->
+        GrunnlagRequestType.entries.filter { GrunnlagRequestType.BARNETILSYN != it }.forEach {
+            feilrapporteringer +=
+                FeilrapporteringDto(
+                    feilmelding = "Ouups!",
+                    grunnlagstype = it,
+                    feiltype = feiltype,
+                    periodeFra =
+                        LocalDate
+                            .now()
+                            .minusYears(1)
+                            .withMonth(1)
+                            .withDayOfMonth(1),
+                    periodeTil =
+                        LocalDate
+                            .now()
+                            .minusYears(1)
+                            .withMonth(12)
+                            .withDayOfMonth(31),
+                    personId = personident,
+                )
+        }
     }
     return feilrapporteringer
 }
@@ -4174,3 +4254,68 @@ fun HentGrunnlagDto.tilSummerteInntekter(rolle: Rolle): SummerteInntekter<Summer
         versjon = response.versjon,
     )
 }
+
+fun oppretteSkattepliktigeInntekter(
+    behandling: Behandling,
+    forRolle: Rolle = behandling.bidragspliktig!!,
+    skattegrunnlagFraDato: LocalDate =
+        behandling.søktFomDato
+            .minusYears(1)
+            .withMonth(1)
+            .withDayOfMonth(1),
+) = SkattepliktigeInntekter(
+    ainntekter =
+        listOf(
+            AinntektGrunnlagDto(
+                personId = forRolle.ident!!,
+                periodeFra = YearMonth.now().minusMonths(2).atDay(1),
+                periodeTil = YearMonth.now().minusMonths(1).atDay(1),
+                ainntektspostListe =
+                    listOf(
+                        tilAinntektspostDto(
+                            beskrivelse = "fastloenn",
+                            beløp = BigDecimal(368000),
+                            inntektstype = "FASTLOENN",
+                            utbetalingsperiode =
+                                YearMonth
+                                    .now()
+                                    .minusMonths(2)
+                                    .format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                        ),
+                    ),
+            ),
+        ),
+    skattegrunnlag =
+        listOf(
+            SkattegrunnlagGrunnlagDto(
+                personId = forRolle.ident!!,
+                periodeFra = skattegrunnlagFraDato,
+                periodeTil = skattegrunnlagFraDato.plusYears(1),
+                skattegrunnlagspostListe =
+                    listOf(
+                        SkattegrunnlagspostDto(
+                            skattegrunnlagType = "ORDINÆR",
+                            beløp = BigDecimal(368000),
+                            belop = BigDecimal(368000),
+                            inntektType = "andelIFellesTapVedSalgAvAndelISDF",
+                            kode = "andelIFellesTapVedSalgAvAndelISDF",
+                        ),
+                    ),
+            ),
+            SkattegrunnlagGrunnlagDto(
+                personId = forRolle.ident!!,
+                periodeFra = skattegrunnlagFraDato,
+                periodeTil = skattegrunnlagFraDato.plusYears(1),
+                skattegrunnlagspostListe =
+                    listOf(
+                        SkattegrunnlagspostDto(
+                            skattegrunnlagType = "ORDINÆR",
+                            beløp = BigDecimal(1368000),
+                            belop = BigDecimal(1368000),
+                            inntektType = "samletLoennsinntekt",
+                            kode = "samletLoennsinntekt",
+                        ),
+                    ),
+            ),
+        ),
+)

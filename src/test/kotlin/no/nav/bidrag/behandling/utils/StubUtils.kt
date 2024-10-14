@@ -390,7 +390,11 @@ class StubUtils {
     }
 
     fun stubHentePersonInfoForTestpersoner() {
-        stubHentePersoninfo(shouldContaintPersonIdent = true, personident = testdataBM.ident, responseBody = testdataBM.tilPersonDto())
+        stubHentePersoninfo(
+            shouldContaintPersonIdent = true,
+            personident = testdataBM.ident,
+            responseBody = testdataBM.tilPersonDto(),
+        )
         stubHentePersoninfo(
             shouldContaintPersonIdent = true,
             personident = testdataBarn1.ident,
@@ -401,7 +405,11 @@ class StubUtils {
             personident = testdataBarn2.ident,
             responseBody = testdataBarn2.tilPersonDto(),
         )
-        stubHentePersoninfo(shouldContaintPersonIdent = true, personident = testdataBP.ident, responseBody = testdataBP.tilPersonDto())
+        stubHentePersoninfo(
+            shouldContaintPersonIdent = true,
+            personident = testdataBP.ident,
+            responseBody = testdataBP.tilPersonDto(),
+        )
         stubHentePersoninfo(
             shouldContaintPersonIdent = true,
             personident = testdataHusstandsmedlem1.ident,
@@ -588,6 +596,7 @@ class StubUtils {
         tomRespons: Boolean = false,
         navnResponsfil: String = "hente-grunnlagrespons.json",
         responsobjekt: HentGrunnlagDto? = null,
+        grunnlagNede: Boolean = false,
     ): StubMapping {
         val wiremock =
             if (rolle == null) {
@@ -617,7 +626,12 @@ class StubUtils {
             )
 
         val respons =
-            if (tomRespons && responsobjekt == null) {
+            if (grunnlagNede) {
+                aClosedJsonResponse()
+                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withStatus(HttpStatus.SERVICE_UNAVAILABLE.value())
+                    .withBody("{}")
+            } else if (tomRespons && responsobjekt == null) {
                 aClosedJsonResponse()
                     .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .withStatus(HttpStatus.OK.value())
@@ -637,25 +651,31 @@ class StubUtils {
         return WireMock.stubFor(wiremock.willReturn(respons))
     }
 
-    fun stubbeGrunnlagsinnhentingForBehandling(behandling: Behandling) {
+    fun stubbeGrunnlagsinnhentingForBehandling(
+        behandling: Behandling,
+        grunnlagNede: Boolean = false,
+    ) {
         var barnNummer = 1
         behandling.roller.forEach {
             when (it.rolletype) {
-                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlag(it)
+                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlag(it, grunnlagNede)
                 Rolletype.BIDRAGSPLIKTIG ->
                     stubHenteGrunnlag(
                         rolle = it,
                         navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
+                        grunnlagNede = grunnlagNede,
                     )
+
                 Rolletype.BARN -> {
                     stubHenteGrunnlag(
                         rolle = it,
                         navnResponsfil = "hente-grunnlagrespons-barn${barnNummer++}.json",
+                        grunnlagNede = grunnlagNede,
                     )
                 }
 
                 else -> {
-                    stubHenteGrunnlag(tomRespons = true)
+                    stubHenteGrunnlag(tomRespons = true, grunnlagNede = grunnlagNede)
                 }
             }
         }

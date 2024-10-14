@@ -107,14 +107,16 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
 
 fun Rolle.tilDto() = RolleDto(id!!, rolletype, ident, navn ?: hentPersonVisningsnavn(ident), fødselsdato)
 
-fun Map<Grunnlagsdatatype, FeilrapporteringDto>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
+fun Map<Grunnlagsdatatype, FeilrapporteringDto?>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this
         .map { feil ->
             Grunnlagsinnhentingsfeil(
-                rolle = behandling.roller.find { feil.value.personId == it.ident }?.tilDto()!!,
-                feilmelding = feil.value.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
+                rolle =
+                    feil.value?.let { p -> behandling.roller.find { p.personId == it.ident }?.tilDto()!! }
+                        ?: behandling.bidragsmottaker!!.tilDto(),
+                feilmelding = feil.value?.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
                 grunnlagsdatatype = feil.key,
-                periode = feil.value.periodeFra?.let { Datoperiode(feil.value.periodeFra!!, feil.value.periodeTil) },
+                periode = feil.value?.periodeFra?.let { Datoperiode(feil.value?.periodeFra!!, feil.value?.periodeTil) },
             )
         }.toSet()
 

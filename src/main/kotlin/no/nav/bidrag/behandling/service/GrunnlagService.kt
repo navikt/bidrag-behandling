@@ -99,7 +99,7 @@ class GrunnlagService(
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
-            val grunnlagRequestobjekter = bidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+            val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
             val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
                 tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
@@ -577,30 +577,32 @@ class GrunnlagService(
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
 
         val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
-            Grunnlagsdatatype
-                .grunnlagsdatatypeobjekter(behandling.tilType())
-                .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, innhentetGrunnlag) }
-                .filterNot { it.value == null }
+            innhentetGrunnlag.hentGrunnlagDto?.let { g ->
+                Grunnlagsdatatype
+                    .grunnlagsdatatypeobjekter(behandling.tilType())
+                    .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g) }
+                    .filterNot { it.value == null }
+            } ?: Grunnlagsdatatype.gjeldende().map { it to null }.toMap()
 
         val rolleInnhentetFor = behandling.roller.find { it.ident == grunnlagsrequest.key.verdi }!!
-        lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, innhentetGrunnlag, feilrapporteringer)
+        innhentetGrunnlag.hentGrunnlagDto?.let {
+            lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, it, feilrapporteringer)
+        }
 
         val feilVedHentingAvInntekter: FeilrapporteringDto? =
             feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
         val tekniskFeilVedHentingAvInntekter = feilVedHentingAvInntekter?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL
-        lagreInntektsgrunnlagHvisEndret(
-            behandling = behandling,
-            rolle = rolleInnhentetFor,
-            grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
-            innhentetGrunnlag =
-                SkattepliktigeInntekter(
-                    innhentetGrunnlag.ainntektListe,
-                    innhentetGrunnlag.skattegrunnlagListe,
-                ),
-            hentetTidspunkt = innhentetGrunnlag.hentetTidspunkt,
-            aktiveringstidspunkt = null,
-            tekniskFeilsjekk = (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
-        )
+        innhentetGrunnlag.hentGrunnlagDto?.let {
+            lagreInntektsgrunnlagHvisEndret(
+                behandling = behandling,
+                rolle = rolleInnhentetFor,
+                grunnlagstype = Grunnlagstype(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER, false),
+                innhentetGrunnlag = SkattepliktigeInntekter(it.ainntektListe, it.skattegrunnlagListe),
+                hentetTidspunkt = it.hentetTidspunkt,
+                aktiveringstidspunkt = null,
+                tekniskFeilsjekk = (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+            )
+        }
 
         if (tekniskFeilVedHentingAvInntekter) {
             log.warn {
@@ -611,34 +613,38 @@ class GrunnlagService(
         }
 
         // Oppdatere inntektstabell med sammenstilte inntekter
-        if (innhentetGrunnlagInneholderInntekterEllerYtelser(innhentetGrunnlag)) {
-            sammenstilleOgLagreInntekter(
-                behandling,
-                innhentetGrunnlag,
-                rolleInnhentetFor,
-                feilrapporteringer,
-                (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
-            )
+        innhentetGrunnlag.hentGrunnlagDto?.let {
+            if (innhentetGrunnlagInneholderInntekterEllerYtelser(it)) {
+                sammenstilleOgLagreInntekter(
+                    behandling,
+                    it,
+                    rolleInnhentetFor,
+                    feilrapporteringer,
+                    (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+                )
+            }
         }
 
         val innhentingAvBoforholdFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
 
         // Husstandsmedlem og bostedsperiode
-        if (behandling.søknadsbarn.isNotEmpty() &&
-            behandling.rolleGrunnlagSkalHentesFor?.ident == grunnlagsrequest.key.verdi &&
-            !innhentingAvBoforholdFeilet
-        ) {
-            periodisereOgLagreBoforhold(
-                behandling,
-                innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
-            )
-
-            if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
-                periodisereOgLagreBpsBoforholdAndreVoksne(
+        innhentetGrunnlag.hentGrunnlagDto?.let {
+            if (behandling.søknadsbarn.isNotEmpty() &&
+                behandling.rolleGrunnlagSkalHentesFor?.ident == grunnlagsrequest.key.verdi &&
+                !innhentingAvBoforholdFeilet
+            ) {
+                periodisereOgLagreBoforhold(
                     behandling,
-                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                    it.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
+
+                if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
+                    periodisereOgLagreBpsBoforholdAndreVoksne(
+                        behandling,
+                        it.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                    )
+                }
             }
         }
 
@@ -646,8 +652,10 @@ class GrunnlagService(
             feilrapporteringer.filter { Grunnlagsdatatype.SIVILSTAND == it.key }.isNotEmpty()
 
         // Oppdatere sivilstandstabell med periodisert sivilstand
-        if (innhentetGrunnlag.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
-            periodisereOgLagreSivilstand(behandling, innhentetGrunnlag)
+        innhentetGrunnlag.hentGrunnlagDto?.let {
+            if (it.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
+                periodisereOgLagreSivilstand(behandling, it)
+            }
         }
 
         return feilrapporteringer
