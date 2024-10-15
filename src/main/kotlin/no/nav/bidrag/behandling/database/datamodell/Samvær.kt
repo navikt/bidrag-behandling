@@ -32,7 +32,7 @@ open class Samvær(
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
-    open var perioder: MutableSet<Bostatusperiode> = mutableSetOf(),
+    open var perioder: MutableSet<Samværsperiode> = mutableSetOf(),
 ) {
     override fun toString(): String = "Samvær(id=$id, behandlingId=${behandling.id}, perioder(size)=${perioder.size}"
 }

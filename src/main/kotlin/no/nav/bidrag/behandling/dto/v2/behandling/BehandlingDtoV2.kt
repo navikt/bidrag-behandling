@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
@@ -111,6 +112,8 @@ data class BehandlingDtoV2(
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
     @Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
     val utgift: SærbidragUtgifterDto? = null,
+    @Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
+    val samvær: List<SamværDto>? = null,
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
 }

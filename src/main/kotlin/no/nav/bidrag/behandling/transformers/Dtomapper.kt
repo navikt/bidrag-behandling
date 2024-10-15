@@ -46,6 +46,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
+import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -54,6 +55,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -143,6 +145,13 @@ class Dtomapper(
                 valideringsfeil = behandling.utgift.hentValideringsfeil(),
                 totalBeregning = behandling.utgift?.tilTotalBeregningDto() ?: emptyList(),
             )
+        }
+
+    fun Behandling.tilSamværDtoListe() =
+        if (tilType() == TypeBehandling.BIDRAG) {
+            samvær.map { it.tilDto() }
+        } else {
+            null
         }
 
     fun Behandling.tilUtgiftDto() =
@@ -456,6 +465,7 @@ class Dtomapper(
             ),
         aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
         utgift = tilUtgiftDto(),
+        samvær = tilSamværDtoListe(),
         ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
         feilOppståttVedSisteGrunnlagsinnhenting =
             grunnlagsinnhentingFeilet?.let {

@@ -25,10 +25,10 @@ open class Samværsperiode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "samvær_id", nullable = false)
     open var samvær: Samvær,
-    open var datoFom: LocalDate?,
-    open val datoTom: LocalDate?,
+    open var datoFom: LocalDate,
+    open var datoTom: LocalDate?,
     @Enumerated(EnumType.STRING)
-    open val samværsklasse: Samværsklasse,
+    open var samværsklasse: Samværsklasse,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
