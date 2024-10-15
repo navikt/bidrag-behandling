@@ -15,12 +15,12 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
-import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
@@ -29,10 +29,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
+import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -158,15 +160,15 @@ class VedtakGrunnlagMapper(
     fun EvnevurderingBeregningResultat.tilGrunnlagDto(personGrunnlagListe: MutableSet<GrunnlagDto>): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
-        fun BidragBeregningResponsDto.BidragBeregning.tilPersonGrunnlag(): GrunnlagDto {
-            val fødselsdato = personService.hentPersonFødselsdato(personidentBarn.verdi) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
-            val nyesteIdent = (personService.hentNyesteIdent(personidentBarn.verdi) ?: personidentBarn)
+        fun LøpendeBidragssak.tilPersonGrunnlag(): GrunnlagDto {
+            val fødselsdato = personService.hentPersonFødselsdato(kravhaver.verdi) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
+            val nyesteIdent = (personService.hentNyesteIdent(kravhaver.verdi) ?: kravhaver)
 
             return GrunnlagDto(
                 referanse =
                     Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
                         fødselsdato.toCompactString(),
-                        (personidentBarn.verdi + 1).hashCode(),
+                        (kravhaver.verdi + 1).hashCode(),
                     ),
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
                 innhold =
@@ -179,7 +181,7 @@ class VedtakGrunnlagMapper(
             )
         }
 
-        fun BidragBeregningResponsDto.BidragBeregning.opprettPersonGrunnlag(): GrunnlagDto {
+        fun LøpendeBidragssak.opprettPersonGrunnlag(): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag()
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
@@ -194,18 +196,19 @@ class VedtakGrunnlagMapper(
                     POJONode(
                         LøpendeBidragGrunnlag(
                             løpendeBidragListe =
-                                beregnetBeløpListe.beregningListe.map { beregning ->
-                                    val løpendeStønad = løpendeBidragsaker.find { it.kravhaver == beregning.personidentBarn }!!
+                                løpendeBidragsaker.map { løpendeStønad ->
+                                    val beregning = beregnetBeløpListe.beregningListe.find { it.personidentBarn == løpendeStønad.kravhaver }
                                     val personObjekt =
-                                        personGrunnlagListe.hentPerson(beregning.personidentBarn.verdi) ?: beregning.opprettPersonGrunnlag()
+                                        personGrunnlagListe.hentPerson(løpendeStønad.kravhaver.verdi)
+                                            ?: løpendeStønad.opprettPersonGrunnlag()
                                     LøpendeBidrag(
-                                        faktiskBeløp = beregning.faktiskBeløp,
-                                        samværsklasse = beregning.samværsklasse!!,
-                                        beregnetBeløp = beregning.beregnetBeløp,
+                                        faktiskBeløp = beregning?.faktiskBeløp ?: BigDecimal.ZERO,
+                                        samværsklasse = beregning?.samværsklasse ?: Samværsklasse.INGEN_SAMVÆR,
+                                        beregnetBeløp = beregning?.beregnetBeløp ?: BigDecimal.ZERO,
                                         løpendeBeløp = løpendeStønad.løpendeBeløp,
-                                        type = beregning.stønadstype,
+                                        type = løpendeStønad.type,
                                         gjelderBarn = personObjekt.referanse,
-                                        saksnummer = Saksnummer(beregning.saksnummer),
+                                        saksnummer = Saksnummer(løpendeStønad.sak.verdi),
                                         valutakode = løpendeStønad.valutakode,
                                     )
                                 },
