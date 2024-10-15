@@ -156,14 +156,19 @@ class BehandlingControllerV2(
         secureLogger.info { "Oppdaterer underholdskostnad for behandling $behandlingsid med forespørsel $request" }
 
         // TODO: Implement me
-        log.warn{"API for å oppdatere underholdskostnad er ikke implementert!"}
+        log.warn { "API for å oppdatere underholdskostnad er ikke implementert!" }
 
         return UnderholdDto(
-            id = 1L, gjelderBarn = PersoninfoDto(), underholdskostnand = UnderholdskostnadDto(
-                periode = ÅrMånedsperiode(
-                    LocalDate.now(), null
-                )
-            )
+            id = 1L,
+            gjelderBarn = PersoninfoDto(),
+            underholdskostnand =
+                UnderholdskostnadDto(
+                    periode =
+                        ÅrMånedsperiode(
+                            LocalDate.now(),
+                            null,
+                        ),
+                ),
         )
     }
 

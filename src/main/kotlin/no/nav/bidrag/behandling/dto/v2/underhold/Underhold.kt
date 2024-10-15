@@ -18,7 +18,7 @@ data class OppdatereUnderholdskostnad(
     val stønadTilBarnetilsynDto: StønadTilBarnetilsynDto? = null,
     val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,
     val tilleggsstønad: TilleggsstønadDto? = null,
-    val slette: SletteUnderholdselement? = null
+    val slette: SletteUnderholdselement? = null,
 )
 
 data class SletteUnderholdselement(
@@ -26,13 +26,13 @@ data class SletteUnderholdselement(
     val type: Underholdselement,
 )
 
-enum class Underholdselement {BARN, FAKTISK_TILSYNSUGIFT, STØNAD_TIL_BARNETILSYN, TILLEGGSSTØNAD, UNDERHOLDSKOSTNAD}
+enum class Underholdselement { BARN, FAKTISK_TILSYNSUGIFT, STØNAD_TIL_BARNETILSYN, TILLEGGSSTØNAD, UNDERHOLDSKOSTNAD }
 
 data class BarnDto(
     val id: Long? = null,
     val personident: Personident? = null,
     val navn: String? = null,
-    )
+)
 
 data class UnderholdDto(
     val id: Long,
@@ -51,24 +51,28 @@ data class UnderholdskostnadDto(
     val stønadTilBarnetilsyn: BigDecimal = BigDecimal.ZERO,
     val tilsynsutgifter: BigDecimal = BigDecimal.ZERO,
     val barnetrygd: BigDecimal = BigDecimal.ZERO,
-    val total: BigDecimal = BigDecimal.ZERO,
-)
+) {
+    val total get() = forbruk + boutgifter + tilsynsutgifter - stønadTilBarnetilsyn - barnetrygd
+}
 
 data class TilleggsstønadDto(
     val id: Long,
     val periode: Periode<LocalDate>,
     val dagsats: BigDecimal,
-    val total: BigDecimal,
-)
+) {
+    // total = dagsats x 260/12 x 11/12
+    val total get() = dagsats.multiply(BigDecimal(2860)).divide(BigDecimal(144))
+}
 
 data class FaktiskTilsynsutgiftDto(
     val id: Long,
     val periode: Periode<LocalDate>,
     val utgift: BigDecimal,
     val kostpenger: BigDecimal = BigDecimal.ZERO,
-    val total: BigDecimal,
     val kommentar: String? = null,
-)
+) {
+    val total get() = utgift - kostpenger
+}
 
 data class StønadTilBarnetilsynDto(
     val id: Long,

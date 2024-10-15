@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.dto.v2.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import io.micrometer.core.instrument.util.StringUtils
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
@@ -16,8 +15,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
-import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
-import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -40,7 +37,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.math.BigDecimal
