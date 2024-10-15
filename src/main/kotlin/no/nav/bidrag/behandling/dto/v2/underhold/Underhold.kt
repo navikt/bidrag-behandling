@@ -53,7 +53,7 @@ data class UnderholdskostnadDto(
     val barnetrygd: BigDecimal = BigDecimal.ZERO,
 ) {
     // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
-    val total get() = forbruk + boutgifter + tilsynsutgifter - stønadTilBarnetilsyn - barnetrygd
+    val total get() = forbruk + boutgifter + tilsynsutgifter + stønadTilBarnetilsyn - barnetrygd
 }
 
 data class TilleggsstønadDto(
