@@ -16,10 +16,14 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdskostnad
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
@@ -30,6 +34,7 @@ import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -37,6 +42,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
+import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
@@ -108,7 +114,7 @@ class BehandlingControllerV2(
 
     @PutMapping("/behandling/{behandlingsid}/utgift")
     @Operation(
-        description = "Oppdatere utgift for behandling. Returnerer oppdatert behandling detaljer. L",
+        description = "Oppdatere utgift for behandling. Returnerer oppdatert behandling detaljer.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -127,6 +133,38 @@ class BehandlingControllerV2(
         secureLogger.info { "Oppdaterer utgift for behandling $behandlingsid med forespørsel $request" }
 
         return utgiftService.oppdatereUtgift(behandlingsid, request)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/underhold")
+    @Operation(
+        description = "Oppdatere underholdskostnad for behandling. Returnerer oppdaterte behandlingsdetaljer.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun oppdatereUnderhold(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdatereUnderholdskostnad,
+    ): UnderholdDto {
+        log.info { "Oppdaterer underholdskostnad for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer underholdskostnad for behandling $behandlingsid med forespørsel $request" }
+
+        // TODO: Implement me
+        log.warn{"API for å oppdatere underholdskostnad er ikke implementert!"}
+
+        return UnderholdDto(
+            id = 1L, gjelderBarn = PersoninfoDto(), underholdskostnand = UnderholdskostnadDto(
+                periode = ÅrMånedsperiode(
+                    LocalDate.now(), null
+                )
+            )
+        )
     }
 
     @PutMapping("/behandling/{behandlingsid}/virkningstidspunkt")
