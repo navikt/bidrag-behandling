@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_løpende_bidrag
@@ -43,11 +44,14 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto.BidragBeregning
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssakerResponse
@@ -273,16 +277,32 @@ class BeregningEvnevurderingServiceTest {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.SÆRBIDRAG, generateId = true)
             val resultat = evnevurderingService.hentLøpendeBidragForBehandling(behandling).tilGrunnlagDto(behandling.tilPersonobjekter())
 
-            resultat shouldHaveSize 2
+            resultat shouldHaveSize 3
             val løpendeBidrag = resultat.find { it.type == Grunnlagstype.LØPENDE_BIDRAG }
             assertSoftly(løpendeBidrag!!) {
                 it.referanse shouldBe grunnlagsreferanse_løpende_bidrag
                 it.gjelderReferanse shouldBe behandling.tilPersonobjekter().bidragspliktig!!.referanse
                 it.grunnlagsreferanseListe.shouldBeEmpty()
                 val innhold = this.innholdTilObjekt<LøpendeBidragGrunnlag>()
-                innhold.løpendeBidragListe shouldHaveSize 2
-                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
-                innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG18AAR
+                innhold.løpendeBidragListe shouldHaveSize 3
+                assertSoftly(innhold.løpendeBidragListe[0]) {
+                    type shouldBe Stønadstype.BIDRAG
+                    faktiskBeløp shouldNotBe BigDecimal.ZERO
+                    beregnetBeløp shouldNotBe BigDecimal.ZERO
+                    samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
+                }
+                assertSoftly(innhold.løpendeBidragListe[1]) {
+                    type shouldBe Stønadstype.BIDRAG
+                    faktiskBeløp shouldBe BigDecimal.ZERO
+                    beregnetBeløp shouldBe BigDecimal.ZERO
+                    samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                }
+                assertSoftly(innhold.løpendeBidragListe[2]) {
+                    type shouldBe Stønadstype.BIDRAG18AAR
+                    faktiskBeløp shouldNotBe BigDecimal.ZERO
+                    beregnetBeløp shouldNotBe BigDecimal.ZERO
+                    samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                }
             }
         }
 
@@ -314,11 +334,42 @@ class BeregningEvnevurderingServiceTest {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.SÆRBIDRAG, generateId = true)
             val resultat = evnevurderingService.hentLøpendeBidragForBehandling(behandling).tilGrunnlagDto(behandling.tilPersonobjekter())
 
-            resultat shouldHaveSize 1
+            resultat shouldHaveSize 3
             val løpendeBidrag = resultat.find { it.type == Grunnlagstype.LØPENDE_BIDRAG }
+            val personer = resultat.hentAllePersoner().toList()
+            val person1 = personer.find { testdataBarn2.ident == it.personIdent }
+            val person2 = personer.find { testdataHusstandsmedlem1.ident == it.personIdent }
+            val søknadsbarn = behandling.søknadsbarn.first()
             assertSoftly(løpendeBidrag!!) {
                 val innhold = this.innholdTilObjekt<LøpendeBidragGrunnlag>()
-                innhold.løpendeBidragListe shouldHaveSize 0
+                innhold.løpendeBidragListe shouldHaveSize 3
+                assertSoftly(innhold.løpendeBidragListe.finnForKravhaver(person1!!.referanse)!!) {
+                    it.type shouldBe Stønadstype.BIDRAG
+                    it.gjelderBarn shouldBe person1.referanse
+                    it.faktiskBeløp shouldBe BigDecimal.ZERO
+                    it.beregnetBeløp shouldBe BigDecimal.ZERO
+                    it.samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    it.løpendeBeløp shouldBe BigDecimal(5222)
+                    it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
+                }
+                assertSoftly(innhold.løpendeBidragListe.finnForKravhaver(person2!!.referanse)!!) {
+                    it.type shouldBe Stønadstype.BIDRAG18AAR
+                    it.gjelderBarn shouldBe person2.referanse
+                    it.faktiskBeløp shouldBe BigDecimal.ZERO
+                    it.beregnetBeløp shouldBe BigDecimal.ZERO
+                    it.samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    it.løpendeBeløp shouldBe BigDecimal(5333)
+                    it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
+                }
+                assertSoftly(innhold.løpendeBidragListe.finnForKravhaver(søknadsbarn.tilGrunnlagsreferanse())!!) {
+                    it.type shouldBe Stønadstype.BIDRAG
+                    it.gjelderBarn shouldBe søknadsbarn.tilGrunnlagsreferanse()
+                    it.faktiskBeløp shouldBe BigDecimal.ZERO
+                    it.beregnetBeløp shouldBe BigDecimal.ZERO
+                    it.samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    it.løpendeBeløp shouldBe BigDecimal(5111)
+                    it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
+                }
             }
         }
 
@@ -486,3 +537,5 @@ fun opprettLøpendeBidraggsak(
     kravhaver = Personident(kravhaver),
     løpendeBeløp = BigDecimal(5160),
 )
+
+private fun List<LøpendeBidrag>.finnForKravhaver(gjelderBarnReferanse: String) = find { it.gjelderBarn == gjelderBarnReferanse }
