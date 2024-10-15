@@ -52,6 +52,7 @@ data class UnderholdskostnadDto(
     val tilsynsutgifter: BigDecimal = BigDecimal.ZERO,
     val barnetrygd: BigDecimal = BigDecimal.ZERO,
 ) {
+    // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
     val total get() = forbruk + boutgifter + tilsynsutgifter - stønadTilBarnetilsyn - barnetrygd
 }
 
@@ -60,6 +61,7 @@ data class TilleggsstønadDto(
     val periode: Periode<LocalDate>,
     val dagsats: BigDecimal,
 ) {
+    // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
     // total = dagsats x 260/12 x 11/12
     val total get() = dagsats.multiply(BigDecimal(2860)).divide(BigDecimal(144))
 }
@@ -71,6 +73,7 @@ data class FaktiskTilsynsutgiftDto(
     val kostpenger: BigDecimal = BigDecimal.ZERO,
     val kommentar: String? = null,
 ) {
+    // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
     val total get() = utgift - kostpenger
 }
 
