@@ -361,19 +361,21 @@ fun Behandling.tilNotat(
 
 fun Behandling.henteRolleForNotat(
     notattype: Notattype,
-    rolleVedInntekt: Rolle?,
+    forRolle: Rolle?,
 ) = when (notattype) {
     Notattype.BOFORHOLD -> this.rolleGrunnlagSkalHentesFor!!
     Notattype.UTGIFTER -> this.bidragsmottaker!!
     Notattype.VIRKNINGSTIDSPUNKT -> this.bidragsmottaker!!
     Notattype.INNTEKT -> {
-        if (rolleVedInntekt == null) {
+        if (forRolle == null) {
             log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
             this.bidragsmottaker!!
         } else {
-            rolleVedInntekt
+            forRolle
         }
     }
+    Notattype.UNDERHOLDSKOSTNAD -> this.bidragspliktig!!
+    Notattype.SAMVÆR -> forRolle!!
 }
 
 fun Behandling.notatTittel(): String {

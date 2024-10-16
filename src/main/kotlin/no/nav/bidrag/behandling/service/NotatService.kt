@@ -77,6 +77,7 @@ class NotatService {
                 Notattype.INNTEKT -> behandling.inntektsbegrunnelseKunINotat
                 Notattype.VIRKNINGSTIDSPUNKT -> behandling.virkningstidspunktbegrunnelseKunINotat
                 Notattype.UTGIFTER -> behandling.utgiftsbegrunnelseKunINotat
+                else -> null
             }
         }
     }
