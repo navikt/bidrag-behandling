@@ -91,9 +91,6 @@ class UtgiftService(
                 log.info { "Alle utgifter er slettet. Sletter utgift maks godkjent beløp" }
                 utgift.slettMaksGodkjentBeløp()
             }
-        } else if (request.angreSisteEndring == true) {
-            log.info { "Angrer siste endring i utgiftsposter for behandling $behandlingsid" }
-            behandling.utgift = utgift.gjenopprettHistorikk()
         }
 
         return mapper.run { utgift.tilOppdaterUtgiftResponse() }

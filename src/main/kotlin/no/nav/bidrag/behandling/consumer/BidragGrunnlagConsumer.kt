@@ -13,11 +13,9 @@ import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDt
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpStatus
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
-import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
@@ -63,10 +61,16 @@ class BidragGrunnlagConsumer(
                                 behandling,
                             )
                     } else if (TypeBehandling.BIDRAG == behandlingstype) {
-                        throw HttpClientErrorException(
-                            HttpStatus.BAD_REQUEST,
-                            "Behandlingstype ${TypeBehandling.BIDRAG} støttes foreløpig ikke i denne løsningen.",
-                        )
+//                        throw HttpClientErrorException(
+//                            HttpStatus.BAD_REQUEST,
+//                            "Behandlingstype ${TypeBehandling.BIDRAG} støttes foreløpig ikke i denne løsningen.",
+//                        )
+                        requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
+                            oppretteGrunnlagsobjekter(
+                                Personident(behandling.bidragspliktig!!.ident!!),
+                                Rolletype.BIDRAGSPLIKTIG,
+                                behandling,
+                            )
                     }
                 }
 

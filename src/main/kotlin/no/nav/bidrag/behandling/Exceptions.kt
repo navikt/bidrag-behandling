@@ -13,6 +13,8 @@ fun samværIkkeFunnet(
         "Fant ikke samvær for barn $gjelderBarn i behandling med id $behandlingId",
     )
 
+fun ugyldigForespørsel(melding: String): Nothing = throw HttpClientErrorException(HttpStatus.BAD_REQUEST, melding)
+
 fun behandlingNotFoundException(behandlingId: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,

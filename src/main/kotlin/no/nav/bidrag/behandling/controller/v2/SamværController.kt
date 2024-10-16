@@ -3,11 +3,11 @@ package no.nav.bidrag.behandling.controller.v2
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import no.nav.bidrag.behandling.database.datamodell.Samværskalkulator
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.service.SamværService
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
+import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -41,6 +41,6 @@ class SamværController(
     fun oppdaterSamvær(
         @Valid
         @RequestBody(required = true)
-        request: Samværskalkulator,
+        request: SamværskalkulatorDetaljer,
     ): Samværsklasse = samværService.beregnSamværsklasse(request)
 }

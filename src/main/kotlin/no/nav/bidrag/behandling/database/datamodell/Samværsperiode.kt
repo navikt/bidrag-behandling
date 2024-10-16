@@ -57,16 +57,16 @@ data class Samværskalkulator(
 ) {
     data class SamværskalkulatorFerie(
         val type: SamværskalkulatorFerietype,
-        val bidragsmottaker: SamværskalkulatorPeriode,
-        val bidragspliktig: SamværskalkulatorPeriode,
+        val bidragsmottaker: SamværskalkulatorFerieNetter,
+        val bidragspliktig: SamværskalkulatorFerieNetter,
     )
 
-    data class SamværskalkulatorPeriode(
+    data class SamværskalkulatorFerieNetter(
         val antallNetter: Int = 0,
-        val repetisjon: SamværskalkulatorPeriodeRepetisjon,
+        val frekvens: SamværskalkulatorNetterFrekvens,
     )
 
-    enum class SamværskalkulatorPeriodeRepetisjon {
+    enum class SamværskalkulatorNetterFrekvens {
         HVERT_ÅR,
         ANNEN_HVERT_ÅR,
     }
