@@ -23,8 +23,6 @@ private val log = KotlinLogging.logger {}
 
 @BehandlingRestControllerV2
 class UnderholdController {
-
-
     @DeleteMapping("/behandling/{behandlingsid}/underhold")
     @Operation(
         description = "Oppdatere underholdskostnad for behandling. Returnerer oppdaterte behandlingsdetaljer.",
@@ -41,7 +39,7 @@ class UnderholdController {
     fun sletteFraUnderhold(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: SletteUnderholdselement,
-    ) : UnderholdDto{
+    ): UnderholdDto {
         log.info { "Sletter fra underholdskostnad i behandling $behandlingsid" }
         secureLogger.info { "Sletter fra underholdskostn i behandling $behandlingsid med forespørsel $request" }
 
@@ -52,13 +50,13 @@ class UnderholdController {
             id = 1L,
             gjelderBarn = PersoninfoDto(),
             underholdskostnand =
-            UnderholdskostnadDto(
-                periode =
-                ÅrMånedsperiode(
-                    LocalDate.now(),
-                    null,
+                UnderholdskostnadDto(
+                    periode =
+                        ÅrMånedsperiode(
+                            LocalDate.now(),
+                            null,
+                        ),
                 ),
-            ),
         )
     }
 
@@ -89,13 +87,13 @@ class UnderholdController {
             id = 1L,
             gjelderBarn = PersoninfoDto(),
             underholdskostnand =
-            UnderholdskostnadDto(
-                periode =
-                ÅrMånedsperiode(
-                    LocalDate.now(),
-                    null,
+                UnderholdskostnadDto(
+                    periode =
+                        ÅrMånedsperiode(
+                            LocalDate.now(),
+                            null,
+                        ),
                 ),
-            ),
         )
     }
 }
