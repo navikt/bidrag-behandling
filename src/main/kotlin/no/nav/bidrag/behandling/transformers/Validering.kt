@@ -128,7 +128,7 @@ fun OppdatereUtgiftRequest.valider(behandling: Behandling) {
         feilliste.add("Kan ikke oppdatere utgift for behandling som ikke er av typen ${Engangsbeløptype.SÆRBIDRAG}")
     }
     val erAvslag = (avslag != null || behandling.avslag != null)
-    if (erAvslag && (nyEllerEndretUtgift != null || sletteUtgift != null || angreSisteEndring == true)) {
+    if (erAvslag && (nyEllerEndretUtgift != null || sletteUtgift != null)) {
         feilliste.add("Kan ikke oppdatere eller opprette utgift hvis avslag er satt")
     }
     val utgift = behandling.utgift

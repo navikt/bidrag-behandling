@@ -32,11 +32,6 @@ data class OppdatereUtgiftRequest(
             "Slette en utgift. Utgift kan ikke endres eller oppdateres hvis avslag er satt",
     )
     val sletteUtgift: Long? = null,
-    @Schema(
-        type = "Boolean",
-        description = "Angre siste endring som ble gjort. Siste endring kan ikke angres hvis avslag er satt",
-    )
-    val angreSisteEndring: Boolean? = false,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
     @Schema(description = "Deprekert - bruk oppdatereBegrunnelse i stedet")
