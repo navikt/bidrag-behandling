@@ -108,7 +108,7 @@ class BehandlingControllerV2(
 
     @PutMapping("/behandling/{behandlingsid}/utgift")
     @Operation(
-        description = "Oppdatere utgift for behandling. Returnerer oppdatert behandling detaljer. L",
+        description = "Oppdatere utgift for behandling. Returnerer oppdatert behandling detaljer.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
