@@ -372,11 +372,10 @@ enum class Grunnlagsdatatype(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
-    BARNETILSYN(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG))),
+    BARNETILSYN(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
     BOFORHOLD(
         mapOf(
-            // TODO: Verfisere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
@@ -384,32 +383,29 @@ enum class Grunnlagsdatatype(
     BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(mapOf(TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG))),
     KONTANTSTØTTE(
         mapOf(
-            // TODO: Verfisere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
-    SIVILSTAND(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    SIVILSTAND(mapOf(
+        TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
     UTVIDET_BARNETRYGD(
         mapOf(
-            // TODO: Verfisere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
     SMÅBARNSTILLEGG(
         mapOf(
-            // TODO: Verfisere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
     SKATTEPLIKTIGE_INNTEKTER(
         mapOf(
-            // TODO: Verfisere for bidrag
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
@@ -417,7 +413,6 @@ enum class Grunnlagsdatatype(
     ),
     SUMMERTE_MÅNEDSINNTEKTER(
         mapOf(
-            // TODO: Verfisere for bidrag
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),

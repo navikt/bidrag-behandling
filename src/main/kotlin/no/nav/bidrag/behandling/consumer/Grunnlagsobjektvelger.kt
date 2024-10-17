@@ -39,28 +39,23 @@ enum class Grunnlagsobjektvelger(
         ),
     ),
 
-    // TODO: Verifsere for bidrag
-    BARNETILSYN(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG))),
+    BARNETILSYN(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
     KONTANTSTØTTE(
         mapOf(
-            // TODO: Verifsere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
     HUSSTANDSMEDLEMMER_OG_EGNE_BARN(
         mapOf(
-            // TODO: Verifsere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
     SIVILSTAND(
         mapOf(
-            // TODO: Verifsere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
@@ -78,8 +73,7 @@ enum class Grunnlagsobjektvelger(
     ),
     UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG(
         mapOf(
-            // TODO: Verifsere for bidrag
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
