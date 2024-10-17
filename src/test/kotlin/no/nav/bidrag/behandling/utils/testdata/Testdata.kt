@@ -1031,6 +1031,10 @@ fun oppretteBehandling(
     val behandling = oppretteBehandling(behandlingsid)
 
     when (behandlingstype) {
+        TypeBehandling.BIDRAG -> {
+            behandling.stonadstype = Stønadstype.BIDRAG
+        }
+
         TypeBehandling.FORSKUDD -> {
             behandling.stonadstype = Stønadstype.FORSKUDD
         }
@@ -1096,7 +1100,8 @@ fun oppretteBehandling(
                 ),
             )
 
-            val inntekt = bearbeidaGrunnlag.inntekter.tilInntekt(behandling, Personident(behandling.bidragsmottaker!!.ident!!))
+            val inntekt =
+                bearbeidaGrunnlag.inntekter.tilInntekt(behandling, Personident(behandling.bidragsmottaker!!.ident!!))
             val ytelser =
                 setOf(
                     Inntektsrapportering.KONTANTSTØTTE,

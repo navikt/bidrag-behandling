@@ -78,6 +78,7 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -144,6 +145,152 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Nested
     @DisplayName("Teste oppdatereGrunnlagForBehandling")
     open inner class OppdatereGrunnlagForBehandling {
+        @Nested
+        open inner class Bidrag {
+            // TODO: Fikse eksisterende og legge til flere tester, f.eks fra FORSKUDD
+            @Test
+            @Disabled("Fikse test")
+            @Transactional
+            open fun `skal lagre ytelser`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(
+                        false,
+                        false,
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BARN ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                            )
+
+                        else -> throw Exception()
+                    }
+                }
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+                entityManager.refresh(oppdatertBehandling.get())
+
+                assertSoftly {
+                    oppdatertBehandling.isPresent shouldBe true
+                    oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+                    oppdatertBehandling.get().grunnlag.size shouldBe 29
+                    oppdatertBehandling.get().inntekter.size shouldBe 28
+                }
+
+                val alleGrunnlagBm =
+                    oppdatertBehandling.get().grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+
+                validereGrunnlagBm(alleGrunnlagBm)
+
+                val alleGrunnlagBarn =
+                    oppdatertBehandling.get().grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
+
+                assertSoftly {
+                    alleGrunnlagBarn.filter { Grunnlagsdatatype.BARNETILLEGG == it.type }.size shouldBe 0
+                    alleGrunnlagBarn.filter { Grunnlagsdatatype.KONTANTSTØTTE == it.type }.size shouldBe 0
+                    alleGrunnlagBarn.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.size shouldBe 0
+                    alleGrunnlagBarn.filter { Grunnlagsdatatype.UTVIDET_BARNETRYGD == it.type }.size shouldBe 0
+                }
+
+                val alleInntekterBm =
+                    oppdatertBehandling.get().inntekter.filter { behandling.bidragsmottaker!!.ident == it.ident }
+
+                assertSoftly {
+                    alleInntekterBm.size shouldBe 8
+                    alleInntekterBm.filter { Inntektsrapportering.BARNETILLEGG == it.type }.size shouldBe 0
+                    oppdatertBehandling
+                        .get()
+                        .inntekter
+                        .filter { Inntektsrapportering.BARNETILLEGG == it.type }
+                        .size shouldBe 0
+                    alleInntekterBm.filter { Inntektsrapportering.KONTANTSTØTTE == it.type }.size shouldBe 0
+                    oppdatertBehandling
+                        .get()
+                        .inntekter
+                        .filter { Inntektsrapportering.KONTANTSTØTTE == it.type }
+                        .size shouldBe 0
+                    alleInntekterBm.filter { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }.size shouldBe 1
+                    oppdatertBehandling
+                        .get()
+                        .inntekter
+                        .filter { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }
+                        .size shouldBe 1
+                    alleInntekterBm.filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }.size shouldBe 1
+                    oppdatertBehandling
+                        .get()
+                        .inntekter
+                        .filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }
+                        .size shouldBe 1
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal lagre arbeidsforhold`() {
+                // gitt
+                val behandling =
+                    testdataManager.oppretteBehandling(
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+                assertSoftly {
+                    oppdatertBehandling.isPresent shouldBe true
+                }
+
+                val grunnlag =
+                    grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
+                        behandlingsid = behandling.id!!,
+                        behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
+                        Grunnlagsdatatype.ARBEIDSFORHOLD,
+                        false,
+                    )
+                val arbeidsforhold = jsonListeTilObjekt<ArbeidsforholdGrunnlagDto>(grunnlag?.data!!)
+
+                assertSoftly {
+                    arbeidsforhold.size shouldBe 3
+                    arbeidsforhold
+                        .filter { a ->
+                            a.partPersonId == behandling.bidragsmottaker!!.ident!! &&
+                                a.sluttdato == null &&
+                                a.startdato ==
+                                LocalDate.of(
+                                    2002,
+                                    11,
+                                    3,
+                                ) &&
+                                a.arbeidsgiverNavn == "SAUEFABRIKK" &&
+                                a.arbeidsgiverOrgnummer == "896929119"
+                        }.toSet()
+                        .size shouldBe 1
+                }
+            }
+        }
+
         @Nested
         open inner class Forskudd {
             @Test
