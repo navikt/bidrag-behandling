@@ -7,8 +7,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.årsbeløpTilMåndesbeløp
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetBidragPerBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import java.math.BigDecimal
 import java.math.MathContext
@@ -22,7 +22,7 @@ data class ResultatSærbidragsberegningDto(
     val utgiftsposter: List<UtgiftspostDto> = emptyList(),
     val delberegningUtgift: DelberegningUtgift? = null,
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
-    val delberegningSumLøpendeBidrag: DelberegningSumLøpendeBidrag? = null,
+    val delberegningBidragspliktigesBeregnedeTotalBidrag: DelberegningBidragspliktigesBeregnedeTotalbidragDto? = null,
     val maksGodkjentBeløp: BigDecimal? = null,
     val forskuddssats: BigDecimal? = null,
     val resultat: BigDecimal,
@@ -34,6 +34,17 @@ data class ResultatSærbidragsberegningDto(
     val bpHarEvne: Boolean = resultatKode != Resultatkode.SÆRBIDRAG_IKKE_FULL_BIDRAGSEVNE,
 ) {
     val beløpSomInnkreves: BigDecimal get() = maxOf(resultat - (beregning?.totalBeløpBetaltAvBp ?: BigDecimal.ZERO), BigDecimal.ZERO)
+}
+
+data class DelberegningBidragspliktigesBeregnedeTotalbidragDto(
+    val beregnetBidragPerBarnListe: List<BeregnetBidragPerBarnDto>,
+    val bidragspliktigesBeregnedeTotalbidrag: BigDecimal,
+    val periode: ÅrMånedsperiode,
+) {
+    data class BeregnetBidragPerBarnDto(
+        val beregnetBidragPerBarn: BeregnetBidragPerBarn,
+        val personidentBarn: String,
+    )
 }
 
 data class DelberegningBidragsevneDto(

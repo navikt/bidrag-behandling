@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
-import no.nav.bidrag.behandling.transformers.finnDelberegningSumLøpendeBidrag
+import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
@@ -157,14 +157,14 @@ class BeregningService(
         val bidragsevneBeregning = BidragsevneBeregning()
         val sjablonListe = hentSjabloner()
         val beregninResultat = beregneSærbidrag(behandling)
-        val delberegningSumLøpendeBidrag =
-            beregninResultat.grunnlagListe.finnDelberegningSumLøpendeBidrag(
+        val delberegningBPsBeregnedeTotalbidrag =
+            beregninResultat.grunnlagListe.finnDelberegningBPsBeregnedeTotalbidrag(
                 beregninResultat.beregnetSærbidragPeriodeListe.first().grunnlagsreferanseListe,
             )
         var low = 0
         var high = 1000000000
         var result = BigDecimal.ZERO
-        val sumLøpendeBidrag = delberegningSumLøpendeBidrag!!.sumLøpendeBidrag.setScale(0, RoundingMode.HALF_UP)
+        val sumLøpendeBidrag = delberegningBPsBeregnedeTotalbidrag!!.bidragspliktigesBeregnedeTotalbidrag.setScale(0, RoundingMode.HALF_UP)
         while (low <= high) {
             val inntektBeløp = (low + high) / 2
             val antallBarnIHusstand =
