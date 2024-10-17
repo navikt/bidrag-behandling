@@ -388,8 +388,11 @@ enum class Grunnlagsdatatype(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
         ),
     ),
-    SIVILSTAND(mapOf(
-        TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    SIVILSTAND(
+        mapOf(
+            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
+        ),
+    ),
     UTVIDET_BARNETRYGD(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
