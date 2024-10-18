@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
+import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -30,8 +31,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHustand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -42,7 +43,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeri
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
@@ -128,7 +131,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     maksGodkjentBeløp = maksGodkjentBeløp,
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
     delberegningBidragsevne = finnDelberegningBidragsevne(grunnlagsreferanseListe),
-    delberegningSumLøpendeBidrag = finnDelberegningSumLøpendeBidrag(grunnlagsreferanseListe),
+    delberegningBidragspliktigesBeregnedeTotalBidrag = finnDelberegningBPsBeregnedeTotalbidrag(grunnlagsreferanseListe),
     voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
     enesteVoksenIHusstandenErEgetBarn = finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe),
     erDirekteAvslag = resultatkode.erDirekteAvslag(),
@@ -194,16 +197,30 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndel>()
 }
 
-fun List<GrunnlagDto>.finnDelberegningSumLøpendeBidrag(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningSumLøpendeBidrag? {
+fun List<GrunnlagDto>.finnDelberegningBPsBeregnedeTotalbidrag(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+): DelberegningBidragspliktigesBeregnedeTotalbidragDto? {
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
     val delberegning =
         find {
-            it.type == Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG &&
+            it.type == Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG &&
                 sluttberegning.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )
         } ?: return null
-    return delberegning.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
+    val delberegningObjekt = delberegning.innholdTilObjekt<DelberegningBidragspliktigesBeregnedeTotalbidrag>()
+
+    return DelberegningBidragspliktigesBeregnedeTotalbidragDto(
+        bidragspliktigesBeregnedeTotalbidrag = delberegningObjekt.bidragspliktigesBeregnedeTotalbidrag,
+        periode = delberegningObjekt.periode,
+        beregnetBidragPerBarnListe =
+            delberegningObjekt.beregnetBidragPerBarnListe.map {
+                DelberegningBidragspliktigesBeregnedeTotalbidragDto.BeregnetBidragPerBarnDto(
+                    beregnetBidragPerBarn = it,
+                    personidentBarn = hentPersonMedReferanse(it.gjelderBarn)?.personIdent!!,
+                )
+            },
+    )
 }
 
 fun List<GrunnlagDto>.finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {

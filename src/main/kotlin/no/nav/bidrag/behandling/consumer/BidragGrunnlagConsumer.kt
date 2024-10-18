@@ -43,6 +43,16 @@ class BidragGrunnlagConsumer(
                             behandling,
                         ),
                 )
+
+            if (listOf(TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG).contains(behandlingstype)) {
+                requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
+                    oppretteGrunnlagsobjekter(
+                        Personident(behandling.bidragspliktig!!.ident!!),
+                        Rolletype.BIDRAGSPLIKTIG,
+                        behandling,
+                    )
+            }
+
             behandling.søknadsbarn
                 .filter { sb -> sb.ident != null }
                 .map { Personident(it.ident!!) }
@@ -53,27 +63,7 @@ class BidragGrunnlagConsumer(
                             Rolletype.BARN,
                             behandling,
                         )
-                    if (TypeBehandling.SÆRBIDRAG == behandlingstype) {
-                        requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
-                            oppretteGrunnlagsobjekter(
-                                Personident(behandling.bidragspliktig!!.ident!!),
-                                Rolletype.BIDRAGSPLIKTIG,
-                                behandling,
-                            )
-                    } else if (TypeBehandling.BIDRAG == behandlingstype) {
-//                        throw HttpClientErrorException(
-//                            HttpStatus.BAD_REQUEST,
-//                            "Behandlingstype ${TypeBehandling.BIDRAG} støttes foreløpig ikke i denne løsningen.",
-//                        )
-                        requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
-                            oppretteGrunnlagsobjekter(
-                                Personident(behandling.bidragspliktig!!.ident!!),
-                                Rolletype.BIDRAGSPLIKTIG,
-                                behandling,
-                            )
-                    }
                 }
-
             return requestobjekterGrunnlag
         }
 

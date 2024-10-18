@@ -60,6 +60,7 @@ import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
 import no.nav.bidrag.transport.notat.NotatBeregnetInntektDto
 import no.nav.bidrag.transport.notat.NotatBoforholdDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragsevneDto
+import no.nav.bidrag.transport.notat.NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto
 import no.nav.bidrag.transport.notat.NotatInntektDto
 import no.nav.bidrag.transport.notat.NotatInntekterDto
 import no.nav.bidrag.transport.notat.NotatInntektspostDto
@@ -290,7 +291,21 @@ class NotatOpplysningerService(
                                             )
                                         },
                                     delberegningUtgift = it.delberegningUtgift,
-                                    delberegningSumLøpendeBidrag = it.delberegningSumLøpendeBidrag,
+                                    delberegningBidragspliktigesBeregnedeTotalbidrag =
+                                        it.delberegningBidragspliktigesBeregnedeTotalBidrag?.let {
+                                            NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto(
+                                                bidragspliktigesBeregnedeTotalbidrag = it.bidragspliktigesBeregnedeTotalbidrag,
+                                                periode = it.periode,
+                                                beregnetBidragPerBarnListe =
+                                                    it.beregnetBidragPerBarnListe.map {
+                                                        NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto
+                                                            .NotatBeregnetBidragPerBarnDto(
+                                                                beregnetBidragPerBarn = it.beregnetBidragPerBarn,
+                                                                personidentBarn = it.personidentBarn,
+                                                            )
+                                                    },
+                                            )
+                                        },
                                     delberegningBidragsevne =
                                         it.delberegningBidragsevne?.let {
                                             NotatDelberegningBidragsevneDto(

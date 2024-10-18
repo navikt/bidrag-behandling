@@ -52,7 +52,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumLøpendeBidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
@@ -606,11 +606,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
         assertSoftly(opprettVedtakRequest) {
             grunnlagsliste shouldHaveSize 101
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG)) {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
-                val innhold = grunnlag.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
-                innhold.sumLøpendeBidrag shouldBe BigDecimal("4208.00")
+                val innhold = grunnlag.innholdTilObjekt<DelberegningBidragspliktigesBeregnedeTotalbidrag>()
+                innhold.bidragspliktigesBeregnedeTotalbidrag shouldBe BigDecimal("4208.00")
                 grunnlagsliste
                     .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                         Grunnlagstype.SJABLON_SAMVARSFRADRAG,
@@ -628,10 +628,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 innhold.endeligAndelFaktor shouldBe BigDecimal("0.4919")
                 innhold.andelBeløp shouldBe BigDecimal("9838")
             }
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG)) {
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG)) {
                 shouldHaveSize(1)
-                val innhold = innholdTilObjekt<DelberegningSumLøpendeBidrag>().first()
-                innhold.sumLøpendeBidrag shouldBe BigDecimal("4208.00")
+                val innhold = innholdTilObjekt<DelberegningBidragspliktigesBeregnedeTotalbidrag>().first()
+                innhold.bidragspliktigesBeregnedeTotalbidrag shouldBe BigDecimal("4208.00")
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
@@ -1931,16 +1931,16 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }
 
-        val delberegningSumLøpendeBidragGrunnlag =
+        val delberegningBPsBeregnedeTotalbidragGrunnlag =
             grunnlagListe
                 .finnGrunnlagSomErReferertAv(
-                    Grunnlagstype.DELBEREGNING_SUM_LØPENDE_BIDRAG,
+                    Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG,
                     sluttberegningSærbidrag.first(),
                 ).first()
 
-        assertSoftly(delberegningSumLøpendeBidragGrunnlag) {
-            val innhold = it.innholdTilObjekt<DelberegningSumLøpendeBidrag>()
-            innhold.sumLøpendeBidrag.setScale(0, RoundingMode.HALF_UP) shouldBe BigDecimal(9263)
+        assertSoftly(delberegningBPsBeregnedeTotalbidragGrunnlag) {
+            val innhold = it.innholdTilObjekt<DelberegningBidragspliktigesBeregnedeTotalbidrag>()
+            innhold.bidragspliktigesBeregnedeTotalbidrag.setScale(0, RoundingMode.HALF_UP) shouldBe BigDecimal(9263)
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }
 
