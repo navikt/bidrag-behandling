@@ -300,10 +300,11 @@ class BehandlingService(
                     oppdaterInntekter()
                 }
 
-                TypeBehandling.BIDRAG -> throw HttpClientErrorException(
-                    HttpStatus.BAD_REQUEST,
-                    "Endring av virkningstidspunkt er ikke implementert for behandlingstype BIDRAG",
-                )
+                TypeBehandling.BIDRAG -> {
+                    oppdaterBoforhold()
+                    oppdaterSivilstand()
+                    oppdaterInntekter()
+                }
             }
         }
     }

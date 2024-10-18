@@ -1435,8 +1435,11 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
         feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
     ) {
-        Grunnlagsdatatype
-            .grunnlagsdatatypeobjekter(behandling.tilType(), rolleInhentetFor.rolletype)
+        val behandlingstype = behandling.tilType()
+        val grunnlagsdatatypeobjekter =
+            Grunnlagsdatatype.grunnlagsdatatypeobjekter(behandlingstype, rolleInhentetFor.rolletype)
+
+        grunnlagsdatatypeobjekter
             .filter {
                 !setOf(
                     Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
