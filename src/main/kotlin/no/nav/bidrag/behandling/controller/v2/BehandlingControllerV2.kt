@@ -12,6 +12,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
@@ -30,6 +32,8 @@ import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -327,7 +331,18 @@ class BehandlingControllerV2(
         @Valid
         @RequestBody(required = true)
         opprettBehandling: OpprettBehandlingRequest,
-    ): OpprettBehandlingResponse = behandlingService.opprettBehandling(opprettBehandling)
+    ): OpprettBehandlingResponse =
+        behandlingService.opprettBehandling(
+            // TODO: Dette er midlertidlig ved testing av særbidrag i prod hvor kategori ikke er satt. Skal fjernes før vi skrur på for alle
+            opprettBehandling.copy(
+                kategori =
+                    if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG && opprettBehandling.kategori == null) {
+                        OpprettKategoriRequestDto(kategori = Særbidragskategori.ANNET.name, "Testing av særbidrag")
+                    } else {
+                        opprettBehandling.kategori
+                    },
+            ),
+        )
 
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingId}/roller")
