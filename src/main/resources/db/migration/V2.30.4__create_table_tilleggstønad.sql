@@ -4,7 +4,7 @@ create table if not exists tilleggsstønad
     underholdskostnad_id bigint not null,
     fom date not null,
     tom date default null,
-    dagsats numeric,
+    dagsats numeric not null,
     constraint fk_underholdskostnad foreign key (underholdskostnad_id) references underholdskostnad(id) match simple
         on update no action
         on delete no action

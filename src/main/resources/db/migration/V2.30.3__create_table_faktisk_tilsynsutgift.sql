@@ -4,7 +4,7 @@ create table if not exists faktisk_tilsynsutgift
     underholdskostnad_id bigint not null,
     fom date not null,
     tom date default null,
-    tilsynsutgift numeric,
+    tilsynsutgift numeric not null,
     kostpenger numeric,
     kommentar text,
     constraint fk_underholdskostnad foreign key (underholdskostnad_id) references underholdskostnad(id) match simple

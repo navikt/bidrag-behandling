@@ -4,9 +4,9 @@ create table if not exists barnetilsyn
     underholdskostnad_id bigint not null ,
     fom date not null,
     tom date default null,
-    under_skolealder boolean,
-    omfang text,
-    kilde text,
+    under_skolealder boolean not null,
+    omfang text not null,
+    kilde text not null,
     constraint fk_underholdskostnad foreign key (underholdskostnad_id) references underholdskostnad(id) match simple
         on update no action
         on delete no action
