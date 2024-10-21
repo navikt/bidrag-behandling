@@ -13,6 +13,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
+import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDate
@@ -25,8 +26,8 @@ open class Samværsperiode(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "samvær_id", nullable = false)
     open var samvær: Samvær,
-    open var datoFom: LocalDate,
-    open var datoTom: LocalDate?,
+    open var fom: LocalDate,
+    open var tom: LocalDate?,
     @Enumerated(EnumType.STRING)
     open var samværsklasse: Samværsklasse,
     @Id
@@ -37,46 +38,15 @@ open class Samværsperiode(
     open var beregningJson: String? = null,
 ) {
     override fun toString(): String =
-        "Samværsperiode(id=$id, datoFom=$datoFom, datoTom=$datoTom, samværsklasse=$samværsklasse, beregning=$beregningJson)"
+        "Samværsperiode(id=$id, datoFom=$fom, datoTom=$tom, samværsklasse=$samværsklasse, beregning=$beregningJson)"
 
     val beregning get() =
         try {
-            commonObjectmapper.readValue(beregningJson, Samværskalkulator::class.java)
+            commonObjectmapper.readValue(beregningJson, SamværskalkulatorDetaljer::class.java)
         } catch (e: Exception) {
             log.error {
                 "Kunne ikke deserialisere samværskalkulator beregning for samvær ${samvær.id}:$id i behandling ${samvær.behandling.id}"
             }
             null
         }
-}
-
-data class Samværskalkulator(
-    val ferier: List<SamværskalkulatorFerie> = emptyList(),
-    val regelmessigSamværNetter: Int,
-    val samværsklasse: Samværsklasse,
-) {
-    data class SamværskalkulatorFerie(
-        val type: SamværskalkulatorFerietype,
-        val bidragsmottaker: SamværskalkulatorFerieNetter,
-        val bidragspliktig: SamværskalkulatorFerieNetter,
-    )
-
-    data class SamværskalkulatorFerieNetter(
-        val antallNetter: Int = 0,
-        val frekvens: SamværskalkulatorNetterFrekvens,
-    )
-
-    enum class SamværskalkulatorNetterFrekvens {
-        HVERT_ÅR,
-        ANNEN_HVERT_ÅR,
-    }
-
-    enum class SamværskalkulatorFerietype {
-        JUL_NYTTÅR,
-        VINTERFERIE,
-        PÅSKE,
-        SOMMERFERIE,
-        HØSTFERIE,
-        ANNET,
-    }
 }
