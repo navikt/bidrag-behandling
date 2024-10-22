@@ -25,7 +25,7 @@ data class SamværValideringsfeilDto(
 ) {
     @get:JsonIgnore
     val harFeil
-        get() = manglerBegrunnelse || ingenLøpendeSamvær || manglerSamvær
+        get() = manglerBegrunnelse || ingenLøpendeSamvær || manglerSamvær || overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty()
 }
 
 data class OverlappendeSamværPeriode(

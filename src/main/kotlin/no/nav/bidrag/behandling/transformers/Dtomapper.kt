@@ -147,7 +147,7 @@ class Dtomapper(
             )
         }
 
-    fun Behandling.tilSamværDtoListe() =
+    fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
             samvær.map { it.tilDto() }
         } else {
@@ -465,7 +465,7 @@ class Dtomapper(
             ),
         aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
         utgift = tilUtgiftDto(),
-        samvær = tilSamværDtoListe(),
+        samvær = tilSamværDto(),
         ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
         feilOppståttVedSisteGrunnlagsinnhenting =
             grunnlagsinnhentingFeilet?.let {

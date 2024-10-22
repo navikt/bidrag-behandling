@@ -60,8 +60,19 @@ class SamværService(
     ) {
         if (request.id == null) {
             val nyPeriode =
-                Samværsperiode(oppdaterSamvær, request.periode.fom, request.periode.tom, request.samværsklasse!!)
+                Samværsperiode(
+                    oppdaterSamvær,
+                    request.periode.fom,
+                    request.periode.tom,
+                    request.samværsklasse!!,
+                    beregningJson = request.beregning.tilJsonString(),
+                )
             oppdaterSamvær.perioder.add(nyPeriode)
+//            oppdaterSamvær.perioder
+//                .maxByOrNull { it.fom }
+//                ?.let {
+//                    it.tom = nyPeriode.fom.minusDays(1)
+//                }
         } else {
             val oppdaterPeriode =
                 oppdaterSamvær.perioder.find { it.id == request.id }
@@ -106,6 +117,8 @@ class SamværService(
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
 
+    private fun SamværskalkulatorDetaljer?.tilJsonString() = this?.let { commonObjectmapper.writeValueAsString(it) }
+
     fun oppdaterSamværsperiodeBeregning(
         behandlingsid: Long,
         request: OppdaterSamværskalkulatorBeregningDto,
@@ -119,7 +132,7 @@ class SamværService(
             oppdaterSamvær.perioder.find { it.id == request.samværsperiodeId }
                 ?: ugyldigForespørsel("Fant ikke samværsperiode med id ${request.samværsperiodeId} i samvær ${oppdaterSamvær.id}")
 
-        oppdaterPeriode.beregningJson = commonObjectmapper.writeValueAsString(request.beregning)
+        oppdaterPeriode.beregningJson = request.beregning.tilJsonString()
         oppdaterPeriode.samværsklasse = beregnSamværsklasse(request.beregning)
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }

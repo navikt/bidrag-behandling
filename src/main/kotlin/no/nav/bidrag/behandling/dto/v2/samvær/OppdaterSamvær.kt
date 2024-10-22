@@ -17,9 +17,6 @@ data class OppdaterSamværDto(
 data class OppdaterSamværResponsDto(
     @Schema(description = "Samvær som ble oppdatert")
     val oppdatertSamvær: SamværDto? = null,
-    @Schema(description = "Saksbehandlers begrunnelse")
-    val begrunnelse: String? = null,
-    val valideringsfeil: SamværValideringsfeilDto?,
 )
 
 data class OppdaterSamværsperiodeDto(
@@ -36,11 +33,6 @@ data class OppdaterSamværskalkulatorBeregningDto(
     val samværsklasse: Samværsklasse?,
 )
 
-data class SlettSamværsberegningDto(
-    val samværId: Long,
-    val samværsperiodeId: Long,
-)
-
 data class SletteSamværsperiodeElementDto(
     val gjelderBarn: String,
     val samværsperiodeId: Long,
@@ -49,9 +41,9 @@ data class SletteSamværsperiodeElementDto(
 data class SamværDto(
     val id: Long,
     val gjelderBarn: String,
-    val perioder: List<SamværsperiodeDto> = emptyList(),
     val begrunnelse: BegrunnelseDto?,
     val valideringsfeil: SamværValideringsfeilDto?,
+    val perioder: List<SamværsperiodeDto> = emptyList(),
 ) {
     data class SamværsperiodeDto(
         val id: Long? = null,

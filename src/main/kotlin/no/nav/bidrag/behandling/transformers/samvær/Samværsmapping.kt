@@ -12,25 +12,28 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 fun Samvær.tilOppdaterSamværResponseDto() =
     OppdaterSamværResponsDto(
         oppdatertSamvær = tilDto(),
-        valideringsfeil = mapValideringsfeil(),
     )
+
+fun Samvær.tilBegrunnelse() =
+    behandling.notater.find { it.rolle.id == rolle.id && it.type == NotatGrunnlag.NotatType.SAMVÆR }?.let {
+        BegrunnelseDto(it.innhold, it.rolle.tilDto())
+    }
 
 fun Samvær.tilDto() =
     SamværDto(
         id = id!!,
         gjelderBarn = rolle.ident!!,
-        begrunnelse =
-            behandling.notater.find { it.rolle.id == rolle.id && it.type == NotatGrunnlag.NotatType.SAMVÆR }?.let {
-                BegrunnelseDto(it.innhold, it.rolle.tilDto())
-            },
-        valideringsfeil = mapValideringsfeil(),
+        begrunnelse = tilBegrunnelse(),
+        valideringsfeil = mapValideringsfeil().takeIf { it.harFeil },
         perioder =
-            perioder.map {
-                SamværDto.SamværsperiodeDto(
-                    id = it.id,
-                    periode = DatoperiodeDto(it.fom, it.tom),
-                    samværsklasse = it.samværsklasse,
-                    beregning = it.beregning,
-                )
-            },
+            perioder
+                .sortedBy { it.fom }
+                .map {
+                    SamværDto.SamværsperiodeDto(
+                        id = it.id,
+                        periode = DatoperiodeDto(it.fom, it.tom),
+                        samværsklasse = it.samværsklasse,
+                        beregning = it.beregning,
+                    )
+                },
     )
