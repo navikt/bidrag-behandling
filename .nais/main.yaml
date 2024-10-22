@@ -53,7 +53,7 @@ database:
   tier: db-f1-micro
 outbound-access-apps:
   - bidrag-grunnlag
-  - bidrag-stonad-syntetisk
+  - bidrag-stonad-q2
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
   - bidrag-vedtak-q2
