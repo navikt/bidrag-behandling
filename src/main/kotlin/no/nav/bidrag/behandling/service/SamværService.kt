@@ -67,12 +67,12 @@ class SamværService(
                     request.samværsklasse!!,
                     beregningJson = request.beregning.tilJsonString(),
                 )
+            oppdaterSamvær.perioder
+                .maxByOrNull { it.fom }
+                ?.let {
+                    it.tom = it.tom ?: nyPeriode.fom.minusDays(1)
+                }
             oppdaterSamvær.perioder.add(nyPeriode)
-//            oppdaterSamvær.perioder
-//                .maxByOrNull { it.fom }
-//                ?.let {
-//                    it.tom = nyPeriode.fom.minusDays(1)
-//                }
         } else {
             val oppdaterPeriode =
                 oppdaterSamvær.perioder.find { it.id == request.id }
