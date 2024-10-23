@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.repository.SamværRepository
+import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværskalkulatorBeregningDto
@@ -18,6 +19,7 @@ import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.stereotype.Service
+import java.time.temporal.TemporalAdjusters
 
 private val log = KotlinLogging.logger {}
 
@@ -69,6 +71,7 @@ class SamværService(
                 )
             oppdaterSamvær.perioder
                 .maxByOrNull { it.fom }
+                ?.takeIf { it.fom.isBefore(nyPeriode.fom) }
                 ?.let {
                     it.tom = it.tom ?: nyPeriode.fom.minusDays(1)
                 }
@@ -79,8 +82,54 @@ class SamværService(
                     ?: ugyldigForespørsel("Fant ikke samværsperiode med id ${request.id} i samvær ${oppdaterSamvær.id}")
             oppdaterPeriode.fom = request.periode.fom
             oppdaterPeriode.tom = request.periode.tom
+            request.beregning?.let {
+                oppdaterPeriode.beregningJson = it.tilJsonString()
+            }
             oppdaterPeriode.samværsklasse = request.samværsklasse ?: oppdaterPeriode.samværsklasse
         }
+    }
+
+    fun fillGapsBetweenPeriods(
+        periods: MutableList<DatoperiodeDto>,
+        newPeriod: DatoperiodeDto,
+    ): List<DatoperiodeDto> {
+        // Add the new period to the list
+        periods.add(newPeriod)
+
+        // Sort periods by start date
+        periods.sortBy { it.fom }
+
+        val filledPeriods = mutableListOf<DatoperiodeDto>()
+
+        for (i in periods.indices) {
+            val period = periods[i]
+
+            // Ensure the period starts at the beginning of the month
+            period.fom = period.fom.with(TemporalAdjusters.firstDayOfMonth())
+
+            // Ensure the period ends at the end of the month if not null
+            period.tom = period.tom?.with(TemporalAdjusters.lastDayOfMonth())
+
+            // Add the current period to the filled periods list
+            filledPeriods.add(period)
+
+            // Check for gaps and add new periods if necessary
+            if (i < periods.size - 1) {
+                val nextPeriod = periods[i + 1]
+                val expectedNextStart = period.tom?.plusDays(1)?.with(TemporalAdjusters.firstDayOfMonth())
+
+                if (expectedNextStart != null && nextPeriod.fom.isAfter(expectedNextStart)) {
+                    filledPeriods.add(
+                        DatoperiodeDto(
+                            fom = expectedNextStart,
+                            tom = nextPeriod.fom.minusDays(1).with(TemporalAdjusters.lastDayOfMonth()),
+                        ),
+                    )
+                }
+            }
+        }
+
+        return periods
     }
 
     fun slettPeriode(
