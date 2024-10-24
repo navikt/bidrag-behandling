@@ -17,7 +17,7 @@ fun Samvær.tilOppdaterSamværResponseDto() =
 fun Samvær.tilBegrunnelse() =
     behandling.notater.find { it.rolle.id == rolle.id && it.type == NotatGrunnlag.NotatType.SAMVÆR }?.let {
         BegrunnelseDto(it.innhold, it.rolle.tilDto())
-    }
+    } ?: BegrunnelseDto("", rolle.tilDto())
 
 fun Samvær.tilDto() =
     SamværDto(
