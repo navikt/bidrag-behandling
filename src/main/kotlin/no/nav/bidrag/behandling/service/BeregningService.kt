@@ -238,7 +238,7 @@ class BeregningService(
                 if (beregnetBPsEvne == (sumLøpendeBidrag + BigDecimal.ONE)) {
                     result = inntektBeløp.toBigDecimal()
                     high = inntektBeløp - 1
-                } else if (beregnetBPsEvne < sumLøpendeBidrag) {
+                } else if (beregnetBPsEvne <= sumLøpendeBidrag) {
                     low = inntektBeløp + 1
                 } else {
                     high = inntektBeløp - 1
