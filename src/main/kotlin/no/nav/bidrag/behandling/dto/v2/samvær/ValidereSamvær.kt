@@ -89,5 +89,11 @@ fun OppdaterSamværDto.valider() {
 fun OppdaterSamværsperiodeDto.valider(): MutableList<String> {
     val feilliste = mutableListOf<String>()
 
+    if (samværsklasse != null && beregning != null) {
+        feilliste.add("Kan ikke sette beregning og manuell samværsklasse samtidig")
+    }
+    if (samværsklasse == null && beregning == null) {
+        feilliste.add("Samværsklasse eller beregning må settes")
+    }
     return feilliste
 }

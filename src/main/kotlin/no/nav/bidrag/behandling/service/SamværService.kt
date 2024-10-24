@@ -60,13 +60,14 @@ class SamværService(
         request: OppdaterSamværsperiodeDto,
         oppdaterSamvær: Samvær,
     ) {
+        val oppdatertSamværsklasse = request.beregning?.let { beregnSamværsklasse(it) } ?: request.samværsklasse
         if (request.id == null) {
             val nyPeriode =
                 Samværsperiode(
                     oppdaterSamvær,
                     request.periode.fom,
                     request.periode.tom,
-                    request.samværsklasse!!,
+                    oppdatertSamværsklasse!!,
                     beregningJson = request.beregning.tilJsonString(),
                 )
             oppdaterSamvær.perioder
@@ -82,10 +83,8 @@ class SamværService(
                     ?: ugyldigForespørsel("Fant ikke samværsperiode med id ${request.id} i samvær ${oppdaterSamvær.id}")
             oppdaterPeriode.fom = request.periode.fom
             oppdaterPeriode.tom = request.periode.tom
-            request.beregning?.let {
-                oppdaterPeriode.beregningJson = it.tilJsonString()
-            }
-            oppdaterPeriode.samværsklasse = request.samværsklasse ?: oppdaterPeriode.samværsklasse
+            oppdaterPeriode.beregningJson = request.beregning.tilJsonString()
+            oppdaterPeriode.samværsklasse = oppdatertSamværsklasse ?: oppdaterPeriode.samværsklasse
         }
     }
 
