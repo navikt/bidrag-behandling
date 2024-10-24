@@ -160,21 +160,22 @@ class BehandlingService(
                 kategoriBeskrivelse = opprettBehandling.kategori?.beskrivelse,
             )
 
-        if (opprettBehandling.tilType() == TypeBehandling.BIDRAG) {
-            behandling.samvær = behandling.søknadsbarn.map { Samvær(behandling, rolle = it) }.toMutableSet()
-        }
-        if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG) {
-            behandling.utgift = Utgift(behandling = behandling)
-        }
-
-        val roller =
+        behandling.roller.addAll(
             HashSet(
                 opprettBehandling.roller.map {
                     it.toRolle(behandling)
                 },
-            )
+            ),
+        )
 
-        behandling.roller.addAll(roller)
+        if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG) {
+            behandling.utgift = Utgift(behandling = behandling)
+        }
+
+        if (opprettBehandling.tilType() == TypeBehandling.BIDRAG) {
+            behandling.samvær = behandling.søknadsbarn.map { Samvær(behandling, rolle = it) }.toMutableSet()
+        }
+
         val behandlingDo = opprettBehandling(behandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
