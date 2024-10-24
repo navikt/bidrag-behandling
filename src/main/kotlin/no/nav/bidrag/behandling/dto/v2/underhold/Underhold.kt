@@ -6,27 +6,26 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.Periode
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
-data class OppdatereUnderholdskostnad(
+data class OppdatereUnderhold(
     @Schema(description = "Barnet underholdskostnaden gjelder.")
     val gjelderBarn: BarnDto,
+
     val harTilsynsordning: Boolean? = null,
-    val stønadTilBarnetilsynDto: StønadTilBarnetilsynDto? = null,
+    val stønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
     val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,
     val tilleggsstønad: TilleggsstønadDto? = null,
-    val slette: SletteUnderholdselement? = null,
 )
 
 data class SletteUnderholdselement(
-    val id: Long,
+    val idUnderhold: Long,
+    val idElement: Long,
     val type: Underholdselement,
 )
 
-enum class Underholdselement { BARN, FAKTISK_TILSYNSUGIFT, STØNAD_TIL_BARNETILSYN, TILLEGGSSTØNAD, UNDERHOLDSKOSTNAD }
+enum class Underholdselement { BARN, FAKTISK_TILSYNSUGIFT, STØNAD_TIL_BARNETILSYN, TILLEGGSSTØNAD }
 
 data class BarnDto(
     val id: Long? = null,
@@ -37,15 +36,15 @@ data class BarnDto(
 data class UnderholdDto(
     val id: Long,
     val gjelderBarn: PersoninfoDto,
-    val harTilsynsordning: Boolean = false,
+    val harTilsynsordning: Boolean? = null,
     val stønadTilBarnetilsyn: Set<StønadTilBarnetilsynDto> = emptySet(),
-    val faktiskeTilsynsutgifter: Set<FaktiskTilsynsutgiftDto> = emptySet(),
+    val faktiskeTilsynsutgifter: Set<FaktiskTilsynsutgiftDto>,
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
-    val underholdskostnand: UnderholdskostnadDto,
+    val underholdskostnad: Set<UnderholdskostnadDto>,
 )
 
 data class UnderholdskostnadDto(
-    val periode: ÅrMånedsperiode,
+    val periode: DatoperiodeDto,
     val forbruk: BigDecimal = BigDecimal.ZERO,
     val boutgifter: BigDecimal = BigDecimal.ZERO,
     val stønadTilBarnetilsyn: BigDecimal = BigDecimal.ZERO,
@@ -58,7 +57,7 @@ data class UnderholdskostnadDto(
 
 data class TilleggsstønadDto(
     val id: Long,
-    val periode: Periode<LocalDate>,
+    val periode: DatoperiodeDto,
     val dagsats: BigDecimal,
 ) {
     // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
@@ -68,7 +67,7 @@ data class TilleggsstønadDto(
 
 data class FaktiskTilsynsutgiftDto(
     val id: Long,
-    val periode: Periode<LocalDate>,
+    val periode: DatoperiodeDto,
     val utgift: BigDecimal,
     val kostpenger: BigDecimal = BigDecimal.ZERO,
     val kommentar: String? = null,
@@ -79,8 +78,13 @@ data class FaktiskTilsynsutgiftDto(
 
 data class StønadTilBarnetilsynDto(
     val id: Long,
-    val periode: Periode<LocalDate>,
+    val periode: DatoperiodeDto,
     val skolealder: Skolealder,
     val tilsynstype: Tilsynstype,
     val klde: Kilde,
+)
+
+data class DatoperiodeDto(
+    val fom: LocalDate,
+    val tom: LocalDate? = null,
 )

@@ -6,26 +6,33 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdskostnad
+import no.nav.bidrag.behandling.behandlingNotFoundException
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderhold
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
-import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
+import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.service.UnderholdService
+import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
 @BehandlingRestControllerV2
-class UnderholdController {
+class UnderholdController(
+    private val behandlingRepository: BehandlingRepository,
+    private val underholdService: UnderholdService,
+) {
     @DeleteMapping("/behandling/{behandlingsid}/underhold")
     @Operation(
-        description = "Oppdatere underholdskostnad for behandling. Returnerer oppdaterte behandlingsdetaljer.",
+        description = "Oppdatere underholdskostnad for behandling. Returnerer oppdaterte underholdsobjekt. Objektet " +
+                " vil være null dersom barn slettes.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -39,25 +46,22 @@ class UnderholdController {
     fun sletteFraUnderhold(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: SletteUnderholdselement,
-    ): UnderholdDto {
+    ): ResponseEntity<UnderholdDto> {
         log.info { "Sletter fra underholdskostnad i behandling $behandlingsid" }
-        secureLogger.info { "Sletter fra underholdskostn i behandling $behandlingsid med forespørsel $request" }
+        secureLogger.info { "Sletter fra underholdskostnad i behandling $behandlingsid med forespørsel $request" }
 
-        // TODO: Implement me
-        log.warn { "API for å slette fra underholdskostnad er ikke implementert!" }
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        return UnderholdDto(
-            id = 1L,
-            gjelderBarn = PersoninfoDto(),
-            underholdskostnand =
-                UnderholdskostnadDto(
-                    periode =
-                        ÅrMånedsperiode(
-                            LocalDate.now(),
-                            null,
-                        ),
-                ),
-        )
+        val underholdDto = underholdService.sletteFraUnderhold(behandling, request)
+
+        if (Underholdselement.BARN == request.type && underholdDto == null) {
+            return ResponseEntity(null, HttpStatus.ACCEPTED)
+        }
+
+        return ResponseEntity(underholdDto, HttpStatus.OK)
     }
 
     @PutMapping("/behandling/{behandlingsid}/underhold")
@@ -75,25 +79,16 @@ class UnderholdController {
     )
     fun oppdatereUnderhold(
         @PathVariable behandlingsid: Long,
-        @Valid @RequestBody(required = true) request: OppdatereUnderholdskostnad,
-    ): UnderholdDto {
+        @Valid @RequestBody(required = true) request: OppdatereUnderhold,
+    ): UnderholdDto? {
         log.info { "Oppdaterer underholdskostnad for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer underholdskostnad for behandling $behandlingsid med forespørsel $request" }
 
-        // TODO: Implement me
-        log.warn { "API for å oppdatere underholdskostnad er ikke implementert!" }
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        return UnderholdDto(
-            id = 1L,
-            gjelderBarn = PersoninfoDto(),
-            underholdskostnand =
-                UnderholdskostnadDto(
-                    periode =
-                        ÅrMånedsperiode(
-                            LocalDate.now(),
-                            null,
-                        ),
-                ),
-        )
+        return underholdService.oppdatereUnderhold(behandling, request)
     }
 }
