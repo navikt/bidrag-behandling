@@ -27,7 +27,6 @@ import java.time.LocalDate
 class UnderholdService(
     private val beregneBidragService: BeregneBidragService,
 ) {
-
     @Transactional
     fun oppdatereStønadTilBarnetilsyn(
         underholdskostnad: Underholdskostnad,
@@ -77,7 +76,6 @@ class UnderholdService(
         behandling: Behandling,
         request: SletteUnderholdselement,
     ): UnderholdDto? {
-
         request.validere(behandling)
 
         val underholdskostnad = behandling.underholdskostnad.find { request.idUnderhold == it.id }!!
@@ -97,7 +95,7 @@ class UnderholdService(
 
     fun sletteStønadTilBarnetilsyn(
         underholdskostnad: Underholdskostnad,
-        idElement: Long
+        idElement: Long,
     ): UnderholdDto {
         val stønadTilBarnetilsyn = underholdskostnad.barnetilsyn.find { idElement == it.id }
         underholdskostnad.barnetilsyn.remove(stønadTilBarnetilsyn)
@@ -106,7 +104,7 @@ class UnderholdService(
 
     fun sletteTilleggsstønad(
         underholdskostnad: Underholdskostnad,
-        idElement: Long
+        idElement: Long,
     ): UnderholdDto {
         val tilleggsstønad = underholdskostnad.tilleggsstønad.find { idElement == it.id }
         underholdskostnad.tilleggsstønad.remove(tilleggsstønad)
@@ -164,7 +162,7 @@ fun oppretteUnderholdDtoMock() =
         id = 1L,
         faktiskeTilsynsutgifter = emptySet(),
         gjelderBarn = PersoninfoDto(),
-        underholdskostnad = emptySet()
+        underholdskostnad = emptySet(),
     )
 
 // TODO: Erstatte med ny bidragsberegningsmodul

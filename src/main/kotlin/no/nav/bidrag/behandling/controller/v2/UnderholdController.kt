@@ -39,7 +39,8 @@ class UnderholdController(
     @ResponseStatus(HttpStatus.ACCEPTED)
     @DeleteMapping("/behandling/{behandlingsid}/underhold")
     @Operation(
-        description = "Oppdatere underholdskostnad for behandling. Returnerer oppdaterte underholdsobjekt. Objektet " +
+        description =
+            "Oppdatere underholdskostnad for behandling. Returnerer oppdaterte underholdsobjekt. Objektet " +
                 " vil være null dersom barn slettes.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -71,11 +72,12 @@ class UnderholdController(
         return underholdDto
     }
 
-    //TODO: implementere
+    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/barnetilsyn/")
     @Operation(
-        description = "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
+        description =
+            "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
                 "element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -105,11 +107,12 @@ class UnderholdController(
         return underholdService.oppdatereStønadTilBarnetilsyn(underholdskostnad, request)
     }
 
-    //TODO: implementere
+    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/faktisk_tilsynsutgift")
     @Operation(
-        description = "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
+        description =
+            "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
                 "element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -139,11 +142,12 @@ class UnderholdController(
         return underholdService.oppdatereFaktiskTilsynsutgift(underholdskostnad, request)
     }
 
-    //TODO: implementere
+    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilleggsstønad")
     @Operation(
-        description = "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
+        description =
+            "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
                 "element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -173,7 +177,7 @@ class UnderholdController(
         return underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
     }
 
-    //TODO: implementere
+    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")
     @Operation(
@@ -191,10 +195,10 @@ class UnderholdController(
     fun angiTilsynsordning(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
-        @RequestParam(required = true) harTilsynsordning: Boolean
+        @RequestParam(required = true) harTilsynsordning: Boolean,
     ) = true
 
-    //TODO: implementere
+    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/behandling/{behandlingsid}/underhold/opprette")
     @Operation(
@@ -211,8 +215,6 @@ class UnderholdController(
     )
     fun oppretteUnderholdForBarn(
         @PathVariable behandlingsid: Long,
-        @RequestBody(required = true) gjelderBarn: BarnDto
-    ): UnderholdDto {
-        return oppretteUnderholdDtoMock()
-    }
+        @RequestBody(required = true) gjelderBarn: BarnDto,
+    ): UnderholdDto = oppretteUnderholdDtoMock()
 }

@@ -64,10 +64,11 @@ data class ValideringsfeilUnderhold(
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() ||
-                    overlappendePerioder.isNotEmpty() ||
-                    fremtidigPeriode ||
-                    harIngenPerioder
+                overlappendePerioder.isNotEmpty() ||
+                fremtidigPeriode ||
+                harIngenPerioder
 }
+
 data class UnderholdskostnadDto(
     val periode: DatoperiodeDto,
     val forbruk: BigDecimal = BigDecimal.ZERO,
