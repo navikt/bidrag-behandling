@@ -27,7 +27,7 @@ UNLEASH_SERVER_API_TOKEN: some_token
 UNLEASH_SERVER_API_TYPE: CLIENT
 UNLEASH_FETCH_SYNC: false
 logging.level:
-  secureLogger: INFO
+  secureLogger: OFF
 no.nav.security.jwt:
   client:
     registration:

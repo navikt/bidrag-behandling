@@ -74,7 +74,7 @@ class UnderholdController(
 
     // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
-    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/barnetilsyn/")
+    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/barnetilsyn")
     @Operation(
         description =
             "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
