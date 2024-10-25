@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers.underhold
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
@@ -16,7 +17,8 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
 
     when (this.type) {
         Underholdselement.BARN -> {
-            val rolle = underhold.person.rolle.firstOrNull()
+            // TODO: legges inn i fbm bd-1920
+            val rolle: Rolle? = null //underhold.person.rolle.firstOrNull()
             if (rolle != null) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
