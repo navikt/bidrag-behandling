@@ -1,22 +1,23 @@
 package no.nav.bidrag.behandling.dto.v2.underhold
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
+import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
-data class OppdatereUnderhold(
-    @Schema(description = "Barnet underholdskostnaden gjelder.")
-    val gjelderBarn: BarnDto,
-
-    val harTilsynsordning: Boolean? = null,
+data class OppdatereUnderholdReponse(
     val stønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
     val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,
     val tilleggsstønad: TilleggsstønadDto? = null,
+    val underholdskostnad: UnderholdskostnadDto,
+    val valideringsfeil: ValideringsfeilUnderhold? = null,
 )
 
 data class SletteUnderholdselement(
@@ -43,6 +44,30 @@ data class UnderholdDto(
     val underholdskostnad: Set<UnderholdskostnadDto>,
 )
 
+data class OppdatereUnderholdResponse(
+    val oppdatertFaktiskTilsynsutgiftDto: FaktiskTilsynsutgiftDto? = null,
+    val oppdatertStønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
+    val oppdatertTilleggsstønadDto: TilleggsstønadDto? = null,
+    val underholdskostnadDto: UnderholdskostnadDto,
+    val valideringsfeil: ValideringsfeilUnderhold,
+)
+
+data class ValideringsfeilUnderhold(
+    val hullIPerioder: List<Datoperiode> = emptyList(),
+    val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
+    @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
+    val fremtidigPeriode: Boolean = false,
+    @Schema(description = """Er sann hvis antall perioder er 0."""")
+    val harIngenPerioder: Boolean = false,
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            hullIPerioder.isNotEmpty() ||
+                    overlappendePerioder.isNotEmpty() ||
+                    fremtidigPeriode ||
+                    harIngenPerioder
+}
 data class UnderholdskostnadDto(
     val periode: DatoperiodeDto,
     val forbruk: BigDecimal = BigDecimal.ZERO,
@@ -56,7 +81,7 @@ data class UnderholdskostnadDto(
 }
 
 data class TilleggsstønadDto(
-    val id: Long,
+    val id: Long? = null,
     val periode: DatoperiodeDto,
     val dagsats: BigDecimal,
 ) {
@@ -66,7 +91,7 @@ data class TilleggsstønadDto(
 }
 
 data class FaktiskTilsynsutgiftDto(
-    val id: Long,
+    val id: Long? = null,
     val periode: DatoperiodeDto,
     val utgift: BigDecimal,
     val kostpenger: BigDecimal = BigDecimal.ZERO,
@@ -77,7 +102,7 @@ data class FaktiskTilsynsutgiftDto(
 }
 
 data class StønadTilBarnetilsynDto(
-    val id: Long,
+    val id: Long? = null,
     val periode: DatoperiodeDto,
     val skolealder: Skolealder,
     val tilsynstype: Tilsynstype,

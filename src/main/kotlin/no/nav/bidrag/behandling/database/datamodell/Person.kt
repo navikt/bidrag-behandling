@@ -21,7 +21,7 @@ open class Person(
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @OneToMany(
         fetch = FetchType.EAGER,
-        mappedBy = "underholdskostnad",
+        mappedBy = "person",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )

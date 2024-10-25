@@ -3,13 +3,13 @@ package no.nav.bidrag.behandling.service
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
-import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.UnderholdRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderhold
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdReponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
+import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
+import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
@@ -27,15 +27,49 @@ import java.time.LocalDate
 class UnderholdService(
     private val beregneBidragService: BeregneBidragService,
 ) {
-    @Transactional
-    fun oppdatereUnderhold(
-        behandling: Behandling,
-        request: OppdatereUnderhold,
-    ): UnderholdDto {
-        request.validere(behandling)
-        
 
-        return oppretteUnderholdDtoMock()
+    @Transactional
+    fun oppdatereStønadTilBarnetilsyn(
+        underholdskostnad: Underholdskostnad,
+        request: StønadTilBarnetilsynDto,
+    ): OppdatereUnderholdReponse {
+        request.validere(underholdskostnad)
+        // TODO: implementere
+
+        request.id?.let { id ->
+            underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
+        }
+
+        return OppdatereUnderholdReponse(underholdskostnad = UnderholdskostnadDto(DatoperiodeDto(LocalDate.now())))
+    }
+
+    @Transactional
+    fun oppdatereFaktiskTilsynsutgift(
+        underholdskostnad: Underholdskostnad,
+        request: FaktiskTilsynsutgiftDto,
+    ): OppdatereUnderholdReponse {
+        request.validere(underholdskostnad)
+        // TODO: implementere
+
+        request.id?.let { id ->
+            underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
+        }
+        return OppdatereUnderholdReponse(underholdskostnad = UnderholdskostnadDto(DatoperiodeDto(LocalDate.now())))
+    }
+
+    @Transactional
+    fun oppdatereTilleggsstønad(
+        underholdskostnad: Underholdskostnad,
+        request: TilleggsstønadDto,
+    ): OppdatereUnderholdReponse {
+        request.validere(underholdskostnad)
+        // TODO: implementere
+
+        request.id?.let { id ->
+            underholdskostnad.tilleggsstønad.find { id == it.id }
+        }
+
+        return OppdatereUnderholdReponse(underholdskostnad = UnderholdskostnadDto(DatoperiodeDto(LocalDate.now())))
     }
 
     @Transactional

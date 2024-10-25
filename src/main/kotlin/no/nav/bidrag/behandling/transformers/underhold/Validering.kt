@@ -1,24 +1,19 @@
 package no.nav.bidrag.behandling.transformers.underhold
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderhold
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
+import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
+import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 
-fun OppdatereUnderhold.validere(behandling: Behandling) {
-    tilleggsstønad?.let { }
-    faktiskTilsynsutgift?.let { }
-    stønadTilBarnetilsyn?.let { }
-}
-
 fun SletteUnderholdselement.validere(behandling: Behandling) {
-    val underhold = behandling.underholdskostnad.find { this.idUnderhold == it.id }
-    if (underhold == null) {
-        ressursIkkeFunnetException("Fant ikke underholdskostnad med id ${this.idUnderhold} i behandling ${behandling.id}")
-    }
+
+    val underhold = henteOgValidereUnderholdskostnad(behandling, this.idUnderhold)
 
     when (this.type) {
         Underholdselement.BARN -> {
@@ -61,4 +56,37 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
             }
         }
     }
+}
+
+fun StønadTilBarnetilsynDto.validere(underholdskostnad: Underholdskostnad) {
+    this.id?.let { id ->
+        if (underholdskostnad.barnetilsyn.find { id == it.id } == null) {
+            ressursIkkeFunnetException("Fant ikke barnetilsyn med id ${id} i behandling ${underholdskostnad.behandling.id}")
+        }
+    }
+}
+
+fun FaktiskTilsynsutgiftDto.validere(underholdskostnad: Underholdskostnad) {
+    this.id?.let { id ->
+        if (underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id } == null) {
+            ressursIkkeFunnetException("Fant ikke faktisk tilsynsutgift med id ${id} i behandling ${underholdskostnad.behandling.id}")
+        }
+    }
+}
+
+fun TilleggsstønadDto.validere(underholdskostnad: Underholdskostnad) {
+    this.id?.let { id ->
+        if (underholdskostnad.tilleggsstønad.find { id == it.id } == null) {
+            ressursIkkeFunnetException("Fant ikke tilleggsstønad med id ${id} i behandling ${underholdskostnad.behandling.id}")
+        }
+    }
+}
+
+fun henteOgValidereUnderholdskostnad(behandling: Behandling, idUnderhold: Long): Underholdskostnad {
+    val underhold = behandling.underholdskostnad.find { idUnderhold == it.id }
+    if (underhold == null) {
+        ressursIkkeFunnetException("Fant ikke underholdskostnad med id ${idUnderhold} i behandling ${behandling.id}")
+    }
+
+    return underhold
 }
