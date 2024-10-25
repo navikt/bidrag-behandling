@@ -18,7 +18,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
     when (this.type) {
         Underholdselement.BARN -> {
             // TODO: legges inn i fbm bd-1920
-            val rolle: Rolle? = null //underhold.person.rolle.firstOrNull()
+            val rolle: Rolle? = null // underhold.person.rolle.firstOrNull()
             if (rolle != null) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
