@@ -69,6 +69,12 @@ open class Rolle(
         orphanRemoval = true,
     )
     open val husstandsmedlem: Husstandsmedlem? = null,
+    // TODO: legges inn i fbm bd-1920
+//    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(
+//        name = "person_id",
+//        nullable = true,
+//    )
+//    open val person: Person? = null,
 )
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
