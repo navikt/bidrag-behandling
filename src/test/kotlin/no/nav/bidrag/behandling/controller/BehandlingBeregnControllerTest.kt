@@ -92,7 +92,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
                     beløp shouldBe BigDecimal(1760)
-                    inntekt shouldBe BigDecimal(120000)
+                    inntekt shouldBe BigDecimal("120000.00")
                     sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                     resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
                     regel shouldBe "REGEL 6"
@@ -107,7 +107,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
                     beløp shouldBe BigDecimal(1760)
-                    inntekt shouldBe BigDecimal(60000)
+                    inntekt shouldBe BigDecimal("60000.00")
                     sivilstand shouldBe Sivilstandskode.BOR_ALENE_MED_BARN
                     resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
                     regel shouldBe "REGEL 6"
@@ -156,13 +156,13 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
         }
 
         assertSoftly(returnert.body!!) {
-            it.resultat shouldBe BigDecimal(2083)
+            it.resultat shouldBe BigDecimal("2083")
             it.resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET
             it.voksenIHusstanden shouldBe true
             it.bpHarEvne shouldBe true
             it.delberegningUtgift!!.sumGodkjent shouldBe BigDecimal(2500)
             it.beregning!!.totalKravbeløp shouldBe BigDecimal(3000)
-            it.bpsAndel!!.andelBeløp shouldBe BigDecimal(2083)
+            it.bpsAndel!!.andelBeløp shouldBe BigDecimal("2083.33")
             it.bpsAndel.endeligAndelFaktor.round(MathContext(3)) shouldBe BigDecimal(0.8333).round(MathContext(3))
         }
     }
