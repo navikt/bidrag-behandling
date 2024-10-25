@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.repository.SamværRepository
-import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværskalkulatorBeregningDto
@@ -14,13 +13,11 @@ import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.stereotype.Service
 import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
 
 private val log = KotlinLogging.logger {}
 
@@ -29,6 +26,7 @@ class SamværService(
     private val samværRepository: SamværRepository,
     private val behandlingService: BehandlingService,
     private val notatService: NotatService,
+    private val beregnSamværsklasseApi: BeregnSamværsklasseApi,
 ) {
     fun oppdaterSamvær(
         behandlingsid: Long,
@@ -61,7 +59,8 @@ class SamværService(
         request: OppdaterSamværsperiodeDto,
         oppdaterSamvær: Samvær,
     ) {
-        val oppdatertSamværsklasse = request.beregning?.let { beregnSamværsklasse(it) } ?: request.samværsklasse
+        val oppdatertSamværsklasse =
+            request.beregning?.let { beregnSamværsklasse(it).samværsklasse } ?: request.samværsklasse
         if (request.id == null) {
             val nyPeriode =
                 Samværsperiode(
@@ -89,49 +88,6 @@ class SamværService(
         }
     }
 
-    fun fillGapsBetweenPeriods(
-        periods: MutableList<DatoperiodeDto>,
-        newPeriod: DatoperiodeDto,
-    ): List<DatoperiodeDto> {
-        // Add the new period to the list
-        periods.add(newPeriod)
-
-        // Sort periods by start date
-        periods.sortBy { it.fom }
-
-        val filledPeriods = mutableListOf<DatoperiodeDto>()
-
-        for (i in periods.indices) {
-            val period = periods[i]
-
-            // Ensure the period starts at the beginning of the month
-            period.fom = period.fom.with(TemporalAdjusters.firstDayOfMonth())
-
-            // Ensure the period ends at the end of the month if not null
-            period.tom = period.tom?.with(TemporalAdjusters.lastDayOfMonth())
-
-            // Add the current period to the filled periods list
-            filledPeriods.add(period)
-
-            // Check for gaps and add new periods if necessary
-            if (i < periods.size - 1) {
-                val nextPeriod = periods[i + 1]
-                val expectedNextStart = period.tom?.plusDays(1)?.with(TemporalAdjusters.firstDayOfMonth())
-
-                if (expectedNextStart != null && nextPeriod.fom.isAfter(expectedNextStart)) {
-                    filledPeriods.add(
-                        DatoperiodeDto(
-                            fom = expectedNextStart,
-                            tom = nextPeriod.fom.minusDays(1).with(TemporalAdjusters.lastDayOfMonth()),
-                        ),
-                    )
-                }
-            }
-        }
-
-        return periods
-    }
-
     fun slettPeriode(
         behandlingsid: Long,
         request: SletteSamværsperiodeElementDto,
@@ -147,6 +103,9 @@ class SamværService(
         log.info { "Slettet samværsperiode ${slettPeriode.id} fra samvær ${oppdaterSamvær.id} i behandling $behandlingsid" }
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
+
+    fun beregnSamværsklasse(kalkulator: SamværskalkulatorDetaljer): BeregnSamværsklasseResultat =
+        beregnSamværsklasseApi.beregnSamværsklasse(kalkulator)
 
     fun slettSamværskalkulatorBeregning(
         behandlingsid: Long,
@@ -182,19 +141,8 @@ class SamværService(
                 ?: ugyldigForespørsel("Fant ikke samværsperiode med id ${request.samværsperiodeId} i samvær ${oppdaterSamvær.id}")
 
         oppdaterPeriode.beregningJson = request.beregning.tilJsonString()
-        oppdaterPeriode.samværsklasse = beregnSamværsklasse(request.beregning)
+        oppdaterPeriode.samværsklasse = beregnSamværsklasse(request.beregning).samværsklasse
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
-    }
-
-    fun beregnSamværsklasse(kalkulator: SamværskalkulatorDetaljer): Samværsklasse {
-        val bpNetter =
-            kalkulator.ferier.sumOf {
-                it.bidragspliktigTotalAntallNetterOverToÅr
-            }
-        val bmNetter = kalkulator.ferier.sumOf { it.bidragsmottakerTotalAntallNetterOverToÅr }
-        val gjennomsnittMånedlig = (bmNetter + bpNetter) / 24
-
-        return Samværsklasse.SAMVÆRSKLASSE_1
     }
 
     private fun MutableSet<Samvær>.finnSamværForBarn(gjelderBarn: String) =

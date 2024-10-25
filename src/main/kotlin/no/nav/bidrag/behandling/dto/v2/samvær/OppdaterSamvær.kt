@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
+import java.math.BigDecimal
 
 data class OppdaterSamværDto(
     val gjelderBarn: String,
@@ -50,6 +51,7 @@ data class SamværDto(
         val id: Long? = null,
         val periode: DatoperiodeDto,
         val samværsklasse: Samværsklasse,
+        val sumGjennomsnittligSamværPerMåned: BigDecimal,
         val beregning: SamværskalkulatorDetaljer? = null,
     )
 }

@@ -7,8 +7,8 @@ import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværskalkulatorBeregningDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
+import no.nav.bidrag.behandling.service.BeregnSamværsklasseResultat
 import no.nav.bidrag.behandling.service.SamværService
-import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -49,20 +49,6 @@ class SamværController(
     ): OppdaterSamværResponsDto = samværService.slettPeriode(behandlingsid, request)
 
     @Suppress("unused")
-    @DeleteMapping("/behandling/{behandlingsid}/samvar/periode/beregning")
-    @Operation(
-        description =
-            "Slett samværsperiode",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    fun slettSamværskalkulatorBeregning(
-        @PathVariable behandlingsid: Long,
-        @Valid
-        @RequestBody(required = true)
-        request: SletteSamværsperiodeElementDto,
-    ): OppdaterSamværResponsDto = samværService.slettSamværskalkulatorBeregning(behandlingsid, request)
-
-    @Suppress("unused")
     @PutMapping("/behandling/{behandlingsid}/samvar/periode/beregning")
     @Operation(
         description =
@@ -87,5 +73,5 @@ class SamværController(
         @Valid
         @RequestBody(required = true)
         request: SamværskalkulatorDetaljer,
-    ): Samværsklasse = samværService.beregnSamværsklasse(request)
+    ): BeregnSamværsklasseResultat = samværService.beregnSamværsklasse(request)
 }
