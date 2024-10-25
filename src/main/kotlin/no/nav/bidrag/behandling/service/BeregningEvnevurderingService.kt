@@ -77,6 +77,6 @@ class BeregningEvnevurderingService(
                             type = it.type,
                         ),
                     ).vedtakListe
-            beregingVedtaksfiltrering.finneSisteManuelleVedtak(vedtakListe, it.kravhaver)
+            beregingVedtaksfiltrering.finneVedtakForEvnevurdering(vedtakListe, it.kravhaver)
         }
 }
