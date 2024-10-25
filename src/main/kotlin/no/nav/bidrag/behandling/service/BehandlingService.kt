@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
@@ -55,6 +56,7 @@ class BehandlingService(
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
     private val mapper: Dtomapper,
+    private val validerBehandlingService: ValiderBehandlingService,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -97,6 +99,7 @@ class BehandlingService(
         }
 
         opprettBehandling.valider()
+        validerBehandlingService.validerKanBehandlesINyLøsning(opprettBehandling.tilKanBehandlesINyLøsningRequest())
 
         val opprettetAv =
             TokenUtils.hentSaksbehandlerIdent() ?: TokenUtils.hentApplikasjonsnavn() ?: "ukjent"

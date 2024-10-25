@@ -5,7 +5,6 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import no.nav.bidrag.behandling.transformers.bestemTypeBehandling
-import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -13,7 +12,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
-data class OpprettBehandlingRequest(
+data class KanBehandlesINyLøsningRequest(
     @Schema(required = true)
     val vedtakstype: Vedtakstype,
     @Schema(required = true)
@@ -34,39 +33,7 @@ data class OpprettBehandlingRequest(
     var stønadstype: Stønadstype? = null,
     @Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
-    @Schema(required = true)
-    val søknadsid: Long,
-    val søknadsreferanseid: Long? = null,
-    val kategori: OpprettKategoriRequestDto? = null,
     val innkrevingstype: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
 )
 
-fun OpprettBehandlingRequest.tilKanBehandlesINyLøsningRequest(): KanBehandlesINyLøsningRequest =
-    KanBehandlesINyLøsningRequest(
-        vedtakstype = this.vedtakstype,
-        søktFomDato = this.søktFomDato,
-        mottattdato = this.mottattdato,
-        søknadFra = this.søknadFra,
-        saksnummer = this.saksnummer,
-        behandlerenhet = this.behandlerenhet,
-        roller = this.roller,
-        stønadstype = this.stønadstype,
-        engangsbeløpstype = this.engangsbeløpstype,
-        innkrevingstype = this.innkrevingstype,
-    )
-
-fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
-
-fun OpprettBehandlingRequest.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
-
-fun OpprettBehandlingRequest.erForskudd() = tilType() == TypeBehandling.FORSKUDD
-
-data class OpprettKategoriRequestDto(
-    @Schema(required = true)
-    val kategori: String,
-    @Schema(
-        required = false,
-        description = "Beskrivelse av kategorien som er valgt. Er påkrevd hvis kategori er ANNET ",
-    )
-    val beskrivelse: String? = null,
-)
+fun KanBehandlesINyLøsningRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
