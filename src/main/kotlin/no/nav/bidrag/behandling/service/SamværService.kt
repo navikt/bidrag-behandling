@@ -19,6 +19,7 @@ import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
 private val log = KotlinLogging.logger {}
@@ -72,7 +73,7 @@ class SamværService(
                 )
             oppdaterSamvær.perioder
                 .maxByOrNull { it.fom }
-                ?.takeIf { it.fom.isBefore(nyPeriode.fom) }
+                ?.takeIf { it.fom.isBefore(nyPeriode.fom) && it.fom.isBefore(LocalDate.now().withDayOfMonth(1)) }
                 ?.let {
                     it.tom = it.tom ?: nyPeriode.fom.minusDays(1)
                 }
