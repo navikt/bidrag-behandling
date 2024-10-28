@@ -22,7 +22,7 @@ class ValiderBehandlingService(
         if (request.tilType() == TypeBehandling.SÆRBIDRAG) {
             val bp = request.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }!!
             val løpendeBidrag = bidragStonadConsumer.hentLøpendeBidrag(LøpendeBidragssakerRequest(skyldner = bp.ident!!))
-            return løpendeBidrag.bidragssakerListe.all { it.valutakode == "NOK" }
+            return løpendeBidrag.bidragssakerListe.all { it.valutakode == "NOK" || it.valutakode.isEmpty() }
         }
         return true
     }
