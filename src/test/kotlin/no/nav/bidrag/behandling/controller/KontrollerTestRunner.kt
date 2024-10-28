@@ -96,5 +96,6 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
         stubUtils.stubTilgangskontrollPersonISak()
+        stubUtils.stubBidragStonadLøpendeSaker()
     }
 }

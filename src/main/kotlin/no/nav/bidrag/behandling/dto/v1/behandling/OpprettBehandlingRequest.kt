@@ -41,6 +41,14 @@ data class OpprettBehandlingRequest(
     val innkrevingstype: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
 )
 
+fun OpprettBehandlingRequest.tilKanBehandlesINyLøsningRequest(): KanBehandlesINyLøsningRequest =
+    KanBehandlesINyLøsningRequest(
+        saksnummer = this.saksnummer,
+        roller = this.roller.map { SjekkRolleDto(it.rolletype, it.ident) },
+        stønadstype = this.stønadstype,
+        engangsbeløpstype = this.engangsbeløpstype,
+    )
+
 fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
 
 fun OpprettBehandlingRequest.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG

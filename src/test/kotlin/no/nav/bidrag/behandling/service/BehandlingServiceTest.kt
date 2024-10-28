@@ -115,6 +115,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
         stubUtils.stubTilgangskontrollPersonISak()
+        stubUtils.stubBidragStonadLøpendeSaker()
         stubKodeverkProvider()
         stubSjablonProvider()
     }
