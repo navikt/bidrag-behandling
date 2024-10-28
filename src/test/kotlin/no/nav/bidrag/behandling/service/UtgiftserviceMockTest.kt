@@ -46,14 +46,16 @@ class UtgiftserviceMockTest {
 
     lateinit var utgiftService: UtgiftService
     lateinit var validering: ValiderBeregning
+    lateinit var validerBehandling: ValiderBehandlingService
     lateinit var mapper: Dtomapper
 
     @BeforeEach
     fun initMock() {
         stubSjablonProvider()
         validering = ValiderBeregning()
-        mapper = Dtomapper(tilgangskontrollService, validering)
+        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
+        every { validerBehandling.kanBehandlesINyLøsning(any()) } returns true
         every { utgiftRepository.save<Utgift>(any()) } answers {
             val utgift = firstArg<Utgift>()
             utgift.id = 1

@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
+import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
@@ -43,6 +44,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -80,6 +82,7 @@ import java.time.LocalDateTime
 class Dtomapper(
     val tilgangskontrollService: TilgangskontrollService,
     val validering: ValiderBeregning,
+    val validerBehandlingService: ValiderBehandlingService,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -464,6 +467,7 @@ class Dtomapper(
 
                 objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
             },
+        kanBehandlesINyLøsning = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()),
     )
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
