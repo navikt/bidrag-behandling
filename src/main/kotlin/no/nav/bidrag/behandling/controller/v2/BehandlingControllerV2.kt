@@ -7,12 +7,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
+import no.nav.bidrag.behandling.dto.v1.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -29,11 +31,14 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.UtgiftService
+import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.ident.Personident
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -51,6 +56,7 @@ class BehandlingControllerV2(
     private val boforholdService: BoforholdService,
     private val inntektService: InntektService,
     private val utgiftService: UtgiftService,
+    private val validerBehandlingService: ValiderBehandlingService,
     private val dtomapper: Dtomapper,
 ) {
     @Suppress("unused")
@@ -383,4 +389,58 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 = behandlingService.aktivereGrunnlag(behandlingsid, request)
+
+    @PostMapping("/behandling/kanBehandles")
+    @Operation(
+        description = "Sjekk om behandling kan behandles i ny løsning",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun kanBehandlesINyLøsning(
+        @Valid @RequestBody(required = true) request: KanBehandlesINyLøsningRequest,
+    ): ResponseEntity<Void> {
+        validerBehandlingService.validerKanBehandlesINyLøsning(request)
+        return ResponseEntity.accepted().build()
+    }
+
+    @PostMapping("/behandling/kanBehandles/{behandlingsid}")
+    @Operation(
+        description = "Sjekk om behandling kan behandles i ny løsning",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun kanBehandlingBehandlesINyLøsning(
+        @PathVariable behandlingsid: Long,
+    ): ResponseEntity<Void> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        validerBehandlingService.validerKanBehandlesINyLøsning(
+            KanBehandlesINyLøsningRequest(
+                engangsbeløpstype = behandling.engangsbeloptype,
+                stønadstype = behandling.stonadstype,
+                saksnummer = behandling.saksnummer,
+                roller =
+                    behandling.roller.map {
+                        SjekkRolleDto(
+                            rolletype = it.rolletype,
+                            ident = Personident(it.ident!!),
+                        )
+                    },
+            ),
+        )
+        return ResponseEntity.accepted().build()
+    }
 }

@@ -627,5 +627,52 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                 )
             Assertions.assertEquals(HttpStatus.BAD_REQUEST, r.statusCode)
         }
+
+        @Test
+        fun `skal ikke opprette en særbidrag behandling hvis BP har løpende bidrag med utenlandsk valuta`() {
+            val personidentBp = Personident("12345678912")
+            val personidentBm = Personident("213213")
+            val personidentBarn = Personident("123213123")
+            stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_utenlandsk_valuta")
+
+            val roller =
+                setOf(
+                    OpprettRolleDto(
+                        Rolletype.BARN,
+                        personidentBarn,
+                        fødselsdato = LocalDate.now().minusMonths(136),
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BIDRAGSMOTTAKER,
+                        personidentBm,
+                        fødselsdato = LocalDate.now().minusMonths(499),
+                    ),
+                    OpprettRolleDto(
+                        Rolletype.BIDRAGSPLIKTIG,
+                        personidentBp,
+                        fødselsdato = LocalDate.now().minusMonths(499),
+                    ),
+                )
+            val request =
+                oppretteBehandlingRequestTest("1900000", "en12", roller, søknadsid = 1239988330001323)
+                    .copy(
+                        engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
+                        stønadstype = null,
+                        vedtakstype = Vedtakstype.FASTSETTELSE,
+                        innkrevingstype = Innkrevingstype.UTEN_INNKREVING,
+                        kategori =
+                            OpprettKategoriRequestDto(
+                                kategori = Særbidragskategori.KONFIRMASJON.name,
+                            ),
+                    )
+            val r =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUriV2()}/behandling",
+                    HttpMethod.POST,
+                    HttpEntity(request),
+                    Void::class.java,
+                )
+            Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, r.statusCode)
+        }
     }
 }
