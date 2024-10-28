@@ -4,8 +4,8 @@ ingresses:
 min_replicas: 1
 env:
   SPRING_PROFILES_ACTIVE: live,nais,database-new
-  BIDRAG_PERSON_URL: https://bidrag-person-feature.dev-fss-pub.nais.io/bidrag-person
-  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person-feature
+  BIDRAG_PERSON_URL: https://bidrag-person-q1.dev-fss-pub.nais.io/bidrag-person
+  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person-q1
   BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag-feature
   BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
   BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse-feature
@@ -22,8 +22,8 @@ env:
   BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
   BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
-  BIDRAG_SAK_URL: https://bidrag-sak-feature.dev-fss-pub.nais.io/bidrag-sak
-  BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-feature
+  BIDRAG_SAK_URL: https://bidrag-sak-q1.dev-fss-pub.nais.io/bidrag-sak
+  BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-q1
   TOPIC_VEDTAK: bidrag.vedtak-q1
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon-feature
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
