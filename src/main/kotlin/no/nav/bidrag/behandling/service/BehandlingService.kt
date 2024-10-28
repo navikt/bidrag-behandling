@@ -381,7 +381,7 @@ class BehandlingService(
             behandlingRepository
                 .findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
-        tilgangskontrollService.sjekkTilgangBehandling(behandling)
+//        tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.deleted) behandlingNotFoundException(behandlingId)
         return behandling
     }

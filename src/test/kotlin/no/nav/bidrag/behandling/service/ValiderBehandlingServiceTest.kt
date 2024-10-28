@@ -6,13 +6,11 @@ import io.mockk.every
 import io.mockk.mockkClass
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.dto.v1.behandling.KanBehandlesINyLøsningRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
@@ -22,7 +20,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
-import java.time.LocalDate
 
 class ValiderBehandlingServiceTest {
     val bidragStønadConsumer: BidragStønadConsumer = mockkClass(BidragStønadConsumer::class)
@@ -103,16 +100,11 @@ private fun oppretLøpendeBidragListeMedBareNorskValuta() =
 
 private fun opprettKanBehandlesINyLøsningRequest() =
     KanBehandlesINyLøsningRequest(
-        Vedtakstype.OPPHØR,
         engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
-        behandlerenhet = "4833",
         stønadstype = null,
-        mottattdato = LocalDate.now(),
         roller =
-            setOf(
-                OpprettRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("12345678901"), fødselsdato = LocalDate.now()),
+            listOf(
+                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("12345678901")),
             ),
         saksnummer = SAKSNUMMER,
-        søknadFra = SøktAvType.BIDRAGSMOTTAKER,
-        søktFomDato = LocalDate.now(),
     )

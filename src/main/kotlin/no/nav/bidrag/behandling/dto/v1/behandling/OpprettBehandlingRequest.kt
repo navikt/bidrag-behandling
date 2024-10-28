@@ -43,16 +43,10 @@ data class OpprettBehandlingRequest(
 
 fun OpprettBehandlingRequest.tilKanBehandlesINyLøsningRequest(): KanBehandlesINyLøsningRequest =
     KanBehandlesINyLøsningRequest(
-        vedtakstype = this.vedtakstype,
-        søktFomDato = this.søktFomDato,
-        mottattdato = this.mottattdato,
-        søknadFra = this.søknadFra,
         saksnummer = this.saksnummer,
-        behandlerenhet = this.behandlerenhet,
-        roller = this.roller,
+        roller = this.roller.map { SjekkRolleDto(it.rolletype, it.ident) },
         stønadstype = this.stønadstype,
         engangsbeløpstype = this.engangsbeløpstype,
-        innkrevingstype = this.innkrevingstype,
     )
 
 fun OpprettBehandlingRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)

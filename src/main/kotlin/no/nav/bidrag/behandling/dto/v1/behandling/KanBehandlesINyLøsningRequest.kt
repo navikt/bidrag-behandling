@@ -1,39 +1,37 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import no.nav.bidrag.behandling.transformers.bestemTypeBehandling
-import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
-import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import java.time.LocalDate
+import no.nav.bidrag.domene.ident.Personident
 
 data class KanBehandlesINyLøsningRequest(
-    @Schema(required = true)
-    val vedtakstype: Vedtakstype,
-    @Schema(required = true)
-    val søktFomDato: LocalDate,
-    @Schema(required = true)
-    val mottattdato: LocalDate,
-    @Schema(required = true)
-    val søknadFra: SøktAvType,
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
     @field:Size(max = 7, min = 7, message = "Saksnummer skal ha sju tegn")
     val saksnummer: String,
-    @field:NotBlank(message = "Enhet kan ikke være blank")
-    @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
-    val behandlerenhet: String,
     @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
-    val roller: Set<@Valid OpprettRolleDto>,
+    val roller: List<SjekkRolleDto>,
     @Schema(required = true)
     var stønadstype: Stønadstype? = null,
     @Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
-    val innkrevingstype: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
+)
+
+@Schema(description = "Rolle beskrivelse som er brukte til å opprette nye roller")
+data class SjekkRolleDto(
+    @Schema(required = true, enumAsRef = true)
+    val rolletype: Rolletype,
+    @Schema(
+        type = "String",
+        description = "F.eks fødselsnummer. Påkrevd for alle rolletyper utenom for barn som ikke inngår i beregning.",
+        required = false,
+        nullable = true,
+    )
+    val ident: Personident?,
 )
 
 fun KanBehandlesINyLøsningRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)
