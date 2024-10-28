@@ -13,7 +13,7 @@ jobs:
     uses: navikt/bidrag-workflow/.github/workflows/deploy.yaml@main
     secrets: inherit
     with:
-      nais_variabler_filnavn: main.yaml
+      nais_variabler_filnavn: q2.yaml
       maven_options: -B -q -fae -Pit
 
   deploy_unleash:
