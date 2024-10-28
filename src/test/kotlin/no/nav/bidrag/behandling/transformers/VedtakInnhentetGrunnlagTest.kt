@@ -526,13 +526,11 @@ class VedtakInnhentetGrunnlagTest {
             }
         }
 
-        fun List<GrunnlagDto>.hentHusstandsmedlemMedReferanse(referanse: String) =
-            this.filter { it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.relatertPerson == referanse }
+        fun List<GrunnlagDto>.hentHusstandsmedlemMedReferanse(referanse: String) = this.filter { it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.relatertPerson == referanse }
 
         fun List<GrunnlagDto>.hentGrunnlagHusstand() = filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }
 
-        fun List<GrunnlagDto>.hentGrunnlagPersonHusstandsmedlem() =
-            hentAllePersoner().filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
+        fun List<GrunnlagDto>.hentGrunnlagPersonHusstandsmedlem() = hentAllePersoner().filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
     }
 
     @Nested
