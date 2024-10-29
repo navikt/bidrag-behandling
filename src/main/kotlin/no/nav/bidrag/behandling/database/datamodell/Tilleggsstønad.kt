@@ -17,8 +17,8 @@ class Tilleggsstønad(
     open val id: Long? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "underholdskostnad_id", nullable = false)
-    open val underholdskostnad: Underholdskostnad,
-    open val fom: LocalDate,
-    open val tom: LocalDate? = null,
-    open val dagsats: BigDecimal,
+    open var underholdskostnad: Underholdskostnad,
+    open var fom: LocalDate,
+    open var tom: LocalDate? = null,
+    open var dagsats: BigDecimal,
 )

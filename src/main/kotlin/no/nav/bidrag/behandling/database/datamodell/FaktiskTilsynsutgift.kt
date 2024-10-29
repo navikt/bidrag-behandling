@@ -18,9 +18,9 @@ class FaktiskTilsynsutgift(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "underholdskostnad_id", nullable = false)
     open val underholdskostnad: Underholdskostnad,
-    open val fom: LocalDate,
-    open val tom: LocalDate? = null,
-    open val tilsynsutgift: BigDecimal,
-    open val kostpenger: BigDecimal? = null,
-    open val kommentar: String? = null,
+    open var fom: LocalDate,
+    open var tom: LocalDate? = null,
+    open var tilsynsutgift: BigDecimal,
+    open var kostpenger: BigDecimal? = null,
+    open var kommentar: String? = null,
 )
