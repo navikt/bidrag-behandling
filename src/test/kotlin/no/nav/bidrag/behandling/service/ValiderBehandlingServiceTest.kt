@@ -5,8 +5,8 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockkClass
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
-import no.nav.bidrag.behandling.dto.v1.behandling.KanBehandlesINyLøsningRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.SjekkRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype

@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
-import no.nav.bidrag.behandling.dto.v1.behandling.KanBehandlesINyLøsningRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.tilType
+import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.tilType
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
