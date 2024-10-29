@@ -11,13 +11,13 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
-import no.nav.bidrag.behandling.dto.v1.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
+import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
