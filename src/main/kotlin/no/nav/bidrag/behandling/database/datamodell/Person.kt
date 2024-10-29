@@ -26,12 +26,11 @@ open class Person(
         orphanRemoval = true,
     )
     open val underholdskostnad: MutableSet<Underholdskostnad> = mutableSetOf(),
-    // TODO: legges inn i fbm bd-1920
-//    @OneToMany(
-//        fetch = FetchType.EAGER,
-//        mappedBy = "person",
-//        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-//        orphanRemoval = false,
-//    )
-//    open val rolle: MutableSet<Rolle> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "person",
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = false,
+    )
+    open val rolle: MutableSet<Rolle> = mutableSetOf(),
 )

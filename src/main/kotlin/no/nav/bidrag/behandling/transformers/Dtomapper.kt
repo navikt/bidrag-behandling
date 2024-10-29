@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
+import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
@@ -43,6 +44,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -82,6 +84,7 @@ import java.time.LocalDateTime
 class Dtomapper(
     val tilgangskontrollService: TilgangskontrollService,
     val validering: ValiderBeregning,
+    val validerBehandlingService: ValiderBehandlingService,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -428,53 +431,57 @@ class Dtomapper(
     private fun Behandling.dto(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
         inkluderHistoriskeInntekter: Boolean,
-    ) = BehandlingDtoV2(
-        id = id!!,
-        type = tilType(),
-        vedtakstype = vedtakstype,
-        opprinneligVedtakstype = opprinneligVedtakstype,
-        stønadstype = stonadstype,
-        engangsbeløptype = engangsbeloptype,
-        erKlageEllerOmgjøring = erKlageEllerOmgjøring,
-        opprettetTidspunkt = opprettetTidspunkt,
-        erVedtakFattet = vedtaksid != null,
-        søktFomDato = søktFomDato,
-        mottattdato = mottattdato,
-        klageMottattdato = klageMottattdato,
-        søktAv = soknadFra,
-        saksnummer = saksnummer,
-        søknadsid = soknadsid,
-        behandlerenhet = behandlerEnhet,
-        roller =
-            roller.map { it.tilDto() }.toSet(),
-        søknadRefId = soknadRefId,
-        vedtakRefId = refVedtaksid,
-        virkningstidspunkt =
-            VirkningstidspunktDto(
-                virkningstidspunkt = virkningstidspunkt,
-                opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-                årsak = årsak,
-                avslag = avslag,
-                begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-            ),
-        boforhold = tilBoforholdV2(),
-        inntekter =
-            tilInntektDtoV2(
-                grunnlag.hentSisteAktiv(),
-                inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
-            ),
-        aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
-        utgift = tilUtgiftDto(),
-        samvær = tilSamværDto(),
-        ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
-        feilOppståttVedSisteGrunnlagsinnhenting =
-            grunnlagsinnhentingFeilet?.let {
-                val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
-                    object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+    ): BehandlingDtoV2 {
+        val kanBehandles = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
+        return BehandlingDtoV2(
+            id = id!!,
+            type = tilType(),
+            vedtakstype = vedtakstype,
+            opprinneligVedtakstype = opprinneligVedtakstype,
+            stønadstype = stonadstype,
+            engangsbeløptype = engangsbeloptype,
+            erKlageEllerOmgjøring = erKlageEllerOmgjøring,
+            opprettetTidspunkt = opprettetTidspunkt,
+            erVedtakFattet = vedtaksid != null,
+            søktFomDato = søktFomDato,
+            mottattdato = mottattdato,
+            klageMottattdato = klageMottattdato,
+            søktAv = soknadFra,
+            saksnummer = saksnummer,
+            søknadsid = soknadsid,
+            behandlerenhet = behandlerEnhet,
+            roller =
+                roller.map { it.tilDto() }.toSet(),
+            søknadRefId = soknadRefId,
+            vedtakRefId = refVedtaksid,
+            virkningstidspunkt =
+                VirkningstidspunktDto(
+                    virkningstidspunkt = virkningstidspunkt,
+                    opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                    årsak = årsak,
+                    avslag = avslag,
+                    begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                ),
+            boforhold = tilBoforholdV2(),
+            inntekter =
+                tilInntektDtoV2(
+                    grunnlag.hentSisteAktiv(),
+                    inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
+                ),
+            aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
+            utgift = tilUtgiftDto(),
+            samvær = tilSamværDto(),
+        ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
+            feilOppståttVedSisteGrunnlagsinnhenting =
+                grunnlagsinnhentingFeilet?.let {
+                    val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
+                        object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
 
-                objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-            },
-    )
+                    objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
+                },
+            kanBehandlesINyLøsning = kanBehandles,
+        )
+    }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(

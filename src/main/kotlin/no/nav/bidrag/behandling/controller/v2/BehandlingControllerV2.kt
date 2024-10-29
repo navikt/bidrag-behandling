@@ -7,19 +7,19 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
-import no.nav.bidrag.behandling.dto.v1.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
-import no.nav.bidrag.behandling.dto.v1.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
@@ -34,10 +34,10 @@ import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
-import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -427,20 +427,7 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        validerBehandlingService.validerKanBehandlesINyLøsning(
-            KanBehandlesINyLøsningRequest(
-                engangsbeløpstype = behandling.engangsbeloptype,
-                stønadstype = behandling.stonadstype,
-                saksnummer = behandling.saksnummer,
-                roller =
-                    behandling.roller.map {
-                        SjekkRolleDto(
-                            rolletype = it.rolletype,
-                            ident = Personident(it.ident!!),
-                        )
-                    },
-            ),
-        )
+        validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         return ResponseEntity.accepted().build()
     }
 }

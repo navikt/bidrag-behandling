@@ -6,6 +6,7 @@ import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockkClass
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
@@ -46,14 +47,16 @@ class UtgiftserviceMockTest {
 
     lateinit var utgiftService: UtgiftService
     lateinit var validering: ValiderBeregning
+    val validerBehandling: ValiderBehandlingService = mockkClass(ValiderBehandlingService::class)
     lateinit var mapper: Dtomapper
 
     @BeforeEach
     fun initMock() {
         stubSjablonProvider()
         validering = ValiderBeregning()
-        mapper = Dtomapper(tilgangskontrollService, validering)
+        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
+        every { validerBehandling.kanBehandlesINyLøsning(any()) } returns true
         every { utgiftRepository.save<Utgift>(any()) } answers {
             val utgift = firstArg<Utgift>()
             utgift.id = 1
