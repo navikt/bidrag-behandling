@@ -6,6 +6,7 @@ import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockkClass
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
@@ -46,7 +47,7 @@ class UtgiftserviceMockTest {
 
     lateinit var utgiftService: UtgiftService
     lateinit var validering: ValiderBeregning
-    lateinit var validerBehandling: ValiderBehandlingService
+    val validerBehandling: ValiderBehandlingService = mockkClass(ValiderBehandlingService::class)
     lateinit var mapper: Dtomapper
 
     @BeforeEach

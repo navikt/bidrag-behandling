@@ -422,53 +422,56 @@ class Dtomapper(
     private fun Behandling.dto(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
         inkluderHistoriskeInntekter: Boolean,
-    ) = BehandlingDtoV2(
-        id = id!!,
-        type = tilType(),
-        vedtakstype = vedtakstype,
-        opprinneligVedtakstype = opprinneligVedtakstype,
-        stønadstype = stonadstype,
-        engangsbeløptype = engangsbeloptype,
-        erKlageEllerOmgjøring = erKlageEllerOmgjøring,
-        opprettetTidspunkt = opprettetTidspunkt,
-        erVedtakFattet = vedtaksid != null,
-        søktFomDato = søktFomDato,
-        mottattdato = mottattdato,
-        klageMottattdato = klageMottattdato,
-        søktAv = soknadFra,
-        saksnummer = saksnummer,
-        søknadsid = soknadsid,
-        behandlerenhet = behandlerEnhet,
-        roller =
-            roller.map { it.tilDto() }.toSet(),
-        søknadRefId = soknadRefId,
-        vedtakRefId = refVedtaksid,
-        virkningstidspunkt =
-            VirkningstidspunktDto(
-                virkningstidspunkt = virkningstidspunkt,
-                opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-                årsak = årsak,
-                avslag = avslag,
-                begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-            ),
-        boforhold = tilBoforholdV2(),
-        inntekter =
-            tilInntektDtoV2(
-                grunnlag.hentSisteAktiv(),
-                inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
-            ),
-        aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
-        utgift = tilUtgiftDto(),
-        ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringerIGrunnlagsdata,
-        feilOppståttVedSisteGrunnlagsinnhenting =
-            grunnlagsinnhentingFeilet?.let {
-                val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
-                    object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+    ): BehandlingDtoV2 {
+        val kanBehandles = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
+        return BehandlingDtoV2(
+            id = id!!,
+            type = tilType(),
+            vedtakstype = vedtakstype,
+            opprinneligVedtakstype = opprinneligVedtakstype,
+            stønadstype = stonadstype,
+            engangsbeløptype = engangsbeloptype,
+            erKlageEllerOmgjøring = erKlageEllerOmgjøring,
+            opprettetTidspunkt = opprettetTidspunkt,
+            erVedtakFattet = vedtaksid != null,
+            søktFomDato = søktFomDato,
+            mottattdato = mottattdato,
+            klageMottattdato = klageMottattdato,
+            søktAv = soknadFra,
+            saksnummer = saksnummer,
+            søknadsid = soknadsid,
+            behandlerenhet = behandlerEnhet,
+            roller =
+                roller.map { it.tilDto() }.toSet(),
+            søknadRefId = soknadRefId,
+            vedtakRefId = refVedtaksid,
+            virkningstidspunkt =
+                VirkningstidspunktDto(
+                    virkningstidspunkt = virkningstidspunkt,
+                    opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                    årsak = årsak,
+                    avslag = avslag,
+                    begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                ),
+            boforhold = tilBoforholdV2(),
+            inntekter =
+                tilInntektDtoV2(
+                    grunnlag.hentSisteAktiv(),
+                    inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
+                ),
+            aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
+            utgift = tilUtgiftDto(),
+            ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
+            feilOppståttVedSisteGrunnlagsinnhenting =
+                grunnlagsinnhentingFeilet?.let {
+                    val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
+                        object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
 
-                objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-            },
-        kanBehandlesINyLøsning = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()),
-    )
+                    objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
+                },
+            kanBehandlesINyLøsning = kanBehandles,
+        )
+    }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(
