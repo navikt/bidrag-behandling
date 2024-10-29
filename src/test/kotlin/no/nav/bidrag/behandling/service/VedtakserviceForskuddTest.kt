@@ -104,6 +104,8 @@ class VedtakserviceForskuddTest {
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    @MockkBean
+    lateinit var validerBehandlingService: ValiderBehandlingService
     lateinit var vedtakService: VedtakService
     lateinit var beregningService: BeregningService
     lateinit var personConsumer: BidragPersonConsumer
@@ -143,6 +145,7 @@ class VedtakserviceForskuddTest {
                 unleash,
                 vedtakGrunnlagMapper,
                 vedtakTilBehandlingMapping,
+                validerBehandlingService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit

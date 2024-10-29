@@ -84,6 +84,9 @@ class VedtakserviceTest : TestContainerRunner() {
     @Autowired
     lateinit var grunnlagService: GrunnlagService
 
+    @Autowired
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
     @MockBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
@@ -131,6 +134,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 unleash,
                 vedtakGrunnlagMapper,
                 vedtakTilBehandlingMapping,
+                validerBehandlingService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
