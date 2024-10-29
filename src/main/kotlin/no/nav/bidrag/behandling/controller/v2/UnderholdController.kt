@@ -10,14 +10,13 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdReponse
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
-import no.nav.bidrag.behandling.service.oppretteUnderholdDtoMock
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.http.HttpStatus
@@ -40,7 +39,7 @@ class UnderholdController(
     @DeleteMapping("/behandling/{behandlingsid}/underhold")
     @Operation(
         description =
-            "Oppdatere underholdskostnad for behandling. Returnerer oppdaterte underholdsobjekt. Objektet " +
+        "Sletter fra underholdskostnad i behandling. Returnerer oppdaterte underholdsobjekt. Objektet " +
                 " vil være null dersom barn slettes.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -72,13 +71,11 @@ class UnderholdController(
         return underholdDto
     }
 
-    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/barnetilsyn")
     @Operation(
         description =
-            "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
-                "element.",
+        "Oppdatere stønad til barnetilsyn for underholdskostnad i behandling. Returnerer oppdatert element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -90,29 +87,28 @@ class UnderholdController(
         ],
     )
     fun oppdatereStønadTilBarnetilsyn(
-        @PathVariable behandlingsid: Long,
-        @PathVariable underholdsid: Long,
+        @PathVariable behandlingsid: String,
+        @PathVariable underholdsid: String,
         @Valid @RequestBody(required = true) request: StønadTilBarnetilsynDto,
-    ): OppdatereUnderholdReponse? {
-        log.info { "Oppdaterer underholdskostnad for behandling $behandlingsid" }
-        secureLogger.info { "Oppdaterer underholdskostnad for behandling $behandlingsid med forespørsel $request" }
+    ): OppdatereUnderholdResponse? {
+        log.info { "Oppdaterer stønad til barnetilsyn for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer stønad til barnetilsyn for behandling $behandlingsid med forespørsel $request" }
 
         val behandling =
             behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+                .findBehandlingById(behandlingsid.toLong())
+                .orElseThrow { behandlingNotFoundException(behandlingsid.toLong()) }
 
-        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
+        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid.toLong())
 
-        return underholdService.oppdatereStønadTilBarnetilsyn(underholdskostnad, request)
+        return underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
     }
 
-    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/faktisk_tilsynsutgift")
     @Operation(
         description =
-            "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
+        "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
                 "element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -128,9 +124,9 @@ class UnderholdController(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
         @Valid @RequestBody(required = true) request: FaktiskTilsynsutgiftDto,
-    ): OppdatereUnderholdReponse {
-        log.info { "Oppdaterer underholdskostnad for behandling $behandlingsid" }
-        secureLogger.info { "Oppdaterer underholdskostnad for behandling $behandlingsid med forespørsel $request" }
+    ): OppdatereUnderholdResponse {
+        log.info { "Oppdaterer faktisk tilsynsutgift for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer faktisk tilsynsutgift  for behandling $behandlingsid med forespørsel $request" }
 
         val behandling =
             behandlingRepository
@@ -142,13 +138,11 @@ class UnderholdController(
         return underholdService.oppdatereFaktiskTilsynsutgift(underholdskostnad, request)
     }
 
-    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilleggsstønad")
     @Operation(
         description =
-            "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
-                "element.",
+        "Oppdatere tilleggsstønad for underholdskostnad i behandling. Returnerer oppdatert element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -163,9 +157,9 @@ class UnderholdController(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
         @Valid @RequestBody(required = true) request: TilleggsstønadDto,
-    ): OppdatereUnderholdReponse? {
-        log.info { "Oppdaterer underholdskostnad for behandling $behandlingsid" }
-        secureLogger.info { "Oppdaterer underholdskostnad for behandling $behandlingsid med forespørsel $request" }
+    ): OppdatereUnderholdResponse {
+        log.info { "Oppdaterer tilleggsstønad for behandling $behandlingsid" }
+        secureLogger.info { "Oppdaterer tilleggsstønad for behandling $behandlingsid med forespørsel $request" }
 
         val behandling =
             behandlingRepository
@@ -177,7 +171,6 @@ class UnderholdController(
         return underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
     }
 
-    // TODO: implementere
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")
     @Operation(
@@ -196,9 +189,17 @@ class UnderholdController(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
         @RequestParam(required = true) harTilsynsordning: Boolean,
-    ) = true
+    ): Boolean {
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-    // TODO: implementere
+        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
+
+        return underholdService.angiTilsynsordning(underholdskostnad, harTilsynsordning)
+    }
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/behandling/{behandlingsid}/underhold/opprette")
     @Operation(
@@ -216,5 +217,13 @@ class UnderholdController(
     fun oppretteUnderholdForBarn(
         @PathVariable behandlingsid: Long,
         @RequestBody(required = true) gjelderBarn: BarnDto,
-    ): UnderholdDto = oppretteUnderholdDtoMock()
+    ): UnderholdDto {
+
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        return underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn)
+    }
 }

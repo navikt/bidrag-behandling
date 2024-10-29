@@ -20,7 +20,7 @@ open class Underholdskostnad(
     open val behandling: Behandling,
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "person_id", nullable = false)
     open val person: Person,
-    open val harTilsynsordning: Boolean? = null,
+    open var harTilsynsordning: Boolean? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "underholdskostnad",

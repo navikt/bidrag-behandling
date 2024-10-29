@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.underhold
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
@@ -10,13 +11,14 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
-data class OppdatereUnderholdReponse(
+data class OppdatereUnderholdResponse(
     val stønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
     val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,
     val tilleggsstønad: TilleggsstønadDto? = null,
-    val underholdskostnad: UnderholdskostnadDto,
+    val underholdskostnad: Set<UnderholdskostnadDto>,
     val valideringsfeil: ValideringsfeilUnderhold? = null,
 )
 
@@ -29,8 +31,11 @@ data class SletteUnderholdselement(
 enum class Underholdselement { BARN, FAKTISK_TILSYNSUGIFT, STØNAD_TIL_BARNETILSYN, TILLEGGSSTØNAD }
 
 data class BarnDto(
+    @Parameter(description = "Unik databaseid for person. Skal være null ved opprettelse av underholdskostand for nytt barn")
     val id: Long? = null,
+    @Parameter(description = "Personident til barnet som skal legges til underholdskostnad. Kan ikke oppgis sammen med navn.")
     val personident: Personident? = null,
+    @Parameter(description = "Navn på barnet som skal legges til underholdskostnad. Kan ikke oppgis sammen med personident.")
     val navn: String? = null,
 )
 
@@ -42,14 +47,6 @@ data class UnderholdDto(
     val faktiskeTilsynsutgifter: Set<FaktiskTilsynsutgiftDto>,
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val underholdskostnad: Set<UnderholdskostnadDto>,
-)
-
-data class OppdatereUnderholdResponse(
-    val oppdatertFaktiskTilsynsutgiftDto: FaktiskTilsynsutgiftDto? = null,
-    val oppdatertStønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
-    val oppdatertTilleggsstønadDto: TilleggsstønadDto? = null,
-    val underholdskostnadDto: UnderholdskostnadDto,
-    val valideringsfeil: ValideringsfeilUnderhold,
 )
 
 data class ValideringsfeilUnderhold(
@@ -64,9 +61,9 @@ data class ValideringsfeilUnderhold(
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() ||
-                overlappendePerioder.isNotEmpty() ||
-                fremtidigPeriode ||
-                harIngenPerioder
+                    overlappendePerioder.isNotEmpty() ||
+                    fremtidigPeriode ||
+                    harIngenPerioder
 }
 
 data class UnderholdskostnadDto(
@@ -88,7 +85,7 @@ data class TilleggsstønadDto(
 ) {
     // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
     // total = dagsats x 260/12 x 11/12
-    val total get() = dagsats.multiply(BigDecimal(2860)).divide(BigDecimal(144))
+    val total get() = dagsats.multiply(BigDecimal(2860)).divide(BigDecimal(144), RoundingMode.HALF_UP)
 }
 
 data class FaktiskTilsynsutgiftDto(
@@ -107,7 +104,7 @@ data class StønadTilBarnetilsynDto(
     val periode: DatoperiodeDto,
     val skolealder: Skolealder,
     val tilsynstype: Tilsynstype,
-    val klde: Kilde,
+    val kilde: Kilde = Kilde.MANUELL,
 )
 
 data class DatoperiodeDto(
