@@ -18,19 +18,19 @@ fun BarnDto.validere() {
     if (navn.isNullOrBlank() && (personident == null || personident.verdi.isEmpty())) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Personident eller navn må oppgis for nytt barn i underholdskostnad."
+            "Personident eller navn må oppgis for nytt barn i underholdskostnad.",
         )
     } else if (!navn.isNullOrBlank() && (personident != null && personident.verdi.isNotEmpty())) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Personident kan ikke oppgis sammen med med navn på barnet som skal legges til underholdskostnad."
+            "Personident kan ikke oppgis sammen med med navn på barnet som skal legges til underholdskostnad.",
         )
     }
 
     if (id != null && id > 0) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Databaseid til barn skal ikke oppgis ved opprettelse av underholdskostnad."
+            "Databaseid til barn skal ikke oppgis ved opprettelse av underholdskostnad.",
         )
     }
 }
@@ -59,8 +59,8 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
                     "Kan ikke slette barn med person.id ${this.idElement} fra underholdskostnad " +
-                            "(id = ${this.idUnderhold} i behandling ${behandling.id}  så lenge det er reigstrert stønad " +
-                            "til barnetilsyn, tilleggsstønad, eller faktiskte tilsysnsutgifter på barnet.",
+                        "(id = ${this.idUnderhold} i behandling ${behandling.id}  så lenge det er reigstrert stønad " +
+                        "til barnetilsyn, tilleggsstønad, eller faktiskte tilsysnsutgifter på barnet.",
                 )
             }
         }
@@ -85,10 +85,11 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
     }
 }
 
-fun Set<Barnetilsyn>.validerePerioder() = ValideringsfeilUnderhold(
-    // TODO: bd-1920 - finne passende sjekk
-    //hullIPerioder = map { Datoperiode(it.fom, it.tom)}.finnHullIPerioder(virkningsdato),
-)
+fun Set<Barnetilsyn>.validerePerioder() =
+    ValideringsfeilUnderhold(
+        // TODO: bd-1920 - finne passende sjekk
+        // hullIPerioder = map { Datoperiode(it.fom, it.tom)}.finnHullIPerioder(virkningsdato),
+    )
 
 fun StønadTilBarnetilsynDto.validere(underholdskostnad: Underholdskostnad) {
     this.id?.let { id ->

@@ -12,4 +12,4 @@ interface FaktiskTilsynsutgiftRepository : CrudRepository<FaktiskTilsynsutgift, 
 
 interface TilleggsstønadRepository : CrudRepository<Tilleggsstønad, Long>
 
-interface UnderholdskostnadRepository: CrudRepository<Underholdskostnad, Long>
+interface UnderholdskostnadRepository : CrudRepository<Underholdskostnad, Long>
