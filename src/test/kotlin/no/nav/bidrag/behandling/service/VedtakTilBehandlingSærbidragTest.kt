@@ -82,6 +82,9 @@ class VedtakTilBehandlingSærbidragTest {
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
+    @MockkBean
     lateinit var sakConsumer: BidragSakConsumer
     lateinit var vedtakService: VedtakService
     lateinit var beregningService: BeregningService
@@ -117,7 +120,9 @@ class VedtakTilBehandlingSærbidragTest {
                 unleash,
                 vedtakGrunnlagMapper,
                 vedtakTilBehandlingMapping,
+                validerBehandlingService,
             )
+        every { validerBehandlingService.validerKanBehandlesINyLøsning(any()) } returns Unit
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit

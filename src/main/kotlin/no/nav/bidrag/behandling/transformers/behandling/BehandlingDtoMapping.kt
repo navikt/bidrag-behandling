@@ -11,7 +11,9 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.dto.v1.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
@@ -46,6 +48,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
@@ -486,3 +489,17 @@ fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
         husstandsmedlem,
         virkniningstidspunkt,
     ).sortedBy { it.periodeFom }
+
+fun Behandling.tilKanBehandlesINyLøsningRequest() =
+    KanBehandlesINyLøsningRequest(
+        engangsbeløpstype = engangsbeloptype,
+        stønadstype = stonadstype,
+        saksnummer = saksnummer,
+        roller =
+            roller.map {
+                SjekkRolleDto(
+                    rolletype = it.rolletype,
+                    ident = Personident(it.ident!!),
+                )
+            },
+    )

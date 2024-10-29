@@ -83,6 +83,9 @@ class VedtakTilBehandlingForskuddTest {
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
     @MockkBean
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
+    @MockkBean
     lateinit var sakConsumer: BidragSakConsumer
     lateinit var vedtakService: VedtakService
     lateinit var beregningService: BeregningService
@@ -118,6 +121,7 @@ class VedtakTilBehandlingForskuddTest {
                 unleash,
                 vedtakGrunnlagMapper,
                 vedtakTilBehandlingMapping,
+                validerBehandlingService,
             )
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

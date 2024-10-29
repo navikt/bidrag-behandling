@@ -278,17 +278,24 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
                     it.referanse,
                 )
         } ?: return null
+    val delberegningBoforhold =
+        find {
+            it.type == Grunnlagstype.DELBEREGNING_BOFORHOLD &&
+                delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
+                    it.referanse,
+                )
+        } ?: return null
     val delberegningVoksneIHusstand =
         find {
             it.type == Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND &&
-                delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
+                delberegningBoforhold.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )
         }?.innholdTilObjekt<DelberegningVoksneIHustand>() ?: return null
     val delberegningBarnIHusstanden =
         find {
             it.type == Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND &&
-                delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
+                delberegningBoforhold.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )
         }?.innholdTilObjekt<DelberegningBarnIHusstand>() ?: return null

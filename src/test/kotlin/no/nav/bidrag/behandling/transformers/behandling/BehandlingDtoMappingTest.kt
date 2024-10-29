@@ -3,13 +3,17 @@ package no.nav.bidrag.behandling.transformers.behandling
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockkClass
 import no.nav.bidrag.behandling.TestContainerRunner
+import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.TilgangskontrollService
+import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
@@ -44,7 +48,9 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     lateinit var mapper: Dtomapper
+    lateinit var bidragStonadConsumer: BidragStønadConsumer
     lateinit var validering: ValiderBeregning
+    lateinit var validerBehandling: ValiderBehandlingService
 
     @BeforeEach
     fun initMocks() {
@@ -53,7 +59,9 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         stubSjablonProvider()
         stubSaksbehandlernavnProvider()
         validering = ValiderBeregning()
-        mapper = Dtomapper(tilgangskontrollService, validering)
+        validerBehandling = mockkClass(ValiderBehandlingService::class)
+        every { validerBehandling.kanBehandlesINyLøsning(any()) } returns true
+        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
     }
 
     @Test

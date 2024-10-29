@@ -4,8 +4,8 @@ ingresses:
 min_replicas: 1
 env:
   SPRING_PROFILES_ACTIVE: live,nais,database-new
-  BIDRAG_PERSON_URL: https://bidrag-person.dev-fss-pub.nais.io/bidrag-person
-  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person
+  BIDRAG_PERSON_URL: https://bidrag-person-q2.dev-fss-pub.nais.io/bidrag-person
+  BIDRAG_PERSON_SCOPE: dev-fss.bidrag.bidrag-person-q2
   BIDRAG_GRUNNLAG_URL: http://bidrag-grunnlag
   BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag
   BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse
@@ -22,13 +22,13 @@ env:
   BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_URL: https://bidrag-dokument.dev-fss-pub.nais.io/bidrag-dokument
   BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument
-  BIDRAG_SAK_URL: https://bidrag-sak.dev-fss-pub.nais.io/bidrag-sak
-  BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak
+  BIDRAG_SAK_URL: https://bidrag-sak-q2.dev-fss-pub.nais.io/bidrag-sak
+  BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-q2
   TOPIC_VEDTAK: bidrag.vedtak-q2
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
-  ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt-q1.dev-fss-pub.nais.io/api/v2
+  ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.dev-fss-pub.nais.io/api/v2
   GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 1
   KODEVERK_URL: https://kodeverk-api.nav.no
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
@@ -60,7 +60,8 @@ outbound-access-apps:
   - bidrag-dokument-produksjon
 outbound-access-hosts:
   - bidrag-dokument.dev-fss-pub.nais.io
-  - bidrag-person.dev-fss-pub.nais.io
+  - bidrag-person-q2.dev-fss-pub.nais.io
+  - bidrag-sak-q2.dev-fss-pub.nais.io
   - bidrag-organisasjon.dev-fss-pub.nais.io
   - bidrag-sjablon.dev-fss-pub.nais.io
   - arbeid-og-inntekt.dev-fss-pub.nais.io

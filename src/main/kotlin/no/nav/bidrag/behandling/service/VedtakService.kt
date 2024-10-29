@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.toggleFatteVedtakName
+import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -70,6 +71,7 @@ class VedtakService(
     private val unleashInstance: Unleash,
     private val mapper: VedtakGrunnlagMapper,
     private val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping,
+    private val vedtakValiderBehandlingService: ValiderBehandlingService,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
         try {
@@ -201,6 +203,7 @@ class VedtakService(
                 "Fattevedtak er ikke aktivert",
             )
         }
+        vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         mapper.validering.run {
             behandling.validerTekniskForBeregningAvSærbidrag()
             behandling.validerForBeregningSærbidrag()
