@@ -4,6 +4,17 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 
+fun samværIkkeFunnet(
+    behandlingId: Long,
+    gjelderBarn: String,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.NOT_FOUND,
+        "Fant ikke samvær for barn $gjelderBarn i behandling med id $behandlingId",
+    )
+
+fun ugyldigForespørsel(melding: String): Nothing = throw HttpClientErrorException(HttpStatus.BAD_REQUEST, melding)
+
 fun behandlingNotFoundException(behandlingId: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.NOT_FOUND,

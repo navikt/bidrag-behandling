@@ -150,6 +150,13 @@ open class Behandling(
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
+    open var samvær: MutableSet<Samvær> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
     open var underholdskostnad: MutableSet<Underholdskostnad> = mutableSetOf(),
     open var deleted: Boolean = false,
 ) {
