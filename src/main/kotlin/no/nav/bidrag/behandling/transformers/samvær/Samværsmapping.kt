@@ -36,7 +36,8 @@ fun Samvær.tilDto() =
                         periode = DatoperiodeDto(it.fom, it.tom),
                         samværsklasse = it.samværsklasse,
                         sumGjennomsnittligSamværPerMåned =
-                            it.beregning?.let { BeregnSamværsklasseApi.beregnSumGjennomsnittligSamværPerMåned(it) } ?: BigDecimal.ZERO,
+                            it.beregning?.let { BeregnSamværsklasseApi.run { it.beregnSumGjennomsnittligSamværPerMåned() } }
+                                ?: BigDecimal.ZERO,
                         beregning = it.beregning,
                     )
                 },
