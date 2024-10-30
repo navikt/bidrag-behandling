@@ -189,7 +189,7 @@ class UnderholdController(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
         @RequestBody(required = true) request: OppdatereUnderholdRequest,
-    ): Boolean {
+    ): UnderholdDto {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
