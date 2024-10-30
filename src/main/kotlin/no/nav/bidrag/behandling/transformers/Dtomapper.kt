@@ -471,7 +471,7 @@ class Dtomapper(
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
-        ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
+            ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
             feilOppståttVedSisteGrunnlagsinnhenting =
                 grunnlagsinnhentingFeilet?.let {
                     val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
