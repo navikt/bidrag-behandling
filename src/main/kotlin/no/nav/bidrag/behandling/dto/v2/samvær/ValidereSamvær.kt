@@ -23,9 +23,11 @@ data class SamværValideringsfeilDto(
     @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
 ) {
+    val harPeriodiseringsfeil get() = ingenLøpendeSamvær || manglerSamvær || overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty()
+
     @get:JsonIgnore
     val harFeil
-        get() = manglerBegrunnelse || ingenLøpendeSamvær || manglerSamvær || overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty()
+        get() = manglerBegrunnelse || harPeriodiseringsfeil
 }
 
 data class OverlappendeSamværPeriode(
