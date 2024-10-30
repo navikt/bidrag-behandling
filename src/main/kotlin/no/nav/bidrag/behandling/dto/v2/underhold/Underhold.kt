@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.dto.v2.underhold
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
