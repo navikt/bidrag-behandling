@@ -50,6 +50,11 @@ data class UnderholdDto(
     val begrunnelse: String? = null,
 )
 
+data class OppdatereUnderholdRequest(
+    val harTilsynsordning: Boolean? = null,
+    val begrunnelse: String? = null,
+)
+
 data class ValideringsfeilUnderhold(
     val hullIPerioder: List<Datoperiode> = emptyList(),
     val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
