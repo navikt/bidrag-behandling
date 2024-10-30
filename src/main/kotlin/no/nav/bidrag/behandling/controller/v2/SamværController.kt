@@ -7,8 +7,8 @@ import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværskalkulatorBeregningDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
-import no.nav.bidrag.behandling.service.BeregnSamværsklasseResultat
 import no.nav.bidrag.behandling.service.SamværService
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseResultat
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable

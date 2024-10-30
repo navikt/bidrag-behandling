@@ -12,16 +12,20 @@ import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseResultat
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
 @Service
+@Import(BeregnSamværsklasseApi::class)
 class SamværService(
     private val samværRepository: SamværRepository,
     private val behandlingService: BehandlingService,
@@ -106,24 +110,6 @@ class SamværService(
 
     fun beregnSamværsklasse(kalkulator: SamværskalkulatorDetaljer): BeregnSamværsklasseResultat =
         beregnSamværsklasseApi.beregnSamværsklasse(kalkulator)
-
-    fun slettSamværskalkulatorBeregning(
-        behandlingsid: Long,
-        request: SletteSamværsperiodeElementDto,
-    ): OppdaterSamværResponsDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        log.info { "Sletter samværskalkulator beregning $request for behandling $behandlingsid" }
-        val oppdaterSamvær =
-            behandling.samvær.finnSamværForBarn(request.gjelderBarn)
-        val periode =
-            oppdaterSamvær.hentPeriode(request.samværsperiodeId)
-
-        periode.beregningJson = null
-        log.info {
-            "Slettet samværskalkulator beregning fra periode ${periode.id} i samvær ${oppdaterSamvær.id} i behandling $behandlingsid"
-        }
-        return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
-    }
 
     private fun SamværskalkulatorDetaljer?.tilJsonString() = this?.let { commonObjectmapper.writeValueAsString(it) }
 

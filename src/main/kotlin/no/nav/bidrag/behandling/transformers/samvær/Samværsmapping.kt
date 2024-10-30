@@ -6,8 +6,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
-import no.nav.bidrag.behandling.service.BeregnSamværsklasseApi
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import java.math.BigDecimal
 
