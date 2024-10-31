@@ -40,11 +40,11 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
         id = this.id,
         periode = DatoperiodeDto(this.fom, this.tom),
         skolealder =
-        when (this.under_skolealder) {
-            true -> Skolealder.UNDER
-            false -> Skolealder.OVER
-            else -> Skolealder.IKKE_ANGITT
-        },
+            when (this.under_skolealder) {
+                true -> Skolealder.UNDER
+                false -> Skolealder.OVER
+                else -> Skolealder.IKKE_ANGITT
+            },
         tilsynstype = this.omfang,
         kilde = this.kilde,
     )

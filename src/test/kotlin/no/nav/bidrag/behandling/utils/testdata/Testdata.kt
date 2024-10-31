@@ -178,10 +178,10 @@ fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
         forsendelseId = forsendelseId,
         saksnummer = SAKSNUMMER,
         behandlingInfo =
-        BehandlingInfoResponseDto(
-            soknadId = SOKNAD_ID.toString(),
-            erFattet = false,
-        ),
+            BehandlingInfoResponseDto(
+                soknadId = SOKNAD_ID.toString(),
+                erFattet = false,
+            ),
         forsendelseType = ForsendelseTypeTo.UTGÅENDE,
         status = ForsendelseStatusTo.UNDER_OPPRETTELSE,
     )
@@ -295,11 +295,11 @@ fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
         beløp = BigDecimal(305203),
         datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
         datoTom =
-        LocalDate
-            .now()
-            .minusYears(1)
-            .withMonth(12)
-            .withDayOfMonth(31),
+            LocalDate
+                .now()
+                .minusYears(1)
+                .withMonth(12)
+                .withDayOfMonth(31),
         ident = Personident("12345678910"),
         gjelderBarn = Personident("01234567891"),
     )
@@ -402,12 +402,12 @@ fun opprettSakForBehandling(behandling: Behandling): BidragssakDto =
         levdeAdskilt = false,
         ukjentPart = false,
         roller =
-        behandling.roller.map {
-            RolleDto(
-                fødselsnummer = Personident(it.ident!!),
-                type = it.rolletype,
-            )
-        },
+            behandling.roller.map {
+                RolleDto(
+                    fødselsnummer = Personident(it.ident!!),
+                    type = it.rolletype,
+                )
+            },
     )
 
 fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDto =
@@ -420,13 +420,13 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
         levdeAdskilt = false,
         ukjentPart = false,
         roller =
-        behandling.roller.map {
-            RolleDto(
-                fødselsnummer = Personident(it.ident!!),
-                reellMottager = if (it.ident == testdataBarn1.ident) ReellMottager("REEL_MOTTAKER") else null,
-                type = it.rolletype,
-            )
-        },
+            behandling.roller.map {
+                RolleDto(
+                    fødselsnummer = Personident(it.ident!!),
+                    reellMottager = if (it.ident == testdataBarn1.ident) ReellMottager("REEL_MOTTAKER") else null,
+                    type = it.rolletype,
+                )
+            },
     )
 
 fun opprettGyldigBehandlingForBeregningOgVedtak(
@@ -440,10 +440,10 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             if (generateId) 1 else null,
             vedtakstype = vedtakstype,
             virkningstidspunkt =
-            when (typeBehandling) {
-                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> LocalDate.parse("2023-02-01")
-                TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
-            },
+                when (typeBehandling) {
+                    TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> LocalDate.parse("2023-02-01")
+                    TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
+                },
         )
     behandling.innkrevingstype = Innkrevingstype.MED_INNKREVING
     behandling.roller =
@@ -760,14 +760,14 @@ fun opprettBeregnetInntektFraGrunnlag(
             erBearbeidet = true,
             aktiv = LocalDateTime.now(),
             data =
-            commonObjectmapper.writeValueAsString(
-                POJONode(
-                    SummerteInntekter(
-                        versjon = inntekterBearbeidet.versjon,
-                        inntekter = inntekterBearbeidet.summertMånedsinntektListe,
+                commonObjectmapper.writeValueAsString(
+                    POJONode(
+                        SummerteInntekter(
+                            versjon = inntekterBearbeidet.versjon,
+                            inntekter = inntekterBearbeidet.summertMånedsinntektListe,
+                        ),
                     ),
                 ),
-            ),
             innhentet = LocalDateTime.now(),
             rolle = testDataPerson.tilRolle(behandling),
         ),
@@ -777,16 +777,16 @@ fun opprettBeregnetInntektFraGrunnlag(
             erBearbeidet = true,
             aktiv = LocalDateTime.now(),
             data =
-            commonObjectmapper.writeValueAsString(
-                POJONode(
-                    SummerteInntekter(
-                        versjon = inntekterBearbeidet.versjon,
-                        inntekter =
-                        inntekterBearbeidet.summertÅrsinntektListe.ainntektListe +
-                                inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlagListe,
+                commonObjectmapper.writeValueAsString(
+                    POJONode(
+                        SummerteInntekter(
+                            versjon = inntekterBearbeidet.versjon,
+                            inntekter =
+                                inntekterBearbeidet.summertÅrsinntektListe.ainntektListe +
+                                    inntekterBearbeidet.summertÅrsinntektListe.skattegrunnlagListe,
+                        ),
                     ),
                 ),
-            ),
             innhentet = LocalDateTime.now(),
             rolle = testDataPerson.tilRolle(behandling),
         ),
@@ -828,14 +828,14 @@ fun TransformerInntekterResponse.tilGrunnlag(
     erBearbeidet = true,
     aktiv = LocalDateTime.now(),
     data =
-    commonObjectmapper.writeValueAsString(
-        POJONode(
-            SummerteInntekter(
-                versjon = versjon,
-                summertÅrsinntektListe.filter { it.inntektRapportering == type },
+        commonObjectmapper.writeValueAsString(
+            POJONode(
+                SummerteInntekter(
+                    versjon = versjon,
+                    summertÅrsinntektListe.filter { it.inntektRapportering == type },
+                ),
             ),
         ),
-    ),
     innhentet = LocalDateTime.now(),
     rolle = person.tilRolle(behandling),
 )
@@ -875,20 +875,20 @@ fun oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(husstandsmedlemSet: Se
             rolle = behandling.bidragsmottaker!!,
             innhentet = LocalDateTime.now(),
             data =
-            commonObjectmapper.writeValueAsString(
-                husstandsmedlem.flatMap { hb ->
-                    hb.perioder.map {
-                        BoforholdResponseV2(
-                            gjelderPersonId = hb.ident,
-                            periodeFom = it.datoFom!!,
-                            periodeTom = it.datoTom,
-                            kilde = it.kilde,
-                            bostatus = it.bostatus,
-                            fødselsdato = hb.fødselsdato!!,
-                        )
-                    }
-                },
-            ),
+                commonObjectmapper.writeValueAsString(
+                    husstandsmedlem.flatMap { hb ->
+                        hb.perioder.map {
+                            BoforholdResponseV2(
+                                gjelderPersonId = hb.ident,
+                                periodeFom = it.datoFom!!,
+                                periodeTom = it.datoTom,
+                                kilde = it.kilde,
+                                bostatus = it.bostatus,
+                                fødselsdato = hb.fødselsdato!!,
+                            )
+                        }
+                    },
+                ),
         )
     }
 
@@ -970,23 +970,23 @@ fun opprettInntekt(
 
     inntekt.inntektsposter =
         (
-                inntektstyper.map {
+            inntektstyper.map {
+                Inntektspost(
+                    inntekt = inntekt,
+                    beløp = it.second,
+                    inntektstype = it.first,
+                    kode = "",
+                )
+            } +
+                inntektstyperKode.map {
                     Inntektspost(
                         inntekt = inntekt,
                         beløp = it.second,
-                        inntektstype = it.first,
-                        kode = "",
+                        inntektstype = null,
+                        kode = it.first,
                     )
-                } +
-                        inntektstyperKode.map {
-                            Inntektspost(
-                                inntekt = inntekt,
-                                beløp = it.second,
-                                inntektstype = null,
-                                kode = it.first,
-                            )
-                        }
-                ).toMutableSet()
+                }
+        ).toMutableSet()
     return inntekt
 }
 
@@ -1080,8 +1080,8 @@ fun oppretteBehandling(
             behandling.underholdskostnad.add(
                 Underholdskostnad(
                     behandling = behandling,
-                    person = Person(rolle = mutableSetOf(it))
-                )
+                    person = Person(rolle = mutableSetOf(it)),
+                ),
             )
         }
     }
@@ -1149,20 +1149,20 @@ fun oppretteArbeidsforhold(personident: String): ArbeidsforholdGrunnlagDto =
         permitteringListe = emptyList(),
         permisjonListe = emptyList(),
         ansettelsesdetaljerListe =
-        listOf(
-            Ansettelsesdetaljer(
-                periodeFra = YearMonth.now().minusMonths(144),
-                periodeTil = null,
-                ansettelsesformBeskrivelse = "Fast ansatt",
-                antallTimerPrUke = 40.0,
-                arbeidsforholdType = "Ordinaer",
-                avtaltStillingsprosent = 100.0,
-                arbeidstidsordningBeskrivelse = "Ikke skift",
-                sisteLønnsendringDato = LocalDate.now().minusMonths(10).withMonth(1),
-                sisteStillingsprosentendringDato = LocalDate.now().minusMonths(144),
-                yrkeBeskrivelse = "Snekker",
+            listOf(
+                Ansettelsesdetaljer(
+                    periodeFra = YearMonth.now().minusMonths(144),
+                    periodeTil = null,
+                    ansettelsesformBeskrivelse = "Fast ansatt",
+                    antallTimerPrUke = 40.0,
+                    arbeidsforholdType = "Ordinaer",
+                    avtaltStillingsprosent = 100.0,
+                    arbeidstidsordningBeskrivelse = "Ikke skift",
+                    sisteLønnsendringDato = LocalDate.now().minusMonths(10).withMonth(1),
+                    sisteStillingsprosentendringDato = LocalDate.now().minusMonths(144),
+                    yrkeBeskrivelse = "Snekker",
+                ),
             ),
-        ),
     )
 
 fun oppretteArbeidsforhold(
@@ -1204,12 +1204,12 @@ private fun oppretteBoforhold(
                 navn = "Lyrisk Sopp",
                 partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                 borISammeHusstandDtoListe =
-                listOf(
-                    BorISammeHusstandDto(
-                        periodeFra = LocalDate.parse("2023-01-01"),
-                        periodeTil = LocalDate.parse("2023-05-31"),
+                    listOf(
+                        BorISammeHusstandDto(
+                            periodeFra = LocalDate.parse("2023-01-01"),
+                            periodeTil = LocalDate.parse("2023-05-31"),
+                        ),
                     ),
-                ),
             ),
             RelatertPersonGrunnlagDto(
                 relatertPersonPersonId = testdataBarn2.ident,
@@ -1219,12 +1219,12 @@ private fun oppretteBoforhold(
                 navn = "Lyrisk Sopp",
                 partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                 borISammeHusstandDtoListe =
-                listOf(
-                    BorISammeHusstandDto(
-                        periodeFra = LocalDate.parse("2023-01-01"),
-                        periodeTil = LocalDate.parse("2023-05-31"),
+                    listOf(
+                        BorISammeHusstandDto(
+                            periodeFra = LocalDate.parse("2023-01-01"),
+                            periodeTil = LocalDate.parse("2023-05-31"),
+                        ),
                     ),
-                ),
             ),
         )
 
@@ -1238,16 +1238,16 @@ private fun oppretteBoforhold(
                 navn = voksenPersonIBpsHusstand.navn,
                 partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
                 borISammeHusstandDtoListe =
-                listOf(
-                    BorISammeHusstandDto(
-                        periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(2).withDayOfMonth(1),
-                        periodeTil =
-                        behandling.virkningstidspunktEllerSøktFomDato
-                            .plusMonths(6)
-                            .withDayOfMonth(1)
-                            .minusDays(1),
+                    listOf(
+                        BorISammeHusstandDto(
+                            periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(2).withDayOfMonth(1),
+                            periodeTil =
+                                behandling.virkningstidspunktEllerSøktFomDato
+                                    .plusMonths(6)
+                                    .withDayOfMonth(1)
+                                    .minusDays(1),
+                        ),
                     ),
-                ),
             ),
         )
 
@@ -1526,29 +1526,29 @@ fun opprettLøpendeBidragGrunnlag(
 fun opprettEvnevurderingResultat(sakerFor: List<Pair<TestDataPerson, Stønadstype>>) =
     EvnevurderingBeregningResultat(
         løpendeBidragsaker =
-        sakerFor.map {
-            LøpendeBidragssak(
-                kravhaver = Personident(it.first.ident),
-                type = it.second,
-                løpendeBeløp = BigDecimal(5123),
-                sak = Saksnummer(SAKSNUMMER),
-            )
-        },
-        beregnetBeløpListe =
-        BidragBeregningResponsDto(
-            beregningListe =
             sakerFor.map {
-                BidragBeregningResponsDto.BidragBeregning(
-                    beløpSamvær = BigDecimal(5123),
-                    faktiskBeløp = BigDecimal(6555),
-                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
-                    beregnetBeløp = BigDecimal(6334),
-                    saksnummer = SAKSNUMMER,
-                    datoSøknad = LocalDate.now(),
-                    gjelderFom = LocalDate.now(),
-                    personidentBarn = Personident(it.first.ident),
-                    stønadstype = it.second,
+                LøpendeBidragssak(
+                    kravhaver = Personident(it.first.ident),
+                    type = it.second,
+                    løpendeBeløp = BigDecimal(5123),
+                    sak = Saksnummer(SAKSNUMMER),
                 )
             },
-        ),
+        beregnetBeløpListe =
+            BidragBeregningResponsDto(
+                beregningListe =
+                    sakerFor.map {
+                        BidragBeregningResponsDto.BidragBeregning(
+                            beløpSamvær = BigDecimal(5123),
+                            faktiskBeløp = BigDecimal(6555),
+                            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
+                            beregnetBeløp = BigDecimal(6334),
+                            saksnummer = SAKSNUMMER,
+                            datoSøknad = LocalDate.now(),
+                            gjelderFom = LocalDate.now(),
+                            personidentBarn = Personident(it.first.ident),
+                            stønadstype = it.second,
+                        )
+                    },
+            ),
     )

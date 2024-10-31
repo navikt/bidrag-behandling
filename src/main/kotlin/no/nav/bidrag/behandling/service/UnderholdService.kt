@@ -67,7 +67,6 @@ class UnderholdService(
             val rolle = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
             val eksisterendePerson = personRepository.findFirstByIdent(personidentBarn.verdi)
             if (eksisterendePerson == null) {
-
                 val ident = if (rolle == null) personidentBarn.verdi else null
                 val roller = rolle?.let { mutableSetOf(it) } ?: mutableSetOf()
 
@@ -109,11 +108,11 @@ class UnderholdService(
                             fom = request.periode.fom,
                             tom = request.periode.tom,
                             under_skolealder =
-                            when (request.skolealder) {
-                                Skolealder.UNDER -> true
-                                Skolealder.OVER -> false
-                                else -> null
-                            },
+                                when (request.skolealder) {
+                                    Skolealder.UNDER -> true
+                                    Skolealder.OVER -> false
+                                    else -> null
+                                },
                             omfang = request.tilsynstype,
                             kilde = Kilde.MANUELL,
                             underholdskostnad = underholdskostnad,
@@ -126,10 +125,10 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
             underholdskostnad =
-            beregneUnderholdskostnad(
-                underholdskostnad,
-                Underholdselement.STØNAD_TIL_BARNETILSYN,
-            ),
+                beregneUnderholdskostnad(
+                    underholdskostnad,
+                    Underholdselement.STØNAD_TIL_BARNETILSYN,
+                ),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -170,10 +169,10 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = oppdatertFaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto(),
             underholdskostnad =
-            beregneUnderholdskostnad(
-                underholdskostnad,
-                Underholdselement.FAKTISK_TILSYNSUGIFT,
-            ),
+                beregneUnderholdskostnad(
+                    underholdskostnad,
+                    Underholdselement.FAKTISK_TILSYNSUGIFT,
+                ),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -210,10 +209,10 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             tilleggsstønad = oppdatertTilleggsstønad.tilTilleggsstønadDto(),
             underholdskostnad =
-            beregneUnderholdskostnad(
-                underholdskostnad,
-                Underholdselement.TILLEGGSSTØNAD,
-            ),
+                beregneUnderholdskostnad(
+                    underholdskostnad,
+                    Underholdselement.TILLEGGSSTØNAD,
+                ),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }

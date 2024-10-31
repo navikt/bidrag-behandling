@@ -61,9 +61,9 @@ data class ValideringsfeilUnderhold(
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() ||
-                    overlappendePerioder.isNotEmpty() ||
-                    fremtidigPeriode ||
-                    harIngenPerioder
+                overlappendePerioder.isNotEmpty() ||
+                fremtidigPeriode ||
+                harIngenPerioder
 }
 
 data class UnderholdskostnadDto(
