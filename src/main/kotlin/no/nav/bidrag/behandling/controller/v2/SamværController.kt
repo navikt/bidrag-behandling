@@ -8,8 +8,8 @@ import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværskalkulatorBeregningDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.service.SamværService
-import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseResultat
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -73,5 +73,5 @@ class SamværController(
         @Valid
         @RequestBody(required = true)
         request: SamværskalkulatorDetaljer,
-    ): BeregnSamværsklasseResultat = samværService.beregnSamværsklasse(request)
+    ): DelberegningSamværsklasse = samværService.beregnSamværsklasse(request)
 }
