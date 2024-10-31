@@ -47,6 +47,12 @@ data class UnderholdDto(
     val faktiskeTilsynsutgifter: Set<FaktiskTilsynsutgiftDto>,
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val underholdskostnad: Set<UnderholdskostnadDto>,
+    val begrunnelse: String? = null,
+)
+
+data class OppdatereUnderholdRequest(
+    val harTilsynsordning: Boolean? = null,
+    val begrunnelse: String? = null,
 )
 
 data class ValideringsfeilUnderhold(

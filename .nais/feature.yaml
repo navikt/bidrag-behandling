@@ -12,10 +12,10 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
-  BIDRAG_STONAD_URL: http://bidrag-stonad
-  BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad
-  BIDRAG_VEDTAK_URL: http://bidrag-vedtak
-  BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak
+  BIDRAG_STONAD_URL: http://bidrag-stonad-q1
+  BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-q1
+  BIDRAG_VEDTAK_URL: http://bidrag-vedtak-q1
+  BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-q1
   BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
   BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
   BIDRAG_DOKUMENT_PRODUKSJON_URL: http://bidrag-dokument-produksjon
@@ -24,7 +24,7 @@ env:
   BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
   BIDRAG_SAK_URL: https://bidrag-sak-feature.dev-fss-pub.nais.io/bidrag-sak
   BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-feature
-  TOPIC_VEDTAK: bidrag.vedtak
+  TOPIC_VEDTAK: bidrag.vedtak-q1
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon-feature
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
@@ -53,10 +53,10 @@ database:
   tier: db-f1-micro
 outbound-access-apps:
   - bidrag-grunnlag-feature
-  - bidrag-stonad
+  - bidrag-stonad-q1
   - bidrag-dokument-forsendelse-feature
   - bidrag-tilgangskontroll-feature
-  - bidrag-vedtak
+  - bidrag-vedtak-q1
   - bidrag-dokument-produksjon
 outbound-access-hosts:
   - bidrag-dokument-feature.dev-fss-pub.nais.io

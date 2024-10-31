@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
@@ -15,6 +14,7 @@ import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
@@ -33,8 +33,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-
-private val log = KotlinLogging.logger {}
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @Service
 class UnderholdService(
@@ -43,17 +42,29 @@ class UnderholdService(
     private val tilleggsstønadRepository: TilleggsstønadRepository,
     private val underholdskostnadRepository: UnderholdskostnadRepository,
     private val personRepository: PersonRepository,
+    private val notatService: NotatService,
 ) {
     @Transactional
-    fun angiTilsynsordning(
+    fun oppdatereUnderhold(
         underholdskostnad: Underholdskostnad,
-        harTilsynsordning: Boolean = true,
-    ): Boolean {
-        underholdskostnad.harTilsynsordning = harTilsynsordning
-        log.info {
-            "Setter harTilsynsording til $harTilsynsordning for underholdskostnad med id ${underholdskostnad.id} i behandling ${underholdskostnad.behandling.id} "
+        request: OppdatereUnderholdRequest,
+    ): UnderholdDto {
+        request.validere()
+
+        request.harTilsynsordning?.let {
+            underholdskostnad.harTilsynsordning = it
         }
-        return harTilsynsordning
+
+        request.begrunnelse?.let {
+            notatService.oppdatereNotat(
+                underholdskostnad.behandling,
+                Notattype.UNDERHOLDSKOSTNAD,
+                it,
+                underholdskostnad.behandling.bidragspliktig!!.id!!,
+            )
+        }
+
+        return underholdskostnad.tilUnderholdDto()
     }
 
     @Transactional

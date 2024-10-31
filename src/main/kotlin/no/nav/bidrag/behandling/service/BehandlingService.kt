@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -165,18 +166,22 @@ class BehandlingService(
                 kategoriBeskrivelse = opprettBehandling.kategori?.beskrivelse,
             )
 
-        if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG) {
-            behandling.utgift = Utgift(behandling = behandling)
-        }
-
-        val roller =
+        behandling.roller.addAll(
             HashSet(
                 opprettBehandling.roller.map {
                     it.toRolle(behandling)
                 },
-            )
+            ),
+        )
 
-        behandling.roller.addAll(roller)
+        if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG) {
+            behandling.utgift = Utgift(behandling = behandling)
+        }
+
+        if (opprettBehandling.tilType() == TypeBehandling.BIDRAG) {
+            behandling.samvær = behandling.søknadsbarn.map { Samvær(behandling, rolle = it) }.toMutableSet()
+        }
+
         val behandlingDo = opprettBehandling(behandling)
 
         if (TypeBehandling.BIDRAG == opprettBehandling.tilType()) {

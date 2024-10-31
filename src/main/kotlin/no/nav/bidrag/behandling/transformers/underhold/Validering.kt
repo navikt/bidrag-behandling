@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
@@ -13,6 +14,15 @@ import no.nav.bidrag.behandling.dto.v2.underhold.ValideringsfeilUnderhold
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+
+fun OppdatereUnderholdRequest.validere() {
+    if (this.harTilsynsordning == null && this.begrunnelse.isNullOrBlank()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Verken harTilsynsordning eller begrunnelse var satt.",
+        )
+    }
+}
 
 fun BarnDto.validere() {
     if (navn.isNullOrBlank() && (personident == null || personident.verdi.isEmpty())) {

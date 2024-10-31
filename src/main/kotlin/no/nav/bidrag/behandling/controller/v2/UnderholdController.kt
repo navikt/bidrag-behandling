@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
@@ -26,7 +27,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 
 private val log = KotlinLogging.logger {}
@@ -173,7 +173,7 @@ class UnderholdController(
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")
+    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/oppdatere")
     @Operation(
         description = "Angir om et barn har tilsynsordning.",
         security = [SecurityRequirement(name = "bearer-key")],
@@ -186,11 +186,11 @@ class UnderholdController(
             ),
         ],
     )
-    fun angiTilsynsordning(
+    fun oppdatereUnderhold(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
-        @RequestParam(required = true) harTilsynsordning: Boolean,
-    ): Boolean {
+        @RequestBody(required = true) request: OppdatereUnderholdRequest,
+    ): UnderholdDto {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
@@ -198,7 +198,7 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
-        return underholdService.angiTilsynsordning(underholdskostnad, harTilsynsordning)
+        return underholdService.oppdatereUnderhold(underholdskostnad, request)
     }
 
     @ResponseStatus(HttpStatus.CREATED)

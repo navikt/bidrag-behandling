@@ -1,10 +1,13 @@
 package no.nav.bidrag.behandling.controller
 
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
+import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFrekvens
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -25,5 +28,8 @@ class VisningsnavnController {
             Bostatuskode.entries.associate { it.name to it.visningsnavn.intern } +
             Sivilstandskode.entries.associate { it.name to it.visningsnavn.intern } +
             Særbidragskategori.entries.associate { it.name to it.visningsnavn.intern } +
+            Samværsklasse.entries.associate { it.name to it.visningsnavn.intern } +
+            SamværskalkulatorFerietype.entries.associate { it.name to it.visningsnavn.intern } +
+            SamværskalkulatorNetterFrekvens.entries.associate { it.name to it.visningsnavn.intern } +
             Utgiftstype.entries.associate { it.name to it.visningsnavn.intern }
 }
