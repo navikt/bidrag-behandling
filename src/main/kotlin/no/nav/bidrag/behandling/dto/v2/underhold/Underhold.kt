@@ -61,9 +61,9 @@ data class ValideringsfeilUnderhold(
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() ||
-                overlappendePerioder.isNotEmpty() ||
-                fremtidigPeriode ||
-                harIngenPerioder
+                    overlappendePerioder.isNotEmpty() ||
+                    fremtidigPeriode ||
+                    harIngenPerioder
 }
 
 data class UnderholdskostnadDto(
@@ -92,11 +92,11 @@ data class FaktiskTilsynsutgiftDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val utgift: BigDecimal,
-    val kostpenger: BigDecimal = BigDecimal.ZERO,
+    val kostpenger: BigDecimal? = null,
     val kommentar: String? = null,
 ) {
     // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
-    val total get() = utgift - kostpenger
+    val total get() = kostpenger?.let { utgift - it } ?: utgift
 }
 
 data class StønadTilBarnetilsynDto(

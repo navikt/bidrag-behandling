@@ -12,7 +12,7 @@ fun Person.tilPersoninfoDto(behandling: Behandling) =
         ident = this.ident?.let { Personident(it) },
         navn = this.navn,
         fødselsdato = this.fødselsdato,
-        kilde = this.ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+        kilde = if (this.rolle.size > 0) Kilde.OFFENTLIG else Kilde.MANUELL,
         medIBehandlingen = this.harRolleIBehandling(behandling),
     )
 

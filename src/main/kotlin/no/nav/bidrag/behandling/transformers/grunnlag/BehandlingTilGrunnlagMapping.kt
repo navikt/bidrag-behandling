@@ -53,7 +53,7 @@ fun Person.valider(rolle: Rolletype? = null): Person {
     if ((ident == null || ident!!.verdi.isEmpty()) && navn.isNullOrEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Person med fødselsdato $fødselsdato og rolle $rolle mangler ident men har ikke navn. Ident eller Navn må være satt",
+            "Person med fødselsdato $fødselsdato og rolle $rolle mangler både ident og navn. Ident eller Navn må være satt",
         )
     }
     return this

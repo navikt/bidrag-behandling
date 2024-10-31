@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
+import no.nav.bidrag.behandling.transformers.underhold.tilUnderholdDto
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -135,7 +136,7 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
-        return underholdService.oppdatereFaktiskTilsynsutgift(underholdskostnad, request)
+        return underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
     }
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -223,6 +224,6 @@ class UnderholdController(
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        return underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn)
+        return underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn).tilUnderholdDto()
     }
 }
