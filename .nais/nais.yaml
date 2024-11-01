@@ -5,6 +5,10 @@ metadata:
   namespace: bidrag
   labels:
     team: bidrag
+observability:
+  autoInstrumentation:
+    enabled: true
+    runtime: java
 spec:
   azure:
     application:
