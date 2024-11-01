@@ -148,7 +148,7 @@ class BeregningEvnevurderingServiceTest {
                 ) {
                     type shouldBe Stønadstype.BIDRAG18AAR
                     løpendeBeløp shouldBe BigDecimal(5333)
-                    samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                     beregnetBeløp shouldBe BigDecimal(7533)
                     faktiskBeløp shouldBe BigDecimal(4433)
                     gjelderBarn shouldBe husstandsmedlemObjekt!!.referanse
@@ -295,13 +295,13 @@ class BeregningEvnevurderingServiceTest {
                     type shouldBe Stønadstype.BIDRAG
                     faktiskBeløp shouldBe BigDecimal.ZERO
                     beregnetBeløp shouldBe BigDecimal.ZERO
-                    samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                 }
                 assertSoftly(innhold.løpendeBidragListe[2]) {
                     type shouldBe Stønadstype.BIDRAG18AAR
                     faktiskBeløp shouldNotBe BigDecimal.ZERO
                     beregnetBeløp shouldNotBe BigDecimal.ZERO
-                    samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                 }
             }
         }
@@ -348,7 +348,7 @@ class BeregningEvnevurderingServiceTest {
                     it.gjelderBarn shouldBe person1.referanse
                     it.faktiskBeløp shouldBe BigDecimal.ZERO
                     it.beregnetBeløp shouldBe BigDecimal.ZERO
-                    it.samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    it.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                     it.løpendeBeløp shouldBe BigDecimal(5222)
                     it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
                 }
@@ -357,7 +357,7 @@ class BeregningEvnevurderingServiceTest {
                     it.gjelderBarn shouldBe person2.referanse
                     it.faktiskBeløp shouldBe BigDecimal.ZERO
                     it.beregnetBeløp shouldBe BigDecimal.ZERO
-                    it.samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    it.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                     it.løpendeBeløp shouldBe BigDecimal(5333)
                     it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
                 }
@@ -366,7 +366,7 @@ class BeregningEvnevurderingServiceTest {
                     it.gjelderBarn shouldBe søknadsbarn.tilGrunnlagsreferanse()
                     it.faktiskBeløp shouldBe BigDecimal.ZERO
                     it.beregnetBeløp shouldBe BigDecimal.ZERO
-                    it.samværsklasse shouldBe Samværsklasse.INGEN_SAMVÆR
+                    it.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                     it.løpendeBeløp shouldBe BigDecimal(5111)
                     it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
                 }
@@ -464,7 +464,7 @@ fun opprettBidragBeregning(
         } else if (kravhaver == testdataBarn2.ident) {
             Samværsklasse.SAMVÆRSKLASSE_1
         } else {
-            Samværsklasse.INGEN_SAMVÆR
+            Samværsklasse.SAMVÆRSKLASSE_0
         },
     datoSøknad = LocalDate.parse("2024-07-01"),
     gjelderFom = LocalDate.parse("2024-07-01"),
