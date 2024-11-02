@@ -42,7 +42,7 @@ open class Samværsperiode(
 
     val beregning get() =
         try {
-            commonObjectmapper.readValue(beregningJson, SamværskalkulatorDetaljer::class.java)
+            beregningJson?.let { commonObjectmapper.readValue(beregningJson, SamværskalkulatorDetaljer::class.java) }
         } catch (e: Exception) {
             log.error {
                 "Kunne ikke deserialisere samværskalkulator beregning for samvær ${samvær.id}:$id i behandling ${samvær.behandling.id}"

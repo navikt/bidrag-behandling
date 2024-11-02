@@ -18,13 +18,12 @@ data class OppdaterSamværDto(
 data class OppdaterSamværResponsDto(
     @Schema(description = "Samvær som ble oppdatert")
     val oppdatertSamvær: SamværDto? = null,
-    val samværsperioder: List<SamværDto> = emptyList(),
 )
 
 data class OppdaterSamværsperiodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
-    val samværsklasse: Samværsklasse?,
+    val samværsklasse: Samværsklasse? = null,
     val beregning: SamværskalkulatorDetaljer? = null,
 )
 
