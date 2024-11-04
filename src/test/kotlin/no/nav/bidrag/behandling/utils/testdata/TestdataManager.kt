@@ -5,8 +5,11 @@ import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
@@ -22,13 +25,29 @@ import java.time.LocalDateTime
 @Component
 class TestdataManager(
     private val behandlingRepository: BehandlingRepository,
+    private val personRepository: PersonRepository,
+    private val rolleRepository: RolleRepository,
     private val entityManager: EntityManager,
 ) {
     @Transactional
     fun lagreBehandling(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
+    fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
+        val underholdskostnader = mutableSetOf<Underholdskostnad>()
+
+        behandling.underholdskostnad.forEach { underholdskostnader.add(it) }
+        behandling.underholdskostnad = mutableSetOf()
+
+        behandlingRepository.save(behandling)
+
+        underholdskostnader.forEach {
+            personRepository.save(it.person)
+        }
+
+        behandling.underholdskostnad.addAll(underholdskostnader)
+        return behandlingRepository.save(behandling)
+    }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun oppretteBehandlingINyTransaksjon(
@@ -111,15 +130,15 @@ class TestdataManager(
                 grunnlagstype.type.getOrMigrate(),
                 grunnlagstype.erBearbeidet,
                 data =
-                    if (grunnlagsdata != null) {
-                        tilJson(grunnlagsdata)
-                    } else {
-                        oppretteGrunnlagInntektsdata(
-                            grunnlagstype.type.getOrMigrate(),
-                            rolle!!.ident!!,
-                            behandling.søktFomDato,
-                        )
-                    },
+                if (grunnlagsdata != null) {
+                    tilJson(grunnlagsdata)
+                } else {
+                    oppretteGrunnlagInntektsdata(
+                        grunnlagstype.type.getOrMigrate(),
+                        rolle!!.ident!!,
+                        behandling.søktFomDato,
+                    )
+                },
                 innhentet = innhentet,
                 aktiv = aktiv,
                 rolle = rolle!!,
@@ -142,13 +161,13 @@ class TestdataManager(
                             periodeFra = søktFomDato.withDayOfMonth(1),
                             periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
                             ainntektspostListe =
-                                listOf(
-                                    tilAinntektspostDto(
-                                        beløp = BigDecimal(70000),
-                                        fomDato = søktFomDato,
-                                        tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
-                                    ),
+                            listOf(
+                                tilAinntektspostDto(
+                                    beløp = BigDecimal(70000),
+                                    fomDato = søktFomDato,
+                                    tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
                                 ),
+                            ),
                         ),
                     ),
                 ),

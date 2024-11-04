@@ -154,7 +154,7 @@ open class Behandling(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE],
         orphanRemoval = true,
     )
     open var underholdskostnad: MutableSet<Underholdskostnad> = mutableSetOf(),

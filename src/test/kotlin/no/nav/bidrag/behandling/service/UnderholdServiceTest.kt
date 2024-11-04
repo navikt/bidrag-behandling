@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
@@ -31,6 +32,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -55,6 +57,9 @@ class UnderholdServiceTest {
     @MockK
     lateinit var personRepository: PersonRepository
 
+    @MockK
+    lateinit var notatService: NotatService
+
     @InjectMockKs
     lateinit var underholdService: UnderholdService
 
@@ -71,17 +76,16 @@ class UnderholdServiceTest {
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
+            val underholdskostnad = behandling.underholdskostnad.first()
 
-            val barn = Person(ident = behandling.søknadsbarn.first().ident)
-            val underholdskostnad = Underholdskostnad(id = universalid, behandling = behandling, person = barn)
             val tilleggsstønad =
                 Tilleggsstønad(
                     id = universalid,
                     underholdskostnad = underholdskostnad,
                     dagsats =
-                        BigDecimal(
-                            350,
-                        ),
+                    BigDecimal(
+                        350,
+                    ),
                     fom = LocalDate.now(),
                 )
             underholdskostnad.tilleggsstønad.add(tilleggsstønad)
@@ -122,11 +126,11 @@ class UnderholdServiceTest {
 
             every { personRepository.save(any()) } returns barn
             every { underholdskostnadRepository.save(any()) } returns
-                Underholdskostnad(
-                    id = universalid,
-                    behandling = behandling,
-                    person = barn,
-                )
+                    Underholdskostnad(
+                        id = universalid,
+                        behandling = behandling,
+                        person = barn,
+                    )
 
             // hvis
             underholdService.oppretteUnderholdskostnad(behandling, request)
@@ -160,30 +164,30 @@ class UnderholdServiceTest {
                 val underholdskostnad =
                     behandling.underholdskostnad.find {
                         barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                                it.person.rolle
+                                    .first()
+                                    .ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
                     TilleggsstønadDto(
                         periode =
-                            DatoperiodeDto(
-                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                                null,
-                            ),
+                        DatoperiodeDto(
+                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                            null,
+                        ),
                         dagsats = BigDecimal(365),
                     )
 
                 every { tilleggsstønadRepository.save(any()) } returns
-                    Tilleggsstønad(
-                        1L,
-                        underholdskostnad,
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        request.dagsats,
-                    )
+                        Tilleggsstønad(
+                            1L,
+                            underholdskostnad,
+                            fom = request.periode.fom,
+                            tom = request.periode.tom,
+                            request.dagsats,
+                        )
 
                 // hvis
                 underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
@@ -220,38 +224,38 @@ class UnderholdServiceTest {
                 val underholdskostnad =
                     behandling.underholdskostnad.find {
                         barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                                it.person.rolle
+                                    .first()
+                                    .ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
                     StønadTilBarnetilsynDto(
                         periode =
-                            DatoperiodeDto(
-                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                                null,
-                            ),
+                        DatoperiodeDto(
+                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                            null,
+                        ),
                         skolealder = Skolealder.OVER,
                         tilsynstype = Tilsynstype.HELTID,
                     )
 
                 every { barnetilsynRepository.save(any()) } returns
-                    Barnetilsyn(
-                        1L,
-                        underholdskostnad,
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        under_skolealder =
+                        Barnetilsyn(
+                            1L,
+                            underholdskostnad,
+                            fom = request.periode.fom,
+                            tom = request.periode.tom,
+                            under_skolealder =
                             when (request.skolealder) {
                                 Skolealder.OVER -> false
                                 Skolealder.UNDER -> true
                                 else -> null
                             },
-                        request.tilsynstype,
-                        kilde = Kilde.OFFENTLIG,
-                    )
+                            request.tilsynstype,
+                            kilde = Kilde.OFFENTLIG,
+                        )
 
                 // hvis
                 underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
@@ -289,34 +293,34 @@ class UnderholdServiceTest {
                 val underholdskostnad =
                     behandling.underholdskostnad.find {
                         barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                                it.person.rolle
+                                    .first()
+                                    .ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
                     FaktiskTilsynsutgiftDto(
                         periode =
-                            DatoperiodeDto(
-                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                                null,
-                            ),
+                        DatoperiodeDto(
+                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                            null,
+                        ),
                         utgift = BigDecimal(6000),
                         kostpenger = BigDecimal(1000),
                         kommentar = "Kostpenger gjelder ikke fredager",
                     )
 
                 every { faktiskTilsynsutgiftRepository.save(any()) } returns
-                    FaktiskTilsynsutgift(
-                        1L,
-                        underholdskostnad,
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        tilsynsutgift = request.utgift,
-                        kostpenger = request.kostpenger,
-                        kommentar = request.kommentar,
-                    )
+                        FaktiskTilsynsutgift(
+                            1L,
+                            underholdskostnad,
+                            fom = request.periode.fom,
+                            tom = request.periode.tom,
+                            tilsynsutgift = request.utgift,
+                            kostpenger = request.kostpenger,
+                            kommentar = request.kommentar,
+                        )
 
                 // hvis
                 underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
@@ -337,7 +341,7 @@ class UnderholdServiceTest {
 
         @Nested
         @DisplayName("Tester oppdatering av underhold ")
-        open inner class Underhold {
+        open inner class Underholdstest {
             @Test
             open fun `skal angi tilsynsordning og legge inn begrunnelse`() {
                 // gitt
@@ -354,48 +358,37 @@ class UnderholdServiceTest {
                 val underholdskostnad =
                     behandling.underholdskostnad.find {
                         barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                                it.person.rolle
+                                    .first()
+                                    .ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
-                    FaktiskTilsynsutgiftDto(
-                        periode =
-                            DatoperiodeDto(
-                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                                null,
-                            ),
-                        utgift = BigDecimal(6000),
-                        kostpenger = BigDecimal(1000),
-                        kommentar = "Kostpenger gjelder ikke fredager",
+                    OppdatereUnderholdRequest(
+                        harTilsynsordning = true,
+                        begrunnelse = "Barmet går i SFO",
                     )
 
-                every { faktiskTilsynsutgiftRepository.save(any()) } returns
-                    FaktiskTilsynsutgift(
-                        1L,
-                        underholdskostnad,
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        tilsynsutgift = request.utgift,
-                        kostpenger = request.kostpenger,
-                        kommentar = request.kommentar,
+                every {
+                    notatService.oppdatereNotat(
+                        any(),
+                        NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+                        request.begrunnelse!!,
+                        behandling.bidragspliktig!!.id!!
                     )
+                } returns Unit
 
                 // hvis
-                underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
+                val underholdDto = underholdService.oppdatereUnderhold(underholdskostnad, request)
 
                 // så
-                val u = behandling.underholdskostnad.first()
-                u.shouldNotBeNull()
-                u.faktiskeTilsynsutgifter.shouldNotBeEmpty()
-
-                assertSoftly(u.faktiskeTilsynsutgifter.first()) {
-                    fom shouldBe request.periode.fom
-                    tom shouldBe request.periode.tom
-                    tilsynsutgift shouldBe request.utgift
-                    kostpenger shouldBe request.kostpenger
+                assertSoftly(underholdDto) {
+                    harTilsynsordning shouldBe request.harTilsynsordning
+                    begrunnelse shouldBe request.begrunnelse
+                    stønadTilBarnetilsyn.shouldBeEmpty()
+                    faktiskeTilsynsutgifter.shouldBeEmpty()
+                    tilleggsstønad.shouldBeEmpty()
                 }
             }
         }

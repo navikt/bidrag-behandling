@@ -119,11 +119,11 @@ class UnderholdService(
                             fom = request.periode.fom,
                             tom = request.periode.tom,
                             under_skolealder =
-                                when (request.skolealder) {
-                                    Skolealder.UNDER -> true
-                                    Skolealder.OVER -> false
-                                    else -> null
-                                },
+                            when (request.skolealder) {
+                                Skolealder.UNDER -> true
+                                Skolealder.OVER -> false
+                                else -> null
+                            },
                             omfang = request.tilsynstype,
                             kilde = Kilde.MANUELL,
                             underholdskostnad = underholdskostnad,
@@ -135,11 +135,7 @@ class UnderholdService(
 
         return OppdatereUnderholdResponse(
             stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
-            underholdskostnad =
-                beregneUnderholdskostnad(
-                    underholdskostnad,
-                    Underholdselement.STØNAD_TIL_BARNETILSYN,
-                ),
+            underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -179,11 +175,7 @@ class UnderholdService(
 
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = oppdatertFaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto(),
-            underholdskostnad =
-                beregneUnderholdskostnad(
-                    underholdskostnad,
-                    Underholdselement.FAKTISK_TILSYNSUGIFT,
-                ),
+            underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -219,11 +211,7 @@ class UnderholdService(
 
         return OppdatereUnderholdResponse(
             tilleggsstønad = oppdatertTilleggsstønad.tilTilleggsstønadDto(),
-            underholdskostnad =
-                beregneUnderholdskostnad(
-                    underholdskostnad,
-                    Underholdselement.TILLEGGSSTØNAD,
-                ),
+            underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -233,6 +221,7 @@ class UnderholdService(
         behandling: Behandling,
         request: SletteUnderholdselement,
     ): UnderholdDto? {
+
         request.validere(behandling)
 
         val underholdskostnad = behandling.underholdskostnad.find { request.idUnderhold == it.id }!!
@@ -252,39 +241,41 @@ class UnderholdService(
         }
     }
 
-    fun sletteStønadTilBarnetilsyn(
+    private fun sletteStønadTilBarnetilsyn(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
     ): UnderholdDto {
         val stønadTilBarnetilsyn = underholdskostnad.barnetilsyn.find { idElement == it.id }
         underholdskostnad.barnetilsyn.remove(stønadTilBarnetilsyn)
-        return underholdskostnad.tilUnderholdDto(Underholdselement.STØNAD_TIL_BARNETILSYN)
+        return underholdskostnad.tilUnderholdDto()
     }
 
-    fun sletteTilleggsstønad(
+    private fun sletteTilleggsstønad(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
     ): UnderholdDto {
         val tilleggsstønad = underholdskostnad.tilleggsstønad.find { idElement == it.id }
         underholdskostnad.tilleggsstønad.remove(tilleggsstønad)
-        return underholdskostnad.tilUnderholdDto(Underholdselement.TILLEGGSSTØNAD)
+        return underholdskostnad.tilUnderholdDto()
     }
 
-    fun sletteUnderholdskostnad(
+    private fun sletteUnderholdskostnad(
         behandling: Behandling,
         underholdskostnad: Underholdskostnad,
     ): UnderholdDto? {
         behandling.underholdskostnad.remove(underholdskostnad)
+        personRepository.deleteById(underholdskostnad.person.id!!)
+        underholdskostnadRepository.deleteById(underholdskostnad.id!!)
         return null
     }
 
-    fun sletteFaktiskTilsynsutgift(
+    private fun sletteFaktiskTilsynsutgift(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
     ): UnderholdDto {
         val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { idElement == it.id }
         underholdskostnad.faktiskeTilsynsutgifter.remove(faktiskTilsynsutgift)
-        return underholdskostnad.tilUnderholdDto(Underholdselement.FAKTISK_TILSYNSUGIFT)
+        return underholdskostnad.tilUnderholdDto()
     }
 
     private fun lagreUnderholdskostnad(
@@ -307,29 +298,31 @@ class UnderholdService(
         @Deprecated("Erstatte med ekstern modul")
         fun beregneUnderholdskostnad(
             underholdskostnad: Underholdskostnad,
-            underholdselement: Underholdselement,
         ): Set<UnderholdskostnadDto> {
-            val perioder =
-                when (underholdselement) {
-                    Underholdselement.TILLEGGSSTØNAD ->
-                        underholdskostnad.tilleggsstønad
-                            .sortedBy { it.fom }
-                            .map { DatoperiodeDto(it.fom, it.tom) }
 
-                    Underholdselement.STØNAD_TIL_BARNETILSYN ->
-                        underholdskostnad.barnetilsyn
-                            .sortedBy { it.fom }
-                            .map { DatoperiodeDto(it.fom, it.tom) }
-
-                    Underholdselement.FAKTISK_TILSYNSUGIFT ->
-                        underholdskostnad.faktiskeTilsynsutgifter
-                            .sortedBy { it.fom }
-                            .map { DatoperiodeDto(it.fom, it.tom) }
-
-                    else -> throw Exception("Barn er ikke støttet - testkode, erstattes av beregningsmodul.")
+            return when {
+                underholdskostnad.tilleggsstønad.isNotEmpty() -> {
+                    underholdskostnad.tilleggsstønad.sortedBy { it.fom }.map { DatoperiodeDto(it.fom, it.tom) }
+                        .tilUnderholdskostnadDto()
                 }
 
-            return perioder
+                underholdskostnad.barnetilsyn.isNotEmpty() -> {
+                    underholdskostnad.barnetilsyn.sortedBy { it.fom }.map { DatoperiodeDto(it.fom, it.tom) }
+                        .tilUnderholdskostnadDto()
+                }
+
+                underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() -> {
+                    underholdskostnad.faktiskeTilsynsutgifter.sortedBy { it.fom }
+                        .map { DatoperiodeDto(it.fom, it.tom) }
+                        .tilUnderholdskostnadDto()
+                }
+
+                else -> emptySet()
+            }
+        }
+
+        fun List<DatoperiodeDto>.tilUnderholdskostnadDto() =
+            this
                 .map {
                     UnderholdskostnadDto(
                         periode = it,
@@ -340,6 +333,5 @@ class UnderholdService(
                         barnetrygd = BigDecimal(4000),
                     )
                 }.toSet()
-        }
     }
 }
