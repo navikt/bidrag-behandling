@@ -3,7 +3,7 @@
 [![continuous integration](https://github.com/navikt/bidrag-behandling/actions/workflows/ci.yaml/badge.svg)](https://github.com/navikt/bidrag-dialog/actions/workflows/ci.yaml)
 [![release bidrag-behandling](https://github.com/navikt/bidrag-behandling/actions/workflows/release.yaml/badge.svg)](https://github.com/navikt/bidrag-dialog/actions/workflows/release.yaml)
 
-## Beskrivelse
+## Beskrivelse2
 
 Legg til Github secret `NAIS_DEPLOY_APIKEY` hvor secret hentes fra [Api key](https://deploy.nais.io/apikeys)
 
