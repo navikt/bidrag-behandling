@@ -16,6 +16,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværsklasse
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
@@ -106,7 +107,7 @@ class SamværService(
     }
 
     fun beregnSamværsklasse(kalkulator: SamværskalkulatorDetaljer): DelberegningSamværsklasse =
-        beregnSamværsklasseApi.beregnSamværsklasse(kalkulator)
+        beregnSamværsklasseApi.beregnSamværsklasse(kalkulator).delberegningSamværsklasse
 
     private fun SamværskalkulatorDetaljer?.tilJsonString() = this?.let { commonObjectmapper.writeValueAsString(it) }
 
