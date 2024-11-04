@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.underhold.tilUnderholdDto
@@ -41,7 +40,7 @@ class UnderholdController(
     @DeleteMapping("/behandling/{behandlingsid}/underhold")
     @Operation(
         description =
-        "Sletter fra underholdskostnad i behandling. Returnerer oppdaterte underholdsobjekt. Objektet " +
+            "Sletter fra underholdskostnad i behandling. Returnerer oppdaterte underholdsobjekt. Objektet " +
                 " vil være null dersom barn slettes.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -78,7 +77,7 @@ class UnderholdController(
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/barnetilsyn")
     @Operation(
         description =
-        "Oppdatere stønad til barnetilsyn for underholdskostnad i behandling. Returnerer oppdatert element.",
+            "Oppdatere stønad til barnetilsyn for underholdskostnad i behandling. Returnerer oppdatert element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -111,7 +110,7 @@ class UnderholdController(
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/faktisk_tilsynsutgift")
     @Operation(
         description =
-        "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
+            "Oppdatere faktisk tilsynsutgift for underholdskostnad i behandling. Returnerer oppdatert " +
                 "element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
@@ -145,7 +144,7 @@ class UnderholdController(
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilleggsstonad")
     @Operation(
         description =
-        "Oppdatere tilleggsstønad for underholdskostnad i behandling. Returnerer oppdatert element.",
+            "Oppdatere tilleggsstønad for underholdskostnad i behandling. Returnerer oppdatert element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -225,7 +224,6 @@ class UnderholdController(
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
-
 
         return underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn).tilUnderholdDto()
     }

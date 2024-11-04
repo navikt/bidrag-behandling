@@ -130,15 +130,15 @@ class TestdataManager(
                 grunnlagstype.type.getOrMigrate(),
                 grunnlagstype.erBearbeidet,
                 data =
-                if (grunnlagsdata != null) {
-                    tilJson(grunnlagsdata)
-                } else {
-                    oppretteGrunnlagInntektsdata(
-                        grunnlagstype.type.getOrMigrate(),
-                        rolle!!.ident!!,
-                        behandling.søktFomDato,
-                    )
-                },
+                    if (grunnlagsdata != null) {
+                        tilJson(grunnlagsdata)
+                    } else {
+                        oppretteGrunnlagInntektsdata(
+                            grunnlagstype.type.getOrMigrate(),
+                            rolle!!.ident!!,
+                            behandling.søktFomDato,
+                        )
+                    },
                 innhentet = innhentet,
                 aktiv = aktiv,
                 rolle = rolle!!,
@@ -161,13 +161,13 @@ class TestdataManager(
                             periodeFra = søktFomDato.withDayOfMonth(1),
                             periodeTil = søktFomDato.plusMonths(1).withDayOfMonth(1),
                             ainntektspostListe =
-                            listOf(
-                                tilAinntektspostDto(
-                                    beløp = BigDecimal(70000),
-                                    fomDato = søktFomDato,
-                                    tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                listOf(
+                                    tilAinntektspostDto(
+                                        beløp = BigDecimal(70000),
+                                        fomDato = søktFomDato,
+                                        tilDato = søktFomDato.plusMonths(1).withDayOfMonth(1),
+                                    ),
                                 ),
-                            ),
                         ),
                     ),
                 ),

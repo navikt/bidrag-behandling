@@ -119,11 +119,11 @@ class UnderholdService(
                             fom = request.periode.fom,
                             tom = request.periode.tom,
                             under_skolealder =
-                            when (request.skolealder) {
-                                Skolealder.UNDER -> true
-                                Skolealder.OVER -> false
-                                else -> null
-                            },
+                                when (request.skolealder) {
+                                    Skolealder.UNDER -> true
+                                    Skolealder.OVER -> false
+                                    else -> null
+                                },
                             omfang = request.tilsynstype,
                             kilde = Kilde.MANUELL,
                             underholdskostnad = underholdskostnad,
@@ -221,7 +221,6 @@ class UnderholdService(
         behandling: Behandling,
         request: SletteUnderholdselement,
     ): UnderholdDto? {
-
         request.validere(behandling)
 
         val underholdskostnad = behandling.underholdskostnad.find { request.idUnderhold == it.id }!!
@@ -296,30 +295,31 @@ class UnderholdService(
     // TODO: Erstatte med ny bidragsberegningsmodul
     companion object {
         @Deprecated("Erstatte med ekstern modul")
-        fun beregneUnderholdskostnad(
-            underholdskostnad: Underholdskostnad,
-        ): Set<UnderholdskostnadDto> {
-
-            return when {
+        fun beregneUnderholdskostnad(underholdskostnad: Underholdskostnad): Set<UnderholdskostnadDto> =
+            when {
                 underholdskostnad.tilleggsstønad.isNotEmpty() -> {
-                    underholdskostnad.tilleggsstønad.sortedBy { it.fom }.map { DatoperiodeDto(it.fom, it.tom) }
+                    underholdskostnad.tilleggsstønad
+                        .sortedBy { it.fom }
+                        .map { DatoperiodeDto(it.fom, it.tom) }
                         .tilUnderholdskostnadDto()
                 }
 
                 underholdskostnad.barnetilsyn.isNotEmpty() -> {
-                    underholdskostnad.barnetilsyn.sortedBy { it.fom }.map { DatoperiodeDto(it.fom, it.tom) }
+                    underholdskostnad.barnetilsyn
+                        .sortedBy { it.fom }
+                        .map { DatoperiodeDto(it.fom, it.tom) }
                         .tilUnderholdskostnadDto()
                 }
 
                 underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() -> {
-                    underholdskostnad.faktiskeTilsynsutgifter.sortedBy { it.fom }
+                    underholdskostnad.faktiskeTilsynsutgifter
+                        .sortedBy { it.fom }
                         .map { DatoperiodeDto(it.fom, it.tom) }
                         .tilUnderholdskostnadDto()
                 }
 
                 else -> emptySet()
             }
-        }
 
         fun List<DatoperiodeDto>.tilUnderholdskostnadDto() =
             this

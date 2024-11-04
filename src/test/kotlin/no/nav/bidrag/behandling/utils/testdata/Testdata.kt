@@ -1078,7 +1078,6 @@ fun oppretteBehandling(
         var idUnderholdskostnad = if (setteDatabaseider) 1 else null
         // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
         behandling.søknadsbarn.forEach {
-
             behandling.underholdskostnad.add(
                 Underholdskostnad(
                     id = idUnderholdskostnad?.toLong(),
@@ -1086,7 +1085,7 @@ fun oppretteBehandling(
                     person = Person(rolle = mutableSetOf(it)),
                 ),
             )
-            idUnderholdskostnad?.let{ idUnderholdskostnad = it + 1}
+            idUnderholdskostnad?.let { idUnderholdskostnad = it + 1 }
         }
     }
 

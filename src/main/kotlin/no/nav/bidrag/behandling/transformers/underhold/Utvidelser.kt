@@ -33,7 +33,7 @@ fun FaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto() =
         periode = DatoperiodeDto(this.fom, this.tom),
         utgift = this.tilsynsutgift,
         kostpenger = this.kostpenger ?: BigDecimal.ZERO,
-        kommentar = this.kommentar
+        kommentar = this.kommentar,
     )
 
 fun Set<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilFaktiskTilsynsutgiftDto() }.toSet()
@@ -43,11 +43,11 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
         id = this.id,
         periode = DatoperiodeDto(this.fom, this.tom),
         skolealder =
-        when (this.under_skolealder) {
-            true -> Skolealder.UNDER
-            false -> Skolealder.OVER
-            else -> Skolealder.IKKE_ANGITT
-        },
+            when (this.under_skolealder) {
+                true -> Skolealder.UNDER
+                false -> Skolealder.OVER
+                else -> Skolealder.IKKE_ANGITT
+            },
         tilsynstype = this.omfang,
         kilde = this.kilde,
     )

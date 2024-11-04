@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.controller
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -48,10 +47,8 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
     @Nested
     open inner class Opprette {
-
         @Test
         open fun `skal opprette underhold for barn`() {
-
             // gitt
             val navnAnnetBarnBp = "Stig E. Spill"
             val behandling =
@@ -98,15 +95,12 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 medIBehandlingen shouldBe false
             }
         }
-
     }
 
     @Nested
     open inner class Oppdatere {
-
         @Test
         open fun `skal angi tilsynsordning og oppdatere begrunnelse`() {
-
             // gitt
             val behandling =
                 oppretteBehandling(
@@ -122,7 +116,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             // hvis
             val svar =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV2()}/behandling/${behandling.id}/underhold/${underholdsid}/oppdatere",
+                    "${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/oppdatere",
                     HttpMethod.PUT,
                     HttpEntity(oppdatereUnderholdRequest),
                     UnderholdDto::class.java,
@@ -146,7 +140,6 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
         @Test
         open fun `skal oppdatere stønad til barnetilsyn`() {
-
             // gitt
             val behandling =
                 oppretteBehandling(
@@ -157,16 +150,17 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             testdataManager.lagreBehandlingNewTransaction(behandling)
             val underholdsid = behandling.underholdskostnad.first().id!!
 
-            val forespørsel = StønadTilBarnetilsynDto(
-                periode = DatoperiodeDto(behandling.virkningstidspunktEllerSøktFomDato, null),
-                skolealder = Skolealder.OVER,
-                tilsynstype = Tilsynstype.DELTID
-            )
+            val forespørsel =
+                StønadTilBarnetilsynDto(
+                    periode = DatoperiodeDto(behandling.virkningstidspunktEllerSøktFomDato, null),
+                    skolealder = Skolealder.OVER,
+                    tilsynstype = Tilsynstype.DELTID,
+                )
 
             // hvis
             val svar =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV2()}/behandling/${behandling.id}/underhold/${underholdsid}/barnetilsyn",
+                    "${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/barnetilsyn",
                     HttpMethod.PUT,
                     HttpEntity(forespørsel),
                     OppdatereUnderholdResponse::class.java,
@@ -190,7 +184,6 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
         @Test
         open fun `skal oppdatere faktiske tilsynsutgifter`() {
-
             // gitt
             val behandling =
                 oppretteBehandling(
@@ -201,17 +194,18 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             testdataManager.lagreBehandlingNewTransaction(behandling)
             val underholdsid = behandling.underholdskostnad.first().id!!
 
-            val forespørsel = FaktiskTilsynsutgiftDto(
-                periode = DatoperiodeDto(behandling.virkningstidspunktEllerSøktFomDato, null),
-                utgift = BigDecimal(6000),
-                kostpenger = BigDecimal(1000),
-                kommentar = "Gjelder frokost",
-            )
+            val forespørsel =
+                FaktiskTilsynsutgiftDto(
+                    periode = DatoperiodeDto(behandling.virkningstidspunktEllerSøktFomDato, null),
+                    utgift = BigDecimal(6000),
+                    kostpenger = BigDecimal(1000),
+                    kommentar = "Gjelder frokost",
+                )
 
             // hvis
             val svar =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV2()}/behandling/${behandling.id}/underhold/${underholdsid}/faktisk_tilsynsutgift",
+                    "${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/faktisk_tilsynsutgift",
                     HttpMethod.PUT,
                     HttpEntity(forespørsel),
                     OppdatereUnderholdResponse::class.java,
@@ -235,7 +229,6 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
         @Test
         open fun `skal oppdatere tilleggsstønad`() {
-
             // gitt
             val behandling =
                 oppretteBehandling(
@@ -246,15 +239,16 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             testdataManager.lagreBehandlingNewTransaction(behandling)
             val underholdsid = behandling.underholdskostnad.first().id!!
 
-            val forespørsel = TilleggsstønadDto(
-                periode = DatoperiodeDto(behandling.virkningstidspunktEllerSøktFomDato, null),
-                dagsats = BigDecimal(365)
-            )
+            val forespørsel =
+                TilleggsstønadDto(
+                    periode = DatoperiodeDto(behandling.virkningstidspunktEllerSøktFomDato, null),
+                    dagsats = BigDecimal(365),
+                )
 
             // hvis
             val svar =
                 httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV2()}/behandling/${behandling.id}/underhold/${underholdsid}/tilleggsstonad",
+                    "${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/tilleggsstonad",
                     HttpMethod.PUT,
                     HttpEntity(forespørsel),
                     OppdatereUnderholdResponse::class.java,
@@ -277,11 +271,9 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
     @Nested
     open inner class Slette {
-
         @Test
         @Transactional
         open fun `skal slette underhold og barn`() {
-
             // gitt
             val navnAnnetBarnBp = "Stig E. Spill"
             val behandling =
@@ -293,8 +285,8 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             behandling.underholdskostnad.add(
                 Underholdskostnad(
                     behandling = behandling,
-                    person = Person(navn = navnAnnetBarnBp)
-                )
+                    person = Person(navn = navnAnnetBarnBp),
+                ),
             )
             val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)
             lagretBehandling.underholdskostnad shouldHaveSize 3
@@ -334,5 +326,4 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             }
         }
     }
-
 }

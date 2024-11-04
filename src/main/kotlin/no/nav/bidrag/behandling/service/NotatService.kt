@@ -14,7 +14,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 private val log = KotlinLogging.logger {}
 
 @Service
-class NotatService() {
+class NotatService {
     @Transactional
     fun oppdatereNotat(
         behandling: Behandling,
@@ -60,9 +60,7 @@ class NotatService() {
                 ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
         }
 
-        fun henteUnderholdsnotat(
-            behandling: Behandling,
-        ): String? =
+        fun henteUnderholdsnotat(behandling: Behandling): String? =
             behandling.notater.find { it.rolle.id == behandling.bidragspliktig!!.id!! && Notattype.UNDERHOLDSKOSTNAD == it.type }?.innhold
 
         fun henteInntektsnotat(
