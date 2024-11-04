@@ -203,7 +203,7 @@ class VedtakGrunnlagMapper(
                                             ?: løpendeStønad.opprettPersonGrunnlag()
                                     LøpendeBidrag(
                                         faktiskBeløp = beregning?.faktiskBeløp ?: BigDecimal.ZERO,
-                                        samværsklasse = beregning?.samværsklasse ?: Samværsklasse.INGEN_SAMVÆR,
+                                        samværsklasse = beregning?.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
                                         beregnetBeløp = beregning?.beregnetBeløp ?: BigDecimal.ZERO,
                                         løpendeBeløp = løpendeStønad.løpendeBeløp,
                                         type = løpendeStønad.type,

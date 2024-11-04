@@ -51,7 +51,7 @@ data class SamværDto(
         val id: Long? = null,
         val periode: DatoperiodeDto,
         val samværsklasse: Samværsklasse,
-        val sumGjennomsnittligSamværPerMåned: BigDecimal,
+        val gjennomsnittligSamværPerMåned: BigDecimal,
         val beregning: SamværskalkulatorDetaljer? = null,
     )
 }

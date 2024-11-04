@@ -13,9 +13,9 @@ import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseResultat
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.context.annotation.Import
@@ -36,8 +36,6 @@ class SamværService(
         behandlingsid: Long,
         request: OppdaterSamværDto,
     ): OppdaterSamværResponsDto {
-        // val
-
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         request.valider()
         log.info { "Oppdaterer samvær for behandling $behandlingsid" }
@@ -108,7 +106,7 @@ class SamværService(
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
 
-    fun beregnSamværsklasse(kalkulator: SamværskalkulatorDetaljer): BeregnSamværsklasseResultat =
+    fun beregnSamværsklasse(kalkulator: SamværskalkulatorDetaljer): DelberegningSamværsklasse =
         beregnSamværsklasseApi.beregnSamværsklasse(kalkulator)
 
     private fun SamværskalkulatorDetaljer?.tilJsonString() = this?.let { commonObjectmapper.writeValueAsString(it) }
