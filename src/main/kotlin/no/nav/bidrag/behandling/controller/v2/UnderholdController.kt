@@ -97,11 +97,16 @@ class UnderholdController(
         secureLogger.info { "Oppdaterer stønad til barnetilsyn for behandling $behandlingsid med forespørsel $request" }
 
         val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            try {
+                behandlingRepository
+                    .findBehandlingById(behandlingsid)
+                    .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            } catch (exception: Exception) {
+                exception.printStackTrace()
+                null
+            }
 
-        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
+        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling!!, underholdsid)
 
         return underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
     }

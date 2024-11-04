@@ -75,7 +75,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
             }
         }
 
-        Underholdselement.FAKTISK_TILSYNSUGIFT -> {
+        Underholdselement.FAKTISK_TILSYNSUTGIFT -> {
             if (underhold.faktiskeTilsynsutgifter.find { this.idElement == it.id } == null) {
                 ressursIkkeFunnetException("Fant ikke faktisk tilsynsutgift med id ${this.idElement} i behandling ${behandling.id}")
             }

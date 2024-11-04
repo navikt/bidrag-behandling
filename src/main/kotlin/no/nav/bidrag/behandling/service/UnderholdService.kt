@@ -227,7 +227,7 @@ class UnderholdService(
 
         when (request.type) {
             Underholdselement.BARN -> return sletteUnderholdskostnad(behandling, underholdskostnad)
-            Underholdselement.FAKTISK_TILSYNSUGIFT -> return sletteFaktiskTilsynsutgift(
+            Underholdselement.FAKTISK_TILSYNSUTGIFT -> return sletteFaktiskTilsynsutgift(
                 underholdskostnad,
                 request.idElement,
             )
