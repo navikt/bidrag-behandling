@@ -6,11 +6,13 @@ import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.minOfNullable
-import no.nav.bidrag.behandling.transformers.tilDatoperiode
+import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDate
 
 data class SamværValideringsfeilDto(
@@ -97,5 +99,28 @@ fun OppdaterSamværsperiodeDto.valider(): MutableList<String> {
     if (samværsklasse == null && beregning == null) {
         feilliste.add("Samværsklasse eller beregning må settes")
     }
+    if (periode.tom != null && periode.tom!! > LocalDate.now().withDayOfMonth(1)) {
+        feilliste.add("Periode tom-dato kan ikke være i frem i tid")
+    }
+    if (beregning != null) {
+        if (beregning.regelmessigSamværNetter > BigDecimal(15)) {
+            feilliste.add("Regelmessig samvær kan ikke være over 15 netter")
+        }
+        if (!beregning.ferier.harMaksEnInnslagMedSammeType()) {
+            feilliste.add("SamværskalkulatorFerie kan ikke ha flere innslag av samme type")
+        }
+    }
     return feilliste
+}
+
+private fun List<SamværskalkulatorDetaljer.SamværskalkulatorFerie>.harMaksEnInnslagMedSammeType(): Boolean {
+    val typeCountMap = mutableMapOf<SamværskalkulatorFerietype, Int>()
+    val ferier = this
+
+    for (ferie in ferier) {
+        val type = ferie.type
+        typeCountMap[type] = typeCountMap.getOrDefault(type, 0) + 1
+    }
+
+    return typeCountMap.any { it.value <= 1 }
 }

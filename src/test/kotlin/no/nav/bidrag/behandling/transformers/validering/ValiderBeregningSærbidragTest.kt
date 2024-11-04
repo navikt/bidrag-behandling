@@ -460,7 +460,7 @@ class ValiderBeregningSærbidragTest {
     }
 }
 
-fun opprettGyldigBehandling(): Behandling {
+private fun opprettGyldigBehandling(): Behandling {
     val behandling = oppretteBehandling(1)
     val virkningstidspunkt = YearMonth.now()
     behandling.virkningstidspunkt = virkningstidspunkt.atDay(1)

@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
@@ -618,6 +619,56 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             behandling.inntekter.addAll(inntekterBm)
         }
 
+        TypeBehandling.BIDRAG -> {
+            behandling.stonadstype = Stønadstype.BIDRAG
+            behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+            behandling.engangsbeloptype = null
+            behandling.samvær = mutableSetOf(Samvær(behandling, rolle = behandling.søknadsbarn.first()))
+            husstandsmedlem.add(
+                behandling.oppretteHusstandsmedlem(
+                    if (generateId) 2 else null,
+                    testdataBarn2.ident,
+                    testdataBarn2.navn,
+                    testdataBarn2.fødselsdato,
+                    behandling.virkningstidspunkt,
+                    behandling.virkningstidspunkt!!.plusMonths(8),
+                    behandling.bidragspliktig,
+                    true,
+                    typeBehandling = typeBehandling,
+                ),
+            )
+            val inntekterBp =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(500000),
+                        datoFom = behandling.virkningstidspunkt,
+                        datoTom = null,
+                        ident = behandling.bidragspliktig!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = if (generateId) (1).toLong() else null,
+                    ),
+                )
+            val inntekterBm =
+                mutableSetOf(
+                    Inntekt(
+                        belop = BigDecimal(50000),
+                        datoFom = behandling.virkningstidspunkt,
+                        datoTom = null,
+                        ident = behandling.bidragsmottaker!!.ident!!,
+                        taMed = true,
+                        kilde = Kilde.MANUELL,
+                        behandling = behandling,
+                        type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
+                        id = if (generateId) (1).toLong() else null,
+                    ),
+                )
+
+            behandling.inntekter.addAll(inntekterBp)
+            behandling.inntekter.addAll(inntekterBm)
+        }
         else -> {}
     }
 

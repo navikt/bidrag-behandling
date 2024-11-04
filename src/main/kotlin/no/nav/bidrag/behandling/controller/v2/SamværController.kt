@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
-import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværskalkulatorBeregningDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.service.SamværService
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
@@ -47,20 +46,6 @@ class SamværController(
         @RequestBody(required = true)
         request: SletteSamværsperiodeElementDto,
     ): OppdaterSamværResponsDto = samværService.slettPeriode(behandlingsid, request)
-
-    @Suppress("unused")
-    @PutMapping("/behandling/{behandlingsid}/samvar/periode/beregning")
-    @Operation(
-        description =
-            "Oppdater samværsperiode beregning",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    fun oppdaterSamværskalkulatorBeregning(
-        @PathVariable behandlingsid: Long,
-        @Valid
-        @RequestBody(required = true)
-        request: OppdaterSamværskalkulatorBeregningDto,
-    ): OppdaterSamværResponsDto = samværService.oppdaterSamværsperiodeBeregning(behandlingsid, request)
 
     @Suppress("unused")
     @PostMapping("/samvar/beregn")
