@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.repository.SamværRepository
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
-import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværskalkulatorBeregningDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværsperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.dto.v2.samvær.valider
@@ -110,24 +109,6 @@ class SamværService(
         beregnSamværsklasseApi.beregnSamværsklasse(kalkulator)
 
     private fun SamværskalkulatorDetaljer?.tilJsonString() = this?.let { commonObjectmapper.writeValueAsString(it) }
-
-    fun oppdaterSamværsperiodeBeregning(
-        behandlingsid: Long,
-        request: OppdaterSamværskalkulatorBeregningDto,
-    ): OppdaterSamværResponsDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        log.info { "Oppdaterer beregning for samværsperiode $request for behandling $behandlingsid" }
-        val oppdaterSamvær =
-            behandling.samvær.find { it.rolle.ident == request.gjelderBarn }
-                ?: ugyldigForespørsel("Fant ikke samvær for barn ${request.gjelderBarn} i behandling med id $behandlingsid")
-        val oppdaterPeriode =
-            oppdaterSamvær.perioder.find { it.id == request.samværsperiodeId }
-                ?: ugyldigForespørsel("Fant ikke samværsperiode med id ${request.samværsperiodeId} i samvær ${oppdaterSamvær.id}")
-
-        oppdaterPeriode.beregningJson = request.beregning.tilJsonString()
-        oppdaterPeriode.samværsklasse = beregnSamværsklasse(request.beregning).samværsklasse
-        return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
-    }
 
     private fun MutableSet<Samvær>.finnSamværForBarn(gjelderBarn: String) =
         find { it.rolle.ident == gjelderBarn }
