@@ -4,10 +4,12 @@ import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -26,27 +28,29 @@ class TestdataManager(
     private val behandlingRepository: BehandlingRepository,
     private val personRepository: PersonRepository,
     private val entityManager: EntityManager,
+    private val inntektRepository: InntektRepository,
 ) {
     @Transactional
     fun lagreBehandling(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun nyTransaksjon(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
-
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
-        val underholdskostnader = mutableSetOf<Underholdskostnad>()
+        val inntekter = mutableSetOf<Inntekt>()
+        behandling.inntekter.forEach { inntekter.add(it) }
+        behandling.inntekter = mutableSetOf()
 
+        val underholdskostnader = mutableSetOf<Underholdskostnad>()
         behandling.underholdskostnader.forEach { underholdskostnader.add(it) }
         behandling.underholdskostnader = mutableSetOf()
 
         behandlingRepository.save(behandling)
 
-        underholdskostnader.forEach {
-            personRepository.save(it.person)
-        }
+        inntekter.forEach { inntektRepository.save(it) }
+        behandling.inntekter.addAll(inntekter)
 
+        underholdskostnader.forEach { personRepository.save(it.person) }
         behandling.underholdskostnader.addAll(underholdskostnader)
+
         return behandlingRepository.save(behandling)
     }
 

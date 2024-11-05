@@ -227,7 +227,6 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     }
 
     @Test
-    @Transactional
     fun `skal oppdatere virkningstidspunkt og oppdatere fra og med dato på inntekter`() {
         // gitt
         val behandling = oppretteTestbehandling(true)
@@ -283,8 +282,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     behandling = behandling,
                 ),
             )
-
-        testdataManager.nyTransaksjon(behandling)
+        testdataManager.lagreBehandlingNewTransaction(behandling)
 
         val nyttVirkningstidspunkt = LocalDate.parse("2023-07-01")
         // hvis

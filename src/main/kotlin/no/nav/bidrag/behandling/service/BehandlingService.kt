@@ -60,7 +60,7 @@ class BehandlingService(
     private val inntektService: InntektService,
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
-    private val underholdSerive: UnderholdService,
+    private val underholdService: UnderholdService,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -188,7 +188,7 @@ class BehandlingService(
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandlingDo.underholdskostnader.add(
-                    underholdSerive.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident)),
+                    underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident)),
                 )
             }
         }

@@ -82,6 +82,8 @@ class UnderholdService(
                 val roller = rolle?.let { mutableSetOf(it) } ?: mutableSetOf()
 
                 val person = personRepository.save(Person(ident = ident, rolle = roller))
+                person.rolle.forEach { it.person = person }
+
                 return lagreUnderholdskostnad(behandling, person)
             } else {
                 return lagreUnderholdskostnad(behandling, eksisterendePerson)
