@@ -60,7 +60,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         stubSaksbehandlernavnProvider()
         validering = ValiderBeregning()
         validerBehandling = mockkClass(ValiderBehandlingService::class)
-        every { validerBehandling.kanBehandlesINyLøsning(any()) } returns true
+        every { validerBehandling.kanBehandlesINyLøsning(any()) } returns ""
         mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
     }
 
