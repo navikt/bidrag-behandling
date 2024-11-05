@@ -15,7 +15,6 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
-import java.nio.charset.Charset
 
 private val log = KotlinLogging.logger {}
 
@@ -74,7 +73,7 @@ class ValiderBehandlingService(
                 HttpStatus.PRECONDITION_FAILED,
                 "Behandling kan ikke behandles i ny løsning",
                 commonObjectmapper.writeValueAsBytes(KanBehandlesINyLøsningResponse(listOf(resultat))),
-                Charset.defaultCharset(),
+                Charsets.UTF_8,
             )
         }
     }
