@@ -1078,7 +1078,7 @@ fun oppretteTestbehandling(
         var idUnderholdskostnad = if (setteDatabaseider) 1 else null
         // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
         behandling.søknadsbarn.forEach {
-            behandling.underholdskostnad.add(
+            behandling.underholdskostnader.add(
                 Underholdskostnad(
                     id = idUnderholdskostnad?.toLong(),
                     behandling = behandling,

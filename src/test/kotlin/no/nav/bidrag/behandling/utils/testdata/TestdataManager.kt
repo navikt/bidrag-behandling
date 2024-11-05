@@ -31,16 +31,14 @@ class TestdataManager(
     fun lagreBehandling(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    fun nyTransaksjon(behandling: Behandling): Behandling {
-        return behandlingRepository.save(behandling)
-    }
+    fun nyTransaksjon(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
         val underholdskostnader = mutableSetOf<Underholdskostnad>()
 
-        behandling.underholdskostnad.forEach { underholdskostnader.add(it) }
-        behandling.underholdskostnad = mutableSetOf()
+        behandling.underholdskostnader.forEach { underholdskostnader.add(it) }
+        behandling.underholdskostnader = mutableSetOf()
 
         behandlingRepository.save(behandling)
 
@@ -48,7 +46,7 @@ class TestdataManager(
             personRepository.save(it.person)
         }
 
-        behandling.underholdskostnad.addAll(underholdskostnader)
+        behandling.underholdskostnader.addAll(underholdskostnader)
         return behandlingRepository.save(behandling)
     }
 

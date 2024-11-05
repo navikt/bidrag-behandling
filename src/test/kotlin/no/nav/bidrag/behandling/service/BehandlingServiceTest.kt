@@ -743,14 +743,14 @@ class BehandlingServiceTest : TestContainerRunner() {
             val opprettetBehandling = behandlingService.hentBehandlingById(respons.id)
             opprettetBehandling.stonadstype shouldBe Stønadstype.BIDRAG
             opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 2
-            opprettetBehandling.underholdskostnad shouldHaveSize 2
-            opprettetBehandling.underholdskostnad.filter {
+            opprettetBehandling.underholdskostnader shouldHaveSize 2
+            opprettetBehandling.underholdskostnader.filter {
                 Rolletype.BARN ==
                     it.person.rolle
                         .first()
                         .rolletype
             } shouldHaveSize 2
-            opprettetBehandling.underholdskostnad.filter { null == it.person.ident } shouldHaveSize 2
+            opprettetBehandling.underholdskostnader.filter { null == it.person.ident } shouldHaveSize 2
         }
 
         @Test

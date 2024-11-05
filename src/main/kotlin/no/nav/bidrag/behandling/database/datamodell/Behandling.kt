@@ -157,7 +157,7 @@ open class Behandling(
         cascade = [CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE],
         orphanRemoval = true,
     )
-    open var underholdskostnad: MutableSet<Underholdskostnad> = mutableSetOf(),
+    open var underholdskostnader: MutableSet<Underholdskostnad> = mutableSetOf(),
     open var deleted: Boolean = false,
 ) {
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()

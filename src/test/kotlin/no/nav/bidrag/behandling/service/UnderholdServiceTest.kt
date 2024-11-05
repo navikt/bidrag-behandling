@@ -77,7 +77,7 @@ class UnderholdServiceTest {
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
-            val underholdskostnad = behandling.underholdskostnad.first()
+            val underholdskostnad = behandling.underholdskostnader.first()
 
             val tilleggsstønad =
                 Tilleggsstønad(
@@ -90,10 +90,10 @@ class UnderholdServiceTest {
                     fom = LocalDate.now(),
                 )
             underholdskostnad.tilleggsstønad.add(tilleggsstønad)
-            behandling.underholdskostnad.add(underholdskostnad)
+            behandling.underholdskostnader.add(underholdskostnad)
             val request = SletteUnderholdselement(idUnderhold = 1, idElement = 1, Underholdselement.TILLEGGSSTØNAD)
 
-            val uFørSleting = behandling.underholdskostnad.find { it.id == universalid }
+            val uFørSleting = behandling.underholdskostnader.find { it.id == universalid }
             uFørSleting.shouldNotBeNull()
             uFørSleting.tilleggsstønad.shouldNotBeEmpty()
 
@@ -101,7 +101,7 @@ class UnderholdServiceTest {
             underholdService.sletteFraUnderhold(behandling, request)
 
             // så
-            val u = behandling.underholdskostnad.find { it.id == universalid }
+            val u = behandling.underholdskostnader.find { it.id == universalid }
             u.shouldNotBeNull()
             u.tilleggsstønad.shouldBeEmpty()
         }
@@ -137,7 +137,7 @@ class UnderholdServiceTest {
             underholdService.oppretteUnderholdskostnad(behandling, request)
 
             // så
-            val u = behandling.underholdskostnad.find { it.id == universalid }
+            val u = behandling.underholdskostnader.find { it.id == universalid }
             u.shouldNotBeNull()
             u.tilleggsstønad.shouldBeEmpty()
         }
@@ -163,7 +163,7 @@ class UnderholdServiceTest {
                 barnIBehandling.ident.shouldNotBeNull()
 
                 val underholdskostnad =
-                    behandling.underholdskostnad.find {
+                    behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
                             it.person.rolle
                                 .first()
@@ -194,7 +194,7 @@ class UnderholdServiceTest {
                 underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
 
                 // så
-                val u = behandling.underholdskostnad.first()
+                val u = behandling.underholdskostnader.first()
                 u.shouldNotBeNull()
                 u.tilleggsstønad.shouldNotBeEmpty()
 
@@ -219,7 +219,7 @@ class UnderholdServiceTest {
                 barnIBehandling.ident.shouldNotBeNull()
 
                 val underholdskostnad =
-                    behandling.underholdskostnad.find {
+                    behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
                             it.person.rolle
                                 .first()
@@ -260,7 +260,7 @@ class UnderholdServiceTest {
                 underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
 
                 // så
-                val u = behandling.underholdskostnad.first()
+                val u = behandling.underholdskostnader.first()
                 u.shouldNotBeNull()
                 u.tilleggsstønad.shouldNotBeEmpty()
                 u.tilleggsstønad shouldHaveSize 1
@@ -291,7 +291,7 @@ class UnderholdServiceTest {
                 barnIBehandling.ident.shouldNotBeNull()
 
                 val underholdskostnad =
-                    behandling.underholdskostnad.find {
+                    behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
                             it.person.rolle
                                 .first()
@@ -330,7 +330,7 @@ class UnderholdServiceTest {
                 underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
 
                 // så
-                val u = behandling.underholdskostnad.first()
+                val u = behandling.underholdskostnader.first()
                 u.shouldNotBeNull()
                 u.barnetilsyn.shouldNotBeEmpty()
 
@@ -356,7 +356,7 @@ class UnderholdServiceTest {
                 barnIBehandling.ident.shouldNotBeNull()
 
                 val underholdskostnad =
-                    behandling.underholdskostnad.find {
+                    behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
                             it.person.rolle
                                 .first()
@@ -409,7 +409,7 @@ class UnderholdServiceTest {
                 underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
 
                 // så
-                val u = behandling.underholdskostnad.first()
+                val u = behandling.underholdskostnader.first()
                 u.shouldNotBeNull()
                 u.barnetilsyn.shouldNotBeEmpty()
                 u.barnetilsyn shouldHaveSize 1
@@ -441,7 +441,7 @@ class UnderholdServiceTest {
                 barnIBehandling.ident.shouldNotBeNull()
 
                 val underholdskostnad =
-                    behandling.underholdskostnad.find {
+                    behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
                             it.person.rolle
                                 .first()
@@ -476,7 +476,7 @@ class UnderholdServiceTest {
                 underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
 
                 // så
-                val u = behandling.underholdskostnad.first()
+                val u = behandling.underholdskostnader.first()
                 u.shouldNotBeNull()
                 u.faktiskeTilsynsutgifter.shouldNotBeEmpty()
 
@@ -502,7 +502,7 @@ class UnderholdServiceTest {
                 barnIBehandling.ident.shouldNotBeNull()
 
                 val underholdskostnad =
-                    behandling.underholdskostnad.find {
+                    behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
                             it.person.rolle
                                 .first()
@@ -550,7 +550,7 @@ class UnderholdServiceTest {
                 underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
 
                 // så
-                val u = behandling.underholdskostnad.first()
+                val u = behandling.underholdskostnader.first()
                 u.shouldNotBeNull()
                 u.faktiskeTilsynsutgifter.shouldNotBeEmpty()
                 u.faktiskeTilsynsutgifter shouldHaveSize 1
@@ -583,7 +583,7 @@ class UnderholdServiceTest {
                 barnIBehandling.ident.shouldNotBeNull()
 
                 val underholdskostnad =
-                    behandling.underholdskostnad.find {
+                    behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
                             it.person.rolle
                                 .first()

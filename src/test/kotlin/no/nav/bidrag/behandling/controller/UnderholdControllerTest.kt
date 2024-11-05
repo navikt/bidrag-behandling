@@ -105,7 +105,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 )
 
             testdataManager.lagreBehandlingNewTransaction(behandling)
-            val underholdsid = behandling.underholdskostnad.first().id!!
+            val underholdsid = behandling.underholdskostnader.first().id!!
 
             val oppdatereUnderholdRequest = OppdatereUnderholdRequest(true, "En grundig begrunnelse")
 
@@ -144,7 +144,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 )
 
             testdataManager.lagreBehandlingNewTransaction(behandling)
-            val underholdsid = behandling.underholdskostnad.first().id!!
+            val underholdsid = behandling.underholdskostnader.first().id!!
 
             val forespørsel =
                 StønadTilBarnetilsynDto(
@@ -188,7 +188,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 )
 
             testdataManager.lagreBehandlingNewTransaction(behandling)
-            val underholdsid = behandling.underholdskostnad.first().id!!
+            val underholdsid = behandling.underholdskostnader.first().id!!
 
             val forespørsel =
                 FaktiskTilsynsutgiftDto(
@@ -233,7 +233,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 )
 
             testdataManager.lagreBehandlingNewTransaction(behandling)
-            val underholdsid = behandling.underholdskostnad.first().id!!
+            val underholdsid = behandling.underholdskostnader.first().id!!
 
             val forespørsel =
                 TilleggsstønadDto(
@@ -278,17 +278,17 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            behandling.underholdskostnad.add(
+            behandling.underholdskostnader.add(
                 Underholdskostnad(
                     behandling = behandling,
                     person = Person(navn = navnAnnetBarnBp),
                 ),
             )
             val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)
-            lagretBehandling.underholdskostnad shouldHaveSize 3
+            lagretBehandling.underholdskostnader shouldHaveSize 3
 
             val u =
-                lagretBehandling.underholdskostnad.find { it.person.rolle.isEmpty() && it.person.navn == navnAnnetBarnBp }
+                lagretBehandling.underholdskostnader.find { it.person.rolle.isEmpty() && it.person.navn == navnAnnetBarnBp }
 
             val sletteUnderholdselement = SletteUnderholdselement(u?.id!!, u.person.id!!, Underholdselement.BARN)
 
@@ -314,9 +314,9 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             }
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!).get()
 
-            oppdatertBehandling.underholdskostnad shouldHaveSize 2
+            oppdatertBehandling.underholdskostnader shouldHaveSize 2
 
-            assertSoftly(oppdatertBehandling.underholdskostnad) {
+            assertSoftly(oppdatertBehandling.underholdskostnader) {
                 it shouldHaveSize 2
                 it.filter { it.person.navn == u.person.navn } shouldHaveSize 0
             }

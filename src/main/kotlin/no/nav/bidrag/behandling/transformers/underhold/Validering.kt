@@ -129,7 +129,7 @@ fun henteOgValidereUnderholdskostnad(
     behandling: Behandling,
     idUnderhold: Long,
 ): Underholdskostnad {
-    val underhold = behandling.underholdskostnad.find { idUnderhold == it.id }
+    val underhold = behandling.underholdskostnader.find { idUnderhold == it.id }
     if (underhold == null) {
         ressursIkkeFunnetException("Fant ikke underholdskostnad med id $idUnderhold i behandling ${behandling.id}")
     }

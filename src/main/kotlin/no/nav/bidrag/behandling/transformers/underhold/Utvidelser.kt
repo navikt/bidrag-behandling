@@ -15,6 +15,8 @@ import no.nav.bidrag.behandling.transformers.person.tilPersoninfoDto
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import java.math.BigDecimal
 
+fun Set<Underholdskostnad>.tilUnderholdDtos() = this.map { it.tilUnderholdDto() }.toSet()
+
 fun Underholdskostnad.tilUnderholdDto() =
     UnderholdDto(
         id = this.id!!,

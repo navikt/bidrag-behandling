@@ -223,7 +223,7 @@ class UnderholdService(
     ): UnderholdDto? {
         request.validere(behandling)
 
-        val underholdskostnad = behandling.underholdskostnad.find { request.idUnderhold == it.id }!!
+        val underholdskostnad = behandling.underholdskostnader.find { request.idUnderhold == it.id }!!
 
         when (request.type) {
             Underholdselement.BARN -> return sletteUnderholdskostnad(behandling, underholdskostnad)
@@ -262,7 +262,7 @@ class UnderholdService(
         behandling: Behandling,
         underholdskostnad: Underholdskostnad,
     ): UnderholdDto? {
-        behandling.underholdskostnad.remove(underholdskostnad)
+        behandling.underholdskostnader.remove(underholdskostnad)
         personRepository.deleteById(underholdskostnad.person.id!!)
         underholdskostnadRepository.deleteById(underholdskostnad.id!!)
         return null
@@ -281,13 +281,13 @@ class UnderholdService(
         behandling: Behandling,
         person: Person,
     ): Underholdskostnad {
-        val eksisterendeUnderholdskostnad = behandling.underholdskostnad.find { it.person.id == person.id }
+        val eksisterendeUnderholdskostnad = behandling.underholdskostnader.find { it.person.id == person.id }
 
         return if (eksisterendeUnderholdskostnad != null) {
             eksisterendeUnderholdskostnad
         } else {
             val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
-            behandling.underholdskostnad.add(u)
+            behandling.underholdskostnader.add(u)
             u
         }
     }

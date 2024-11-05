@@ -187,7 +187,7 @@ class BehandlingService(
         if (TypeBehandling.BIDRAG == opprettBehandling.tilType()) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
-                behandlingDo.underholdskostnad.add(
+                behandlingDo.underholdskostnader.add(
                     underholdSerive.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident)),
                 )
             }
