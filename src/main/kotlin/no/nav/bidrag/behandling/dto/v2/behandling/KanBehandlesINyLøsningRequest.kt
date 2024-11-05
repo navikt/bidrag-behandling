@@ -26,6 +26,7 @@ data class KanBehandlesINyLøsningRequest(
     val vedtakRefId: Long? = null,
 ) {
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+    val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
 }
 
 @Schema(description = "Rolle beskrivelse som er brukte til å opprette nye roller")

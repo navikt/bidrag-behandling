@@ -43,6 +43,7 @@ class ValiderBehandlingService(
     private fun kanBidragBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? = kanBidragV1BehandlesINyLøsning(request)
 
     private fun kanBidragV1BehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
+        if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
         if (request.vedtakstype == Vedtakstype.KLAGE ||
             request.søknadsreferanseid != null ||
             request.vedtakRefId != null
@@ -56,7 +57,7 @@ class ValiderBehandlingService(
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
         return if (harBPMinstEtBidragsstønad) {
-            "Bidragspliktig har en eller flere stønader"
+            "Bidragspliktig har en eller flere historiske eller løpende bidrag"
         } else {
             null
         }
@@ -72,7 +73,7 @@ class ValiderBehandlingService(
             throw HttpClientErrorException(
                 HttpStatus.PRECONDITION_FAILED,
                 "Behandling kan ikke behandles i ny løsning",
-                commonObjectmapper.writeValueAsBytes(KanBehandlesINyLøsningResponse(resultat)),
+                commonObjectmapper.writeValueAsBytes(KanBehandlesINyLøsningResponse(listOf(resultat))),
                 Charset.defaultCharset(),
             )
         }
