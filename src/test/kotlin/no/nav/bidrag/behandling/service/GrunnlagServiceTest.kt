@@ -34,7 +34,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -1294,7 +1294,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal legge inn søknadsbarn som husstandsmedlemmer dersom grunnlagsdata mangler`() {
                 // gitt
-                val behandling = oppretteBehandling(false)
+                val behandling = oppretteTestbehandling(false)
                 val personidentBarnSomIkkeErInkludertIGrunnlag = "01010112345"
                 behandling.roller.add(
                     Rolle(
@@ -4026,7 +4026,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal ikke lagre ny innhenting av arbeidsforhold med teknisk feil dersom forrige innhenting var OK`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     true,
                     inkludereArbeidsforhold = true,
                     setteDatabaseider = true,
@@ -4091,7 +4091,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal lagre ny innhenting av arbeidsforhold med funksjonell feil dersom forrige innhenting var OK`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     true,
                     inkludereArbeidsforhold = true,
                     setteDatabaseider = true,
@@ -4145,7 +4145,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre ny innhenting av skattegrunnlag med teknisk feil dersom forrige innhenting var OK`() {
             // gitt
-            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -4211,7 +4211,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal lagre ny innhenting av skattegrunnlag med funksjonell feil dersom forrige innhenting var OK`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     true,
                     inkludereBp = true,
                     setteDatabaseider = true,
@@ -4292,7 +4292,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre endret skattegrunnlag med teknisk feil dersom forrige innhenting hadde teknisk feil`() {
             // gitt
-            val behandling = oppretteBehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -4363,7 +4363,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal lagre endret skattegrunnlag med funksjonell feil dersom forrige innhenting hadde teknisk feil`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     true,
                     inkludereBp = true,
                     setteDatabaseider = true,
@@ -4443,7 +4443,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         open fun `skal lagre endret skattegrunnlag med funksjonell feil dersom forrige innhenting ikke hadde feil`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     true,
                     inkludereBp = true,
                     inkludereInntektsgrunnlag = true,

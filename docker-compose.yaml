@@ -3,7 +3,7 @@ services:
   database:
     image: postgres:latest
     ports:
-      - "5445:5432"
+      - "5454:5432"
     environment:
       POSTGRES_USER: cloudsqliamuser
       POSTGRES_PASSWORD: admin

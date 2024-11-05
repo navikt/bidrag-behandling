@@ -21,7 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -51,11 +51,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         open fun `skal opprette underhold for barn`() {
             // gitt
             val navnAnnetBarnBp = "Stig E. Spill"
-            val behandling =
-                oppretteBehandling(
-                    inkludereBp = true,
-                    behandlingstype = TypeBehandling.BIDRAG,
-                )
+            val behandling = oppretteTestbehandling(inkludereBp = true, behandlingstype = TypeBehandling.BIDRAG)
 
             testdataManager.lagreBehandlingNewTransaction(behandling)
 
@@ -103,7 +99,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         open fun `skal angi tilsynsordning og oppdatere begrunnelse`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
@@ -142,7 +138,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         open fun `skal oppdatere stønad til barnetilsyn`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
@@ -186,7 +182,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         open fun `skal oppdatere faktiske tilsynsutgifter`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
@@ -231,7 +227,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         open fun `skal oppdatere tilleggsstønad`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
@@ -277,7 +273,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             // gitt
             val navnAnnetBarnBp = "Stig E. Spill"
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )

@@ -1018,7 +1018,7 @@ fun Utgift.opprettUtgifstpost(
     utgift = this,
 )
 
-fun oppretteBehandling(
+fun oppretteTestbehandling(
     inkludereInntekter: Boolean = false,
     inkludereSivilstand: Boolean = true,
     inkludereBoforhold: Boolean = true,

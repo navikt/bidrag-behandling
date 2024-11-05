@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
-import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
@@ -26,11 +25,15 @@ import java.time.LocalDateTime
 class TestdataManager(
     private val behandlingRepository: BehandlingRepository,
     private val personRepository: PersonRepository,
-    private val rolleRepository: RolleRepository,
     private val entityManager: EntityManager,
 ) {
     @Transactional
     fun lagreBehandling(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    fun nyTransaksjon(behandling: Behandling): Behandling {
+        return behandlingRepository.save(behandling)
+    }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
@@ -79,17 +82,16 @@ class TestdataManager(
         inkludereArbeidsforhold: Boolean = false,
     ): Behandling {
         val behandling =
-            no.nav.bidrag.behandling.utils.testdata
-                .oppretteBehandling(
-                    inkludereInntekter,
-                    inkludereSivilstand,
-                    inkludereBoforhold,
-                    inkludereBp,
-                    behandlingstype,
-                    inkludereVoksneIBpsHusstand,
-                    setteDatabaseider,
-                    inkludereArbeidsforhold,
-                )
+            oppretteTestbehandling(
+                inkludereInntekter,
+                inkludereSivilstand,
+                inkludereBoforhold,
+                inkludereBp,
+                behandlingstype,
+                inkludereVoksneIBpsHusstand,
+                setteDatabaseider,
+                inkludereArbeidsforhold,
+            )
 
         return behandlingRepository.save(behandling)
     }

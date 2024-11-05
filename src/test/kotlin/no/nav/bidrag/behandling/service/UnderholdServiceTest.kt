@@ -28,7 +28,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -72,7 +72,7 @@ class UnderholdServiceTest {
             // gitt
             val universalid = 1L
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     setteDatabaseider = true,
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
@@ -116,7 +116,7 @@ class UnderholdServiceTest {
             val universalid = 1L
             val navnAnnetBarnBp = "Stig E. Spill"
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     setteDatabaseider = true,
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
@@ -153,7 +153,7 @@ class UnderholdServiceTest {
             open fun `skal legge til ny tilleggsstønadsperiode`() {
                 // gitt
                 val behandling =
-                    oppretteBehandling(
+                    oppretteTestbehandling(
                         setteDatabaseider = true,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
@@ -209,7 +209,7 @@ class UnderholdServiceTest {
             open fun `skal endre eksisterende tilleggsstønadsperiode`() {
                 // gitt
                 val behandling =
-                    oppretteBehandling(
+                    oppretteTestbehandling(
                         setteDatabaseider = true,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
@@ -281,7 +281,7 @@ class UnderholdServiceTest {
             open fun `skal legge til ny stønad til barnetilsynsperiode`() {
                 // gitt
                 val behandling =
-                    oppretteBehandling(
+                    oppretteTestbehandling(
                         setteDatabaseider = true,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
@@ -346,7 +346,7 @@ class UnderholdServiceTest {
             open fun `skal endre eksisterende stønad til barnetilsynsperiode`() {
                 // gitt
                 val behandling =
-                    oppretteBehandling(
+                    oppretteTestbehandling(
                         setteDatabaseider = true,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
@@ -431,7 +431,7 @@ class UnderholdServiceTest {
             open fun `skal legge til ny faktiske tilsynsutgifter`() {
                 // gitt
                 val behandling =
-                    oppretteBehandling(
+                    oppretteTestbehandling(
                         setteDatabaseider = true,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
@@ -492,7 +492,7 @@ class UnderholdServiceTest {
             open fun `skal eksisterende periode med faktiske tilsynsutgifter`() {
                 // gitt
                 val behandling =
-                    oppretteBehandling(
+                    oppretteTestbehandling(
                         setteDatabaseider = true,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
@@ -573,7 +573,7 @@ class UnderholdServiceTest {
             open fun `skal angi tilsynsordning og legge inn begrunnelse`() {
                 // gitt
                 val behandling =
-                    oppretteBehandling(
+                    oppretteTestbehandling(
                         setteDatabaseider = true,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,

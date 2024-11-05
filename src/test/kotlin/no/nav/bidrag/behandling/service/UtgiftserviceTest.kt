@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -42,7 +42,7 @@ class UtgiftserviceTest : TestContainerRunner() {
         stubKodeverkProvider()
     }
 
-    fun oppretteBehandlingForSærbidrag(): Behandling = oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true)
+    fun oppretteBehandlingForSærbidrag(): Behandling = oppretteTestbehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true)
 
     @Test
     @Transactional

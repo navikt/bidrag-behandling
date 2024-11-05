@@ -4,7 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Notat
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Nested
@@ -22,7 +22,7 @@ class NotatServiceTest {
         fun `skal opprette nytt notat`() {
             // gitt
             val innhold = "Notattekst"
-            val behandling = oppretteBehandling(true, setteDatabaseider = true)
+            val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
 
             // hvis
             notatService.oppdatereNotat(behandling, Notattype.BOFORHOLD, innhold, behandling.bidragsmottaker!!.id!!)
@@ -42,7 +42,7 @@ class NotatServiceTest {
             // gitt
             val eksisterendeInnhold = "Eksisterende notattekst"
             val nyttInnhold = "Ny nottattekst"
-            val behandling = oppretteBehandling(true, setteDatabaseider = true)
+            val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
             val rolle = behandling.bidragsmottaker!!
             val notattype = Notattype.UTGIFTER
 
@@ -74,7 +74,7 @@ class NotatServiceTest {
         fun `skal ikke tillate oppdatering av notat for rolle som ikke er med i behandlingen`() {
             // gitt
             val innhold = "Notattekst"
-            val behandling = oppretteBehandling(true, setteDatabaseider = true)
+            val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
             val idTilRolleidSomIkkeFinnesIBehandling = 100L
 
             // hvis, så

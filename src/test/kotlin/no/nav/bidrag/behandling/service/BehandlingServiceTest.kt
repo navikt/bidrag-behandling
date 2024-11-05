@@ -41,8 +41,8 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -297,7 +297,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere virkningstidspunkt på særbidrag ved henting av behandling hvis VT ikke i inneværende måned`() {
             // gitt
-            var behandling =
+            val behandling =
                 testdataManager.oppretteBehandling(
                     false,
                     false,
@@ -730,7 +730,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         open fun `skal opprette bidragsbehandling`() {
             // gitt
             val behandling =
-                oppretteBehandling(
+                oppretteTestbehandling(
                     behandlingstype = TypeBehandling.BIDRAG,
                     inkludereBoforhold = false,
                     inkludereBp = true,
@@ -1167,7 +1167,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal aktivere arbeidsforhold`() {
                 // gitt
-                val b = oppretteBehandling(inkludereBp = true, inkludereArbeidsforhold = true)
+                val b = oppretteTestbehandling(inkludereBp = true, inkludereArbeidsforhold = true)
                 kjøreStubber(b)
                 val nyttArbeidsforhold =
                     oppretteArbeidsforhold(b.bidragspliktig!!.ident!!).copy(
