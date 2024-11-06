@@ -432,7 +432,8 @@ class Dtomapper(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
         inkluderHistoriskeInntekter: Boolean,
     ): BehandlingDtoV2 {
-        val kanBehandles = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) == null
+        val kanIkkeBehandlesBegrunnelse = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
+        val kanBehandles = kanIkkeBehandlesBegrunnelse == null
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
@@ -480,6 +481,7 @@ class Dtomapper(
                     objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
                 },
             kanBehandlesINyLøsning = kanBehandles,
+            kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
         )
     }
 

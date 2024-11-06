@@ -89,6 +89,7 @@ data class BehandlingDtoV2(
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
     val kanBehandlesINyLøsning: Boolean = true,
+    val kanIkkeBehandlesBegrunnelse: String? = null,
     val erKlageEllerOmgjøring: Boolean,
     val opprettetTidspunkt: LocalDateTime,
     @Schema(type = "string", format = "date", example = "01.12.2025")

@@ -584,7 +584,7 @@ fun OppdatereHusstandsmedlem.validere(behandling: Behandling) {
 }
 
 fun OppdatereAndreVoksneIHusstanden.validere(behandling: Behandling) {
-    if (TypeBehandling.SÆRBIDRAG != behandling.tilType()) {
+    if (behandling.tilType() == TypeBehandling.FORSKUDD) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             "Ugyldig behandlingstype for oppdatering av andre voksne i husstanden: ${behandling.tilType()} " +

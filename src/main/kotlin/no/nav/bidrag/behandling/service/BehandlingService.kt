@@ -438,6 +438,7 @@ class BehandlingService(
         }
 
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
+        oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
 
         behandlingRepository.save(behandling)
 
@@ -448,6 +449,17 @@ class BehandlingService(
         }
 
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
+    }
+
+    private fun oppdatereSamværForRoller(
+        behandling: Behandling,
+        rollerSomLeggesTil: List<OpprettRolleDto>,
+    ) {
+        if (behandling.tilType() == TypeBehandling.BIDRAG) {
+            rollerSomLeggesTil.forEach { rolle ->
+                behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
+            }
+        }
     }
 
     private fun oppdatereHusstandsmedlemmerForRoller(
