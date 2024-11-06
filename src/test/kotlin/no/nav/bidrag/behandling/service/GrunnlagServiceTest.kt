@@ -186,7 +186,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
                     oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    oppdatertBehandling.get().grunnlag.size shouldBe 27
+                    oppdatertBehandling.get().grunnlag.size shouldBe 28
                     oppdatertBehandling.get().inntekter.size shouldBe 28
                 }
 
@@ -327,7 +327,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
                     oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    oppdatertBehandling.get().grunnlag.size shouldBe 32
+                    oppdatertBehandling.get().grunnlag.size shouldBe 33
                 }
 
                 val grunnlagBp =
