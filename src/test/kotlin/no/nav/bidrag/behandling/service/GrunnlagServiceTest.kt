@@ -152,13 +152,15 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal lagre ytelser`() {
                 // gitt
                 val behandling =
-                    testdataManager.oppretteBehandling(
+                    oppretteTestbehandling(
                         false,
                         false,
                         false,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
                 behandling.roller.forEach {
@@ -180,23 +182,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
-                entityManager.refresh(oppdatertBehandling.get())
-
                 assertSoftly {
-                    oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    oppdatertBehandling.get().grunnlag.size shouldBe 27
-                    oppdatertBehandling.get().inntekter.size shouldBe 28
+                    behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+                    behandling.grunnlag.size shouldBe 27
+                    behandling.inntekter.size shouldBe 28
                 }
 
                 val alleGrunnlagBm =
-                    oppdatertBehandling.get().grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
 
                 validereGrunnlagBm(alleGrunnlagBm, true)
 
                 val alleGrunnlagBarn =
-                    oppdatertBehandling.get().grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
+                    behandling.grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
 
                 assertSoftly {
                     alleGrunnlagBarn.filter { Grunnlagsdatatype.BARNETILLEGG == it.type }.size shouldBe 0
@@ -206,31 +204,27 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 }
 
                 val alleInntekterBm =
-                    oppdatertBehandling.get().inntekter.filter { behandling.bidragsmottaker!!.ident == it.ident }
+                    behandling.inntekter.filter { behandling.bidragsmottaker!!.ident == it.ident }
 
                 assertSoftly {
                     alleInntekterBm.size shouldBe 8
                     alleInntekterBm.filter { Inntektsrapportering.BARNETILLEGG == it.type }.size shouldBe 0
-                    oppdatertBehandling
-                        .get()
+                    behandling
                         .inntekter
                         .filter { Inntektsrapportering.BARNETILLEGG == it.type }
                         .size shouldBe 0
                     alleInntekterBm.filter { Inntektsrapportering.KONTANTSTØTTE == it.type }.size shouldBe 0
-                    oppdatertBehandling
-                        .get()
+                    behandling
                         .inntekter
                         .filter { Inntektsrapportering.KONTANTSTØTTE == it.type }
                         .size shouldBe 0
                     alleInntekterBm.filter { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }.size shouldBe 1
-                    oppdatertBehandling
-                        .get()
+                    behandling
                         .inntekter
                         .filter { Inntektsrapportering.SMÅBARNSTILLEGG == it.type }
                         .size shouldBe 2
                     alleInntekterBm.filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }.size shouldBe 1
-                    oppdatertBehandling
-                        .get()
+                    behandling
                         .inntekter
                         .filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }
                         .size shouldBe 2
@@ -242,11 +236,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal lagre arbeidsforhold`() {
                 // gitt
                 val behandling =
-                    testdataManager.oppretteBehandling(
+                    oppretteTestbehandling(
                         false,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
+
+                testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
@@ -256,19 +252,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
-
-                assertSoftly {
-                    oppdatertBehandling.isPresent shouldBe true
-                }
-
                 val grunnlag =
-                    grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                        behandlingsid = behandling.id!!,
-                        behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                        Grunnlagsdatatype.ARBEIDSFORHOLD,
-                        false,
-                    )
+                    behandling.grunnlag.find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER && Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }
+
                 val arbeidsforhold = jsonListeTilObjekt<ArbeidsforholdGrunnlagDto>(grunnlag?.data!!)
 
                 assertSoftly {
@@ -295,11 +281,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal lagre skattegrunnlag`() {
                 // gitt
                 val behandling =
-                    testdataManager.oppretteBehandling(
+                    oppretteTestbehandling(
                         false,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
                 behandling.roller.forEach {
@@ -321,17 +309,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
-                entityManager.refresh(oppdatertBehandling.get())
-
                 assertSoftly {
-                    oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    oppdatertBehandling.get().grunnlag.size shouldBe 32
+                    behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+                    behandling.grunnlag.size shouldBe 32
                 }
 
                 val grunnlagBp =
-                    oppdatertBehandling.get().grunnlag.filter { Rolletype.BIDRAGSPLIKTIG == it.rolle.rolletype }
+                    behandling.grunnlag.filter { Rolletype.BIDRAGSPLIKTIG == it.rolle.rolletype }
                 assertSoftly {
                     grunnlagBp.size shouldBe 12
                     grunnlagBp.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 1
@@ -341,7 +325,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     grunnlagBp.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2
 
                     val grunnlagBm =
-                        oppdatertBehandling.get().grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                        behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
                     assertSoftly {
                         grunnlagBm.size shouldBe 12
                         grunnlagBm.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 1
@@ -351,7 +335,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     }
 
                     val grunnlagBarn =
-                        oppdatertBehandling.get().grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
+                        behandling.grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
                     assertSoftly {
                         grunnlagBarn.size shouldBe 8
                         grunnlagBarn.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 2

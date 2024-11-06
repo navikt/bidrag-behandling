@@ -727,6 +727,23 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal ikke opprette bidragsbehandling med mer enn ett søknadsbarn`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    behandlingstype = TypeBehandling.BIDRAG,
+                    inkludereBoforhold = false,
+                    inkludereBp = true,
+                )
+
+            // hvis, så
+            Assertions.assertThrows(HttpClientErrorException::class.java) {
+                behandlingService.opprettBehandling(behandling.tilOppretteBehandlingRequest())
+            }
+        }
+
+        @Test
+        @Transactional
         open fun `skal opprette bidragsbehandling`() {
             // gitt
             val behandling =
@@ -735,6 +752,13 @@ class BehandlingServiceTest : TestContainerRunner() {
                     inkludereBoforhold = false,
                     inkludereBp = true,
                 )
+
+            if (behandling.roller.filter { Rolletype.BARN == it.rolletype }.size > 1) {
+                val enebarn = behandling.roller.first { Rolletype.BARN == it.rolletype }
+                val alleBarn = behandling.roller.filter { Rolletype.BARN == it.rolletype }
+                behandling.roller.removeAll(alleBarn)
+                behandling.roller.add(enebarn)
+            }
 
             // hvis
             val respons = behandlingService.opprettBehandling(behandling.tilOppretteBehandlingRequest())

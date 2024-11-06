@@ -6,17 +6,21 @@ import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 
-fun Person.tilPersoninfoDto(behandling: Behandling) =
-    PersoninfoDto(
-        id = this.id,
-        ident = this.ident?.let { Personident(it) },
-        navn = this.navn,
-        fødselsdato = this.fødselsdato,
-        kilde = if (this.rolle.size > 0) Kilde.OFFENTLIG else Kilde.MANUELL,
-        medIBehandlingen = this.harRolleIBehandling(behandling),
-    )
+fun Person.tilPersoninfoDto(behandling: Behandling): PersoninfoDto {
+    val rolle =
+        behandling.roller.find { r ->
+            this.rolle
+                .map { it.id }
+                .toSet()
+                .contains(r.id)
+        }
 
-fun Person.harRolleIBehandling(behandling: Behandling) =
-    this.ident?.let { ident ->
-        behandling.roller.find { it.ident == ident } != null
-    } ?: false
+    return PersoninfoDto(
+        id = this.id,
+        ident = rolle?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
+        navn = this.navn,
+        fødselsdato = rolle?.fødselsdato ?: this.fødselsdato,
+        kilde = rolle?.ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+        medIBehandlingen = rolle?.ident != null,
+    )
+}

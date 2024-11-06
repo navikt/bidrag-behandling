@@ -127,7 +127,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-                behandling.id!!,
+                behandling,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
@@ -264,7 +264,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-                behandling.id!!,
+                behandling,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
@@ -312,7 +312,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-                behandling.id!!,
+                behandling,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )

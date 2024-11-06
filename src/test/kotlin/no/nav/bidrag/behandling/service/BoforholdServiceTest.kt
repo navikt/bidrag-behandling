@@ -58,7 +58,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -1126,13 +1125,14 @@ class BoforholdServiceTest : TestContainerRunner() {
 
             @Test
             @Transactional
-            @Disabled("Magnus skal fikse Boforhold api slik at oppføreselen blir riktig")
             open fun `skal opprette husstandsmedlem over 18`() {
                 // gitt
                 val behandling = opprettBehandlingForBoforholdTest()
 
                 behandling.husstandsmedlem.shouldHaveSize(1)
-                val fødselsdato = LocalDate.now().minusYears(17).minusMonths(7)
+                val fødselsdato = LocalDate.now().minusYears(19).minusMonths(7)
+
+                // hvis
                 boforholdService.oppdatereHusstandsmedlemManuelt(
                     behandling.id!!,
                     OppdatereHusstandsmedlem(
@@ -1145,6 +1145,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     ),
                 )
 
+                // så
                 assertSoftly(behandling.husstandsmedlem.find { it.ident == "213123" }!!) {
                     it.perioder.shouldHaveSize(2)
                     it.navn shouldBe "Navn Navnesen"
@@ -1152,17 +1153,16 @@ class BoforholdServiceTest : TestContainerRunner() {
                     val periode = it.perioder.first()
                     periode.kilde shouldBe Kilde.MANUELL
                     periode.datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
-                    periode.datoTom shouldBe YearMonth.now().minusYears(18).atEndOfMonth()
+                    periode.datoTom shouldBe
+                        YearMonth
+                            .of(fødselsdato.year, fødselsdato.month)
+                            .plusYears(18)
+                            .atEndOfMonth()
                     periode.bostatus shouldBe Bostatuskode.MED_FORELDER
 
                     val periode2 = it.perioder.toList()[1]
                     periode2.kilde shouldBe Kilde.MANUELL
-                    periode2.datoFom shouldBe
-                        LocalDate
-                            .now()
-                            .minusYears(18)
-                            .plusMonths(1)
-                            .withDayOfMonth(1)
+                    periode2.datoFom shouldBe fødselsdato.plusYears(18).plusMonths(1).withDayOfMonth(1)
                     periode2.datoTom shouldBe null
                     periode2.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
                 }

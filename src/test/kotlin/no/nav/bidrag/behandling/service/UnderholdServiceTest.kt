@@ -7,7 +7,6 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
@@ -33,7 +32,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -58,11 +57,22 @@ class UnderholdServiceTest {
     @MockK
     lateinit var personRepository: PersonRepository
 
-    @MockK
-    lateinit var notatService: NotatService
+    val notatService = NotatService()
 
-    @InjectMockKs
     lateinit var underholdService: UnderholdService
+
+    @BeforeEach
+    fun setup() {
+        underholdService =
+            UnderholdService(
+                barnetilsynRepository,
+                faktiskTilsynsutgiftRepository,
+                tilleggsstønadRepository,
+                underholdskostnadRepository,
+                personRepository,
+                notatService,
+            )
+    }
 
     @Nested
     @DisplayName("Tester sletting fra underholdskostnad")
@@ -596,15 +606,6 @@ class UnderholdServiceTest {
                         harTilsynsordning = true,
                         begrunnelse = "Barmet går i SFO",
                     )
-
-                every {
-                    notatService.oppdatereNotat(
-                        any(),
-                        NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
-                        request.begrunnelse!!,
-                        behandling.bidragspliktig!!.id!!,
-                    )
-                } returns Unit
 
                 // hvis
                 val underholdDto = underholdService.oppdatereUnderhold(underholdskostnad, request)

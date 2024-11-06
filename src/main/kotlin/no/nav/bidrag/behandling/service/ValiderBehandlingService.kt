@@ -50,12 +50,12 @@ class ValiderBehandlingService(
             return "Kan ikke behandle klage eller omgjøring"
         }
         val bp = request.bidragspliktig ?: return "Behandlingen mangler bidragspliktig"
-        val harBPMinstEtBidragsstønad =
+        val harBPMinstEnBidragsstønad =
             bidragStonadConsumer
                 .hentAlleStønaderForBidragspliktig(bp.ident!!)
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
-        return if (harBPMinstEtBidragsstønad) {
+        return if (harBPMinstEnBidragsstønad) {
             "Bidragspliktig har en eller flere historiske eller løpende bidrag"
         } else {
             null
