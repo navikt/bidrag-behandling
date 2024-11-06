@@ -333,7 +333,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBp =
                     oppdatertBehandling.get().grunnlag.filter { Rolletype.BIDRAGSPLIKTIG == it.rolle.rolletype }
                 assertSoftly {
-                    grunnlagBp.size shouldBe 12
+                    grunnlagBp.size shouldBe 13
                     grunnlagBp.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 1
                     grunnlagBp.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 6
                     grunnlagBp.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2
