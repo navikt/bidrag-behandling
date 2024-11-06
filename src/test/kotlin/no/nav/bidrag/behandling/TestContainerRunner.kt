@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling
 
+import org.slf4j.LoggerFactory
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -10,9 +11,11 @@ import org.testcontainers.junit.jupiter.Testcontainers
 
 @Testcontainers
 @ActiveProfiles(value = ["test", "testcontainer"])
-@DirtiesContext
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class TestContainerRunner : SpringTestRunner() {
     companion object {
+        private val LOGGER = LoggerFactory.getLogger(TestContainerRunner::class.java)
+
         @JvmStatic
         @Container
         protected val postgreSqlDb =
@@ -21,6 +24,7 @@ class TestContainerRunner : SpringTestRunner() {
                 withUsername("cloudsqliamuser")
                 withPassword("admin")
                 withInitScript("db/init.sql")
+//                withLogConsumer(Slf4jLogConsumer(LOGGER))
                 portBindings = listOf("7777:5432")
                 start()
             }
@@ -36,7 +40,6 @@ class TestContainerRunner : SpringTestRunner() {
             registry.add("spring.datasource.url", postgreSqlDb::getJdbcUrl)
             registry.add("spring.datasource.password", postgreSqlDb::getPassword)
             registry.add("spring.datasource.username", postgreSqlDb::getUsername)
-            registry.add("spring.datasource.hikari.connection-timeout") { 250 }
         }
     }
 }

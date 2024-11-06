@@ -56,7 +56,7 @@ class UtgiftserviceMockTest {
         validering = ValiderBeregning()
         mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
-        every { validerBehandling.kanBehandlesINyLøsning(any()) } returns true
+        every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
         every { utgiftRepository.save<Utgift>(any()) } answers {
             val utgift = firstArg<Utgift>()
             utgift.id = 1

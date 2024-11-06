@@ -1,8 +1,11 @@
 package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.commons.web.client.AbstractRestClient
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
+import no.nav.bidrag.transport.behandling.stonad.request.SkyldnerStønaderRequest
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssakerResponse
+import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.annotation.Backoff
@@ -30,5 +33,16 @@ class BidragStønadConsumer(
         postForNonNullEntity(
             bidragsStønadUri.pathSegment("hent-lopende-bidragssaker-for-skyldner").build().toUri(),
             request,
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun hentAlleStønaderForBidragspliktig(personidentBidragspliktig: Personident): SkyldnerStønaderResponse =
+        postForNonNullEntity(
+            bidragsStønadUri.pathSegment("hent-alle-stonader-for-skyldner").build().toUri(),
+            SkyldnerStønaderRequest(personidentBidragspliktig),
         )
 }

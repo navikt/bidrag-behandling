@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.transformers.bestemTypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 
 data class KanBehandlesINyLøsningRequest(
@@ -18,8 +19,15 @@ data class KanBehandlesINyLøsningRequest(
     @Schema(required = true)
     var stønadstype: Stønadstype? = null,
     @Schema(required = true)
+    var vedtakstype: Vedtakstype? = null,
+    @Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
-)
+    val søknadsreferanseid: Long? = null,
+    val vedtakRefId: Long? = null,
+) {
+    val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+    val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
+}
 
 @Schema(description = "Rolle beskrivelse som er brukte til å opprette nye roller")
 data class SjekkRolleDto(

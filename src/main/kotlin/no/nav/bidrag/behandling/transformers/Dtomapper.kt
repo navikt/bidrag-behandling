@@ -433,7 +433,7 @@ class Dtomapper(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
         inkluderHistoriskeInntekter: Boolean,
     ): BehandlingDtoV2 {
-        val kanBehandles = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
+        val kanBehandles = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) == null
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),

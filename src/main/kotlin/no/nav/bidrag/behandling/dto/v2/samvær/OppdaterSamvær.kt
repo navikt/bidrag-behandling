@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.samvær
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
@@ -10,6 +11,7 @@ import java.math.BigDecimal
 
 data class OppdaterSamværDto(
     val gjelderBarn: String,
+    @field:Valid
     val periode: OppdaterSamværsperiodeDto? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
@@ -18,13 +20,13 @@ data class OppdaterSamværDto(
 data class OppdaterSamværResponsDto(
     @Schema(description = "Samvær som ble oppdatert")
     val oppdatertSamvær: SamværDto? = null,
-    val samværsperioder: List<SamværDto> = emptyList(),
 )
 
 data class OppdaterSamværsperiodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
-    val samværsklasse: Samværsklasse?,
+    val samværsklasse: Samværsklasse? = null,
+    @field:Valid
     val beregning: SamværskalkulatorDetaljer? = null,
 )
 
