@@ -495,7 +495,7 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
         engangsbeløpstype = engangsbeloptype,
         stønadstype = stonadstype,
         saksnummer = saksnummer,
-        harReferanseTilAnnenSøknad = soknadRefId != null,
+        harReferanseTilAnnenBehandling = soknadRefId != null,
         roller =
             roller.map {
                 SjekkRolleDto(

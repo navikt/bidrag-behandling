@@ -22,7 +22,7 @@ data class KanBehandlesINyLøsningRequest(
     var vedtakstype: Vedtakstype? = null,
     @Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
-    val harReferanseTilAnnenSøknad: Boolean = false,
+    val harReferanseTilAnnenBehandling: Boolean = false,
 ) {
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
