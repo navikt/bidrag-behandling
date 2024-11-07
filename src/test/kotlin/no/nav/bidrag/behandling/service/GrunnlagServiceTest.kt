@@ -186,7 +186,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
                     oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    oppdatertBehandling.get().grunnlag.size shouldBe 27
+                    oppdatertBehandling.get().grunnlag.size shouldBe 28
                     oppdatertBehandling.get().inntekter.size shouldBe 28
                 }
 
@@ -327,13 +327,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
                     oppdatertBehandling.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    oppdatertBehandling.get().grunnlag.size shouldBe 32
+                    oppdatertBehandling.get().grunnlag.size shouldBe 33
                 }
 
                 val grunnlagBp =
                     oppdatertBehandling.get().grunnlag.filter { Rolletype.BIDRAGSPLIKTIG == it.rolle.rolletype }
                 assertSoftly {
-                    grunnlagBp.size shouldBe 12
+                    grunnlagBp.size shouldBe 13
                     grunnlagBp.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 1
                     grunnlagBp.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 6
                     grunnlagBp.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2

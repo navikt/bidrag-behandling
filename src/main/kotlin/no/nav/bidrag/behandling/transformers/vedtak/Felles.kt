@@ -14,7 +14,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.response.BehandlingsreferanseDto
+import no.nav.bidrag.transport.behandling.vedtak.response.EngangsbeløpDto
+import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.sak.RolleDto
+import java.time.LocalDateTime
 
 val særbidragDirekteAvslagskoderSomKreverBeregning = listOf(Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS)
 val særbidragDirekteAvslagskoderSomInneholderUtgifter =
@@ -53,3 +60,81 @@ fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
 }
 
 fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(this) else null
+
+fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
+    VedtakDto(
+        type = type,
+        opprettetAv = opprettetAv ?: "",
+        opprettetAvNavn = opprettetAv,
+        kilde = kilde,
+        kildeapplikasjon = "behandling",
+        vedtakstidspunkt = vedtakstidspunkt,
+        enhetsnummer = enhetsnummer,
+        innkrevingUtsattTilDato = innkrevingUtsattTilDato,
+        fastsattILand = fastsattILand,
+        opprettetTidspunkt = LocalDateTime.now(),
+        behandlingsreferanseListe =
+            behandlingsreferanseListe.map {
+                BehandlingsreferanseDto(
+                    kilde = it.kilde,
+                    referanse = it.referanse,
+                )
+            },
+        stønadsendringListe =
+            stønadsendringListe.map {
+                StønadsendringDto(
+                    innkreving = it.innkreving,
+                    skyldner = it.skyldner,
+                    kravhaver = it.kravhaver,
+                    mottaker = it.mottaker,
+                    sak = it.sak,
+                    type = it.type,
+                    beslutning = it.beslutning,
+                    grunnlagReferanseListe = it.grunnlagReferanseListe,
+                    eksternReferanse = it.eksternReferanse,
+                    omgjørVedtakId = it.omgjørVedtakId,
+                    førsteIndeksreguleringsår = it.førsteIndeksreguleringsår,
+                    periodeListe =
+                        it.periodeListe.map {
+                            VedtakPeriodeDto(
+                                periode = it.periode,
+                                beløp = it.beløp,
+                                valutakode = it.valutakode,
+                                resultatkode = it.resultatkode,
+                                delytelseId = it.delytelseId,
+                                grunnlagReferanseListe = it.grunnlagReferanseListe,
+                            )
+                        },
+                )
+            },
+        engangsbeløpListe =
+            engangsbeløpListe.map {
+                EngangsbeløpDto(
+                    beløp = it.beløp,
+                    valutakode = it.valutakode,
+                    resultatkode = it.resultatkode,
+                    delytelseId = it.delytelseId,
+                    grunnlagReferanseListe = it.grunnlagReferanseListe,
+                    beslutning = it.beslutning,
+                    innkreving = it.innkreving,
+                    skyldner = it.skyldner,
+                    kravhaver = it.kravhaver,
+                    mottaker = it.mottaker,
+                    sak = it.sak,
+                    type = it.type,
+                    eksternReferanse = it.eksternReferanse,
+                    omgjørVedtakId = it.omgjørVedtakId,
+                    referanse = it.referanse ?: "",
+                )
+            },
+        grunnlagListe =
+            grunnlagListe.map {
+                GrunnlagDto(
+                    referanse = it.referanse,
+                    type = it.type,
+                    innhold = it.innhold,
+                    grunnlagsreferanseListe = it.grunnlagsreferanseListe,
+                    gjelderReferanse = it.gjelderReferanse,
+                )
+            },
+    )

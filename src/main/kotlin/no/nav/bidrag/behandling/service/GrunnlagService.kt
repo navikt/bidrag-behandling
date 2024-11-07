@@ -639,7 +639,7 @@ class GrunnlagService(
                     it.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
 
-                if (TypeBehandling.SÆRBIDRAG == behandling.tilType() && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
+                if (behandling.tilType() != TypeBehandling.FORSKUDD && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
                     periodisereOgLagreBpsBoforholdAndreVoksne(
                         behandling,
                         it.husstandsmedlemmerOgEgneBarnListe.toSet(),
