@@ -20,14 +20,14 @@ open class Person(
     open val fødselsdato: LocalDate? = null,
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @OneToMany(
-        fetch = FetchType.EAGER,
+        fetch = FetchType.LAZY,
         mappedBy = "person",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
     open val underholdskostnad: MutableSet<Underholdskostnad> = mutableSetOf(),
     @OneToMany(
-        fetch = FetchType.EAGER,
+        fetch = FetchType.LAZY,
         mappedBy = "person",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = false,

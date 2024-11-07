@@ -13,7 +13,7 @@ import jakarta.persistence.OneToMany
 @Entity
 open class Underholdskostnad(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) open val id: Long? = null,
-    @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(
         name = "behandling_id",
         nullable = false,
     )
