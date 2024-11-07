@@ -43,10 +43,7 @@ class ValiderBehandlingService(
 
     private fun kanBidragV1BehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
-        if (request.vedtakstype == Vedtakstype.KLAGE ||
-            request.søknadsreferanseid != null ||
-            request.vedtakRefId != null
-        ) {
+        if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
         val bp = request.bidragspliktig ?: return "Behandlingen mangler bidragspliktig"

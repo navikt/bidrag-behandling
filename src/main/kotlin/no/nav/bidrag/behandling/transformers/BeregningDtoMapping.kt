@@ -34,7 +34,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHustand
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
@@ -246,7 +246,7 @@ fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnl
 
     val delberegningBidragspliktigesAndel =
         finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull() ?: return null
-    return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningVoksneIHustand>().borMedAndreVoksne
+    return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningVoksneIHusstand>().borMedAndreVoksne
 }
 
 fun List<GrunnlagDto>.finnDelberegningUtgift(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUtgift? {
@@ -291,7 +291,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
                 delberegningBoforhold.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )
-        }?.innholdTilObjekt<DelberegningVoksneIHustand>() ?: return null
+        }?.innholdTilObjekt<DelberegningVoksneIHusstand>() ?: return null
     val delberegningBarnIHusstanden =
         find {
             it.type == Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND &&
@@ -308,7 +308,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
         }?.innholdTilObjekt<SjablonBidragsevnePeriode>() ?: return null
     val sjablonUnderholdEgnebarnIHusstand =
         find {
-            it.type == Grunnlagstype.SJABLON &&
+            it.type == Grunnlagstype.SJABLON_SJABLONTALL &&
                 delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
                     it.referanse,
                 ) &&
@@ -343,7 +343,7 @@ fun List<GrunnlagDto>.finnForskuddssats(grunnlagsreferanseListe: List<Grunnlagsr
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
-    return finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON, sluttberegning)
+    return finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON_SJABLONTALL, sluttberegning)
         .find { it.innholdTilObjekt<SjablonSjablontallPeriode>().sjablon == SjablonTallNavn.FORSKUDDSSATS_BELØP }
         ?.innholdTilObjekt<SjablonSjablontallPeriode>()
         ?.verdi ?: BigDecimal.ZERO
