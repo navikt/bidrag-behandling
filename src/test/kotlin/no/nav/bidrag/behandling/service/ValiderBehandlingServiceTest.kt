@@ -195,8 +195,7 @@ private fun oppretLøpendeBidragListeMedUtenlandskValuta() =
         ),
     )
 
-private fun opprettSkyldnerStønad(type: Stønadstype = Stønadstype.BIDRAG) =
-    SkyldnerStønad(sak = Saksnummer("123"), kravhaver = Personident("213"), type = type)
+private fun opprettSkyldnerStønad(type: Stønadstype = Stønadstype.BIDRAG) = SkyldnerStønad(sak = Saksnummer("123"), kravhaver = Personident("213"), type = type)
 
 private fun oppretLøpendeBidragListeMedBareNorskValuta() =
     listOf(
