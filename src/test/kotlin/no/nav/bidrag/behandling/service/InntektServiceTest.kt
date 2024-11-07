@@ -1268,14 +1268,15 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             behandling.inntekter.add(utvidetBarnetrygd)
-            val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)
+            testdataManager.lagreBehandlingNewTransaction(behandling)
+            val lagraInntekter = inntektRepository.findAll()
 
             val oppdatereInntektRequest =
                 OppdatereInntektRequest(
                     oppdatereInntektsperiode =
                         OppdaterePeriodeInntekt(
                             taMedIBeregning = true,
-                            id = lagretBehandling.inntekter.find { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }!!.id!!,
+                            id = lagraInntekter.find { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }!!.id!!,
                         ),
                 )
 
