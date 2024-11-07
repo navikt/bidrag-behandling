@@ -78,10 +78,8 @@ class UnderholdService(
             val rolle = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
             val eksisterendePerson = personRepository.findFirstByIdent(personidentBarn.verdi)
             if (eksisterendePerson == null) {
-                val ident = if (rolle == null) personidentBarn.verdi else null
                 val roller = rolle?.let { mutableSetOf(it) } ?: mutableSetOf()
-
-                val person = personRepository.save(Person(ident = ident, rolle = roller))
+                val person = personRepository.save(Person(ident = personidentBarn.verdi, rolle = roller))
                 person.rolle.forEach { it.person = person }
 
                 return lagreUnderholdskostnad(behandling, person)

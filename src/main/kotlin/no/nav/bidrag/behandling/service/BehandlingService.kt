@@ -370,11 +370,8 @@ class BehandlingService(
         inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
         val behandling = hentBehandlingById(behandlingsid)
-        tilgangskontrollService.sjekkTilgangBehandling(behandling)
-
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         behandling.oppdatereVirkningstidspunktSærbidrag()
-
         return mapper.tilDto(behandling, true)
     }
 

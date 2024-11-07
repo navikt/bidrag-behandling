@@ -779,7 +779,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         .first()
                         .rolletype
             } shouldHaveSize 1
-            opprettetBehandling.underholdskostnader.filter { null == it.person.ident } shouldHaveSize 1
+            opprettetBehandling.underholdskostnader.filter { it.person.ident != null } shouldHaveSize 1
         }
 
         @Test
