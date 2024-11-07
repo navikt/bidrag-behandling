@@ -4,6 +4,7 @@ import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
@@ -947,7 +948,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal lagre tomt grunnlag uten å sette til aktiv dersom sist lagrede grunnlag ikke var tomt`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling(false, false, false)
+                val behandling = oppretteTestbehandling(false, false, false)
+                testdataManager.lagreBehandlingNewTransaction(behandling)
                 stubUtils.stubHenteGrunnlag(tomRespons = true)
 
                 val småbarnstillegg =
@@ -976,39 +978,20 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+                behandling.grunnlag.size shouldBe 4
 
-                assertSoftly {
-                    oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 4
-                }
+                val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
+                alleAktiveGrunnlag.size shouldBe 3
+                val sistInnhentaSmåbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
+                sistInnhentaSmåbarnstillegg.aktiv shouldBe null
 
-                val grunnlag =
-                    grunnlagRepository.findTopByBehandlingIdAndRolleIdAndTypeAndErBearbeidetOrderByInnhentetDesc(
-                        behandlingsid = behandling.id!!,
-                        behandling.roller.first { Rolletype.BIDRAGSMOTTAKER == it.rolletype }.id!!,
-                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                        false,
-                    )
+                val gjeldendeSmåbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type && it.aktiv != null }.maxBy { it.innhentet }
+                gjeldendeSmåbarnstillegg.shouldNotBeNull()
 
-                assertSoftly {
-                    jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(grunnlag!!.data) shouldBe emptySet()
-                    grunnlag.aktiv shouldBe null
-                }
-
-                val gjeldendeAktiveGrunnlag =
-                    grunnlagRepository.findAll().filter { g -> g.aktiv != null }
-
-                gjeldendeAktiveGrunnlag.size shouldBe 3
-
-                val småbarnstilleggGrunnlagDto =
-                    jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeAktiveGrunnlag.first().data)
-
-                assertSoftly {
-                    småbarnstilleggGrunnlagDto shouldNotBe emptySet<SmåbarnstilleggGrunnlagDto>()
-                    småbarnstilleggGrunnlagDto.size shouldBe 1
-                    småbarnstilleggGrunnlagDto.filter { sbt -> sbt.personId == behandling.bidragsmottaker!!.ident!! }.size shouldBe 1
-                    småbarnstilleggGrunnlagDto.filter { sbt -> sbt.beløp == småbarnstillegg.beløp }.size shouldBe 1
+                assertSoftly(jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeSmåbarnstillegg.data)) {
+                    it shouldHaveSize 1
+                    it.filter { sbt -> sbt.personId == behandling.bidragsmottaker!!.ident!! } shouldHaveSize 1
+                    it.filter { sbt -> sbt.beløp == småbarnstillegg.beløp } shouldHaveSize 1
                 }
             }
 
@@ -1146,7 +1129,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal aktivere førstegangsinnhenting av sivilstand`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling(false, false, false)
+                val behandling = oppretteTestbehandling(false, false, false)
+                testdataManager.lagreBehandlingNewTransaction(behandling)
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -1155,8 +1139,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                entityManager.refresh(behandling)
-
                 assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) {
                     it.shouldNotBeEmpty()
                 }
@@ -1380,8 +1362,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal lagre sivilstand`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling(false, false, false)
-
+                val behandling = oppretteTestbehandling(false, false, false)
+                testdataManager.lagreBehandlingNewTransaction(behandling)
                 assertSoftly(behandling.sivilstand) { s ->
                     s.size shouldBe 0
                 }
@@ -1393,8 +1375,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                entityManager.refresh(behandling)
-
                 assertSoftly(behandling.grunnlag) { g ->
                     g.size shouldBe 21
                     g.filter { Grunnlagsdatatype.SIVILSTAND == it.type }.size shouldBe 2
@@ -1470,7 +1450,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal lagre barnetillegg og kontantstøtte som gjelder barn med rolle i behandling`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling(false)
+                val behandling = oppretteTestbehandling(false)
 
                 val barnFraHenteGrunnlagresponsJson = "01057812300"
 
@@ -1485,6 +1465,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     ),
                 )
 
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -1493,8 +1475,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                entityManager.refresh(behandling)
-
                 behandling.grunnlag.size shouldBe totaltAntallGrunnlag + 1
 
                 val grunnlagBarnetillegg =
@@ -1530,8 +1510,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal ikke lagre barnetillegg eller kontantstøtte som gjelder barn som ikke er del av behandling`() {
                 // gitt
-                val behandling = testdataManager.oppretteBehandling(false)
-
+                val behandling = oppretteTestbehandling(false)
+                testdataManager.lagreBehandlingNewTransaction(behandling)
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -1540,8 +1520,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                entityManager.refresh(behandling)
-
                 behandling.grunnlag.size shouldBe totaltAntallGrunnlag
 
                 val grunnlagBarnetillegg =
@@ -1854,11 +1832,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal aktivere grunnlag av type inntekt for bp i behandling av bidrag`() {
                 // gitt
                 val behandling =
-                    testdataManager.oppretteBehandling(
+                    oppretteTestbehandling(
                         false,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
                 stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
@@ -1923,11 +1902,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal aktivere grunnlag av type arbeidsforhold for bp i behandling av bidrag`() {
                 // gitt
                 val behandling =
-                    testdataManager.oppretteBehandling(
-                        false,
-                        inkludereBp = true,
-                        behandlingstype = TypeBehandling.BIDRAG,
-                    )
+                    oppretteTestbehandling(false, inkludereBp = true, behandlingstype = TypeBehandling.BIDRAG)
+
+                testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
                 stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
@@ -1966,13 +1943,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
             open fun `skal aktivere grunnlag av type boforhold for barn av BP i behandling av bidrag, og oppdatere husstandsmedlemtabell`() {
                 // gitt
                 val behandling =
-                    testdataManager.oppretteBehandling(
+                    oppretteTestbehandling(
                         false,
                         false,
                         false,
                         true,
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
                 Mockito

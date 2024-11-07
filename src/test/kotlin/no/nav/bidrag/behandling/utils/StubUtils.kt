@@ -43,6 +43,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
@@ -186,6 +187,18 @@ class StubUtils {
                 aClosedJsonResponse()
                     .withStatus(status.value())
                     .withBody(erstattVariablerITestFil("stonad/$filnavn")),
+            ),
+        )
+    }
+
+    fun stubAlleStønaderBp(
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/stonad/hent-alle-stonader-for-skyldner")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(SkyldnerStønaderResponse())),
             ),
         )
     }

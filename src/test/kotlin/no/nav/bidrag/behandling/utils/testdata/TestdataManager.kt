@@ -37,16 +37,14 @@ class TestdataManager(
     fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
         val inntekter = mutableSetOf<Inntekt>()
         behandling.inntekter.forEach { inntekter.add(it) }
-        behandling.inntekter = mutableSetOf()
+        behandling.inntekter.clear()
 
         val underholdskostnader = mutableSetOf<Underholdskostnad>()
         behandling.underholdskostnader.forEach { underholdskostnader.add(it) }
-        behandling.underholdskostnader = mutableSetOf()
+        behandling.underholdskostnader.clear()
 
         behandlingRepository.save(behandling)
-
         inntekter.forEach { inntektRepository.save(it) }
-        behandling.inntekter.addAll(inntekter)
 
         underholdskostnader.forEach { personRepository.save(it.person) }
         behandling.underholdskostnader.addAll(underholdskostnader)

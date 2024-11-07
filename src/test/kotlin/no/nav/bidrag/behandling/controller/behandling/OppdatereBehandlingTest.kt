@@ -284,6 +284,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
 
+        val b = behandlingRepository.findBehandlingById(behandling.id!!)
+
         val nyttVirkningstidspunkt = LocalDate.parse("2023-07-01")
         // hvis
         val behandlingRes =

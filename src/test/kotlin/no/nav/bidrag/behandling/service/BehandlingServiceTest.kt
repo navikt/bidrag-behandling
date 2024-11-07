@@ -746,6 +746,9 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal opprette bidragsbehandling`() {
             // gitt
+            stubUtils.stubHenteGrunnlag()
+            stubUtils.stubAlleStønaderBp()
+
             val behandling =
                 oppretteTestbehandling(
                     behandlingstype = TypeBehandling.BIDRAG,
@@ -760,21 +763,23 @@ class BehandlingServiceTest : TestContainerRunner() {
                 behandling.roller.add(enebarn)
             }
 
+            stubUtils.stubHentePersoninfo(personident = behandling.roller.find { Rolletype.BARN == it.rolletype }!!.ident!!)
+
             // hvis
             val respons = behandlingService.opprettBehandling(behandling.tilOppretteBehandlingRequest())
 
             // så
             val opprettetBehandling = behandlingService.hentBehandlingById(respons.id)
             opprettetBehandling.stonadstype shouldBe Stønadstype.BIDRAG
-            opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 2
-            opprettetBehandling.underholdskostnader shouldHaveSize 2
+            opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 1
+            opprettetBehandling.underholdskostnader shouldHaveSize 1
             opprettetBehandling.underholdskostnader.filter {
                 Rolletype.BARN ==
                     it.person.rolle
                         .first()
                         .rolletype
-            } shouldHaveSize 2
-            opprettetBehandling.underholdskostnader.filter { null == it.person.ident } shouldHaveSize 2
+            } shouldHaveSize 1
+            opprettetBehandling.underholdskostnader.filter { null == it.person.ident } shouldHaveSize 1
         }
 
         @Test
