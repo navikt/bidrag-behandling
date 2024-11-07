@@ -26,9 +26,9 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilBehandl
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilOpprettRequestDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilSkyldner
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
+import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.commons.util.tilVedtakDto
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype

@@ -308,7 +308,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
         }?.innholdTilObjekt<SjablonBidragsevnePeriode>() ?: return null
     val sjablonUnderholdEgnebarnIHusstand =
         find {
-            it.type == Grunnlagstype.SJABLON &&
+            it.type == Grunnlagstype.SJABLON_SJABLONTALL &&
                 delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
                     it.referanse,
                 ) &&
@@ -343,7 +343,7 @@ fun List<GrunnlagDto>.finnForskuddssats(grunnlagsreferanseListe: List<Grunnlagsr
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
-    return finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON, sluttberegning)
+    return finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON_SJABLONTALL, sluttberegning)
         .find { it.innholdTilObjekt<SjablonSjablontallPeriode>().sjablon == SjablonTallNavn.FORSKUDDSSATS_BELØP }
         ?.innholdTilObjekt<SjablonSjablontallPeriode>()
         ?.verdi ?: BigDecimal.ZERO
