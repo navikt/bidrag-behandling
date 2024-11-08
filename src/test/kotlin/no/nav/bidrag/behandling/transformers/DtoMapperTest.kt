@@ -58,6 +58,8 @@ class DtoMapperTest : TestContainerRunner() {
     @BeforeEach
     fun initMocks() {
         stubUtils.stubTilgangskontrollPersonISak()
+        every { tilgangskontrollService.harBeskyttelse(any()) } returns false
+        every { tilgangskontrollService.harTilgang(any(), any()) } returns true
     }
 
     @Nested

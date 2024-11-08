@@ -28,11 +28,15 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -59,14 +63,26 @@ class UnderholdServiceTest {
     lateinit var personRepository: PersonRepository
 
     @MockK
-    lateinit var dtomapper: Dtomapper
+    lateinit var personService: PersonService
+
+    @MockK
+    lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockK
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
+    @MockK
+    lateinit var validering: ValiderBeregning
 
     val notatService = NotatService()
+
+    lateinit var dtomapper: Dtomapper
 
     lateinit var underholdService: UnderholdService
 
     @BeforeEach
     fun setup() {
+        dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, personService)
         underholdService =
             UnderholdService(
                 barnetilsynRepository,
@@ -111,6 +127,13 @@ class UnderholdServiceTest {
             val uFørSleting = behandling.underholdskostnader.find { it.id == universalid }
             uFørSleting.shouldNotBeNull()
             uFørSleting.tilleggsstønad.shouldNotBeEmpty()
+
+            every { personService.hentPerson(any()) } returns
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
 
             // hvis
             underholdService.sletteFraUnderhold(behandling, request)
@@ -610,6 +633,13 @@ class UnderholdServiceTest {
                     OppdatereUnderholdRequest(
                         harTilsynsordning = true,
                         begrunnelse = "Barmet går i SFO",
+                    )
+
+                every { personService.hentPerson(any()) } returns
+                    PersonDto(
+                        ident = Personident(testdataBarn1.ident),
+                        navn = testdataBarn1.navn,
+                        fødselsdato = testdataBarn1.fødselsdato,
                     )
 
                 // hvis
