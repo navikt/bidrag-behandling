@@ -81,18 +81,18 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BoforholdResponseV2(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(13),
-                                periodeTom = null,
-                                bostatus = Bostatuskode.MED_FORELDER,
-                                fødselsdato = LocalDate.now().minusYears(13),
-                                gjelderPersonId = testdataBarn1.ident,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponseV2(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    gjelderPersonId = testdataBarn1.ident,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -107,18 +107,18 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BoforholdResponseV2(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = nyFomdato,
-                                periodeTom = null,
-                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                                fødselsdato = LocalDate.now().minusYears(13),
-                                gjelderPersonId = testdataBarn1.ident,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponseV2(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = nyFomdato,
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    gjelderPersonId = testdataBarn1.ident,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -200,16 +200,16 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(13),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -222,16 +222,16 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(15),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -260,11 +260,12 @@ class DtoMapperTest : TestContainerRunner() {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            every { personService.hentPerson(testdataBarn1.ident) } returns PersonDto(
-                ident = Personident(testdataBarn1.ident),
-                navn = testdataBarn1.navn,
-                fødselsdato = testdataBarn1.fødselsdato
-            )
+            every { personService.hentPerson(testdataBarn1.ident) } returns
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
 
             // hvis
             val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.first())
