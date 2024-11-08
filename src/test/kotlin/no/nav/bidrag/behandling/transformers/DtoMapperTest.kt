@@ -257,7 +257,7 @@ class DtoMapperTest : TestContainerRunner() {
                 oppretteTestbehandling(
                     setteDatabaseider = true,
                     inkludereBp = true,
-                    behandlingstype = TypeBehandling.BIDRAG,s
+                    behandlingstype = TypeBehandling.BIDRAG,
                 )
 
             every { personService.hentPerson(testdataBarn1.ident) } returns PersonDto(
