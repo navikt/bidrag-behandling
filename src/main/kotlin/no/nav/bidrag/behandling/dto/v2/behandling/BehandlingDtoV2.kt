@@ -118,7 +118,7 @@ data class BehandlingDtoV2(
     val utgift: SærbidragUtgifterDto? = null,
     @Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
     val samvær: List<SamværDto>? = null,
-    val underholdskostnader: Set<UnderholdDto> = emptySet(),
+    var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
 }

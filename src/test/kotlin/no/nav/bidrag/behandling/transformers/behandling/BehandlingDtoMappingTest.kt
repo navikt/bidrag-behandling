@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.mockkClass
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
@@ -12,6 +13,7 @@ import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -52,6 +54,9 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var validering: ValiderBeregning
     lateinit var validerBehandling: ValiderBehandlingService
 
+    @MockK
+    lateinit var personService: PersonService
+
     @BeforeEach
     fun initMocks() {
         stubPersonConsumer()
@@ -61,7 +66,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         validering = ValiderBeregning()
         validerBehandling = mockkClass(ValiderBehandlingService::class)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
-        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
+        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling, personService)
     }
 
     @Test

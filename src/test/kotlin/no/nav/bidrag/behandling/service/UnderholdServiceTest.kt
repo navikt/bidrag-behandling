@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
@@ -57,6 +58,9 @@ class UnderholdServiceTest {
     @MockK
     lateinit var personRepository: PersonRepository
 
+    @MockK
+    lateinit var dtomapper: Dtomapper
+
     val notatService = NotatService()
 
     lateinit var underholdService: UnderholdService
@@ -71,6 +75,7 @@ class UnderholdServiceTest {
                 underholdskostnadRepository,
                 personRepository,
                 notatService,
+                dtomapper,
             )
     }
 

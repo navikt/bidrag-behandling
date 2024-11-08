@@ -4,24 +4,35 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.MockK
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.service.TilgangskontrollService
+import no.nav.bidrag.behandling.service.ValiderBehandlingService
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -29,7 +40,19 @@ class DtoMapperTest : TestContainerRunner() {
     @Autowired
     lateinit var testdataManager: TestdataManager
 
-    @Autowired
+    @MockK
+    lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockK
+    lateinit var validering: ValiderBeregning
+
+    @MockK
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
+    @MockK
+    lateinit var personService: PersonService
+
+    @InjectMockKs
     lateinit var dtomapper: Dtomapper
 
     @BeforeEach
@@ -58,18 +81,18 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                        commonObjectmapper.writeValueAsString(
-                            setOf(
-                                BoforholdResponseV2(
-                                    kilde = Kilde.OFFENTLIG,
-                                    periodeFom = LocalDate.now().minusYears(13),
-                                    periodeTom = null,
-                                    bostatus = Bostatuskode.MED_FORELDER,
-                                    fødselsdato = LocalDate.now().minusYears(13),
-                                    gjelderPersonId = testdataBarn1.ident,
-                                ),
+                    commonObjectmapper.writeValueAsString(
+                        setOf(
+                            BoforholdResponseV2(
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = LocalDate.now().minusYears(13),
+                                periodeTom = null,
+                                bostatus = Bostatuskode.MED_FORELDER,
+                                fødselsdato = LocalDate.now().minusYears(13),
+                                gjelderPersonId = testdataBarn1.ident,
                             ),
                         ),
+                    ),
                 ),
             )
 
@@ -84,18 +107,18 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                        commonObjectmapper.writeValueAsString(
-                            setOf(
-                                BoforholdResponseV2(
-                                    kilde = Kilde.OFFENTLIG,
-                                    periodeFom = nyFomdato,
-                                    periodeTom = null,
-                                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                                    fødselsdato = LocalDate.now().minusYears(13),
-                                    gjelderPersonId = testdataBarn1.ident,
-                                ),
+                    commonObjectmapper.writeValueAsString(
+                        setOf(
+                            BoforholdResponseV2(
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = nyFomdato,
+                                periodeTom = null,
+                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                fødselsdato = LocalDate.now().minusYears(13),
+                                gjelderPersonId = testdataBarn1.ident,
                             ),
                         ),
+                    ),
                 ),
             )
 
@@ -177,16 +200,16 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                        commonObjectmapper.writeValueAsString(
-                            setOf(
-                                Sivilstand(
-                                    kilde = Kilde.OFFENTLIG,
-                                    periodeFom = LocalDate.now().minusYears(13),
-                                    periodeTom = null,
-                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
-                                ),
+                    commonObjectmapper.writeValueAsString(
+                        setOf(
+                            Sivilstand(
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = LocalDate.now().minusYears(13),
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
                             ),
                         ),
+                    ),
                 ),
             )
 
@@ -199,16 +222,16 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                        commonObjectmapper.writeValueAsString(
-                            setOf(
-                                Sivilstand(
-                                    kilde = Kilde.OFFENTLIG,
-                                    periodeFom = LocalDate.now().minusYears(15),
-                                    periodeTom = null,
-                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
-                                ),
+                    commonObjectmapper.writeValueAsString(
+                        setOf(
+                            Sivilstand(
+                                kilde = Kilde.OFFENTLIG,
+                                periodeFom = LocalDate.now().minusYears(15),
+                                periodeTom = null,
+                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
                             ),
                         ),
+                    ),
                 ),
             )
 
@@ -220,6 +243,35 @@ class DtoMapperTest : TestContainerRunner() {
             assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
                 resultat.sivilstand shouldNotBe null
             }
+        }
+    }
+
+    @Nested
+    open inner class Underholdskostnad {
+        @Test
+        fun `skal mappe ident og navn til barnet underholdskostnaden gjelder`() {
+            // gitt
+            stubUtils.stubPerson(status = HttpStatus.OK, personident = testdataBarn1.ident)
+
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,s
+                )
+
+            every { personService.hentPerson(testdataBarn1.ident) } returns PersonDto(
+                ident = Personident(testdataBarn1.ident),
+                navn = testdataBarn1.navn,
+                fødselsdato = testdataBarn1.fødselsdato
+            )
+
+            // hvis
+            val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.first())
+
+            // så
+            dto.gjelderBarn.navn shouldBe testdataBarn1.navn
+            dto.gjelderBarn.ident?.verdi shouldBe testdataBarn1.ident
         }
     }
 }

@@ -45,6 +45,9 @@ class UtgiftserviceMockTest {
     @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
 
+    @MockK
+    lateinit var personService: PersonService
+
     lateinit var utgiftService: UtgiftService
     lateinit var validering: ValiderBeregning
     val validerBehandling: ValiderBehandlingService = mockkClass(ValiderBehandlingService::class)
@@ -54,7 +57,7 @@ class UtgiftserviceMockTest {
     fun initMock() {
         stubSjablonProvider()
         validering = ValiderBeregning()
-        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
+        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling, personService)
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
         every { utgiftRepository.save<Utgift>(any()) } answers {

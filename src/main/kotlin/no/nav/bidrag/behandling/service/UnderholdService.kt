@@ -22,10 +22,10 @@ import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.tilFaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.tilTilleggsstønadDto
-import no.nav.bidrag.behandling.transformers.underhold.tilUnderholdDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
@@ -43,6 +43,7 @@ class UnderholdService(
     private val underholdskostnadRepository: UnderholdskostnadRepository,
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
+    private val dtomapper: Dtomapper,
 ) {
     @Transactional
     fun oppdatereUnderhold(
@@ -64,7 +65,7 @@ class UnderholdService(
             )
         }
 
-        return underholdskostnad.tilUnderholdDto()
+        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     @Transactional
@@ -246,7 +247,7 @@ class UnderholdService(
     ): UnderholdDto {
         val stønadTilBarnetilsyn = underholdskostnad.barnetilsyn.find { idElement == it.id }
         underholdskostnad.barnetilsyn.remove(stønadTilBarnetilsyn)
-        return underholdskostnad.tilUnderholdDto()
+        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     private fun sletteTilleggsstønad(
@@ -255,7 +256,7 @@ class UnderholdService(
     ): UnderholdDto {
         val tilleggsstønad = underholdskostnad.tilleggsstønad.find { idElement == it.id }
         underholdskostnad.tilleggsstønad.remove(tilleggsstønad)
-        return underholdskostnad.tilUnderholdDto()
+        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     private fun sletteUnderholdskostnad(
@@ -274,7 +275,7 @@ class UnderholdService(
     ): UnderholdDto {
         val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { idElement == it.id }
         underholdskostnad.faktiskeTilsynsutgifter.remove(faktiskTilsynsutgift)
-        return underholdskostnad.tilUnderholdDto()
+        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     private fun lagreUnderholdskostnad(
