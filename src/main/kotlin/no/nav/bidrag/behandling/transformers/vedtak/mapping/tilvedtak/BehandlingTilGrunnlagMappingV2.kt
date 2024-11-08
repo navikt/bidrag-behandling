@@ -115,7 +115,7 @@ class BehandlingTilGrunnlagMappingV2(
         )
     }
 
-    fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
+    fun Behandling.tilGrunnlagBostatus(personobjekter: Set<GrunnlagDto> = tilPersonobjekter()): Set<GrunnlagDto> {
         val personobjekterHusstandsmedlem = mutableSetOf<GrunnlagDto>()
 
         fun Husstandsmedlem.opprettPersonGrunnlag(): GrunnlagDto {

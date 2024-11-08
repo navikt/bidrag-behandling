@@ -12,11 +12,13 @@ import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
@@ -59,9 +61,10 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         stubSjablonProvider()
         stubSaksbehandlernavnProvider()
         validering = ValiderBeregning()
+        val personService = PersonService(stubPersonConsumer())
         validerBehandling = mockkClass(ValiderBehandlingService::class)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
-        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling)
+        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling, BehandlingTilGrunnlagMappingV2(personService))
     }
 
     @Test
