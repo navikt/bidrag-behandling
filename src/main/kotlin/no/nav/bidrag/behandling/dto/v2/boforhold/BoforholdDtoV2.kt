@@ -8,13 +8,14 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.transformers.erSærbidrag
+import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBoforhold
 import java.time.LocalDate
 
 val Behandling.egetBarnErEnesteVoksenIHusstanden get() =
-    if (erSærbidrag()) {
+    if (!erForskudd()) {
         husstandsmedlem.voksneIHusstanden?.perioder?.none { avh -> avh.bostatus == Bostatuskode.BOR_MED_ANDRE_VOKSNE } == true &&
             husstandsmedlem.barn.any { hm -> hm.perioder.any { p -> p.bostatus == Bostatuskode.REGNES_IKKE_SOM_BARN } }
     } else {
@@ -34,6 +35,7 @@ data class BoforholdDtoV2(
                 " men det er 18 åring i husstanden som regnes som voksen i husstanden",
     )
     val egetBarnErEnesteVoksenIHusstanden: Boolean? = false,
+    val beregnetBoforhold: List<DelberegningBoforhold> = emptyList(),
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)

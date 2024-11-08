@@ -9,6 +9,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBoforhold
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -35,6 +36,7 @@ data class OppdatereBoforholdResponse(
     val oppdatertSivilstandshistorikk: Set<SivilstandDto> = emptySet(),
     val begrunnelse: String? = null,
     val valideringsfeil: BoforholdValideringsfeil,
+    val beregnetBoforhold: List<DelberegningBoforhold> = emptyList(),
 ) {
     @Deprecated("Erstattes av oppdatertHusstandsmedlem")
     @Schema(description = "Erstattes av oppdatertHusstandsmedlem", deprecated = true)

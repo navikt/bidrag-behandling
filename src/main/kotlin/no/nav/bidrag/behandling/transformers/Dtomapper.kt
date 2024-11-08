@@ -30,7 +30,6 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.objectmapper
-import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
@@ -56,6 +55,8 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -64,6 +65,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
@@ -86,6 +88,7 @@ class Dtomapper(
     val tilgangskontrollService: TilgangskontrollService,
     val validering: ValiderBeregning,
     val validerBehandlingService: ValiderBehandlingService,
+    val grunnlagMapper: BehandlingTilGrunnlagMappingV2,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -507,6 +510,7 @@ class Dtomapper(
                             .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
                             .filter { it.harFeil },
                 ),
+            beregnetBoforhold = behandling.tilBeregnetBoforhold(),
         )
 
     private fun Behandling.tilBoforholdV2() =
@@ -521,10 +525,11 @@ class Dtomapper(
             sivilstand = sivilstand.toSivilstandDto(),
             begrunnelse =
                 BegrunnelseDto(
-                    innhold = NotatService.henteNotatinnhold(this, NotatType.BOFORHOLD),
+                    innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
                     gjelder = this.henteRolleForNotat(NotatType.BOFORHOLD, null).tilDto(),
                 ),
             egetBarnErEnesteVoksenIHusstanden = egetBarnErEnesteVoksenIHusstanden,
+            beregnetBoforhold = tilBeregnetBoforhold(),
             valideringsfeil =
                 BoforholdValideringsfeil(
                     andreVoksneIHusstanden =
@@ -540,6 +545,27 @@ class Dtomapper(
                     sivilstand = sivilstand.validereSivilstand(virkningstidspunktEllerSøktFomDato).takeIf { it.harFeil },
                 ),
         )
+
+    private fun Behandling.tilBeregnetBoforhold() =
+        if (tilType() == TypeBehandling.BIDRAG) {
+            try {
+                BeregnApi().beregnBoforhold(
+                    BeregnGrunnlag(
+                        grunnlagListe =
+                            grunnlagMapper
+                                .run {
+                                    tilGrunnlagBostatus() + tilPersonobjekter()
+                                }.toList(),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
+                        søknadsbarnReferanse = "",
+                    ),
+                )
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
 
     private fun Husstandsmedlem.tilBostatusperiode(): HusstandsmedlemDtoV2 {
         val tilgangskontrollertPersoninfo =
