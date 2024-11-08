@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OpprettHusstandsstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlemMedOffentligePerioder
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -44,7 +45,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
     lateinit var behandlingRepository: BehandlingRepository
 
     private fun opprettBehandling(): Behandling {
-        val behandling = testdataManager.oppretteBehandling()
+        val behandling = oppretteTestbehandling()
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.husstandsmedlem.clear()
         behandling.husstandsmedlem.addAll(
@@ -103,6 +104,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 oppretteHusstandsmedlemMedOffentligePerioder(behandling),
             ),
         )
+
         return testdataManager.lagreBehandlingNewTransaction(behandling)
     }
 
@@ -572,7 +574,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
         @Test
         open fun `skal kunne legge til et nytt husstandsmedlem som saksbehandler ikke har tilgang til`() {
-            // gitts
+            // gitt
             val behandling = opprettBehandling()
             behandling.husstandsmedlem.shouldHaveSize(2)
             val request =
@@ -598,6 +600,10 @@ class BoforholdControllerTest : KontrollerTestRunner() {
                 )
 
             // så
+            assertSoftly(behandlingRepository.findBehandlingById(behandling.id!!).get()) {
+                it.husstandsmedlem shouldHaveSize 3
+            }
+
             assertSoftly(boforholdResponse) {
                 it.statusCode shouldBe HttpStatus.OK
                 it.body shouldNotBe null

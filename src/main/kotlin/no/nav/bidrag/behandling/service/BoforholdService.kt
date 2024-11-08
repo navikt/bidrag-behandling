@@ -333,6 +333,7 @@ class BoforholdService(
             }
             behandling.husstandsmedlem.add(husstandsmedlem)
             loggeEndringHusstandsmedlem(behandling, oppdatereHusstandsmedlem, husstandsmedlem)
+
             return dtomapper.tilOppdatereBoforholdResponse(husstandsmedlemRepository.save(husstandsmedlem))
         }
 

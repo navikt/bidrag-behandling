@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.optional.shouldBePresent
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import jakarta.persistence.EntityManager
@@ -27,6 +29,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilUtvidetBarnetrygd
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.tilAinntektspostDto
@@ -127,7 +130,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-                behandling.id!!,
+                behandling,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
@@ -264,7 +267,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-                behandling.id!!,
+                behandling,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
@@ -312,7 +315,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-                behandling.id!!,
+                behandling,
                 personident = Personident(behandling.bidragsmottaker?.ident!!),
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
@@ -1247,7 +1250,7 @@ class InntektServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ta med offentlig inntekt som er ekplisitt ytelse og sette datoFom og datoTom automatisk`() {
             // gitt
-            val behandling = testdataManager.oppretteBehandling(false, false, false)
+            val behandling = oppretteTestbehandling(false, false, false)
             behandling.virkningstidspunkt = LocalDate.parse("2023-05-01")
             val utvidetBarnetrygd =
                 Inntekt(
@@ -1264,26 +1267,29 @@ class InntektServiceTest : TestContainerRunner() {
                     taMed = false,
                 )
 
-            val lagreUtvidetBarnetrygd = inntektRepository.save(utvidetBarnetrygd)
-            behandling.inntekter.add(lagreUtvidetBarnetrygd)
+            behandling.inntekter.add(utvidetBarnetrygd)
             testdataManager.lagreBehandlingNewTransaction(behandling)
+            val lagraInntekter = inntektRepository.findAll()
+
             val oppdatereInntektRequest =
                 OppdatereInntektRequest(
                     oppdatereInntektsperiode =
                         OppdaterePeriodeInntekt(
                             taMedIBeregning = true,
-                            id = lagreUtvidetBarnetrygd.id!!,
+                            id = lagraInntekter.find { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }!!.id!!,
                         ),
                 )
 
             // hvis
             inntektService.oppdatereInntektManuelt(behandling.id!!, oppdatereInntektRequest)
 
-            assertSoftly {
-                shouldBePresent(behandling)
-                behandling.inntekter.size shouldBe 1
-                behandling.inntekter.first().datoFom shouldBe behandling.virkningstidspunkt
-                behandling.inntekter.first().datoTom shouldBe YearMonth.parse("2024-05").atEndOfMonth()
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
+
+            assertSoftly(oppdatertBehandling.get()) {
+                it.shouldNotBeNull()
+                inntekter.size shouldBe 1
+                inntekter.first().datoFom shouldBe behandling.virkningstidspunkt
+                inntekter.first().datoTom shouldBe YearMonth.parse("2024-05").atEndOfMonth()
             }
         }
 

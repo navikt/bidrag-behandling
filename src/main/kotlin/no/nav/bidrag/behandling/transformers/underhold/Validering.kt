@@ -75,7 +75,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
             }
         }
 
-        Underholdselement.FAKTISK_TILSYNSUGIFT -> {
+        Underholdselement.FAKTISK_TILSYNSUTGIFT -> {
             if (underhold.faktiskeTilsynsutgifter.find { this.idElement == it.id } == null) {
                 ressursIkkeFunnetException("Fant ikke faktisk tilsynsutgift med id ${this.idElement} i behandling ${behandling.id}")
             }
@@ -129,7 +129,7 @@ fun henteOgValidereUnderholdskostnad(
     behandling: Behandling,
     idUnderhold: Long,
 ): Underholdskostnad {
-    val underhold = behandling.underholdskostnad.find { idUnderhold == it.id }
+    val underhold = behandling.underholdskostnader.find { idUnderhold == it.id }
     if (underhold == null) {
         ressursIkkeFunnetException("Fant ikke underholdskostnad med id $idUnderhold i behandling ${behandling.id}")
     }

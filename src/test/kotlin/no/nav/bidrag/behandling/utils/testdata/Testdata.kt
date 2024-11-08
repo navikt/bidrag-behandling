@@ -13,9 +13,11 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Notat
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
@@ -1067,7 +1069,7 @@ fun Utgift.opprettUtgifstpost(
     utgift = this,
 )
 
-fun oppretteBehandling(
+fun oppretteTestbehandling(
     inkludereInntekter: Boolean = false,
     inkludereSivilstand: Boolean = true,
     inkludereBoforhold: Boolean = true,
@@ -1121,6 +1123,21 @@ fun oppretteBehandling(
 
     if (inkludereSivilstand) {
         oppretteSivilstand(behandling)
+    }
+
+    if (TypeBehandling.BIDRAG == behandlingstype) {
+        var idUnderholdskostnad = if (setteDatabaseider) 1 else null
+        // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
+        behandling.søknadsbarn.forEach {
+            behandling.underholdskostnader.add(
+                Underholdskostnad(
+                    id = idUnderholdskostnad?.toLong(),
+                    behandling = behandling,
+                    person = Person(rolle = mutableSetOf(it)),
+                ),
+            )
+            idUnderholdskostnad?.let { idUnderholdskostnad = it + 1 }
+        }
     }
 
     if (inkludereInntekter) {

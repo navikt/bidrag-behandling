@@ -278,7 +278,7 @@ class InntektServiceMockTest {
 
         // hvis
         inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-            1,
+            behandling,
             personident = Personident(behandling.bidragsmottaker?.ident!!),
             summerteÅrsinntekter = summerteInntekter.inntekter,
         )
@@ -366,7 +366,7 @@ class InntektServiceMockTest {
 
         // hvis
         inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-            1,
+            behandling,
             personident = Personident(behandling.bidragsmottaker?.ident!!),
             summerteÅrsinntekter = summerteInntekter.inntekter,
         )

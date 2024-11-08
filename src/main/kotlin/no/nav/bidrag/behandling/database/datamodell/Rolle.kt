@@ -37,12 +37,18 @@ open class Rolle(
     open val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     open val rolletype: Rolletype,
+    // TODO: Migere persondata til Person-tabellen
+    @Deprecated("Migrere til Person.ident")
     open val ident: String?,
+    // TODO: Migere persondata til Person-tabellen
+    @Deprecated("Migrere til Person.fødselsdato")
     open val fødselsdato: LocalDate,
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
+    // TODO: Migere persondata til Person-tabellen
+    @Deprecated("Migrere til Person.navn")
     open val navn: String? = null,
     open val deleted: Boolean = false,
     @Column(name = "forrige_sivilstandshistorikk", columnDefinition = "jsonb")
@@ -73,7 +79,7 @@ open class Rolle(
         name = "person_id",
         nullable = true,
     )
-    open val person: Person? = null,
+    open var person: Person? = null,
 )
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }

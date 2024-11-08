@@ -28,7 +28,7 @@ data class SletteUnderholdselement(
     val type: Underholdselement,
 )
 
-enum class Underholdselement { BARN, FAKTISK_TILSYNSUGIFT, STØNAD_TIL_BARNETILSYN, TILLEGGSSTØNAD }
+enum class Underholdselement { BARN, FAKTISK_TILSYNSUTGIFT, STØNAD_TIL_BARNETILSYN, TILLEGGSSTØNAD }
 
 data class BarnDto(
     @Parameter(description = "Unik databaseid for person. Skal være null ved opprettelse av underholdskostand for nytt barn")
@@ -98,11 +98,11 @@ data class FaktiskTilsynsutgiftDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val utgift: BigDecimal,
-    val kostpenger: BigDecimal = BigDecimal.ZERO,
+    val kostpenger: BigDecimal? = null,
     val kommentar: String? = null,
 ) {
     // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
-    val total get() = utgift - kostpenger
+    val total get() = kostpenger?.let { utgift - it } ?: utgift
 }
 
 data class StønadTilBarnetilsynDto(

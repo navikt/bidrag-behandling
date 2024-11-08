@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
+import no.nav.bidrag.behandling.transformers.underhold.tilUnderholdDto
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -64,6 +65,7 @@ class UnderholdController(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         val underholdDto = underholdService.sletteFraUnderhold(behandling, request)
+
         if (Underholdselement.BARN == request.type && underholdDto == null) {
             return null
         }
@@ -87,19 +89,24 @@ class UnderholdController(
         ],
     )
     fun oppdatereStønadTilBarnetilsyn(
-        @PathVariable behandlingsid: String,
-        @PathVariable underholdsid: String,
+        @PathVariable behandlingsid: Long,
+        @PathVariable underholdsid: Long,
         @Valid @RequestBody(required = true) request: StønadTilBarnetilsynDto,
     ): OppdatereUnderholdResponse? {
         log.info { "Oppdaterer stønad til barnetilsyn for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer stønad til barnetilsyn for behandling $behandlingsid med forespørsel $request" }
 
         val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid.toLong())
-                .orElseThrow { behandlingNotFoundException(behandlingsid.toLong()) }
+            try {
+                behandlingRepository
+                    .findBehandlingById(behandlingsid)
+                    .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            } catch (exception: Exception) {
+                exception.printStackTrace()
+                null
+            }
 
-        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid.toLong())
+        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling!!, underholdsid)
 
         return underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
     }
@@ -135,11 +142,11 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
-        return underholdService.oppdatereFaktiskTilsynsutgift(underholdskostnad, request)
+        return underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilleggsstønad")
+    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilleggsstonad")
     @Operation(
         description =
             "Oppdatere tilleggsstønad for underholdskostnad i behandling. Returnerer oppdatert element.",
@@ -203,7 +210,7 @@ class UnderholdController(
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/behandling/{behandlingsid}/underhold/opprette")
     @Operation(
-        description = "Oppretter underholdselement for barn.",
+        description = "Oppretter underholdselement med faktiske utgifter for BMs andre barn. Legges manuelt inn av saksbehandler.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -223,6 +230,6 @@ class UnderholdController(
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        return underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn)
+        return underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn).tilUnderholdDto()
     }
 }

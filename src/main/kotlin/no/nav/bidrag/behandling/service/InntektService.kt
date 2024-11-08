@@ -90,15 +90,10 @@ class InntektService(
 
     @Transactional
     fun lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
-        behandlingsid: Long,
+        behandling: Behandling,
         personident: Personident,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,
     ) {
-        val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
-
         val inntekterSomSkalSlettes: MutableSet<Inntekt> = mutableSetOf()
         val inntektstyper = summerteÅrsinntekter.map { it.inntektRapportering }
         behandling.inntekter.filter { it.ident == personident.verdi && inntektstyper.contains(it.type) }.forEach {

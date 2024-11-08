@@ -41,8 +41,8 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -297,7 +297,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal oppdatere virkningstidspunkt på særbidrag ved henting av behandling hvis VT ikke i inneværende måned`() {
             // gitt
-            var behandling =
+            val behandling =
                 testdataManager.oppretteBehandling(
                     false,
                     false,
@@ -727,6 +727,63 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        open fun `skal ikke opprette bidragsbehandling med mer enn ett søknadsbarn`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    behandlingstype = TypeBehandling.BIDRAG,
+                    inkludereBoforhold = false,
+                    inkludereBp = true,
+                )
+
+            // hvis, så
+            Assertions.assertThrows(HttpClientErrorException::class.java) {
+                behandlingService.opprettBehandling(behandling.tilOppretteBehandlingRequest())
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal opprette bidragsbehandling`() {
+            // gitt
+            stubUtils.stubHenteGrunnlag()
+            stubUtils.stubAlleStønaderBp()
+
+            val behandling =
+                oppretteTestbehandling(
+                    behandlingstype = TypeBehandling.BIDRAG,
+                    inkludereBoforhold = false,
+                    inkludereBp = true,
+                )
+
+            if (behandling.roller.filter { Rolletype.BARN == it.rolletype }.size > 1) {
+                val enebarn = behandling.roller.first { Rolletype.BARN == it.rolletype }
+                val alleBarn = behandling.roller.filter { Rolletype.BARN == it.rolletype }
+                behandling.roller.removeAll(alleBarn)
+                behandling.roller.add(enebarn)
+            }
+
+            stubUtils.stubHentePersoninfo(personident = behandling.roller.find { Rolletype.BARN == it.rolletype }!!.ident!!)
+
+            // hvis
+            val respons = behandlingService.opprettBehandling(behandling.tilOppretteBehandlingRequest())
+
+            // så
+            val opprettetBehandling = behandlingService.hentBehandlingById(respons.id)
+            opprettetBehandling.stonadstype shouldBe Stønadstype.BIDRAG
+            opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 1
+            opprettetBehandling.underholdskostnader shouldHaveSize 1
+            opprettetBehandling.underholdskostnader.filter {
+                Rolletype.BARN ==
+                    it.person.rolle
+                        .first()
+                        .rolletype
+            } shouldHaveSize 1
+            opprettetBehandling.underholdskostnader.filter { it.person.ident != null } shouldHaveSize 1
+        }
+
+        @Test
+        @Transactional
         open fun `skal opprette en særbidrag behandling`() {
             val søknadsid = 123213L
             stubUtils.stubHenteGrunnlag()
@@ -1139,7 +1196,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal aktivere arbeidsforhold`() {
                 // gitt
-                val b = oppretteBehandling(inkludereBp = true, inkludereArbeidsforhold = true)
+                val b = oppretteTestbehandling(inkludereBp = true, inkludereArbeidsforhold = true)
                 kjøreStubber(b)
                 val nyttArbeidsforhold =
                     oppretteArbeidsforhold(b.bidragspliktig!!.ident!!).copy(
@@ -1885,4 +1942,29 @@ class BehandlingServiceTest : TestContainerRunner() {
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
     }
+
+    private fun Behandling.tilOppretteBehandlingRequest() =
+        OpprettBehandlingRequest(
+            vedtakstype = this.vedtakstype,
+            søktFomDato = this.søktFomDato,
+            mottattdato = this.mottattdato,
+            søknadFra = this.soknadFra,
+            saksnummer = this.saksnummer,
+            søknadsid = this.soknadsid,
+            behandlerenhet = this.behandlerEnhet,
+            stønadstype = this.stonadstype,
+            engangsbeløpstype = this.engangsbeloptype,
+            kategori = OpprettKategoriRequestDto(kategori = this.kategori ?: ""),
+            roller = this.roller.tilOpprettRolleDto(),
+        )
+
+    private fun Set<Rolle>.tilOpprettRolleDto() =
+        this
+            .map {
+                OpprettRolleDto(
+                    rolletype = it.rolletype,
+                    fødselsdato = it.fødselsdato,
+                    ident = Personident(it.ident!!),
+                )
+            }.toSet()
 }

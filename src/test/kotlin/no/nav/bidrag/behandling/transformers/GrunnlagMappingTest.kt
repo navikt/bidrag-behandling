@@ -50,6 +50,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregni
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -123,7 +124,7 @@ class GrunnlagMappingTest {
 
     val grunnlagBm =
         Rolle(
-            behandling = oppretteBehandling(),
+            behandling = oppretteTestbehandling(),
             ident = testdataBM.ident,
             rolletype = Rolletype.BIDRAGSMOTTAKER,
             fødselsdato = testdataBM.fødselsdato,
@@ -131,7 +132,7 @@ class GrunnlagMappingTest {
         ).tilGrunnlagPerson()
     val grunnlagBp =
         Rolle(
-            behandling = oppretteBehandling(),
+            behandling = oppretteTestbehandling(),
             ident = testdataBP.ident,
             rolletype = Rolletype.BIDRAGSPLIKTIG,
             fødselsdato = testdataBP.fødselsdato,
@@ -139,7 +140,7 @@ class GrunnlagMappingTest {
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
         Rolle(
-            behandling = oppretteBehandling(),
+            behandling = oppretteTestbehandling(),
             ident = testdataBarn1.ident,
             rolletype = Rolletype.BARN,
             fødselsdato = testdataBarn1.fødselsdato,
@@ -147,7 +148,7 @@ class GrunnlagMappingTest {
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
         Rolle(
-            behandling = oppretteBehandling(),
+            behandling = oppretteTestbehandling(),
             ident = testdataBarn2.ident,
             rolletype = Rolletype.BARN,
             fødselsdato = testdataBarn2.fødselsdato,
@@ -630,7 +631,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe rolle til grunnlag`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 assertSoftly(
                     Rolle(
                         behandling = behandling,
@@ -684,7 +685,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe husstandsmedlem til grunnlag`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 assertSoftly(
                     Husstandsmedlem(
                         behandling = behandling,
@@ -729,7 +730,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe husstandsmedlem uten ident til grunnlag`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 assertSoftly(
                     Husstandsmedlem(
                         behandling = behandling,
@@ -776,7 +777,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe husstandsmedlem med nyeste ident`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 stubHentPersonNyIdent("12345678901", "1231232131")
                 assertSoftly(
                     Husstandsmedlem(
@@ -801,7 +802,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe rolle med nyeste ident`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 stubHentPersonNyIdent("12345678901", "1231232131", personStub)
                 assertSoftly(
                     Rolle(
@@ -830,7 +831,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe inntekt til grunnlag`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 behandling.grunnlag =
                     opprettInntekterBearbeidetGrunnlag(
                         behandling,
@@ -945,7 +946,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal ikke mappe inntekt til grunnlag hvis inntekt ikke tilhører søknadsbarn`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 behandling.roller = oppretteBehandlingRoller(behandling)
                 behandling.grunnlag =
                     opprettInntekterBearbeidetGrunnlag(
@@ -1052,7 +1053,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal feile mapping av inntektperiode hvis søknadsbarn mangler`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 behandling.grunnlag =
                     opprettInntekterBearbeidetGrunnlag(
                         behandling,
@@ -1078,7 +1079,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe inntekt til grunnlag hvis inneholder inntektliste for Barn og BP`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
                 behandling.grunnlag =
                     (
                         opprettInntekterBearbeidetGrunnlag(behandling, testdataBM) +
@@ -1133,7 +1134,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal legge til grunnlagsliste for innhentet inntekter`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
 
                 behandling.grunnlag =
                     opprettInntekterBearbeidetGrunnlag(
@@ -1165,7 +1166,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal feile hvis offentlig inntekt mangler grunnlagsreferanseliste`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
 
                 behandling.inntekter.addAll(
                     opprettInntekter(behandling, testdataBM, testdataBarn1),
@@ -1561,7 +1562,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe husstandsmedlem til bosstatus`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
 
                 behandling.roller =
                     mutableSetOf(
@@ -1690,7 +1691,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal opprette grunnlag for sivilstand`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteBehandling()
+                val behandling = oppretteTestbehandling()
 
                 behandling.roller =
                     mutableSetOf(
@@ -1866,7 +1867,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal opprette grunnlag for notat og ikke ta med notat hvis tomt eller null`(): Unit =
             mapper.run {
-                val behandling = oppretteBehandling(true, setteDatabaseider = true)
+                val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
                 behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
                 behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
                 behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
@@ -1893,7 +1894,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal opprette grunnlag for notat`(): Unit =
             mapper.run {
-                val behandling = oppretteBehandling(true, setteDatabaseider = true)
+                val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
                 behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
                 behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
                 behandling.boforholdsbegrunnelseKunINotat = "Boforhold"

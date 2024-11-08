@@ -18,7 +18,7 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -248,7 +248,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     @Test
     fun `mappe behandlingDto for særbidrag  med andre voksne i husstanden`() {
         // gitt
-        val behandling = oppretteBehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true, true)
+        val behandling = oppretteTestbehandling(false, false, true, true, TypeBehandling.SÆRBIDRAG, true, true)
 
         val andreVoksneUbehandla =
             behandling.grunnlag

@@ -26,5 +26,6 @@ open class Barnetilsyn(
     open var under_skolealder: Boolean? = null,
     @Enumerated(EnumType.STRING)
     open var omfang: Tilsynstype,
+    @Enumerated(EnumType.STRING)
     open var kilde: Kilde,
 )

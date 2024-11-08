@@ -11,7 +11,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @Entity
-class FaktiskTilsynsutgift(
+open class FaktiskTilsynsutgift(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,

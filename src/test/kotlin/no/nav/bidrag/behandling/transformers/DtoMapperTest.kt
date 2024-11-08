@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
-import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -22,7 +22,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -42,7 +41,6 @@ class DtoMapperTest : TestContainerRunner() {
     @DisplayName("Teste differensiering av nytt mot gammelt grunnlag")
     open inner class Diffing {
         @Test
-        @Transactional
         fun `skal returnere diff for boforhold`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false)
@@ -132,7 +130,7 @@ class DtoMapperTest : TestContainerRunner() {
         @Test
         fun `skal returnere diff for arbeidsforhold`() {
             // gitt
-            val b = oppretteBehandling(inkludereBp = true, inkludereArbeidsforhold = true)
+            val b = oppretteTestbehandling(inkludereBp = true, inkludereArbeidsforhold = true)
             val nyttArbeidsforhold =
                 oppretteArbeidsforhold(b.bidragspliktig!!.ident!!).copy(
                     startdato = LocalDate.now(),

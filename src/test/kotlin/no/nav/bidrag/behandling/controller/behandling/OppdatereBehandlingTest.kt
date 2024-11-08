@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlemMedOffentligePerioder
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -228,7 +229,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     @Test
     fun `skal oppdatere virkningstidspunkt og oppdatere fra og med dato på inntekter`() {
         // gitt
-        val behandling = testdataManager.oppretteBehandling(true)
+        val behandling = oppretteTestbehandling(true)
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
             oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
@@ -281,8 +282,9 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     behandling = behandling,
                 ),
             )
-
         testdataManager.lagreBehandlingNewTransaction(behandling)
+
+        val b = behandlingRepository.findBehandlingById(behandling.id!!)
 
         val nyttVirkningstidspunkt = LocalDate.parse("2023-07-01")
         // hvis
@@ -374,6 +376,8 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     behandling = behandling,
                 ),
             )
+
+        behandlingRepository.save(behandling)
 
         testdataManager.lagreBehandlingNewTransaction(behandling)
 

@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -14,6 +15,7 @@ private val log = KotlinLogging.logger {}
 
 @Service
 class NotatService {
+    @Transactional
     fun oppdatereNotat(
         behandling: Behandling,
         notattype: Notattype,
@@ -57,6 +59,9 @@ class NotatService {
             return behandling.notater.find { it.rolle.id == rolleid && it.type == notattype }?.innhold
                 ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
         }
+
+        fun henteUnderholdsnotat(behandling: Behandling): String? =
+            behandling.notater.find { it.rolle.id == behandling.bidragspliktig!!.id!! && Notattype.UNDERHOLDSKOSTNAD == it.type }?.innhold
 
         fun henteInntektsnotat(
             behandling: Behandling,

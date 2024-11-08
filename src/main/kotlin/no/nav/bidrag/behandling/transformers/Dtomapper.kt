@@ -49,6 +49,7 @@ import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
+import no.nav.bidrag.behandling.transformers.underhold.tilUnderholdDtos
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -461,7 +462,7 @@ class Dtomapper(
                     opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
                     årsak = årsak,
                     avslag = avslag,
-                    begrunnelse = BegrunnelseDto(NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                 ),
             boforhold = tilBoforholdV2(),
             inntekter =
@@ -469,6 +470,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                     inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
                 ),
+            underholdskostnader = underholdskostnader.tilUnderholdDtos(),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
