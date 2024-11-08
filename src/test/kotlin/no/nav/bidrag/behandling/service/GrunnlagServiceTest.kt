@@ -982,10 +982,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
                 alleAktiveGrunnlag.size shouldBe 3
-                val sistInnhentaSmåbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
+                val sistInnhentaSmåbarnstillegg =
+                    behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
                 sistInnhentaSmåbarnstillegg.aktiv shouldBe null
 
-                val gjeldendeSmåbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type && it.aktiv != null }.maxBy { it.innhentet }
+                val gjeldendeSmåbarnstillegg =
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type && it.aktiv != null }
+                        .maxBy { it.innhentet }
                 gjeldendeSmåbarnstillegg.shouldNotBeNull()
 
                 assertSoftly(jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeSmåbarnstillegg.data)) {
@@ -2029,6 +2033,53 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     it.size shouldBe 1
                     it.first().perioder.size shouldBe 1
                 }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal aktivere tomt grunnlag med boforhold_andre_voksne_i_husstanden`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        true,
+                        behandlingstype = TypeBehandling.SÆRBIDRAG,
+                    )
+
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        behandling = behandling,
+                        data = commonObjectmapper.writeValueAsString(emptySet<RelatertPersonGrunnlagDto>()),
+                        innhentet = LocalDateTime.now().minusDays(1),
+                        rolle = behandling.bidragspliktig!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    ),
+                )
+
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                Mockito
+                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
+                    .thenReturn(testdataBarn1.tilPersonDto())
+
+                assertSoftly(behandling.husstandsmedlem) {
+                    it.size shouldBe 0
+                }
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        personident = Personident(behandling.bidragspliktig!!.ident!!),
+                        grunnlagstype = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    )
+
+                // hvis
+                grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+
+                // så
+                assert(true)
             }
         }
 

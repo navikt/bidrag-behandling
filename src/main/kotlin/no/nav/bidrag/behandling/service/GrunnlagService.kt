@@ -444,7 +444,7 @@ class GrunnlagService(
         val nyesteIkkeAktivertBearbeidetBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet }
         val nyesteIkkeAktivertGrunnlagBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { !it.erBearbeidet }
 
-        if (nyesteIkkeAktivertBearbeidetBoforhold == null || nyesteIkkeAktivertGrunnlagBoforhold == null) {
+        if (nyesteIkkeAktivertGrunnlagBoforhold == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
@@ -454,7 +454,7 @@ class GrunnlagService(
 
         boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
             behandling,
-            nyesteIkkeAktivertBearbeidetBoforhold.konvertereData<Set<Bostatus>>()!!,
+            nyesteIkkeAktivertBearbeidetBoforhold?.konvertereData<Set<Bostatus>>() ?: emptySet(),
             nyesteIkkeAktivertGrunnlagBoforhold.konvertereData<List<RelatertPersonGrunnlagDto>>()!!,
             overskriveManuelleOpplysninger,
         )
