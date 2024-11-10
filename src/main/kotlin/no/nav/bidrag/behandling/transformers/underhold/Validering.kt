@@ -97,6 +97,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
 
 fun Set<Barnetilsyn>.validerePerioder() =
     ValideringsfeilUnderhold(
+        underholdskostnad = first().underholdskostnad,
         // TODO: bd-1920 - finne passende sjekk
         // hullIPerioder = map { Datoperiode(it.fom, it.tom)}.finnHullIPerioder(virkningsdato),
     )

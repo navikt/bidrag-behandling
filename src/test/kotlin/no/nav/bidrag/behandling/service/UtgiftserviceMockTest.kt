@@ -19,7 +19,9 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
@@ -57,7 +59,13 @@ class UtgiftserviceMockTest {
         stubSjablonProvider()
         validering = ValiderBeregning()
         val personService = PersonService(stubPersonConsumer())
-        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling, BehandlingTilGrunnlagMappingV2(personService))
+        mapper =
+            Dtomapper(
+                tilgangskontrollService,
+                validering,
+                validerBehandling,
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
+            )
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
         every { utgiftRepository.save<Utgift>(any()) } answers {

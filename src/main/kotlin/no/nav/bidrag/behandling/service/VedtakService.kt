@@ -56,6 +56,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -259,6 +260,34 @@ class VedtakService(
         return response.vedtaksid
     }
 
+    fun fatteVedtakBidrag(behandling: Behandling): Int {
+        val behandlingId = behandling.id!!
+        mapper.validering.run { behandling.validerForBeregning() }
+
+        val request =
+            if (behandling.avslag != null) {
+                behandling.byggOpprettBidragVedtakRequestForAvslag()
+            } else {
+                behandling.byggOpprettVedtakRequestForskudd()
+            }
+
+        request.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for behandling $behandlingId med forespørsel $request" }
+        val response = vedtakConsumer.fatteVedtak(request)
+        behandlingService.oppdaterVedtakFattetStatus(
+            behandlingId,
+            vedtaksid = response.vedtaksid.toLong(),
+        )
+        opprettNotat(behandling)
+        LOGGER.info {
+            "Fattet vedtak for behandling $behandlingId med ${
+                behandling.årsak?.let { "årsakstype $it" }
+                    ?: "avslagstype ${behandling.avslag}"
+            } med vedtaksid ${response.vedtaksid}"
+        }
+        return response.vedtaksid
+    }
+
     fun behandlingTilVedtakDto(behandlingId: Long): VedtakDto {
         mapper.validering.run {
             val behandling = behandlingService.hentBehandlingById(behandlingId)
@@ -305,6 +334,47 @@ class VedtakService(
             opprettetAv = null,
         )
 
+    private fun Behandling.byggOpprettBidragVedtakRequestForAvslag(): OpprettVedtakRequestDto =
+        mapper.run {
+            val sak = sakConsumer.hentSak(saksnummer)
+            val grunnlagListe = byggGrunnlagGenereltAvslag()
+
+            return byggOpprettVedtakRequestObjekt()
+                .copy(
+                    stønadsendringListe =
+                        søknadsbarn.map {
+                            OpprettStønadsendringRequestDto(
+                                innkreving = innkrevingstype!!,
+                                skyldner = tilSkyldner(),
+                                omgjørVedtakId = refVedtaksid?.toInt(),
+                                kravhaver =
+                                    it.tilNyestePersonident()
+                                        ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                                mottaker =
+                                    roller
+                                        .reelMottakerEllerBidragsmottaker(
+                                            sak.hentRolleMedFnr(it.ident!!),
+                                        ),
+                                sak = Saksnummer(saksnummer),
+                                type = stonadstype!!,
+                                beslutning = Beslutningstype.ENDRING,
+                                grunnlagReferanseListe = grunnlagListe.map { it.referanse },
+                                periodeListe =
+                                    listOf(
+                                        OpprettPeriodeRequestDto(
+                                            periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
+                                            beløp = null,
+                                            resultatkode = avslag!!.name,
+                                            valutakode = "NOK",
+                                            grunnlagReferanseListe = emptyList(),
+                                        ),
+                                    ),
+                            )
+                        },
+                    grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
+                )
+        }
+
     private fun Behandling.byggOpprettVedtakRequestForAvslag(): OpprettVedtakRequestDto =
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
@@ -345,6 +415,54 @@ class VedtakService(
                     grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
                 )
         }
+
+    private fun Behandling.byggOpprettVedtakRequestBidrag(): OpprettVedtakRequestDto {
+        val behandling = this
+        val sak = sakConsumer.hentSak(saksnummer)
+        val beregning = beregningService.beregneBidrag(id!!)
+
+        mapper.run {
+            val stønadsendringPerioder =
+                beregning.map { it.byggStønadsendringerForVedtak(behandling) }
+
+            val grunnlagListeVedtak = byggGrunnlagForVedtak()
+            val stønadsendringGrunnlagListe = byggGrunnlagGenerelt()
+
+            val grunnlagListe =
+                (
+                    grunnlagListeVedtak +
+                        stønadsendringPerioder.flatMap(
+                            StønadsendringPeriode::grunnlag,
+                        ) + stønadsendringGrunnlagListe
+                ).toSet()
+
+            return byggOpprettVedtakRequestObjekt().copy(
+                stønadsendringListe =
+                    stønadsendringPerioder.map {
+                        OpprettStønadsendringRequestDto(
+                            innkreving = innkrevingstype!!,
+                            skyldner = tilSkyldner(),
+                            omgjørVedtakId = refVedtaksid?.toInt(),
+                            kravhaver =
+                                it.barn.tilNyestePersonident()
+                                    ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                            mottaker =
+                                roller
+                                    .reelMottakerEllerBidragsmottaker(
+                                        sak.hentRolleMedFnr(it.barn.ident!!),
+                                    ),
+                            sak = Saksnummer(saksnummer),
+                            type = stonadstype!!,
+                            beslutning = Beslutningstype.ENDRING,
+                            grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
+                            periodeListe = it.perioder,
+                            førsteIndeksreguleringsår = YearMonth.now().plusYears(1).year,
+                        )
+                    },
+                grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+            )
+        }
+    }
 
     private fun Behandling.byggOpprettVedtakRequestForskudd(): OpprettVedtakRequestDto {
         val behandling = this

@@ -18,7 +18,7 @@ data class ResultatSærbidragsberegningDto(
     val periode: ÅrMånedsperiode,
     val bpsAndel: DelberegningBidragspliktigesAndel? = null,
     val beregning: UtgiftBeregningDto? = null,
-    val inntekter: ResultatSærbidragsberegningInntekterDto? = null,
+    val inntekter: ResultatBeregningInntekterDto? = null,
     val utgiftsposter: List<UtgiftspostDto> = emptyList(),
     val delberegningUtgift: DelberegningUtgift? = null,
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
@@ -80,7 +80,7 @@ data class DelberegningBidragsevneDto(
     )
 }
 
-data class ResultatSærbidragsberegningInntekterDto(
+data class ResultatBeregningInntekterDto(
     val inntektBM: BigDecimal? = null,
     val inntektBP: BigDecimal? = null,
     val inntektBarn: BigDecimal? = null,

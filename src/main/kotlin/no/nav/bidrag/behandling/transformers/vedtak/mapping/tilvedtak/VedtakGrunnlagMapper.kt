@@ -94,6 +94,14 @@ class VedtakGrunnlagMapper(
                                 .tilGrunnlagDto(grunnlagsliste)
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
+                    TypeBehandling.BIDRAG -> {
+                        // TODO: Underholdskostnad
+                        // TODO: Samvær
+                        grunnlagsliste.addAll(tilGrunnlagTilleggsstønad(søknadsbarn))
+                        grunnlagsliste.addAll(tilGrunnlagFaktiskeTilsynsutgifter(søknadsbarn))
+                        grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
+                        grunnlagsliste.addAll(tilGrunnlagDeltBossted(søknadsbarn))
+                    }
 
                     else -> {}
                 }
@@ -123,18 +131,10 @@ class VedtakGrunnlagMapper(
 
             val grunnlagListe = (personobjekter + bostatus + inntekter + innhentetGrunnlagListe).toMutableSet()
             when (tilType()) {
-                TypeBehandling.FORSKUDD ->
-                    grunnlagListe.addAll(
-                        tilGrunnlagSivilstand(
-                            personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
-                        ),
-                    )
-
                 TypeBehandling.SÆRBIDRAG ->
                     grunnlagListe.addAll(
                         byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     )
-
                 else -> {}
             }
             return grunnlagListe.toSet()

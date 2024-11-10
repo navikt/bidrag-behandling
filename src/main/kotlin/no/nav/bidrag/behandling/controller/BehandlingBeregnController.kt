@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.service.BehandlingService
@@ -143,6 +144,45 @@ class BehandlingBeregnController(
         }
 
         return beregningService.beregneSærbidrag(behandling.id!!).tilDto(behandling)
+    }
+
+    @Suppress("unused")
+    @PostMapping("/behandling/{behandlingsid}/beregn/barnebidrag")
+    @Operation(
+        description = "Beregn barnebidrag",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Validering av grunnlag feilet for beregning",
+                content = [
+                    Content(
+                        schema = Schema(implementation = BeregningValideringsfeil::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun beregnBarnebidrag(
+        @PathVariable behandlingsid: Long,
+    ): ResultatBidragberegningDto {
+        LOGGER.info { "Beregner barnebidrag for behandling med id $behandlingsid" }
+
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+
+        if (behandling.stonadstype != Stønadstype.BIDRAG) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Behandling $behandlingsid er ikke en bidrag behandling",
+            )
+        }
+
+        return beregningService.beregneBidrag(behandling.id!!).tilDto(behandling)
     }
 
     @Suppress("unused")

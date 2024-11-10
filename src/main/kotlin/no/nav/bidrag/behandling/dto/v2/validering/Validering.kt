@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.underhold.ValideringsfeilUnderhold
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.erSøknadsbarn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -208,12 +210,14 @@ data class SivilstandOverlappendePeriode(
 )
 
 data class BeregningValideringsfeil(
-    val virkningstidspunkt: VirkningstidspunktFeilDto?,
-    val utgift: UtgiftValideringsfeilDto?,
+    val virkningstidspunkt: VirkningstidspunktFeilDto? = null,
+    val utgift: UtgiftValideringsfeilDto? = null,
     val inntekter: InntektValideringsfeilDto? = null,
     val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = null,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
-    val sivilstand: SivilstandPeriodeseringsfeil?,
+    val sivilstand: SivilstandPeriodeseringsfeil? = null,
+    val samvær: Set<SamværValideringsfeilDto>? = null,
+    val underholdskostnad: Set<ValideringsfeilUnderhold>? = null,
     val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )
 

@@ -4,11 +4,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
 import no.nav.bidrag.beregn.core.bo.SjablonInnhold
@@ -28,6 +30,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
@@ -37,6 +40,8 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.math.RoundingMode
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBidrag
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBidrag
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatBeregning as ResultatBeregningSærbidrag
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatPeriode as ResultatPeriodeSærbidrag
 
@@ -53,6 +58,7 @@ class BeregningService(
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
+    private val beregnBarnebidragApi = BeregnBarnebidragApi()
 
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
         behandling.run {
@@ -105,6 +111,34 @@ class BeregningService(
         }
     }
 
+    fun beregneBidrag(behandling: Behandling): List<ResultatBidragsberegningBarn> {
+        mapper.validering.run {
+            behandling.validerForBeregningBidrag()
+        }
+
+        return if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
+            behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
+        } else {
+            try {
+                behandling.søknadsbarn.map { søknasdbarn ->
+                    val grunnlagBeregning =
+                        mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
+                    ResultatBidragsberegningBarn(
+                        søknasdbarn.mapTilResultatBarn(),
+                        beregnBarnebidragApi.beregn(grunnlagBeregning).let {
+                            it.copy(
+                                grunnlagListe = (it.grunnlagListe + grunnlagBeregning.grunnlagListe).toSet().toList(),
+                            )
+                        },
+                    )
+                }
+            } catch (e: Exception) {
+                LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }
+                throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
+            }
+        }
+    }
+
     fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return beregneForskudd(behandling)
@@ -114,6 +148,32 @@ class BeregningService(
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return beregneSærbidrag(behandling)
     }
+
+    fun beregneBidrag(behandlingsid: Long): List<ResultatBidragsberegningBarn> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        return beregneBidrag(behandling)
+    }
+
+    private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =
+        ResultatBidragsberegningBarn(
+            barn = barn.mapTilResultatBarn(),
+            resultat =
+                BeregnetBarnebidragResultat(
+                    beregnetBarnebidragPeriodeListe =
+                        listOf(
+                            ResultatPeriodeBidrag(
+                                grunnlagsreferanseListe = emptyList(),
+                                periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
+                                resultat =
+                                    ResultatBeregningBidrag(
+                                        beløp = BigDecimal.ZERO, // TODO null eller 0?
+                                        kode = avslag!!,
+                                    ),
+                            ),
+                        ),
+                    grunnlagListe = emptyList(),
+                ),
+        )
 
     private fun Behandling.tilResultatAvslagSærbidrag() =
         BeregnetSærbidragResultat(
