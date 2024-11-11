@@ -385,7 +385,12 @@ enum class Grunnlagsdatatype(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
-    BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(mapOf(TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG))),
+    BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(
+        mapOf(
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG)
+        )
+    ),
     KONTANTSTØTTE(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
