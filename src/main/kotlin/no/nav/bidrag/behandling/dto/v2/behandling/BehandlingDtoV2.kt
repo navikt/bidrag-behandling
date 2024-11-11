@@ -388,8 +388,8 @@ enum class Grunnlagsdatatype(
     BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
-            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG)
-        )
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
+        ),
     ),
     KONTANTSTØTTE(
         mapOf(

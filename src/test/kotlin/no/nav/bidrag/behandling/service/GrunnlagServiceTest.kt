@@ -185,7 +185,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 assertSoftly {
                     behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    behandling.grunnlag.size shouldBe 27
+                    behandling.grunnlag.size shouldBe 29
                     behandling.inntekter.size shouldBe 28
                 }
 
@@ -312,15 +312,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 assertSoftly {
                     behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    behandling.grunnlag.size shouldBe 32
+                    behandling.grunnlag.size shouldBe 34
                 }
 
                 val grunnlagBp =
                     behandling.grunnlag.filter { Rolletype.BIDRAGSPLIKTIG == it.rolle.rolletype }
                 assertSoftly {
-                    grunnlagBp.size shouldBe 12
+                    grunnlagBp.size shouldBe 14
                     grunnlagBp.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 1
                     grunnlagBp.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 6
+                    grunnlagBp.filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }.size shouldBe 2
                     grunnlagBp.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2
                     grunnlagBp.filter { Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == it.type }.size shouldBe 1
                     grunnlagBp.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2
