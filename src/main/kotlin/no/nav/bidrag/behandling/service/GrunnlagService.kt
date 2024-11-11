@@ -639,7 +639,11 @@ class GrunnlagService(
                     it.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
 
-                if (behandling.tilType() != TypeBehandling.FORSKUDD && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
+                if (behandling.tilType() == TypeBehandling.SÆRBIDRAG &&
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.behandlinstypeMotRolletyper[TypeBehandling.SÆRBIDRAG]?.contains(
+                        rolleInnhentetFor.rolletype,
+                    ) == true
+                ) {
                     periodisereOgLagreBpsBoforholdAndreVoksne(
                         behandling,
                         it.husstandsmedlemmerOgEgneBarnListe.toSet(),
