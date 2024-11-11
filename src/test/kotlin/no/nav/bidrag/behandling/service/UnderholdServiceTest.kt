@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
@@ -76,13 +77,17 @@ class UnderholdServiceTest {
 
     val notatService = NotatService()
 
+    lateinit var behandlingTilGrunnlagMappingV2: BehandlingTilGrunnlagMappingV2
+
     lateinit var dtomapper: Dtomapper
 
     lateinit var underholdService: UnderholdService
 
     @BeforeEach
     fun setup() {
-        dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, personService)
+        behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService)
+        dtomapper =
+            Dtomapper(tilgangskontrollService, validering, validerBehandlingService, behandlingTilGrunnlagMappingV2)
         underholdService =
             UnderholdService(
                 barnetilsynRepository,
@@ -650,7 +655,7 @@ class UnderholdServiceTest {
                     harTilsynsordning shouldBe request.harTilsynsordning
                     begrunnelse shouldBe request.begrunnelse
                     stønadTilBarnetilsyn.shouldBeEmpty()
-                    faktiskeTilsynsutgifter.shouldBeEmpty()
+                    faktiskTilsynsutgift.shouldBeEmpty()
                     tilleggsstønad.shouldBeEmpty()
                 }
             }

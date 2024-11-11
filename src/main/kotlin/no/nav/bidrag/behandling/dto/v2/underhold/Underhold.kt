@@ -44,7 +44,7 @@ data class UnderholdDto(
     val gjelderBarn: PersoninfoDto,
     val harTilsynsordning: Boolean? = null,
     val stønadTilBarnetilsyn: Set<StønadTilBarnetilsynDto> = emptySet(),
-    val faktiskeTilsynsutgifter: Set<FaktiskTilsynsutgiftDto>,
+    val faktiskTilsynsutgift: Set<FaktiskTilsynsutgiftDto>,
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val underholdskostnad: Set<UnderholdskostnadDto>,
     val begrunnelse: String? = null,

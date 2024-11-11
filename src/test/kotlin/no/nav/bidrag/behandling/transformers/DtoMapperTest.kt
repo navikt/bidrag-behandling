@@ -5,7 +5,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -14,6 +13,7 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
@@ -52,11 +52,14 @@ class DtoMapperTest : TestContainerRunner() {
     @MockK
     lateinit var personService: PersonService
 
-    @InjectMockKs
+    lateinit var grunnlagsmapper: BehandlingTilGrunnlagMappingV2
+
     lateinit var dtomapper: Dtomapper
 
     @BeforeEach
     fun initMocks() {
+        grunnlagsmapper = BehandlingTilGrunnlagMappingV2(personService)
+        dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, grunnlagsmapper)
         stubUtils.stubTilgangskontrollPersonISak()
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
         every { tilgangskontrollService.harTilgang(any(), any()) } returns true

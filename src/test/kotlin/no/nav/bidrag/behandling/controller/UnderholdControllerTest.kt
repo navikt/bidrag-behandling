@@ -77,7 +77,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 id shouldBeGreaterThan 0L
                 harTilsynsordning.shouldBeNull()
                 begrunnelse.shouldBeNull()
-                faktiskeTilsynsutgifter.shouldBeEmpty()
+                faktiskTilsynsutgift.shouldBeEmpty()
                 stønadTilBarnetilsyn.shouldBeEmpty()
                 tilleggsstønad.shouldBeEmpty()
             }
