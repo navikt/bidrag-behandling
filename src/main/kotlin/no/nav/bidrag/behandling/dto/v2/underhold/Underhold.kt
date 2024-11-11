@@ -58,7 +58,7 @@ data class OppdatereUnderholdRequest(
 
 data class ValideringsfeilUnderhold(
     @JsonIgnore
-    val underholdskostnad: Underholdskostnad,
+    val underholdskostnad: Underholdskostnad?,
     val hullIPerioder: List<Datoperiode> = emptyList(),
     val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
     @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
@@ -76,12 +76,12 @@ data class ValideringsfeilUnderhold(
                 manglerPerioderForTilsynsutgifter ||
                 fremtidigPeriode ||
                 harIngenPerioder
-    val underholdskostnadId get() = underholdskostnad.id
+    val underholdskostnadId get() = underholdskostnad!!.id
     val barn get() =
         UnderholdBarnDto(
-            navn = underholdskostnad.person.navn,
+            navn = underholdskostnad!!.person.navn,
             ident = underholdskostnad.person.ident,
-            fødselsdato = underholdskostnad.person.fødselsdato!!,
+            fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
             medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
         )
 

@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
@@ -124,18 +125,18 @@ class VedtakserviceTest : TestContainerRunner() {
                 behandlingService,
                 vedtakGrunnlagMapper,
             )
+        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
         vedtakService =
             VedtakService(
                 behandlingService,
                 grunnlagService,
                 notatOpplysningerService,
-                beregningService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                sakConsumer,
                 unleash,
-                vedtakGrunnlagMapper,
+                validerBeregning,
                 vedtakTilBehandlingMapping,
+                behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId

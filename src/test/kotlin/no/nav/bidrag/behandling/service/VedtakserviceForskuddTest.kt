@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
@@ -135,18 +136,18 @@ class VedtakserviceForskuddTest {
                 behandlingService,
                 vedtakGrunnlagMapper,
             )
+        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
         vedtakService =
             VedtakService(
                 behandlingService,
                 grunnlagService,
                 notatOpplysningerService,
-                beregningService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                sakConsumer,
                 unleash,
-                vedtakGrunnlagMapper,
+                validerBeregning,
                 vedtakTilBehandlingMapping,
+                behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"

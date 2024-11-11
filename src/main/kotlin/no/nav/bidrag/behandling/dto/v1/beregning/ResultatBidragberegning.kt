@@ -7,6 +7,7 @@ import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import java.math.BigDecimal
 
 data class ResultatBidragsberegningBarn(
@@ -47,6 +48,7 @@ data class BidragPeriodeBeregningsdetaljer(
     val inntekter: ResultatBeregningInntekterDto? = null,
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
     val samværsfradrag: BeregningsdetaljerSamværsfradrag? = null,
+    val sluttberegning: SluttberegningBarnebidrag? = null,
     val delberegningUnderholdskostnad: DelberegningUnderholdskostnad? = null,
     val delberegningBidragspliktigesBeregnedeTotalBidrag: DelberegningBidragspliktigesBeregnedeTotalbidragDto? = null,
 ) {

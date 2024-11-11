@@ -127,6 +127,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
                                                         grunnlagsreferanseListe,
                                                     ),
                                             bpsAndel = bpsAndel,
+                                            sluttberegning = sluttberegning,
                                             antallBarnIHusstanden = grunnlagsListe.finnAntallBarnIHusstanden(grunnlagsreferanseListe),
                                             inntekter = grunnlagsListe.byggResultatSærbidragInntekter(grunnlagsreferanseListe),
                                             voksenIHusstanden = grunnlagsListe.finnBorMedAndreVoksne(grunnlagsreferanseListe),

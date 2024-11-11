@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatForTypeOgRolle
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
@@ -147,11 +148,13 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
             henteNotatinnhold(this, Notattype.UTGIFTER)?.takeIfNotNullOrEmpty {
                 opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
             },
-            henteNotatinnhold(this, Notattype.UNDERHOLDSKOSTNAD)?.takeIfNotNullOrEmpty {
-                opprettGrunnlagNotat(Notattype.UNDERHOLDSKOSTNAD, false, it)
-            },
         ).filterNotNull()
-
+    val notatUnderhold =
+        søknadsbarn.mapNotNull {
+            henteNotatForTypeOgRolle(this, Notattype.UNDERHOLDSKOSTNAD, it)?.takeIfNotNullOrEmpty { innhold ->
+                opprettGrunnlagNotat(Notattype.UNDERHOLDSKOSTNAD, false, innhold)
+            }
+        }
     val notatSamvær =
         søknadsbarn.mapNotNull {
             henteSamværsnotat(this, it)?.takeIfNotNullOrEmpty { innhold ->
@@ -168,7 +171,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                 }
             }
 
-    return (notatGrunnlag + notatGrunnlagInntekter + notatSamvær).toSet()
+    return (notatGrunnlag + notatGrunnlagInntekter + notatSamvær + notatUnderhold).toSet()
 }
 
 fun Behandling.tilSkyldner() =
