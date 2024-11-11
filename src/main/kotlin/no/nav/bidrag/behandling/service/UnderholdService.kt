@@ -52,16 +52,16 @@ class UnderholdService(
     ): UnderholdDto {
         request.validere()
 
-        request.harTilsynsordning?.let {
-            underholdskostnad.harTilsynsordning = it
-        }
+        request.harTilsynsordning?.let { underholdskostnad.harTilsynsordning = it }
+
+        val rolleSøknadsbarn = underholdskostnad.person.rolle.firstOrNull()
 
         request.begrunnelse?.let {
             notatService.oppdatereNotat(
                 underholdskostnad.behandling,
                 Notattype.UNDERHOLDSKOSTNAD,
                 it,
-                underholdskostnad.behandling.bidragspliktig!!.id!!,
+                rolleSøknadsbarn?.id ?: underholdskostnad.behandling.bidragsmottaker!!.id!!,
             )
         }
 

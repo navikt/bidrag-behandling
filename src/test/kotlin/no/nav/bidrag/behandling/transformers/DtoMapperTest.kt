@@ -318,7 +318,7 @@ class DtoMapperTest : TestContainerRunner() {
 
             behandling.notater.add(
                 Notat(
-                    1,
+                    10,
                     behandling,
                     behandling.bidragsmottaker!!,
                     NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
@@ -339,7 +339,7 @@ class DtoMapperTest : TestContainerRunner() {
             // så
             dto.gjelderBarn.navn shouldBe "Annet Barn Bm"
             dto.gjelderBarn.ident.shouldBeNull()
-            dto.begrunnelse shouldBe "Underholdskostnad for annet barn"
+            dto.begrunnelse shouldBe "Underholdskostnad for Bms andre barn"
         }
     }
 }
