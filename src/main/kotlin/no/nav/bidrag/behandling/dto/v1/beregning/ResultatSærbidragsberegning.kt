@@ -48,6 +48,7 @@ data class DelberegningBidragspliktigesBeregnedeTotalbidragDto(
 }
 
 data class DelberegningBidragsevneDto(
+    val sumInntekt25Prosent: BigDecimal,
     val bidragsevne: BigDecimal,
     val skatt: Skatt,
     val underholdEgneBarnIHusstand: UnderholdEgneBarnIHusstand,

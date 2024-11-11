@@ -445,6 +445,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
     val delberegningBidragsevne = delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragsevne>()
     return DelberegningBidragsevneDto(
         bidragsevne = delberegningBidragsevne.beløp,
+        sumInntekt25Prosent = delberegningBidragsevne.sumInntekt25Prosent,
         skatt =
             DelberegningBidragsevneDto.Skatt(
                 sumSkatt = delberegningBidragsevne.skatt.sumSkatt,
