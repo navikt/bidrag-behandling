@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.validering.MaksGodkjentBeløpValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
+import no.nav.bidrag.behandling.transformers.erUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.sorterBeregnetUtgifter
 import no.nav.bidrag.behandling.transformers.validerUtgiftspost
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -101,7 +102,7 @@ fun Utgift.tilBeregningDto() =
 fun Utgiftspost.tilDto() =
     UtgiftspostDto(
         id = id!!,
-        kommentar = kommentar ?: "",
+        kommentar = if (erUtgiftForeldet()) "Utgiften er foreldet" else kommentar ?: "",
         type = type,
         godkjentBeløp = godkjentBeløp,
         kravbeløp = kravbeløp,

@@ -344,7 +344,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.tilType(),
-                boforhold.tilBoforholdBarnRequest(behandling),
+                boforhold.tilBoforholdBarnRequest(behandling, true),
             )
         boforholdPeriodisert
             .filter { it.gjelderPersonId != null }

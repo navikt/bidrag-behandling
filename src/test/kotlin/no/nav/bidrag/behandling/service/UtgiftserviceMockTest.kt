@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.web.client.HttpClientErrorException
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional
@@ -57,7 +59,8 @@ class UtgiftserviceMockTest {
     fun initMock() {
         stubSjablonProvider()
         validering = ValiderBeregning()
-        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling, personService)
+        val personService = PersonService(stubPersonConsumer())
+        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling, BehandlingTilGrunnlagMappingV2(personService))
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
         every { utgiftRepository.save<Utgift>(any()) } answers {

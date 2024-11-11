@@ -435,9 +435,8 @@ class BoforholdService(
                 if (oppdatereStatus.borMedAndreVoksne) Bostatuskode.BOR_MED_ANDRE_VOKSNE else Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE
 
             husstandsmedlemSomSkalOppdateres.lagreEksisterendePerioder()
-            val periodeSomSkalOppdateres =
-                husstandsmedlemSomSkalOppdateres.perioder.find { oppdatereStatus.idPeriode == it.id }
 
+            val nyPeriode = oppdatereStatus.periode
             husstandsmedlemSomSkalOppdateres.oppdaterePerioderVoksne(
                 gjelderRolle = rolleMedAndreVoksneIHusstaden,
                 nyEllerOppdatertBostatusperiode =
@@ -446,9 +445,9 @@ class BoforholdService(
                         husstandsmedlem = husstandsmedlemSomSkalOppdateres,
                         bostatus = nyBostatus,
                         datoFom =
-                            periodeSomSkalOppdateres?.datoFom
+                            nyPeriode.fom.atDay(1)
                                 ?: behandling.virkningstidspunkt!!,
-                        datoTom = periodeSomSkalOppdateres?.datoTom,
+                        datoTom = nyPeriode.til?.atEndOfMonth(),
                         kilde = Kilde.MANUELL,
                     ),
             )

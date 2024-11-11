@@ -322,8 +322,10 @@ class BehandlingService(
 
                 TypeBehandling.BIDRAG -> {
                     oppdaterBoforhold()
-                    oppdaterSivilstand()
+                    oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
+                    // TODO Underholdskostnad
+                    // TODO Samvær
                 }
             }
         }

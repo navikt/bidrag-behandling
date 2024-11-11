@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
@@ -69,6 +70,8 @@ private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapport
 val Behandling.utgiftCuttofDato get() = mottattdato.minusYears(1)
 
 fun Behandling.erDatoForUtgiftForeldet(utgiftDato: LocalDate) = utgiftDato < utgiftCuttofDato
+
+fun Utgiftspost.erUtgiftForeldet() = utgift.behandling.erDatoForUtgiftForeldet(dato)
 
 fun Behandling.validerKanOppdatere() {
     if (erVedtakFattet) {
