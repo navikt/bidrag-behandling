@@ -147,8 +147,10 @@ class Dtomapper(
 
     private fun Set<Underholdskostnad>.tilUnderholdDtos() = this.map { it.tilDto() }.toSet()
 
-    private fun Underholdskostnad.tilDto() =
-        UnderholdDto(
+    private fun Underholdskostnad.tilDto(): UnderholdDto {
+        // Vil aldri ha flere enn èn rolle per behandling
+        val rolleSøknadsbarn = this.person.rolle.firstOrNull()
+        return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
             gjelderBarn = this.person.tilPersoninfoDto(this.behandling),
@@ -156,8 +158,13 @@ class Dtomapper(
             stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
             tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
             underholdskostnad = beregneUnderholdskostnad(this),
-            begrunnelse = NotatService.henteUnderholdsnotat(this.behandling),
+            begrunnelse =
+                NotatService.henteUnderholdsnotat(
+                    this.behandling,
+                    rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
+                ),
         )
+    }
 
     private fun Person.tilPersoninfoDto(behandling: Behandling): PersoninfoDto {
         val rolle =
