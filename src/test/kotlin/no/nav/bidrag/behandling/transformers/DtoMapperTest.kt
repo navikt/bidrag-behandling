@@ -21,7 +21,9 @@ import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -63,7 +65,7 @@ class DtoMapperTest : TestContainerRunner() {
 
     @BeforeEach
     fun initMocks() {
-        grunnlagsmapper = BehandlingTilGrunnlagMappingV2(personService)
+        grunnlagsmapper = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, grunnlagsmapper)
         stubUtils.stubTilgangskontrollPersonISak()
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
