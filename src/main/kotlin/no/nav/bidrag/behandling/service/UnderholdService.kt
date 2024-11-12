@@ -61,7 +61,7 @@ class UnderholdService(
                 underholdskostnad.behandling,
                 Notattype.UNDERHOLDSKOSTNAD,
                 it,
-                rolleSøknadsbarn?.id ?: underholdskostnad.behandling.bidragsmottaker!!.id!!,
+                rolleSøknadsbarn ?: underholdskostnad.behandling.bidragsmottaker!!,
             )
         }
 

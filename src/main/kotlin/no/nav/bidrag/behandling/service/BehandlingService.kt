@@ -261,7 +261,7 @@ class BehandlingService(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
                         n.henteNyttNotat() ?: "",
-                        it.bidragsmottaker!!.id!!,
+                        it.bidragsmottaker!!,
                     )
                 }
                 oppdaterVirkningstidspunkt(request, it)
@@ -391,7 +391,7 @@ class BehandlingService(
             oppdaterVirkningstidspunkt(OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt), this)
         }
     }
-
+    
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
             behandlingRepository
