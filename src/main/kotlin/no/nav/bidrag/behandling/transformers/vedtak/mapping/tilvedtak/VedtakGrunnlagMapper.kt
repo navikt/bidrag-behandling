@@ -99,7 +99,6 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(tilGrunnlagFaktiskeTilsynsutgifter(søknadsbarn))
                         grunnlagsliste.addAll(tilGrunnlagBarnetilsyn(søknadsbarn))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
-                        grunnlagsliste.addAll(tilGrunnlagDeltBossted(søknadsbarn))
                     }
 
                     else -> {}

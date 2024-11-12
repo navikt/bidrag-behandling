@@ -225,6 +225,7 @@ class BehandlingTilGrunnlagMappingV2(
                                         "_${it.toCompactString()}"
                                     }}_${samvær.rolle.tilGrunnlagPerson().referanse}",
                             type = Grunnlagstype.SAMVÆRSPERIODE,
+                            gjelderReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
                             grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
                             innhold =
                                 POJONode(

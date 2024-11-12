@@ -15,7 +15,6 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DeltBostedPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
@@ -116,24 +115,6 @@ fun Behandling.tilGrunnlagTilleggsstønad(søknadsbarn: GrunnlagDto? = null): Li
                 )
             }
         }
-}
-
-fun Behandling.tilGrunnlagDeltBossted(søknadsbarn: GrunnlagDto? = null): List<GrunnlagDto> {
-    val søknadsbarnIdent = søknadsbarn?.personIdent
-    return listOf(
-        GrunnlagDto(
-            referanse = "DeltBossted_$id",
-            type = Grunnlagstype.DELT_BOSTED,
-            innhold =
-                POJONode(
-                    DeltBostedPeriode(
-                        periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
-                        deltBosted = false,
-                        manueltRegistrert = true,
-                    ),
-                ),
-        ),
-    )
 }
 
 fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Behandling): StønadsendringPeriode {
