@@ -196,13 +196,13 @@ class BehandlingBeregnController(
     ): List<ResultatBeregningBarnDto> {
         LOGGER.info { "Henter resultat for $vedtaksId" }
 
-        return vedtakService.konverterVedtakTilBeregningResultat(vedtaksId)
+        return vedtakService.konverterVedtakTilBeregningResultatForskudd(vedtaksId)
     }
 
     @Suppress("unused")
     @PostMapping("/vedtak/{vedtaksId}/beregn/sarbidrag")
     @Operation(
-        description = "Beregn forskudd",
+        description = "Beregn særbidrag",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     fun hentVedtakBeregningResultatSærbidrag(
@@ -211,5 +211,19 @@ class BehandlingBeregnController(
         LOGGER.info { "Henter resultat for $vedtaksId" }
 
         return vedtakService.konverterVedtakTilBeregningResultatSærbidrag(vedtaksId)
+    }
+
+    @Suppress("unused")
+    @PostMapping("/vedtak/{vedtaksId}/beregn/bidrag")
+    @Operation(
+        description = "Beregn bidrag",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun hentVedtakBeregningResultatBidrag(
+        @PathVariable vedtaksId: Long,
+    ): ResultatBidragberegningDto? {
+        LOGGER.info { "Henter resultat for $vedtaksId" }
+
+        return vedtakService.konverterVedtakTilBeregningResultatBidrag(vedtaksId)
     }
 }

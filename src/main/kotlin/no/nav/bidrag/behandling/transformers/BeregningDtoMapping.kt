@@ -92,54 +92,11 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
                     barn = resultat.barn,
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
-                            val grunnlagsreferanseListe = it.grunnlagsreferanseListe
-                            val bpsAndel = grunnlagsListe.finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
-                            val sluttberegning =
-                                grunnlagsListe
-                                    .finnSluttberegningIReferanser(
-                                        grunnlagsreferanseListe,
-                                    )?.innholdTilObjekt<SluttberegningBarnebidrag>()
-                            ResultatBarnebidragsberegningPeriodeDto(
-                                periode = it.periode,
-                                faktiskBidrag = it.resultat.beløp,
-                                resultatKode = it.resultat.kode,
-                                beregnetBidrag = sluttberegning?.beregnetBeløp ?: BigDecimal.ZERO,
-                                samværsfradrag = grunnlagsListe.finnSamværsfradrag(grunnlagsreferanseListe),
-                                bpsAndelU = bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO,
-                                erDirekteAvslag = it.resultat.kode.erDirekteAvslag(),
-                                beregningsdetaljer =
-                                    if (!it.resultat.kode.erDirekteAvslag()) {
-                                        val delberegningBPsEvne = grunnlagsListe.finnDelberegningBidragsevne(grunnlagsreferanseListe)
-                                        BidragPeriodeBeregningsdetaljer(
-                                            delberegningBidragsevne = delberegningBPsEvne,
-                                            samværsfradrag =
-                                                grunnlagsListe.finnDelberegningSamværsfradrag(
-                                                    grunnlagsreferanseListe,
-                                                ),
-                                            delberegningUnderholdskostnad =
-                                                grunnlagsListe.finnDelberegningUnderholdskostnad(
-                                                    grunnlagsreferanseListe,
-                                                ),
-                                            forskuddssats = grunnlagsListe.finnForskuddssats(grunnlagsreferanseListe),
-                                            delberegningBidragspliktigesBeregnedeTotalBidrag =
-                                                grunnlagsListe
-                                                    .finnDelberegningBPsBeregnedeTotalbidrag(
-                                                        grunnlagsreferanseListe,
-                                                    ),
-                                            bpsAndel = bpsAndel,
-                                            sluttberegning = sluttberegning,
-                                            antallBarnIHusstanden = grunnlagsListe.finnAntallBarnIHusstanden(grunnlagsreferanseListe),
-                                            inntekter = grunnlagsListe.byggResultatSærbidragInntekter(grunnlagsreferanseListe),
-                                            voksenIHusstanden = grunnlagsListe.finnBorMedAndreVoksne(grunnlagsreferanseListe),
-                                            enesteVoksenIHusstandenErEgetBarn =
-                                                grunnlagsListe.finnEnesteVoksenIHusstandenErEgetBarn(
-                                                    grunnlagsreferanseListe,
-                                                ),
-                                            bpHarEvne = delberegningBPsEvne!!.bidragsevne > BigDecimal.ZERO,
-                                        )
-                                    } else {
-                                        null
-                                    },
+                            grunnlagsListe.byggResultatBidragsberegning(
+                                it.periode,
+                                it.resultat.beløp,
+                                it.resultat.kode,
+                                it.grunnlagsreferanseListe,
                             )
                         },
                 )
@@ -179,6 +136,57 @@ fun List<GrunnlagDto>.byggResultatSærbidragInntekter(grunnlagsreferanseListe: L
                 Rolletype.BIDRAGSMOTTAKER,
             ),
     )
+
+fun List<GrunnlagDto>.byggResultatBidragsberegning(
+    periode: ÅrMånedsperiode,
+    resultat: BigDecimal?,
+    resultatkode: Resultatkode,
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+): ResultatBarnebidragsberegningPeriodeDto {
+    val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe)?.innholdTilObjekt<SluttberegningBarnebidrag>()
+    return ResultatBarnebidragsberegningPeriodeDto(
+        periode = periode,
+        faktiskBidrag = resultat ?: BigDecimal.ZERO,
+        resultatKode = resultatkode,
+        beregnetBidrag = sluttberegning?.beregnetBeløp ?: BigDecimal.ZERO,
+        samværsfradrag = finnSamværsfradrag(grunnlagsreferanseListe),
+        bpsAndelU = bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO,
+        erDirekteAvslag = resultatkode.erDirekteAvslag(),
+        beregningsdetaljer =
+            if (!resultatkode.erDirekteAvslag()) {
+                val delberegningBPsEvne = finnDelberegningBidragsevne(grunnlagsreferanseListe)
+                BidragPeriodeBeregningsdetaljer(
+                    delberegningBidragsevne = delberegningBPsEvne,
+                    samværsfradrag =
+                        finnDelberegningSamværsfradrag(
+                            grunnlagsreferanseListe,
+                        ),
+                    delberegningUnderholdskostnad =
+                        finnDelberegningUnderholdskostnad(
+                            grunnlagsreferanseListe,
+                        ),
+                    forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
+                    delberegningBidragspliktigesBeregnedeTotalBidrag =
+                        finnDelberegningBPsBeregnedeTotalbidrag(
+                            grunnlagsreferanseListe,
+                        ),
+                    bpsAndel = bpsAndel,
+                    sluttberegning = sluttberegning,
+                    antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
+                    inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
+                    voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
+                    enesteVoksenIHusstandenErEgetBarn =
+                        finnEnesteVoksenIHusstandenErEgetBarn(
+                            grunnlagsreferanseListe,
+                        ),
+                    bpHarEvne = delberegningBPsEvne!!.bidragsevne > BigDecimal.ZERO,
+                )
+            } else {
+                null
+            },
+    )
+}
 
 fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     virkningstidspunkt: LocalDate,

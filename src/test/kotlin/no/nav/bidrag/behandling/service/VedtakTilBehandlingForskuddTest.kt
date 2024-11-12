@@ -471,7 +471,7 @@ class VedtakTilBehandlingForskuddTest {
     fun `Skal konvertere vedtak for beregning`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val resultat =
-            vedtakService.konverterVedtakTilBeregningResultat(1)
+            vedtakService.konverterVedtakTilBeregningResultatForskudd(1)
 
         resultat shouldHaveSize 2
         assertSoftly(resultat[0]) {
