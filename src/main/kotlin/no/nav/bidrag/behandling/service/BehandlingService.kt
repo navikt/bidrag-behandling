@@ -391,7 +391,7 @@ class BehandlingService(
             oppdaterVirkningstidspunkt(OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt), this)
         }
     }
-    
+
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
             behandlingRepository
