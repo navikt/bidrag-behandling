@@ -40,8 +40,10 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -244,12 +246,24 @@ class InntektService(
         }
 
         oppdatereInntektRequest.henteOppdatereBegrunnelse?.let {
+            val rolle =
+                it.rolleid?.let { rolleid ->
+                    val rolle = behandling.roller.find { it.id == rolleid }
+                    if (rolle == null) {
+                        throw HttpClientErrorException(
+                            HttpStatus.NOT_FOUND,
+                            "Fant ikke rolle med id $rolle i behandling ${behandling.id}",
+                        )
+                    }
+                    rolle
+                } ?: behandling.bidragsmottaker!!
+
             notatService.oppdatereNotat(
                 behandling = behandling,
                 notattype = Notattype.INNTEKT,
                 notattekst = it.henteNyttNotat() ?: "",
                 // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
-                rolleid = it.rolleid ?: behandling.bidragsmottaker!!.id!!,
+                rolle = rolle,
             )
         }
 

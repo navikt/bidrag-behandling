@@ -50,7 +50,7 @@ class UtgiftService(
                 behandling,
                 NotatGrunnlag.NotatType.UTGIFTER,
                 it.henteNyttNotat() ?: "",
-                behandling.bidragsmottaker!!.id!!,
+                behandling.bidragsmottaker!!,
             )
         }
         behandling.avslag = request.avslag
