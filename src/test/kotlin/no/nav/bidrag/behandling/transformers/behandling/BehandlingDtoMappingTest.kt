@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.mockkClass
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
@@ -55,6 +56,9 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var bidragStonadConsumer: BidragStønadConsumer
     lateinit var validering: ValiderBeregning
     lateinit var validerBehandling: ValiderBehandlingService
+
+    @MockK
+    lateinit var personService: PersonService
 
     @BeforeEach
     fun initMocks() {

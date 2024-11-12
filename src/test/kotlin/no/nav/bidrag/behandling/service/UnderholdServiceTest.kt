@@ -27,11 +27,17 @@ import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -57,12 +63,31 @@ class UnderholdServiceTest {
     @MockK
     lateinit var personRepository: PersonRepository
 
+    @MockK
+    lateinit var personService: PersonService
+
+    @MockK
+    lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockK
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
+    @MockK
+    lateinit var validering: ValiderBeregning
+
     val notatService = NotatService()
+
+    lateinit var behandlingTilGrunnlagMappingV2: BehandlingTilGrunnlagMappingV2
+
+    lateinit var dtomapper: Dtomapper
 
     lateinit var underholdService: UnderholdService
 
     @BeforeEach
     fun setup() {
+        behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService)
+        dtomapper =
+            Dtomapper(tilgangskontrollService, validering, validerBehandlingService, behandlingTilGrunnlagMappingV2)
         underholdService =
             UnderholdService(
                 barnetilsynRepository,
@@ -71,6 +96,7 @@ class UnderholdServiceTest {
                 underholdskostnadRepository,
                 personRepository,
                 notatService,
+                dtomapper,
             )
     }
 
@@ -106,6 +132,13 @@ class UnderholdServiceTest {
             val uFørSleting = behandling.underholdskostnader.find { it.id == universalid }
             uFørSleting.shouldNotBeNull()
             uFørSleting.tilleggsstønad.shouldNotBeEmpty()
+
+            every { personService.hentPerson(any()) } returns
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
 
             // hvis
             underholdService.sletteFraUnderhold(behandling, request)
@@ -607,6 +640,13 @@ class UnderholdServiceTest {
                         begrunnelse = "Barmet går i SFO",
                     )
 
+                every { personService.hentPerson(any()) } returns
+                    PersonDto(
+                        ident = Personident(testdataBarn1.ident),
+                        navn = testdataBarn1.navn,
+                        fødselsdato = testdataBarn1.fødselsdato,
+                    )
+
                 // hvis
                 val underholdDto = underholdService.oppdatereUnderhold(underholdskostnad, request)
 
@@ -615,7 +655,7 @@ class UnderholdServiceTest {
                     harTilsynsordning shouldBe request.harTilsynsordning
                     begrunnelse shouldBe request.begrunnelse
                     stønadTilBarnetilsyn.shouldBeEmpty()
-                    faktiskeTilsynsutgifter.shouldBeEmpty()
+                    faktiskTilsynsutgift.shouldBeEmpty()
                     tilleggsstønad.shouldBeEmpty()
                 }
             }

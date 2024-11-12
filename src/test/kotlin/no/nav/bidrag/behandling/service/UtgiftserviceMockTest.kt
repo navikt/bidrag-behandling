@@ -49,6 +49,9 @@ class UtgiftserviceMockTest {
     @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
 
+    @MockK
+    lateinit var personService: PersonService
+
     lateinit var utgiftService: UtgiftService
     lateinit var validering: ValiderBeregning
     val validerBehandling: ValiderBehandlingService = mockkClass(ValiderBehandlingService::class)

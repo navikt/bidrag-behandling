@@ -51,7 +51,6 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
@@ -444,7 +443,7 @@ class GrunnlagService(
         val nyesteIkkeAktivertBearbeidetBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet }
         val nyesteIkkeAktivertGrunnlagBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { !it.erBearbeidet }
 
-        if (nyesteIkkeAktivertBearbeidetBoforhold == null || nyesteIkkeAktivertGrunnlagBoforhold == null) {
+        if (nyesteIkkeAktivertGrunnlagBoforhold == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
@@ -454,7 +453,7 @@ class GrunnlagService(
 
         boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
             behandling,
-            nyesteIkkeAktivertBearbeidetBoforhold.konvertereData<Set<Bostatus>>()!!,
+            nyesteIkkeAktivertBearbeidetBoforhold?.konvertereData<Set<Bostatus>>() ?: emptySet(),
             nyesteIkkeAktivertGrunnlagBoforhold.konvertereData<List<RelatertPersonGrunnlagDto>>()!!,
             overskriveManuelleOpplysninger,
         )
@@ -639,7 +638,10 @@ class GrunnlagService(
                     it.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
 
-                if (behandling.tilType() != TypeBehandling.FORSKUDD && Rolletype.BIDRAGSPLIKTIG == rolleInnhentetFor.rolletype) {
+                if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.behandlinstypeMotRolletyper[behandling.tilType()]?.contains(
+                        rolleInnhentetFor.rolletype,
+                    ) == true
+                ) {
                     periodisereOgLagreBpsBoforholdAndreVoksne(
                         behandling,
                         it.husstandsmedlemmerOgEgneBarnListe.toSet(),
