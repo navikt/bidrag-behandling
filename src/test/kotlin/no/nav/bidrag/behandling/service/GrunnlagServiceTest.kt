@@ -185,7 +185,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 assertSoftly {
                     behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    behandling.grunnlag.size shouldBe 28
+                    behandling.grunnlag.size shouldBe 29
                     behandling.inntekter.size shouldBe 28
                 }
 
@@ -312,15 +312,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 assertSoftly {
                     behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    behandling.grunnlag.size shouldBe 33
+                    behandling.grunnlag.size shouldBe 34
                 }
 
                 val grunnlagBp =
                     behandling.grunnlag.filter { Rolletype.BIDRAGSPLIKTIG == it.rolle.rolletype }
                 assertSoftly {
-                    grunnlagBp.size shouldBe 13
+                    grunnlagBp.size shouldBe 14
                     grunnlagBp.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type }.size shouldBe 1
                     grunnlagBp.filter { Grunnlagsdatatype.BOFORHOLD == it.type }.size shouldBe 6
+                    grunnlagBp.filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }.size shouldBe 2
                     grunnlagBp.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2
                     grunnlagBp.filter { Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == it.type }.size shouldBe 1
                     grunnlagBp.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 2
@@ -344,6 +345,87 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         grunnlagBarn.filter { Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == it.type }.size shouldBe 2
                         grunnlagBarn.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.type }.size shouldBe 4
                     }
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal hente boforhold andre voksne i husstanden for BP som ikke har andre voksne i husstanden`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(false, false, false, true, TypeBehandling.BIDRAG)
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
+                            )
+
+                        Rolletype.BIDRAGSPLIKTIG ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-sb-bp-uten-andre-voksne.json",
+                            )
+
+                        Rolletype.BARN ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-barn1.json",
+                            )
+
+                        else -> throw Exception()
+                    }
+                }
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+
+                val grunnlagBarn = behandling.grunnlag.filter { Rolletype.BARN == it.rolle.rolletype }
+
+                grunnlagBarn.groupBy { it.rolle }.forEach {
+                    assertSoftly(it.value) { gbarn ->
+                        gbarn shouldHaveSize 4
+                        gbarn.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
+                        gbarn.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
+                        gbarn.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
+                    }
+                }
+
+                grunnlagBarn shouldHaveSize 8
+
+                val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
+
+                assertSoftly(grunnlagBm) { gbm ->
+                    gbm shouldHaveSize 10
+                    gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
+                    gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
+                    gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
+                    gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
+                    gbm.filter { it.erBearbeidet } shouldHaveSize 5
+                }
+
+                val grunnlagBp = behandling.grunnlag.filter { it.rolle == behandling.bidragspliktig }
+
+                assertSoftly(grunnlagBp) { gbp ->
+                    gbp shouldHaveSize 9
+                    gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1
+                    gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
+                    gbp.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
+                    gbp.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
+                    gbp.filter { it.erBearbeidet } shouldHaveSize 5
                 }
             }
         }
@@ -982,10 +1064,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
                 alleAktiveGrunnlag.size shouldBe 3
-                val sistInnhentaSmåbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
+                val sistInnhentaSmåbarnstillegg =
+                    behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
                 sistInnhentaSmåbarnstillegg.aktiv shouldBe null
 
-                val gjeldendeSmåbarnstillegg = behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type && it.aktiv != null }.maxBy { it.innhentet }
+                val gjeldendeSmåbarnstillegg =
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type && it.aktiv != null }
+                        .maxBy { it.innhentet }
                 gjeldendeSmåbarnstillegg.shouldNotBeNull()
 
                 assertSoftly(jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeSmåbarnstillegg.data)) {
@@ -2029,6 +2115,53 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     it.size shouldBe 1
                     it.first().perioder.size shouldBe 1
                 }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal aktivere tomt grunnlag med boforhold_andre_voksne_i_husstanden`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        true,
+                        behandlingstype = TypeBehandling.SÆRBIDRAG,
+                    )
+
+                behandling.grunnlag.add(
+                    Grunnlag(
+                        behandling = behandling,
+                        data = commonObjectmapper.writeValueAsString(emptySet<RelatertPersonGrunnlagDto>()),
+                        innhentet = LocalDateTime.now().minusDays(1),
+                        rolle = behandling.bidragspliktig!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    ),
+                )
+
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                Mockito
+                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
+                    .thenReturn(testdataBarn1.tilPersonDto())
+
+                assertSoftly(behandling.husstandsmedlem) {
+                    it.size shouldBe 0
+                }
+
+                val aktivereGrunnlagRequest =
+                    AktivereGrunnlagRequestV2(
+                        personident = Personident(behandling.bidragspliktig!!.ident!!),
+                        grunnlagstype = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    )
+
+                // hvis
+                grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
+
+                // så
+                assert(true)
             }
         }
 

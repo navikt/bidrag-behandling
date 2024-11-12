@@ -2,26 +2,42 @@ package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Notat
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.service.TilgangskontrollService
+import no.nav.bidrag.behandling.service.ValiderBehandlingService
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -29,12 +45,29 @@ class DtoMapperTest : TestContainerRunner() {
     @Autowired
     lateinit var testdataManager: TestdataManager
 
-    @Autowired
+    @MockK
+    lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockK
+    lateinit var validering: ValiderBeregning
+
+    @MockK
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
+    @MockK
+    lateinit var personService: PersonService
+
+    lateinit var grunnlagsmapper: BehandlingTilGrunnlagMappingV2
+
     lateinit var dtomapper: Dtomapper
 
     @BeforeEach
     fun initMocks() {
+        grunnlagsmapper = BehandlingTilGrunnlagMappingV2(personService)
+        dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, grunnlagsmapper)
         stubUtils.stubTilgangskontrollPersonISak()
+        every { tilgangskontrollService.harBeskyttelse(any()) } returns false
+        every { tilgangskontrollService.harTilgang(any(), any()) } returns true
     }
 
     @Nested
@@ -220,6 +253,93 @@ class DtoMapperTest : TestContainerRunner() {
             assertSoftly(ikkeAktivereGrunnlagsdata) { resultat ->
                 resultat.sivilstand shouldNotBe null
             }
+        }
+    }
+
+    @Nested
+    open inner class Underholdskostnad {
+        @Test
+        fun `skal mappe ident, navn, og begrunnelse til søknadsbarn`() {
+            // gitt
+            stubUtils.stubPerson(status = HttpStatus.OK, personident = testdataBarn1.ident)
+
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val rolleSøknadsbarn = behandling.roller.first { Rolletype.BARN == it.rolletype }
+            behandling.notater.add(
+                Notat(
+                    1,
+                    behandling,
+                    rolleSøknadsbarn,
+                    NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+                    innhold = "Underholdskostnad for søknadsbarn",
+                ),
+            )
+
+            every { personService.hentPerson(testdataBarn1.ident) } returns
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
+
+            // hvis
+            val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.first())
+
+            // så
+            dto.gjelderBarn.navn shouldBe testdataBarn1.navn
+            dto.gjelderBarn.ident?.verdi shouldBe testdataBarn1.ident
+            dto.begrunnelse shouldBe "Underholdskostnad for søknadsbarn"
+        }
+
+        @Test
+        fun `skal mappe ident, navn, og begrunnelse til annet barn`() {
+            stubUtils.stubPerson(status = HttpStatus.OK, personident = testdataBarn1.ident)
+
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            behandling.underholdskostnader.add(
+                no.nav.bidrag.behandling.database.datamodell.Underholdskostnad(
+                    3,
+                    behandling,
+                    Person(10, navn = "Annet Barn Bm"),
+                ),
+            )
+
+            behandling.notater.add(
+                Notat(
+                    10,
+                    behandling,
+                    behandling.bidragsmottaker!!,
+                    NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+                    innhold = "Underholdskostnad for Bms andre barn",
+                ),
+            )
+
+            every { personService.hentPerson(testdataBarn1.ident) } returns
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
+
+            // hvis
+            val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.find { it.person.id == 10L }!!)
+
+            // så
+            dto.gjelderBarn.navn shouldBe "Annet Barn Bm"
+            dto.gjelderBarn.ident.shouldBeNull()
+            dto.begrunnelse shouldBe "Underholdskostnad for Bms andre barn"
         }
     }
 }

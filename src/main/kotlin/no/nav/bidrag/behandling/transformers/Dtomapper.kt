@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
@@ -23,15 +25,19 @@ import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
+import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
+import no.nav.bidrag.behandling.service.UnderholdService.Companion.beregneUnderholdskostnad
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.erLik
@@ -48,7 +54,9 @@ import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
-import no.nav.bidrag.behandling.transformers.underhold.tilUnderholdDtos
+import no.nav.bidrag.behandling.transformers.underhold.tilFaktiskeTilsynsutgiftDtos
+import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
+import no.nav.bidrag.behandling.transformers.underhold.tilTilleggsstønadDtos
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -60,6 +68,7 @@ import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -93,7 +102,9 @@ class Dtomapper(
     fun tilDto(
         behandling: Behandling,
         inkluderHistoriskeInntekter: Boolean = false,
-    ): BehandlingDtoV2 = behandling.dto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter)
+    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter)
+
+    fun tilUnderholdDto(underholdskostnad: Underholdskostnad) = underholdskostnad.tilDto()
 
     fun tilAktivereGrunnlagResponseV2(behandling: Behandling) =
         AktivereGrunnlagResponseV2(
@@ -134,6 +145,50 @@ class Dtomapper(
         aktiveGrunnlag: List<Grunnlag>,
     ) = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
 
+    private fun Set<Underholdskostnad>.tilUnderholdDtos() = this.map { it.tilDto() }.toSet()
+
+    private fun Underholdskostnad.tilDto(): UnderholdDto {
+        // Vil aldri ha flere enn èn rolle per behandling
+        val rolleSøknadsbarn = this.person.rolle.firstOrNull()
+        return UnderholdDto(
+            id = this.id!!,
+            harTilsynsordning = this.harTilsynsordning,
+            gjelderBarn = this.person.tilPersoninfoDto(this.behandling),
+            faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
+            stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
+            tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
+            underholdskostnad = beregneUnderholdskostnad(this),
+            begrunnelse =
+                NotatService.henteUnderholdsnotat(
+                    this.behandling,
+                    rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
+                ),
+        )
+    }
+
+    private fun Person.tilPersoninfoDto(behandling: Behandling): PersoninfoDto {
+        val rolle =
+            behandling.roller.find { r ->
+                this.rolle
+                    .map { it.id }
+                    .toSet()
+                    .contains(r.id)
+            }
+
+        val personinfo =
+            this.ident?.let { grunnlagMapper.personService.hentPerson(it) }
+                ?: rolle?.ident?.let { grunnlagMapper.personService.hentPerson(it) }
+
+        return PersoninfoDto(
+            id = this.id,
+            ident = rolle?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
+            navn = personinfo?.navn ?: this.navn,
+            fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
+            kilde = rolle?.ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+            medIBehandlingen = rolle?.ident != null,
+        )
+    }
+
     fun Utgift.tilOppdaterUtgiftResponse(utgiftspostId: Long? = null) =
         if (behandling.avslag != null) {
             OppdatereUtgiftResponse(
@@ -154,7 +209,7 @@ class Dtomapper(
             )
         }
 
-    fun Behandling.tilSamværDto() =
+    private fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
             samvær.map { it.tilDto() }
         } else {
@@ -432,11 +487,12 @@ class Dtomapper(
 
     // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
     @Suppress("ktlint:standard:value-argument-comment")
-    private fun Behandling.dto(
+    private fun Behandling.tilDto(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
         inkluderHistoriskeInntekter: Boolean,
     ): BehandlingDtoV2 {
-        val kanIkkeBehandlesBegrunnelse = validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
+        val kanIkkeBehandlesBegrunnelse =
+            validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
         return BehandlingDtoV2(
             id = id!!,
@@ -684,13 +740,6 @@ private fun List<Grunnlag>.tilHusstandsmedlem() =
                         }?.toSet() ?: emptySet(),
             )
         }.toSet()
-
-private fun AndreVoksneIHusstandenDetaljerDto.tilPersoninfo() =
-    Personinfo(
-        null,
-        this.navn,
-        this.fødselsdato,
-    )
 
 private fun Husstandsmedlem.tilPersoninfo() =
     Personinfo(
