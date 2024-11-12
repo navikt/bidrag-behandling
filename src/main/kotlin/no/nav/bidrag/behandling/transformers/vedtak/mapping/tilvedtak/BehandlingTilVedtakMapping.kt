@@ -116,7 +116,7 @@ class BehandlingTilVedtakMapping(
                                     listOf(
                                         OpprettPeriodeRequestDto(
                                             periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
-                                            beløp = null, // TODO Null eller 0?
+                                            beløp = null,
                                             resultatkode = avslag!!.name,
                                             valutakode = "NOK",
                                             grunnlagReferanseListe = emptyList(),
