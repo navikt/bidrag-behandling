@@ -261,7 +261,7 @@ class BehandlingService(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
                         n.henteNyttNotat() ?: "",
-                        it.bidragsmottaker!!.id!!,
+                        it.bidragsmottaker!!,
                     )
                 }
                 oppdaterVirkningstidspunkt(request, it)

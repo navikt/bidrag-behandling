@@ -107,7 +107,7 @@ class BoforholdService(
             behandling = behandling,
             notattype = Notattype.BOFORHOLD,
             notattekst = request.henteNyttNotat() ?: "",
-            rolleid = behandling.rolleGrunnlagSkalHentesFor!!.id!!,
+            rolle = behandling.rolleGrunnlagSkalHentesFor!!,
         )
 
         return OppdatereBoforholdResponse(

@@ -49,7 +49,7 @@ class SamværService(
                     behandling,
                     NotatGrunnlag.NotatType.SAMVÆR,
                     it.henteNyttNotat() ?: "",
-                    oppdaterSamvær.rolle.id!!,
+                    oppdaterSamvær.rolle,
                 )
             }
         }

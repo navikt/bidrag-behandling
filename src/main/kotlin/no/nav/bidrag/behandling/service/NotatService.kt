@@ -5,10 +5,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.client.HttpClientErrorException
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
@@ -20,24 +18,15 @@ class NotatService {
         behandling: Behandling,
         notattype: Notattype,
         notattekst: String,
-        rolleid: Long,
+        rolle: Rolle,
     ) {
-        val rolle = behandling.roller.find { rolleid == it.id }
-
-        if (rolle == null) {
-            throw HttpClientErrorException(
-                HttpStatus.NOT_FOUND,
-                "Fant ikke rolle med id $rolleid i behandling ${behandling.id}",
-            )
-        }
-
-        val eksisterendeNotat = behandling.notater.find { it.rolle.id == rolleid && it.type == notattype }
+        val eksisterendeNotat = behandling.notater.find { it.rolle == rolle && it.type == notattype }
 
         eksisterendeNotat?.let {
-            log.info { "Oppdaterer eksisterende notat av type $notattype for rolle med id $rolleid i behandling ${behandling.id}" }
+            log.info { "Oppdaterer eksisterende notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
             it.innhold = notattekst
         } ?: run {
-            log.info { "Legger til notat av type $notattype for rolle med id $rolleid i behandling ${behandling.id}" }
+            log.info { "Legger til notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
             behandling.notater.add(
                 Notat(
                     behandling = behandling,
