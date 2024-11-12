@@ -71,8 +71,6 @@ class NotatService {
             rolle: Rolle,
         ): String? = behandling.notater.find { it.rolle.id == rolle.id && type == it.type }?.innhold
 
-        fun henteUnderholdsnotat(behandling: Behandling): String? =
-            behandling.notater.find { it.rolle.id == behandling.bidragspliktig!!.id!! && Notattype.UNDERHOLDSKOSTNAD == it.type }?.innhold
         fun henteUnderholdsnotat(
             behandling: Behandling,
             rolle: Rolle,
