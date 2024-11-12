@@ -37,7 +37,7 @@ import java.time.LocalDate
 
 @Component
 class BehandlingTilGrunnlagMappingV2(
-    private val personService: PersonService,
+    val personService: PersonService,
     private val beregnSamværsklasseApi: BeregnSamværsklasseApi,
 ) {
     fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<GrunnlagDto> {
