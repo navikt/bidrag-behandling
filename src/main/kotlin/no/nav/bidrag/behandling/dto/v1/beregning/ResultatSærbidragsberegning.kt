@@ -63,6 +63,7 @@ data class DelberegningBidragsevneDto(
     }
 
     data class Skatt(
+        val sumSkattFaktor: BigDecimal,
         val sumSkatt: BigDecimal,
         val skattAlminneligInntekt: BigDecimal,
         val trinnskatt: BigDecimal,

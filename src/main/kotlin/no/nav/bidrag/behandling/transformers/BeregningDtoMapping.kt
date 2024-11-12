@@ -448,6 +448,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
         sumInntekt25Prosent = delberegningBidragsevne.sumInntekt25Prosent,
         skatt =
             DelberegningBidragsevneDto.Skatt(
+                sumSkattFaktor = delberegningBidragsevne.skatt.sumSkattFaktor,
                 sumSkatt = delberegningBidragsevne.skatt.sumSkatt,
                 skattAlminneligInntekt = delberegningBidragsevne.skatt.skattAlminneligInntekt,
                 trinnskatt = delberegningBidragsevne.skatt.trinnskatt,
