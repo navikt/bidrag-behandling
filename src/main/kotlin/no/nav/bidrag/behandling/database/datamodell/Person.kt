@@ -33,4 +33,6 @@ open class Person(
         orphanRemoval = false,
     )
     open val rolle: MutableSet<Rolle> = mutableSetOf(),
-)
+) {
+    override fun toString(): String = "Person(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, opprettet=$opprettet)"
+}

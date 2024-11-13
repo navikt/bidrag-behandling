@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -28,6 +29,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.felles.toCompactString
@@ -95,9 +97,7 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
                     TypeBehandling.BIDRAG -> {
-                        grunnlagsliste.addAll(tilGrunnlagTilleggsstønad(søknadsbarn))
-                        grunnlagsliste.addAll(tilGrunnlagFaktiskeTilsynsutgifter(søknadsbarn))
-                        grunnlagsliste.addAll(tilGrunnlagBarnetilsyn(søknadsbarn))
+                        grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad())
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
                     }
 

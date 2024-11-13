@@ -132,6 +132,11 @@ class VedtakTilBehandlingMapping(
                 behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.INNTEKT, it, r))
             }
         }
+        behandling.søknadsbarn.forEach { r ->
+            notatMedType(NotatGrunnlag.NotatType.SAMVÆR, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.SAMVÆR, it, r))
+            }
+        }
 
         return behandling
     }
@@ -187,4 +192,23 @@ class VedtakTilBehandlingMapping(
 
         return utgift
     }
+
+//    private fun List<GrunnlagDto>.mapSamvær(
+//        behandling: Behandling,
+//        lesemodus: Boolean,
+//    ): Set<Samvær>? {
+//        val samværsperioder =
+//            filtrerBasertPåEgenReferanse(
+//                Grunnlagstype.SAMVÆRSPERIODE,
+//            ).groupBy { it.gjelderReferanse }.map { (gjelderReferanse, perioder) ->
+//                val person = hentPersonMedReferanse(gjelderReferanse)!!
+//                Samvær(
+//                    behandling = behandling,
+//                    rolle = behandling.roller.find { it.ident == person.personIdent }!!,
+//                    perioder = emptySet(),
+//                )
+//            }
+//
+//        return emptySet()
+//    }
 }

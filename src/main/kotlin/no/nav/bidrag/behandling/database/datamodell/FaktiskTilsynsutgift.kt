@@ -23,4 +23,7 @@ open class FaktiskTilsynsutgift(
     open var tilsynsutgift: BigDecimal,
     open var kostpenger: BigDecimal? = null,
     open var kommentar: String? = null,
-)
+) {
+    override fun toString(): String =
+        "FaktiskTilsynsutgift(id=$id, underholdskostnad=${underholdskostnad.id}, fom=$fom, tom=$tom, tilsynsutgift=$tilsynsutgift, kostpenger=$kostpenger, kommentar=$kommentar)"
+}

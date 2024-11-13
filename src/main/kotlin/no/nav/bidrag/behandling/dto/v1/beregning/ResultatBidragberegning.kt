@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavnIntern
@@ -35,7 +36,15 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
 ) {
     @Suppress("unused")
-    val resultatkodeVisningsnavn get() = resultatKode.visningsnavnIntern()
+    val resultatkodeVisningsnavn get() =
+        if (resultatKode.erDirekteAvslag()) {
+            resultatKode.visningsnavnIntern()
+        } else {
+            beregningsdetaljer
+                ?.sluttberegning
+                ?.resultatVisningsnavn
+                ?.intern
+        }
 }
 
 data class BidragPeriodeBeregningsdetaljer(
