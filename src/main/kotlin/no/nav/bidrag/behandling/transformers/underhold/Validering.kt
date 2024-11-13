@@ -96,10 +96,15 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
 }
 
 fun Set<Barnetilsyn>.validerePerioder() =
-    ValideringsfeilUnderhold(
-        // TODO: bd-1920 - finne passende sjekk
-        // hullIPerioder = map { Datoperiode(it.fom, it.tom)}.finnHullIPerioder(virkningsdato),
-    )
+    if (isEmpty()) {
+        null
+    } else {
+        ValideringsfeilUnderhold(
+            underholdskostnad = first().underholdskostnad,
+            // TODO: bd-1920 - finne passende sjekk
+            // hullIPerioder = map { Datoperiode(it.fom, it.tom)}.finnHullIPerioder(virkningsdato),
+        )
+    }
 
 fun StønadTilBarnetilsynDto.validere(underholdskostnad: Underholdskostnad) {
     this.id?.let { id ->

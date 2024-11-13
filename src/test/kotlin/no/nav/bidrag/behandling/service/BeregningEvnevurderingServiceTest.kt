@@ -27,8 +27,11 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
+import no.nav.bidrag.commons.service.sjablon.SjablonService
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -86,14 +89,16 @@ class BeregningEvnevurderingServiceTest {
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
     lateinit var behandlingTilGrunnlagMapping: BehandlingTilGrunnlagMappingV2
     lateinit var personService: PersonService
+    lateinit var sjablonService: SjablonService
     lateinit var validerBeregning: ValiderBeregning
 
     @BeforeEach
     fun init() {
         clearAllMocks(recordedCalls = true)
         personService = PersonService(stubPersonConsumer())
+        sjablonService = stubSjablonService()
         validerBeregning = ValiderBeregning()
-        behandlingTilGrunnlagMapping = BehandlingTilGrunnlagMappingV2(personService)
+        behandlingTilGrunnlagMapping = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(sjablonService))
 
         evnevurderingService =
             BeregningEvnevurderingService(bidragStønadConsumer, bidragVedtakConsumer, bidragBBMConsumer, beregingVedtaksfiltrering)

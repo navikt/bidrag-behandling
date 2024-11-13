@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.underhold
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
@@ -56,20 +57,40 @@ data class OppdatereUnderholdRequest(
 )
 
 data class ValideringsfeilUnderhold(
+    @JsonIgnore
+    val underholdskostnad: Underholdskostnad?,
     val hullIPerioder: List<Datoperiode> = emptyList(),
     val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
     @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
     val fremtidigPeriode: Boolean = false,
     @Schema(description = """Er sann hvis antall perioder er 0."""")
     val harIngenPerioder: Boolean = false,
+    @Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
+    val manglerPerioderForTilsynsutgifter: Boolean = false,
 ) {
     @get:JsonIgnore
     val harFeil
         get() =
             hullIPerioder.isNotEmpty() ||
                 overlappendePerioder.isNotEmpty() ||
+                manglerPerioderForTilsynsutgifter ||
                 fremtidigPeriode ||
                 harIngenPerioder
+    val underholdskostnadId get() = underholdskostnad!!.id
+    val barn get() =
+        UnderholdBarnDto(
+            navn = underholdskostnad!!.person.navn,
+            ident = underholdskostnad.person.ident,
+            fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
+            medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
+        )
+
+    data class UnderholdBarnDto(
+        val navn: String?,
+        val ident: String?,
+        val fødselsdato: LocalDate,
+        val medIBehandling: Boolean,
+    )
 }
 
 data class UnderholdskostnadDto(

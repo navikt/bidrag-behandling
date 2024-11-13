@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -34,8 +35,10 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -99,7 +102,7 @@ class VedtakTilBehandlingForskuddTest {
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService),
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 validerBeregning,
                 evnevurderingService,
                 personService,
@@ -109,18 +112,18 @@ class VedtakTilBehandlingForskuddTest {
                 behandlingService,
                 vedtakGrunnlagMapper,
             )
+        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
         vedtakService =
             VedtakService(
                 behandlingService,
                 grunnlagService,
                 notatOpplysningerService,
-                beregningService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                sakConsumer,
                 unleash,
-                vedtakGrunnlagMapper,
+                validerBeregning,
                 vedtakTilBehandlingMapping,
+                behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
@@ -468,7 +471,7 @@ class VedtakTilBehandlingForskuddTest {
     fun `Skal konvertere vedtak for beregning`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
         val resultat =
-            vedtakService.konverterVedtakTilBeregningResultat(1)
+            vedtakService.konverterVedtakTilBeregningResultatForskudd(1)
 
         resultat shouldHaveSize 2
         assertSoftly(resultat[0]) {

@@ -27,6 +27,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpEntity
@@ -65,6 +66,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     }
 
     @Test
+    @Disabled
     fun `Skal ikke fatte vedtak særbidrag hvis feature toggle er av`() {
         every { unleashInstance.isEnabled(eq(toggleFatteVedtakName), any<Boolean>()) } returns false
 

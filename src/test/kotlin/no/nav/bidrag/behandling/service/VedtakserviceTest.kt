@@ -24,13 +24,16 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -112,7 +115,7 @@ class VedtakserviceTest : TestContainerRunner() {
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService),
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 validerBeregning,
                 evnevurderingService,
                 personService,
@@ -122,18 +125,18 @@ class VedtakserviceTest : TestContainerRunner() {
                 behandlingService,
                 vedtakGrunnlagMapper,
             )
+        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
         vedtakService =
             VedtakService(
                 behandlingService,
                 grunnlagService,
                 notatOpplysningerService,
-                beregningService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                sakConsumer,
                 unleash,
-                vedtakGrunnlagMapper,
+                validerBeregning,
                 vedtakTilBehandlingMapping,
+                behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId

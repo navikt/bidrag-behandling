@@ -23,9 +23,11 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -68,7 +70,18 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         val personService = PersonService(stubPersonConsumer())
         validerBehandling = mockkClass(ValiderBehandlingService::class)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
-        mapper = Dtomapper(tilgangskontrollService, validering, validerBehandling, BehandlingTilGrunnlagMappingV2(personService))
+        mapper =
+            Dtomapper(
+                tilgangskontrollService,
+                validering,
+                validerBehandling,
+                BehandlingTilGrunnlagMappingV2(
+                    personService,
+                    BeregnSamværsklasseApi(
+                        stubSjablonService(),
+                    ),
+                ),
+            )
     }
 
     @Test

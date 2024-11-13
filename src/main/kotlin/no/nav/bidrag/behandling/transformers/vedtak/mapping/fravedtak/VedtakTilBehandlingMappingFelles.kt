@@ -9,6 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
@@ -17,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinnelig
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
@@ -70,7 +73,7 @@ val inntektsrapporteringSomKreverBarn =
         Inntektsrapportering.KONTANTSTØTTE,
     )
 
-fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
+fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
     stønadsendringListe.map { stønadsendring ->
         val barnIdent = stønadsendring.kravhaver
         val barn =
@@ -98,6 +101,33 @@ fun VedtakDto.tilBeregningResultat(): List<ResultatBeregningBarnDto> =
                 },
         )
     }
+
+fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
+    ResultatBidragberegningDto(
+        stønadsendringListe.map { stønadsendring ->
+            val barnIdent = stønadsendring.kravhaver
+            val barn =
+                grunnlagListe.hentPerson(barnIdent.verdi)?.innholdTilObjekt<Person>()
+                    ?: manglerPersonGrunnlag(barnIdent.verdi)
+            ResultatBidragsberegningBarnDto(
+                barn =
+                    ResultatRolle(
+                        barn.ident,
+                        barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
+                        barn.fødselsdato,
+                    ),
+                perioder =
+                    stønadsendring.periodeListe.map {
+                        grunnlagListe.byggResultatBidragsberegning(
+                            it.periode,
+                            it.beløp,
+                            Resultatkode.fraKode(it.resultatkode)!!,
+                            it.grunnlagReferanseListe,
+                        )
+                    },
+            )
+        },
+    )
 
 internal fun List<GrunnlagDto>.mapGrunnlag(
     behandling: Behandling,

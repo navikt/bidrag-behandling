@@ -23,10 +23,12 @@ import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -79,10 +81,11 @@ class BeregningServiceTest {
             )
 
         val personService = createPersonServiceMock()
+        val sjablonService = stubSjablonService()
 
         vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService),
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(sjablonService)),
                 ValiderBeregning(),
                 evnevurderingService,
                 personService,

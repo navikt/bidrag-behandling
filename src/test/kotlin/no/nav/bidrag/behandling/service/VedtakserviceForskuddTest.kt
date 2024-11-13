@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
@@ -40,8 +41,10 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.virkningsdato
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -123,7 +126,7 @@ class VedtakserviceForskuddTest {
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService),
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 validerBeregning,
                 evnevurderingService,
                 personService,
@@ -133,18 +136,18 @@ class VedtakserviceForskuddTest {
                 behandlingService,
                 vedtakGrunnlagMapper,
             )
+        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
         vedtakService =
             VedtakService(
                 behandlingService,
                 grunnlagService,
                 notatOpplysningerService,
-                beregningService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                sakConsumer,
                 unleash,
-                vedtakGrunnlagMapper,
+                validerBeregning,
                 vedtakTilBehandlingMapping,
+                behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"

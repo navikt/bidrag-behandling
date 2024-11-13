@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
@@ -81,17 +82,15 @@ class ValiderBeregning(
                         måBekrefteOpplysninger.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
-                        virkningstidspunktFeil,
-                        null,
-                        inntekterFeil,
-                        husstandsmedlemsfeil,
-                        null,
-                        sivilstandFeil,
-                        måBekrefteOpplysninger,
+                        virkningstidspunkt = virkningstidspunktFeil,
+                        inntekter = inntekterFeil,
+                        husstandsmedlem = husstandsmedlemsfeil,
+                        sivilstand = sivilstandFeil,
+                        måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
                     )
                 }
             } else if (virkningstidspunktFeil != null) {
-                BeregningValideringsfeil(virkningstidspunktFeil, null, null, null, null, null)
+                BeregningValideringsfeil(virkningstidspunktFeil)
             } else {
                 null
             }
@@ -165,6 +164,88 @@ class ValiderBeregning(
         }
     }
 
+    fun Behandling.validerForBeregningBidrag() {
+        val feil =
+            if (avslag == null) {
+                val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
+                val andreVoksneIHusstandenFeil =
+                    (husstandsmedlem.voksneIHusstanden ?: Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = bidragspliktig))
+                        .validereAndreVoksneIHusstanden(
+                            virkningstidspunktEllerSøktFomDato,
+                        ).takeIf {
+                            it.harFeil
+                        }
+                val husstandsmedlemsfeil =
+                    husstandsmedlem.barn
+                        .toSet()
+                        .validerBoforhold(
+                            virkningstidspunktEllerSøktFomDato,
+                        ).filter { it.harFeil }
+                        .toMutableList()
+
+                if (søknadsbarn.none { sb -> husstandsmedlem.any { it.ident == sb.ident } }) {
+                    husstandsmedlemsfeil.add(
+                        BoforholdPeriodeseringsfeil(
+                            manglerPerioder = true,
+                            husstandsmedlem =
+                                Husstandsmedlem(
+                                    this,
+                                    ident = søknadsbarn.first().ident,
+                                    kilde = Kilde.OFFENTLIG,
+                                    navn = søknadsbarn.first().navn ?: "",
+                                    fødselsdato = søknadsbarn.first().fødselsdato,
+                                ),
+                        ),
+                    )
+                }
+                val måBekrefteOpplysninger =
+                    grunnlag
+                        .hentAlleSomMåBekreftes()
+                        .map { grunnlagSomMåBekreftes ->
+                            MåBekrefteNyeOpplysninger(
+                                grunnlagSomMåBekreftes.type,
+                                rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
+                                husstandsmedlem =
+                                    (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
+                                        husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                    },
+                            )
+                        }.toSet()
+                val samværValideringsfeil = samvær.mapValideringsfeil()
+                val harFeil =
+                    inntekterFeil != null ||
+                        husstandsmedlemsfeil.isNotEmpty() ||
+                        andreVoksneIHusstandenFeil != null ||
+                        samværValideringsfeil.isNotEmpty() ||
+                        måBekrefteOpplysninger.isNotEmpty()
+                harFeil.ifTrue {
+                    BeregningValideringsfeil(
+                        inntekter = inntekterFeil,
+                        husstandsmedlem = husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
+                        andreVoksneIHusstanden = andreVoksneIHusstandenFeil,
+                        måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
+                        samvær = samværValideringsfeil.takeIf { it.isNotEmpty() },
+                        underholdskostnad = null, // TODO: Legg til validering av underholdskostnad
+                    )
+                }
+            } else {
+                null
+            }
+
+        if (feil != null) {
+            secureLogger.warn {
+                "Feil ved validering av behandling for beregning av særbidrag" +
+                    commonObjectmapper.writeValueAsString(feil)
+            }
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Feil ved validering av behandling for beregning av særbidrag",
+                commonObjectmapper.writeValueAsBytes(feil),
+                Charset.defaultCharset(),
+            )
+        }
+    }
+
     fun Behandling.validerForBeregningSærbidrag() {
         val feil =
             if (tilSærbidragAvslagskode() == null) {
@@ -221,13 +302,11 @@ class ValiderBeregning(
                         måBekrefteOpplysninger.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
-                        null,
-                        utgiftFeil,
-                        inntekterFeil,
-                        husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
-                        andreVoksneIHusstandenFeil,
-                        null,
-                        måBekrefteOpplysninger,
+                        utgift = utgiftFeil,
+                        inntekter = inntekterFeil,
+                        husstandsmedlem = husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
+                        andreVoksneIHusstanden = andreVoksneIHusstandenFeil,
+                        måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
                     )
                 }
             } else {

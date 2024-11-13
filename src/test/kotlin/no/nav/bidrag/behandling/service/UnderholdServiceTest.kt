@@ -32,6 +32,8 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -85,7 +87,7 @@ class UnderholdServiceTest {
 
     @BeforeEach
     fun setup() {
-        behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService)
+        behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         dtomapper =
             Dtomapper(tilgangskontrollService, validering, validerBehandlingService, behandlingTilGrunnlagMappingV2)
         underholdService =

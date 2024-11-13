@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.v2.samvær
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
@@ -17,7 +18,8 @@ import java.time.LocalDate
 
 data class SamværValideringsfeilDto(
     val samværId: Long,
-    val gjelderBarn: String,
+    @JsonIgnore
+    val gjelderRolle: Rolle,
     val manglerBegrunnelse: Boolean,
     val ingenLøpendeSamvær: Boolean,
     val manglerSamvær: Boolean,
@@ -26,6 +28,8 @@ data class SamværValideringsfeilDto(
     val hullIPerioder: List<Datoperiode> = emptyList(),
 ) {
     val harPeriodiseringsfeil get() = ingenLøpendeSamvær || manglerSamvær || overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty()
+    val gjelderBarn get() = gjelderRolle.ident
+    val gjelderBarnNavn get() = gjelderRolle.navn
 
     @get:JsonIgnore
     val harFeil
@@ -38,7 +42,7 @@ data class OverlappendeSamværPeriode(
     val idListe: MutableSet<Long>,
 )
 
-fun Set<Samvær>.mapValideringsfeil(virkningstidspunkt: LocalDate): Set<SamværValideringsfeilDto> =
+fun Set<Samvær>.mapValideringsfeil(): Set<SamværValideringsfeilDto> =
     map { samvær -> samvær.mapValideringsfeil() }
         .filter { it.harFeil }
         .toSet()
@@ -48,7 +52,7 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
     val perioder = perioder
     return SamværValideringsfeilDto(
         samværId = id!!,
-        gjelderBarn = rolle.ident!!,
+        gjelderRolle = rolle,
         manglerBegrunnelse = notatSæmvær?.innhold.isNullOrBlank(),
         ingenLøpendeSamvær = perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null,
         overlappendePerioder = perioder.finnOverlappendePerioder(),

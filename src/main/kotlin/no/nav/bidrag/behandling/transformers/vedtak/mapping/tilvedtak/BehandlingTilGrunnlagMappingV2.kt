@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -21,6 +22,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
@@ -36,6 +38,7 @@ import java.time.LocalDate
 @Component
 class BehandlingTilGrunnlagMappingV2(
     val personService: PersonService,
+    private val beregnSamværsklasseApi: BeregnSamværsklasseApi,
 ) {
     fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<GrunnlagDto> {
         val søknadsbarnListe =
@@ -205,6 +208,36 @@ class BehandlingTilGrunnlagMappingV2(
                     ).valider(),
                 ),
         )
+    }
+
+    fun Behandling.tilGrunnlagSamvær(søknadsbarn: GrunnlagDto? = null): List<GrunnlagDto> {
+        val søknadsbarnIdent = søknadsbarn?.personIdent
+        return samvær
+            .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
+            .flatMap { samvær ->
+                samvær.perioder.flatMap {
+                    val grunnlagBeregning = it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
+                    val grunnlagPeriode =
+                        GrunnlagDto(
+                            referanse =
+                                "samvær_${Grunnlagstype.SAMVÆRSPERIODE}" +
+                                    "_${it.fom.toCompactString()}${it.tom?.let {
+                                        "_${it.toCompactString()}"
+                                    }}_${samvær.rolle.tilGrunnlagPerson().referanse}",
+                            type = Grunnlagstype.SAMVÆRSPERIODE,
+                            gjelderReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
+                            grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
+                            innhold =
+                                POJONode(
+                                    SamværsperiodeGrunnlag(
+                                        periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                                        samværsklasse = it.samværsklasse,
+                                    ),
+                                ),
+                        )
+                    grunnlagBeregning + grunnlagPeriode
+                }
+            }
     }
 
     fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
