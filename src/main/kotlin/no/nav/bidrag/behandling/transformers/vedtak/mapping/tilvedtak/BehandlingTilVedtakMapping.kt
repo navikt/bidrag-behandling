@@ -9,14 +9,17 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
+import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -30,6 +33,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.YearMonth
 
@@ -82,6 +86,39 @@ class BehandlingTilVedtakMapping(
                             førsteIndeksreguleringsår = YearMonth.now().plusYears(1).year,
                         )
                     },
+                engangsbeløpListe =
+                    listOf(
+                        OpprettEngangsbeløpRequestDto(
+                            type = Engangsbeløptype.GEBYR_SKYLDNER,
+                            beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
+                            betaltBeløp = null,
+                            resultatkode = "GIGI", // TODO: Resultat fra beregning
+                            eksternReferanse = null,
+                            beslutning = Beslutningstype.ENDRING,
+                            grunnlagReferanseListe = emptyList(),
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+                            kravhaver = skyldnerNav,
+                            mottaker = skyldnerNav,
+                            valutakode = "NOK",
+                            sak = Saksnummer(saksnummer),
+                        ),
+                        OpprettEngangsbeløpRequestDto(
+                            type = Engangsbeløptype.GEBYR_MOTTAKER,
+                            beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
+                            betaltBeløp = null,
+                            resultatkode = "GIGI", // TODO: Resultat fra beregning
+                            eksternReferanse = null,
+                            beslutning = Beslutningstype.ENDRING,
+                            grunnlagReferanseListe = emptyList(),
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            skyldner = Personident(behandling.bidragsmottaker!!.ident!!),
+                            kravhaver = skyldnerNav,
+                            mottaker = skyldnerNav,
+                            valutakode = "NOK",
+                            sak = Saksnummer(saksnummer),
+                        ),
+                    ),
                 grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
             )
         }
