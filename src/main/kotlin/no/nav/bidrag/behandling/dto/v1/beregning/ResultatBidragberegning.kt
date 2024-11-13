@@ -57,4 +57,20 @@ data class BidragPeriodeBeregningsdetaljer(
         val samværsklasse: Samværsklasse,
         val gjennomsnittligSamværPerMåned: BigDecimal,
     )
+
+    val underholdskostnadMinusBMsNettoBarnetillegg get() =
+        maxOf(
+            delberegningUnderholdskostnad!!.underholdskostnad - sluttberegning!!.nettoBarnetilleggBM,
+            BigDecimal.ZERO,
+        )
+    val beløpEtterVurderingAv25ProsentInntektOgEvne get(): BigDecimal {
+        if (sluttberegning!!.justertNedTil25ProsentAvInntekt) return delberegningBidragsevne?.sumInntekt25Prosent ?: BigDecimal.ZERO
+        if (sluttberegning.justertNedTilEvne) return delberegningBidragsevne?.bidragsevne ?: BigDecimal.ZERO
+        return bpsAndel?.andelBeløp ?: BigDecimal.ZERO
+    }
+    val beløpSamværsfradragTrekkesFra get(): BigDecimal {
+        if (sluttberegning!!.justertForNettoBarnetilleggBM) return underholdskostnadMinusBMsNettoBarnetillegg
+        if (sluttberegning.justertForNettoBarnetilleggBP) return sluttberegning.nettoBarnetilleggBP
+        return beløpEtterVurderingAv25ProsentInntektOgEvne
+    }
 }
