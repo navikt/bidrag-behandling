@@ -68,9 +68,12 @@ data class BidragPeriodeBeregningsdetaljer(
         if (sluttberegning.justertNedTilEvne) return delberegningBidragsevne?.bidragsevne ?: BigDecimal.ZERO
         return bpsAndel?.andelBeløp ?: BigDecimal.ZERO
     }
-    val beløpSamværsfradragTrekkesFra get(): BigDecimal {
+    val beløpEtterVurderingAvBMsBarnetillegg get(): BigDecimal {
         if (sluttberegning!!.justertForNettoBarnetilleggBM) return underholdskostnadMinusBMsNettoBarnetillegg
-        if (sluttberegning.justertForNettoBarnetilleggBP) return sluttberegning.nettoBarnetilleggBP
         return beløpEtterVurderingAv25ProsentInntektOgEvne
+    }
+    val beløpSamværsfradragTrekkesFra get(): BigDecimal {
+        if (sluttberegning!!.justertForNettoBarnetilleggBP) return sluttberegning.nettoBarnetilleggBP
+        return beløpEtterVurderingAvBMsBarnetillegg
     }
 }
