@@ -88,7 +88,10 @@ class UnderholdService(
                 return lagreUnderholdskostnad(behandling, eksisterendePerson)
             }
         } ?: run {
-            return lagreUnderholdskostnad(behandling, personRepository.save(Person(navn = gjelderBarn.navn)))
+            return lagreUnderholdskostnad(
+                behandling,
+                personRepository.save(Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato)),
+            )
         }
     }
 

@@ -25,10 +25,10 @@ fun OppdatereUnderholdRequest.validere() {
 }
 
 fun BarnDto.validere() {
-    if (navn.isNullOrBlank() && (personident == null || personident.verdi.isEmpty())) {
+    if ((navn.isNullOrBlank() || fødselsdato == null) && (personident == null || personident.verdi.isEmpty())) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
-            "Personident eller navn må oppgis for nytt barn i underholdskostnad.",
+            "Personident eller navn og fødselsdato må oppgis for nytt barn i underholdskostnad.",
         )
     } else if (!navn.isNullOrBlank() && (personident != null && personident.verdi.isNotEmpty())) {
         throw HttpClientErrorException(
