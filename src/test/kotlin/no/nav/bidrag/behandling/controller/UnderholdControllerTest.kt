@@ -35,7 +35,10 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.RestClientException
 import java.math.BigDecimal
+import java.time.LocalDate
+import kotlin.test.assertFailsWith
 
 @RunWith(Enclosed::class)
 class UnderholdControllerTest : KontrollerTestRunner() {
@@ -51,11 +54,12 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         open fun `skal opprette underhold for barn`() {
             // gitt
             val navnAnnetBarnBp = "Stig E. Spill"
+            val fødselsdatoAnnetBarn = LocalDate.now().minusMonths(143)
             val behandling = oppretteTestbehandling(inkludereBp = true, behandlingstype = TypeBehandling.BIDRAG)
 
             testdataManager.lagreBehandlingNewTransaction(behandling)
 
-            val request = BarnDto(navn = navnAnnetBarnBp)
+            val request = BarnDto(navn = navnAnnetBarnBp, fødselsdato = fødselsdatoAnnetBarn)
 
             // hvis
             val svar =
@@ -85,10 +89,31 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             assertSoftly(svar.body!!.gjelderBarn) {
                 id.shouldNotBeNull()
                 navn shouldBe request.navn
+                fødselsdato shouldBe request.fødselsdato
                 ident.shouldBeNull()
                 kilde shouldBe Kilde.MANUELL
-                fødselsdato.shouldBeNull()
                 medIBehandlingen shouldBe false
+            }
+        }
+
+        @Test
+        open fun `skal ikke opprette underhold for annet barn uten personident hvis fødselsdato mangler`() {
+            // gitt
+            val navnAnnetBarnBp = "Stig E. Spill"
+            val behandling = oppretteTestbehandling(inkludereBp = true, behandlingstype = TypeBehandling.BIDRAG)
+
+            testdataManager.lagreBehandlingNewTransaction(behandling)
+
+            val request = BarnDto(navn = navnAnnetBarnBp)
+
+            // hvis, så
+            assertFailsWith<RestClientException> {
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUriV2()}/behandling/${behandling.id}/underhold/opprette",
+                    HttpMethod.POST,
+                    HttpEntity(request),
+                    UnderholdDto::class.java,
+                )
             }
         }
     }
