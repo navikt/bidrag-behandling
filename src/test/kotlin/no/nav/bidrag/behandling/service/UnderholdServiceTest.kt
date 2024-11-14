@@ -160,6 +160,7 @@ class UnderholdServiceTest {
             // gitt
             val universalid = 1L
             val navnAnnetBarnBp = "Stig E. Spill"
+            val fødselsdatoAnnetBarnBp = LocalDate.now().minusMonths(96)
             val behandling =
                 oppretteTestbehandling(
                     setteDatabaseider = true,
@@ -167,8 +168,8 @@ class UnderholdServiceTest {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            val request = BarnDto(navn = navnAnnetBarnBp)
-            val barn = Person(navn = navnAnnetBarnBp)
+            val request = BarnDto(navn = navnAnnetBarnBp, fødselsdato = fødselsdatoAnnetBarnBp)
+            val barn = Person(navn = navnAnnetBarnBp, fødselsdato = fødselsdatoAnnetBarnBp)
 
             every { personRepository.save(any()) } returns barn
             every { underholdskostnadRepository.save(any()) } returns
