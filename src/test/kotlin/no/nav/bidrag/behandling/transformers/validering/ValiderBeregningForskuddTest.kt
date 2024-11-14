@@ -39,7 +39,7 @@ class ValiderBeregningForskuddTest {
         validering.run {
             val behandling = opprettGyldigBehandling()
 
-            assertDoesNotThrow { behandling.validerForBeregning() }
+            assertDoesNotThrow { behandling.validerForBeregningForskudd() }
         }
 
     @Test
@@ -48,7 +48,7 @@ class ValiderBeregningForskuddTest {
             val behandling = opprettGyldigBehandling()
             behandling.virkningstidspunkt = null
             behandling.årsak = null
-            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
+            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningForskudd() }
 
             resultat.message shouldContain "Feil ved validering av behandling for beregning"
             val responseBody =
@@ -72,7 +72,7 @@ class ValiderBeregningForskuddTest {
             val behandling = opprettGyldigBehandling()
             behandling.virkningstidspunkt = null
             behandling.avslag = Resultatkode.IKKE_OMSORG
-            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
+            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningForskudd() }
 
             resultat.message shouldContain "Feil ved validering av behandling for beregning"
             val responseBody =
@@ -111,7 +111,7 @@ class ValiderBeregningForskuddTest {
                         ) to Sivilstandskode.GIFT_SAMBOER,
                     ),
                 )
-            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
+            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningForskudd() }
 
             resultat.message shouldContain "Feil ved validering av behandling for beregning"
             val responseBody =
@@ -164,7 +164,7 @@ class ValiderBeregningForskuddTest {
                         fødselsdato = LocalDate.parse("2023-01-01"),
                     ),
                 )
-            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
+            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningForskudd() }
 
             resultat.message shouldContain "Feil ved validering av behandling for beregning"
             val responseBody =
@@ -248,7 +248,7 @@ class ValiderBeregningForskuddTest {
                         type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
                     ),
                 )
-            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
+            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningForskudd() }
 
             resultat.message shouldContain "Feil ved validering av behandling for beregning"
             val responseBody =
@@ -293,7 +293,7 @@ class ValiderBeregningForskuddTest {
             val behandling = opprettGyldigBehandling()
             behandling.inntekter =
                 mutableSetOf()
-            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregning() }
+            val resultat = assertThrows<HttpClientErrorException> { behandling.validerForBeregningForskudd() }
 
             resultat.message shouldContain "Feil ved validering av behandling for beregning"
             val responseBody =

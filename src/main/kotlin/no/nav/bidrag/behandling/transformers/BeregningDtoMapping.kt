@@ -52,6 +52,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonBidragsevnePeri
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
@@ -392,6 +393,15 @@ fun List<GrunnlagDto>.finnDelberegningSamværsfradrag(
                 ?.gjennomsnittligSamværPerMåned ?: BigDecimal.ZERO,
     )
 }
+
+fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<DelberegningUnderholdskostnad> =
+    this
+        .filtrerBasertPåEgenReferanse(
+            Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD,
+        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
+        .sortedBy {
+            it.periode.fom
+        }
 
 fun List<GrunnlagDto>.finnDelberegningUnderholdskostnad(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUnderholdskostnad? {
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null

@@ -63,7 +63,7 @@ class BeregningService(
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
         behandling.run {
             mapper.run {
-                validering.run { validerForBeregning() }
+                validering.run { validerForBeregningForskudd() }
                 return if (avslag != null) {
                     søknadsbarn.map {
                         tilResultatAvslag(it)

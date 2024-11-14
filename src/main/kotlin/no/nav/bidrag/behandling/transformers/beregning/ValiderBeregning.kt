@@ -40,7 +40,7 @@ import java.time.LocalDate
 class ValiderBeregning(
     val særbidragValidering: ValiderSærbidragForBeregningService = ValiderSærbidragForBeregningService(),
 ) {
-    fun Behandling.validerForBeregning() {
+    fun Behandling.validerForBeregningForskudd() {
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
             erKlageEllerOmgjøring &&
                 opprinneligVirkningstidspunkt != null &&

@@ -118,6 +118,22 @@ class BehandlingTilVedtakMapping(
                             valutakode = "NOK",
                             sak = Saksnummer(saksnummer),
                         ),
+                        OpprettEngangsbeløpRequestDto(
+                            type = Engangsbeløptype.DIREKTE_OPPGJØR,
+                            beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
+                            betaltBeløp = null,
+                            resultatkode = "DIREKTE_OPPGJØR", // TODO: Resultat fra beregning
+                            eksternReferanse = null,
+                            beslutning = Beslutningstype.ENDRING,
+                            grunnlagReferanseListe = emptyList(),
+                            innkreving = innkrevingstype!!,
+                            skyldner = Personident(behandling.bidragsmottaker!!.ident!!),
+                            kravhaver = Personident(""),
+                            mottaker = Personident(""),
+                            valutakode = "NOK",
+                            omgjørVedtakId = refVedtaksid?.toInt(),
+                            sak = Saksnummer(saksnummer),
+                        ),
                     ),
                 grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
             )

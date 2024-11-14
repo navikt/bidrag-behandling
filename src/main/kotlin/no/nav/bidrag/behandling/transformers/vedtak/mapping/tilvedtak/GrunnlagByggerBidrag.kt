@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.bo.TilleggsstønadPeriode
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -79,7 +80,7 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
                 periode = it.periode,
                 beløp = it.resultat.beløp,
                 valutakode = "NOK",
-                resultatkode = it.resultat.kode.name,
+                resultatkode = Resultatkode.BEREGNET_BIDRAG.name,
                 grunnlagReferanseListe = it.grunnlagsreferanseListe,
             )
         }

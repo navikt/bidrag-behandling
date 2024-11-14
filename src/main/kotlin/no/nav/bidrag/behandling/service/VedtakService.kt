@@ -204,7 +204,7 @@ class VedtakService(
     }
 
     fun fatteVedtakForskudd(behandling: Behandling): Int {
-        validering.run { behandling.validerForBeregning() }
+        validering.run { behandling.validerForBeregningForskudd() }
 
         val request =
             behandlingTilVedtakMapping.run {
@@ -241,7 +241,7 @@ class VedtakService(
             )
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
-        validering.run { behandling.validerForBeregning() }
+        validering.run { behandling.validerForBeregningBidrag() }
         val request =
             behandlingTilVedtakMapping.run {
                 if (behandling.avslag != null) {
