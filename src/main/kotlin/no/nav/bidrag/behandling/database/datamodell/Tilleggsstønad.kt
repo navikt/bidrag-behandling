@@ -21,4 +21,7 @@ class Tilleggsstønad(
     open var fom: LocalDate,
     open var tom: LocalDate? = null,
     open var dagsats: BigDecimal,
-)
+) {
+    override fun toString(): String =
+        "Tilleggsstønad(id=$id, underholdskostnad=${underholdskostnad.id}, fom=$fom, tom=$tom, dagsats=$dagsats)"
+}

@@ -2,17 +2,21 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
+import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.bo.FaktiskUtgiftPeriode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -29,10 +33,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Component
@@ -148,6 +154,13 @@ class BehandlingTilGrunnlagMappingV2(
         return grunnlagBosstatus + personobjekterHusstandsmedlem
     }
 
+    fun Behandling.tilGrunnlagUnderholdskostnad() =
+        listOf(
+            tilGrunnlagBarnetilsyn(),
+            tilGrunnlagTilleggsstønad(),
+            tilGrunnlagFaktiskeTilsynsutgifter(),
+        ).flatten()
+
     fun Behandling.tilGrunnlagInntekt(
         personobjekter: Set<GrunnlagDto>,
         søknadsbarn: GrunnlagDto? = null,
@@ -238,6 +251,62 @@ class BehandlingTilGrunnlagMappingV2(
                     grunnlagBeregning + grunnlagPeriode
                 }
             }
+    }
+
+    private fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(): List<GrunnlagDto> {
+        val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
+
+        fun FaktiskTilsynsutgift.tilPersonGrunnlag(): GrunnlagDto {
+            val person = underholdskostnad.person
+            val fødselsdato =
+                person.fødselsdato ?: personService.hentPersonFødselsdato(person.ident) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
+
+            return GrunnlagDto(
+                referanse =
+                    Grunnlagstype.PERSON_BIDRAGSMOTTAKER.tilPersonreferanse(
+                        fødselsdato.toCompactString(),
+                        (person.ident + person.fødselsdato + person.navn).hashCode(),
+                    ),
+                type = Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
+                innhold =
+                    POJONode(
+                        Person(
+                            ident = person.ident?.let { Personident(it) },
+                            navn = person.navn,
+                            fødselsdato = fødselsdato,
+                        ).valider(),
+                    ),
+            )
+        }
+
+        fun FaktiskTilsynsutgift.opprettPersonGrunnlag(): GrunnlagDto {
+            val relatertPersonGrunnlag = tilPersonGrunnlag()
+            grunnlagslistePersoner.add(relatertPersonGrunnlag)
+            return relatertPersonGrunnlag
+        }
+        return underholdskostnader
+            .flatMap { u ->
+                u.faktiskeTilsynsutgifter.map {
+                    val underholdRolle = u.person.rolle.find { it.behandling.id == id }
+                    val gjelderBarn = underholdRolle?.tilGrunnlagPerson() ?: it.opprettPersonGrunnlag()
+                    val gjelderBarnReferanse = gjelderBarn.referanse
+                    GrunnlagDto(
+                        referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
+                        type = Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
+                        innhold =
+                            POJONode(
+                                FaktiskUtgiftPeriode(
+                                    periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                                    fødselsdatoBarn = gjelderBarn.personObjekt.fødselsdato,
+                                    gjelderBarn = gjelderBarnReferanse,
+                                    kostpengerBeløp = it.kostpenger ?: BigDecimal.ZERO,
+                                    faktiskUtgiftBeløp = it.tilsynsutgift,
+                                    manueltRegistrert = true,
+                                ),
+                            ),
+                    )
+                }
+            } + grunnlagslistePersoner
     }
 
     fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =

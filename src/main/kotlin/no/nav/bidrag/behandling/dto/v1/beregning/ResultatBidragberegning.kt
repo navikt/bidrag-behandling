@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavnIntern
@@ -9,6 +10,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
@@ -35,7 +37,15 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
 ) {
     @Suppress("unused")
-    val resultatkodeVisningsnavn get() = resultatKode.visningsnavnIntern()
+    val resultatkodeVisningsnavn get() =
+        if (resultatKode.erDirekteAvslag()) {
+            resultatKode.visningsnavnIntern()
+        } else {
+            beregningsdetaljer
+                ?.sluttberegning
+                ?.resultatVisningsnavn
+                ?.intern
+        }
 }
 
 data class BidragPeriodeBeregningsdetaljer(
@@ -76,4 +86,18 @@ data class BidragPeriodeBeregningsdetaljer(
         if (sluttberegning!!.justertForNettoBarnetilleggBP) return sluttberegning.nettoBarnetilleggBP
         return beløpEtterVurderingAvBMsBarnetillegg
     }
+
+    val beløpEtterFratrekkDeltBosted get() =
+        if (deltBosted) {
+            bpsAndel!!.andelBeløp -
+                delberegningUnderholdskostnad!!.underholdskostnad.divide(BigDecimal(2), RoundingMode.HALF_UP)
+        } else {
+            bpsAndel!!.andelBeløp
+        }
+
+    val deltBosted get() =
+        listOf(
+            Resultatkode.DELT_BOSTED,
+            Resultatkode.BIDRAG_IKKE_BEREGNET_DELT_BOSTED,
+        ).contains(sluttberegning!!.resultatKode)
 }
