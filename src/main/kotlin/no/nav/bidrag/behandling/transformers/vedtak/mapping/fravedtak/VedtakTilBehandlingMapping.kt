@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Samvær
+import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -17,12 +19,20 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.særbidragskategori
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftDirekteBetalt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBeløp
@@ -32,6 +42,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -116,6 +127,7 @@ class VedtakTilBehandlingMapping(
         behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling)
         behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
         behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
+        behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
         notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
@@ -193,22 +205,40 @@ class VedtakTilBehandlingMapping(
         return utgift
     }
 
-//    private fun List<GrunnlagDto>.mapSamvær(
-//        behandling: Behandling,
-//        lesemodus: Boolean,
-//    ): Set<Samvær>? {
-//        val samværsperioder =
-//            filtrerBasertPåEgenReferanse(
-//                Grunnlagstype.SAMVÆRSPERIODE,
-//            ).groupBy { it.gjelderReferanse }.map { (gjelderReferanse, perioder) ->
-//                val person = hentPersonMedReferanse(gjelderReferanse)!!
-//                Samvær(
-//                    behandling = behandling,
-//                    rolle = behandling.roller.find { it.ident == person.personIdent }!!,
-//                    perioder = emptySet(),
-//                )
-//            }
-//
-//        return emptySet()
-//    }
+    private fun List<GrunnlagDto>.mapSamvær(
+        behandling: Behandling,
+        lesemodus: Boolean,
+    ): MutableSet<Samvær> =
+        filtrerBasertPåEgenReferanse(
+            Grunnlagstype.SAMVÆRSPERIODE,
+        ).groupBy { it.gjelderReferanse }
+            .map { (gjelderReferanse, perioder) ->
+                val person = hentPersonMedReferanse(gjelderReferanse)!!
+                val samvær =
+                    Samvær(
+                        behandling = behandling,
+                        rolle = behandling.roller.find { it.ident == person.personIdent }!!,
+                        perioder = mutableSetOf(),
+                    )
+
+                perioder.mapIndexed { index, it ->
+                    val periodeInnhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
+                    val beregning =
+                        finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.SAMVÆRSKALKULATOR, it.grunnlagsreferanseListe)
+                            .firstOrNull()
+                            ?.innholdTilObjekt<SamværskalkulatorDetaljer>()
+                    Samværsperiode(
+                        id = if (lesemodus) index.toLong() else null,
+                        samvær = samvær,
+                        fom = periodeInnhold.periode.fom.atDay(1),
+                        tom =
+                            periodeInnhold.periode.til
+                                ?.minusMonths(1)
+                                ?.atEndOfMonth(),
+                        samværsklasse = periodeInnhold.samværsklasse,
+                        beregningJson = beregning?.let { commonObjectmapper.writeValueAsString(it) },
+                    )
+                }
+                samvær
+            }.toMutableSet()
 }

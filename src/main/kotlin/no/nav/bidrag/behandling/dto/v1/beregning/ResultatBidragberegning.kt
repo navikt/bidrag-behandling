@@ -10,6 +10,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
@@ -85,4 +86,18 @@ data class BidragPeriodeBeregningsdetaljer(
         if (sluttberegning!!.justertForNettoBarnetilleggBP) return sluttberegning.nettoBarnetilleggBP
         return beløpEtterVurderingAvBMsBarnetillegg
     }
+
+    val beløpEtterFratrekkDeltBosted get() =
+        if (deltBosted) {
+            bpsAndel!!.andelBeløp -
+                delberegningUnderholdskostnad!!.underholdskostnad.divide(BigDecimal(2), RoundingMode.HALF_UP)
+        } else {
+            bpsAndel!!.andelBeløp
+        }
+
+    val deltBosted get() =
+        listOf(
+            Resultatkode.DELT_BOSTED,
+            Resultatkode.BIDRAG_IKKE_BEREGNET_DELT_BOSTED,
+        ).contains(sluttberegning!!.resultatKode)
 }
