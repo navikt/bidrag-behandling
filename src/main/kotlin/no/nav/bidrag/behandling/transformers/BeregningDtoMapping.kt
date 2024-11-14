@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -154,7 +155,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         bpsAndelU = bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO,
         erDirekteAvslag = resultatkode.erDirekteAvslag(),
         beregningsdetaljer =
-            if (!resultatkode.erDirekteAvslag()) {
+            if (!resultatkode.erAvslag()) {
                 val delberegningBPsEvne = finnDelberegningBidragsevne(grunnlagsreferanseListe)
                 BidragPeriodeBeregningsdetaljer(
                     delberegningBidragsevne = delberegningBPsEvne,
@@ -180,7 +181,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                         finnEnesteVoksenIHusstandenErEgetBarn(
                             grunnlagsreferanseListe,
                         ),
-                    bpHarEvne = delberegningBPsEvne!!.bidragsevne > BigDecimal.ZERO,
+                    bpHarEvne = delberegningBPsEvne?.let { it.bidragsevne > BigDecimal.ZERO } ?: false,
                 )
             } else {
                 null
