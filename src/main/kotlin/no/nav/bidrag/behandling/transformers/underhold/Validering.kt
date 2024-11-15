@@ -2,18 +2,22 @@ package no.nav.bidrag.behandling.transformers.underhold
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
+import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
+import no.nav.bidrag.behandling.dto.v2.underhold.Periodiseringsfeil
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.dto.v2.underhold.ValideringsfeilUnderhold
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
+import no.nav.bidrag.behandling.transformers.finneOverlappendeDatoperioder
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 
 fun OppdatereUnderholdRequest.validere() {
     if (this.harTilsynsordning == null && this.begrunnelse.isNullOrBlank()) {
@@ -95,18 +99,49 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
     }
 }
 
+fun Underholdskostnad.validere() {
+}
+
 fun Set<Barnetilsyn>.validerePerioder() =
     if (isEmpty()) {
         null
     } else {
+        Periodiseringsfeil(
+            gjelderTabell = Underholdselement.STØNAD_TIL_BARNETILSYN,
+            harFremtidigPeriode = this.find { it.fom.isAfter(LocalDate.now()) } != null,
+            harIngenPerioder = false,
+            overlappendePerioder = finneOverlappendeDatoperioder(this.tilDatoperioder()),
+        )
+    }
+
+fun Set<FaktiskTilsynsutgift>.validerePerioderFaktiskTilsynsutgift() =
+    if (isEmpty()) {
+        null
+    } else {
+        /*
+        ValideringsfeilUnderhold(
+            underholdskostnad = first().underholdskostnad,
+            // TODO: bd-1920 - finne passende sjekk
+            // hullIPerioder = map { Datoperiode(it.fom, it.tom)}.finnHullIPerioder(virkningsdato),
+        )*/
+        null
+    }
+
+fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad() =
+    if (isEmpty()) {
+        null
+    } else {
+        /*
         ValideringsfeilUnderhold(
             underholdskostnad = first().underholdskostnad,
             // TODO: bd-1920 - finne passende sjekk
             // hullIPerioder = map { Datoperiode(it.fom, it.tom)}.finnHullIPerioder(virkningsdato),
         )
+         */
+        null
     }
 
-fun StønadTilBarnetilsynDto.validere(underholdskostnad: Underholdskostnad) {
+fun StønadTilBarnetilsynDto.validerePerioderStønadTilBarnetilsyn(underholdskostnad: Underholdskostnad) {
     this.id?.let { id ->
         if (id > 0 && underholdskostnad.barnetilsyn.find { id == it.id } == null) {
             ressursIkkeFunnetException("Fant ikke barnetilsyn med id $id i behandling ${underholdskostnad.behandling.id}")

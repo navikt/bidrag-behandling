@@ -20,7 +20,7 @@ data class OppdatereUnderholdResponse(
     val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,
     val tilleggsstønad: TilleggsstønadDto? = null,
     val underholdskostnad: Set<UnderholdskostnadDto>,
-    val valideringsfeil: ValideringsfeilUnderhold? = null,
+    val valideringsfeil: Periodiseringsfeil? = null,
 )
 
 data class SletteUnderholdselement(
@@ -51,11 +51,19 @@ data class UnderholdDto(
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val underholdskostnad: Set<UnderholdskostnadDto>,
     val begrunnelse: String? = null,
+    val valideringsfeil: Set<ValideringsfeilUnderhold> = emptySet(),
 )
 
 data class OppdatereUnderholdRequest(
     val harTilsynsordning: Boolean? = null,
     val begrunnelse: String? = null,
+)
+
+data class Periodiseringsfeil(
+    val gjelderTabell: Underholdselement,
+    val overlappendePerioder: Map<Datoperiode, Set<Datoperiode>>,
+    val harFremtidigPeriode: Boolean,
+    val harIngenPerioder: Boolean,
 )
 
 data class ValideringsfeilUnderhold(
@@ -79,13 +87,14 @@ data class ValideringsfeilUnderhold(
                 fremtidigPeriode ||
                 harIngenPerioder
     val underholdskostnadId get() = underholdskostnad!!.id
-    val barn get() =
-        UnderholdBarnDto(
-            navn = underholdskostnad!!.person.navn,
-            ident = underholdskostnad.person.ident,
-            fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
-            medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
-        )
+    val barn
+        get() =
+            UnderholdBarnDto(
+                navn = underholdskostnad!!.person.navn,
+                ident = underholdskostnad.person.ident,
+                fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
+                medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
+            )
 
     data class UnderholdBarnDto(
         val navn: String?,

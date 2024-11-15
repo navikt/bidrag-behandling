@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.finneOverlappendeDatoperioder
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -39,6 +40,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -87,7 +89,8 @@ class UnderholdServiceTest {
 
     @BeforeEach
     fun setup() {
-        behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        behandlingTilGrunnlagMappingV2 =
+            BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         dtomapper =
             Dtomapper(tilgangskontrollService, validering, validerBehandlingService, behandlingTilGrunnlagMappingV2)
         underholdService =
@@ -105,6 +108,19 @@ class UnderholdServiceTest {
     @Nested
     @DisplayName("Tester sletting fra underholdskostnad")
     open inner class Slette {
+        @Test
+        open fun test() {
+            val p1 = Datoperiode(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 9, 1))
+            val p2 = Datoperiode(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 8, 1))
+            val p3 = Datoperiode(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1))
+            val p4 = Datoperiode(LocalDate.of(2024, 9, 2), LocalDate.of(2024, 11, 1))
+
+            val datosett = setOf(p1, p2, p3, p4)
+
+            val r3 = finneOverlappendeDatoperioder(datosett)
+            r3.shouldNotBeNull()
+        }
+
         @Test
         open fun `skal slette tilleggsstønad fra underholdskostnad`() {
             // gitt
@@ -185,6 +201,39 @@ class UnderholdServiceTest {
             // så
             val u = behandling.underholdskostnader.find { it.id == universalid }
             u.shouldNotBeNull()
+            u.tilleggsstønad.shouldBeEmpty()
+        }
+
+        @Test
+        open fun `skal knytte rolle til eksisterende person for søknadsbarn ved opprettelse av underholdskostnad`() {
+            // gitt
+            val universalid = 1L
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val request = BarnDto(personident = Personident(behandling.søknadsbarn.first().ident!!))
+            val barn = Person(ident = behandling.søknadsbarn.first().ident!!)
+
+            every { personRepository.save(any()) } returns barn
+            every { personRepository.findFirstByIdent(any()) } returns barn
+            every { underholdskostnadRepository.save(any()) } returns
+                Underholdskostnad(
+                    id = universalid,
+                    behandling = behandling,
+                    person = barn,
+                )
+
+            // hvis
+            underholdService.oppretteUnderholdskostnad(behandling, request)
+
+            // så
+            val u = behandling.underholdskostnader.find { it.id == universalid }
+            u.shouldNotBeNull()
+            u.person.rolle shouldHaveSize 1
             u.tilleggsstønad.shouldBeEmpty()
         }
     }

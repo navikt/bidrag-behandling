@@ -346,6 +346,27 @@ private fun Set<Bostatusperiode>.finneOverlappendeBostatusperioder() =
             }
     }
 
+fun finneOverlappendeDatoperioder(
+    perioder: Set<Datoperiode>,
+    indeks: Int = 0,
+    overlappendePerioder: MutableMap<Datoperiode, Set<Datoperiode>> = mutableMapOf(),
+): Map<Datoperiode, Set<Datoperiode>> {
+    val gjeldendePeriode = perioder.minBy { it.fom }
+    if (perioder.size > 1) {
+        val nestePeriodesett = perioder.minus(gjeldendePeriode).sortedBy { it.fom }.toSet()
+
+        val perioderSomOverlapperGjeldendePeriode = nestePeriodesett.filter { it.overlapper(gjeldendePeriode) }.toSet()
+        if (perioderSomOverlapperGjeldendePeriode.isNotEmpty()) {
+            overlappendePerioder[gjeldendePeriode] = perioderSomOverlapperGjeldendePeriode
+            finneOverlappendeDatoperioder(nestePeriodesett, indeks + 1, overlappendePerioder)
+        } else {
+            return overlappendePerioder
+        }
+    }
+
+    return overlappendePerioder
+}
+
 fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
     val hullPerioder = mutableListOf<Datoperiode>()
     val perioderSomSkalSjekkes = sortedBy { it.fom }

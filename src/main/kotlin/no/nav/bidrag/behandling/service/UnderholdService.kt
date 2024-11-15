@@ -28,6 +28,9 @@ import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynD
 import no.nav.bidrag.behandling.transformers.underhold.tilTilleggsstønadDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioderFaktiskTilsynsutgift
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioderTilleggsstønad
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.springframework.stereotype.Service
@@ -85,6 +88,15 @@ class UnderholdService(
 
                 return lagreUnderholdskostnad(behandling, person)
             } else {
+                rolle?.let { r ->
+                    if (!eksisterendePerson.rolle
+                            .map { it.id }
+                            .toSet()
+                            .contains(r.id)
+                    ) {
+                        eksisterendePerson.rolle.add(rolle)
+                    }
+                }
                 return lagreUnderholdskostnad(behandling, eksisterendePerson)
             }
         } ?: run {
@@ -100,7 +112,7 @@ class UnderholdService(
         underholdskostnad: Underholdskostnad,
         request: StønadTilBarnetilsynDto,
     ): OppdatereUnderholdResponse {
-        request.validere(underholdskostnad)
+        request.validerePerioderStønadTilBarnetilsyn(underholdskostnad)
 
         val oppdatertBarnetilsyn: Barnetilsyn =
             request.id?.let { id ->
@@ -180,7 +192,7 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = oppdatertFaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto(),
             underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
-            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
+            valideringsfeil = underholdskostnad.faktiskeTilsynsutgifter.validerePerioderFaktiskTilsynsutgift(),
         )
     }
 
@@ -216,7 +228,7 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             tilleggsstønad = oppdatertTilleggsstønad.tilTilleggsstønadDto(),
             underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
-            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
+            valideringsfeil = underholdskostnad.tilleggsstønad.validerePerioderTilleggsstønad(),
         )
     }
 
@@ -231,15 +243,19 @@ class UnderholdService(
 
         when (request.type) {
             Underholdselement.BARN -> return sletteUnderholdskostnad(behandling, underholdskostnad)
-            Underholdselement.FAKTISK_TILSYNSUTGIFT -> return sletteFaktiskTilsynsutgift(
-                underholdskostnad,
-                request.idElement,
+            Underholdselement.FAKTISK_TILSYNSUTGIFT -> return dtomapper.tilUnderholdDto(
+                sletteFaktiskTilsynsutgift(
+                    underholdskostnad,
+                    request.idElement,
+                ),
             )
 
             Underholdselement.TILLEGGSSTØNAD -> return sletteTilleggsstønad(underholdskostnad, request.idElement)
-            Underholdselement.STØNAD_TIL_BARNETILSYN -> return sletteStønadTilBarnetilsyn(
-                underholdskostnad,
-                request.idElement,
+            Underholdselement.STØNAD_TIL_BARNETILSYN -> return dtomapper.tilUnderholdDto(
+                sletteStønadTilBarnetilsyn(
+                    underholdskostnad,
+                    request.idElement,
+                ),
             )
         }
     }
@@ -247,10 +263,10 @@ class UnderholdService(
     private fun sletteStønadTilBarnetilsyn(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
-    ): UnderholdDto {
+    ): Underholdskostnad {
         val stønadTilBarnetilsyn = underholdskostnad.barnetilsyn.find { idElement == it.id }
         underholdskostnad.barnetilsyn.remove(stønadTilBarnetilsyn)
-        return dtomapper.tilUnderholdDto(underholdskostnad)
+        return underholdskostnad
     }
 
     private fun sletteTilleggsstønad(
@@ -275,10 +291,10 @@ class UnderholdService(
     private fun sletteFaktiskTilsynsutgift(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
-    ): UnderholdDto {
+    ): Underholdskostnad {
         val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { idElement == it.id }
         underholdskostnad.faktiskeTilsynsutgifter.remove(faktiskTilsynsutgift)
-        return dtomapper.tilUnderholdDto(underholdskostnad)
+        return underholdskostnad
     }
 
     private fun lagreUnderholdskostnad(

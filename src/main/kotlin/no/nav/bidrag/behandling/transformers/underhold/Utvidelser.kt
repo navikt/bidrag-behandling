@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 
 fun FaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto() =
@@ -20,6 +21,8 @@ fun FaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto() =
     )
 
 fun Set<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilFaktiskTilsynsutgiftDto() }.toSet()
+
+fun Set<Barnetilsyn>.tilDatoperioder() = this.map { Datoperiode(it.fom, it.tom?.plusDays(1)) }.toSet()
 
 fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
     StønadTilBarnetilsynDto(
