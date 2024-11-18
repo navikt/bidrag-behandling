@@ -46,10 +46,11 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
-        val bpIdent = request.bidragspliktig?.ident ?: return "Behandlingen mangler bidragspliktig"
+        val bp = request.bidragspliktig
+        if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
         val harBPMinstEnBidragsstønad =
             bidragStonadConsumer
-                .hentAlleStønaderForBidragspliktig(bpIdent)
+                .hentAlleStønaderForBidragspliktig(bp.ident)
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
         return if (harBPMinstEnBidragsstønad) {
