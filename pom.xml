@@ -29,7 +29,7 @@
         <flyway.version>10.21.0</flyway.version>
         <jackson.version>2.18.1</jackson.version>
         <testcontainers.version>1.20.3</testcontainers.version>
-        <spring-boot-testcontainers.version>3.3.4</spring-boot-testcontainers.version>
+        <spring-boot-testcontainers.version>3.3.5</spring-boot-testcontainers.version>
         <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
         <snakeyaml.version>2.3</snakeyaml.version>
         <snappy-java.version>1.1.10.7</snappy-java.version>
@@ -39,7 +39,7 @@
         <asm.version>9.7.1</asm.version>
         <swagger.version>2.2.25</swagger.version>
         <jetbrains.annotations.version>26.0.1</jetbrains.annotations.version>
-        <nimbus-jose-jwt.version>9.46</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
     </properties>
 
     <repositories>
