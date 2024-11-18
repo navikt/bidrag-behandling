@@ -39,6 +39,7 @@ data class SjekkRolleDto(
         nullable = true,
     )
     val ident: Personident?,
+    val erUkjent: Boolean?,
 )
 
 fun KanBehandlesINyLøsningRequest.tilType() = bestemTypeBehandling(stønadstype, engangsbeløpstype)

@@ -1293,6 +1293,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                             Personident(b.søknadsbarn.first().ident!!),
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
+                            null,
                             true,
                         ),
                     ),
@@ -1355,6 +1356,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                             Personident(identOriginaltMedISaken),
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
+                            null,
                             true,
                         ),
                         OpprettRolleDto(
@@ -1368,12 +1370,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                             Personident("1111234"),
                             null,
                             fødselsdato = LocalDate.now().minusMonths(144),
+                            innbetaltBeløp = BigDecimal("100.254"),
                         ),
                         OpprettRolleDto(
                             Rolletype.BARN,
                             Personident("5555566666"),
                             "Person som ikke finnes",
                             fødselsdato = LocalDate.now().minusMonths(144),
+                            null,
                             true,
                         ),
                     ),
@@ -1381,6 +1385,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             behandlingEtter.søknadsbarn shouldHaveSize 3
+            behandlingEtter.søknadsbarn.find { it.ident == "1111234" }!!.innbetaltBeløp shouldBe BigDecimal("100.254")
             behandlingEtter.husstandsmedlem shouldHaveSize 3
             behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
             behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.MANUELL
@@ -1409,6 +1414,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                                 Personident(identOriginaltMedISaken),
                                 null,
                                 fødselsdato = LocalDate.now().minusMonths(144),
+                                null,
                                 true,
                             ),
                         ),

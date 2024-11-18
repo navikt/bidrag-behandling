@@ -25,6 +25,7 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -51,6 +52,7 @@ open class Rolle(
     @Deprecated("Migrere til Person.navn")
     open val navn: String? = null,
     open val deleted: Boolean = false,
+    open val innbetaltBeløp: BigDecimal? = null,
     @Column(name = "forrige_sivilstandshistorikk", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var forrigeSivilstandshistorikk: String? = null,

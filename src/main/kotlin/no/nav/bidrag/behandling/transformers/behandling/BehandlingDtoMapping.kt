@@ -501,6 +501,7 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
                 SjekkRolleDto(
                     rolletype = it.rolletype,
                     ident = Personident(it.ident!!),
+                    erUkjent = false,
                 )
             },
     )

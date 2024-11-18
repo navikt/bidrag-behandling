@@ -121,7 +121,7 @@ class ValiderBehandlingServiceTest {
                 shouldThrow<HttpClientErrorException> {
                     validerBehandlingService.validerKanBehandlesINyLøsning(
                         request.copy(
-                            roller = request.roller + SjekkRolleDto(Rolletype.BARN, ident = Personident("333")),
+                            roller = request.roller + SjekkRolleDto(Rolletype.BARN, ident = Personident("333"), false),
                         ),
                     )
                 }
@@ -214,7 +214,7 @@ private fun opprettKanBehandlesINyLøsningRequest() =
         stønadstype = null,
         roller =
             listOf(
-                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("12345678901")),
+                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("12345678901"), false),
             ),
         saksnummer = SAKSNUMMER,
     )
@@ -226,9 +226,9 @@ private fun opprettBidragKanBehandlesINyLøsningRequest() =
         stønadstype = Stønadstype.BIDRAG,
         roller =
             listOf(
-                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("3231")),
-                SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123")),
-                SjekkRolleDto(Rolletype.BARN, ident = Personident("123213")),
+                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("3231"), false),
+                SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123"), false),
+                SjekkRolleDto(Rolletype.BARN, ident = Personident("123213"), false),
             ),
         saksnummer = SAKSNUMMER,
     )
