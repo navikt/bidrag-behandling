@@ -94,6 +94,29 @@ class ValiderBehandlingServiceTest {
         }
 
         @Test
+        fun `skal ikke validere gyldig BIDRAG behandling hvis BP mangler`() {
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader = emptyList(),
+                )
+            val expection =
+                shouldThrow<HttpClientErrorException> {
+                    validerBehandlingService.validerKanBehandlesINyLøsning(
+                        opprettBidragKanBehandlesINyLøsningRequest().copy(
+                            roller =
+                                listOf(
+                                    SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = null, true),
+                                    SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123"), false),
+                                    SjekkRolleDto(Rolletype.BARN, ident = Personident("123213"), false),
+                                ),
+                        ),
+                    )
+                }
+            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
+            expection.validerInneholderMelding("Behandlingen mangler bidragspliktig")
+        }
+
+        @Test
         fun `skal ikke validere gyldig BIDRAG behandling hvis BP har minst en løpende bidrag`() {
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
