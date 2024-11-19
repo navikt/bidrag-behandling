@@ -189,12 +189,6 @@ class Dtomapper(
                 this.søknadsbarn.first(),
             )
 
-        val u = beregnBarnebidragApi.beregnUnderholdskostnad(grunnlag)
-        u.forEach { it.type }
-
-        val nt = beregnBarnebidragApi.beregnNettoTilsynsutgift(grunnlag).finnAlleDelberegningUnderholdskostnad()
-        nt.forEach { it.underholdskostnad }
-
         return beregnBarnebidragApi
             .beregnUnderholdskostnad(grunnlag)
             .finnAlleDelberegningUnderholdskostnad()
