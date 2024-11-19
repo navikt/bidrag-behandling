@@ -499,7 +499,7 @@ class Dtomapper(
             id = id!!,
             type = tilType(),
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
-            innkrevingstype = innkrevingstype!!,
+            innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
             vedtakstype = vedtakstype,
             opprinneligVedtakstype = opprinneligVedtakstype,
             stønadstype = stonadstype,
