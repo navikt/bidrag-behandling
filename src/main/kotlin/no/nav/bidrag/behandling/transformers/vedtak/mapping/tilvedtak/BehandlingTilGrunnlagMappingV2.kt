@@ -284,6 +284,7 @@ class BehandlingTilGrunnlagMappingV2(
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
         }
+
         return underholdskostnader
             .flatMap { u ->
                 u.faktiskeTilsynsutgifter.map {

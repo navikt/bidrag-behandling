@@ -32,12 +32,12 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
-import no.nav.bidrag.behandling.service.UnderholdService.Companion.beregneUnderholdskostnad
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.erLik
@@ -63,7 +63,8 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -97,7 +98,8 @@ class Dtomapper(
     val tilgangskontrollService: TilgangskontrollService,
     val validering: ValiderBeregning,
     val validerBehandlingService: ValiderBehandlingService,
-    val grunnlagMapper: BehandlingTilGrunnlagMappingV2,
+    val vedtakGrunnlagMapper: VedtakGrunnlagMapper,
+    val beregnBarnebidragApi: BeregnBarnebidragApi,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -105,6 +107,8 @@ class Dtomapper(
     ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter)
 
     fun tilUnderholdDto(underholdskostnad: Underholdskostnad) = underholdskostnad.tilDto()
+
+    fun tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(behandling: Behandling) = behandling.tilBeregnetUnderholdskostnad()
 
     fun tilAktivereGrunnlagResponseV2(behandling: Behandling) =
         AktivereGrunnlagResponseV2(
@@ -145,7 +149,7 @@ class Dtomapper(
         aktiveGrunnlag: List<Grunnlag>,
     ) = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
 
-    private fun Set<Underholdskostnad>.tilUnderholdDtos() = this.map { it.tilDto() }.toSet()
+    private fun Set<Underholdskostnad>.tilDtos() = this.map { it.tilDto() }.toSet()
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
@@ -155,15 +159,37 @@ class Dtomapper(
             harTilsynsordning = this.harTilsynsordning,
             gjelderBarn = this.person.tilPersoninfoDto(this.behandling),
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
-            stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
-            tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
-            underholdskostnad = beregneUnderholdskostnad(this),
+            stønadTilBarnetilsyn =
+                rolleSøknadsbarn?.let { this.barnetilsyn.tilStønadTilBarnetilsynDtos() }
+                    ?: emptySet(),
+            tilleggsstønad = rolleSøknadsbarn?.let { this.tilleggsstønad.tilTilleggsstønadDtos() } ?: emptySet(),
+            underholdskostnad = rolleSøknadsbarn?.let { this.behandling.tilBeregnetUnderholdskostnad() } ?: emptySet(),
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
                     this.behandling,
                     rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
                 ),
         )
+    }
+
+    private fun Behandling.tilBeregnetUnderholdskostnad(): Set<UnderholdskostnadDto> {
+        // TODO: Beregning støtter per nå kun ett søknadsbarn. Skal støtte flere søknadsbarn i fremtiden.
+        val grunnlag =
+            vedtakGrunnlagMapper.byggGrunnlagForBeregning(
+                this,
+                this.søknadsbarn.first(),
+            )
+
+        val u = beregnBarnebidragApi.beregnUnderholdskostnad(grunnlag)
+        u.forEach { it.type }
+
+        val nt = beregnBarnebidragApi.beregnNettoTilsynsutgift(grunnlag).finnAlleDelberegningUnderholdskostnad()
+        nt.forEach { it.underholdskostnad }
+
+        return beregnBarnebidragApi
+            .beregnUnderholdskostnad(grunnlag)
+            .finnAlleDelberegningUnderholdskostnad()
+            .tilUnderholdskostnadDto()
     }
 
     private fun Person.tilPersoninfoDto(behandling: Behandling): PersoninfoDto {
@@ -176,8 +202,8 @@ class Dtomapper(
             }
 
         val personinfo =
-            this.ident?.let { grunnlagMapper.personService.hentPerson(it) }
-                ?: rolle?.ident?.let { grunnlagMapper.personService.hentPerson(it) }
+            this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
+                ?: rolle?.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
 
         return PersoninfoDto(
             id = this.id,
@@ -529,7 +555,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                     inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
                 ),
-            underholdskostnader = underholdskostnader.tilUnderholdDtos(),
+            underholdskostnader = underholdskostnader.tilDtos(),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
@@ -608,7 +634,7 @@ class Dtomapper(
                 BeregnApi().beregnBoforhold(
                     BeregnGrunnlag(
                         grunnlagListe =
-                            grunnlagMapper
+                            vedtakGrunnlagMapper.mapper
                                 .run {
                                     tilGrunnlagBostatus() + tilPersonobjekter()
                                 }.toList(),

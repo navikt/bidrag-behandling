@@ -15,6 +15,8 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
@@ -146,7 +148,8 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
 ): ResultatBarnebidragsberegningPeriodeDto {
     val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
-    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe)?.innholdTilObjekt<SluttberegningBarnebidrag>()
+    val sluttberegning =
+        finnSluttberegningIReferanser(grunnlagsreferanseListe)?.innholdTilObjekt<SluttberegningBarnebidrag>()
     return ResultatBarnebidragsberegningPeriodeDto(
         periode = periode,
         faktiskBidrag = resultat ?: BigDecimal.ZERO,
@@ -262,7 +265,8 @@ fun List<GrunnlagDto>.finnSamværsfradrag(grunnlagsreferanseListe: List<Grunnlag
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
-    val samværsfradrag = finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG, sluttberegning).firstOrNull()
+    val samværsfradrag =
+        finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG, sluttberegning).firstOrNull()
     return samværsfradrag?.innholdTilObjekt<DelberegningSamværsfradrag>()?.beløp
         ?: BigDecimal.ZERO
 }
@@ -271,7 +275,8 @@ fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Gr
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return 0.0
-    val delberegningBarnIHusstanden = finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND, sluttberegning).firstOrNull()
+    val delberegningBarnIHusstanden =
+        finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_BARN_I_HUSSTAND, sluttberegning).firstOrNull()
     return delberegningBarnIHusstanden?.innholdTilObjekt<DelberegningBarnIHusstand>()?.antallBarn
         ?: 0.0
 }
@@ -320,7 +325,8 @@ fun List<GrunnlagDto>.finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseLi
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
 
     val delberegningBidragspliktigesAndel =
-        finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull() ?: return null
+        finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull()
+            ?: return null
     val bosstatuser = finnGrunnlagSomErReferertAv(Grunnlagstype.BOSTATUS_PERIODE, delberegningBidragspliktigesAndel)
     val borMedVoksenBarn =
         bosstatuser
@@ -338,7 +344,8 @@ fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnl
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
 
     val delberegningBidragspliktigesAndel =
-        finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull() ?: return null
+        finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull()
+            ?: return null
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningVoksneIHusstand>().borMedAndreVoksne
 }
 
@@ -393,6 +400,53 @@ fun List<GrunnlagDto>.finnDelberegningSamværsfradrag(
                 ?.gjennomsnittligSamværPerMåned ?: BigDecimal.ZERO,
     )
 }
+
+fun List<DelberegningUnderholdskostnad>.tilUnderholdskostnadDto() =
+    this
+        .map {
+            UnderholdskostnadDto(
+                stønadTilBarnetilsyn = it.barnetilsynMedStønad ?: BigDecimal.ZERO,
+                tilsynsutgifter = it.nettoTilsynsutgift ?: BigDecimal.ZERO,
+                periode =
+                    DatoperiodeDto(
+                        it.periode.fom.atDay(1),
+                        it.periode.til
+                            ?.atDay(1)
+                            ?.minusDays(1),
+                    ),
+                forbruk = it.forbruksutgift,
+                barnetrygd = it.barnetrygd,
+                boutgifter = it.boutgift,
+                total = it.underholdskostnad,
+            )
+        }.toSet()
+
+fun List<GrunnlagDto>.finneFaktiskTilsynsutgiftsperioder(): List<DelberegningUnderholdskostnad> =
+    this
+        .filtrerBasertPåEgenReferanse(
+            Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
+        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
+        .sortedBy {
+            it.periode.fom
+        }
+
+fun List<GrunnlagDto>.finneTilleggsstønadsperioder(): List<DelberegningUnderholdskostnad> =
+    this
+        .filtrerBasertPåEgenReferanse(
+            Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
+        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
+        .sortedBy {
+            it.periode.fom
+        }
+
+fun List<GrunnlagDto>.finneBarnetilleggsperioder(): List<DelberegningUnderholdskostnad> =
+    this
+        .filtrerBasertPåEgenReferanse(
+            Grunnlagstype.BARNETILLEGG_PERIODE,
+        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
+        .sortedBy {
+            it.periode.fom
+        }
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<DelberegningUnderholdskostnad> =
     this

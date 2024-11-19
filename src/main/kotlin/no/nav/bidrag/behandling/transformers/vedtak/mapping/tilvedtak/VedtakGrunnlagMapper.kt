@@ -45,7 +45,7 @@ fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
 
 @Component
 class VedtakGrunnlagMapper(
-    private val mapper: BehandlingTilGrunnlagMappingV2,
+    val mapper: BehandlingTilGrunnlagMappingV2,
     val validering: ValiderBeregning,
     private val beregningEvnevurderingService: BeregningEvnevurderingService,
     private val personService: PersonService,
