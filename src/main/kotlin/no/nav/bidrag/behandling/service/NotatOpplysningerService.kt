@@ -42,6 +42,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
@@ -185,6 +186,7 @@ class NotatOpplysningerService(
 
         return VedtakNotatDto(
             saksnummer = behandling.saksnummer,
+            medInnkreving = behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
             type =
                 when (behandling.tilType()) {
                     TypeBehandling.FORSKUDD -> NotatMalType.FORSKUDD
