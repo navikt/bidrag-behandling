@@ -82,6 +82,7 @@ data class BehandlingDetaljerDtoV2(
 data class BehandlingDtoV2(
     val id: Long,
     val type: TypeBehandling,
+    val medInnkreving: Boolean,
     val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
     val vedtakstype: Vedtakstype,
     val opprinneligVedtakstype: Vedtakstype? = null,
