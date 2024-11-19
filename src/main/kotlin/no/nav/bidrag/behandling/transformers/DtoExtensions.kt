@@ -31,6 +31,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
         this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
             ?: rolleManglerFødselsdato(rolletype),
         navn = this.navn,
+        innbetaltBeløp = this.innbetaltBeløp,
     )
 
 fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem =

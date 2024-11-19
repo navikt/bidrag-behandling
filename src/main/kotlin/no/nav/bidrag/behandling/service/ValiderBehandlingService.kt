@@ -46,10 +46,11 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
-        val bp = request.bidragspliktig ?: return "Behandlingen mangler bidragspliktig"
+        val bp = request.bidragspliktig
+        if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
         val harBPMinstEnBidragsstønad =
             bidragStonadConsumer
-                .hentAlleStønaderForBidragspliktig(bp.ident!!)
+                .hentAlleStønaderForBidragspliktig(bp.ident)
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
         return if (harBPMinstEnBidragsstønad) {
@@ -63,9 +64,9 @@ class ValiderBehandlingService(
         val resultat = kanBehandlesINyLøsning(request)
         if (resultat != null) {
             log.info {
-                "Behandling engangsbeløpstype=${request.engangsbeløpstype}, stønadstype=${request.stønadstype} kan ikke behandles i ny løsning"
+                "Behandling engangsbeløpstype=${request.engangsbeløpstype}, stønadstype=${request.stønadstype} kan ikke behandles i ny løsning: $resultat"
             }
-            secureLogger.info { "Behandling kan ikke behandles i ny løsning: $request" }
+            secureLogger.info { "Behandling kan ikke behandles i ny løsning: $request med begrunnelse $resultat" }
             throw HttpClientErrorException(
                 HttpStatus.PRECONDITION_FAILED,
                 "Behandling kan ikke behandles i ny løsning",

@@ -419,6 +419,9 @@ class BehandlingService(
         log.info { "Oppdater roller i behandling $behandlingId" }
         secureLogger.info { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
         val eksisterendeRoller = behandling.roller
+
+        behandling.oppdaterEksisterendeRoller(oppdaterRollerListe)
+
         val rollerSomLeggesTil =
             oppdaterRollerListe
                 .filter { !it.erSlettet }
@@ -459,6 +462,17 @@ class BehandlingService(
         }
 
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
+    }
+
+    private fun Behandling.oppdaterEksisterendeRoller(oppdaterRollerListe: List<OpprettRolleDto>) {
+        oppdaterRollerListe
+            .filter { !it.erSlettet }
+            .filter { roller.any { br -> br.ident == it.ident?.verdi } }
+            .forEach {
+                roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
+                    eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
+                }
+            }
     }
 
     private fun oppdatereSamværForRoller(

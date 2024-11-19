@@ -75,6 +75,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -557,6 +558,8 @@ class Dtomapper(
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
+            medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
+            innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
             vedtakstype = vedtakstype,
             opprinneligVedtakstype = opprinneligVedtakstype,
             stønadstype = stonadstype,
