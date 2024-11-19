@@ -2,9 +2,11 @@ package no.nav.bidrag.behandling.transformers
 
 import com.fasterxml.jackson.core.type.TypeReference
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
@@ -31,6 +33,9 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
+import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
@@ -54,9 +59,7 @@ import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
-import no.nav.bidrag.behandling.transformers.underhold.tilFaktiskeTilsynsutgiftDtos
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
-import no.nav.bidrag.behandling.transformers.underhold.tilTilleggsstønadDtos
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -90,6 +93,7 @@ import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -109,6 +113,10 @@ class Dtomapper(
     fun tilUnderholdDto(underholdskostnad: Underholdskostnad) = underholdskostnad.tilDto()
 
     fun tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(behandling: Behandling) = behandling.tilBeregnetUnderholdskostnad()
+
+    fun tilFaktiskTilsynsutgiftDto(faktiskTilsynsutgift: FaktiskTilsynsutgift) = faktiskTilsynsutgift.tilDto()
+
+    fun tilTilleggsstønadDto(tilleggsstønad: Tilleggsstønad) = tilleggsstønad.tilDto()
 
     fun tilAktivereGrunnlagResponseV2(behandling: Behandling) =
         AktivereGrunnlagResponseV2(
@@ -309,6 +317,32 @@ class Dtomapper(
             erBeskytta,
         )
     }
+
+    fun Tilleggsstønad.tilDto() =
+        TilleggsstønadDto(
+            id = this.id!!,
+            periode = DatoperiodeDto(this.fom, this.tom),
+            dagsats = this.dagsats,
+            total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats) ?: BigDecimal.ZERO,
+        )
+
+    fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.map { it.tilDto() }.toSet()
+
+    fun FaktiskTilsynsutgift.tilDto() =
+        FaktiskTilsynsutgiftDto(
+            id = this.id!!,
+            periode = DatoperiodeDto(this.fom, this.tom),
+            utgift = this.tilsynsutgift,
+            kostpenger = this.kostpenger ?: BigDecimal.ZERO,
+            kommentar = this.kommentar,
+            total =
+                beregnBarnebidragApi.beregnMånedsbeløpFaktiskeUtgifter(
+                    faktiskUtgift = this.tilsynsutgift,
+                    kostpenger = this.kostpenger,
+                ) ?: BigDecimal.ZERO,
+        )
+
+    fun Set<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilDto() }.toSet()
 
     private fun Husstandsmedlem.boforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>): BoforholdBarn {
         val tilgangskontrollertPersoninfo =

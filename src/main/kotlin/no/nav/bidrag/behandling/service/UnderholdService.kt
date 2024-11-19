@@ -21,9 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
-import no.nav.bidrag.behandling.transformers.underhold.tilFaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.transformers.underhold.tilTilleggsstønadDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
@@ -169,7 +167,7 @@ class UnderholdService(
                 faktiskTilsynsutgift
             }
         return OppdatereUnderholdResponse(
-            faktiskTilsynsutgift = oppdatertFaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto(),
+            faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
             underholdskostnad =
                 dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
                     underholdskostnad.behandling,
@@ -208,7 +206,7 @@ class UnderholdService(
             }
 
         return OppdatereUnderholdResponse(
-            tilleggsstønad = oppdatertTilleggsstønad.tilTilleggsstønadDto(),
+            tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
             underholdskostnad =
                 dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),

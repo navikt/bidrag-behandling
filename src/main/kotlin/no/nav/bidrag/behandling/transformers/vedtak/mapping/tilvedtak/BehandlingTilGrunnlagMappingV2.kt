@@ -9,14 +9,12 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
-import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.beregn.barnebidrag.bo.FaktiskUtgiftPeriode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -24,6 +22,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
@@ -65,7 +64,7 @@ class BehandlingTilGrunnlagMappingV2(
             sivilstand
                 .map {
                     GrunnlagDto(
-                        referanse = "sivilstand_${gjelder.referanse}_${it.datoFom?.toCompactString()}",
+                        referanse = "sivilstand_${gjelder.referanse}_${it.datoFom.toCompactString()}",
                         type = Grunnlagstype.SIVILSTAND_PERIODE,
                         gjelderReferanse = gjelder.referanse,
                         grunnlagsreferanseListe =
@@ -94,7 +93,8 @@ class BehandlingTilGrunnlagMappingV2(
         val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
         val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
         val innhentetSivilstand = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetSivilstand(personobjekter)
-        val innhentetHusstandsmedlemmer = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter)
+        val innhentetHusstandsmedlemmer =
+            sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter)
         val beregnetInntekt = sortertGrunnlagsListeBearbeidet.tilBeregnetInntekt(personobjekter)
         val innhentetInntekter = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetGrunnlagInntekt(personobjekter)
 
@@ -229,14 +229,17 @@ class BehandlingTilGrunnlagMappingV2(
             .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
             .flatMap { samvær ->
                 samvær.perioder.flatMap {
-                    val grunnlagBeregning = it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
+                    val grunnlagBeregning =
+                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
                     val grunnlagPeriode =
                         GrunnlagDto(
                             referanse =
                                 "samvær_${Grunnlagstype.SAMVÆRSPERIODE}" +
-                                    "_${it.fom.toCompactString()}${it.tom?.let {
-                                        "_${it.toCompactString()}"
-                                    }}_${samvær.rolle.tilGrunnlagPerson().referanse}",
+                                    "_${it.fom.toCompactString()}${
+                                        it.tom?.let {
+                                            "_${it.toCompactString()}"
+                                        }
+                                    }_${samvær.rolle.tilGrunnlagPerson().referanse}",
                             type = Grunnlagstype.SAMVÆRSPERIODE,
                             gjelderReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
                             grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
@@ -259,7 +262,8 @@ class BehandlingTilGrunnlagMappingV2(
         fun FaktiskTilsynsutgift.tilPersonGrunnlag(): GrunnlagDto {
             val person = underholdskostnad.person
             val fødselsdato =
-                person.fødselsdato ?: personService.hentPersonFødselsdato(person.ident) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
+                person.fødselsdato ?: personService.hentPersonFødselsdato(person.ident)
+                    ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
 
             return GrunnlagDto(
                 referanse =
