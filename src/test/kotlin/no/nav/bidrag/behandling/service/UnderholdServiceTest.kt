@@ -23,11 +23,11 @@ import no.nav.bidrag.behandling.database.repository.TilleggsstønadRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
-import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -239,7 +239,7 @@ class UnderholdServiceTest {
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
-                    TilleggsstønadDto(
+                    OppdatereTilleggsstønadRequest(
                         periode =
                             DatoperiodeDto(
                                 LocalDate.now().minusMonths(6).withDayOfMonth(1),
@@ -304,7 +304,7 @@ class UnderholdServiceTest {
                 )
 
                 val request =
-                    TilleggsstønadDto(
+                    OppdatereTilleggsstønadRequest(
                         id = 1,
                         periode =
                             DatoperiodeDto(
@@ -517,7 +517,7 @@ class UnderholdServiceTest {
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
-                    FaktiskTilsynsutgiftDto(
+                    OppdatereFaktiskTilsynsutgiftRequest(
                         periode =
                             DatoperiodeDto(
                                 LocalDate.now().minusMonths(6).withDayOfMonth(1),
@@ -590,7 +590,7 @@ class UnderholdServiceTest {
                 )
 
                 val request =
-                    FaktiskTilsynsutgiftDto(
+                    OppdatereFaktiskTilsynsutgiftRequest(
                         id = 1,
                         periode =
                             DatoperiodeDto(

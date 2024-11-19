@@ -9,12 +9,12 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
@@ -131,7 +131,7 @@ class UnderholdController(
     fun oppdatereFaktiskTilsynsutgift(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
-        @Valid @RequestBody(required = true) request: FaktiskTilsynsutgiftDto,
+        @Valid @RequestBody(required = true) request: OppdatereFaktiskTilsynsutgiftRequest,
     ): OppdatereUnderholdResponse {
         log.info { "Oppdaterer faktisk tilsynsutgift for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer faktisk tilsynsutgift  for behandling $behandlingsid med forespørsel $request" }
@@ -164,7 +164,7 @@ class UnderholdController(
     fun oppdatereTilleggsstønad(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
-        @Valid @RequestBody(required = true) request: TilleggsstønadDto,
+        @Valid @RequestBody(required = true) request: OppdatereTilleggsstønadRequest,
     ): OppdatereUnderholdResponse {
         log.info { "Oppdaterer tilleggsstønad for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer tilleggsstønad for behandling $behandlingsid med forespørsel $request" }

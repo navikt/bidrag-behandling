@@ -17,6 +17,8 @@ fun FaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto() =
         utgift = this.tilsynsutgift,
         kostpenger = this.kostpenger ?: BigDecimal.ZERO,
         kommentar = this.kommentar,
+        // TODO: Bytte ut med resultat fra beregning
+        total = BigDecimal.ZERO,
     )
 
 fun Set<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilFaktiskTilsynsutgiftDto() }.toSet()
@@ -42,6 +44,8 @@ fun Tilleggsstønad.tilTilleggsstønadDto() =
         id = this.id!!,
         periode = DatoperiodeDto(this.fom, this.tom),
         dagsats = this.dagsats,
+        // TODO: bytte ut med kall til beregning
+        total = BigDecimal.ZERO,
     )
 
 fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.map { it.tilTilleggsstønadDto() }.toSet()

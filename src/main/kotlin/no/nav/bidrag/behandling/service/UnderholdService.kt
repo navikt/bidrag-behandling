@@ -12,12 +12,12 @@ import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.TilleggsstønadRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -139,7 +139,7 @@ class UnderholdService(
     @Transactional
     fun oppdatereFaktiskeTilsynsutgifter(
         underholdskostnad: Underholdskostnad,
-        request: FaktiskTilsynsutgiftDto,
+        request: OppdatereFaktiskTilsynsutgiftRequest,
     ): OppdatereUnderholdResponse {
         request.validere(underholdskostnad)
 
@@ -181,7 +181,7 @@ class UnderholdService(
     @Transactional
     fun oppdatereTilleggsstønad(
         underholdskostnad: Underholdskostnad,
-        request: TilleggsstønadDto,
+        request: OppdatereTilleggsstønadRequest,
     ): OppdatereUnderholdResponse {
         request.validere(underholdskostnad)
 
