@@ -22,7 +22,9 @@ import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
@@ -74,6 +76,20 @@ fun stubTokenUtils() {
 }
 
 fun createPersonServiceMock(): PersonService = PersonService(stubPersonConsumer())
+
+fun stubPersonRepository(): PersonRepository {
+    val personRepositoryMock = mockkClass(PersonRepository::class)
+    every { personRepositoryMock.findFirstByIdent(any<String>()) }.answers {
+        val personId = firstArg<String>()
+        val personer =
+            listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1)
+        personer.find { it.ident == personId }?.tilPerson() ?: Person(
+            ident = firstArg<String>(),
+            fødselsdato = LocalDate.parse("2015-05-01"),
+        )
+    }
+    return personRepositoryMock
+}
 
 fun stubPersonConsumer(): BidragPersonConsumer {
     try {

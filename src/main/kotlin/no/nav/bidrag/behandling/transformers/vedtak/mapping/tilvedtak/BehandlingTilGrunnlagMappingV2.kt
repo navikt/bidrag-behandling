@@ -9,14 +9,12 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
-import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.beregn.barnebidrag.bo.FaktiskUtgiftPeriode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -24,6 +22,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
@@ -301,6 +300,7 @@ class BehandlingTilGrunnlagMappingV2(
                                     gjelderBarn = gjelderBarnReferanse,
                                     kostpengerBeløp = it.kostpenger ?: BigDecimal.ZERO,
                                     faktiskUtgiftBeløp = it.tilsynsutgift,
+                                    kommentar = it.kommentar,
                                     manueltRegistrert = true,
                                 ),
                             ),

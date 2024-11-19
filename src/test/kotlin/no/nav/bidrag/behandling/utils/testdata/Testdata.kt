@@ -164,6 +164,17 @@ data class TestDataPerson(
         behandling = behandling,
     )
 
+    fun tilPerson(
+        behandling: Behandling = oppretteBehandling(),
+        id: Long = 1,
+    ) = Person(
+        id = id + 1,
+        ident = ident,
+        navn = navn,
+        fødselsdato = fødselsdato,
+        rolle = mutableSetOf(tilRolle(behandling, id)),
+    )
+
     fun tilPersonDto() =
         PersonDto(
             ident = Personident(ident),

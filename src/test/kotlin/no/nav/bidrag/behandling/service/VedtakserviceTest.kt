@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.slot
 import io.mockk.verify
 import jakarta.persistence.EntityManager
@@ -20,7 +21,10 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
+import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
@@ -102,7 +106,14 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var vedtakService: VedtakService
     lateinit var beregningService: BeregningService
 
+    @MockK
+    lateinit var underholdskostnadRepository: UnderholdskostnadRepository
+
+    @MockK
+    lateinit var personRepository: PersonRepository
+
     val unleash = FakeUnleash()
+    val notatService = NotatService()
 
     @BeforeEach
     fun initMocks() {
@@ -112,7 +123,17 @@ class VedtakserviceTest : TestContainerRunner() {
         bidragPersonConsumer = stubPersonConsumer()
         val personService = PersonService(bidragPersonConsumer)
         val validerBeregning = ValiderBeregning()
-        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
+        val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        val dtomapper =
+            Dtomapper(tilgangskontrollService, validerBeregning, validerBehandlingService, behandlingTilGrunnlagMappingV2)
+        val underholdService =
+            UnderholdService(
+                underholdskostnadRepository,
+                personRepository,
+                notatService,
+                dtomapper,
+            )
+        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService)
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
@@ -120,6 +141,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 evnevurderingService,
                 personService,
             )
+
         beregningService =
             BeregningService(
                 behandlingService,

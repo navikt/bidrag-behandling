@@ -1,7 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import com.ninjasquad.springmockk.MockkBean
-import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -9,22 +7,13 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.slot
 import io.mockk.verify
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
-import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyperForReferanser
@@ -41,10 +30,6 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.virkningsdato
-import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
-import no.nav.bidrag.commons.web.mock.stubSjablonProvider
-import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -74,98 +59,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubHentPersonNyIdent
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
-@ExtendWith(SpringExtension::class)
-class VedtakserviceForskuddTest {
-    @MockkBean
-    lateinit var behandlingService: BehandlingService
-
-    @MockkBean
-    lateinit var grunnlagService: GrunnlagService
-
-    @MockkBean
-    lateinit var notatOpplysningerService: NotatOpplysningerService
-
-    @MockkBean
-    lateinit var tilgangskontrollService: TilgangskontrollService
-
-    @MockkBean
-    lateinit var vedtakConsumer: BidragVedtakConsumer
-
-    @MockkBean
-    lateinit var sakConsumer: BidragSakConsumer
-
-    @MockkBean
-    lateinit var evnevurderingService: BeregningEvnevurderingService
-
-    @MockkBean
-    lateinit var validerBehandlingService: ValiderBehandlingService
-    lateinit var vedtakService: VedtakService
-    lateinit var beregningService: BeregningService
-    lateinit var personConsumer: BidragPersonConsumer
-
-    val unleash = FakeUnleash()
-
-    @BeforeEach
-    fun initMocks() {
-        clearAllMocks()
-        unleash.enableAll()
-        personConsumer = stubPersonConsumer()
-        val personService = PersonService(personConsumer)
-
-        val validerBeregning = ValiderBeregning()
-        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
-        val vedtakGrunnlagMapper =
-            VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
-                validerBeregning,
-                evnevurderingService,
-                personService,
-            )
-        beregningService =
-            BeregningService(
-                behandlingService,
-                vedtakGrunnlagMapper,
-            )
-        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
-        vedtakService =
-            VedtakService(
-                behandlingService,
-                grunnlagService,
-                notatOpplysningerService,
-                tilgangskontrollService,
-                vedtakConsumer,
-                unleash,
-                validerBeregning,
-                vedtakTilBehandlingMapping,
-                behandlingTilVedtakMapping,
-                validerBehandlingService,
-            )
-        every { notatOpplysningerService.opprettNotat(any()) } returns "213"
-        every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
-        every {
-            behandlingService.oppdaterVedtakFattetStatus(
-                any(),
-                any(),
-            )
-        } returns Unit
-        every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
-        stubSjablonProvider()
-        stubKodeverkProvider()
-    }
-
+class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en forskudd behandling`() {
         stubPersonConsumer()
