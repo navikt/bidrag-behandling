@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilB
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -73,7 +74,13 @@ abstract class CommonVedtakTilBehandlingTest {
         val personService = PersonService(personConsumer)
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         dtomapper =
-            Dtomapper(tilgangskontrollService, validerBeregning, validerBehandlingService, behandlingTilGrunnlagMappingV2)
+            Dtomapper(
+                tilgangskontrollService,
+                validerBeregning,
+                validerBehandlingService,
+                VedtakGrunnlagMapper(behandlingTilGrunnlagMappingV2, validerBeregning, evnevurderingService, personService),
+                BeregnBarnebidragApi(),
+            )
         val underholdService =
             UnderholdService(
                 underholdskostnadRepository,
@@ -110,11 +117,14 @@ abstract class CommonVedtakTilBehandlingTest {
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
+        unleash.enableAll()
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
+        every { behandlingService.oppdaterVedtakFattetStatus(any(), any()) } returns Unit
+        every { validerBehandlingService.validerKanBehandlesINyLøsning(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()
         stubPersonConsumer()

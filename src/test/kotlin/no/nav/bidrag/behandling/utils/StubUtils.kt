@@ -160,6 +160,18 @@ class StubUtils {
         )
     }
 
+    fun stubBidragStønaderForSkyldner(
+        filnavn: String = "alle-stønader-bp-tom",
+    ) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/stonad/hent-alle-stonader-for-skyldner")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withBody(erstattVariablerITestFil("stonad/$filnavn")),
+            ),
+        )
+    }
+
     fun stubBidragVedtakForStønad(
         kravhaverIdent: String,
         filnavn: String,

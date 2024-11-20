@@ -6,8 +6,10 @@ import no.nav.bidrag.behandling.consumer.BehandlingInfoResponseDto
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
+import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -16,7 +18,9 @@ import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
+import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
@@ -38,8 +42,11 @@ import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.commons.web.mock.stubSjablonService
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -53,6 +60,8 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.sak.Bidragssakstatus
 import no.nav.bidrag.domene.enums.sak.Sakskategori
+import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
+import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFrekvens
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -64,12 +73,15 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.ident.ReellMottager
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
+import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
@@ -131,6 +143,14 @@ val testdataHusstandsmedlem1 =
     TestDataPerson(
         navn = "Huststand Gapp",
         ident = "31231231231",
+        rolletype = Rolletype.BARN,
+        fødselsdato = LocalDate.parse("2001-05-09"),
+    )
+
+val testdataBarnBm =
+    TestDataPerson(
+        navn = "Huststand Dett",
+        ident = "3123123123123",
         rolletype = Rolletype.BARN,
         fødselsdato = LocalDate.parse("2001-05-09"),
     )
@@ -379,7 +399,7 @@ fun oppretteBehandlingRoller(
             ),
         )
 
-    if (typeBehandling != TypeBehandling.SÆRBIDRAG) {
+    if (typeBehandling == TypeBehandling.FORSKUDD) {
         roller.add(
             Rolle(
                 ident = testdataBarn2.ident,
@@ -636,7 +656,24 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             behandling.stonadstype = Stønadstype.BIDRAG
             behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             behandling.engangsbeloptype = null
-            behandling.samvær = mutableSetOf(Samvær(behandling, rolle = behandling.søknadsbarn.first()))
+            behandling.samvær =
+                behandling.søknadsbarn
+                    .map {
+                        Samvær(
+                            behandling,
+                            rolle = it,
+                            id = if (generateId) 1 else null,
+                        )
+                    }.toMutableSet()
+            behandling.underholdskostnader =
+                behandling.søknadsbarn
+                    .map {
+                        Underholdskostnad(
+                            id = if (generateId) 1 else null,
+                            behandling = behandling,
+                            person = Person(ident = it.ident, rolle = mutableSetOf(it)),
+                        )
+                    }.toMutableSet()
             husstandsmedlem.add(
                 behandling.oppretteHusstandsmedlem(
                     if (generateId) 2 else null,
@@ -1619,3 +1656,137 @@ fun opprettEvnevurderingResultat(sakerFor: List<Pair<TestDataPerson, Stønadstyp
                     },
             ),
     )
+
+fun Behandling.taMedInntekt(
+    rolle: Rolle,
+    type: Inntektsrapportering,
+) {
+    val inntekt = inntekter.find { it.ident == rolle.ident && type == it.type }!!
+    inntekt.taMed = true
+    inntekt.datoFom = virkningstidspunkt
+}
+
+fun Behandling.leggTilFaktiskTilsynsutgift(
+    periode: ÅrMånedsperiode,
+    barn: TestDataPerson = testdataBarn1,
+    medId: Boolean = false,
+) {
+    val underholdskostnad =
+        underholdskostnader.find { it.person.ident == barn.ident } ?: run {
+            Underholdskostnad(
+                id = if (medId) 1 else null,
+                behandling = this,
+                person = Person(ident = barn.ident),
+            ).also { underholdskostnader.add(it) }
+        }
+    underholdskostnad.faktiskeTilsynsutgifter.add(
+        FaktiskTilsynsutgift(
+            id = if (medId) 1 else null,
+            underholdskostnad = underholdskostnad,
+            fom = periode.fom.atDay(1),
+            tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
+            tilsynsutgift = BigDecimal(100),
+            kostpenger = BigDecimal(400),
+            kommentar = "Kommentar på tilsynsutgift",
+        ),
+    )
+}
+
+fun Behandling.leggTilBarnetilsyn(
+    periode: ÅrMånedsperiode,
+    barn: TestDataPerson = testdataBarn1,
+    medId: Boolean = false,
+) {
+    val underholdskostnad = underholdskostnader.find { it.person.ident == barn.ident }!!
+    underholdskostnad.barnetilsyn.add(
+        Barnetilsyn(
+            id = if (medId) 1 else null,
+            underholdskostnad = underholdskostnad,
+            fom = periode.fom.atDay(1),
+            tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
+            under_skolealder = true,
+            omfang = Tilsynstype.HELTID,
+            kilde = Kilde.OFFENTLIG,
+        ),
+    )
+}
+
+fun Behandling.leggTilTillegsstønad(
+    periode: ÅrMånedsperiode,
+    barn: TestDataPerson = testdataBarn1,
+    medId: Boolean = false,
+) {
+    val underholdskostnad =
+        underholdskostnader.find { it.person.ident == barn.ident }!!
+    underholdskostnad.tilleggsstønad.add(
+        Tilleggsstønad(
+            id = if (medId) 1 else null,
+            underholdskostnad = underholdskostnad,
+            fom = periode.fom.atDay(1),
+            tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
+            dagsats = BigDecimal(10),
+        ),
+    )
+}
+
+fun Behandling.leggTilSamvær(
+    periode: ÅrMånedsperiode,
+    barn: TestDataPerson = testdataBarn1,
+    samværsklasse: Samværsklasse? = null,
+    medId: Boolean = false,
+) {
+    val medBeregning = samværsklasse == null
+    val samværsklasseDetaljer =
+        SamværskalkulatorDetaljer(
+            regelmessigSamværNetter = BigDecimal(4),
+            ferier =
+                listOf(
+                    SamværskalkulatorDetaljer.SamværskalkulatorFerie(
+                        type = SamværskalkulatorFerietype.SOMMERFERIE,
+                        bidragsmottakerNetter = BigDecimal(14),
+                        bidragspliktigNetter = BigDecimal(1),
+                        frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+                    ),
+                ),
+        )
+    val samværBarn = samvær.find { it.rolle.ident == barn.ident }!!
+    samværBarn.perioder.add(
+        Samværsperiode(
+            id = if (medId) 1 else null,
+            samvær = samværBarn,
+            fom = periode.fom.atDay(1),
+            tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
+            samværsklasse = samværsklasse ?: BeregnSamværsklasseApi(stubSjablonService()).beregnSamværsklasse(samværsklasseDetaljer).delberegningSamværsklasse.samværsklasse,
+            beregningJson = if (medBeregning) commonObjectmapper.writeValueAsString(samværsklasseDetaljer) else null,
+        ),
+    )
+}
+
+fun Behandling.leggTilBarnetillegg(
+    forBarn: TestDataPerson,
+    rolle: Rolle,
+    medId: Boolean = false,
+) {
+    val inntekt =
+        Inntekt(
+            id = if (medId) 1 else null,
+            belop = BigDecimal(3000),
+            datoFom = virkningstidspunkt!!.plusMonths(5),
+            datoTom = null,
+            ident = rolle.ident!!,
+            taMed = true,
+            kilde = Kilde.MANUELL,
+            behandling = this,
+            gjelderBarn = forBarn.ident,
+            type = Inntektsrapportering.BARNETILLEGG,
+        )
+    inntekt.inntektsposter.add(
+        Inntektspost(
+            beløp = BigDecimal(100),
+            inntektstype = Inntektstype.BARNETILLEGG_AAP,
+            inntekt = inntekt,
+            kode = "",
+        ),
+    )
+    inntekter.add(inntekt)
+}

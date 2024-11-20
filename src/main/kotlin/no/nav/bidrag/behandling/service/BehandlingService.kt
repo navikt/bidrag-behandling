@@ -58,6 +58,7 @@ class BehandlingService(
     private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
+    private val samværService: SamværService,
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
@@ -291,6 +292,11 @@ class BehandlingService(
             grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
         }
 
+        fun oppdaterSamvær() {
+            log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
+            samværService.rekalkulerPerioderSamvær(behandling.id!!)
+        }
+
         fun oppdaterInntekter() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
             inntektService.rekalkulerPerioderInntekter(behandling.id!!)
@@ -324,6 +330,7 @@ class BehandlingService(
                     oppdaterBoforhold()
                     oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
+                    oppdaterSamvær()
                     // TODO Underholdskostnad
                     // TODO Samvær
                 }

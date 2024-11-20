@@ -30,6 +30,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
@@ -154,11 +155,11 @@ class BehandlingTilGrunnlagMappingV2(
         return grunnlagBosstatus + personobjekterHusstandsmedlem
     }
 
-    fun Behandling.tilGrunnlagUnderholdskostnad() =
+    fun Behandling.tilGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto> = emptySet()) =
         listOf(
             tilGrunnlagBarnetilsyn(),
             tilGrunnlagTilleggsstønad(),
-            tilGrunnlagFaktiskeTilsynsutgifter(),
+            tilGrunnlagFaktiskeTilsynsutgifter(personobjekter),
         ).flatten()
 
     fun Behandling.tilGrunnlagInntekt(
@@ -256,7 +257,7 @@ class BehandlingTilGrunnlagMappingV2(
             }
     }
 
-    private fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(): List<GrunnlagDto> {
+    private fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(personobjekter: Set<GrunnlagDto> = emptySet()): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
         fun FaktiskTilsynsutgift.tilPersonGrunnlag(): GrunnlagDto {
@@ -267,11 +268,11 @@ class BehandlingTilGrunnlagMappingV2(
 
             return GrunnlagDto(
                 referanse =
-                    Grunnlagstype.PERSON_BIDRAGSMOTTAKER.tilPersonreferanse(
+                    Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER.tilPersonreferanse(
                         fødselsdato.toCompactString(),
                         (person.ident + person.fødselsdato + person.navn).hashCode(),
                     ),
-                type = Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
+                type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
                 innhold =
                     POJONode(
                         Person(
@@ -293,7 +294,8 @@ class BehandlingTilGrunnlagMappingV2(
             .flatMap { u ->
                 u.faktiskeTilsynsutgifter.map {
                     val underholdRolle = u.person.rolle.find { it.behandling.id == id }
-                    val gjelderBarn = underholdRolle?.tilGrunnlagPerson() ?: it.opprettPersonGrunnlag()
+                    val gjelderBarn =
+                        underholdRolle?.tilGrunnlagPerson() ?: personobjekter.hentPerson(u.person.ident) ?: it.opprettPersonGrunnlag()
                     val gjelderBarnReferanse = gjelderBarn.referanse
                     GrunnlagDto(
                         referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
