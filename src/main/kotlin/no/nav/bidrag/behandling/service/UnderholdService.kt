@@ -259,6 +259,7 @@ class UnderholdService(
         behandling: Behandling,
         underholdskostnad: Underholdskostnad,
     ): UnderholdDto? {
+        //TODO: Slette begrunnelse til andre barn
         behandling.underholdskostnader.remove(underholdskostnad)
         personRepository.deleteById(underholdskostnad.person.id!!)
         underholdskostnadRepository.deleteById(underholdskostnad.id!!)
