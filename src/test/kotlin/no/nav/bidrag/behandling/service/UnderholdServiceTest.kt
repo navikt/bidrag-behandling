@@ -5,6 +5,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -42,6 +43,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -170,6 +172,56 @@ class UnderholdServiceTest {
             val u = behandling.underholdskostnader.find { it.id == universalid }
             u.shouldNotBeNull()
             u.tilleggsstønad.shouldBeEmpty()
+        }
+
+        @Test
+        open fun `skal slette andre barn`() {
+            // gitt
+            val universalid = 1L
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val barn = Person(id = 10, navn = "Generalen", fødselsdato = LocalDate.now())
+            val underholdskostnadTilBarnSomSlettes = Underholdskostnad(id = 100, behandling = behandling, person = barn)
+            behandling.underholdskostnader.add(underholdskostnadTilBarnSomSlettes)
+
+            notatService.oppdatereNotat(
+                behandling,
+                NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+                "Begrunnelse for andre barn",
+                behandling.bidragsmottaker!!,
+            )
+
+            val request = SletteUnderholdselement(idUnderhold = 100, idElement = 10, Underholdselement.BARN)
+
+            every { underholdskostnadRepository.deleteById(underholdskostnadTilBarnSomSlettes.id!!) } returns Unit
+            every { personRepository.deleteById(barn.id!!) } returns Unit
+
+            assertSoftly(behandling.underholdskostnader.find { it.id == underholdskostnadTilBarnSomSlettes.id!! }) {
+                shouldNotBeNull()
+                person.id shouldBe barn.id
+            }
+
+            assertSoftly(behandling.notater.find { it.rolle == behandling.bidragsmottaker }) {
+                shouldNotBeNull()
+                innhold shouldBe "Begrunnelse for andre barn"
+            }
+
+            // hvis
+            underholdService.sletteFraUnderhold(behandling, request)
+
+            // så
+            val u = behandling.underholdskostnader.find { it.id == universalid }
+            u.shouldNotBeNull()
+            u.tilleggsstønad.shouldBeEmpty()
+
+            behandling.underholdskostnader.find { it.id == underholdskostnadTilBarnSomSlettes.id!! }.shouldBeNull()
+
+            behandling.notater.find { it.rolle == behandling.bidragsmottaker }.shouldBeNull()
         }
     }
 
