@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
@@ -166,7 +167,7 @@ class Dtomapper(
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
-            gjelderBarn = this.person.tilPersoninfoDto(this.behandling),
+            gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn =
                 rolleSøknadsbarn?.let { this.barnetilsyn.tilStønadTilBarnetilsynDtos() }
@@ -190,20 +191,12 @@ class Dtomapper(
             )
 
         return beregnBarnebidragApi
-            .beregnUnderholdskostnad(grunnlag)
+            .beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
             .finnAlleDelberegningUnderholdskostnad()
             .tilUnderholdskostnadDto()
     }
 
-    private fun Person.tilPersoninfoDto(behandling: Behandling): PersoninfoDto {
-        val rolle =
-            behandling.roller.find { r ->
-                this.rolle
-                    .map { it.id }
-                    .toSet()
-                    .contains(r.id)
-            }
-
+    private fun Person.tilPersoninfoDto(rolle: Rolle?): PersoninfoDto {
         val personinfo =
             this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
                 ?: rolle?.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
@@ -318,7 +311,7 @@ class Dtomapper(
             id = this.id!!,
             periode = DatoperiodeDto(this.fom, this.tom),
             dagsats = this.dagsats,
-            total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats) ?: BigDecimal.ZERO,
+            total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats),
         )
 
     fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.map { it.tilDto() }.toSet()
@@ -333,7 +326,7 @@ class Dtomapper(
             total =
                 beregnBarnebidragApi.beregnMånedsbeløpFaktiskeUtgifter(
                     faktiskUtgift = this.tilsynsutgift,
-                    kostpenger = this.kostpenger,
+                    kostpenger = this.kostpenger ?: BigDecimal.ZERO,
                 ) ?: BigDecimal.ZERO,
         )
 
