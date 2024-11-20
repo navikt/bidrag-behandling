@@ -66,14 +66,21 @@ class UnderholdService(
     ): Underholdskostnad {
         gjelderBarn.validere()
         gjelderBarn.personident?.let { personidentBarn ->
-            val rolle = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
+            val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
             val eksisterendePerson = personRepository.findFirstByIdent(personidentBarn.verdi)
             if (eksisterendePerson == null) {
-                val roller = rolle?.let { mutableSetOf(it) } ?: mutableSetOf()
-                val person = personRepository.save(Person(ident = personidentBarn.verdi, rolle = roller))
+                val person =
+                    personRepository.save(
+                        Person(
+                            ident = personidentBarn.verdi,
+                            rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
+                        ),
+                    )
                 person.rolle.forEach { it.person = person }
                 return lagreUnderholdskostnad(behandling, person)
             } else {
+                rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
+                rolleSøknadsbarn?.person = eksisterendePerson
                 return lagreUnderholdskostnad(behandling, eksisterendePerson)
             }
         } ?: run {
@@ -259,9 +266,12 @@ class UnderholdService(
         behandling: Behandling,
         underholdskostnad: Underholdskostnad,
     ): UnderholdDto? {
-        //TODO: Slette begrunnelse til andre barn
         behandling.underholdskostnader.remove(underholdskostnad)
-        personRepository.deleteById(underholdskostnad.person.id!!)
+        underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
+        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.person.rolle.isEmpty()) {
+            personRepository.deleteById(underholdskostnad.person.id!!)
+            notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
+        }
         underholdskostnadRepository.deleteById(underholdskostnad.id!!)
         return null
     }
