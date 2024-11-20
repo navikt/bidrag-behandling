@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -13,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
@@ -20,9 +22,11 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -56,6 +60,10 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var bidragStonadConsumer: BidragStønadConsumer
     lateinit var validering: ValiderBeregning
     lateinit var validerBehandling: ValiderBehandlingService
+    lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper
+
+    @MockkBean
+    lateinit var evnevurderingService: BeregningEvnevurderingService
 
     @MockK
     lateinit var personService: PersonService
@@ -70,17 +78,20 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         val personService = PersonService(stubPersonConsumer())
         validerBehandling = mockkClass(ValiderBehandlingService::class)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null
+        vedtakGrunnlagsmapper =
+            VedtakGrunnlagMapper(
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
+                ValiderBeregning(),
+                evnevurderingService,
+                personService,
+            )
         mapper =
             Dtomapper(
                 tilgangskontrollService,
                 validering,
                 validerBehandling,
-                BehandlingTilGrunnlagMappingV2(
-                    personService,
-                    BeregnSamværsklasseApi(
-                        stubSjablonService(),
-                    ),
-                ),
+                vedtakGrunnlagsmapper,
+                BeregnBarnebidragApi(),
             )
     }
 

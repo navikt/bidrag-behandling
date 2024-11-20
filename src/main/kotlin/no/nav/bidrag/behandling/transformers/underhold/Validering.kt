@@ -4,11 +4,11 @@ import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.ValideringsfeilUnderhold
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
@@ -114,7 +114,7 @@ fun StønadTilBarnetilsynDto.validere(underholdskostnad: Underholdskostnad) {
     }
 }
 
-fun FaktiskTilsynsutgiftDto.validere(underholdskostnad: Underholdskostnad) {
+fun OppdatereFaktiskTilsynsutgiftRequest.validere(underholdskostnad: Underholdskostnad) {
     this.id?.let { id ->
         if (id > 0 && underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id } == null) {
             ressursIkkeFunnetException("Fant ikke faktisk tilsynsutgift med id $id i behandling ${underholdskostnad.behandling.id}")
@@ -122,7 +122,7 @@ fun FaktiskTilsynsutgiftDto.validere(underholdskostnad: Underholdskostnad) {
     }
 }
 
-fun TilleggsstønadDto.validere(underholdskostnad: Underholdskostnad) {
+fun OppdatereTilleggsstønadRequest.validere(underholdskostnad: Underholdskostnad) {
     this.id?.let { id ->
         if (id > 0 && underholdskostnad.tilleggsstønad.find { id == it.id } == null) {
             ressursIkkeFunnetException("Fant ikke tilleggsstønad med id $id i behandling ${underholdskostnad.behandling.id}")

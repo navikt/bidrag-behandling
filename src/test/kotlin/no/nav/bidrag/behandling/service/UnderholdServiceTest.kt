@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -9,6 +10,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
@@ -18,30 +20,31 @@ import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
-import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
-import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
-import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -53,8 +56,8 @@ class UnderholdServiceTest {
     @MockK
     lateinit var personRepository: PersonRepository
 
-    @MockK
-    lateinit var personService: PersonService
+    @MockkBean
+    lateinit var personConsumer: BidragPersonConsumer
 
     @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
@@ -64,6 +67,11 @@ class UnderholdServiceTest {
 
     @MockK
     lateinit var validering: ValiderBeregning
+
+    @MockK
+    lateinit var evnevurderingService: BeregningEvnevurderingService
+
+    lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper
 
     val notatService = NotatService()
 
@@ -75,9 +83,29 @@ class UnderholdServiceTest {
 
     @BeforeEach
     fun setup() {
-        behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        stubSjablonProvider()
+        personConsumer = stubPersonConsumer()
+        val personService = PersonService(personConsumer)
+
+        behandlingTilGrunnlagMappingV2 =
+            BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        val beregnBarnebidragApi = BeregnBarnebidragApi()
+        vedtakGrunnlagsmapper =
+            VedtakGrunnlagMapper(
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
+                ValiderBeregning(),
+                evnevurderingService,
+                personService,
+            )
+
         dtomapper =
-            Dtomapper(tilgangskontrollService, validering, validerBehandlingService, behandlingTilGrunnlagMappingV2)
+            Dtomapper(
+                tilgangskontrollService,
+                validering,
+                validerBehandlingService,
+                vedtakGrunnlagsmapper,
+                beregnBarnebidragApi,
+            )
         underholdService =
             UnderholdService(
                 underholdskostnadRepository,
@@ -127,13 +155,6 @@ class UnderholdServiceTest {
             val uFørSleting = behandling.underholdskostnader.find { it.id == universalid }
             uFørSleting.shouldNotBeNull()
             uFørSleting.tilleggsstønad.shouldNotBeEmpty()
-
-            every { personService.hentPerson(any()) } returns
-                PersonDto(
-                    ident = Personident(testdataBarn1.ident),
-                    navn = testdataBarn1.navn,
-                    fødselsdato = testdataBarn1.fødselsdato,
-                )
 
             // hvis
             underholdService.sletteFraUnderhold(behandling, request)
@@ -211,7 +232,7 @@ class UnderholdServiceTest {
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
-                    TilleggsstønadDto(
+                    OppdatereTilleggsstønadRequest(
                         periode =
                             DatoperiodeDto(
                                 LocalDate.now().minusMonths(6).withDayOfMonth(1),
@@ -277,7 +298,7 @@ class UnderholdServiceTest {
                 )
 
                 val request =
-                    TilleggsstønadDto(
+                    OppdatereTilleggsstønadRequest(
                         id = 1,
                         periode =
                             DatoperiodeDto(
@@ -465,7 +486,7 @@ class UnderholdServiceTest {
                 underholdskostnad.shouldNotBeNull()
 
                 val request =
-                    FaktiskTilsynsutgiftDto(
+                    OppdatereFaktiskTilsynsutgiftRequest(
                         periode =
                             DatoperiodeDto(
                                 LocalDate.now().minusMonths(6).withDayOfMonth(1),
@@ -538,7 +559,7 @@ class UnderholdServiceTest {
                 )
 
                 val request =
-                    FaktiskTilsynsutgiftDto(
+                    OppdatereFaktiskTilsynsutgiftRequest(
                         id = 1,
                         periode =
                             DatoperiodeDto(
@@ -599,13 +620,6 @@ class UnderholdServiceTest {
                     OppdatereUnderholdRequest(
                         harTilsynsordning = true,
                         begrunnelse = "Barmet går i SFO",
-                    )
-
-                every { personService.hentPerson(any()) } returns
-                    PersonDto(
-                        ident = Personident(testdataBarn1.ident),
-                        navn = testdataBarn1.navn,
-                        fødselsdato = testdataBarn1.fødselsdato,
                     )
 
                 // hvis

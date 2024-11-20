@@ -12,7 +12,6 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 
 data class OppdatereUnderholdResponse(
@@ -79,13 +78,14 @@ data class ValideringsfeilUnderhold(
                 fremtidigPeriode ||
                 harIngenPerioder
     val underholdskostnadId get() = underholdskostnad!!.id
-    val barn get() =
-        UnderholdBarnDto(
-            navn = underholdskostnad!!.person.navn,
-            ident = underholdskostnad.person.ident,
-            fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
-            medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
-        )
+    val barn
+        get() =
+            UnderholdBarnDto(
+                navn = underholdskostnad!!.person.navn,
+                ident = underholdskostnad.person.ident,
+                fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
+                medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
+            )
 
     data class UnderholdBarnDto(
         val navn: String?,
@@ -102,20 +102,29 @@ data class UnderholdskostnadDto(
     val stønadTilBarnetilsyn: BigDecimal = BigDecimal.ZERO,
     val tilsynsutgifter: BigDecimal = BigDecimal.ZERO,
     val barnetrygd: BigDecimal = BigDecimal.ZERO,
-) {
-    // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
-    val total get() = forbruk + boutgifter + tilsynsutgifter + stønadTilBarnetilsyn - barnetrygd
-}
+    val total: BigDecimal,
+)
+
+data class OppdatereTilleggsstønadRequest(
+    val id: Long? = null,
+    val periode: DatoperiodeDto,
+    val dagsats: BigDecimal,
+)
 
 data class TilleggsstønadDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val dagsats: BigDecimal,
-) {
-    // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
-    // total = dagsats x 260/12 x 11/12
-    val total get() = dagsats.multiply(BigDecimal(2860)).divide(BigDecimal(144), RoundingMode.HALF_UP)
-}
+    val total: BigDecimal,
+)
+
+data class OppdatereFaktiskTilsynsutgiftRequest(
+    val id: Long? = null,
+    val periode: DatoperiodeDto,
+    val utgift: BigDecimal,
+    val kostpenger: BigDecimal? = null,
+    val kommentar: String? = null,
+)
 
 data class FaktiskTilsynsutgiftDto(
     val id: Long? = null,
@@ -123,10 +132,8 @@ data class FaktiskTilsynsutgiftDto(
     val utgift: BigDecimal,
     val kostpenger: BigDecimal? = null,
     val kommentar: String? = null,
-) {
-    // TODO: Bytte ut med resultat fra beregningsbibliotek når dette er klart
-    val total get() = kostpenger?.let { utgift - it } ?: utgift
-}
+    val total: BigDecimal,
+)
 
 data class StønadTilBarnetilsynDto(
     val id: Long? = null,

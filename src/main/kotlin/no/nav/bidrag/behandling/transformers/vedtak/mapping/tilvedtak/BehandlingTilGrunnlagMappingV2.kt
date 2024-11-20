@@ -64,7 +64,7 @@ class BehandlingTilGrunnlagMappingV2(
             sivilstand
                 .map {
                     GrunnlagDto(
-                        referanse = "sivilstand_${gjelder.referanse}_${it.datoFom?.toCompactString()}",
+                        referanse = "sivilstand_${gjelder.referanse}_${it.datoFom.toCompactString()}",
                         type = Grunnlagstype.SIVILSTAND_PERIODE,
                         gjelderReferanse = gjelder.referanse,
                         grunnlagsreferanseListe =
@@ -93,7 +93,8 @@ class BehandlingTilGrunnlagMappingV2(
         val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
         val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
         val innhentetSivilstand = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetSivilstand(personobjekter)
-        val innhentetHusstandsmedlemmer = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter)
+        val innhentetHusstandsmedlemmer =
+            sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter)
         val beregnetInntekt = sortertGrunnlagsListeBearbeidet.tilBeregnetInntekt(personobjekter)
         val innhentetInntekter = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetGrunnlagInntekt(personobjekter)
 
@@ -228,14 +229,17 @@ class BehandlingTilGrunnlagMappingV2(
             .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
             .flatMap { samvær ->
                 samvær.perioder.flatMap {
-                    val grunnlagBeregning = it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
+                    val grunnlagBeregning =
+                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
                     val grunnlagPeriode =
                         GrunnlagDto(
                             referanse =
                                 "samvær_${Grunnlagstype.SAMVÆRSPERIODE}" +
-                                    "_${it.fom.toCompactString()}${it.tom?.let {
-                                        "_${it.toCompactString()}"
-                                    }}_${samvær.rolle.tilGrunnlagPerson().referanse}",
+                                    "_${it.fom.toCompactString()}${
+                                        it.tom?.let {
+                                            "_${it.toCompactString()}"
+                                        }
+                                    }_${samvær.rolle.tilGrunnlagPerson().referanse}",
                             type = Grunnlagstype.SAMVÆRSPERIODE,
                             gjelderReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
                             grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
@@ -258,7 +262,8 @@ class BehandlingTilGrunnlagMappingV2(
         fun FaktiskTilsynsutgift.tilPersonGrunnlag(): GrunnlagDto {
             val person = underholdskostnad.person
             val fødselsdato =
-                person.fødselsdato ?: personService.hentPersonFødselsdato(person.ident) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
+                person.fødselsdato ?: personService.hentPersonFødselsdato(person.ident)
+                    ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
 
             return GrunnlagDto(
                 referanse =
@@ -283,6 +288,7 @@ class BehandlingTilGrunnlagMappingV2(
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
         }
+
         return underholdskostnader
             .flatMap { u ->
                 u.faktiskeTilsynsutgifter.map {
