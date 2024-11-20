@@ -62,8 +62,10 @@ class UnderholdService(
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
-            personRepository.findFirstByIdent(personidentBarn.verdi)?.let {
-                lagreUnderholdskostnad(behandling, it)
+            personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
+                rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
+                rolleSøknadsbarn?.person = eksisterendePerson
+                lagreUnderholdskostnad(behandling, eksisterendePerson)
             } ?: run {
                 val person =
                     personRepository.save(
