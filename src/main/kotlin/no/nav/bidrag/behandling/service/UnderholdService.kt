@@ -12,27 +12,22 @@ import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.TilleggsstønadRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
-import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
-import no.nav.bidrag.behandling.transformers.underhold.tilFaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.transformers.underhold.tilTilleggsstønadDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @Service
@@ -51,11 +46,8 @@ class UnderholdService(
         request: OppdatereUnderholdRequest,
     ): UnderholdDto {
         request.validere()
-
         request.harTilsynsordning?.let { underholdskostnad.harTilsynsordning = it }
-
         val rolleSøknadsbarn = underholdskostnad.person.rolle.firstOrNull()
-
         request.begrunnelse?.let {
             notatService.oppdatereNotat(
                 underholdskostnad.behandling,
@@ -64,7 +56,6 @@ class UnderholdService(
                 rolleSøknadsbarn ?: underholdskostnad.behandling.bidragsmottaker!!,
             )
         }
-
         return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
@@ -74,7 +65,6 @@ class UnderholdService(
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
         gjelderBarn.validere()
-
         gjelderBarn.personident?.let { personidentBarn ->
             val rolle = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
             val eksisterendePerson = personRepository.findFirstByIdent(personidentBarn.verdi)
@@ -82,7 +72,6 @@ class UnderholdService(
                 val roller = rolle?.let { mutableSetOf(it) } ?: mutableSetOf()
                 val person = personRepository.save(Person(ident = personidentBarn.verdi, rolle = roller))
                 person.rolle.forEach { it.person = person }
-
                 return lagreUnderholdskostnad(behandling, person)
             } else {
                 return lagreUnderholdskostnad(behandling, eksisterendePerson)
@@ -139,7 +128,8 @@ class UnderholdService(
 
         return OppdatereUnderholdResponse(
             stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
-            underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -147,7 +137,7 @@ class UnderholdService(
     @Transactional
     fun oppdatereFaktiskeTilsynsutgifter(
         underholdskostnad: Underholdskostnad,
-        request: FaktiskTilsynsutgiftDto,
+        request: OppdatereFaktiskTilsynsutgiftRequest,
     ): OppdatereUnderholdResponse {
         request.validere(underholdskostnad)
 
@@ -176,10 +166,12 @@ class UnderholdService(
                 underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
                 faktiskTilsynsutgift
             }
-
         return OppdatereUnderholdResponse(
-            faktiskTilsynsutgift = oppdatertFaktiskTilsynsutgift.tilFaktiskTilsynsutgiftDto(),
-            underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
+            faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
+                    underholdskostnad.behandling,
+                ),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -187,7 +179,7 @@ class UnderholdService(
     @Transactional
     fun oppdatereTilleggsstønad(
         underholdskostnad: Underholdskostnad,
-        request: TilleggsstønadDto,
+        request: OppdatereTilleggsstønadRequest,
     ): OppdatereUnderholdResponse {
         request.validere(underholdskostnad)
 
@@ -214,8 +206,9 @@ class UnderholdService(
             }
 
         return OppdatereUnderholdResponse(
-            tilleggsstønad = oppdatertTilleggsstønad.tilTilleggsstønadDto(),
-            underholdskostnad = beregneUnderholdskostnad(underholdskostnad),
+            tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -294,48 +287,5 @@ class UnderholdService(
             behandling.underholdskostnader.add(u)
             u
         }
-    }
-
-    // TODO: Erstatte med ny bidragsberegningsmodul
-    companion object {
-        @Deprecated("Erstatte med ekstern modul")
-        fun beregneUnderholdskostnad(underholdskostnad: Underholdskostnad): Set<UnderholdskostnadDto> =
-            when {
-                underholdskostnad.tilleggsstønad.isNotEmpty() -> {
-                    underholdskostnad.tilleggsstønad
-                        .sortedBy { it.fom }
-                        .map { DatoperiodeDto(it.fom, it.tom) }
-                        .tilUnderholdskostnadDto()
-                }
-
-                underholdskostnad.barnetilsyn.isNotEmpty() -> {
-                    underholdskostnad.barnetilsyn
-                        .sortedBy { it.fom }
-                        .map { DatoperiodeDto(it.fom, it.tom) }
-                        .tilUnderholdskostnadDto()
-                }
-
-                underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() -> {
-                    underholdskostnad.faktiskeTilsynsutgifter
-                        .sortedBy { it.fom }
-                        .map { DatoperiodeDto(it.fom, it.tom) }
-                        .tilUnderholdskostnadDto()
-                }
-
-                else -> emptySet()
-            }
-
-        fun List<DatoperiodeDto>.tilUnderholdskostnadDto() =
-            this
-                .map {
-                    UnderholdskostnadDto(
-                        periode = it,
-                        forbruk = BigDecimal(5000),
-                        boutgifter = BigDecimal(15450),
-                        stønadTilBarnetilsyn = BigDecimal(3000),
-                        tilsynsutgifter = BigDecimal(6000),
-                        barnetrygd = BigDecimal(4000),
-                    )
-                }.toSet()
     }
 }

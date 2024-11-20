@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -12,17 +13,21 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -39,13 +44,15 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class DtoMapperTest : TestContainerRunner() {
     @Autowired
     lateinit var testdataManager: TestdataManager
+
+    @MockkBean
+    lateinit var personService: PersonService
 
     @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
@@ -56,17 +63,26 @@ class DtoMapperTest : TestContainerRunner() {
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
-    @MockK
-    lateinit var personService: PersonService
+    @MockkBean
+    lateinit var evnevurderingService: BeregningEvnevurderingService
 
     lateinit var grunnlagsmapper: BehandlingTilGrunnlagMappingV2
+
+    lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper
 
     lateinit var dtomapper: Dtomapper
 
     @BeforeEach
     fun initMocks() {
         grunnlagsmapper = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
-        dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, grunnlagsmapper)
+        vedtakGrunnlagsmapper =
+            VedtakGrunnlagMapper(
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
+                ValiderBeregning(),
+                evnevurderingService,
+                personService,
+            )
+        dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, vedtakGrunnlagsmapper, BeregnBarnebidragApi())
         stubUtils.stubTilgangskontrollPersonISak()
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
         every { tilgangskontrollService.harTilgang(any(), any()) } returns true
@@ -263,8 +279,7 @@ class DtoMapperTest : TestContainerRunner() {
         @Test
         fun `skal mappe ident, navn, og begrunnelse til søknadsbarn`() {
             // gitt
-            stubUtils.stubPerson(status = HttpStatus.OK, personident = testdataBarn1.ident)
-
+            stubSjablonProvider()
             val behandling =
                 oppretteTestbehandling(
                     setteDatabaseider = true,
@@ -290,6 +305,8 @@ class DtoMapperTest : TestContainerRunner() {
                     fødselsdato = testdataBarn1.fødselsdato,
                 )
 
+            every { personService.hentNyesteIdent(any()) } returns Personident(testdataBarn1.ident)
+
             // hvis
             val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.first())
 
@@ -301,8 +318,6 @@ class DtoMapperTest : TestContainerRunner() {
 
         @Test
         fun `skal mappe ident, navn, og begrunnelse til annet barn`() {
-            stubUtils.stubPerson(status = HttpStatus.OK, personident = testdataBarn1.ident)
-
             val behandling =
                 oppretteTestbehandling(
                     setteDatabaseider = true,
