@@ -10,6 +10,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
@@ -70,26 +71,13 @@ data class BidragPeriodeBeregningsdetaljer(
         val gjennomsnittligSamværPerMåned: BigDecimal,
     )
 
-    val underholdskostnadMinusBMsNettoBarnetillegg get() =
-        maxOf(
-            delberegningUnderholdskostnad!!.underholdskostnad - BigDecimal.ZERO,
-            BigDecimal.ZERO,
-        )
-    val beløpEtterVurderingAv25ProsentInntektOgEvne get(): BigDecimal {
-        if (sluttberegning!!.bidragJustertNedTil25ProsentAvInntekt) return delberegningBidragsevne?.sumInntekt25Prosent ?: BigDecimal.ZERO
-        if (sluttberegning.bidragJustertNedTilEvne) return delberegningBidragsevne?.bidragsevne ?: BigDecimal.ZERO
-        return bpsAndel?.andelBeløp ?: BigDecimal.ZERO
-    }
-    val beløpEtterVurderingAvBMsBarnetillegg get(): BigDecimal {
-        if (sluttberegning!!.bidragJustertForNettoBarnetilleggBM) return underholdskostnadMinusBMsNettoBarnetillegg
-        return beløpEtterVurderingAv25ProsentInntektOgEvne
-    }
-    val beløpSamværsfradragTrekkesFra get(): BigDecimal {
-        if (sluttberegning!!.bidragJustertForNettoBarnetilleggBP) return BigDecimal.ZERO
-        return beløpEtterVurderingAvBMsBarnetillegg
-    }
-
-    val beløpEtterFratrekkDeltBosted get() = bpsAndel!!.andelBeløp
+    val beløpEtterFratrekkDeltBosted get() =
+        if (deltBosted) {
+            bpsAndel!!.andelBeløp -
+                delberegningUnderholdskostnad!!.underholdskostnad.divide(BigDecimal(2), RoundingMode.HALF_UP)
+        } else {
+            bpsAndel!!.andelBeløp
+        }
 
     val deltBosted get() = sluttberegning!!.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }

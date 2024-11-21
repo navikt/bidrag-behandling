@@ -68,6 +68,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnlag =
@@ -486,14 +487,20 @@ fun List<GrunnlagDto>.finnBarnetillegg(
     val sumBarnetillegg = barnetillegg.sumOf { it.innholdTilObjekt<InntektsrapporteringPeriode>().beløp }
     return DelberegningBarnetilleggDto(
         skattFaktor = skattFaktor,
-        nettoBeløp = sumBarnetillegg.multiply(BigDecimal.ONE - skattFaktor),
+        nettoBeløp =
+            sumBarnetillegg
+                .divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.ONE - skattFaktor),
         barnetillegg =
             barnetillegg
                 .map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }
                 .map {
                     DelberegningBarnetilleggDto.BarnetilleggDetaljerDto(
-                        bruttoBeløp = it.beløp,
-                        nettoBeløp = it.beløp.multiply(BigDecimal.ONE - skattFaktor),
+                        bruttoBeløp = it.beløp.divide(BigDecimal(12), 10, RoundingMode.HALF_UP),
+                        nettoBeløp =
+                            it.beløp
+                                .divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
+                                .multiply(BigDecimal.ONE - skattFaktor),
                         visningsnavn =
                             it.inntekstpostListe
                                 .first()
