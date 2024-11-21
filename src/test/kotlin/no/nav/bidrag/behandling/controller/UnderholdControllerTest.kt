@@ -7,12 +7,14 @@ import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
@@ -26,6 +28,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -36,6 +39,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.RestClientException
+import org.springframework.web.util.UriComponentsBuilder
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertFailsWith
@@ -120,6 +124,97 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
     @Nested
     open inner class Oppdatere {
+        @Test
+        @Transactional
+        open fun `skal sette tilsynsordning`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)
+
+            val underholdsid = behandling.underholdskostnader.first().id!!
+            lagretBehandling.underholdskostnader.find { it.id == underholdsid }?.harTilsynsordning shouldNotBe true
+
+            val komponentbygger =
+                UriComponentsBuilder
+                    .fromUriString("${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/tilsynsordning")
+                    .queryParam("harTilsynsordning", true)
+
+            // hvis
+            val svar =
+                httpHeaderTestRestTemplate.exchange(
+                    komponentbygger.build().encode().toUri(),
+                    HttpMethod.PUT,
+                    null,
+                    Object::class.java,
+                )
+
+            // så
+            svar.shouldNotBeNull()
+            svar.statusCode shouldBe HttpStatus.CREATED
+
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
+            oppdatertBehandling.shouldNotBeNull()
+
+            oppdatertBehandling
+                .get()
+                .underholdskostnader
+                .find { it.id == underholdsid }
+                ?.harTilsynsordning shouldBe true
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere begrunnelse for søknadsbarn`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)
+
+            val underholdsid = behandling.underholdskostnader.first().id!!
+            lagretBehandling.underholdskostnader.find { it.id == underholdsid }?.harTilsynsordning shouldNotBe true
+
+            val request = OppdatereBegrunnelseRequest(underholdsid, "Oppretter begrunnelse for søknadsbarn")
+
+            // hvis
+            val svar =
+                httpHeaderTestRestTemplate.exchange(
+                    "${rootUriV2()}/behandling/${behandling.id}/underhold/begrunnelse",
+                    HttpMethod.PUT,
+                    HttpEntity(request),
+                    Object::class.java,
+                )
+
+            // så
+            svar.shouldNotBeNull()
+            svar.statusCode shouldBe HttpStatus.CREATED
+
+            val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
+            oppdatertBehandling.shouldNotBeNull()
+
+            assertSoftly(
+                oppdatertBehandling.get().notater.find {
+                    behandling.underholdskostnader
+                        .first()
+                        .person.rolle
+                        .first()
+                        .id == it.rolle.id &&
+                        NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD == it.type
+                },
+            ) {
+                shouldNotBeNull()
+                innhold shouldBe "Oppretter begrunnelse for søknadsbarn"
+            }
+        }
+
         @Test
         open fun `skal angi tilsynsordning og oppdatere begrunnelse`() {
             // gitt

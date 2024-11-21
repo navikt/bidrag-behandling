@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.database.repository.TilleggsstønadRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
@@ -49,9 +50,11 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
+import kotlin.test.assertFailsWith
 
 @ExtendWith(MockKExtension::class)
 class UnderholdServiceTest {
@@ -682,6 +685,47 @@ class UnderholdServiceTest {
                     kostpenger shouldBe request.kostpenger
                     kommentar shouldBe request.kommentar
                 }
+            }
+        }
+
+        @Nested
+        @DisplayName("Tester oppdatering av begrunnelse")
+        open inner class Begrunnelse {
+            @Test
+            open fun `skal ikke kunne legge inn begrunnelse for andre barn hvis andre barn mangler`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val underholdskostnad =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! ==
+                            it.person.rolle
+                                .first()
+                                .ident
+                    }
+                underholdskostnad.shouldNotBeNull()
+
+                val request =
+                    OppdatereBegrunnelseRequest(
+                        begrunnelse = "Begrunnelse for annet barn",
+                    )
+
+                // hvis
+                val respons =
+                    assertFailsWith<HttpClientErrorException> {
+                        underholdService.oppdatereBegrunnelse(behandling, request)
+                    }
+
+                // så
+                respons.shouldNotBeNull()
             }
         }
 

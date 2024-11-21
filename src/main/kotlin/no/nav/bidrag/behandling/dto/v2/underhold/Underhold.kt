@@ -57,6 +57,12 @@ data class OppdatereUnderholdRequest(
     val begrunnelse: String? = null,
 )
 
+data class OppdatereBegrunnelseRequest(
+    @Schema(description = "Id til underhold begrunnelsen gjelder for hvis søknadsbarn. Null for andre barn.")
+    val underholdsid: Long? = null,
+    val begrunnelse: String,
+)
+
 data class ValideringsfeilUnderhold(
     @JsonIgnore
     val underholdskostnad: Underholdskostnad?,
