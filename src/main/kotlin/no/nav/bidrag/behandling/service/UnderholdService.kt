@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
@@ -18,13 +19,16 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @Service
@@ -34,6 +38,55 @@ class UnderholdService(
     private val notatService: NotatService,
     private val dtomapper: Dtomapper,
 ) {
+    fun oppdatereBegrunnelse(
+        behandling: Behandling,
+        request: OppdatereBegrunnelseRequest,
+    ) {
+        val rolleSøknadsbarn =
+            request.underholdsid?.let {
+                henteOgValidereUnderholdskostnad(behandling, it).person.rolle.firstOrNull()
+            }
+
+        if (request.underholdsid == null) {
+            val underholdHarAndreBarn = behandling.underholdskostnader.find { it.person.rolle.isEmpty() } != null
+            if (!underholdHarAndreBarn) {
+                throw HttpClientErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    "Kan ikke oppdatere begrunnelse i underhold for andre barn uten at andre barn er lagt til.",
+                )
+            }
+        }
+
+        notatService.oppdatereNotat(
+            behandling,
+            Notattype.UNDERHOLDSKOSTNAD,
+            request.begrunnelse,
+            rolleSøknadsbarn ?: behandling.bidragsmottaker!!,
+        )
+    }
+
+    @Transactional
+    fun oppdatereTilsynsordning(
+        underholdskostnad: Underholdskostnad,
+        harTilsynsordning: Boolean,
+    ) {
+        if (!harTilsynsordning &&
+            (
+                underholdskostnad.barnetilsyn.isNotEmpty() ||
+                    underholdskostnad.tilleggsstønad.isNotEmpty() ||
+                    underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty()
+            )
+        ) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke sette harTilsynsordning til usann så lenge barnet er registrert med stønad til barnetilstyn, tilleggsstønad, eller faktiske tilsynsutgift",
+            )
+        }
+
+        underholdskostnad.harTilsynsordning = harTilsynsordning
+    }
+
+    @Deprecated("Erstattes av oppdatereBegrunnelse og oppdatereTilsynsordning")
     @Transactional
     fun oppdatereUnderhold(
         underholdskostnad: Underholdskostnad,

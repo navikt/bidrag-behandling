@@ -9,6 +9,7 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 
 private val log = KotlinLogging.logger {}
@@ -179,6 +181,7 @@ class UnderholdController(
         return underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
     }
 
+    @Deprecated("Erstattes av oppdatereBegrunnelse og angiTilsynsordning")
     @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/oppdatere")
     @Operation(
@@ -206,6 +209,61 @@ class UnderholdController(
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
         return underholdService.oppdatereUnderhold(underholdskostnad, request)
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PutMapping("/behandling/{behandlingsid}/underhold/begrunnelse")
+    @Operation(
+        description = "Oppdatere begrunnelse for underhold relatert til søknadsbarn eller andre barn.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun oppdatereBegrunnelse(
+        @PathVariable behandlingsid: Long,
+        @RequestBody(required = true) request: OppdatereBegrunnelseRequest,
+    ) {
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        underholdService.oppdatereBegrunnelse(behandling, request)
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")
+    @Operation(
+        description = "Angir om søknadsbarn har tilsynsordning.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun oppdatereTilsynsordning(
+        @PathVariable behandlingsid: Long,
+        @PathVariable underholdsid: Long,
+        @RequestParam(required = true) harTilsynsordning: Boolean,
+    ) {
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
+
+        underholdService.oppdatereTilsynsordning(underholdskostnad, harTilsynsordning)
     }
 
     @ResponseStatus(HttpStatus.CREATED)
