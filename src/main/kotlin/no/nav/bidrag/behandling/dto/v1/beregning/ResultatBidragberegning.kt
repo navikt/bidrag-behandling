@@ -10,11 +10,11 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val resultat: BeregnetBarnebidragResultat,
+    val avslaskode: Resultatkode? = null,
 )
 
 data class ResultatBidragberegningDto(
@@ -32,13 +32,13 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val samværsfradrag: BigDecimal,
     val beregnetBidrag: BigDecimal,
     val faktiskBidrag: BigDecimal,
-    val resultatKode: Resultatkode,
+    val resultatKode: Resultatkode?,
     val erDirekteAvslag: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
 ) {
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
-        if (resultatKode.erDirekteAvslag()) {
+        if (resultatKode?.erDirekteAvslag() == true) {
             resultatKode.visningsnavnIntern()
         } else {
             beregningsdetaljer
@@ -52,6 +52,8 @@ data class BidragPeriodeBeregningsdetaljer(
     val bpHarEvne: Boolean,
     val antallBarnIHusstanden: Double? = null,
     val forskuddssats: BigDecimal,
+    val barnetilleggBM: DelberegningBarnetilleggDto,
+    val barnetilleggBP: DelberegningBarnetilleggDto,
     val voksenIHusstanden: Boolean? = null,
     val enesteVoksenIHusstandenErEgetBarn: Boolean? = null,
     val bpsAndel: DelberegningBidragspliktigesAndel? = null,
@@ -70,34 +72,24 @@ data class BidragPeriodeBeregningsdetaljer(
 
     val underholdskostnadMinusBMsNettoBarnetillegg get() =
         maxOf(
-            delberegningUnderholdskostnad!!.underholdskostnad - sluttberegning!!.nettoBarnetilleggBM,
+            delberegningUnderholdskostnad!!.underholdskostnad - BigDecimal.ZERO,
             BigDecimal.ZERO,
         )
     val beløpEtterVurderingAv25ProsentInntektOgEvne get(): BigDecimal {
-        if (sluttberegning!!.justertNedTil25ProsentAvInntekt) return delberegningBidragsevne?.sumInntekt25Prosent ?: BigDecimal.ZERO
-        if (sluttberegning.justertNedTilEvne) return delberegningBidragsevne?.bidragsevne ?: BigDecimal.ZERO
+        if (sluttberegning!!.bidragJustertNedTil25ProsentAvInntekt) return delberegningBidragsevne?.sumInntekt25Prosent ?: BigDecimal.ZERO
+        if (sluttberegning.bidragJustertNedTilEvne) return delberegningBidragsevne?.bidragsevne ?: BigDecimal.ZERO
         return bpsAndel?.andelBeløp ?: BigDecimal.ZERO
     }
     val beløpEtterVurderingAvBMsBarnetillegg get(): BigDecimal {
-        if (sluttberegning!!.justertForNettoBarnetilleggBM) return underholdskostnadMinusBMsNettoBarnetillegg
+        if (sluttberegning!!.bidragJustertForNettoBarnetilleggBM) return underholdskostnadMinusBMsNettoBarnetillegg
         return beløpEtterVurderingAv25ProsentInntektOgEvne
     }
     val beløpSamværsfradragTrekkesFra get(): BigDecimal {
-        if (sluttberegning!!.justertForNettoBarnetilleggBP) return sluttberegning.nettoBarnetilleggBP
+        if (sluttberegning!!.bidragJustertForNettoBarnetilleggBP) return BigDecimal.ZERO
         return beløpEtterVurderingAvBMsBarnetillegg
     }
 
-    val beløpEtterFratrekkDeltBosted get() =
-        if (deltBosted) {
-            bpsAndel!!.andelBeløp -
-                delberegningUnderholdskostnad!!.underholdskostnad.divide(BigDecimal(2), RoundingMode.HALF_UP)
-        } else {
-            bpsAndel!!.andelBeløp
-        }
+    val beløpEtterFratrekkDeltBosted get() = bpsAndel!!.andelBeløp
 
-    val deltBosted get() =
-        listOf(
-            Resultatkode.DELT_BOSTED,
-            Resultatkode.BIDRAG_IKKE_BEREGNET_DELT_BOSTED,
-        ).contains(sluttberegning!!.resultatKode)
+    val deltBosted get() = sluttberegning!!.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }

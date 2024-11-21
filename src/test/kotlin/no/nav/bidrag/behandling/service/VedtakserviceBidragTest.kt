@@ -56,19 +56,26 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsfradrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
+import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
@@ -193,6 +200,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakRequest.validerSluttberegning()
         opprettVedtakRequest.validerBosstatusPerioder()
         opprettVedtakRequest.validerInntekter()
+        opprettVedtakRequest.validerSamvær()
+        opprettVedtakRequest.validerUndeholdskostnad()
 
         assertSoftly(opprettVedtakRequest) {
             val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
@@ -622,14 +631,17 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     val sluttberegning =
         hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG)
     sluttberegning shouldHaveSize (8)
+    val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
 
     val sluttberegningPeriode = sluttberegning[6]
     assertSoftly(sluttberegningPeriode) {
         val innhold = innholdTilObjekt<SluttberegningBarnebidrag>()
-        innhold.resultatKode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.KOSTNADSBEREGNET_BIDRAG
+        innhold.resultatVisningsnavn!!.intern shouldBe "Kostnadsberegnet bidrag"
         innhold.beregnetBeløp shouldBe BigDecimal("6121.53")
         innhold.resultatBeløp shouldBe BigDecimal("6120")
-        it.grunnlagsreferanseListe shouldHaveSize 7
+        it.grunnlagsreferanseListe shouldHaveSize 8
+        hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe) shouldHaveSize 1
+        hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe).first().referanse shouldBe søknadsbarn1Grunnlag.referanse
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL, it.grunnlagsreferanseListe) shouldHaveSize 1
@@ -691,9 +703,77 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
             relatertTilPart shouldBe bpGrunnlag.referanse
         }
 
-        it
-            .filtrerBasertPåFremmedReferanse(referanse = husstandsmedlemGrunnlag.referanse)
-            .shouldHaveSize(2)
+        it.filtrerBasertPåFremmedReferanse(referanse = husstandsmedlemGrunnlag.referanse).shouldHaveSize(2)
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerUndeholdskostnad() {
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+    val husstandsmedlemGrunnlag = grunnlagListe.hentPerson(testdataHusstandsmedlem1.ident)!!
+    val bmBarnGrunnlag = grunnlagListe.hentPerson(testdataBarnBm.ident)!!
+    val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)) {
+        shouldHaveSize(2)
+        assertSoftly(it[0]) {
+            val innhold = it.innholdTilObjekt<BarnetilsynMedStønadPeriode>()
+            innhold.gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
+            gjelderReferanse shouldBe bmGrunnlag.referanse
+        }
+    }
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)) {
+        shouldHaveSize(1)
+        val innhold = it[0].innholdTilObjekt<TilleggsstønadPeriode>()
+        innhold.gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
+    }
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)) {
+        shouldHaveSize(3)
+        it[0].gjelderReferanse shouldBe bmGrunnlag.referanse
+        it[1].gjelderReferanse shouldBe bmGrunnlag.referanse
+        it[2].gjelderReferanse shouldBe bmGrunnlag.referanse
+
+        val søknadsbarnFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == søknadsbarnGrunnlag.referanse }!!
+        søknadsbarnFU shouldNotBe null
+        val innholdSøknadsbarnFU = søknadsbarnFU.innholdTilObjekt<FaktiskUtgiftPeriode>()
+        innholdSøknadsbarnFU.kommentar shouldBe "Kommentar på tilsynsutgift"
+        innholdSøknadsbarnFU.faktiskUtgiftBeløp shouldBe BigDecimal(4000)
+        innholdSøknadsbarnFU.kostpengerBeløp shouldBe BigDecimal(1000)
+
+        val bmBarnFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == bmBarnGrunnlag.referanse }
+        bmBarnFU shouldNotBe null
+
+        val hustandsmedlemFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == husstandsmedlemGrunnlag.referanse }
+        hustandsmedlemFU shouldNotBe null
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerSamvær() {
+    val samværsperioder = hentGrunnlagstyper(Grunnlagstype.SAMVÆRSPERIODE)
+    samværsperioder shouldHaveSize 2
+    val manuellPeriode = samværsperioder.find { grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it.grunnlagsreferanseListe).isEmpty() }!!
+    val beregnetPeriode = samværsperioder.find { grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it.grunnlagsreferanseListe).isNotEmpty() }!!
+    assertSoftly(manuellPeriode) {
+        it.grunnlagsreferanseListe shouldHaveSize 0
+        it.innholdTilObjekt<SamværsperiodeGrunnlag>().samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
+    }
+    assertSoftly(beregnetPeriode) {
+        it.grunnlagsreferanseListe shouldHaveSize 8
+        grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON_SAMVARSFRADRAG, it) shouldHaveSize 5
+        grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER, it) shouldHaveSize 1
+        grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it) shouldHaveSize 1
+        grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SAMVÆRSKALKULATOR, it) shouldHaveSize 1
+
+        val innhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
+        innhold.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
+        val kalkulator = grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SAMVÆRSKALKULATOR, it).first()
+        val innholdKalkulator = kalkulator.innholdTilObjekt<SamværskalkulatorDetaljer>()
+        innholdKalkulator.ferier shouldHaveSize 5
+        innholdKalkulator.regelmessigSamværNetter shouldBe BigDecimal(4)
+
+        val delberegningSamværsklasse = grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it).first()
+        val innholdSamværsklasse = delberegningSamværsklasse.innholdTilObjekt<DelberegningSamværsklasse>()
+        innholdSamværsklasse.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
+        innholdSamværsklasse.gjennomsnittligSamværPerMåned shouldBe BigDecimal("8.01")
     }
 }
 

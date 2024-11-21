@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
@@ -294,6 +295,7 @@ class BehandlingTilGrunnlagMappingV2(
                     GrunnlagDto(
                         referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
                         type = Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
+                        gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
                         innhold =
                             POJONode(
                                 FaktiskUtgiftPeriode(

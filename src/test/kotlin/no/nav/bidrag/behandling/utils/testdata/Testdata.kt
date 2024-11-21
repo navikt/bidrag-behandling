@@ -1750,10 +1750,34 @@ fun Behandling.leggTilSamvær(
             ferier =
                 listOf(
                     SamværskalkulatorDetaljer.SamværskalkulatorFerie(
-                        type = SamværskalkulatorFerietype.SOMMERFERIE,
+                        type = SamværskalkulatorFerietype.VINTERFERIE,
+                        bidragsmottakerNetter = BigDecimal(0),
+                        bidragspliktigNetter = BigDecimal(0),
+                        frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+                    ),
+                    SamværskalkulatorDetaljer.SamværskalkulatorFerie(
+                        type = SamværskalkulatorFerietype.JUL_NYTTÅR,
+                        bidragsmottakerNetter = BigDecimal(0),
+                        bidragspliktigNetter = BigDecimal(0),
+                        frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+                    ),
+                    SamværskalkulatorDetaljer.SamværskalkulatorFerie(
+                        type = SamværskalkulatorFerietype.ANNET,
                         bidragsmottakerNetter = BigDecimal(14),
                         bidragspliktigNetter = BigDecimal(1),
                         frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+                    ),
+                    SamværskalkulatorDetaljer.SamværskalkulatorFerie(
+                        type = SamværskalkulatorFerietype.PÅSKE,
+                        bidragsmottakerNetter = BigDecimal(14),
+                        bidragspliktigNetter = BigDecimal(1),
+                        frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+                    ),
+                    SamværskalkulatorDetaljer.SamværskalkulatorFerie(
+                        type = SamværskalkulatorFerietype.SOMMERFERIE,
+                        bidragsmottakerNetter = BigDecimal(14),
+                        bidragspliktigNetter = BigDecimal(1),
+                        frekvens = SamværskalkulatorNetterFrekvens.ANNET_HVERT_ÅR,
                     ),
                 ),
         )

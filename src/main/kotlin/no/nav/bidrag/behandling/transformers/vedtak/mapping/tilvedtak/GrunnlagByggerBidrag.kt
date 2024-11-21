@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -33,6 +34,7 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                     GrunnlagDto(
                         referanse = it.tilGrunnlagsreferanseBarnetilsyn(gjelderBarnReferanse),
                         type = Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE,
+                        gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
                         innhold =
                             POJONode(
                                 BarnetilsynMedStønadPeriode(
@@ -43,7 +45,7 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                                         it.under_skolealder?.let {
                                             if (it) Skolealder.UNDER else Skolealder.OVER
                                         } ?: Skolealder.IKKE_ANGITT,
-                                    manueltRegistrert = true,
+                                    manueltRegistrert = if (it.kilde == Kilde.OFFENTLIG) false else true,
                                 ),
                             ),
                     )
@@ -61,6 +63,7 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                 GrunnlagDto(
                     referanse = it.tilGrunnlagsreferanseTilleggsstønad(gjelderBarnReferanse),
                     type = Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
+                    gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
                     innhold =
                         POJONode(
                             TilleggsstønadPeriode(
