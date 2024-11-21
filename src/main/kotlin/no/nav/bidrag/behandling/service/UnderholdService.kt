@@ -53,6 +53,16 @@ class UnderholdService(
                 henteOgValidereUnderholdskostnad(behandling, it).person.rolle.firstOrNull()
             }
 
+        if(request.underholdsid == null) {
+            val underholdHarAndreBarn = behandling.underholdskostnader.find{it.person.rolle.isEmpty()} != null
+            if (!underholdHarAndreBarn) {
+                throw HttpClientErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    "Kan ikke oppdatere begrunnelse i underhold for andre barn uten at andre barn er lagt til.",
+                )
+            }
+        }
+
         notatService.oppdatereNotat(
             behandling,
             Notattype.UNDERHOLDSKOSTNAD,
