@@ -238,7 +238,7 @@ class UnderholdController(
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")
+    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/begrunnelse")
     @Operation(
         description = "Angir om søknadsbarn har tilsynsordning.",
         security = [SecurityRequirement(name = "bearer-key")],
