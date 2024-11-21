@@ -779,7 +779,7 @@ class VedtakInnhentetGrunnlagTest {
                             periode.fom shouldBe LocalDate.parse("2022-01-01")
                             periode.til shouldBe LocalDate.parse("2022-07-31")
                             tilsynstype shouldBe Tilsynstype.HELTID
-                            skolealder shouldBe Skolealder.IKKE_ANGITT
+                            skolealder shouldBe Skolealder.OVER
                         }
                     }
                 }

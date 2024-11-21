@@ -2,7 +2,7 @@
   "bidragssakerListe" : [ {
     "sak" : "{saksnummer}",
     "type" : "BIDRAG",
-    "kravhaver" : "{barnIdent}",
+    "kravhaver" : "{barn1Ident}",
     "løpendeBeløp" : 0
   } ]
 }

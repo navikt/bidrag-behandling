@@ -234,13 +234,7 @@ class BehandlingTilGrunnlagMappingV2(
                         it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
                     val grunnlagPeriode =
                         GrunnlagDto(
-                            referanse =
-                                "samvær_${Grunnlagstype.SAMVÆRSPERIODE}" +
-                                    "_${it.fom.toCompactString()}${
-                                        it.tom?.let {
-                                            "_${it.toCompactString()}"
-                                        }
-                                    }_${samvær.rolle.tilGrunnlagPerson().referanse}",
+                            referanse = it.tilGrunnlagsreferanseSamværsperiode(),
                             type = Grunnlagstype.SAMVÆRSPERIODE,
                             gjelderReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
                             grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },

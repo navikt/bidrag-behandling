@@ -97,6 +97,7 @@ import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
 import java.math.BigDecimal
+import java.nio.charset.Charset
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -803,25 +804,31 @@ fun opprettAlleAktiveGrunnlagFraFil(
     behandling: Behandling,
     filnavn: String,
 ): MutableSet<Grunnlag> {
+    val filJsonString =
+        try {
+            hentFil("/__files/$filnavn").readText(Charset.defaultCharset())
+        } catch (e: Exception) {
+            filnavn
+        }
     val grunnlagListe =
         listOf(
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.ARBEIDSFORHOLD),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILSYN),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BARNETILLEGG),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.KONTANTSTØTTE),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SMÅBARNSTILLEGG),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
-            opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
-            opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBM),
-            opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn1),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BOFORHOLD),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.ARBEIDSFORHOLD),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BARNETILSYN),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BARNETILLEGG),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.KONTANTSTØTTE),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SMÅBARNSTILLEGG),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
+            opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBM),
+            opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBarn1),
         ).flatten().toMutableSet()
     when (behandling.tilType()) {
         TypeBehandling.FORSKUDD -> {
             grunnlagListe.addAll(
                 listOf(
-                    opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.SIVILSTAND),
-                    opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBarn2),
+                    opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SIVILSTAND),
+                    opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBarn2),
                 ).flatten(),
             )
         }
@@ -829,8 +836,8 @@ fun opprettAlleAktiveGrunnlagFraFil(
         else -> {
             grunnlagListe.addAll(
                 listOf(
-                    opprettBeregnetInntektFraGrunnlag(behandling, filnavn, testdataBP),
-                    opprettGrunnlagFraFil(behandling, filnavn, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN),
+                    opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBP),
+                    opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN),
                 ).flatten(),
             )
         }
@@ -840,11 +847,10 @@ fun opprettAlleAktiveGrunnlagFraFil(
 
 fun opprettBeregnetInntektFraGrunnlag(
     behandling: Behandling,
-    filnavn: String,
+    filJson: String,
     testDataPerson: TestDataPerson,
 ): List<Grunnlag> {
-    val fil = hentFil("/__files/$filnavn")
-    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
+    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(filJson)
     val inntekterBearbeidet =
         InntektApi("").transformerInntekter(
             grunnlag.tilTransformerInntekterRequest(
@@ -1597,10 +1603,9 @@ fun erstattVariablerITestFil(filnavn: String): String {
     stringValue = stringValue.replace("{bmfDato}", testdataBM.fødselsdato.toString())
     stringValue = stringValue.replace("{bpIdent}", testdataBP.ident)
     stringValue = stringValue.replace("{bpfDato}", testdataBP.fødselsdato.toString())
-    stringValue = stringValue.replace("{barnId}", testdataBarn1.ident)
-    stringValue = stringValue.replace("{barnIdent}", testdataBarn1.ident)
+    stringValue = stringValue.replace("{barn1Ident}", testdataBarn1.ident)
     stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
-    stringValue = stringValue.replace("{barnId2}", testdataBarn2.ident)
+    stringValue = stringValue.replace("{barn2Ident}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
     stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)
     stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
@@ -1685,8 +1690,8 @@ fun Behandling.leggTilFaktiskTilsynsutgift(
             underholdskostnad = underholdskostnad,
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
-            tilsynsutgift = BigDecimal(100),
-            kostpenger = BigDecimal(400),
+            tilsynsutgift = BigDecimal(4000),
+            kostpenger = BigDecimal(1000),
             kommentar = "Kommentar på tilsynsutgift",
         ),
     )
@@ -1695,18 +1700,21 @@ fun Behandling.leggTilFaktiskTilsynsutgift(
 fun Behandling.leggTilBarnetilsyn(
     periode: ÅrMånedsperiode,
     barn: TestDataPerson = testdataBarn1,
-    medId: Boolean = false,
+    generateId: Boolean = false,
+    tilsynstype: Tilsynstype = Tilsynstype.HELTID,
+    under_skolealder: Boolean? = true,
+    kilde: Kilde = Kilde.MANUELL,
 ) {
     val underholdskostnad = underholdskostnader.find { it.person.ident == barn.ident }!!
     underholdskostnad.barnetilsyn.add(
         Barnetilsyn(
-            id = if (medId) 1 else null,
+            id = if (generateId) 1 else null,
             underholdskostnad = underholdskostnad,
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
-            under_skolealder = true,
-            omfang = Tilsynstype.HELTID,
-            kilde = Kilde.OFFENTLIG,
+            under_skolealder = under_skolealder,
+            omfang = tilsynstype,
+            kilde = kilde,
         ),
     )
 }
@@ -1724,7 +1732,7 @@ fun Behandling.leggTilTillegsstønad(
             underholdskostnad = underholdskostnad,
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
-            dagsats = BigDecimal(10),
+            dagsats = BigDecimal(50),
         ),
     )
 }
@@ -1782,7 +1790,7 @@ fun Behandling.leggTilBarnetillegg(
         )
     inntekt.inntektsposter.add(
         Inntektspost(
-            beløp = BigDecimal(100),
+            beløp = BigDecimal(3000),
             inntektstype = Inntektstype.BARNETILLEGG_AAP,
             inntekt = inntekt,
             kode = "",

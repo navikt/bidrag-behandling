@@ -100,7 +100,7 @@ class BehandlingTilVedtakMapping(
                 type = Engangsbeløptype.GEBYR_SKYLDNER,
                 beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
                 betaltBeløp = null,
-                resultatkode = "GIGI", // TODO: Resultat fra beregning
+                resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
                 eksternReferanse = null,
                 beslutning = Beslutningstype.ENDRING,
                 grunnlagReferanseListe = emptyList(),
@@ -115,7 +115,7 @@ class BehandlingTilVedtakMapping(
                 type = Engangsbeløptype.GEBYR_MOTTAKER,
                 beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
                 betaltBeløp = null,
-                resultatkode = "GIGI", // TODO: Resultat fra beregning
+                resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
                 eksternReferanse = null,
                 beslutning = Beslutningstype.ENDRING,
                 grunnlagReferanseListe = emptyList(),
@@ -167,6 +167,7 @@ class BehandlingTilVedtakMapping(
 
             return byggOpprettVedtakRequestObjekt()
                 .copy(
+                    engangsbeløpListe = mapEngangsbeløpGebyr(),
                     stønadsendringListe =
                         søknadsbarn.map {
                             OpprettStønadsendringRequestDto(

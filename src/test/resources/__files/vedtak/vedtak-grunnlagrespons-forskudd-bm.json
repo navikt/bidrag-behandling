@@ -329,7 +329,7 @@
   "barnetilleggListe": [
     {
       "partPersonId": "{personId}",
-      "barnPersonId": "{barnId}",
+      "barnPersonId": "{barn1Ident}",
       "periodeFra": "{virkningstidspunkt-minus-5m}",
       "periodeTil": "{virkningstidspunkt-plus-8m}",
       "barnetilleggType": "PENSJON",
@@ -340,7 +340,7 @@
   "kontantstøtteListe": [
     {
       "partPersonId": "{personId}",
-      "barnPersonId": "{barnId}",
+      "barnPersonId": "{barn1Ident}",
       "periodeFra": "2023-01-01",
       "periodeTil": "2023-03-31",
       "beløp": 1000.0
@@ -378,7 +378,7 @@
       "relasjon": "BARN",
       "fødselsdato": "2017-07-07",
       "partPersonId": "{personId}",
-      "gjelderPersonId": "{barnId}",
+      "gjelderPersonId": "{barn1Ident}",
       "borISammeHusstandDtoListe": [
         {
           "periodeFra": "2022-07-26",
@@ -404,7 +404,7 @@
       "relasjon": "BARN",
       "fødselsdato": "2015-05-13",
       "partPersonId": "{personId}",
-      "gjelderPersonId": "{barnId2}",
+      "gjelderPersonId": "{barn2Ident}",
       "borISammeHusstandDtoListe": [
         {
           "periodeFra": "2022-07-26",

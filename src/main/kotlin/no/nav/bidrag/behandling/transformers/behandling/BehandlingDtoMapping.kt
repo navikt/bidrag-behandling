@@ -377,7 +377,13 @@ fun Behandling.henteRolleForNotat(
             forRolle
         }
     }
-    Notattype.UNDERHOLDSKOSTNAD -> this.bidragspliktig!!
+    Notattype.UNDERHOLDSKOSTNAD ->
+        if (forRolle == null) {
+            log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
+            this.bidragsmottaker!!
+        } else {
+            forRolle
+        }
     Notattype.SAMVÆR -> forRolle!!
 }
 

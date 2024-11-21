@@ -39,7 +39,10 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                                     periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
                                     gjelderBarn = gjelderBarnReferanse,
                                     tilsynstype = it.omfang,
-                                    skolealder = if (it.under_skolealder == true) Skolealder.UNDER else Skolealder.OVER,
+                                    skolealder =
+                                        it.under_skolealder?.let {
+                                            if (it) Skolealder.UNDER else Skolealder.OVER
+                                        } ?: Skolealder.IKKE_ANGITT,
                                     manueltRegistrert = true,
                                 ),
                             ),
