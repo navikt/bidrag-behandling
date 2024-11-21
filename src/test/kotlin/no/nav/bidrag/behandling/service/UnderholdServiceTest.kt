@@ -707,9 +707,9 @@ class UnderholdServiceTest {
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
                         barnIBehandling.ident!! ==
-                                it.person.rolle
-                                    .first()
-                                    .ident
+                            it.person.rolle
+                                .first()
+                                .ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -719,9 +719,10 @@ class UnderholdServiceTest {
                     )
 
                 // hvis
-                val respons = assertFailsWith<HttpClientErrorException> {
-                    underholdService.oppdatereBegrunnelse(behandling, request)
-                }
+                val respons =
+                    assertFailsWith<HttpClientErrorException> {
+                        underholdService.oppdatereBegrunnelse(behandling, request)
+                    }
 
                 // så
                 respons.shouldNotBeNull()

@@ -53,8 +53,8 @@ class UnderholdService(
                 henteOgValidereUnderholdskostnad(behandling, it).person.rolle.firstOrNull()
             }
 
-        if(request.underholdsid == null) {
-            val underholdHarAndreBarn = behandling.underholdskostnader.find{it.person.rolle.isEmpty()} != null
+        if (request.underholdsid == null) {
+            val underholdHarAndreBarn = behandling.underholdskostnader.find { it.person.rolle.isEmpty() } != null
             if (!underholdHarAndreBarn) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
