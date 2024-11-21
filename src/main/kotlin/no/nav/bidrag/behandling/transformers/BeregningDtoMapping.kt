@@ -471,10 +471,9 @@ fun List<GrunnlagDto>.finnBarnetillegg(
     val personGrunnlag = find { it.type == personGrunnlagstype } ?: return DelberegningBarnetilleggDto()
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return DelberegningBarnetilleggDto()
     val evne =
-        finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+        filtrerBasertPåEgenReferanse(
             Grunnlagstype.DELBEREGNING_BIDRAGSEVNE,
-            sluttberegning.grunnlagsreferanseListe,
-        ).firstOrNull() ?: return DelberegningBarnetilleggDto()
+        ).lastOrNull() ?: return DelberegningBarnetilleggDto()
 
     val skattFaktor = evne.innholdTilObjekt<DelberegningBidragsevne>().skatt.sumSkattFaktor
     val barnetillegg =
@@ -487,10 +486,7 @@ fun List<GrunnlagDto>.finnBarnetillegg(
     val sumBarnetillegg = barnetillegg.sumOf { it.innholdTilObjekt<InntektsrapporteringPeriode>().beløp }
     return DelberegningBarnetilleggDto(
         skattFaktor = skattFaktor,
-        nettoBeløp =
-            sumBarnetillegg
-                .divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.ONE - skattFaktor),
+        nettoBeløp = beregnNettoBarnetillegg(sumBarnetillegg, skattFaktor),
         barnetillegg =
             barnetillegg
                 .map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }
@@ -498,9 +494,7 @@ fun List<GrunnlagDto>.finnBarnetillegg(
                     DelberegningBarnetilleggDto.BarnetilleggDetaljerDto(
                         bruttoBeløp = it.beløp.divide(BigDecimal(12), 10, RoundingMode.HALF_UP),
                         nettoBeløp =
-                            it.beløp
-                                .divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
-                                .multiply(BigDecimal.ONE - skattFaktor),
+                            beregnNettoBarnetillegg(it.beløp, skattFaktor),
                         visningsnavn =
                             it.inntekstpostListe
                                 .first()
@@ -510,6 +504,11 @@ fun List<GrunnlagDto>.finnBarnetillegg(
                 },
     )
 }
+
+private fun beregnNettoBarnetillegg(
+    bruttoBeløp: BigDecimal,
+    skattfaktor: BigDecimal,
+): BigDecimal = (bruttoBeløp - (bruttoBeløp * skattfaktor)).divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
 
 fun List<GrunnlagDto>.finnDelberegningUnderholdskostnad(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUnderholdskostnad? {
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
