@@ -23,7 +23,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
@@ -125,7 +124,6 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
     @Nested
     open inner class Oppdatere {
-
         @Test
         @Transactional
         open fun `skal sette tilsynsordning`() {
@@ -139,10 +137,11 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)
 
             val underholdsid = behandling.underholdskostnader.first().id!!
-            lagretBehandling.underholdskostnader.find{it.id == underholdsid}?.harTilsynsordning shouldNotBe true
+            lagretBehandling.underholdskostnader.find { it.id == underholdsid }?.harTilsynsordning shouldNotBe true
 
             val komponentbygger =
-                UriComponentsBuilder.fromUriString("${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/tilsynsordning")
+                UriComponentsBuilder
+                    .fromUriString("${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/tilsynsordning")
                     .queryParam("harTilsynsordning", true)
 
             // hvis
@@ -161,7 +160,11 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
             oppdatertBehandling.shouldNotBeNull()
 
-            oppdatertBehandling.get().underholdskostnader.find{it.id == underholdsid}?.harTilsynsordning shouldBe true
+            oppdatertBehandling
+                .get()
+                .underholdskostnader
+                .find { it.id == underholdsid }
+                ?.harTilsynsordning shouldBe true
         }
 
         @Test
@@ -177,7 +180,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)
 
             val underholdsid = behandling.underholdskostnader.first().id!!
-            lagretBehandling.underholdskostnader.find{it.id == underholdsid}?.harTilsynsordning shouldNotBe true
+            lagretBehandling.underholdskostnader.find { it.id == underholdsid }?.harTilsynsordning shouldNotBe true
 
             val request = OppdatereBegrunnelseRequest(underholdsid, "Oppretter begrunnelse for søknadsbarn")
 
@@ -197,7 +200,16 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
             oppdatertBehandling.shouldNotBeNull()
 
-            assertSoftly(oppdatertBehandling.get().notater.find { behandling.underholdskostnader.first().person.rolle.first().id == it.rolle.id && NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD == it.type }) {
+            assertSoftly(
+                oppdatertBehandling.get().notater.find {
+                    behandling.underholdskostnader
+                        .first()
+                        .person.rolle
+                        .first()
+                        .id == it.rolle.id &&
+                        NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD == it.type
+                },
+            ) {
                 shouldNotBeNull()
                 innhold shouldBe "Oppretter begrunnelse for søknadsbarn"
             }
