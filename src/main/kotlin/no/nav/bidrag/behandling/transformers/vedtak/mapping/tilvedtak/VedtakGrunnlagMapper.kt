@@ -97,7 +97,7 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
                     TypeBehandling.BIDRAG -> {
-                        grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad())
+                        grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
                     }
 
@@ -140,6 +140,9 @@ class VedtakGrunnlagMapper(
                     grunnlagListe.addAll(
                         byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     )
+                TypeBehandling.BIDRAG -> {
+                    grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true))
+                }
                 else -> {}
             }
             return grunnlagListe.toSet()

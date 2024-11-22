@@ -1,16 +1,11 @@
 package no.nav.bidrag.behandling.service
 
-import com.ninjasquad.springmockk.MockkBean
-import createPersonServiceMock
-import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
-import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -19,13 +14,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequ
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
-import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.filtrerEtterTypeOgIdent
@@ -35,10 +25,6 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
-import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
-import no.nav.bidrag.commons.web.mock.stubSjablonProvider
-import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -51,94 +37,14 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
-import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.test.context.junit.jupiter.SpringExtension
-import stubPersonConsumer
-import stubSaksbehandlernavnProvider
-import stubTokenUtils
 import java.math.BigDecimal
 import java.time.LocalDate
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
-@ExtendWith(SpringExtension::class)
-class VedtakTilBehandlingForskuddTest {
-    @MockkBean
-    lateinit var behandlingService: BehandlingService
-
-    @MockkBean
-    lateinit var grunnlagService: GrunnlagService
-
-    @MockkBean
-    lateinit var notatOpplysningerService: NotatOpplysningerService
-
-    @MockkBean
-    lateinit var tilgangskontrollService: TilgangskontrollService
-
-    @MockkBean
-    lateinit var vedtakConsumer: BidragVedtakConsumer
-
-    @MockkBean
-    lateinit var evnevurderingService: BeregningEvnevurderingService
-
-    @MockkBean
-    lateinit var validerBehandlingService: ValiderBehandlingService
-
-    @MockkBean
-    lateinit var sakConsumer: BidragSakConsumer
-    lateinit var vedtakService: VedtakService
-    lateinit var beregningService: BeregningService
-
-    val unleash = FakeUnleash()
-
-    @BeforeEach
-    fun initMocks() {
-        val personService = createPersonServiceMock()
-        val validerBeregning = ValiderBeregning()
-        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning)
-        val vedtakGrunnlagMapper =
-            VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
-                validerBeregning,
-                evnevurderingService,
-                personService,
-            )
-        beregningService =
-            BeregningService(
-                behandlingService,
-                vedtakGrunnlagMapper,
-            )
-        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
-        vedtakService =
-            VedtakService(
-                behandlingService,
-                grunnlagService,
-                notatOpplysningerService,
-                tilgangskontrollService,
-                vedtakConsumer,
-                unleash,
-                validerBeregning,
-                vedtakTilBehandlingMapping,
-                behandlingTilVedtakMapping,
-                validerBehandlingService,
-            )
-        every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
-        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
-        every { notatOpplysningerService.opprettNotat(any()) } returns "213"
-        every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
-        stubSjablonProvider()
-        stubPersonConsumer()
-        stubTokenUtils()
-        stubSaksbehandlernavnProvider()
-        stubKodeverkProvider()
-    }
-
+class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for FORSKUDD`() {
         every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")

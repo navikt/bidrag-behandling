@@ -17,10 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
-import no.nav.bidrag.behandling.database.repository.BarnetilsynRepository
-import no.nav.bidrag.behandling.database.repository.FaktiskTilsynsutgiftRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
-import no.nav.bidrag.behandling.database.repository.TilleggsstønadRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
@@ -58,15 +55,6 @@ import kotlin.test.assertFailsWith
 
 @ExtendWith(MockKExtension::class)
 class UnderholdServiceTest {
-    @MockK
-    lateinit var barnetilsynRepository: BarnetilsynRepository
-
-    @MockK
-    lateinit var faktiskTilsynsutgiftRepository: FaktiskTilsynsutgiftRepository
-
-    @MockK
-    lateinit var tilleggsstønadRepository: TilleggsstønadRepository
-
     @MockK
     lateinit var underholdskostnadRepository: UnderholdskostnadRepository
 
@@ -125,14 +113,19 @@ class UnderholdServiceTest {
             )
         underholdService =
             UnderholdService(
-                barnetilsynRepository,
-                faktiskTilsynsutgiftRepository,
-                tilleggsstønadRepository,
                 underholdskostnadRepository,
                 personRepository,
                 notatService,
                 dtomapper,
             )
+
+        every { underholdskostnadRepository.save(any()) }.answers {
+            val underholdskostnad = firstArg<Underholdskostnad>()
+            underholdskostnad.tilleggsstønad.forEachIndexed { index, tilleggsstønad -> tilleggsstønad.id = index.toLong() }
+            underholdskostnad.barnetilsyn.forEachIndexed { index, barnetilsyn -> barnetilsyn.id = index.toLong() }
+            underholdskostnad.faktiskeTilsynsutgifter.forEachIndexed { index, faktiskeTilsynsutgifter -> faktiskeTilsynsutgifter.id = index.toLong() }
+            underholdskostnad
+        }
     }
 
     @Nested
@@ -303,14 +296,15 @@ class UnderholdServiceTest {
                         dagsats = BigDecimal(365),
                     )
 
-                every { tilleggsstønadRepository.save(any()) } returns
+                underholdskostnad.tilleggsstønad.add(
                     Tilleggsstønad(
                         1L,
                         underholdskostnad,
                         fom = request.periode.fom,
                         tom = request.periode.tom,
                         request.dagsats,
-                    )
+                    ),
+                )
 
                 // hvis
                 underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
@@ -369,15 +363,6 @@ class UnderholdServiceTest {
                         dagsats = BigDecimal(365),
                     )
 
-                every { tilleggsstønadRepository.save(any()) } returns
-                    Tilleggsstønad(
-                        1L,
-                        underholdskostnad,
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        request.dagsats,
-                    )
-
                 // hvis
                 underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
 
@@ -432,7 +417,7 @@ class UnderholdServiceTest {
                         tilsynstype = Tilsynstype.HELTID,
                     )
 
-                every { barnetilsynRepository.save(any()) } returns
+                underholdskostnad.barnetilsyn.add(
                     Barnetilsyn(
                         1L,
                         underholdskostnad,
@@ -446,8 +431,8 @@ class UnderholdServiceTest {
                             },
                         request.tilsynstype,
                         kilde = Kilde.OFFENTLIG,
-                    )
-
+                    ),
+                )
                 // hvis
                 underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
 
@@ -511,22 +496,6 @@ class UnderholdServiceTest {
                         tilsynstype = Tilsynstype.DELTID,
                     )
 
-                every { barnetilsynRepository.save(any()) } returns
-                    Barnetilsyn(
-                        1L,
-                        underholdskostnad,
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        under_skolealder =
-                            when (request.skolealder) {
-                                Skolealder.OVER -> false
-                                Skolealder.UNDER -> true
-                                else -> null
-                            },
-                        request.tilsynstype,
-                        kilde = Kilde.OFFENTLIG,
-                    )
-
                 // hvis
                 underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
 
@@ -583,7 +552,7 @@ class UnderholdServiceTest {
                         kommentar = "Kostpenger gjelder ikke fredager",
                     )
 
-                every { faktiskTilsynsutgiftRepository.save(any()) } returns
+                underholdskostnad.faktiskeTilsynsutgifter.add(
                     FaktiskTilsynsutgift(
                         1L,
                         underholdskostnad,
@@ -592,8 +561,8 @@ class UnderholdServiceTest {
                         tilsynsutgift = request.utgift,
                         kostpenger = request.kostpenger,
                         kommentar = request.kommentar,
-                    )
-
+                    ),
+                )
                 // hvis
                 underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
 
@@ -655,17 +624,6 @@ class UnderholdServiceTest {
                         utgift = BigDecimal(6000),
                         kostpenger = BigDecimal(1000),
                         kommentar = "Kostpenger gjelder ikke fredager",
-                    )
-
-                every { faktiskTilsynsutgiftRepository.save(any()) } returns
-                    FaktiskTilsynsutgift(
-                        1L,
-                        underholdskostnad,
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        tilsynsutgift = request.utgift,
-                        kostpenger = request.kostpenger,
-                        kommentar = request.kommentar,
                     )
 
                 // hvis
