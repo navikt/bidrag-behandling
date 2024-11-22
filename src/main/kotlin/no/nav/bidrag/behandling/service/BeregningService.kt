@@ -157,6 +157,7 @@ class BeregningService(
     private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =
         ResultatBidragsberegningBarn(
             barn = barn.mapTilResultatBarn(),
+            avslaskode = avslag,
             resultat =
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =
@@ -166,8 +167,7 @@ class BeregningService(
                                 periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
                                 resultat =
                                     ResultatBeregningBidrag(
-                                        beløp = BigDecimal.ZERO, // TODO null eller 0?
-                                        kode = avslag!!,
+                                        beløp = BigDecimal.ZERO,
                                     ),
                             ),
                         ),

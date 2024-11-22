@@ -17,7 +17,7 @@ import java.time.LocalDate
 open class Barnetilsyn(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "underholdskostnad_id", nullable = false)
     open val underholdskostnad: Underholdskostnad,

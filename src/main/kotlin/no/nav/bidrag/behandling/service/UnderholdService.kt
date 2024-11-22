@@ -6,10 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
-import no.nav.bidrag.behandling.database.repository.BarnetilsynRepository
-import no.nav.bidrag.behandling.database.repository.FaktiskTilsynsutgiftRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
-import no.nav.bidrag.behandling.database.repository.TilleggsstønadRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
@@ -37,9 +34,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 
 @Service
 class UnderholdService(
-    private val barnetilsynRepository: BarnetilsynRepository,
-    private val faktiskTilsynsutgiftRepository: FaktiskTilsynsutgiftRepository,
-    private val tilleggsstønadRepository: TilleggsstønadRepository,
     private val underholdskostnadRepository: UnderholdskostnadRepository,
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
@@ -119,28 +113,27 @@ class UnderholdService(
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
         gjelderBarn.validere()
-        gjelderBarn.personident?.let { personidentBarn ->
+
+        return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
-            val eksisterendePerson = personRepository.findFirstByIdent(personidentBarn.verdi)
-            if (eksisterendePerson == null) {
-                val person =
-                    personRepository.save(
-                        Person(
-                            ident = personidentBarn.verdi,
-                            rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
-                        ),
-                    )
-                person.rolle.forEach { it.person = person }
-                return lagreUnderholdskostnad(behandling, person)
-            } else {
+            personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
                 rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
                 rolleSøknadsbarn?.person = eksisterendePerson
-                return lagreUnderholdskostnad(behandling, eksisterendePerson)
+                lagreUnderholdskostnad(behandling, eksisterendePerson)
+            } ?: run {
+                val person =
+                    Person(
+                        ident = personidentBarn.verdi,
+                        rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
+                    )
+                person.rolle.forEach { it.person = person }
+
+                lagreUnderholdskostnad(behandling, person)
             }
         } ?: run {
-            return lagreUnderholdskostnad(
+            lagreUnderholdskostnad(
                 behandling,
-                personRepository.save(Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato)),
+                Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato),
             )
         }
     }
@@ -168,23 +161,21 @@ class UnderholdService(
                 barnetilsyn
             } ?: run {
                 val barnetilsyn =
-                    barnetilsynRepository.save(
-                        Barnetilsyn(
-                            fom = request.periode.fom,
-                            tom = request.periode.tom,
-                            under_skolealder =
-                                when (request.skolealder) {
-                                    Skolealder.UNDER -> true
-                                    Skolealder.OVER -> false
-                                    else -> null
-                                },
-                            omfang = request.tilsynstype,
-                            kilde = Kilde.MANUELL,
-                            underholdskostnad = underholdskostnad,
-                        ),
+                    Barnetilsyn(
+                        fom = request.periode.fom,
+                        tom = request.periode.tom,
+                        under_skolealder =
+                            when (request.skolealder) {
+                                Skolealder.UNDER -> true
+                                Skolealder.OVER -> false
+                                else -> null
+                            },
+                        omfang = request.tilsynstype,
+                        kilde = Kilde.MANUELL,
+                        underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.barnetilsyn.add(barnetilsyn)
-                barnetilsyn
+                underholdskostnadRepository.save(underholdskostnad).barnetilsyn.last()
             }
 
         return OppdatereUnderholdResponse(
@@ -214,18 +205,16 @@ class UnderholdService(
                 faktiskTilsynsutgift
             } ?: run {
                 val faktiskTilsynsutgift =
-                    faktiskTilsynsutgiftRepository.save(
-                        FaktiskTilsynsutgift(
-                            fom = request.periode.fom,
-                            tom = request.periode.tom,
-                            kostpenger = request.kostpenger,
-                            tilsynsutgift = request.utgift,
-                            kommentar = request.kommentar,
-                            underholdskostnad = underholdskostnad,
-                        ),
+                    FaktiskTilsynsutgift(
+                        fom = request.periode.fom,
+                        tom = request.periode.tom,
+                        kostpenger = request.kostpenger,
+                        tilsynsutgift = request.utgift,
+                        kommentar = request.kommentar,
+                        underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
-                faktiskTilsynsutgift
+                underholdskostnadRepository.save(underholdskostnad).faktiskeTilsynsutgifter.last()
             }
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
@@ -254,16 +243,14 @@ class UnderholdService(
                 tilleggsstønad
             } ?: run {
                 val tilleggsstønad =
-                    tilleggsstønadRepository.save(
-                        Tilleggsstønad(
-                            fom = request.periode.fom,
-                            tom = request.periode.tom,
-                            dagsats = request.dagsats,
-                            underholdskostnad = underholdskostnad,
-                        ),
+                    Tilleggsstønad(
+                        fom = request.periode.fom,
+                        tom = request.periode.tom,
+                        dagsats = request.dagsats,
+                        underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.tilleggsstønad.add(tilleggsstønad)
-                tilleggsstønad
+                underholdskostnadRepository.save(underholdskostnad).tilleggsstønad.last()
             }
 
         return OppdatereUnderholdResponse(

@@ -45,10 +45,9 @@ val testdataGrunnlagInnhentetTidspunkt = LocalDateTime.parse("2024-01-01T00:00:0
 
 fun opprettGrunnlagFraFil(
     behandling: Behandling,
-    filnavn: String,
+    fil: String,
     type: Grunnlagsdatatype,
 ): List<Grunnlag> {
-    val fil = hentFil("/__files/$filnavn")
     val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(fil)
 
     return when (type) {
