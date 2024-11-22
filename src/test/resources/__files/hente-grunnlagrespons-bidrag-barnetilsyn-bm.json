@@ -1,0 +1,32 @@
+{
+  "ainntektListe": [],
+  "arbeidsforholdListe": [],
+  "barnetilleggListe": [],
+  "barnetilsynListe": [
+    {
+      "barnPersonId": "1344124",
+      "beløp": 4000,
+      "partPersonId": "313213213",
+      "periodeFra": "2023-01-01",
+      "periodeTil": "2024-01-01",
+      "skolealder": "OVER",
+      "tilsynstype": "HELTID"
+    },
+    {
+      "barnPersonId": "1344124",
+      "beløp": 5000,
+      "partPersonId": "313213213",
+      "periodeFra": "2024-01-01",
+      "skolealder": "OVER",
+      "tilsynstype": "HELTID"
+    }
+  ],
+  "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
+  "husstandsmedlemmerOgEgneBarnListe": [],
+  "kontantstøtteListe": [],
+  "sivilstandListe": [],
+  "skattegrunnlagListe": [],
+  "småbarnstilleggListe": [],
+  "utvidetBarnetrygdListe": [],
+  "feilrapporteringListe": []
+}

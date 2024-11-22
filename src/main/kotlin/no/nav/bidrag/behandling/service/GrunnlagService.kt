@@ -1562,9 +1562,15 @@ class GrunnlagService(
             }
 
             Grunnlagsdatatype.BARNETILSYN -> {
-                if (innhentetGrunnlag.barnetilsynListe.isNotEmpty()) {
-                    log.info { "Barnetilsyn er ikke relevant for forskudd." }
-                }
+                lagreGrunnlagHvisEndret(
+                    behandling,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.barnetilsynListe
+                        .filter {
+                            harBarnRolleIBehandling(it.barnPersonId, behandling)
+                        }.toSet(),
+                )
             }
 
             Grunnlagsdatatype.KONTANTSTØTTE -> {
