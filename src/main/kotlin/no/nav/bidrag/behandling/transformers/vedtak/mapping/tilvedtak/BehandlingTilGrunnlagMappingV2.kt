@@ -290,7 +290,9 @@ class BehandlingTilGrunnlagMappingV2(
                 u.faktiskeTilsynsutgifter.map {
                     val underholdRolle = u.person.rolle.find { it.behandling.id == id }
                     val gjelderBarn =
-                        underholdRolle?.tilGrunnlagPerson() ?: personobjekter.hentPerson(u.person.ident) ?: it.opprettPersonGrunnlag()
+                        underholdRolle?.tilGrunnlagPerson()?.also {
+                            grunnlagslistePersoner.add(it)
+                        } ?: personobjekter.hentPerson(u.person.ident) ?: it.opprettPersonGrunnlag()
                     val gjelderBarnReferanse = gjelderBarn.referanse
                     GrunnlagDto(
                         referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),

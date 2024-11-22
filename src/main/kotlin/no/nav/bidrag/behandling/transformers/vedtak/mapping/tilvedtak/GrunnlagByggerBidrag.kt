@@ -25,29 +25,31 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
         .flatMap { u ->
             u.barnetilsyn
                 .filter { inkluderIkkeAngitt || it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null }
-                .map {
+                .flatMap {
                     val underholdRolle = u.person.rolle.find { it.behandling.id == id }
-                    val gjelderBarn =
-                        underholdRolle?.tilGrunnlagPerson()
-                            ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
-                    val gjelderBarnReferanse = gjelderBarn.referanse
-                    GrunnlagDto(
-                        referanse = it.tilGrunnlagsreferanseBarnetilsyn(gjelderBarnReferanse),
-                        type = Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE,
-                        gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
-                        gjelderBarnReferanse = gjelderBarnReferanse,
-                        innhold =
-                            POJONode(
-                                BarnetilsynMedStønadPeriode(
-                                    periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                                    tilsynstype = it.omfang,
-                                    skolealder =
-                                        it.under_skolealder?.let {
-                                            if (it) Skolealder.UNDER else Skolealder.OVER
-                                        } ?: Skolealder.IKKE_ANGITT,
-                                    manueltRegistrert = if (it.kilde == Kilde.OFFENTLIG) false else true,
+                    val underholdRolleGrunnlagobjekt =
+                        underholdRolle?.tilGrunnlagPerson() ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                    val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
+                    listOf(
+                        underholdRolleGrunnlagobjekt,
+                        GrunnlagDto(
+                            referanse = it.tilGrunnlagsreferanseBarnetilsyn(gjelderBarnReferanse),
+                            type = Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE,
+                            gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                            gjelderBarnReferanse = gjelderBarnReferanse,
+                            innhold =
+                                POJONode(
+                                    BarnetilsynMedStønadPeriode(
+                                        periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                                        tilsynstype = it.omfang,
+                                        skolealder =
+                                            it.under_skolealder?.let {
+                                                if (it) Skolealder.UNDER else Skolealder.OVER
+                                            } ?: Skolealder.IKKE_ANGITT,
+                                        manueltRegistrert = if (it.kilde == Kilde.OFFENTLIG) false else true,
+                                    ),
                                 ),
-                            ),
+                        ),
                     )
                 }
         }
@@ -55,24 +57,27 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
 fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
     underholdskostnader
         .flatMap { u ->
-            u.tilleggsstønad.map {
+            u.tilleggsstønad.flatMap {
                 val underholdRolle = u.person.rolle.find { it.behandling.id == id }
-                val gjelderBarnReferanse =
-                    underholdRolle?.tilGrunnlagsreferanse()
-                        ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
-                GrunnlagDto(
-                    referanse = it.tilGrunnlagsreferanseTilleggsstønad(gjelderBarnReferanse),
-                    type = Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
-                    gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
-                    gjelderBarnReferanse = gjelderBarnReferanse,
-                    innhold =
-                        POJONode(
-                            TilleggsstønadPeriode(
-                                periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                                beløpDagsats = it.dagsats,
-                                manueltRegistrert = true,
+                val underholdRolleGrunnlagobjekt =
+                    underholdRolle?.tilGrunnlagPerson() ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
+                listOf(
+                    underholdRolleGrunnlagobjekt,
+                    GrunnlagDto(
+                        referanse = it.tilGrunnlagsreferanseTilleggsstønad(gjelderBarnReferanse),
+                        type = Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
+                        gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                        gjelderBarnReferanse = gjelderBarnReferanse,
+                        innhold =
+                            POJONode(
+                                TilleggsstønadPeriode(
+                                    periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                                    beløpDagsats = it.dagsats,
+                                    manueltRegistrert = true,
+                                ),
                             ),
-                        ),
+                    ),
                 )
             }
         }
