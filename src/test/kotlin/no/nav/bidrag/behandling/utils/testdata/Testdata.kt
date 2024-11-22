@@ -1534,9 +1534,8 @@ fun lagGrunnlagsdata(
 ): HentGrunnlagDto {
     val fil = hentFil("/__files/$filnavn")
     var stringValue = fil.readText().replace("{personId}", gjelderIdent)
-    stringValue = stringValue.replace("{barnId}", barnIdent)
-    stringValue = stringValue.replace("{barnId2}", barnIdent2)
-    stringValue = stringValue.replace("{barnId2}", barnIdent2)
+    stringValue = stringValue.replace("{barn1Ident}", barnIdent)
+    stringValue = stringValue.replace("{barn2Ident}", barnIdent2)
     stringValue = stringValue.replace("{hustandsmedlem1}", hustandsmedlem1)
     stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
     (0..24).forEach {

@@ -10,7 +10,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
@@ -70,14 +69,6 @@ data class BidragPeriodeBeregningsdetaljer(
         val samværsklasse: Samværsklasse,
         val gjennomsnittligSamværPerMåned: BigDecimal,
     )
-
-    val beløpEtterFratrekkDeltBosted get() =
-        if (deltBosted) {
-            bpsAndel!!.andelBeløp -
-                delberegningUnderholdskostnad!!.underholdskostnad.divide(BigDecimal(2), RoundingMode.HALF_UP)
-        } else {
-            bpsAndel!!.andelBeløp
-        }
 
     val deltBosted get() = sluttberegning!!.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }
