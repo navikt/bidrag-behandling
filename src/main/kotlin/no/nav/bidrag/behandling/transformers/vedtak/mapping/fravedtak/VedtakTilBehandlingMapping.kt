@@ -250,38 +250,38 @@ class VedtakTilBehandlingMapping(
 
                     underholdskostnad.tilleggsstønad.addAll(
                         filtrerBasertPåEgenReferanse(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)
-                            .map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
                             .filter {
-                                hentPersonMedReferanse(it.gjelderBarn)!!.personIdent == rolle.ident
-                            }.mapTillegsstønad(underholdskostnad, lesemodus),
+                                hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                            }.map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
+                            .mapTillegsstønad(underholdskostnad, lesemodus),
                     )
 
                     underholdskostnad.faktiskeTilsynsutgifter.addAll(
                         filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
-                            .map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
                             .filter {
-                                hentPersonMedReferanse(it.gjelderBarn)!!.personIdent == rolle.ident
-                            }.mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
+                                hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                            }.map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
+                            .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
                     )
 
                     underholdskostnad.barnetilsyn.addAll(
                         filtrerBasertPåEgenReferanse(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)
-                            .map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
                             .filter { ts ->
-                                hentPersonMedReferanse(ts.gjelderBarn)!!.personIdent == rolle.ident
-                            }.mapBarnetilsyn(underholdskostnad, lesemodus),
+                                hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                            }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
+                            .mapBarnetilsyn(underholdskostnad, lesemodus),
                     )
                     underholdskostnad
                 }.toMutableSet()
 
         val underholdskostnadAndreBarn =
             filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
-                .map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
                 .filter {
-                    val gjelderBarnIdent = hentPersonMedReferanse(it.gjelderBarn)!!.personIdent
+                    val gjelderBarnIdent = hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent
                     behandling.roller.none { it.ident == gjelderBarnIdent }
-                }.groupBy { it.gjelderBarn }
-                .map { (gjelderBarnReferanse, innhold) ->
+                }.groupBy { it.gjelderBarnReferanse }
+                .map { (gjelderBarnReferanse, grunnlag) ->
+                    val innhold = grunnlag.innholdTilObjekt<FaktiskUtgiftPeriode>()
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!.personObjekt
 
                     val underholdskostnad =

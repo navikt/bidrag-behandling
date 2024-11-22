@@ -71,6 +71,7 @@ fun GrunnlagDto.tilOpprettRequestDto() =
         innhold = innhold,
         grunnlagsreferanseListe = grunnlagsreferanseListe,
         gjelderReferanse = gjelderReferanse,
+        gjelderBarnReferanse = gjelderBarnReferanse,
     )
 
 private fun opprettGrunnlagNotat(

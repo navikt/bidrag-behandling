@@ -296,12 +296,12 @@ class BehandlingTilGrunnlagMappingV2(
                         referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
                         type = Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
                         gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                        gjelderBarnReferanse = gjelderBarnReferanse,
                         innhold =
                             POJONode(
                                 FaktiskUtgiftPeriode(
                                     periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
                                     fødselsdatoBarn = gjelderBarn.personObjekt.fødselsdato,
-                                    gjelderBarn = gjelderBarnReferanse,
                                     kostpengerBeløp = it.kostpenger ?: BigDecimal.ZERO,
                                     faktiskUtgiftBeløp = it.tilsynsutgift,
                                     kommentar = it.kommentar,

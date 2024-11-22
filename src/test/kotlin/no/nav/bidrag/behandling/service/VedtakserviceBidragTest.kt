@@ -71,7 +71,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
@@ -716,15 +715,13 @@ private fun OpprettVedtakRequestDto.validerUndeholdskostnad() {
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)) {
         shouldHaveSize(2)
         assertSoftly(it[0]) {
-            val innhold = it.innholdTilObjekt<BarnetilsynMedStønadPeriode>()
-            innhold.gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
+            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
             gjelderReferanse shouldBe bmGrunnlag.referanse
         }
     }
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)) {
         shouldHaveSize(1)
-        val innhold = it[0].innholdTilObjekt<TilleggsstønadPeriode>()
-        innhold.gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
+        it[0].gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
     }
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)) {
         shouldHaveSize(3)
@@ -732,17 +729,17 @@ private fun OpprettVedtakRequestDto.validerUndeholdskostnad() {
         it[1].gjelderReferanse shouldBe bmGrunnlag.referanse
         it[2].gjelderReferanse shouldBe bmGrunnlag.referanse
 
-        val søknadsbarnFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == søknadsbarnGrunnlag.referanse }!!
+        val søknadsbarnFU = it.find { it.gjelderBarnReferanse == søknadsbarnGrunnlag.referanse }!!
         søknadsbarnFU shouldNotBe null
         val innholdSøknadsbarnFU = søknadsbarnFU.innholdTilObjekt<FaktiskUtgiftPeriode>()
         innholdSøknadsbarnFU.kommentar shouldBe "Kommentar på tilsynsutgift"
         innholdSøknadsbarnFU.faktiskUtgiftBeløp shouldBe BigDecimal(4000)
         innholdSøknadsbarnFU.kostpengerBeløp shouldBe BigDecimal(1000)
 
-        val bmBarnFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == bmBarnGrunnlag.referanse }
+        val bmBarnFU = it.find { it.gjelderBarnReferanse == bmBarnGrunnlag.referanse }
         bmBarnFU shouldNotBe null
 
-        val hustandsmedlemFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == husstandsmedlemGrunnlag.referanse }
+        val hustandsmedlemFU = it.find { it.gjelderBarnReferanse == husstandsmedlemGrunnlag.referanse }
         hustandsmedlemFU shouldNotBe null
     }
 }

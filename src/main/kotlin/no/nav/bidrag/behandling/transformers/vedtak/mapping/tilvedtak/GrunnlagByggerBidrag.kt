@@ -35,11 +35,11 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                         referanse = it.tilGrunnlagsreferanseBarnetilsyn(gjelderBarnReferanse),
                         type = Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE,
                         gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                        gjelderBarnReferanse = gjelderBarnReferanse,
                         innhold =
                             POJONode(
                                 BarnetilsynMedStønadPeriode(
                                     periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                                    gjelderBarn = gjelderBarnReferanse,
                                     tilsynstype = it.omfang,
                                     skolealder =
                                         it.under_skolealder?.let {
@@ -64,12 +64,12 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                     referanse = it.tilGrunnlagsreferanseTilleggsstønad(gjelderBarnReferanse),
                     type = Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
                     gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                    gjelderBarnReferanse = gjelderBarnReferanse,
                     innhold =
                         POJONode(
                             TilleggsstønadPeriode(
                                 periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
                                 beløpDagsats = it.dagsats,
-                                gjelderBarn = gjelderBarnReferanse,
                                 manueltRegistrert = true,
                             ),
                         ),
