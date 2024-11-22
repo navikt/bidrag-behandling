@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
@@ -323,7 +324,9 @@ class UnderholdService(
         underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
         if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.person.rolle.isEmpty()) {
             personRepository.deleteById(underholdskostnad.person.id!!)
-            notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
+            if (!behandling.harAndreBarnIUnderhold()) {
+                notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
+            }
         }
         underholdskostnadRepository.deleteById(underholdskostnad.id!!)
         return null
@@ -345,7 +348,10 @@ class UnderholdService(
         val eksisterendeUnderholdskostnad = behandling.underholdskostnader.find { it.person.id == person.id }
 
         return if (eksisterendeUnderholdskostnad != null) {
-            eksisterendeUnderholdskostnad
+            throw HttpClientErrorException(
+                HttpStatus.CONFLICT,
+                "Underhold for oppgitt barn eksisterer allerede (underholdid: ${eksisterendeUnderholdskostnad.id})",
+            )
         } else {
             val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
             behandling.underholdskostnader.add(u)

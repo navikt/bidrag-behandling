@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
@@ -53,6 +54,9 @@ class TestdataManager(
 
         return behandlingRepository.save(behandling)
     }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    fun lagrePersonIEgenTransaksjon(person: Person) = personRepository.save(person)
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun oppretteBehandlingINyTransaksjon(

@@ -44,12 +44,14 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
 import java.math.BigDecimal
@@ -226,6 +228,67 @@ class UnderholdServiceTest {
 
             behandling.notater.find { it.rolle == behandling.bidragsmottaker }.shouldBeNull()
         }
+
+        @Test
+        open fun `skal ikke slette notat ved sletting av underhold så lenge det finnes andre barn`() {
+            // gitt
+            val universalid = 1L
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val generalen = Person(id = 10, navn = "Generalen", fødselsdato = LocalDate.now())
+            val kostnadForUnderholdAvGeneralen =
+                Underholdskostnad(id = 100, behandling = behandling, person = generalen)
+            behandling.underholdskostnader.add(kostnadForUnderholdAvGeneralen)
+
+            val flaggkommandøren = Person(id = 11, navn = "Flaggkommandøren", fødselsdato = LocalDate.now())
+            val kostnadForUnderholdAvFlaggkommandøren =
+                Underholdskostnad(id = 101, behandling = behandling, person = flaggkommandøren)
+            behandling.underholdskostnader.add(kostnadForUnderholdAvFlaggkommandøren)
+
+            notatService.oppdatereNotat(
+                behandling,
+                NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+                "Begrunnelse for andre barn",
+                behandling.bidragsmottaker!!,
+            )
+
+            val request = SletteUnderholdselement(idUnderhold = 100, idElement = 10, Underholdselement.BARN)
+
+            every { underholdskostnadRepository.deleteById(kostnadForUnderholdAvGeneralen.id!!) } returns Unit
+            every { personRepository.deleteById(generalen.id!!) } returns Unit
+
+            assertSoftly(behandling.underholdskostnader.find { it.id == kostnadForUnderholdAvGeneralen.id!! }) {
+                shouldNotBeNull()
+                person.id shouldBe generalen.id
+            }
+
+            assertSoftly(behandling.notater.find { it.rolle == behandling.bidragsmottaker }) {
+                shouldNotBeNull()
+                innhold shouldBe "Begrunnelse for andre barn"
+            }
+
+            // hvis
+            underholdService.sletteFraUnderhold(behandling, request)
+
+            // så
+            val u = behandling.underholdskostnader.find { it.id == universalid }
+            u.shouldNotBeNull()
+            u.tilleggsstønad.shouldBeEmpty()
+
+            behandling.underholdskostnader.find { it.id == kostnadForUnderholdAvGeneralen.id!! }.shouldBeNull()
+
+            assertSoftly(behandling.notater.find { it.rolle == behandling.bidragsmottaker }) {
+                shouldNotBeNull()
+                rolle shouldBe behandling.bidragsmottaker!!
+                innhold shouldBe "Begrunnelse for andre barn"
+                type shouldBe NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD
+            }
+        }
     }
 
     @Nested
@@ -262,6 +325,43 @@ class UnderholdServiceTest {
             val u = behandling.underholdskostnader.find { it.id == universalid }
             u.shouldNotBeNull()
             u.tilleggsstønad.shouldBeEmpty()
+        }
+
+        @Test
+        open fun `skal ikke være mulig å opprette mer enn ett underhold per bar per behandling`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val annetBarnMedPersonident = Person(ident = "11223312345")
+
+            behandling.underholdskostnader.add(
+                Underholdskostnad(id = 101, behandling = behandling, person = annetBarnMedPersonident),
+            )
+
+            val request = BarnDto(personident = Personident(annetBarnMedPersonident.ident!!))
+
+            every { personRepository.save(any()) } returns annetBarnMedPersonident
+            every { personRepository.findFirstByIdent(annetBarnMedPersonident.ident!!) } returns annetBarnMedPersonident
+            every { underholdskostnadRepository.save(any()) } returns
+                Underholdskostnad(
+                    id = 102,
+                    behandling = behandling,
+                    person = annetBarnMedPersonident,
+                )
+
+            // hvis
+            val respons =
+                assertFailsWith<HttpClientErrorException> {
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
+                }
+
+            // så
+            respons.statusCode shouldBe HttpStatus.CONFLICT
         }
     }
 
