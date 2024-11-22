@@ -70,5 +70,7 @@ data class BidragPeriodeBeregningsdetaljer(
         val gjennomsnittligSamværPerMåned: BigDecimal,
     )
 
-    val deltBosted get() = sluttberegning!!.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
+    val deltBosted get() =
+        sluttberegning!!.bidragJustertForDeltBosted ||
+            sluttberegning.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }
