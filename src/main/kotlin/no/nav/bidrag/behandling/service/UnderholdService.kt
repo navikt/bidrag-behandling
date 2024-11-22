@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
@@ -111,7 +112,7 @@ class UnderholdService(
         behandling: Behandling,
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
-        gjelderBarn.validere()
+        gjelderBarn.validere(behandling)
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
@@ -310,7 +311,9 @@ class UnderholdService(
         underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
         if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.person.rolle.isEmpty()) {
             personRepository.deleteById(underholdskostnad.person.id!!)
-            notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
+            if (!behandling.harAndreBarnIUnderhold()) {
+                notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
+            }
         }
         underholdskostnadRepository.deleteById(underholdskostnad.id!!)
         return null
@@ -329,14 +332,8 @@ class UnderholdService(
         behandling: Behandling,
         person: Person,
     ): Underholdskostnad {
-        val eksisterendeUnderholdskostnad = behandling.underholdskostnader.find { it.person.id == person.id }
-
-        return if (eksisterendeUnderholdskostnad != null) {
-            eksisterendeUnderholdskostnad
-        } else {
-            val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
-            behandling.underholdskostnader.add(u)
-            u
-        }
+        val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
+        behandling.underholdskostnader.add(u)
+        return u
     }
 }
