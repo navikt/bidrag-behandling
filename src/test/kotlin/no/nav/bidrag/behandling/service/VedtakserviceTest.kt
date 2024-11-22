@@ -359,12 +359,12 @@ class VedtakserviceTest : TestContainerRunner() {
             it.beslutning shouldBe Beslutningstype.ENDRING
 
             it.periodeListe shouldHaveSize 6
-            it.grunnlagReferanseListe shouldHaveSize 8
+            it.grunnlagReferanseListe shouldHaveSize 9
             grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                 Grunnlagstype.NOTAT,
                 it.grunnlagReferanseListe,
             ) shouldHaveSize
-                6
+                7
             grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                 Grunnlagstype.SØKNAD,
                 it.grunnlagReferanseListe,
@@ -390,7 +390,7 @@ class VedtakserviceTest : TestContainerRunner() {
             val barn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
 
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-                shouldHaveSize(6)
+                shouldHaveSize(7)
             }
 
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1

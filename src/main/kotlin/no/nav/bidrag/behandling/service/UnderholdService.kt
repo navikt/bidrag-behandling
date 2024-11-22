@@ -121,11 +121,9 @@ class UnderholdService(
                 lagreUnderholdskostnad(behandling, eksisterendePerson)
             } ?: run {
                 val person =
-                    personRepository.save(
-                        Person(
-                            ident = personidentBarn.verdi,
-                            rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
-                        ),
+                    Person(
+                        ident = personidentBarn.verdi,
+                        rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
                     )
                 person.rolle.forEach { it.person = person }
 
@@ -134,7 +132,7 @@ class UnderholdService(
         } ?: run {
             lagreUnderholdskostnad(
                 behandling,
-                personRepository.save(Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato)),
+                Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato),
             )
         }
     }
