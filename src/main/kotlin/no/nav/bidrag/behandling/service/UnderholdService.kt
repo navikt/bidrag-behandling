@@ -112,7 +112,7 @@ class UnderholdService(
         behandling: Behandling,
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
-        gjelderBarn.validere()
+        gjelderBarn.validere(behandling)
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
@@ -332,17 +332,8 @@ class UnderholdService(
         behandling: Behandling,
         person: Person,
     ): Underholdskostnad {
-        val eksisterendeUnderholdskostnad = behandling.underholdskostnader.find { it.person.id == person.id }
-
-        return if (eksisterendeUnderholdskostnad != null) {
-            throw HttpClientErrorException(
-                HttpStatus.CONFLICT,
-                "Underhold for oppgitt barn eksisterer allerede (underholdid: ${eksisterendeUnderholdskostnad.id})",
-            )
-        } else {
-            val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
-            behandling.underholdskostnader.add(u)
-            u
-        }
+        val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
+        behandling.underholdskostnader.add(u)
+        return u
     }
 }

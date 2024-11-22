@@ -123,9 +123,13 @@ class UnderholdServiceTest {
 
         every { underholdskostnadRepository.save(any()) }.answers {
             val underholdskostnad = firstArg<Underholdskostnad>()
-            underholdskostnad.tilleggsstønad.forEachIndexed { index, tilleggsstønad -> tilleggsstønad.id = index.toLong() }
+            underholdskostnad.tilleggsstønad.forEachIndexed { index, tilleggsstønad ->
+                tilleggsstønad.id = index.toLong()
+            }
             underholdskostnad.barnetilsyn.forEachIndexed { index, barnetilsyn -> barnetilsyn.id = index.toLong() }
-            underholdskostnad.faktiskeTilsynsutgifter.forEachIndexed { index, faktiskeTilsynsutgifter -> faktiskeTilsynsutgifter.id = index.toLong() }
+            underholdskostnad.faktiskeTilsynsutgifter.forEachIndexed { index, faktiskeTilsynsutgifter ->
+                faktiskeTilsynsutgifter.id = index.toLong()
+            }
             underholdskostnad
         }
     }
@@ -290,18 +294,18 @@ class UnderholdServiceTest {
         @Test
         open fun `skal opprette underholdskostnad ved opprettelse av nytt barn`() {
             // gitt
-            val universalid = 1L
-            val navnAnnetBarnBp = "Stig E. Spill"
-            val fødselsdatoAnnetBarnBp = LocalDate.now().minusMonths(96)
             val behandling =
                 oppretteTestbehandling(
                     setteDatabaseider = true,
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
+            val universalid = 1L
+            val navnAnnetBarnBp = "Stig E. Spill"
+            val fødselsdatoAnnetBarnBp = LocalDate.now().minusMonths(96)
 
             val request = BarnDto(navn = navnAnnetBarnBp, fødselsdato = fødselsdatoAnnetBarnBp)
-            val barn = Person(navn = navnAnnetBarnBp, fødselsdato = fødselsdatoAnnetBarnBp)
+            val barn = Person(id = 100, navn = navnAnnetBarnBp, fødselsdato = fødselsdatoAnnetBarnBp)
 
             every { personRepository.save(any()) } returns barn
             every { underholdskostnadRepository.save(any()) } returns
@@ -321,7 +325,7 @@ class UnderholdServiceTest {
         }
 
         @Test
-        open fun `skal ikke være mulig å opprette mer enn ett underhold per bar per behandling`() {
+        open fun `skal ikke være mulig å opprette mer enn ett underhold per barn oppgitt med personident per behandling`() {
             // gitt
             val behandling =
                 oppretteTestbehandling(
@@ -345,6 +349,42 @@ class UnderholdServiceTest {
                     id = 102,
                     behandling = behandling,
                     person = annetBarnMedPersonident,
+                )
+
+            // hvis
+            val respons =
+                assertFailsWith<HttpClientErrorException> {
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
+                }
+
+            // så
+            respons.statusCode shouldBe HttpStatus.CONFLICT
+        }
+
+        @Test
+        open fun `skal ikke være mulig å opprette mer enn ett underhold per barn oppgitt med navn og fødselsdato per behandling`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val generalen = Person(navn = "Generalen", fødselsdato = LocalDate.now())
+
+            behandling.underholdskostnader.add(
+                Underholdskostnad(id = 101, behandling = behandling, person = generalen),
+            )
+
+            val request = BarnDto(navn = generalen.navn, fødselsdato = generalen.fødselsdato)
+
+            every { personRepository.save(any()) } returns generalen
+            every { underholdskostnadRepository.save(any()) } returns
+                Underholdskostnad(
+                    id = 102,
+                    behandling = behandling,
+                    person = generalen,
                 )
 
             // hvis
