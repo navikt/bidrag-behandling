@@ -6,7 +6,7 @@ LABEL maintainer="Team Bidrag" \
 
 COPY --from=busybox /bin/sh /bin/sh
 COPY --from=busybox /bin/printenv /bin/printenv
-COPY --from=busybox /usr/lib/locale /usr/lib/locale
+COPY --from=debian:9.11 /usr/lib/locale /usr/lib/locale
 
 WORKDIR /app
 
