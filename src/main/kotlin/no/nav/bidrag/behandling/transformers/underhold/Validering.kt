@@ -24,7 +24,7 @@ fun OppdatereUnderholdRequest.validere() {
     }
 }
 
-fun BarnDto.validere() {
+fun BarnDto.validere(behandling: Behandling) {
     if ((navn.isNullOrBlank() || fødselsdato == null) && (personident == null || personident.verdi.isEmpty())) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
@@ -41,6 +41,20 @@ fun BarnDto.validere() {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             "Databaseid til barn skal ikke oppgis ved opprettelse av underholdskostnad.",
+        )
+    }
+
+    if (this.annetBarnMedSammePersonidentEksistererFraFør(behandling)) {
+        throw HttpClientErrorException(
+            HttpStatus.CONFLICT,
+            "Underhold for oppgitt barn eksisterer allerede i behandling ${behandling.id}).",
+        )
+    }
+
+    if (this.annetBarnMedSammeNavnOgFødselsdatoEksistererFraFør(behandling)) {
+        throw HttpClientErrorException(
+            HttpStatus.CONFLICT,
+            "Det finnes allerede underhold for barn med samme navn og fødselsdato i behandling ${behandling.id}.",
         )
     }
 }

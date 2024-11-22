@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
@@ -28,6 +29,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.Nested
@@ -51,6 +53,9 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
     @Autowired
     lateinit var underholdskostnadRepository: UnderholdskostnadRepository
+
+    @Autowired
+    lateinit var personRepository: PersonRepository
 
     @Nested
     open inner class Opprette {
@@ -118,6 +123,37 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                     HttpEntity(request),
                     UnderholdDto::class.java,
                 )
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal ikke opprette ny person for annet barn oppgitt med personident dersom person med samme ident allerede eksisterer`() {
+            // gitt
+            val behandling = oppretteTestbehandling(inkludereBp = true, behandlingstype = TypeBehandling.BIDRAG)
+            val eksisterendePerson = Person(ident = "11223312345")
+            testdataManager.lagrePersonIEgenTransaksjon(eksisterendePerson)
+
+            testdataManager.lagreBehandlingNewTransaction(behandling)
+
+            val request = BarnDto(personident = Personident(eksisterendePerson.ident!!))
+
+            // hvis
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/${behandling.id}/underhold/opprette",
+                HttpMethod.POST,
+                HttpEntity(request),
+                UnderholdDto::class.java,
+            )
+
+            // så
+            val p = personRepository.findAll()
+            p.filter { it.ident == eksisterendePerson.ident } shouldHaveSize 1
+
+            assertSoftly(personRepository.findAll().filter { it.ident == eksisterendePerson.ident }) {
+                shouldHaveSize(1)
+                it.first().underholdskostnad shouldHaveSize 1
+                it.first().rolle shouldHaveSize 0
             }
         }
     }
