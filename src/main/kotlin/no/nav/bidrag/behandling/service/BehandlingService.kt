@@ -332,7 +332,6 @@ class BehandlingService(
                     oppdaterInntekter()
                     oppdaterSamvær()
                     // TODO Underholdskostnad
-                    // TODO Samvær
                 }
             }
         }
