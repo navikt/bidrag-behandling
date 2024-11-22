@@ -11,8 +11,8 @@ WORKDIR /app
 COPY ./target/bidrag-behandling-*.jar app.jar
 
 EXPOSE 8080
+RUN update-locale LANG=nb_NO.UTF-8
 ENV LANG='nb_NO.UTF-8' LANGUAGE='nb_NO:nb' LC_ALL='nb_NO.UTF-8' TZ="Europe/Oslo"
 ENV SPRING_PROFILES_ACTIVE=nais
-ENV JDK_JAVA_OPTIONS="-Dfile.encoding=UTF-8"
 
 CMD ["app.jar"]
