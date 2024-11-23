@@ -717,6 +717,12 @@ private fun OpprettVedtakRequestDto.validerUndeholdskostnad() {
         assertSoftly(it[0]) {
             gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
             gjelderReferanse shouldBe bmGrunnlag.referanse
+            grunnlagsreferanseListe shouldHaveSize 0
+        }
+        assertSoftly(it[1]) {
+            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+            gjelderReferanse shouldBe bmGrunnlag.referanse
+            grunnlagsreferanseListe shouldHaveSize 1
         }
     }
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)) {

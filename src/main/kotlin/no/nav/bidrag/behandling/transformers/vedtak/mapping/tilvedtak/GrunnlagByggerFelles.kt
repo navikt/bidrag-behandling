@@ -279,6 +279,7 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
             this,
         ),
     gjelderReferanse = gjelder.referanse,
+    gjelderBarnReferanse = søknadsbarn?.referanse,
     innhold =
         POJONode(
             InntektsrapporteringPeriode(

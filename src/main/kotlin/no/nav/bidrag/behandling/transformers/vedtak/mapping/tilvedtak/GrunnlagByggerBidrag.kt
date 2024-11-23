@@ -18,6 +18,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 
 fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List<GrunnlagDto> =
@@ -26,9 +27,10 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
             u.barnetilsyn
                 .filter { inkluderIkkeAngitt || it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null }
                 .flatMap {
-                    val underholdRolle = u.person.rolle.find { it.behandling.id == id }
-                    val underholdRolleGrunnlagobjekt =
-                        underholdRolle?.tilGrunnlagPerson() ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                    val underholdRolle =
+                        u.person.rolle.find { it.behandling.id == id }
+                            ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                    val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                     val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
                     listOf(
                         underholdRolleGrunnlagobjekt,
@@ -37,6 +39,14 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                             type = Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE,
                             gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
                             gjelderBarnReferanse = gjelderBarnReferanse,
+                            grunnlagsreferanseListe =
+                                if (it.kilde == Kilde.OFFENTLIG) {
+                                    listOf(
+                                        opprettBarnetilsynGrunnlagsreferanse(bidragsmottaker!!.tilGrunnlagsreferanse()),
+                                    )
+                                } else {
+                                    emptyList()
+                                },
                             innhold =
                                 POJONode(
                                     BarnetilsynMedStønadPeriode(
@@ -52,15 +62,17 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                         ),
                     )
                 }
-        }
+        }.toSet()
+        .toList()
 
 fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
     underholdskostnader
         .flatMap { u ->
             u.tilleggsstønad.flatMap {
-                val underholdRolle = u.person.rolle.find { it.behandling.id == id }
-                val underholdRolleGrunnlagobjekt =
-                    underholdRolle?.tilGrunnlagPerson() ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                val underholdRolle =
+                    u.person.rolle.find { it.behandling.id == id }
+                        ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                 val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
                 listOf(
                     underholdRolleGrunnlagobjekt,
@@ -80,7 +92,8 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                     ),
                 )
             }
-        }
+        }.toSet()
+        .toList()
 
 fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Behandling): StønadsendringPeriode {
     val søknadsbarn =
