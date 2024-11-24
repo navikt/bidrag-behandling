@@ -28,7 +28,9 @@ data class ResultatBidragsberegningBarnDto(
 
 data class ResultatBarnebidragsberegningPeriodeDto(
     val periode: ÅrMånedsperiode,
+    val underholdskostnad: BigDecimal,
     val bpsAndelU: BigDecimal,
+    val bpsAndelBeløp: BigDecimal,
     val samværsfradrag: BigDecimal,
     val beregnetBidrag: BigDecimal,
     val faktiskBidrag: BigDecimal,
