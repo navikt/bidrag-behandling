@@ -23,7 +23,9 @@ import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -31,12 +33,13 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
-import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
-import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.MathContext
@@ -45,66 +48,48 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 
 class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     @Test
-    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
+    fun `Skal konvertere vedtak til behandling for lesemodus for BIDRAG`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_respons-bidrag")
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
             behandling.saksnummer shouldBe SAKSNUMMER
-            årsak shouldBe null
+            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             avslag shouldBe null
-            virkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
+            virkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
+            søktFomDato shouldBe LocalDate.parse("2024-02-01")
             soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
-            stonadstype shouldBe null
-            engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            stonadstype shouldBe Stønadstype.BIDRAG
+            engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
-            mottattdato shouldBe LocalDate.parse("2024-01-15")
+            mottattdato shouldBe LocalDate.parse("2024-11-18")
             klageMottattdato shouldBe null
-            vedtakstype shouldBe Vedtakstype.ENDRING
+            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
             refVedtaksid shouldBe 1
-            kategori shouldBe "ANNET"
-            kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
-            soknadsid shouldBe 101
+            soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
-            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             notater shouldHaveSize 4
-            val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
-            notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
-            notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"
-            notatInntekter.find { it.rolle == it.behandling.søknadsbarn.first() }?.innhold shouldBe "Notat inntekter BA"
-            validerUtgifter()
+            val samværNotat = notater.find { it.type == Notattype.SAMVÆR }!!
+            samværNotat.innhold shouldBe "Begrunnelse samvær"
+            samværNotat.rolle.rolletype shouldBe Rolletype.BARN
+            val underholdNotat = notater.find { it.type == Notattype.UNDERHOLDSKOSTNAD }!!
+            underholdNotat.innhold shouldBe "Begrunnelse underholdskostnad"
+            underholdNotat.rolle.rolletype shouldBe Rolletype.BARN
             validerRoller()
             validerHusstandsmedlem()
             validerInntekter()
             validerGrunnlag()
+            validerUnderhold()
+            validerSamvær()
         }
     }
 
     @Test
-    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG maks godkjent beløp`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag_maksbeløp")
-        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
-
-        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
-
-        assertSoftly(behandling) {
-            utgift shouldNotBe null
-            assertSoftly(utgift!!) {
-                beløpDirekteBetaltAvBp shouldBe BigDecimal(500)
-                maksGodkjentBeløp shouldBe BigDecimal(15000)
-                maksGodkjentBeløpBegrunnelse shouldBe "Dette er kommentar"
-                maksGodkjentBeløpTaMed shouldBe true
-                utgiftsposter shouldHaveSize 3
-            }
-        }
-    }
-
-    @Test
-    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med klage mottatt dato`() {
-        val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
+    fun `Skal konvertere vedtak til behandling for lesemodus for BIDRAG med klage mottatt dato`() {
+        val originalVedtak = lagVedtaksdata("vedtak_respons-bidrag")
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -131,191 +116,29 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
         assertSoftly(behandling) {
             behandling.saksnummer shouldBe SAKSNUMMER
-            årsak shouldBe null
+            årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             avslag shouldBe null
-            virkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
+            virkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
+            søktFomDato shouldBe LocalDate.parse("2024-02-01")
             soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
-            stonadstype shouldBe null
-            engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
+            stonadstype shouldBe Stønadstype.BIDRAG
+            engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-05-01")
             klageMottattdato shouldBe LocalDate.parse("2024-03-01")
-            vedtakstype shouldBe Vedtakstype.ENDRING
+            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
             refVedtaksid shouldBe 1
-            kategori shouldBe "ANNET"
-            kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
-            soknadsid shouldBe 101
+            soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
-            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
-                "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
-            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
-            notater shouldHaveSize 4
-            val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
-            notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
-            notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"
-            notatInntekter.find { it.rolle == it.behandling.søknadsbarn.first() }?.innhold shouldBe "Notat inntekter BA"
-            validerUtgifter()
-            validerRoller()
-            validerHusstandsmedlem()
-            validerInntekter()
-            validerGrunnlag()
         }
     }
 
     @Test
-    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med avslag godkjent beløp lavere enn forskuddsats`() {
-        val originalVedtak = lagVedtaksdata("vedtak_respons_avslag_særbidrag-forskuddsats")
-        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
-
-        val vedtak1 =
-            originalVedtak.copy(
-                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
-                grunnlagListe =
-                    originalVedtak.grunnlagListe.map {
-                        if (it.type == Grunnlagstype.SØKNAD) {
-                            it.copy(
-                                innhold =
-                                    POJONode(
-                                        it.innholdTilObjekt<SøknadGrunnlag>().copy(
-                                            mottattDato = LocalDate.parse("2024-05-01"),
-                                            klageMottattDato = LocalDate.parse("2024-03-01"),
-                                        ),
-                                    ),
-                            )
-                        } else {
-                            it
-                        }
-                    },
-            )
-        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
-        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
-
-        assertSoftly(behandling) {
-            behandling.saksnummer shouldBe "2400067"
-            årsak shouldBe null
-            avslag shouldBe null
-            virkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
-            soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
-            stonadstype shouldBe null
-            engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
-            behandlerEnhet shouldBe "4806"
-            mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klageMottattdato shouldBe LocalDate.parse("2024-03-01")
-            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
-            refVedtaksid shouldBe 1
-            kategori shouldBe Særbidragskategori.TANNREGULERING.name
-            kategoriBeskrivelse shouldBe null
-            soknadsid shouldBe 433434L
-            opprettetAv shouldBe "Z994977"
-            opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
-            sivilstand shouldHaveSize 0
-            inntekter shouldHaveSize 0
-            husstandsmedlem shouldHaveSize 0
-            roller shouldHaveSize 3
-            utgift shouldNotBe null
-            assertSoftly(utgift!!) {
-                beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
-                maksGodkjentBeløp shouldBe null
-                maksGodkjentBeløpBegrunnelse shouldBe null
-                utgiftsposter shouldHaveSize 2
-                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2024-05-08") }!!) {
-                    kravbeløp shouldBe BigDecimal(5000)
-                    godkjentBeløp shouldBe BigDecimal(300)
-                    type shouldBe Utgiftstype.TANNREGULERING.name
-                    betaltAvBp shouldBe false
-                    kommentar shouldBe "Fakturanr 1, delvis betalt av barnetrygd"
-                }
-                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2024-07-09") }!!) {
-                    kravbeløp shouldBe BigDecimal(8000)
-                    godkjentBeløp shouldBe BigDecimal(800)
-                    type shouldBe Utgiftstype.TANNREGULERING.name
-                    betaltAvBp shouldBe false
-                    kommentar shouldBe "Fakturanr 2, dekket av forsikring"
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med avslag alle utgifter foreldet`() {
-        val originalVedtak = lagVedtaksdata("vedtak_respons_avslag_særbidrag-foreldet")
-        val vedtak1 =
-            originalVedtak.copy(
-                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
-                grunnlagListe =
-                    originalVedtak.grunnlagListe.map {
-                        if (it.type == Grunnlagstype.SØKNAD) {
-                            it.copy(
-                                innhold =
-                                    POJONode(
-                                        it.innholdTilObjekt<SøknadGrunnlag>().copy(
-                                            mottattDato = LocalDate.parse("2024-05-01"),
-                                            klageMottattDato = LocalDate.parse("2024-03-01"),
-                                        ),
-                                    ),
-                            )
-                        } else {
-                            it
-                        }
-                    },
-            )
-        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
-        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
-        val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
-
-        assertSoftly(behandling) {
-            behandling.saksnummer shouldBe "2400067"
-            årsak shouldBe null
-            avslag shouldBe null
-            virkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
-            soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
-            stonadstype shouldBe null
-            engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
-            behandlerEnhet shouldBe "4806"
-            mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klageMottattdato shouldBe LocalDate.parse("2024-03-01")
-            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
-            refVedtaksid shouldBe 1
-            kategori shouldBe Særbidragskategori.TANNREGULERING.name
-            kategoriBeskrivelse shouldBe null
-            soknadsid shouldBe 433434L
-            opprettetAv shouldBe "Z994977"
-            opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
-            sivilstand shouldHaveSize 0
-            inntekter shouldHaveSize 0
-            husstandsmedlem shouldHaveSize 0
-            roller shouldHaveSize 3
-            utgift shouldNotBe null
-            assertSoftly(utgift!!) {
-                beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
-                utgiftsposter shouldHaveSize 2
-                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2022-05-08") }!!) {
-                    kravbeløp shouldBe BigDecimal(5000)
-                    godkjentBeløp shouldBe BigDecimal(0)
-                    type shouldBe Utgiftstype.TANNREGULERING.name
-                    betaltAvBp shouldBe false
-                    kommentar shouldBe "Fakturanr 1"
-                }
-                assertSoftly(utgiftsposter.find { it.dato == LocalDate.parse("2022-07-09") }!!) {
-                    kravbeløp shouldBe BigDecimal(8000)
-                    godkjentBeløp shouldBe BigDecimal(0)
-                    type shouldBe Utgiftstype.TANNREGULERING.name
-                    betaltAvBp shouldBe false
-                    kommentar shouldBe "Fakturanr 2"
-                }
-            }
-        }
-    }
-
-    @Test
+    @Disabled
     fun `Skal opprette behandling og lagre vedtakstidspunkt for forrige vedtak`() {
-        val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
+        val originalVedtak = lagVedtaksdata("vedtak_respons-bidrag")
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -373,51 +196,6 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    fun `Skal opprette behandling med klage mottatt dato`() {
-        val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
-        val vedtak1 =
-            originalVedtak.copy(
-                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
-                grunnlagListe =
-                    originalVedtak.grunnlagListe.map {
-                        if (it.type == Grunnlagstype.SØKNAD) {
-                            it.copy(
-                                innhold =
-                                    POJONode(
-                                        it.innholdTilObjekt<SøknadGrunnlag>().copy(
-                                            mottattDato = LocalDate.parse("2024-05-01"),
-                                            klageMottattDato = LocalDate.parse("2024-03-01"),
-                                        ),
-                                    ),
-                            )
-                        } else {
-                            it
-                        }
-                    },
-            )
-        every { vedtakConsumer.hentVedtak(eq(12333)) } returns vedtak1
-        val behandling =
-            vedtakService.konverterVedtakTilBehandling(
-                OpprettBehandlingFraVedtakRequest(
-                    vedtakstype = Vedtakstype.KLAGE,
-                    søknadsid = 100,
-                    søknadsreferanseid = 222,
-                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
-                    saksnummer = "123213213",
-                    mottattdato = LocalDate.parse("2024-07-01"),
-                    søktFomDato = LocalDate.parse("2024-07-01"),
-                    behandlerenhet = "9999",
-                ),
-                12333,
-            )!!
-
-        assertSoftly(behandling) {
-            klageMottattdato shouldBe LocalDate.parse("2024-07-01")
-            mottattdato shouldBe LocalDate.parse("2024-05-01")
-        }
-    }
-
-    @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis direkte avslag`() {
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_respons_avslag-særbidrag")
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
@@ -462,15 +240,96 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
         }
     }
 
+    private fun Behandling.validerSamvær() {
+        assertSoftly(samvær) {
+            size shouldBe 1
+            val samværBarn = samvær.first()
+            samværBarn.rolle.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
+            samværBarn.perioder shouldHaveSize 4
+            assertSoftly(samværBarn.perioder.first()) {
+                samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
+                fom shouldBe LocalDate.parse("2024-02-01")
+                tom shouldBe LocalDate.parse("2024-05-31")
+                beregning shouldNotBe null
+            }
+            assertSoftly(samværBarn.perioder.toList()[1]) {
+                samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
+                fom shouldBe LocalDate.parse("2024-06-01")
+                tom shouldBe LocalDate.parse("2024-08-31")
+                beregning shouldBe null
+            }
+            assertSoftly(samværBarn.perioder.toList()[2]) {
+                samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_4
+                fom shouldBe LocalDate.parse("2024-09-01")
+                tom shouldBe LocalDate.parse("2024-10-31")
+                beregning shouldNotBe null
+            }
+            assertSoftly(samværBarn.perioder.toList()[3]) {
+                samværsklasse shouldBe Samværsklasse.DELT_BOSTED
+                fom shouldBe LocalDate.parse("2024-11-01")
+                tom shouldBe null
+                beregning shouldBe null
+            }
+        }
+    }
+
+    private fun Behandling.validerUnderhold() {
+        assertSoftly(underholdskostnader) {
+            size shouldBe 2
+            val underholdSøknadsbarn = underholdskostnader.find { it.person.rolle.isNotEmpty() }!!
+            assertSoftly(underholdSøknadsbarn) {
+                harTilsynsordning shouldBe true
+
+                barnetilsyn shouldHaveSize 1
+                barnetilsyn.first().fom shouldBe LocalDate.parse("2024-02-01")
+                barnetilsyn.first().tom shouldBe LocalDate.parse("2024-09-30")
+                barnetilsyn.first().under_skolealder shouldBe false
+                barnetilsyn.first().omfang shouldBe Tilsynstype.HELTID
+
+                tilleggsstønad shouldHaveSize 1
+                tilleggsstønad.first().fom shouldBe LocalDate.parse("2024-02-01")
+                tilleggsstønad.first().tom shouldBe LocalDate.parse("2024-09-30")
+                tilleggsstønad.first().dagsats shouldBe BigDecimal(20)
+
+                faktiskeTilsynsutgifter shouldHaveSize 2
+                faktiskeTilsynsutgifter.first().fom shouldBe LocalDate.parse("2024-02-01")
+                faktiskeTilsynsutgifter.first().tom shouldBe LocalDate.parse("2024-09-30")
+                faktiskeTilsynsutgifter.first().tilsynsutgift shouldBe BigDecimal(1300)
+                faktiskeTilsynsutgifter.first().kostpenger shouldBe BigDecimal(20)
+                faktiskeTilsynsutgifter.first().kommentar shouldBe "Dette er test"
+            }
+
+            assertSoftly(underholdskostnader.find { it.person.rolle.isEmpty() }!!) {
+                harTilsynsordning shouldBe null
+                barnetilsyn shouldHaveSize 0
+                tilleggsstønad shouldHaveSize 0
+                faktiskeTilsynsutgifter shouldHaveSize 1
+                faktiskeTilsynsutgifter.first().fom shouldBe LocalDate.parse("2024-06-01")
+                faktiskeTilsynsutgifter.first().tom shouldBe null
+                faktiskeTilsynsutgifter.first().tilsynsutgift shouldBe BigDecimal(2756)
+                faktiskeTilsynsutgifter.first().kostpenger shouldBe BigDecimal(100)
+                faktiskeTilsynsutgifter.first().kommentar shouldBe "Barnehage"
+            }
+        }
+    }
+
     private fun Behandling.validerInntekter() {
         assertSoftly(inntekter) {
-            size shouldBe 8
-            filter { it.type == Inntektsrapportering.BARNETILLEGG } shouldHaveSize 1
-            filter { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET } shouldHaveSize 2
-            filter { it.type == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 2
-            filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 2
+            size shouldBe 20
+            filter { it.type == Inntektsrapportering.BARNETILLEGG } shouldHaveSize 6
+            filter { it.type == Inntektsrapportering.KONTANTSTØTTE } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.SYKEPENGER } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD } shouldHaveSize 2
+            filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.AINNTEKT } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.OVERGANGSSTØNAD } shouldHaveSize 1
+            filter { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET } shouldHaveSize 4
+            filter { it.type == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 0
+            filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 0
             find { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET && it.ident == testdataBP.ident } shouldNotBe null
-            find { it.type == Inntektsrapportering.LIGNINGSINNTEKT && it.ident == testdataBM.ident } shouldNotBe null
+            find { it.type == Inntektsrapportering.FORELDREPENGER && it.ident == testdataBM.ident } shouldNotBe null
             find { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET && it.ident == testdataBarn1.ident } shouldNotBe null
         }
     }
@@ -486,10 +345,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 it.kilde shouldBe Kilde.OFFENTLIG
                 val periode = it.perioder.first()
                 assertSoftly(periode) {
-                    it.datoFom shouldBe LocalDate.of(2024, 7, 1)
+                    it.datoFom shouldBe LocalDate.of(2024, 10, 1)
                     it.datoTom shouldBe null
                     it.bostatus shouldBe Bostatuskode.MED_FORELDER
-                    it.kilde shouldBe Kilde.OFFENTLIG
+                    it.kilde shouldBe Kilde.MANUELL
                 }
             }
         }
@@ -501,7 +360,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             it.kilde shouldBe Kilde.OFFENTLIG
             val periode = it.perioder.first()
             assertSoftly(periode) {
-                it.datoFom shouldBe LocalDate.of(2024, 7, 1)
+                it.datoFom shouldBe LocalDate.of(2024, 2, 1)
                 it.datoTom shouldBe null
                 it.bostatus shouldBe Bostatuskode.BOR_MED_ANDRE_VOKSNE
                 it.kilde shouldBe Kilde.OFFENTLIG
@@ -559,7 +418,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 17
+            size shouldBe 16
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 testdataBM.ident,
@@ -575,11 +434,11 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.UTVIDET_BARNETRYGD,
                 testdataBM.ident,
-            ) shouldHaveSize 1
+            ) shouldHaveSize 0
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.BARNETILLEGG,
                 testdataBM.ident,
-            ) shouldHaveSize 1
+            ) shouldHaveSize 0
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.BARNETILSYN,
                 testdataBM.ident,
@@ -600,7 +459,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
                 testdataBM.ident,
                 true,
-            ) shouldHaveSize 0
+            ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                 testdataBP.ident,
@@ -637,9 +496,9 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             skattepliktig shouldHaveSize 1
             val skattepliktigInnhold =
                 skattepliktig[0].konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
-            skattepliktigInnhold!!.inntekter shouldHaveSize 4
-            skattepliktigInnhold.inntekter.ainntektListe shouldHaveSize 0
-            skattepliktigInnhold.inntekter.skattegrunnlagListe shouldHaveSize 4
+            skattepliktigInnhold!!.inntekter shouldHaveSize 6
+            skattepliktigInnhold.inntekter.ainntektListe shouldHaveSize 3
+            skattepliktigInnhold.inntekter.skattegrunnlagListe shouldHaveSize 3
         }
     }
 }

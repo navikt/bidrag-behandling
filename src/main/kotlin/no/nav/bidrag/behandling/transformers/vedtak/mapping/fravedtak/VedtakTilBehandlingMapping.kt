@@ -97,6 +97,7 @@ class VedtakTilBehandlingMapping(
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
             }
+        val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
@@ -124,8 +125,8 @@ class VedtakTilBehandlingMapping(
                         else -> mottattdato ?: hentSøknad().mottattDato
                     },
                 // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
-                stonadstype = stønadsendringListe.firstOrNull()?.type,
-                engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,
+                stonadstype = stønadsendringstype,
+                engangsbeloptype = if (stønadsendringstype == null) engangsbeløpListe.firstOrNull()?.type else null,
                 vedtaksid = null,
                 soknadRefId = søknadRefId,
                 refVedtaksid = vedtakId,
@@ -271,6 +272,10 @@ class VedtakTilBehandlingMapping(
                             }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
                             .mapBarnetilsyn(underholdskostnad, lesemodus),
                     )
+                    underholdskostnad.harTilsynsordning =
+                        underholdskostnad.barnetilsyn.isNotEmpty() ||
+                        underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() ||
+                        underholdskostnad.tilleggsstønad.isNotEmpty()
                     underholdskostnad
                 }.toMutableSet()
 

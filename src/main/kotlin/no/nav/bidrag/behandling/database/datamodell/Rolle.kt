@@ -82,7 +82,10 @@ open class Rolle(
         nullable = true,
     )
     open var person: Person? = null,
-)
+) {
+    override fun toString(): String =
+        "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+}
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 

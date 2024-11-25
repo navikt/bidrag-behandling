@@ -466,7 +466,8 @@ private fun DelberegningBarnetilleggDto.tilNotatDto() =
                     visningsnavn = it.visningsnavn,
                 )
             },
-        nettoBeløp = nettoBeløp,
+        sumNettoBeløp = sumNettoBeløp,
+        sumBruttoBeløp = sumBruttoBeløp,
         skattFaktor = skattFaktor,
     )
 

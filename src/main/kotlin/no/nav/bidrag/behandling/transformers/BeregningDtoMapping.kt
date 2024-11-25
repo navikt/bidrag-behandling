@@ -486,7 +486,8 @@ fun List<GrunnlagDto>.finnBarnetillegg(
     val sumBarnetillegg = barnetillegg.sumOf { it.innholdTilObjekt<InntektsrapporteringPeriode>().beløp }
     return DelberegningBarnetilleggDto(
         skattFaktor = skattFaktor,
-        nettoBeløp = beregnNettoBarnetillegg(sumBarnetillegg, skattFaktor),
+        sumBruttoBeløp = sumBarnetillegg.divide(BigDecimal(12), 10, RoundingMode.HALF_UP),
+        sumNettoBeløp = beregnNettoBarnetillegg(sumBarnetillegg, skattFaktor),
         barnetillegg =
             barnetillegg
                 .map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }
