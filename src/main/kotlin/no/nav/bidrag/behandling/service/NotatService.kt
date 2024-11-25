@@ -30,7 +30,7 @@ class NotatService {
             behandling.notater.add(
                 Notat(
                     behandling = behandling,
-                    rolle = rolle ?: behandling.rolleGrunnlagSkalHentesFor!!,
+                    rolle = rolle,
                     innhold = notattekst,
                     type = notattype,
                 ),

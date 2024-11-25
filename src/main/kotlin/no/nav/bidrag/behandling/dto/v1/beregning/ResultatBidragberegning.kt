@@ -28,7 +28,9 @@ data class ResultatBidragsberegningBarnDto(
 
 data class ResultatBarnebidragsberegningPeriodeDto(
     val periode: ÅrMånedsperiode,
+    val underholdskostnad: BigDecimal,
     val bpsAndelU: BigDecimal,
+    val bpsAndelBeløp: BigDecimal,
     val samværsfradrag: BigDecimal,
     val beregnetBidrag: BigDecimal,
     val faktiskBidrag: BigDecimal,
@@ -70,5 +72,7 @@ data class BidragPeriodeBeregningsdetaljer(
         val gjennomsnittligSamværPerMåned: BigDecimal,
     )
 
-    val deltBosted get() = sluttberegning!!.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
+    val deltBosted get() =
+        sluttberegning!!.bidragJustertForDeltBosted ||
+            sluttberegning.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }
