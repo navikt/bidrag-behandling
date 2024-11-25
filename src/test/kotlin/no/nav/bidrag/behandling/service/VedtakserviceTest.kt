@@ -344,7 +344,7 @@ class VedtakserviceTest : TestContainerRunner() {
             request.stønadsendringListe.shouldHaveSize(1)
             request.engangsbeløpListe shouldHaveSize 3
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 176
+                request.grunnlagListe shouldHaveSize 177
             }
         }
 
@@ -405,6 +405,10 @@ class VedtakserviceTest : TestContainerRunner() {
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 22
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 7
             hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
