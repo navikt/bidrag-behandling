@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 open class Person(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     open val ident: String? = null,
     open val navn: String? = null,
     open val fødselsdato: LocalDate? = null,

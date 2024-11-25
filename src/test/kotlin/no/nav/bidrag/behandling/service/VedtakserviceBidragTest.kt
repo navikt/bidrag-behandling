@@ -412,6 +412,90 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
+    fun `Skal fatte vedtak uten innkreving`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val innbetaltBeløp = BigDecimal(10000)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatGrunnlag.NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatGrunnlag.NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+        behandling.refVedtaksid = 553
+        behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
+        behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp"),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.stønadsendringListe shouldHaveSize 1
+        }
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            it.first().innkreving shouldBe Innkrevingstype.UTEN_INNKREVING
+        }
+        assertSoftly(opprettVedtakRequest.engangsbeløpListe) {
+            shouldHaveSize(3)
+
+            it.any { it.type == Engangsbeløptype.GEBYR_MOTTAKER }.shouldBeTrue()
+            it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
+            it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+            it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+            it.find { it.type == Engangsbeløptype.DIREKTE_OPPGJØR }!!.innkreving shouldBe Innkrevingstype.UTEN_INNKREVING
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+    }
+
+    @Test
     fun `Skal fatte vedtak med direkte avslag`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
