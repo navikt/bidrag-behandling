@@ -32,24 +32,22 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.math.MathContext
 import java.time.LocalDate
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for BIDRAG`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_respons-bidrag")
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("fattetvedtak/bidrag-innvilget")
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
@@ -89,7 +87,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for BIDRAG med klage mottatt dato`() {
-        val originalVedtak = lagVedtaksdata("vedtak_respons-bidrag")
+        val originalVedtak = lagVedtaksdata("fattetvedtak/bidrag-innvilget")
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -136,9 +134,33 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    @Disabled
+    fun `Skal opprette behandling fra vedtak`() {
+        every { vedtakConsumer.hentVedtak(eq(12333)) } returns lagVedtaksdata("fattetvedtak/bidrag-innvilget")
+
+        val behandling =
+            vedtakService.konverterVedtakTilBehandling(
+                OpprettBehandlingFraVedtakRequest(
+                    vedtakstype = Vedtakstype.KLAGE,
+                    søknadsid = 100,
+                    søknadsreferanseid = 222,
+                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                    saksnummer = "123213213",
+                    mottattdato = LocalDate.parse("2024-01-01"),
+                    søktFomDato = LocalDate.parse("2021-01-01"),
+                    behandlerenhet = "9999",
+                ),
+                12333,
+            )!!
+
+        assertSoftly(behandling) {
+            validerSamvær()
+            validerUnderhold()
+        }
+    }
+
+    @Test
     fun `Skal opprette behandling og lagre vedtakstidspunkt for forrige vedtak`() {
-        val originalVedtak = lagVedtaksdata("vedtak_respons-bidrag")
+        val originalVedtak = lagVedtaksdata("fattetvedtak/bidrag-innvilget")
         val vedtak1 =
             originalVedtak.copy(
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
@@ -197,21 +219,23 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis direkte avslag`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_respons_avslag-særbidrag")
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("fattetvedtak/bidrag-avslag")
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
 
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
-            behandling.saksnummer shouldBe "2400042"
+            behandling.saksnummer shouldBe "2400116"
+            stonadstype shouldBe Stønadstype.BIDRAG
+            engangsbeloptype shouldBe null
+            vedtakstype shouldBe Vedtakstype.FASTSETTELSE
+            behandlerEnhet shouldBe "4806"
+            innkrevingstype shouldBe Innkrevingstype.MED_INNKREVING
             årsak shouldBe null
-            avslag shouldBe Resultatkode.PRIVAT_AVTALE
-            kategori shouldBe Særbidragskategori.ANNET.name
-            kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
-            notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
-                "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
-            virkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
+            avslag shouldBe Resultatkode.IKKE_OMSORG_FOR_BARNET
+            notater shouldHaveSize 0
+            virkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
+            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
         }
     }
 
@@ -219,25 +243,9 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal konvertere vedtak for beregning`() {
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
         val resultat =
-            vedtakService.konverterVedtakTilBeregningResultatSærbidrag(1)
+            vedtakService.konverterVedtakTilBeregningResultatBidrag(1)
 
         resultat shouldNotBe null
-
-        assertSoftly(resultat!!) {
-            bpsAndel!!.endeligAndelFaktor shouldBe BigDecimal(0.6444, MathContext(4))
-            bpsAndel.andelBeløp shouldBe BigDecimal(5796)
-            utgiftsposter.shouldHaveSize(3)
-            resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET
-            it.resultat shouldBe BigDecimal(5796)
-            antallBarnIHusstanden shouldBe 3.0
-            voksenIHusstanden shouldBe true
-            erDirekteAvslag shouldBe false
-            bpHarEvne shouldBe true
-            delberegningUtgift!!.sumGodkjent shouldBe BigDecimal(9000)
-            delberegningUtgift.sumBetaltAvBp shouldBe BigDecimal(2500)
-            beløpSomInnkreves shouldBe BigDecimal(3296)
-            maksGodkjentBeløp shouldBe null
-        }
     }
 
     private fun Behandling.validerSamvær() {

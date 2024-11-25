@@ -51,6 +51,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
+import stubUnderholdskostnadRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertFailsWith
@@ -121,17 +122,7 @@ class UnderholdServiceTest {
                 dtomapper,
             )
 
-        every { underholdskostnadRepository.save(any()) }.answers {
-            val underholdskostnad = firstArg<Underholdskostnad>()
-            underholdskostnad.tilleggsstønad.forEachIndexed { index, tilleggsstønad ->
-                tilleggsstønad.id = index.toLong()
-            }
-            underholdskostnad.barnetilsyn.forEachIndexed { index, barnetilsyn -> barnetilsyn.id = index.toLong() }
-            underholdskostnad.faktiskeTilsynsutgifter.forEachIndexed { index, faktiskeTilsynsutgifter ->
-                faktiskeTilsynsutgifter.id = index.toLong()
-            }
-            underholdskostnad
-        }
+        stubUnderholdskostnadRepository(underholdskostnadRepository)
     }
 
     @Nested

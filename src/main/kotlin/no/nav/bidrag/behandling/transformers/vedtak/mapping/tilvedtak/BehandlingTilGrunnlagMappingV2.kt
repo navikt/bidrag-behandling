@@ -31,6 +31,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -230,16 +231,22 @@ class BehandlingTilGrunnlagMappingV2(
         return samvær
             .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
             .flatMap { samvær ->
+                val bpGrunnlagsreferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                val barnGrunnlagsreferanse = samvær.rolle.tilGrunnlagPerson().referanse
                 samvær.perioder.flatMap {
                     val grunnlagBeregning =
-                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
+                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it, bpGrunnlagsreferanse, barnGrunnlagsreferanse) }
+                            ?: emptyList()
                     val grunnlagPeriode =
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseSamværsperiode(),
                             type = Grunnlagstype.SAMVÆRSPERIODE,
-                            gjelderReferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse(),
-                            grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
-                            gjelderBarnReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
+                            gjelderReferanse = bpGrunnlagsreferanse,
+                            grunnlagsreferanseListe =
+                                grunnlagBeregning
+                                    .filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE)
+                                    .map { it.referanse },
+                            gjelderBarnReferanse = barnGrunnlagsreferanse,
                             innhold =
                                 POJONode(
                                     SamværsperiodeGrunnlag(

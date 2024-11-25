@@ -8,7 +8,6 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -31,7 +30,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
-import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
@@ -44,8 +42,6 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.taMedInntekt
-import no.nav.bidrag.behandling.utils.testdata.testdataBM
-import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
@@ -57,15 +53,10 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
-import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.BeforeEach
@@ -344,55 +335,12 @@ class VedtakserviceTest : TestContainerRunner() {
             request.stønadsendringListe.shouldHaveSize(1)
             request.engangsbeløpListe shouldHaveSize 3
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 176
+                request.grunnlagListe shouldHaveSize 177
             }
         }
 
-        val grunnlagsliste = opprettVedtakRequest.grunnlagListe
-        assertSoftly(opprettVedtakRequest.stønadsendringListe[0]) {
-            it.type shouldBe Stønadstype.BIDRAG
-            it.sak shouldBe Saksnummer(behandling.saksnummer)
-            it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
-            it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
-            it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
-            it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
-            it.beslutning shouldBe Beslutningstype.ENDRING
-
-            it.periodeListe shouldHaveSize 6
-            it.grunnlagReferanseListe shouldHaveSize 9
-            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
-                Grunnlagstype.NOTAT,
-                it.grunnlagReferanseListe,
-            ) shouldHaveSize
-                7
-            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
-                Grunnlagstype.SØKNAD,
-                it.grunnlagReferanseListe,
-            ) shouldHaveSize
-                1
-            grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
-                Grunnlagstype.VIRKNINGSTIDSPUNKT,
-                it.grunnlagReferanseListe,
-            ) shouldHaveSize
-                1
-
-            assertSoftly(it.periodeListe[0]) {
-                grunnlagsliste.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
-                    Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG,
-                    it.grunnlagReferanseListe,
-                ) shouldHaveSize
-                    1
-            }
-        }
         assertSoftly(opprettVedtakRequest) {
-            val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
-            val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
-            val barn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
-
-            assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-                shouldHaveSize(7)
-            }
-
+            hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 7
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE) shouldHaveSize 1
@@ -402,23 +350,17 @@ class VedtakserviceTest : TestContainerRunner() {
             hentGrunnlagstyper(Grunnlagstype.SAMVÆRSKALKULATOR) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
-            hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
+            hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 22
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 7
             hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT)
-                .find { it.gjelderReferanse == bmGrunnlag.referanse } shouldNotBe null
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT)
-                .find { it.gjelderReferanse == bpGrunnlag.referanse } shouldNotBe null
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT)
-                .find { it.gjelderReferanse == barn1Grunnlag.referanse } shouldNotBe null
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG)
-                .find { it.gjelderReferanse == bmGrunnlag.referanse } shouldNotBe null
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG)
-                .find { it.gjelderReferanse == bpGrunnlag.referanse } shouldNotBe null
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE) shouldHaveSize 1

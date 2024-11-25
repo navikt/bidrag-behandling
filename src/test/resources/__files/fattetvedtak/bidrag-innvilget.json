@@ -4580,9 +4580,9 @@
     {
       "type": "BIDRAG",
       "sak": "1233333",
-      "skyldner": "16498311338",
-      "kravhaver": "15461398089",
-      "mottaker": "18477924413",
+      "skyldner": "{bpIdent}",
+      "kravhaver": "{barn1Ident}",
+      "mottaker": "{bmIdent}",
       "førsteIndeksreguleringsår": 2025,
       "innkreving": "MED_INNKREVING",
       "beslutning": "ENDRING",
