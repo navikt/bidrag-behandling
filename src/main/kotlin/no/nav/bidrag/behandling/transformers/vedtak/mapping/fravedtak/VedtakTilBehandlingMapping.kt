@@ -97,6 +97,7 @@ class VedtakTilBehandlingMapping(
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
             }
+        val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
@@ -124,8 +125,8 @@ class VedtakTilBehandlingMapping(
                         else -> mottattdato ?: hentSøknad().mottattDato
                     },
                 // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
-                stonadstype = stønadsendringListe.firstOrNull()?.type,
-                engangsbeloptype = engangsbeløpListe.firstOrNull()?.type,
+                stonadstype = stønadsendringstype,
+                engangsbeloptype = if (stønadsendringstype == null) engangsbeløpListe.firstOrNull()?.type else null,
                 vedtaksid = null,
                 soknadRefId = søknadRefId,
                 refVedtaksid = vedtakId,
@@ -140,7 +141,7 @@ class VedtakTilBehandlingMapping(
 
         behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
         behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
-        behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling)
+        behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling, lesemodus)
         behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
         behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
@@ -250,38 +251,42 @@ class VedtakTilBehandlingMapping(
 
                     underholdskostnad.tilleggsstønad.addAll(
                         filtrerBasertPåEgenReferanse(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)
-                            .map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
                             .filter {
-                                hentPersonMedReferanse(it.gjelderBarn)!!.personIdent == rolle.ident
-                            }.mapTillegsstønad(underholdskostnad, lesemodus),
+                                hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                            }.map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
+                            .mapTillegsstønad(underholdskostnad, lesemodus),
                     )
 
                     underholdskostnad.faktiskeTilsynsutgifter.addAll(
                         filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
-                            .map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
                             .filter {
-                                hentPersonMedReferanse(it.gjelderBarn)!!.personIdent == rolle.ident
-                            }.mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
+                                hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                            }.map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
+                            .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
                     )
 
                     underholdskostnad.barnetilsyn.addAll(
                         filtrerBasertPåEgenReferanse(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)
-                            .map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
                             .filter { ts ->
-                                hentPersonMedReferanse(ts.gjelderBarn)!!.personIdent == rolle.ident
-                            }.mapBarnetilsyn(underholdskostnad, lesemodus),
+                                hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                            }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
+                            .mapBarnetilsyn(underholdskostnad, lesemodus),
                     )
+                    underholdskostnad.harTilsynsordning =
+                        underholdskostnad.barnetilsyn.isNotEmpty() ||
+                        underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() ||
+                        underholdskostnad.tilleggsstønad.isNotEmpty()
                     underholdskostnad
                 }.toMutableSet()
 
         val underholdskostnadAndreBarn =
             filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
-                .map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
                 .filter {
-                    val gjelderBarnIdent = hentPersonMedReferanse(it.gjelderBarn)!!.personIdent
+                    val gjelderBarnIdent = hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent
                     behandling.roller.none { it.ident == gjelderBarnIdent }
-                }.groupBy { it.gjelderBarn }
-                .map { (gjelderBarnReferanse, innhold) ->
+                }.groupBy { it.gjelderBarnReferanse }
+                .map { (gjelderBarnReferanse, grunnlag) ->
+                    val innhold = grunnlag.innholdTilObjekt<FaktiskUtgiftPeriode>()
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!.personObjekt
 
                     val underholdskostnad =

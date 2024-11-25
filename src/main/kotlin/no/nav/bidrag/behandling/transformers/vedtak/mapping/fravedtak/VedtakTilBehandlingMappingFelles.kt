@@ -149,11 +149,14 @@ internal fun List<GrunnlagDto>.mapRoller(
         .mapIndexed { i, it -> it.tilRolle(behandling, if (lesemodus) i.toLong() else null) }
         .toMutableSet()
 
-internal fun List<GrunnlagDto>.mapHusstandsmedlem(behandling: Behandling): MutableSet<Husstandsmedlem> =
+internal fun List<GrunnlagDto>.mapHusstandsmedlem(
+    behandling: Behandling,
+    lesemodus: Boolean,
+): MutableSet<Husstandsmedlem> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
         .groupBy { it.gjelderReferanse }
         .map {
-            it.value.tilHusstandsmedlem(it.key!!, behandling, this)
+            it.value.tilHusstandsmedlem(it.key!!, behandling, this, lesemodus)
         }.toMutableSet()
 
 internal fun List<GrunnlagDto>.mapSivilstand(
@@ -484,6 +487,7 @@ internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
     gjelderReferanse: Grunnlagsreferanse,
     behandling: Behandling,
     grunnlagsListe: List<GrunnlagDto>,
+    lesemodus: Boolean,
 ): Husstandsmedlem {
     val gjelderGrunnlag =
         grunnlagsListe.hentPersonMedReferanse(gjelderReferanse) ?: manglerPersonGrunnlag(
@@ -504,6 +508,7 @@ internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
             .any { it.gjelderPersonId == gjelderGrunnlag.personIdent }
     val husstandsmedlemBO =
         Husstandsmedlem(
+            id = if (lesemodus) 1 else null,
             ident = gjelderGrunnlag.personIdent,
             navn = gjelderPerson.navn,
             fødselsdato = gjelderPerson.fødselsdato,
@@ -513,9 +518,10 @@ internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
         )
     husstandsmedlemBO.perioder =
         this
-            .map {
+            .mapIndexed { index, it ->
                 val bosstatusPeriode = it.innholdTilObjekt<BostatusPeriode>()
                 Bostatusperiode(
+                    id = if (lesemodus) index.toLong() else null,
                     husstandsmedlem = husstandsmedlemBO,
                     datoFom = bosstatusPeriode.periode.fom.atDay(1),
                     datoTom =
