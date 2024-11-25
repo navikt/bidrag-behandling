@@ -52,6 +52,7 @@ open class Rolle(
     @Deprecated("Migrere til Person.navn")
     open val navn: String? = null,
     open val deleted: Boolean = false,
+    open var harGebyrsøknad: Boolean = false,
     open var innbetaltBeløp: BigDecimal? = null,
     @Column(name = "forrige_sivilstandshistorikk", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")

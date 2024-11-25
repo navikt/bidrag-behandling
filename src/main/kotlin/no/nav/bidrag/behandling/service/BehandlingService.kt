@@ -477,6 +477,7 @@ class BehandlingService(
             .forEach {
                 roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
+                    eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
                 }
             }
     }
