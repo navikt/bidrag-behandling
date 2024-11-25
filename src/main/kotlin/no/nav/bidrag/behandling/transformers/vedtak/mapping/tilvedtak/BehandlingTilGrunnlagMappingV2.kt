@@ -31,6 +31,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -241,7 +242,10 @@ class BehandlingTilGrunnlagMappingV2(
                             referanse = it.tilGrunnlagsreferanseSamværsperiode(),
                             type = Grunnlagstype.SAMVÆRSPERIODE,
                             gjelderReferanse = bpGrunnlagsreferanse,
-                            grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
+                            grunnlagsreferanseListe =
+                                grunnlagBeregning
+                                    .filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE)
+                                    .map { it.referanse },
                             gjelderBarnReferanse = barnGrunnlagsreferanse,
                             innhold =
                                 POJONode(
