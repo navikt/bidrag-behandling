@@ -751,6 +751,9 @@ private fun OpprettVedtakRequestDto.validerUndeholdskostnad() {
 }
 
 private fun OpprettVedtakRequestDto.validerSamvær() {
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+    val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
+
     val samværsperioder = hentGrunnlagstyper(Grunnlagstype.SAMVÆRSPERIODE)
     samværsperioder shouldHaveSize 2
     val manuellPeriode = samværsperioder.find { grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it.grunnlagsreferanseListe).isEmpty() }!!
@@ -758,6 +761,8 @@ private fun OpprettVedtakRequestDto.validerSamvær() {
     assertSoftly(manuellPeriode) {
         it.grunnlagsreferanseListe shouldHaveSize 0
         it.innholdTilObjekt<SamværsperiodeGrunnlag>().samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
+        it.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        it.gjelderReferanse shouldBe bpGrunnlag.referanse
     }
     assertSoftly(beregnetPeriode) {
         it.grunnlagsreferanseListe shouldHaveSize 8
@@ -765,16 +770,21 @@ private fun OpprettVedtakRequestDto.validerSamvær() {
         grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER, it) shouldHaveSize 1
         grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it) shouldHaveSize 1
         grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SAMVÆRSKALKULATOR, it) shouldHaveSize 1
-
+        it.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        it.gjelderReferanse shouldBe bpGrunnlag.referanse
         val innhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
         innhold.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
         val kalkulator = grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SAMVÆRSKALKULATOR, it).first()
         val innholdKalkulator = kalkulator.innholdTilObjekt<SamværskalkulatorDetaljer>()
+        kalkulator.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        kalkulator.gjelderReferanse shouldBe bpGrunnlag.referanse
         innholdKalkulator.ferier shouldHaveSize 5
         innholdKalkulator.regelmessigSamværNetter shouldBe BigDecimal(4)
 
         val delberegningSamværsklasse = grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it).first()
         val innholdSamværsklasse = delberegningSamværsklasse.innholdTilObjekt<DelberegningSamværsklasse>()
+        delberegningSamværsklasse.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        delberegningSamværsklasse.gjelderReferanse shouldBe bpGrunnlag.referanse
         innholdSamværsklasse.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
         innholdSamværsklasse.gjennomsnittligSamværPerMåned shouldBe BigDecimal("8.01")
     }

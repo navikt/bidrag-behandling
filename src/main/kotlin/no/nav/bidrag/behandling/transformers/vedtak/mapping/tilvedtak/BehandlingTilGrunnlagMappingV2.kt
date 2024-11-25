@@ -230,16 +230,19 @@ class BehandlingTilGrunnlagMappingV2(
         return samvær
             .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
             .flatMap { samvær ->
+                val bpGrunnlagsreferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                val barnGrunnlagsreferanse = samvær.rolle.tilGrunnlagPerson().referanse
                 samvær.perioder.flatMap {
                     val grunnlagBeregning =
-                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
+                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it, bpGrunnlagsreferanse, barnGrunnlagsreferanse) }
+                            ?: emptyList()
                     val grunnlagPeriode =
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseSamværsperiode(),
                             type = Grunnlagstype.SAMVÆRSPERIODE,
-                            gjelderReferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse(),
+                            gjelderReferanse = bpGrunnlagsreferanse,
                             grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
-                            gjelderBarnReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
+                            gjelderBarnReferanse = barnGrunnlagsreferanse,
                             innhold =
                                 POJONode(
                                     SamværsperiodeGrunnlag(
