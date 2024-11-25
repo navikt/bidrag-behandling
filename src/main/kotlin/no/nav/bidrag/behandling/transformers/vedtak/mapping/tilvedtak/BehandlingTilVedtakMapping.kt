@@ -30,6 +30,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.sak.BidragssakDto
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -87,58 +88,77 @@ class BehandlingTilVedtakMapping(
                         )
                     },
                 engangsbeløpListe =
-                    listOf(
-                        OpprettEngangsbeløpRequestDto(
-                            type = Engangsbeløptype.GEBYR_SKYLDNER,
-                            beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
-                            betaltBeløp = null,
-                            resultatkode = "GIGI", // TODO: Resultat fra beregning
-                            eksternReferanse = null,
-                            beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = emptyList(),
-                            innkreving = Innkrevingstype.MED_INNKREVING,
-                            skyldner = Personident(behandling.bidragspliktig!!.ident!!),
-                            kravhaver = skyldnerNav,
-                            mottaker = skyldnerNav,
-                            valutakode = "NOK",
-                            sak = Saksnummer(saksnummer),
-                        ),
-                        OpprettEngangsbeløpRequestDto(
-                            type = Engangsbeløptype.GEBYR_MOTTAKER,
-                            beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
-                            betaltBeløp = null,
-                            resultatkode = "GIGI", // TODO: Resultat fra beregning
-                            eksternReferanse = null,
-                            beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = emptyList(),
-                            innkreving = Innkrevingstype.MED_INNKREVING,
-                            skyldner = Personident(behandling.bidragsmottaker!!.ident!!),
-                            kravhaver = skyldnerNav,
-                            mottaker = skyldnerNav,
-                            valutakode = "NOK",
-                            sak = Saksnummer(saksnummer),
-                        ),
-                        OpprettEngangsbeløpRequestDto(
-                            type = Engangsbeløptype.DIREKTE_OPPGJØR,
-                            beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
-                            betaltBeløp = null,
-                            resultatkode = "DIREKTE_OPPGJØR", // TODO: Resultat fra beregning
-                            eksternReferanse = null,
-                            beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = emptyList(),
-                            innkreving = innkrevingstype!!,
-                            skyldner = Personident(behandling.bidragsmottaker!!.ident!!),
-                            kravhaver = Personident(""),
-                            mottaker = Personident(""),
-                            valutakode = "NOK",
-                            omgjørVedtakId = refVedtaksid?.toInt(),
-                            sak = Saksnummer(saksnummer),
-                        ),
-                    ),
+                    mapEngangsbeløpGebyr() + mapEngangsbeløpDirekteOppgjør(sak),
                 grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
             )
         }
     }
+
+    private fun Behandling.mapEngangsbeløpGebyr() =
+        listOf(
+            OpprettEngangsbeløpRequestDto(
+                type = Engangsbeløptype.GEBYR_SKYLDNER,
+                beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
+                betaltBeløp = null,
+                resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
+                eksternReferanse = null,
+                beslutning = Beslutningstype.ENDRING,
+                grunnlagReferanseListe = emptyList(),
+                innkreving = Innkrevingstype.MED_INNKREVING,
+                skyldner = Personident(bidragspliktig!!.ident!!),
+                kravhaver = skyldnerNav,
+                mottaker = skyldnerNav,
+                valutakode = "NOK",
+                sak = Saksnummer(saksnummer),
+            ),
+            OpprettEngangsbeløpRequestDto(
+                type = Engangsbeløptype.GEBYR_MOTTAKER,
+                beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
+                betaltBeløp = null,
+                resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
+                eksternReferanse = null,
+                beslutning = Beslutningstype.ENDRING,
+                grunnlagReferanseListe = emptyList(),
+                innkreving = Innkrevingstype.MED_INNKREVING,
+                skyldner = Personident(bidragsmottaker!!.ident!!),
+                kravhaver = skyldnerNav,
+                mottaker = skyldnerNav,
+                valutakode = "NOK",
+                sak = Saksnummer(saksnummer),
+            ),
+        )
+
+    private fun Behandling.mapEngangsbeløpDirekteOppgjør(sak: BidragssakDto) =
+        søknadsbarn
+            .filter {
+                it.innbetaltBeløp != null &&
+                    it.innbetaltBeløp!! > BigDecimal.ZERO
+            }.map {
+                mapper.run {
+                    OpprettEngangsbeløpRequestDto(
+                        type = Engangsbeløptype.DIREKTE_OPPGJØR,
+                        beløp = it.innbetaltBeløp,
+                        betaltBeløp = null,
+                        resultatkode = Resultatkode.DIREKTE_OPPJØR.name,
+                        eksternReferanse = null,
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = emptyList(),
+                        innkreving = innkrevingstype!!,
+                        skyldner = tilSkyldner(),
+                        kravhaver =
+                            it.tilNyestePersonident()
+                                ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                        mottaker =
+                            roller
+                                .reelMottakerEllerBidragsmottaker(
+                                    sak.hentRolleMedFnr(it.ident!!),
+                                ),
+                        valutakode = "NOK",
+                        omgjørVedtakId = refVedtaksid?.toInt(),
+                        sak = Saksnummer(saksnummer),
+                    )
+                }
+            }
 
     fun Behandling.byggOpprettVedtakRequestAvslagForBidrag(): OpprettVedtakRequestDto =
         mapper.run {
@@ -147,6 +167,7 @@ class BehandlingTilVedtakMapping(
 
             return byggOpprettVedtakRequestObjekt()
                 .copy(
+                    engangsbeløpListe = mapEngangsbeløpGebyr(),
                     stønadsendringListe =
                         søknadsbarn.map {
                             OpprettStønadsendringRequestDto(

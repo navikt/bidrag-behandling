@@ -18,7 +18,11 @@ open class Underholdskostnad(
         nullable = false,
     )
     open val behandling: Behandling,
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "person_id", nullable = false)
+    @ManyToOne(
+        fetch = FetchType.LAZY,
+        cascade = [CascadeType.PERSIST],
+    )
+    @JoinColumn(name = "person_id", nullable = false)
     open val person: Person,
     open var harTilsynsordning: Boolean? = null,
     @OneToMany(

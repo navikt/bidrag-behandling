@@ -14,7 +14,7 @@ import java.time.LocalDate
 class Tilleggsstønad(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "underholdskostnad_id", nullable = false)
     open var underholdskostnad: Underholdskostnad,

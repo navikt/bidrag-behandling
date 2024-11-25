@@ -1,7 +1,7 @@
 {
   "beregningListe" : [ {
     "saksnummer" : "{saksnummer}",
-    "personidentBarn" : "{barnIdent}",
+    "personidentBarn" : "{barn1Ident}",
     "gjelderFom" : "2023-09-01",
     "datoSøknad" : "2023-05-28",
     "beregnetBeløp" : 3159.00,

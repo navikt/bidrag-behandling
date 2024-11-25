@@ -191,7 +191,7 @@ class Dtomapper(
             )
 
         return beregnBarnebidragApi
-            .beregnUnderholdskostnad(grunnlag)
+            .beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
             .finnAlleDelberegningUnderholdskostnad()
             .tilUnderholdskostnadDto()
     }

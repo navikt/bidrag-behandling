@@ -450,7 +450,7 @@ fun opprettBarnetilsynListe() =
             periodeTil = LocalDate.parse("2022-07-31"),
             beløp = 1000,
             tilsynstype = Tilsynstype.HELTID,
-            skolealder = Skolealder.IKKE_ANGITT,
+            skolealder = Skolealder.OVER,
         ),
         BarnetilsynGrunnlagDto(
             partPersonId = testdataBM.ident,

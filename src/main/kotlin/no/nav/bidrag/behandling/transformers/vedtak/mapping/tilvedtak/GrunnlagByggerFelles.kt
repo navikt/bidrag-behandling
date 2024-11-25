@@ -150,15 +150,16 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
             },
         ).filterNotNull()
     val notatUnderhold =
-        søknadsbarn.mapNotNull {
-            henteNotatForTypeOgRolle(this, Notattype.UNDERHOLDSKOSTNAD, it)?.takeIfNotNullOrEmpty { innhold ->
-                opprettGrunnlagNotat(Notattype.UNDERHOLDSKOSTNAD, false, innhold)
+        roller
+            .mapNotNull { rolle ->
+                henteNotatForTypeOgRolle(this, Notattype.UNDERHOLDSKOSTNAD, rolle)?.takeIfNotNullOrEmpty { innhold ->
+                    opprettGrunnlagNotat(Notattype.UNDERHOLDSKOSTNAD, false, innhold, rolle.tilGrunnlagsreferanse())
+                }
             }
-        }
     val notatSamvær =
-        søknadsbarn.mapNotNull {
-            henteSamværsnotat(this, it)?.takeIfNotNullOrEmpty { innhold ->
-                opprettGrunnlagNotat(Notattype.SAMVÆR, false, innhold)
+        roller.mapNotNull { rolle ->
+            henteSamværsnotat(this, rolle)?.takeIfNotNullOrEmpty { innhold ->
+                opprettGrunnlagNotat(Notattype.SAMVÆR, false, innhold, rolle.tilGrunnlagsreferanse())
             }
         }
     val notatGrunnlagInntekter =

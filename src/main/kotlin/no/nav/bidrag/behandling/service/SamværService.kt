@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.SamværRepository
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
@@ -28,7 +29,7 @@ private val log = KotlinLogging.logger {}
 @Import(BeregnSamværsklasseApi::class)
 class SamværService(
     private val samværRepository: SamværRepository,
-    private val behandlingService: BehandlingService,
+    private val behandlingRepository: BehandlingRepository,
     private val notatService: NotatService,
     private val beregnSamværsklasseApi: BeregnSamværsklasseApi,
 ) {
@@ -36,7 +37,7 @@ class SamværService(
         behandlingsid: Long,
         request: OppdaterSamværDto,
     ): OppdaterSamværResponsDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         request.valider()
         log.info { "Oppdaterer samvær for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
@@ -94,7 +95,7 @@ class SamværService(
         behandlingsid: Long,
         request: SletteSamværsperiodeElementDto,
     ): OppdaterSamværResponsDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         log.info { "Sletter samværsperiode $request for behandling $behandlingsid" }
         val oppdaterSamvær =
             behandling.samvær.finnSamværForBarn(request.gjelderBarn)
@@ -118,4 +119,21 @@ class SamværService(
     private fun Samvær.hentPeriode(id: Long) =
         perioder.find { it.id == id }
             ?: ugyldigForespørsel("Fant ikke samværsperiode med id $id i samvær $id")
+
+    fun rekalkulerPerioderSamvær(behandlingsid: Long) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
+        val virkningstidspunkt = behandling.virkningstidspunkt ?: return
+
+        behandling.samvær.forEach {
+            it.perioder
+                .filter { it.fom < virkningstidspunkt }
+                .forEach { periode ->
+                    if (periode.tom != null && virkningstidspunkt >= periode.tom) {
+                        it.perioder.remove(periode)
+                    } else {
+                        periode.fom = virkningstidspunkt
+                    }
+                }
+        }
+    }
 }
