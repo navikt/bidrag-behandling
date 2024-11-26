@@ -459,6 +459,8 @@ class BehandlingService(
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
         oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
 
+        // TODO oppdater underholdskostnader ( legge til når ny barn legges til )
+
         behandlingRepository.save(behandling)
 
         if (behandling.søknadsbarn.isEmpty()) {

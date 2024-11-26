@@ -29,7 +29,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
         rolletype = rolletype,
         ident = ident?.verdi,
         fødselsdato =
-            this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
+            fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
                 ?: rolleManglerFødselsdato(rolletype),
         navn = navn,
         innbetaltBeløp = innbetaltBeløp,
