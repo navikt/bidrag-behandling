@@ -30,6 +30,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.sak.BidragssakDto
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -95,37 +96,41 @@ class BehandlingTilVedtakMapping(
     }
 
     private fun Behandling.mapEngangsbeløpGebyr() =
-        listOf(
-            OpprettEngangsbeløpRequestDto(
-                type = Engangsbeløptype.GEBYR_SKYLDNER,
-                beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
-                betaltBeløp = null,
-                resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
-                eksternReferanse = null,
-                beslutning = Beslutningstype.ENDRING,
-                grunnlagReferanseListe = emptyList(),
-                innkreving = Innkrevingstype.MED_INNKREVING,
-                skyldner = Personident(bidragspliktig!!.ident!!),
-                kravhaver = skyldnerNav,
-                mottaker = skyldnerNav,
-                valutakode = "NOK",
-                sak = Saksnummer(saksnummer),
-            ),
-            OpprettEngangsbeløpRequestDto(
-                type = Engangsbeløptype.GEBYR_MOTTAKER,
-                beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
-                betaltBeløp = null,
-                resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
-                eksternReferanse = null,
-                beslutning = Beslutningstype.ENDRING,
-                grunnlagReferanseListe = emptyList(),
-                innkreving = Innkrevingstype.MED_INNKREVING,
-                skyldner = Personident(bidragsmottaker!!.ident!!),
-                kravhaver = skyldnerNav,
-                mottaker = skyldnerNav,
-                valutakode = "NOK",
-                sak = Saksnummer(saksnummer),
-            ),
+        listOfNotNull(
+            bidragspliktig!!.harGebyrsøknad.ifTrue {
+                OpprettEngangsbeløpRequestDto(
+                    type = Engangsbeløptype.GEBYR_SKYLDNER,
+                    beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
+                    betaltBeløp = null,
+                    resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
+                    eksternReferanse = null,
+                    beslutning = Beslutningstype.ENDRING,
+                    grunnlagReferanseListe = emptyList(),
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    skyldner = Personident(bidragspliktig!!.ident!!),
+                    kravhaver = skyldnerNav,
+                    mottaker = skyldnerNav,
+                    valutakode = "NOK",
+                    sak = Saksnummer(saksnummer),
+                )
+            },
+            bidragsmottaker!!.harGebyrsøknad.ifTrue {
+                OpprettEngangsbeløpRequestDto(
+                    type = Engangsbeløptype.GEBYR_MOTTAKER,
+                    beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
+                    betaltBeløp = null,
+                    resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
+                    eksternReferanse = null,
+                    beslutning = Beslutningstype.ENDRING,
+                    grunnlagReferanseListe = emptyList(),
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    skyldner = Personident(bidragsmottaker!!.ident!!),
+                    kravhaver = skyldnerNav,
+                    mottaker = skyldnerNav,
+                    valutakode = "NOK",
+                    sak = Saksnummer(saksnummer),
+                )
+            },
         )
 
     private fun Behandling.mapEngangsbeløpDirekteOppgjør(sak: BidragssakDto) =
