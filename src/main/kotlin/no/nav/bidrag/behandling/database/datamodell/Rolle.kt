@@ -82,7 +82,9 @@ open class Rolle(
         nullable = true,
     )
     open var person: Person? = null,
-)
+) {
+    val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
+}
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 

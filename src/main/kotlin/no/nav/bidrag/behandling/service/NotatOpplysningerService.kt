@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -165,7 +166,7 @@ class NotatOpplysningerService(
                 .hentAlleBearbeidaBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsmedlem,
-                    behandling.rolleGrunnlagSkalHentesFor!!,
+                   Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                 )
 
         val opplysningerSivilstand =
@@ -358,7 +359,7 @@ class NotatOpplysningerService(
 private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
-        gjelder = this.rolleGrunnlagSkalHentesFor!!.tilNotatRolle(),
+        gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
 private fun Behandling.tilNotatVirkningstidspunkt() =

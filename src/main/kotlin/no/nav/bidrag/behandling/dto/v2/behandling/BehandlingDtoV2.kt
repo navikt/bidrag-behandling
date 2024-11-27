@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -16,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -39,6 +42,7 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -221,6 +225,7 @@ data class AktiveGrunnlagsdata(
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
+    val barnetilsyn: BarnetilsynAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
@@ -233,6 +238,7 @@ data class IkkeAktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
+    val barnetilsyn: BarnetilsynIkkeAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
@@ -251,10 +257,10 @@ data class IkkeAktiveInntekter(
     val ingenEndringer
         get() =
             barnetillegg.isEmpty() &&
-                utvidetBarnetrygd.isEmpty() &&
-                kontantstøtte.isEmpty() &&
-                småbarnstillegg.isEmpty() &&
-                årsinntekter.isEmpty()
+                    utvidetBarnetrygd.isEmpty() &&
+                    kontantstøtte.isEmpty() &&
+                    småbarnstillegg.isEmpty() &&
+                    årsinntekter.isEmpty()
 }
 
 data class Grunnlagsinnhentingsfeil(
@@ -310,6 +316,17 @@ data class SivilstandIkkeAktivGrunnlagDto(
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )
 
+data class BarnetilsynAktiveGrunnlagDto(
+    val grunnlag: Map<Personident, Set<BarnetilsynGrunnlagDto>> = emptyMap(),
+    val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
+)
+
+data class BarnetilsynIkkeAktiveGrunnlagDto(
+    val barnetilsyn: Map<Personident, Set<Barnetilsyn>> = emptyMap(),
+    val grunnlag: Map<Personident, Set<BarnetilsynGrunnlagDto>> = emptyMap(),
+    val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
+)
+
 data class HusstandsmedlemGrunnlagDto(
     val perioder: Set<BostatusperiodeGrunnlagDto>,
     val ident: String? = null,
@@ -344,7 +361,7 @@ data class PeriodeAndreVoksneIHusstanden(
     val totalAntallHusstandsmedlemmer: Int,
     @Schema(
         description =
-            "Detaljer om husstandsmedlemmer som bor hos BP for gjeldende periode. " +
+        "Detaljer om husstandsmedlemmer som bor hos BP for gjeldende periode. " +
                 "Antall hustandsmedlemmer er begrenset til maks 10 personer",
     )
     val husstandsmedlemmer: List<AndreVoksneIHusstandenDetaljerDto> = emptyList(),
@@ -499,5 +516,29 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
         Grunnlagsdatatype.BARNETILLEGG -> Inntektsrapportering.BARNETILLEGG
         Grunnlagsdatatype.BARNETILSYN -> Inntektsrapportering.BARNETILSYN
         Grunnlagsdatatype.KONTANTSTØTTE -> Inntektsrapportering.KONTANTSTØTTE
+        else -> null
+    }
+
+fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
+    when (this) {
+
+        Grunnlagsdatatype.BARNETILSYN -> when (this.behandlinstypeMotRolletyper[behandling.tilType()]!!.first()) {
+            Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
+            Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
+            else -> null
+        }
+
+        Grunnlagsdatatype.BOFORHOLD -> when (this.behandlinstypeMotRolletyper[behandling.tilType()]!!.first()) {
+            Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
+            Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
+            else -> null
+        }
+
+        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> when (this.behandlinstypeMotRolletyper[behandling.tilType()]!!.first()) {
+            Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
+            Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
+            else -> null
+        }
+
         else -> null
     }

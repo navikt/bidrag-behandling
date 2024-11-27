@@ -28,12 +28,7 @@ class NotatService {
         } ?: run {
             log.info { "Legger til notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
             behandling.notater.add(
-                Notat(
-                    behandling = behandling,
-                    rolle = rolle ?: behandling.rolleGrunnlagSkalHentesFor!!,
-                    innhold = notattekst,
-                    type = notattype,
-                ),
+                Notat(behandling = behandling, rolle = rolle, innhold = notattekst, type = notattype),
             )
         }
     }
@@ -79,7 +74,8 @@ class NotatService {
         fun henteUnderholdsnotat(
             behandling: Behandling,
             rolle: Rolle,
-        ): String? = behandling.notater.find { it.rolle.id == rolle.id!! && Notattype.UNDERHOLDSKOSTNAD == it.type }?.innhold
+        ): String? =
+            behandling.notater.find { it.rolle.id == rolle.id!! && Notattype.UNDERHOLDSKOSTNAD == it.type }?.innhold
 
         fun henteInntektsnotat(
             behandling: Behandling,

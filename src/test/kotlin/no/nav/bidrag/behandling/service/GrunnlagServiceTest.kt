@@ -4,7 +4,6 @@ import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -26,6 +25,7 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.GrunnlagServiceTest.Companion.tilAinntektspostDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
@@ -258,6 +258,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                 rolle = it,
                                 navnResponsfil = "hente-grunnlagrespons-bidrag-barnetilsyn-bm.json",
                             )
+
                         else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
                     }
                 }
@@ -281,8 +282,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly(jsonListeTilObjekt<BarnetilsynGrunnlagDto>(barnetilsyn?.data!!).sortedBy { it.periodeFra }) {
                     shouldHaveSize(2)
                     it.elementAt(0).beløp shouldBe 4000
-                    it.elementAt(0).periodeFra shouldBe LocalDate.of(2023,1,1)
-                    it.elementAt(0).periodeTil shouldBe LocalDate.of(2024,1,1)
+                    it.elementAt(0).periodeFra shouldBe LocalDate.of(2023, 1, 1)
+                    it.elementAt(0).periodeTil shouldBe LocalDate.of(2024, 1, 1)
                     it.elementAt(0).skolealder shouldBe Skolealder.OVER
                     it.elementAt(0).tilsynstype shouldBe Tilsynstype.HELTID
                     it.elementAt(0).partPersonId shouldBe "313213213"
@@ -2085,6 +2086,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Test
             @Transactional
             open fun `skal aktivere grunnlag av type boforhold for barn av BP i behandling av bidrag, og oppdatere husstandsmedlemtabell`() {
+
                 // gitt
                 val behandling =
                     oppretteTestbehandling(
@@ -2803,7 +2805,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandling = behandling,
                         innhentet = LocalDateTime.now().minusDays(3),
                         data = commonObjectmapper.writeValueAsString(voksneIBpsHusstand),
-                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                        rolle = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.innhentesForRolle(behandling)!!,
                         type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                         erBearbeidet = true,
                     ),
@@ -2815,7 +2817,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandling = behandling,
                         innhentet = LocalDateTime.now().minusDays(3),
                         data = bfg!!.data,
-                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                        rolle = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.innhentesForRolle(behandling)!!,
                         type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                         erBearbeidet = false,
                     ),

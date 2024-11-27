@@ -12,12 +12,14 @@ import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.BarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
@@ -53,6 +55,7 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
@@ -135,6 +138,21 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     return SivilstandAktivGrunnlagDto(
         grunnlag = filtrertGrunnlag?.toSet() ?: emptySet(),
         innhentetTidspunkt = innhentet,
+    )
+}
+
+fun Set<Grunnlag>.tilBarnetilsynAktiveGrunnlagDto(): BarnetilsynAktiveGrunnlagDto? {
+    if (this.isEmpty()) return null
+    return BarnetilsynAktiveGrunnlagDto(
+        grunnlag =
+            this
+                .flatMap { it.konvertereData<Set<BarnetilsynGrunnlagDto>>() ?: emptySet() }
+                .toSet()
+                .groupBy { it.barnPersonId }
+                .map { (personidentBarn, barnetilsyn) ->
+                    Personident(personidentBarn) to barnetilsyn.toSet()
+                }.toMap(),
+        innhentetTidspunkt = first().innhentet,
     )
 }
 
@@ -366,7 +384,7 @@ fun Behandling.henteRolleForNotat(
     notattype: Notattype,
     forRolle: Rolle?,
 ) = when (notattype) {
-    Notattype.BOFORHOLD -> this.rolleGrunnlagSkalHentesFor!!
+    Notattype.BOFORHOLD -> Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
     Notattype.UTGIFTER -> this.bidragsmottaker!!
     Notattype.VIRKNINGSTIDSPUNKT -> this.bidragsmottaker!!
     Notattype.INNTEKT -> {
@@ -377,6 +395,7 @@ fun Behandling.henteRolleForNotat(
             forRolle
         }
     }
+
     Notattype.UNDERHOLDSKOSTNAD ->
         if (forRolle == null) {
             log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
@@ -384,6 +403,7 @@ fun Behandling.henteRolleForNotat(
         } else {
             forRolle
         }
+
     Notattype.SAMVÆR -> forRolle!!
 }
 
@@ -410,6 +430,23 @@ fun Behandling.notatTittel(): String {
         }
     return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
 }
+
+fun Set<BarnetilsynGrunnlagDto>.filtrerePerioderEtterVirkningstidspunkt(virkningstidspunkt: LocalDate): Set<BarnetilsynGrunnlagDto> =
+    groupBy { it.barnPersonId }
+        .flatMap { (personident, perioder) ->
+            val perioderFiltrert =
+                perioder.sortedBy { it.periodeFra }.slice(
+                    perioder
+                        .map { it.periodeFra }
+                        .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, null),
+                )
+            val cutoffPeriodeFom = finnCutoffDatoFom(virkningstidspunkt, null)
+            perioderFiltrert.map { periode ->
+                periode
+                    .takeIf { it == perioderFiltrert.first() }
+                    ?.copy(periodeFra = maxOf(periode.periodeFra, cutoffPeriodeFom)) ?: periode
+            }
+        }.toSet()
 
 fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunkt(
     husstandsmedlemListe: Set<Husstandsmedlem>,
@@ -495,6 +532,20 @@ fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
         husstandsmedlem,
         virkniningstidspunkt,
     ).sortedBy { it.periodeFom }
+
+fun Set<Grunnlag>.hentAlleBearbeidaBarnetilsyn(
+    virkniningstidspunkt: LocalDate,
+    rolle: Rolle,
+) = asSequence()
+    .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
+    .mapNotNull { it.konvertereData<Set<BarnetilsynGrunnlagDto>>() }
+    .flatten()
+    .distinct()
+    .toSet()
+    .filtrerePerioderEtterVirkningstidspunkt(
+        virkniningstidspunkt,
+    ).sortedBy { it.periodeFra }
+    .toSet()
 
 fun Behandling.tilKanBehandlesINyLøsningRequest() =
     KanBehandlesINyLøsningRequest(

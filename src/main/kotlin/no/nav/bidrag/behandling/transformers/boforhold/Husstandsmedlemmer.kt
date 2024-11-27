@@ -7,6 +7,8 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBoforhold
 import no.nav.bidrag.behandling.database.datamodell.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.opprettDefaultPeriodeForAndreVoksneIHusstand
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
@@ -56,7 +58,7 @@ private fun Behandling.leggeInnManglendeSøknadsbarnSomHusstandsbarn(
             if (!grunnlag.map { it.gjelderPersonId }.contains(identSøknadsbarn)) {
                 grunnlag.add(
                     RelatertPersonGrunnlagDto(
-                        partPersonId = this.rolleGrunnlagSkalHentesFor?.ident,
+                        partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)?.ident,
                         gjelderPersonId = identSøknadsbarn,
                         borISammeHusstandDtoListe = emptyList(),
                         fødselsdato = søknadsbarn.fødselsdato,

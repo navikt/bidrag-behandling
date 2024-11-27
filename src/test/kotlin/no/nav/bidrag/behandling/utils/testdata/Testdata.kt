@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.service.tilSummerteInntekter
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
@@ -1243,7 +1244,7 @@ fun oppretteTestbehandling(
     }
 
     if (inkludereArbeidsforhold) {
-        oppretteArbeidsforhold(behandling, behandling.rolleGrunnlagSkalHentesFor!!.ident!!)
+        oppretteArbeidsforhold(behandling, Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident!!)
     }
 
     return behandling
@@ -1287,7 +1288,7 @@ fun oppretteArbeidsforhold(
             behandling = behandling,
             innhentet = LocalDateTime.now().minusDays(3),
             data = commonObjectmapper.writeValueAsString(setOf(arbeidsforhold)),
-            rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+            rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
             type = Grunnlagsdatatype.ARBEIDSFORHOLD,
             erBearbeidet = false,
         ),
@@ -1312,7 +1313,7 @@ private fun oppretteBoforhold(
                 erBarnAvBmBp = true,
                 relasjon = Familierelasjon.BARN,
                 navn = "Lyrisk Sopp",
-                partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
+                partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
                 borISammeHusstandDtoListe =
                     listOf(
                         BorISammeHusstandDto(
@@ -1327,7 +1328,7 @@ private fun oppretteBoforhold(
                 erBarnAvBmBp = true,
                 relasjon = Familierelasjon.BARN,
                 navn = "Lyrisk Sopp",
-                partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
+                partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
                 borISammeHusstandDtoListe =
                     listOf(
                         BorISammeHusstandDto(
@@ -1346,7 +1347,7 @@ private fun oppretteBoforhold(
                 erBarnAvBmBp = false,
                 relasjon = Familierelasjon.INGEN,
                 navn = voksenPersonIBpsHusstand.navn,
-                partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
+                partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
                 borISammeHusstandDtoListe =
                     listOf(
                         BorISammeHusstandDto(
@@ -1367,7 +1368,7 @@ private fun oppretteBoforhold(
                 behandling = behandling,
                 innhentet = LocalDateTime.now().minusDays(3),
                 data = commonObjectmapper.writeValueAsString(grunnlagHusstandsmedlemmer),
-                rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                rolle = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.innhentesForRolle(behandling)!!,
                 type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                 erBearbeidet = false,
             ),
@@ -1399,7 +1400,7 @@ private fun oppretteBoforhold(
             behandling = behandling,
             innhentet = LocalDateTime.now().minusDays(3),
             data = commonObjectmapper.writeValueAsString(grunnlagHusstandsmedlemmer),
-            rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+            rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
             type = Grunnlagsdatatype.BOFORHOLD,
             erBearbeidet = false,
         ),
@@ -1422,7 +1423,7 @@ private fun oppretteBoforhold(
                     behandling = behandling,
                     innhentet = LocalDateTime.now().minusDays(3),
                     data = commonObjectmapper.writeValueAsString(it.value),
-                    rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                    rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     gjelder = it.key,
                     erBearbeidet = true,
