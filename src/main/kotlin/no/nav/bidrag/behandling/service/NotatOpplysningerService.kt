@@ -186,7 +186,7 @@ class NotatOpplysningerService(
                 .hentAlleBearbeidaBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsmedlem,
-                   Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
+                    Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                 )
 
         val opplysningerSivilstand =

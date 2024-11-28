@@ -21,14 +21,15 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
                 false -> Skolealder.OVER
                 else -> null
             },
-        tilsynstype = when(this.omfang) {
-            Tilsynstype.IKKE_ANGITT -> null
-            else -> this.omfang
-        },
+        tilsynstype =
+            when (this.omfang) {
+                Tilsynstype.IKKE_ANGITT -> null
+                else -> this.omfang
+            },
         kilde = this.kilde,
     )
 
-fun List<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = map { it.tilStønadTilBarnetilsynDto() }.toSet()
+fun Set<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = map { it.tilStønadTilBarnetilsynDto() }.toSet()
 
 fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.person.rolle.isEmpty() } != null
 

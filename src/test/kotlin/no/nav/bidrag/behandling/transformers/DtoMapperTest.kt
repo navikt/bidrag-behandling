@@ -5,7 +5,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
@@ -89,13 +88,14 @@ class DtoMapperTest : TestContainerRunner() {
                 evnevurderingService,
                 personService,
             )
-        dtomapper = Dtomapper(
-            tilgangskontrollService,
-            validering,
-            validerBehandlingService,
-            vedtakGrunnlagsmapper,
-            BeregnBarnebidragApi()
-        )
+        dtomapper =
+            Dtomapper(
+                tilgangskontrollService,
+                validering,
+                validerBehandlingService,
+                vedtakGrunnlagsmapper,
+                BeregnBarnebidragApi(),
+            )
         stubUtils.stubTilgangskontrollPersonISak()
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
         every { tilgangskontrollService.harTilgang(any(), any()) } returns true
@@ -122,18 +122,18 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BoforholdResponseV2(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(13),
-                                periodeTom = null,
-                                bostatus = Bostatuskode.MED_FORELDER,
-                                fødselsdato = LocalDate.now().minusYears(13),
-                                gjelderPersonId = testdataBarn1.ident,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponseV2(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    gjelderPersonId = testdataBarn1.ident,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -148,18 +148,18 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.BOFORHOLD,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BoforholdResponseV2(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = nyFomdato,
-                                periodeTom = null,
-                                bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                                fødselsdato = LocalDate.now().minusYears(13),
-                                gjelderPersonId = testdataBarn1.ident,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BoforholdResponseV2(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = nyFomdato,
+                                    periodeTom = null,
+                                    bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                                    fødselsdato = LocalDate.now().minusYears(13),
+                                    gjelderPersonId = testdataBarn1.ident,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -219,19 +219,19 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = barnetilsynInnhentesForRolle,
                     type = Grunnlagsdatatype.BARNETILSYN,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BarnetilsynGrunnlagDto(
-                                beløp = 4000,
-                                periodeFra = LocalDate.now().minusYears(13),
-                                periodeTil = null,
-                                skolealder = null,
-                                tilsynstype = null,
-                                barnPersonId = testdataBarn1.ident,
-                                partPersonId = barnetilsynInnhentesForRolle.ident!!
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4000,
+                                    periodeFra = LocalDate.now().minusYears(13),
+                                    periodeTil = null,
+                                    skolealder = null,
+                                    tilsynstype = null,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -246,37 +246,37 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = barnetilsynInnhentesForRolle,
                     type = Grunnlagsdatatype.BARNETILSYN,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            BarnetilsynGrunnlagDto(
-                                beløp = 4500,
-                                periodeFra = LocalDate.now().minusYears(1),
-                                periodeTil = LocalDate.now().minusMonths(6),
-                                skolealder = Skolealder.IKKE_ANGITT,
-                                tilsynstype = Tilsynstype.IKKE_ANGITT,
-                                barnPersonId = testdataBarn1.ident,
-                                partPersonId = barnetilsynInnhentesForRolle.ident!!
-                            ),
-                            BarnetilsynGrunnlagDto(
-                                beløp = 4600,
-                                periodeFra = LocalDate.now().minusMonths(6),
-                                periodeTil = LocalDate.now().minusMonths(4),
-                                skolealder = Skolealder.OVER,
-                                tilsynstype = Tilsynstype.HELTID,
-                                barnPersonId = testdataBarn1.ident,
-                                partPersonId = barnetilsynInnhentesForRolle.ident!!
-                            ),
-                            BarnetilsynGrunnlagDto(
-                                beløp = 4700,
-                                periodeFra = LocalDate.now().minusMonths(4),
-                                periodeTil = null,
-                                skolealder = null,
-                                tilsynstype = null,
-                                barnPersonId = testdataBarn1.ident,
-                                partPersonId = barnetilsynInnhentesForRolle.ident!!
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4500,
+                                    periodeFra = LocalDate.now().minusYears(1),
+                                    periodeTil = LocalDate.now().minusMonths(6),
+                                    skolealder = Skolealder.IKKE_ANGITT,
+                                    tilsynstype = Tilsynstype.IKKE_ANGITT,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4600,
+                                    periodeFra = LocalDate.now().minusMonths(6),
+                                    periodeTil = LocalDate.now().minusMonths(4),
+                                    skolealder = Skolealder.OVER,
+                                    tilsynstype = Tilsynstype.HELTID,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4700,
+                                    periodeFra = LocalDate.now().minusMonths(4),
+                                    periodeTil = null,
+                                    skolealder = null,
+                                    tilsynstype = null,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -299,10 +299,11 @@ class DtoMapperTest : TestContainerRunner() {
             nyttBarnetilsyn?.shouldHaveSize(3)
 
             assertSoftly(nyttBarnetilsyn!!.elementAt(0)) {
-                periode shouldBe DatoperiodeDto(
-                    LocalDate.now().minusYears(1),
-                    LocalDate.now().minusMonths(6).minusDays(1)
-                )
+                periode shouldBe
+                    DatoperiodeDto(
+                        LocalDate.now().minusYears(1),
+                        LocalDate.now().minusMonths(6).minusDays(1),
+                    )
                 tilsynstype shouldBe null
                 skolealder shouldBe null
                 kilde shouldBe Kilde.OFFENTLIG
@@ -311,10 +312,11 @@ class DtoMapperTest : TestContainerRunner() {
             assertSoftly(nyttBarnetilsyn.elementAt(1)) {
                 skolealder shouldBe Skolealder.OVER
                 tilsynstype shouldBe Tilsynstype.HELTID
-                periode shouldBe DatoperiodeDto(
-                    LocalDate.now().minusMonths(6),
-                    LocalDate.now().minusMonths(4).minusDays(1)
-                )
+                periode shouldBe
+                    DatoperiodeDto(
+                        LocalDate.now().minusMonths(6),
+                        LocalDate.now().minusMonths(4).minusDays(1),
+                    )
                 kilde shouldBe Kilde.OFFENTLIG
             }
 
@@ -376,16 +378,16 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(13),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(13),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -398,16 +400,16 @@ class DtoMapperTest : TestContainerRunner() {
                     rolle = behandling.bidragsmottaker!!,
                     type = Grunnlagsdatatype.SIVILSTAND,
                     data =
-                    commonObjectmapper.writeValueAsString(
-                        setOf(
-                            Sivilstand(
-                                kilde = Kilde.OFFENTLIG,
-                                periodeFom = LocalDate.now().minusYears(15),
-                                periodeTom = null,
-                                sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                Sivilstand(
+                                    kilde = Kilde.OFFENTLIG,
+                                    periodeFom = LocalDate.now().minusYears(15),
+                                    periodeTom = null,
+                                    sivilstandskode = Sivilstandskode.GIFT_SAMBOER,
+                                ),
                             ),
                         ),
-                    ),
                 ),
             )
 
@@ -447,11 +449,11 @@ class DtoMapperTest : TestContainerRunner() {
             )
 
             every { personService.hentPerson(testdataBarn1.ident) } returns
-                    PersonDto(
-                        ident = Personident(testdataBarn1.ident),
-                        navn = testdataBarn1.navn,
-                        fødselsdato = testdataBarn1.fødselsdato,
-                    )
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
 
             every { personService.hentNyesteIdent(any()) } returns Personident(testdataBarn1.ident)
 
@@ -492,11 +494,11 @@ class DtoMapperTest : TestContainerRunner() {
             )
 
             every { personService.hentPerson(testdataBarn1.ident) } returns
-                    PersonDto(
-                        ident = Personident(testdataBarn1.ident),
-                        navn = testdataBarn1.navn,
-                        fødselsdato = testdataBarn1.fødselsdato,
-                    )
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
 
             // hvis
             val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.find { it.person.id == 10L }!!)

@@ -8,13 +8,13 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynIkkeAktiveGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynIkkeAktiveGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
@@ -175,7 +175,11 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
             stønadTilBarnetilsyn =
                 nyeBarnetilsynsdataTilknyttetSøknadsbarn
                     .map {
-                        it.key to it.value.tilBarnetilsyn(behandling.henteUnderholdskostnadPersonident(it.key)!!).tilStønadTilBarnetilsynDtos()
+                        it.key to
+                            it.value
+                                .tilBarnetilsyn(behandling.henteUnderholdskostnadPersonident(it.key)!!)
+                                .toSet()
+                                .tilStønadTilBarnetilsynDtos()
                     }.toMap(),
             grunnlag =
                 nyeBarnetilsyn
