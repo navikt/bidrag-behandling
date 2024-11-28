@@ -167,7 +167,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 167
+                request.grunnlagListe shouldHaveSize 161
             }
         }
 
@@ -262,7 +262,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 }
             }
             validerNotater(behandling)
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 31
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 26
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 3
@@ -766,8 +766,8 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     assertSoftly(sluttberegningPeriode) {
         val innhold = innholdTilObjekt<SluttberegningBarnebidrag>()
         innhold.resultatVisningsnavn!!.intern shouldBe "Kostnadsberegnet bidrag"
-        innhold.beregnetBeløp shouldBe BigDecimal("6121.53")
-        innhold.resultatBeløp shouldBe BigDecimal("6120")
+        innhold.beregnetBeløp shouldBe BigDecimal("5741.53")
+        innhold.resultatBeløp shouldBe BigDecimal("5740")
         it.grunnlagsreferanseListe shouldHaveSize 8
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe).first().referanse shouldBe søknadsbarn1Grunnlag.referanse
@@ -782,21 +782,21 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningBidragsevne>()
         innhold.beløp shouldBe BigDecimal("9482.45")
-        it.grunnlagsreferanseListe shouldHaveSize 14
+        it.grunnlagsreferanseListe shouldHaveSize 11
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndel>()
-        innhold.andelBeløp shouldBe BigDecimal("7132.53")
-        it.grunnlagsreferanseListe shouldHaveSize 10
+        innhold.andelBeløp shouldBe BigDecimal("6752.53")
+        it.grunnlagsreferanseListe shouldHaveSize 6
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningUnderholdskostnad>()
-        innhold.underholdskostnad shouldBe BigDecimal("8559.04")
+        innhold.underholdskostnad shouldBe BigDecimal("8103.04")
         innhold.nettoTilsynsutgift shouldBe BigDecimal("1287.04")
         innhold.barnetilsynMedStønad shouldBe BigDecimal("630.00")
-        it.grunnlagsreferanseListe shouldHaveSize 6
+        it.grunnlagsreferanseListe shouldHaveSize 7
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
