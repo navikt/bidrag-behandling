@@ -63,6 +63,8 @@ abstract class CommonVedtakTilBehandlingTest {
     lateinit var sakConsumer: BidragSakConsumer
     lateinit var personConsumer: BidragPersonConsumer
     lateinit var vedtakService: VedtakService
+
+    @MockkBean
     lateinit var beregningService: BeregningService
     lateinit var dtomapper: Dtomapper
     val unleash = FakeUnleash()
