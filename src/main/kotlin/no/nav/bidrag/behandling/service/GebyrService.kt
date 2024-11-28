@@ -1,22 +1,76 @@
 package no.nav.bidrag.behandling.service
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
-import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrResponsDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterManueltGebyrDto
+import no.nav.bidrag.behandling.transformers.validerSann
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.transport.felles.ifTrue
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
+@Service
 class GebyrService(
-    private val behandlingService: BehandlingService,
+    private val vedtakGrunnlagMapper: VedtakGrunnlagMapper,
 ) {
-    fun oppdaterManueltGebyr(
-        behandlingsId: Long,
+    @Transactional
+    fun oppdaterGebyrEtterEndringVirkningstidspunkt(behandling: Behandling) {
+        behandling
+            .roller
+            .filter { it.harGebyrsøknad }
+            .forEach { rolle ->
+                rolle.manueltOverstyrtGebyr =
+                    (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
+                        it.copy(
+                            overstyrGebyr = behandling.avslag != null,
+                            ilagtGebyr =
+                                (behandling.avslag == null).ifTrue {
+                                    val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+                                    !beregning.ilagtGebyr
+                                },
+                        )
+                    }
+            }
+    }
+
+    @Transactional
+    fun oppdaterManueltOverstyrtGebyr(
+        behandling: Behandling,
         request: OppdaterManueltGebyrDto,
-    ): OppdaterGebyrResponsDto {
-        val behandling = behandlingService.hentBehandlingById(behandlingsId)
-        val rolle = behandling.roller.find { it.id == request.rolleId } ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId}")
-        if (request.overstyrtGebyr != null) {
-            val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr(true)
+    ) {
+        val rolle =
+            behandling.roller.find { it.id == request.rolleId }
+                ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId} i behandling ${behandling.id}")
+        val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+        behandling.validerOppdatering(request)
+        rolle.manueltOverstyrtGebyr =
+            (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
+                it.copy(
+                    overstyrGebyr = request.overstyrtGebyr != null,
+                    ilagtGebyr = request.overstyrtGebyr?.ilagtGebyr ?: !beregning.ilagtGebyr,
+                    begrunnelse = request.overstyrtGebyr?.begrunnelse ?: it.begrunnelse,
+                )
+            }
+    }
+
+    private fun Behandling.validerOppdatering(request: OppdaterManueltGebyrDto) {
+        val feilListe = mutableSetOf<String>()
+
+        if (avslag == null) {
+            feilListe.validerSann(
+                request.overstyrtGebyr?.ilagtGebyr == null,
+                "Kan ikke sette gebyr til samme som beregnet gebyr når det ikke er avslag",
+            )
+        } else {
+            feilListe.validerSann(
+                request.overstyrtGebyr?.ilagtGebyr != null,
+                "Må sette gebyr hvis det er avslag",
+            )
         }
-        return OppdaterGebyrResponsDto(behandlingsId, gebyr)
+
+        if (feilListe.isNotEmpty()) {
+            ugyldigForespørsel(feilListe.toSet().joinToString("\n"))
+        }
     }
 }

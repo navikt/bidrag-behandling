@@ -95,8 +95,8 @@ open class Rolle(
 }
 
 data class RolleManueltOverstyrtGebyr(
-    val overstyrtGebyr: Boolean = false,
-    val ilagtGebyr: Boolean,
+    val overstyrGebyr: Boolean = true,
+    val ilagtGebyr: Boolean? = false,
     val begrunnelse: String? = null,
 )
 

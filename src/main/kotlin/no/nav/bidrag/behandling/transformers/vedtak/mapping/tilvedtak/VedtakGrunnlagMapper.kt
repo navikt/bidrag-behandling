@@ -76,10 +76,19 @@ class VedtakGrunnlagMapper(
             )
         }
 
+    private fun Behandling.gebyrGrunnlagslisteDefaultVerdi(rolle: Rolle) =
+        if (avslag ==
+            null
+        ) {
+            emptyList()
+        } else {
+            beregnetInntekterGrunnlagForRolle(rolle)
+        }
+
     fun beregnGebyr(
         behandling: Behandling,
         rolle: Rolle,
-        grunnlagsliste: List<GrunnlagDto> = behandling.beregnetInntekterGrunnlagForRolle(rolle),
+        grunnlagsliste: List<GrunnlagDto> = behandling.gebyrGrunnlagslisteDefaultVerdi(rolle),
     ): BeregnGebyrResultat {
         val gebyrBeregning =
             if (behandling.avslag != null) {

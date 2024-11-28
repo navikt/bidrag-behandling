@@ -112,8 +112,8 @@ fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
                 innhold =
                     POJONode(
                         ManueltOverstyrtGebyr(
-                            begrunnelse = it.manueltOverstyrtGebyr!!.begrunnelse,
-                            ilagtGebyr = it.manueltOverstyrtGebyr!!.ilagtGebyr,
+                            begrunnelse = it.manueltOverstyrtGebyr!!.begrunnelse!!,
+                            ilagtGebyr = it.manueltOverstyrtGebyr!!.ilagtGebyr!!,
                         ),
                     ),
             )

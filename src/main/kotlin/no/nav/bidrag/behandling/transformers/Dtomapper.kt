@@ -61,6 +61,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
+import no.nav.bidrag.behandling.transformers.gebyr.tilDto
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
@@ -577,8 +578,8 @@ class Dtomapper(
                                         skattepliktigInntekt = it.skattepliktigInntekt,
                                         maksBarnetillegg = it.maksBarnetillegg,
                                     ),
-                                manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr,
-                                ilagtGebyr = it.ilagtGebyr,
+                                manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
+                                beregnetIlagtGebyr = it.ilagtGebyr,
                                 rolle = rolle.tilDto(),
                             )
                         }

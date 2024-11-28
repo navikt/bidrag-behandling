@@ -62,6 +62,7 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val gebyrService: GebyrService,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -292,6 +293,11 @@ class BehandlingService(
             grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
         }
 
+        fun oppdaterGebyr() {
+            log.info { "Virkningstidspunkt er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
+            gebyrService.oppdaterGebyrEtterEndringVirkningstidspunkt(behandling)
+        }
+
         fun oppdaterSamvær() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
             samværService.rekalkulerPerioderSamvær(behandling.id!!)
@@ -331,6 +337,7 @@ class BehandlingService(
                     oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
                     oppdaterSamvær()
+                    oppdaterGebyr()
                     // TODO Underholdskostnad
                 }
             }

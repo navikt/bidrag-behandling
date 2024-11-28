@@ -5,7 +5,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 
 data class OppdaterManueltGebyrDto(
     val rolleId: Long,
-    val begrunnelse: String,
     val overstyrtGebyr: ManueltOverstyrGebyrDto?,
 )
 

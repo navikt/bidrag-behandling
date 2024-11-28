@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.gebyr.ManueltOverstyrGebyrDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
@@ -128,8 +128,8 @@ data class BehandlingDtoV2(
 
 data class GebyrRolleDto(
     val inntekt: GebyrInntektDto,
-    val manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,
-    val ilagtGebyr: Boolean,
+    val manueltOverstyrtGebyr: ManueltOverstyrGebyrDto? = null,
+    val beregnetIlagtGebyr: Boolean,
     val rolle: RolleDto,
 ) {
     data class GebyrInntektDto(
