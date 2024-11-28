@@ -68,24 +68,12 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
             if (rolle != null) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
-                    "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}",
+                    "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}. Barnet kan derfor ikke slettes.",
                 )
             }
 
             if (this.idElement != underhold.person.id) {
                 ressursIkkeFunnetException("Fant ikke barn med person.id ${this.idElement} i behandling ${behandling.id}")
-            }
-
-            if (underhold.barnetilsyn.isNotEmpty() ||
-                underhold.tilleggsstønad.isNotEmpty() ||
-                underhold.faktiskeTilsynsutgifter.isNotEmpty()
-            ) {
-                throw HttpClientErrorException(
-                    HttpStatus.BAD_REQUEST,
-                    "Kan ikke slette barn med person.id ${this.idElement} fra underholdskostnad " +
-                        "(id = ${this.idUnderhold} i behandling ${behandling.id}  så lenge det er reigstrert stønad " +
-                        "til barnetilsyn, tilleggsstønad, eller faktiskte tilsysnsutgifter på barnet.",
-                )
             }
         }
 
