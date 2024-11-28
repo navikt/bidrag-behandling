@@ -3,9 +3,11 @@ package no.nav.bidrag.behandling.service
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterManueltGebyrDto
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.validerSann
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,7 +17,7 @@ class GebyrService(
     private val vedtakGrunnlagMapper: VedtakGrunnlagMapper,
 ) {
     @Transactional
-    fun oppdaterGebyrEtterEndringVirkningstidspunkt(behandling: Behandling) {
+    fun oppdaterGebyrEtterEndringÅrsakAvslag(behandling: Behandling) {
         behandling
             .roller
             .filter { it.harGebyrsøknad }
@@ -56,6 +58,17 @@ class GebyrService(
 
     private fun Behandling.validerOppdatering(request: OppdaterManueltGebyrDto) {
         val feilListe = mutableSetOf<String>()
+
+        feilListe.validerSann(tilType() == TypeBehandling.BIDRAG, "Kan bare oppdatere gebyr på en bidragsbehandling")
+
+        val rolle =
+            roller.find { it.id == request.rolleId }
+                ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId} i behandling $id")
+
+        feilListe.validerSann(
+            rolle.harGebyrsøknad,
+            "Kan ikke endre gebyr på en rolle som ikke har gebyrsøknad",
+        )
 
         if (avslag == null) {
             feilListe.validerSann(

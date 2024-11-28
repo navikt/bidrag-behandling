@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
@@ -36,6 +37,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
@@ -568,22 +570,26 @@ class Dtomapper(
             søknadsid = soknadsid,
             behandlerenhet = behandlerEnhet,
             gebyr =
-                roller.filter { it.harGebyrsøknad }.map { rolle ->
-                    vedtakGrunnlagMapper
-                        .beregnGebyr(this, rolle)
-                        .let {
-                            GebyrRolleDto(
-                                inntekt =
-                                    GebyrRolleDto.GebyrInntektDto(
-                                        skattepliktigInntekt = it.skattepliktigInntekt,
-                                        maksBarnetillegg = it.maksBarnetillegg,
-                                    ),
-                                manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
-                                beregnetIlagtGebyr = it.ilagtGebyr,
-                                rolle = rolle.tilDto(),
-                            )
-                        }
-                },
+                GebyrDto(
+                    gebyrRoller =
+                        roller.filter { it.harGebyrsøknad }.map { rolle ->
+                            vedtakGrunnlagMapper
+                                .beregnGebyr(this, rolle)
+                                .let {
+                                    GebyrRolleDto(
+                                        inntekt =
+                                            GebyrRolleDto.GebyrInntektDto(
+                                                skattepliktigInntekt = it.skattepliktigInntekt,
+                                                maksBarnetillegg = it.maksBarnetillegg,
+                                            ),
+                                        manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
+                                        beregnetIlagtGebyr = it.ilagtGebyr,
+                                        rolle = rolle.tilDto(),
+                                    )
+                                }
+                        },
+                    valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
+                ),
             roller =
                 roller.map { it.tilDto() }.toSet(),
             søknadRefId = soknadRefId,

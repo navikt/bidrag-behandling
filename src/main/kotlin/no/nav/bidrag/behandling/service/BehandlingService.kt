@@ -275,8 +275,8 @@ class BehandlingService(
         request: OppdatereVirkningstidspunkt,
     ) {
         fun oppdaterGebyr() {
-            log.info { "Årsak/Avaslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
-            gebyrService.oppdaterGebyrEtterEndringVirkningstidspunkt(behandling)
+            log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
+            gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
         }
         val erAvslagÅrsakEndret = request.årsak != behandling.årsak || request.avslag != behandling.avslag
 
