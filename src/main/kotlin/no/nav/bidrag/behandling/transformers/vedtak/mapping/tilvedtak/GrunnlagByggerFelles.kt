@@ -71,6 +71,7 @@ fun GrunnlagDto.tilOpprettRequestDto() =
         innhold = innhold,
         grunnlagsreferanseListe = grunnlagsreferanseListe,
         gjelderReferanse = gjelderReferanse,
+        gjelderBarnReferanse = gjelderBarnReferanse,
     )
 
 private fun opprettGrunnlagNotat(
@@ -278,6 +279,7 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
             this,
         ),
     gjelderReferanse = gjelder.referanse,
+    gjelderBarnReferanse = søknadsbarn?.referanse,
     innhold =
         POJONode(
             InntektsrapporteringPeriode(

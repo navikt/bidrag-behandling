@@ -31,6 +31,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -225,20 +226,27 @@ class BehandlingTilGrunnlagMappingV2(
         )
     }
 
-    fun Behandling.tilGrunnlagSamvær(søknadsbarn: GrunnlagDto? = null): List<GrunnlagDto> {
+    fun Behandling.tilGrunnlagSamvær(søknadsbarn: BaseGrunnlag? = null): List<GrunnlagDto> {
         val søknadsbarnIdent = søknadsbarn?.personIdent
         return samvær
             .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
             .flatMap { samvær ->
+                val bpGrunnlagsreferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                val barnGrunnlagsreferanse = samvær.rolle.tilGrunnlagPerson().referanse
                 samvær.perioder.flatMap {
                     val grunnlagBeregning =
-                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
+                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it, bpGrunnlagsreferanse, barnGrunnlagsreferanse) }
+                            ?: emptyList()
                     val grunnlagPeriode =
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseSamværsperiode(),
                             type = Grunnlagstype.SAMVÆRSPERIODE,
-                            gjelderReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
-                            grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
+                            gjelderReferanse = bpGrunnlagsreferanse,
+                            grunnlagsreferanseListe =
+                                grunnlagBeregning
+                                    .filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE)
+                                    .map { it.referanse },
+                            gjelderBarnReferanse = barnGrunnlagsreferanse,
                             innhold =
                                 POJONode(
                                     SamværsperiodeGrunnlag(
@@ -252,7 +260,7 @@ class BehandlingTilGrunnlagMappingV2(
             }
     }
 
-    private fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(personobjekter: Set<GrunnlagDto> = emptySet()): List<GrunnlagDto> {
+    fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(personobjekter: Set<GrunnlagDto> = emptySet()): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
         fun FaktiskTilsynsutgift.tilPersonGrunnlag(): GrunnlagDto {
@@ -285,32 +293,36 @@ class BehandlingTilGrunnlagMappingV2(
             return relatertPersonGrunnlag
         }
 
-        return underholdskostnader
-            .flatMap { u ->
-                u.faktiskeTilsynsutgifter.map {
-                    val underholdRolle = u.person.rolle.find { it.behandling.id == id }
-                    val gjelderBarn =
-                        underholdRolle?.tilGrunnlagPerson() ?: personobjekter.hentPerson(u.person.ident) ?: it.opprettPersonGrunnlag()
-                    val gjelderBarnReferanse = gjelderBarn.referanse
-                    GrunnlagDto(
-                        referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
-                        type = Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
-                        gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
-                        innhold =
-                            POJONode(
-                                FaktiskUtgiftPeriode(
-                                    periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                                    fødselsdatoBarn = gjelderBarn.personObjekt.fødselsdato,
-                                    gjelderBarn = gjelderBarnReferanse,
-                                    kostpengerBeløp = it.kostpenger ?: BigDecimal.ZERO,
-                                    faktiskUtgiftBeløp = it.tilsynsutgift,
-                                    kommentar = it.kommentar,
-                                    manueltRegistrert = true,
+        return (
+            underholdskostnader
+                .flatMap { u ->
+                    u.faktiskeTilsynsutgifter.map {
+                        val underholdRolle = u.person.rolle.find { it.behandling.id == id }
+                        val gjelderBarn =
+                            underholdRolle?.tilGrunnlagPerson()?.also {
+                                grunnlagslistePersoner.add(it)
+                            } ?: personobjekter.hentPerson(u.person.ident) ?: it.opprettPersonGrunnlag()
+                        val gjelderBarnReferanse = gjelderBarn.referanse
+                        GrunnlagDto(
+                            referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
+                            type = Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
+                            gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                            gjelderBarnReferanse = gjelderBarnReferanse,
+                            innhold =
+                                POJONode(
+                                    FaktiskUtgiftPeriode(
+                                        periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                                        fødselsdatoBarn = gjelderBarn.personObjekt.fødselsdato,
+                                        kostpengerBeløp = it.kostpenger ?: BigDecimal.ZERO,
+                                        faktiskUtgiftBeløp = it.tilsynsutgift,
+                                        kommentar = it.kommentar,
+                                        manueltRegistrert = true,
+                                    ),
                                 ),
-                            ),
-                    )
-                }
-            } + grunnlagslistePersoner
+                        )
+                    }
+                } + grunnlagslistePersoner
+        ).toSet().toList()
     }
 
     fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =

@@ -28,7 +28,12 @@ class NotatService {
         } ?: run {
             log.info { "Legger til notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
             behandling.notater.add(
-                Notat(behandling = behandling, rolle = rolle, innhold = notattekst, type = notattype),
+                Notat(
+                    behandling = behandling,
+                    rolle = rolle,
+                    innhold = notattekst,
+                    type = notattype
+                ),
             )
         }
     }

@@ -12,6 +12,7 @@ import io.mockk.slot
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
+import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyperForReferanser
@@ -71,7 +72,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
@@ -112,6 +112,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
+
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatGrunnlag.NotatType.INNTEKT,
@@ -165,11 +166,49 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest) {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
-
-            request.stønadsendringListe shouldHaveSize 1
-            request.engangsbeløpListe.shouldHaveSize(2)
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
                 request.grunnlagListe shouldHaveSize 167
+            }
+        }
+
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            assertSoftly(stønadsendring) {
+                it.type shouldBe Stønadstype.BIDRAG
+                it.sak shouldBe Saksnummer(behandling.saksnummer)
+                it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
+                it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
+                it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
+                it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                it.beslutning shouldBe Beslutningstype.ENDRING
+                it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
+
+                it.periodeListe shouldHaveSize 8
+                it.grunnlagReferanseListe shouldHaveSize 8
+                opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                    Grunnlagstype.NOTAT,
+                    it.grunnlagReferanseListe,
+                ) shouldHaveSize
+                    6
+                opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                    Grunnlagstype.SØKNAD,
+                    it.grunnlagReferanseListe,
+                ) shouldHaveSize
+                    1
+                opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                    Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                    it.grunnlagReferanseListe,
+                ) shouldHaveSize
+                    1
+
+                assertSoftly(it.periodeListe[0]) {
+                    opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                        Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG,
+                        it.grunnlagReferanseListe,
+                    ) shouldHaveSize
+                        1
+                }
             }
         }
         assertSoftly(opprettVedtakRequest.engangsbeløpListe) {
@@ -223,6 +262,13 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 }
             }
             validerNotater(behandling)
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 31
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 8
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE) shouldHaveSize 2
@@ -233,7 +279,6 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 31
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 5
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN) shouldHaveSize 1
@@ -405,6 +450,90 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 sak shouldBe Saksnummer(SAKSNUMMER)
                 beslutning shouldBe Beslutningstype.ENDRING
             }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+    }
+
+    @Test
+    fun `Skal fatte vedtak uten innkreving`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val innbetaltBeløp = BigDecimal(10000)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatGrunnlag.NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatGrunnlag.NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatGrunnlag.NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+        behandling.refVedtaksid = 553
+        behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
+        behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp"),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.stønadsendringListe shouldHaveSize 1
+        }
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            it.first().innkreving shouldBe Innkrevingstype.UTEN_INNKREVING
+        }
+        assertSoftly(opprettVedtakRequest.engangsbeløpListe) {
+            shouldHaveSize(3)
+
+            it.any { it.type == Engangsbeløptype.GEBYR_MOTTAKER }.shouldBeTrue()
+            it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
+            it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+            it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+            it.find { it.type == Engangsbeløptype.DIREKTE_OPPGJØR }!!.innkreving shouldBe Innkrevingstype.UTEN_INNKREVING
         }
 
         verify(exactly = 1) {
@@ -716,15 +845,19 @@ private fun OpprettVedtakRequestDto.validerUndeholdskostnad() {
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)) {
         shouldHaveSize(2)
         assertSoftly(it[0]) {
-            val innhold = it.innholdTilObjekt<BarnetilsynMedStønadPeriode>()
-            innhold.gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
+            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
             gjelderReferanse shouldBe bmGrunnlag.referanse
+            grunnlagsreferanseListe shouldHaveSize 0
+        }
+        assertSoftly(it[1]) {
+            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+            gjelderReferanse shouldBe bmGrunnlag.referanse
+            grunnlagsreferanseListe shouldHaveSize 1
         }
     }
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)) {
         shouldHaveSize(1)
-        val innhold = it[0].innholdTilObjekt<TilleggsstønadPeriode>()
-        innhold.gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
+        it[0].gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
     }
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)) {
         shouldHaveSize(3)
@@ -732,22 +865,25 @@ private fun OpprettVedtakRequestDto.validerUndeholdskostnad() {
         it[1].gjelderReferanse shouldBe bmGrunnlag.referanse
         it[2].gjelderReferanse shouldBe bmGrunnlag.referanse
 
-        val søknadsbarnFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == søknadsbarnGrunnlag.referanse }!!
+        val søknadsbarnFU = it.find { it.gjelderBarnReferanse == søknadsbarnGrunnlag.referanse }!!
         søknadsbarnFU shouldNotBe null
         val innholdSøknadsbarnFU = søknadsbarnFU.innholdTilObjekt<FaktiskUtgiftPeriode>()
         innholdSøknadsbarnFU.kommentar shouldBe "Kommentar på tilsynsutgift"
         innholdSøknadsbarnFU.faktiskUtgiftBeløp shouldBe BigDecimal(4000)
         innholdSøknadsbarnFU.kostpengerBeløp shouldBe BigDecimal(1000)
 
-        val bmBarnFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == bmBarnGrunnlag.referanse }
+        val bmBarnFU = it.find { it.gjelderBarnReferanse == bmBarnGrunnlag.referanse }
         bmBarnFU shouldNotBe null
 
-        val hustandsmedlemFU = it.find { it.innholdTilObjekt<FaktiskUtgiftPeriode>().gjelderBarn == husstandsmedlemGrunnlag.referanse }
+        val hustandsmedlemFU = it.find { it.gjelderBarnReferanse == husstandsmedlemGrunnlag.referanse }
         hustandsmedlemFU shouldNotBe null
     }
 }
 
 private fun OpprettVedtakRequestDto.validerSamvær() {
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+    val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
+
     val samværsperioder = hentGrunnlagstyper(Grunnlagstype.SAMVÆRSPERIODE)
     samværsperioder shouldHaveSize 2
     val manuellPeriode = samværsperioder.find { grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it.grunnlagsreferanseListe).isEmpty() }!!
@@ -755,25 +891,39 @@ private fun OpprettVedtakRequestDto.validerSamvær() {
     assertSoftly(manuellPeriode) {
         it.grunnlagsreferanseListe shouldHaveSize 0
         it.innholdTilObjekt<SamværsperiodeGrunnlag>().samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
+        it.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        it.gjelderReferanse shouldBe bpGrunnlag.referanse
     }
     assertSoftly(beregnetPeriode) {
-        it.grunnlagsreferanseListe shouldHaveSize 8
+        it.grunnlagsreferanseListe shouldHaveSize 1
         grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON_SAMVARSFRADRAG, it) shouldHaveSize 5
         grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER, it) shouldHaveSize 1
         grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it) shouldHaveSize 1
         grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SAMVÆRSKALKULATOR, it) shouldHaveSize 1
-
+        it.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        it.gjelderReferanse shouldBe bpGrunnlag.referanse
         val innhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
         innhold.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
         val kalkulator = grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SAMVÆRSKALKULATOR, it).first()
         val innholdKalkulator = kalkulator.innholdTilObjekt<SamværskalkulatorDetaljer>()
+        kalkulator.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        kalkulator.gjelderReferanse shouldBe bpGrunnlag.referanse
         innholdKalkulator.ferier shouldHaveSize 5
         innholdKalkulator.regelmessigSamværNetter shouldBe BigDecimal(4)
 
         val delberegningSamværsklasse = grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it).first()
         val innholdSamværsklasse = delberegningSamværsklasse.innholdTilObjekt<DelberegningSamværsklasse>()
+        delberegningSamværsklasse.grunnlagsreferanseListe shouldHaveSize 2
+        grunnlagListe.harReferanseTilGrunnlag(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER, delberegningSamværsklasse)
+        grunnlagListe.harReferanseTilGrunnlag(Grunnlagstype.SAMVÆRSKALKULATOR, delberegningSamværsklasse)
+        delberegningSamværsklasse.gjelderBarnReferanse shouldBe søknadsbarnGrunnlag.referanse
+        delberegningSamværsklasse.gjelderReferanse shouldBe bpGrunnlag.referanse
         innholdSamværsklasse.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
         innholdSamværsklasse.gjennomsnittligSamværPerMåned shouldBe BigDecimal("8.01")
+
+        val delberegningSamværsklasseNetter = grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER, it).first()
+        delberegningSamværsklasseNetter.grunnlagsreferanseListe.shouldHaveSize(5)
+        grunnlagListe.finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON_SAMVARSFRADRAG, delberegningSamværsklasseNetter) shouldHaveSize 5
     }
 }
 

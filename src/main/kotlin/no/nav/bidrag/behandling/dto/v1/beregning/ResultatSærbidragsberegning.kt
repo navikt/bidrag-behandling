@@ -50,7 +50,8 @@ data class DelberegningBidragspliktigesBeregnedeTotalbidragDto(
 data class DelberegningBarnetilleggDto(
     val barnetillegg: List<BarnetilleggDetaljerDto> = emptyList(),
     val skattFaktor: BigDecimal = BigDecimal.ZERO,
-    val nettoBeløp: BigDecimal = BigDecimal.ZERO,
+    val sumNettoBeløp: BigDecimal = BigDecimal.ZERO,
+    val sumBruttoBeløp: BigDecimal = BigDecimal.ZERO,
 ) {
     data class BarnetilleggDetaljerDto(
         val bruttoBeløp: BigDecimal,

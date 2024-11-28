@@ -28,6 +28,7 @@ import stubPersonConsumer
 import stubPersonRepository
 import stubSaksbehandlernavnProvider
 import stubTokenUtils
+import stubUnderholdskostnadRepository
 
 @ExtendWith(SpringExtension::class)
 abstract class CommonVedtakTilBehandlingTest {
@@ -68,6 +69,7 @@ abstract class CommonVedtakTilBehandlingTest {
 
     @BeforeEach
     fun initMocks() {
+        stubUnderholdskostnadRepository(underholdskostnadRepository)
         val validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()

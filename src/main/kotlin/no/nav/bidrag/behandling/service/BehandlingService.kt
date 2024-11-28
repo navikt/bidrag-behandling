@@ -19,7 +19,6 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -376,11 +375,11 @@ class BehandlingService(
     fun henteBehandling(
         behandlingsid: Long,
         inkluderHistoriskeInntekter: Boolean = false,
-    ): BehandlingDtoV2 {
+    ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         behandling.oppdatereVirkningstidspunktSærbidrag()
-        return mapper.tilDto(behandling, true)
+        return behandling
     }
 
     @Transactional

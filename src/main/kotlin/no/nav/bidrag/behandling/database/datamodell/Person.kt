@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 open class Person(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     open val ident: String? = null,
     open val navn: String? = null,
     open val fødselsdato: LocalDate? = null,
@@ -35,7 +35,12 @@ open class Person(
     )
     open val rolle: MutableSet<Rolle> = mutableSetOf(),
 ) {
+<<<<<<< HEAD
     val personident get() = ident?.let { Personident(it) } ?: rolle.first().ident?.let { Personident(it) }
 
     override fun toString(): String = "Person(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, opprettet=$opprettet)"
+=======
+    override fun toString(): String =
+        "Person(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, opprettet=$opprettet, roller=$rolle)"
+>>>>>>> main
 }

@@ -91,7 +91,7 @@ import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstandenDetaljerDto
-import no.nav.bidrag.transport.notat.NotatRolleDto
+import no.nav.bidrag.transport.notat.NotatPersonDto
 import no.nav.bidrag.transport.notat.NotatVoksenIHusstandenDetaljerDto
 import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
@@ -162,7 +162,7 @@ class Dtomapper(
         aktiveGrunnlag: List<Grunnlag>,
     ) = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
 
-    private fun Set<Underholdskostnad>.tilDtos() = this.map { it.tilDto() }.toSet()
+    fun Set<Underholdskostnad>.tilDtos() = this.map { it.tilDto() }.toSet()
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
@@ -171,11 +171,12 @@ class Dtomapper(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
             gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
-            faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
+            faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.sortedBy { it.fom }.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn =
-            rolleSøknadsbarn?.let { this.barnetilsyn.tilStønadTilBarnetilsynDtos() }
+            rolleSøknadsbarn?.let { this.barnetilsyn.sortedBy { it.fom }.tilStønadTilBarnetilsynDtos() }
                 ?: emptySet(),
-            tilleggsstønad = rolleSøknadsbarn?.let { this.tilleggsstønad.tilTilleggsstønadDtos() } ?: emptySet(),
+            tilleggsstønad = rolleSøknadsbarn?.let { this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos() }
+                ?: emptySet(),
             underholdskostnad = rolleSøknadsbarn?.let { this.behandling.tilBeregnetUnderholdskostnad() } ?: emptySet(),
             begrunnelse =
             NotatService.henteUnderholdsnotat(
@@ -242,7 +243,7 @@ class Dtomapper(
             )
         }
 
-    private fun Behandling.tilSamværDto() =
+    fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
             samvær.map { it.tilDto() }
         } else {
@@ -325,7 +326,7 @@ class Dtomapper(
             total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats),
         )
 
-    fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.map { it.tilDto() }.toSet()
+    fun List<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()
 
     fun FaktiskTilsynsutgift.tilDto() =
         FaktiskTilsynsutgiftDto(
@@ -341,7 +342,7 @@ class Dtomapper(
             ) ?: BigDecimal.ZERO,
         )
 
-    fun Set<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilDto() }.toSet()
+    fun List<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilDto() }.toSet()
 
     private fun Husstandsmedlem.boforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>): BoforholdBarn {
         val tilgangskontrollertPersoninfo =
@@ -352,7 +353,7 @@ class Dtomapper(
             )
         return BoforholdBarn(
             gjelder =
-            NotatRolleDto(
+            NotatPersonDto(
                 rolle = null,
                 navn = tilgangskontrollertPersoninfo.navn,
                 fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,

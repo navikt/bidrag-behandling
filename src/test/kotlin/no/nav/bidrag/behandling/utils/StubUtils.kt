@@ -24,7 +24,9 @@ import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
@@ -89,6 +91,23 @@ fun stubPersonRepository(): PersonRepository {
         )
     }
     return personRepositoryMock
+}
+
+fun stubUnderholdskostnadRepository(underholdskostnadRepository: UnderholdskostnadRepository = mockkClass(UnderholdskostnadRepository::class)): UnderholdskostnadRepository {
+    every { underholdskostnadRepository.save(any()) }.answers {
+        val underholdskostnad = firstArg<Underholdskostnad>()
+        underholdskostnad.id = underholdskostnad.id ?: 1
+        underholdskostnad.person.id = underholdskostnad.person.id ?: 1
+        underholdskostnad.tilleggsstønad.forEachIndexed { index, tilleggsstønad ->
+            tilleggsstønad.id = index.toLong()
+        }
+        underholdskostnad.barnetilsyn.forEachIndexed { index, barnetilsyn -> barnetilsyn.id = index.toLong() }
+        underholdskostnad.faktiskeTilsynsutgifter.forEachIndexed { index, faktiskeTilsynsutgifter ->
+            faktiskeTilsynsutgifter.id = index.toLong()
+        }
+        underholdskostnad
+    }
+    return underholdskostnadRepository
 }
 
 fun stubPersonConsumer(): BidragPersonConsumer {

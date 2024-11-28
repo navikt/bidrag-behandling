@@ -135,6 +135,7 @@ fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
                     innhold = it.innhold,
                     grunnlagsreferanseListe = it.grunnlagsreferanseListe,
                     gjelderReferanse = it.gjelderReferanse,
+                    gjelderBarnReferanse = it.gjelderBarnReferanse,
                 )
             },
     )

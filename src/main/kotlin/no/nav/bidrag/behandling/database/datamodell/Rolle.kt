@@ -84,6 +84,8 @@ open class Rolle(
     open var person: Person? = null,
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
+    override fun toString(): String =
+        "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 }
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
@@ -111,7 +113,7 @@ fun Rolle.henteLagretSivilstandshistorikk(behandling: Behandling): Set<Sivilstan
         jsonListeTilObjekt<SivilstandUtenBehandling>(
             forrigeSivilstandshistorikk ?: oppdateringAvBoforholdFeilet(
                 "Fant ikke tidligere lagret sivilstandshistorikk for " +
-                    "bidragsmottaker i behandling ${behandling.id}",
+                        "bidragsmottaker i behandling ${behandling.id}",
             ),
         )
 
