@@ -19,9 +19,12 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
             when (this.under_skolealder) {
                 true -> Skolealder.UNDER
                 false -> Skolealder.OVER
-                else -> Skolealder.IKKE_ANGITT
+                else -> null
             },
-        tilsynstype = this.omfang,
+        tilsynstype = when(this.omfang) {
+            Tilsynstype.IKKE_ANGITT -> null
+            else -> this.omfang
+        },
         kilde = this.kilde,
     )
 

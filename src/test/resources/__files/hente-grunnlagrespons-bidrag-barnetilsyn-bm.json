@@ -19,6 +19,14 @@
       "periodeFra": "2024-01-01",
       "skolealder": "OVER",
       "tilsynstype": "HELTID"
+    },
+    {
+      "barnPersonId": "15043215",
+      "beløp": 3500,
+      "partPersonId": "313213213",
+      "periodeFra": "2024-01-01",
+      "skolealder": "OVER",
+      "tilsynstype": "DELTID"
     }
   ],
   "hentetTidspunkt": "2024-01-16T15:10:44.003848261",

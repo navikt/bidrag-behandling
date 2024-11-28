@@ -80,6 +80,8 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.error.ShouldHaveDimensions.shouldHaveSize
+import org.assertj.core.error.ShouldHaveSize.shouldHaveSize
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -263,13 +265,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     }
                 }
 
+                behandling.underholdskostnader shouldHaveSize 2
+                behandling.underholdskostnader.flatMap { it.barnetilsyn } shouldHaveSize 0
+
                 // hvis
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
                 behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
 
-                behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 1
+                behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 2
+                behandling.grunnlag.filter { !it.erBearbeidet && it.type == Grunnlagsdatatype.BARNETILSYN } shouldHaveSize 1
+                behandling.grunnlag.filter { it.erBearbeidet && it.type == Grunnlagsdatatype.BARNETILSYN } shouldHaveSize 1
+
                 val barnetilsyn =
                     behandling.grunnlag.find { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype && Grunnlagsdatatype.BARNETILSYN == it.type }
                 assertSoftly(barnetilsyn) {
@@ -288,6 +296,27 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     it.elementAt(0).tilsynstype shouldBe Tilsynstype.HELTID
                     it.elementAt(0).partPersonId shouldBe "313213213"
                     it.elementAt(0).barnPersonId shouldBe "1344124"
+                }
+
+                behandling.underholdskostnader.flatMap { it.barnetilsyn } shouldHaveSize 2
+
+                val stønadTilBarnetilsyn = behandling.underholdskostnader.find { it.person.rolle.first().personident?.verdi == testdataBarn1.ident }!!.barnetilsyn.sortedBy { it.fom }
+                stønadTilBarnetilsyn shouldHaveSize 2
+
+                assertSoftly(stønadTilBarnetilsyn.elementAt(0)) {
+                    it.omfang shouldBe Tilsynstype.HELTID
+                    it.under_skolealder shouldBe false
+                    it.fom shouldBe LocalDate.of(2023,1,1)
+                    it.tom shouldBe LocalDate.of(2023, 12,31)
+                    it.kilde shouldBe Kilde.OFFENTLIG
+                }
+
+                assertSoftly(stønadTilBarnetilsyn.elementAt(1)) {
+                    it.omfang shouldBe Tilsynstype.HELTID
+                    it.under_skolealder shouldBe false
+                    it.fom shouldBe LocalDate.of(2024,1,1)
+                    it.tom shouldBe null
+                    it.kilde shouldBe Kilde.OFFENTLIG
                 }
             }
 

@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynD
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -156,7 +157,7 @@ class UnderholdService(
                         Skolealder.OVER -> false
                         else -> null
                     }
-                barnetilsyn.omfang = request.tilsynstype
+                barnetilsyn.omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT
                 barnetilsyn.kilde = Kilde.MANUELL
                 barnetilsyn
             } ?: run {
@@ -170,7 +171,7 @@ class UnderholdService(
                                 Skolealder.OVER -> false
                                 else -> null
                             },
-                        omfang = request.tilsynstype,
+                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
                         kilde = Kilde.MANUELL,
                         underholdskostnad = underholdskostnad,
                     )

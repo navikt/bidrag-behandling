@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
@@ -14,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
+import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
@@ -225,7 +225,7 @@ data class AktiveGrunnlagsdata(
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
-    val barnetilsyn: BarnetilsynAktiveGrunnlagDto? = null,
+    val stønadTilBarnetilsyn: StønadTilBarnetilsynAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
@@ -238,7 +238,7 @@ data class IkkeAktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
-    val barnetilsyn: BarnetilsynIkkeAktiveGrunnlagDto? = null,
+    val stønadTilBarnetilsyn: StønadTilBarnetilsynIkkeAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
@@ -316,13 +316,13 @@ data class SivilstandIkkeAktivGrunnlagDto(
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )
 
-data class BarnetilsynAktiveGrunnlagDto(
+data class StønadTilBarnetilsynAktiveGrunnlagDto(
     val grunnlag: Map<Personident, Set<BarnetilsynGrunnlagDto>> = emptyMap(),
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )
 
-data class BarnetilsynIkkeAktiveGrunnlagDto(
-    val barnetilsyn: Map<Personident, Set<Barnetilsyn>> = emptyMap(),
+data class StønadTilBarnetilsynIkkeAktiveGrunnlagDto(
+    val stønadTilBarnetilsyn: Map<Personident, Set<StønadTilBarnetilsynDto>> = emptyMap(),
     val grunnlag: Map<Personident, Set<BarnetilsynGrunnlagDto>> = emptyMap(),
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )
@@ -378,7 +378,7 @@ data class AndreVoksneIHusstandenDetaljerDto(
 
 @Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype(
-    val behandlinstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
+    val behandlingstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
     val erGjeldende: Boolean = true,
 ) {
     ARBEIDSFORHOLD(
@@ -488,11 +488,11 @@ enum class Grunnlagsdatatype(
             when (rolletype != null) {
                 true ->
                     entries
-                        .filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
-                        .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
+                        .filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }
+                        .filter { it.behandlingstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
                         .toSet()
 
-                false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
+                false -> entries.filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }
 
         fun gjeldende() = Grunnlagsdatatype.entries.filter { it.erGjeldende }
@@ -521,20 +521,19 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
 
 fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
     when (this) {
-
-        Grunnlagsdatatype.BARNETILSYN -> when (this.behandlinstypeMotRolletyper[behandling.tilType()]!!.first()) {
+        Grunnlagsdatatype.BARNETILSYN -> when (this.behandlingstypeMotRolletyper[behandling.tilType()]!!.first()) {
             Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
             Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
             else -> null
         }
 
-        Grunnlagsdatatype.BOFORHOLD -> when (this.behandlinstypeMotRolletyper[behandling.tilType()]!!.first()) {
+        Grunnlagsdatatype.BOFORHOLD -> when (this.behandlingstypeMotRolletyper[behandling.tilType()]!!.first()) {
             Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
             Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
             else -> null
         }
 
-        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> when (this.behandlinstypeMotRolletyper[behandling.tilType()]!!.first()) {
+        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> when (this.behandlingstypeMotRolletyper[behandling.tilType()]!!.first()) {
             Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
             Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
             else -> null

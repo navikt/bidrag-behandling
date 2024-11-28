@@ -655,7 +655,7 @@ class GrunnlagService(
                     it.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
 
-                if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.behandlinstypeMotRolletyper[behandling.tilType()]?.contains(
+                if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.behandlingstypeMotRolletyper[behandling.tilType()]?.contains(
                         rolleInnhentetFor.rolletype,
                     ) == true
                 ) {
@@ -690,16 +690,19 @@ class GrunnlagService(
                         rolleInnhentetFor,
                     )
 
-                // Lagrer barnetilsyn per barn som bearbeida grunnlag
+                // Lagrer barnetilsyn per søknadsbarn som bearbeida grunnlag
                 grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
-                    lagreGrunnlagHvisEndret<BarnetilsynGrunnlagDto>(
-                        behandling,
-                        rolleInnhentetFor,
-                        Grunnlagstype(Grunnlagsdatatype.BARNETILSYN, true),
-                        barnetilsyn.value.toSet(),
-                        null,
-                        Personident(barnetilsyn.key),
-                    )
+
+                    if (behandling.søknadsbarn.find { it.personident?.verdi == barnetilsyn.key } != null) {
+                        lagreGrunnlagHvisEndret<BarnetilsynGrunnlagDto>(
+                            behandling,
+                            rolleInnhentetFor,
+                            Grunnlagstype(Grunnlagsdatatype.BARNETILSYN, true),
+                            barnetilsyn.value.toSet(),
+                            null,
+                            Personident(barnetilsyn.key),
+                        )
+                    }
                 }
 
                 val nyesteBearbeidaBarnetilsynEtterLagring =

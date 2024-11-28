@@ -144,8 +144,8 @@ data class FaktiskTilsynsutgiftDto(
 data class StønadTilBarnetilsynDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
-    val skolealder: Skolealder,
-    val tilsynstype: Tilsynstype,
+    val skolealder: Skolealder? = null,
+    val tilsynstype: Tilsynstype? = null,
     val kilde: Kilde = Kilde.MANUELL,
 )
 

@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v2.behandling.BarnetilsynIkkeAktiveGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynIkkeAktiveGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektspostEndring
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
@@ -125,7 +126,7 @@ fun List<Grunnlag>.henteEndringerIArbeidsforhold(alleAktiveGrunnlag: List<Grunnl
 fun List<Grunnlag>.henteEndringerIBarnetilsyn(
     aktiveGrunnlag: Set<Grunnlag>,
     behandling: Behandling,
-): BarnetilsynIkkeAktiveGrunnlagDto? {
+): StønadTilBarnetilsynIkkeAktiveGrunnlagDto? {
     fun Personident.erSøknadsbarn() = behandling.søknadsbarn.find { it.personident == this } != null
 
     fun Behandling.henteUnderholdskostnadPersonident(personident: Personident) =
@@ -170,11 +171,11 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
         }
 
     if (aktiveBarnetilsynsdata.values.isNotEmpty() && nyeBarnetilsynsdataTilknyttetSøknadsbarn.values.isNotEmpty()) {
-        return BarnetilsynIkkeAktiveGrunnlagDto(
-            barnetilsyn =
+        return StønadTilBarnetilsynIkkeAktiveGrunnlagDto(
+            stønadTilBarnetilsyn =
                 nyeBarnetilsynsdataTilknyttetSøknadsbarn
                     .map {
-                        it.key to it.value.tilBarnetilsyn(behandling.henteUnderholdskostnadPersonident(it.key)!!)
+                        it.key to it.value.tilBarnetilsyn(behandling.henteUnderholdskostnadPersonident(it.key)!!).tilStønadTilBarnetilsynDtos()
                     }.toMap(),
             grunnlag =
                 nyeBarnetilsyn

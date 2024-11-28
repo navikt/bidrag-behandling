@@ -12,7 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.v2.behandling.BarnetilsynAktiveGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
@@ -141,9 +141,9 @@ fun Grunnlag?.toSivilstand(): SivilstandAktivGrunnlagDto? {
     )
 }
 
-fun Set<Grunnlag>.tilBarnetilsynAktiveGrunnlagDto(): BarnetilsynAktiveGrunnlagDto? {
+fun Set<Grunnlag>.tilBarnetilsynAktiveGrunnlagDto(): StønadTilBarnetilsynAktiveGrunnlagDto? {
     if (this.isEmpty()) return null
-    return BarnetilsynAktiveGrunnlagDto(
+    return StønadTilBarnetilsynAktiveGrunnlagDto(
         grunnlag =
             this
                 .flatMap { it.konvertereData<Set<BarnetilsynGrunnlagDto>>() ?: emptySet() }

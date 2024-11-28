@@ -569,7 +569,7 @@ class UnderholdServiceTest {
                                 Skolealder.UNDER -> true
                                 else -> null
                             },
-                        request.tilsynstype,
+                        request.tilsynstype!!,
                         kilde = Kilde.OFFENTLIG,
                     ),
                 )

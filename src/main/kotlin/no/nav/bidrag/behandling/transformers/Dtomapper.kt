@@ -505,7 +505,7 @@ class Dtomapper(
                 aktiveGrunnlag,
                 behandling.virkningstidspunktEllerSøktFomDato,
             ),
-            barnetilsyn =
+            stønadTilBarnetilsyn =
             sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBarnetilsyn(
                 aktiveGrunnlag.toSet(),
                 behandling,
@@ -763,7 +763,7 @@ class Dtomapper(
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
             find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
-            barnetilsyn =
+            stønadTilBarnetilsyn =
             filter { it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
                 .toSet()
                 .tilBarnetilsynAktiveGrunnlagDto(),
