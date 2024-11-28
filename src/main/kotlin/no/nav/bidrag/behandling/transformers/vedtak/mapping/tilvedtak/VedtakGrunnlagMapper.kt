@@ -77,9 +77,7 @@ class VedtakGrunnlagMapper(
         }
 
     private fun Behandling.gebyrGrunnlagslisteDefaultVerdi(rolle: Rolle) =
-        if (avslag ==
-            null
-        ) {
+        if (avslag != null) {
             emptyList()
         } else {
             beregnetInntekterGrunnlagForRolle(rolle)

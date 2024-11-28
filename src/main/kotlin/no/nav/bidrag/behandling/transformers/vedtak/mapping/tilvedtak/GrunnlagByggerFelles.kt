@@ -104,11 +104,12 @@ private fun opprettGrunnlagNotat(
 fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
     roller
         .filter { it.harGebyrsøknad }
-        .filter { it.manueltOverstyrtGebyr != null }
+        .filter { it.manueltOverstyrtGebyr != null && it.manueltOverstyrtGebyr?.overstyrGebyr == true }
         .map {
             GrunnlagDto(
                 referanse = "${Grunnlagstype.MANUELT_OVERSTYRT_GEBYR}_${it.tilGrunnlagsreferanse()}",
                 type = Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
+                gjelderReferanse = it.tilGrunnlagsreferanse(),
                 innhold =
                     POJONode(
                         ManueltOverstyrtGebyr(

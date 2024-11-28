@@ -256,8 +256,7 @@ class BehandlingService(
                 log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                 secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
                 request.valider(it)
-                it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
-                it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
+                oppdaterAvslagÅrsak(it, request)
                 request.henteOppdatereNotat()?.let { n ->
                     notatService.oppdatereNotat(
                         it,
@@ -269,6 +268,30 @@ class BehandlingService(
                 oppdaterVirkningstidspunkt(request, it)
                 it
             }
+
+    @Transactional
+    fun oppdaterAvslagÅrsak(
+        behandling: Behandling,
+        request: OppdatereVirkningstidspunkt,
+    ) {
+        fun oppdaterGebyr() {
+            log.info { "Årsak/Avaslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
+            gebyrService.oppdaterGebyrEtterEndringVirkningstidspunkt(behandling)
+        }
+        val erAvslagÅrsakEndret = request.årsak != behandling.årsak || request.avslag != behandling.avslag
+
+        if (erAvslagÅrsakEndret) {
+            behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
+            behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
+
+            when (behandling.tilType()) {
+                TypeBehandling.BIDRAG -> {
+                    oppdaterGebyr()
+                }
+                else -> {}
+            }
+        }
+    }
 
     @Transactional
     fun oppdaterVirkningstidspunkt(
@@ -291,11 +314,6 @@ class BehandlingService(
             grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)
             boforholdService.oppdatereSivilstandshistorikk(behandling)
             grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
-        }
-
-        fun oppdaterGebyr() {
-            log.info { "Virkningstidspunkt er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
-            gebyrService.oppdaterGebyrEtterEndringVirkningstidspunkt(behandling)
         }
 
         fun oppdaterSamvær() {
@@ -337,7 +355,6 @@ class BehandlingService(
                     oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
                     oppdaterSamvær()
-                    oppdaterGebyr()
                     // TODO Underholdskostnad
                 }
             }

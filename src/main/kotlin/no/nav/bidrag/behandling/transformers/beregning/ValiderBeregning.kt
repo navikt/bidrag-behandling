@@ -234,12 +234,12 @@ class ValiderBeregning(
 
         if (feil != null) {
             secureLogger.warn {
-                "Feil ved validering av behandling for beregning av særbidrag" +
+                "Feil ved validering av behandling for beregning av bidrag" +
                     commonObjectmapper.writeValueAsString(feil)
             }
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
-                "Feil ved validering av behandling for beregning av særbidrag",
+                "Feil ved validering av behandling for beregning av bidrag",
                 commonObjectmapper.writeValueAsBytes(feil),
                 Charset.defaultCharset(),
             )

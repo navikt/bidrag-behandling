@@ -124,7 +124,7 @@ class BehandlingTilVedtakMapping(
                     )
                 },
                 bidragsmottaker!!.harGebyrsøknad.ifTrue {
-                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagsliste)
+                    val beregning = mapper.beregnGebyr(this, bidragsmottaker!!, grunnlagsliste)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_MOTTAKER,
