@@ -90,7 +90,7 @@ class VedtakGrunnlagMapper(
     ): BeregnGebyrResultat {
         val gebyrBeregning =
             if (behandling.avslag != null) {
-                beregnGebyrApi.beregnGebyr(emptyList(), rolle.tilGrunnlagsreferanse()) +
+                beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse()) +
                     mapper.run { behandling.tilGrunnlagInntektSiste12Mnd(rolle) }
             } else {
                 beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse())
