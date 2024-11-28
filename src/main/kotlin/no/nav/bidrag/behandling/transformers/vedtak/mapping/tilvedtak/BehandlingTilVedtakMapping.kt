@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -23,6 +24,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
@@ -32,6 +34,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.sak.BidragssakDto
+import org.springframework.context.annotation.Import
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -40,6 +43,7 @@ import java.time.LocalDateTime
 import java.time.YearMonth
 
 @Service
+@Import(BeregnGebyrApi::class)
 class BehandlingTilVedtakMapping(
     private val sakConsumer: BidragSakConsumer,
     private val mapper: VedtakGrunnlagMapper,
@@ -64,6 +68,7 @@ class BehandlingTilVedtakMapping(
                             StønadsendringPeriode::grunnlag,
                         ) + stønadsendringGrunnlagListe
                 ).toSet()
+            val engangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
 
             return byggOpprettVedtakRequestObjekt().copy(
                 stønadsendringListe =
@@ -89,49 +94,57 @@ class BehandlingTilVedtakMapping(
                         )
                     },
                 engangsbeløpListe =
-                    mapEngangsbeløpGebyr() + mapEngangsbeløpDirekteOppgjør(sak),
-                grunnlagListe = grunnlagListe.map(GrunnlagDto::tilOpprettRequestDto),
+                    engangsbeløpGebyr.engangsbeløp + mapEngangsbeløpDirekteOppgjør(sak),
+                grunnlagListe = (grunnlagListe + engangsbeløpGebyr.grunnlagsliste).toSet().map(BaseGrunnlag::tilOpprettRequestDto),
             )
         }
     }
 
-    private fun Behandling.mapEngangsbeløpGebyr() =
-        listOfNotNull(
-            bidragspliktig!!.harGebyrsøknad.ifTrue {
-                OpprettEngangsbeløpRequestDto(
-                    type = Engangsbeløptype.GEBYR_SKYLDNER,
-                    beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
-                    betaltBeløp = null,
-                    resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
-                    eksternReferanse = null,
-                    beslutning = Beslutningstype.ENDRING,
-                    grunnlagReferanseListe = emptyList(),
-                    innkreving = Innkrevingstype.MED_INNKREVING,
-                    skyldner = Personident(bidragspliktig!!.ident!!),
-                    kravhaver = skyldnerNav,
-                    mottaker = skyldnerNav,
-                    valutakode = "NOK",
-                    sak = Saksnummer(saksnummer),
-                )
-            },
-            bidragsmottaker!!.harGebyrsøknad.ifTrue {
-                OpprettEngangsbeløpRequestDto(
-                    type = Engangsbeløptype.GEBYR_MOTTAKER,
-                    beløp = BigDecimal.ZERO, // TODO: Gebyr fra beregning
-                    betaltBeløp = null,
-                    resultatkode = Resultatkode.GEBYR_ILAGT.name, // TODO: Resultat fra beregning
-                    eksternReferanse = null,
-                    beslutning = Beslutningstype.ENDRING,
-                    grunnlagReferanseListe = emptyList(),
-                    innkreving = Innkrevingstype.MED_INNKREVING,
-                    skyldner = Personident(bidragsmottaker!!.ident!!),
-                    kravhaver = skyldnerNav,
-                    mottaker = skyldnerNav,
-                    valutakode = "NOK",
-                    sak = Saksnummer(saksnummer),
-                )
-            },
-        )
+    private fun Behandling.mapEngangsbeløpGebyr(grunnlagsliste: List<GrunnlagDto>): GebyrResulat {
+        val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
+        val engangsbeløpListe =
+            listOfNotNull(
+                bidragspliktig!!.harGebyrsøknad.ifTrue {
+                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagsliste)
+                    gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
+                    OpprettEngangsbeløpRequestDto(
+                        type = Engangsbeløptype.GEBYR_SKYLDNER,
+                        beløp = beregning.beløpGebyrsats,
+                        betaltBeløp = null,
+                        resultatkode = beregning.resultatkode.name,
+                        eksternReferanse = null,
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
+                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        skyldner = Personident(bidragspliktig!!.ident!!),
+                        kravhaver = skyldnerNav,
+                        mottaker = skyldnerNav,
+                        valutakode = "NOK",
+                        sak = Saksnummer(saksnummer),
+                    )
+                },
+                bidragsmottaker!!.harGebyrsøknad.ifTrue {
+                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagsliste)
+                    gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
+                    OpprettEngangsbeløpRequestDto(
+                        type = Engangsbeløptype.GEBYR_MOTTAKER,
+                        beløp = beregning.beløpGebyrsats,
+                        betaltBeløp = null,
+                        resultatkode = beregning.resultatkode.name,
+                        eksternReferanse = null,
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
+                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        skyldner = Personident(bidragsmottaker!!.ident!!),
+                        kravhaver = skyldnerNav,
+                        mottaker = skyldnerNav,
+                        valutakode = "NOK",
+                        sak = Saksnummer(saksnummer),
+                    )
+                },
+            )
+        return GebyrResulat(engangsbeløpListe, gebyrGrunnlagsliste)
+    }
 
     private fun Behandling.mapEngangsbeløpDirekteOppgjør(sak: BidragssakDto) =
         søknadsbarn
@@ -169,10 +182,11 @@ class BehandlingTilVedtakMapping(
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val grunnlagListe = byggGrunnlagGenereltAvslag()
+            val resultatEngangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
 
             return byggOpprettVedtakRequestObjekt()
                 .copy(
-                    engangsbeløpListe = mapEngangsbeløpGebyr(),
+                    engangsbeløpListe = resultatEngangsbeløpGebyr.engangsbeløp,
                     stønadsendringListe =
                         søknadsbarn.map {
                             OpprettStønadsendringRequestDto(
@@ -203,7 +217,10 @@ class BehandlingTilVedtakMapping(
                                     ),
                             )
                         },
-                    grunnlagListe = (grunnlagListe + tilPersonobjekter()).map(GrunnlagDto::tilOpprettRequestDto),
+                    grunnlagListe =
+                        (grunnlagListe + tilPersonobjekter() + resultatEngangsbeløpGebyr.grunnlagsliste).map(
+                            BaseGrunnlag::tilOpprettRequestDto,
+                        ),
                 )
         }
 

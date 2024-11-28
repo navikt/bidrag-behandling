@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -25,6 +26,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
@@ -33,6 +35,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
@@ -164,8 +167,15 @@ class BehandlingTilGrunnlagMappingV2(
             tilGrunnlagFaktiskeTilsynsutgifter(personobjekter),
         ).flatten()
 
+    fun Behandling.tilGrunnlagInntektSiste12Mnd(rolle: Rolle) =
+        tilGrunnlagInntekt()
+            .filter { it.gjelderReferanse == rolle.tilGrunnlagsreferanse() }
+            .find {
+                it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND
+            }
+
     fun Behandling.tilGrunnlagInntekt(
-        personobjekter: Set<GrunnlagDto>,
+        personobjekter: Set<GrunnlagDto> = tilPersonobjekter(),
         søknadsbarn: GrunnlagDto? = null,
         inkluderAlle: Boolean = true,
     ): Set<GrunnlagDto> {

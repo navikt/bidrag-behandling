@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -75,12 +76,20 @@ abstract class CommonVedtakTilBehandlingTest {
         personConsumer = stubPersonConsumer()
         val personService = PersonService(personConsumer)
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        val vedtakGrunnlagMapper =
+            VedtakGrunnlagMapper(
+                behandlingTilGrunnlagMappingV2,
+                validerBeregning,
+                evnevurderingService,
+                personService,
+                BeregnGebyrApi(stubSjablonService()),
+            )
         dtomapper =
             Dtomapper(
                 tilgangskontrollService,
                 validerBeregning,
                 validerBehandlingService,
-                VedtakGrunnlagMapper(behandlingTilGrunnlagMappingV2, validerBeregning, evnevurderingService, personService),
+                vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
         val underholdService =
@@ -91,20 +100,13 @@ abstract class CommonVedtakTilBehandlingTest {
                 dtomapper,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService)
-        val vedtakGrunnlagMapper =
-            VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
-                validerBeregning,
-                evnevurderingService,
-                personService,
-            )
 
-        beregningService =
-            BeregningService(
-                behandlingService,
+        val behandlingTilVedtakMapping =
+            BehandlingTilVedtakMapping(
+                sakConsumer,
                 vedtakGrunnlagMapper,
+                beregningService,
             )
-        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
 
         vedtakService =
             VedtakService(

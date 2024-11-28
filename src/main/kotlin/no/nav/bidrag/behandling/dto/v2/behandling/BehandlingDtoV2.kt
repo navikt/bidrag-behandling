@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -112,6 +113,7 @@ data class BehandlingDtoV2(
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
+    val gebyr: List<GebyrRolleDto>? = null,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
@@ -122,6 +124,20 @@ data class BehandlingDtoV2(
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
+}
+
+data class GebyrRolleDto(
+    val inntekt: GebyrInntektDto,
+    val manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,
+    val ilagtGebyr: Boolean,
+    val rolle: RolleDto,
+) {
+    data class GebyrInntektDto(
+        val skattepliktigInntekt: BigDecimal,
+        val maksBarnetillegg: BigDecimal? = null,
+    ) {
+        val totalInntekt get() = skattepliktigInntekt + (maksBarnetillegg ?: BigDecimal.ZERO)
+    }
 }
 
 data class PersoninfoDto(

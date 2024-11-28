@@ -34,6 +34,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -66,6 +67,9 @@ class UnderholdServiceTest {
 
     @MockkBean
     lateinit var personConsumer: BidragPersonConsumer
+
+    @MockkBean
+    lateinit var behandlingService: BehandlingService
 
     @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
@@ -104,8 +108,8 @@ class UnderholdServiceTest {
                 ValiderBeregning(),
                 evnevurderingService,
                 personService,
+                BeregnGebyrApi(stubSjablonService()),
             )
-
         dtomapper =
             Dtomapper(
                 tilgangskontrollService,
