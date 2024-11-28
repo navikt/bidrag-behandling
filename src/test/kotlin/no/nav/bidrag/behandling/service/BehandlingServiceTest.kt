@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
@@ -106,6 +107,9 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var testdataManager: TestdataManager
+
+    @Autowired
+    lateinit var dtomapper: Dtomapper
 
     @PersistenceContext
     lateinit var entityManager: EntityManager
@@ -213,9 +217,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             kjøreStubber(behandling, true)
 
             // hvis
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
 
             // så
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
+
             val ytelser =
                 setOf(
                     Inntektsrapportering.BARNETILLEGG,
@@ -407,7 +414,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingRepository.save(behandling)
             kjøreStubber(behandling)
 
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
+
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
 
             assertSoftly(behandlingDto) {
                 it.inntekter.beregnetInntekter shouldHaveSize 3
@@ -525,7 +535,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             kjøreStubber(behandling)
 
             // hvis
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
+
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
 
             // så
             val ytelser =
@@ -605,9 +618,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             )
 
             // hvis
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
 
             // så
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
+
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.inntekter.årsinntekter shouldHaveSize 0
