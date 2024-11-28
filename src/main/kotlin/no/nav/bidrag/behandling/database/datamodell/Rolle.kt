@@ -95,8 +95,9 @@ open class Rolle(
 }
 
 data class RolleManueltOverstyrtGebyr(
+    val overstyrtGebyr: Boolean = false,
     val ilagtGebyr: Boolean,
-    val begrunnelse: String,
+    val begrunnelse: String? = null,
 )
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
