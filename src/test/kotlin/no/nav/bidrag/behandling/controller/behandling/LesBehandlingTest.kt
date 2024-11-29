@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.controller.behandling
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
@@ -79,6 +80,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
         aktiveGrunnlagsdata.arbeidsforhold shouldHaveSize 3
         aktiveGrunnlagsdata.husstandsmedlem shouldHaveSize 5
         aktiveGrunnlagsdata.sivilstand!!.grunnlag shouldHaveSize 2
+        aktiveGrunnlagsdata.stønadTilBarnetilsyn!!.grunnlag shouldHaveSize 2
     }
 
     @Test

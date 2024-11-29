@@ -27,7 +27,6 @@ val summertYtelsetyper =
     setOf(
         Inntektsrapportering.BARNETILLEGG,
         Inntektsrapportering.KONTANTSTØTTE,
-        Inntektsrapportering.BARNETILSYN,
         Inntektsrapportering.SMÅBARNSTILLEGG,
         Inntektsrapportering.UTVIDET_BARNETRYGD,
     )

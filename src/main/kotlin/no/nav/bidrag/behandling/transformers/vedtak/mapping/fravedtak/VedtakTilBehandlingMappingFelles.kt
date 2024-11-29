@@ -135,6 +135,7 @@ internal fun List<GrunnlagDto>.mapGrunnlag(
 ): MutableSet<Grunnlag> =
     (
         hentGrunnlagIkkeInntekt(behandling, lesemodus) +
+            hentGrunnlagBarnetilsyn(behandling, lesemodus) +
             hentGrunnlagInntekt(
                 behandling,
                 lesemodus,
@@ -341,6 +342,37 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         },
 ).flatten()
 
+private fun List<GrunnlagDto>.hentGrunnlagBarnetilsyn(
+    behandling: Behandling,
+    lesemodus: Boolean,
+) = henteGrunnlagBarnetilsyn()
+    .groupBy { it.partPersonId }
+    .map { (gjelderIdent, grunnlag) ->
+
+        val ikkebearbeida =
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.BARNETILSYN,
+                grunnlag,
+                gjelderIdent,
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                lesemodus,
+            )
+
+        val bearbeida =
+            grunnlag.groupBy { it.barnPersonId }.map { (personidentBarn, barnetsGrunnlag) ->
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.BARNETILSYN,
+                    barnetsGrunnlag,
+                    gjelderIdent,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                    lesemodus,
+                    true,
+                    personidentBarn,
+                )
+            }
+        listOf(ikkebearbeida) + bearbeida
+    }.flatten()
+
 private fun List<GrunnlagDto>.hentGrunnlagInntekt(
     behandling: Behandling,
     lesemodus: Boolean,
@@ -386,17 +418,6 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                     grunnlag,
                     gjelderIdent,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG),
-                    lesemodus,
-                )
-            },
-        hentBarnetilsynListe()
-            .groupBy { it.partPersonId }
-            .map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.BARNETILSYN,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
                     lesemodus,
                 )
             },
