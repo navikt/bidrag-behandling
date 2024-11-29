@@ -569,15 +569,19 @@ class Dtomapper(
             søknadsid = soknadsid,
             behandlerenhet = behandlerEnhet,
             gebyr =
-                GebyrDto(
-                    gebyrRoller =
-                        roller.filter { it.harGebyrsøknad }.map { rolle ->
-                            vedtakGrunnlagMapper
-                                .beregnGebyr(this, rolle)
-                                .tilDto(rolle)
-                        },
-                    valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
-                ),
+                if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
+                    GebyrDto(
+                        gebyrRoller =
+                            roller.filter { it.harGebyrsøknad }.map { rolle ->
+                                vedtakGrunnlagMapper
+                                    .beregnGebyr(this, rolle)
+                                    .tilDto(rolle)
+                            },
+                        valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
+                    )
+                } else {
+                    null
+                },
             roller =
                 roller.map { it.tilDto() }.toSet(),
             søknadRefId = soknadRefId,

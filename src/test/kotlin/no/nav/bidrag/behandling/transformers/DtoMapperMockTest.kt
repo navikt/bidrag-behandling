@@ -214,9 +214,7 @@ class DtoMapperMockTest {
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
-        val gebyr = behandlingDto.gebyr
-        gebyr.shouldNotBeNull()
-        gebyr.gebyrRoller.shouldHaveSize(0)
+        behandlingDto.gebyr.shouldBeNull()
     }
 
     @Test
