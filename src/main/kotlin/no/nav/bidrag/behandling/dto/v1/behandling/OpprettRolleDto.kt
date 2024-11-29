@@ -29,4 +29,5 @@ data class OpprettRolleDto(
     val innbetaltBeløp: BigDecimal? = null,
     val erSlettet: Boolean = false,
     val erUkjent: Boolean = false,
+    val harGebyrsøknad: Boolean = false,
 )

@@ -23,8 +23,10 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,6 +54,11 @@ open class Rolle(
     @Deprecated("Migrere til Person.navn")
     open val navn: String? = null,
     open val deleted: Boolean = false,
+    open var harGebyrsøknad: Boolean = false,
+    @Column(columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    open var manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,
     open var innbetaltBeløp: BigDecimal? = null,
     @Column(name = "forrige_sivilstandshistorikk", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
@@ -86,6 +93,12 @@ open class Rolle(
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 }
+
+data class RolleManueltOverstyrtGebyr(
+    val overstyrGebyr: Boolean = true,
+    val ilagtGebyr: Boolean? = false,
+    val begrunnelse: String? = null,
+)
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 

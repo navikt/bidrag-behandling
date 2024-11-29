@@ -51,6 +51,9 @@ class UtgiftserviceMockTest {
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
     @MockK
+    lateinit var behandlingService: BehandlingService
+
+    @MockK
     lateinit var personService: PersonService
 
     lateinit var utgiftService: UtgiftService

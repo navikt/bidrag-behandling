@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.underhold.ValideringsfeilUnderhold
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -217,6 +218,7 @@ data class BeregningValideringsfeil(
     val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
     val sivilstand: SivilstandPeriodeseringsfeil? = null,
     val samvær: Set<SamværValideringsfeilDto>? = null,
+    val gebyr: Set<GebyrValideringsfeilDto>? = null,
     val underholdskostnad: Set<ValideringsfeilUnderhold>? = null,
     val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )

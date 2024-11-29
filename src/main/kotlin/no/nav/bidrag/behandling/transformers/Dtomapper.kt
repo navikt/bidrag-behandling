@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -23,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
@@ -34,6 +36,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
@@ -59,6 +62,8 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
+import no.nav.bidrag.behandling.transformers.gebyr.tilDto
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
@@ -74,6 +79,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -81,6 +87,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
@@ -561,6 +568,20 @@ class Dtomapper(
             saksnummer = saksnummer,
             søknadsid = soknadsid,
             behandlerenhet = behandlerEnhet,
+            gebyr =
+                if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
+                    GebyrDto(
+                        gebyrRoller =
+                            roller.filter { it.harGebyrsøknad }.map { rolle ->
+                                vedtakGrunnlagMapper
+                                    .beregnGebyr(this, rolle)
+                                    .tilDto(rolle)
+                            },
+                        valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
+                    )
+                } else {
+                    null
+                },
             roller =
                 roller.map { it.tilDto() }.toSet(),
             søknadRefId = soknadRefId,
@@ -595,6 +616,23 @@ class Dtomapper(
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
         )
     }
+
+    fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
+        BeregnApi()
+            .beregnInntekt(tilInntektberegningDto(rolle))
+            .inntektPerBarnListe
+            .filter { it.inntektGjelderBarnIdent != null }
+            .flatMap { beregningBarn ->
+                beregningBarn.summertInntektListe.map {
+                    GrunnlagDto(
+                        referanse = "${Grunnlagstype.DELBEREGNING_SUM_INNTEKT}_${rolle.tilGrunnlagsreferanse()}",
+                        type = Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
+                        innhold = POJONode(it),
+                        gjelderReferanse = rolle.tilGrunnlagsreferanse(),
+                        gjelderBarnReferanse = beregningBarn.inntektGjelderBarnIdent!!.verdi,
+                    )
+                }
+            }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(

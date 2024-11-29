@@ -25,13 +25,15 @@ fun Behandling.tilForsendelseRolleDto() =
 
 fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle =
     Rolle(
-        behandling,
-        rolletype = this.rolletype,
-        this.ident?.verdi,
-        this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-            ?: rolleManglerFødselsdato(rolletype),
-        navn = this.navn,
-        innbetaltBeløp = this.innbetaltBeløp,
+        behandling = behandling,
+        rolletype = rolletype,
+        ident = ident?.verdi,
+        fødselsdato =
+            fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
+                ?: rolleManglerFødselsdato(rolletype),
+        navn = navn,
+        innbetaltBeløp = innbetaltBeløp,
+        harGebyrsøknad = harGebyrsøknad,
     )
 
 fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem =

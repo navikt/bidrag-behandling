@@ -45,6 +45,7 @@ import no.nav.bidrag.behandling.utils.testdata.taMedInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -120,6 +121,7 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var entityManager: EntityManager
 
     lateinit var vedtakService: VedtakService
+
     lateinit var beregningService: BeregningService
 
     @MockK
@@ -137,15 +139,29 @@ class VedtakserviceTest : TestContainerRunner() {
         stubTokenUtils()
         unleash.enableAll()
         bidragPersonConsumer = stubPersonConsumer()
+
         val personService = PersonService(bidragPersonConsumer)
         val validerBeregning = ValiderBeregning()
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        val vedtakGrunnlagMapper =
+            VedtakGrunnlagMapper(
+                behandlingTilGrunnlagMappingV2,
+                validerBeregning,
+                evnevurderingService,
+                personService,
+                BeregnGebyrApi(stubSjablonService()),
+            )
+        beregningService =
+            BeregningService(
+                behandlingService,
+                vedtakGrunnlagMapper,
+            )
         val dtomapper =
             Dtomapper(
                 tilgangskontrollService,
                 validerBeregning,
                 validerBehandlingService,
-                VedtakGrunnlagMapper(behandlingTilGrunnlagMappingV2, validerBeregning, evnevurderingService, personService),
+                vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
         val underholdService =
@@ -156,20 +172,13 @@ class VedtakserviceTest : TestContainerRunner() {
                 dtomapper,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService)
-        val vedtakGrunnlagMapper =
-            VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
-                validerBeregning,
-                evnevurderingService,
-                personService,
-            )
 
-        beregningService =
-            BeregningService(
-                behandlingService,
+        val behandlingTilVedtakMapping =
+            BehandlingTilVedtakMapping(
+                sakConsumer,
                 vedtakGrunnlagMapper,
+                beregningService,
             )
-        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
         vedtakService =
             VedtakService(
                 behandlingService,
@@ -335,11 +344,13 @@ class VedtakserviceTest : TestContainerRunner() {
             request.stønadsendringListe.shouldHaveSize(1)
             request.engangsbeløpListe shouldHaveSize 3
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 177
+                request.grunnlagListe shouldHaveSize 179
             }
         }
 
         assertSoftly(opprettVedtakRequest) {
+            hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 7
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 2
@@ -351,7 +362,7 @@ class VedtakserviceTest : TestContainerRunner() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 22
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 20
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 2

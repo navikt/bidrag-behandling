@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
@@ -20,21 +21,28 @@ import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreve
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilInnholdMedReferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.felles.ifTrue
@@ -64,7 +72,7 @@ fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
     return grunnlagListe
 }
 
-fun GrunnlagDto.tilOpprettRequestDto() =
+fun BaseGrunnlag.tilOpprettRequestDto() =
     OpprettGrunnlagRequestDto(
         referanse = referanse,
         type = type,
@@ -92,6 +100,25 @@ private fun opprettGrunnlagNotat(
             ),
         ),
 )
+
+fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
+    roller
+        .filter { it.harGebyrsøknad }
+        .filter { it.manueltOverstyrtGebyr != null && it.manueltOverstyrtGebyr?.overstyrGebyr == true }
+        .map {
+            GrunnlagDto(
+                referanse = "${Grunnlagstype.MANUELT_OVERSTYRT_GEBYR}_${it.tilGrunnlagsreferanse()}",
+                type = Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
+                gjelderReferanse = it.tilGrunnlagsreferanse(),
+                innhold =
+                    POJONode(
+                        ManueltOverstyrtGebyr(
+                            begrunnelse = it.manueltOverstyrtGebyr!!.begrunnelse!!,
+                            ilagtGebyr = it.manueltOverstyrtGebyr!!.ilagtGebyr!!,
+                        ),
+                    ),
+            )
+        }.toSet()
 
 fun Behandling.byggGrunnlagSøknad() =
     setOf(
@@ -264,6 +291,14 @@ internal fun opprettGrunnlagForBostatusperioder(
                     ),
             )
         }.toSet()
+
+internal fun SluttberegningGebyr.tilResultatkode() = if (ilagtGebyr) Resultatkode.GEBYR_ILAGT else Resultatkode.GEBYR_FRITTATT
+
+fun List<BaseGrunnlag>.finnInntektSiste12Mnd(rolle: Rolle) =
+    filter {
+        it.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE && it.gjelderReferanse == rolle.tilGrunnlagsreferanse()
+    }.find { it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
+        ?.tilInnholdMedReferanse<InntektsrapporteringPeriode>()
 
 internal fun Inntekt.tilInntektsrapporteringPeriode(
     gjelder: GrunnlagDto,

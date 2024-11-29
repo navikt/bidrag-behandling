@@ -61,6 +61,7 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val gebyrService: GebyrService,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -254,8 +255,7 @@ class BehandlingService(
                 log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                 secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
                 request.valider(it)
-                it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
-                it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
+                oppdaterAvslagÅrsak(it, request)
                 request.henteOppdatereNotat()?.let { n ->
                     notatService.oppdatereNotat(
                         it,
@@ -267,6 +267,30 @@ class BehandlingService(
                 oppdaterVirkningstidspunkt(request, it)
                 it
             }
+
+    @Transactional
+    fun oppdaterAvslagÅrsak(
+        behandling: Behandling,
+        request: OppdatereVirkningstidspunkt,
+    ) {
+        fun oppdaterGebyr() {
+            log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
+            gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
+        }
+        val erAvslagÅrsakEndret = request.årsak != behandling.årsak || request.avslag != behandling.avslag
+
+        if (erAvslagÅrsakEndret) {
+            behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
+            behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
+
+            when (behandling.tilType()) {
+                TypeBehandling.BIDRAG -> {
+                    oppdaterGebyr()
+                }
+                else -> {}
+            }
+        }
+    }
 
     @Transactional
     fun oppdaterVirkningstidspunkt(
@@ -458,6 +482,8 @@ class BehandlingService(
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
         oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
 
+        // TODO oppdater underholdskostnader ( legge til når ny barn legges til )
+
         behandlingRepository.save(behandling)
 
         if (behandling.søknadsbarn.isEmpty()) {
@@ -476,6 +502,7 @@ class BehandlingService(
             .forEach {
                 roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
+                    eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
                 }
             }
     }

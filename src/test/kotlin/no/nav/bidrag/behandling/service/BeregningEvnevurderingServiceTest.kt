@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.service.sjablon.SjablonService
@@ -102,7 +103,7 @@ class BeregningEvnevurderingServiceTest {
 
         evnevurderingService =
             BeregningEvnevurderingService(bidragStønadConsumer, bidragVedtakConsumer, bidragBBMConsumer, beregingVedtaksfiltrering)
-        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregning, evnevurderingService, personService)
+        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregning, evnevurderingService, personService, BeregnGebyrApi(sjablonService))
         stubSjablonProvider()
         initMockTestdata()
     }
