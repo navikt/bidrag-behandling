@@ -143,21 +143,22 @@ class GebyrServiceTest {
     }
 
     @Test
-    fun `skal kreve å sette gebyrvalg hvis avslag`() {
+    fun `skal oppdatere uten gebyrvalg ved avslag`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        val exception =
-            assertThrows<HttpClientErrorException> {
-                gebyrService.oppdaterManueltOverstyrtGebyr(
-                    behandling,
-                    OppdaterManueltGebyrDto(
-                        rolleId = bm.id!!,
-                        overstyrtGebyr = ManueltOverstyrGebyrDto(begrunnelse = "Begrunnelse"),
-                    ),
-                )
-            }
-        exception.message shouldContain "Må sette gebyr hvis det er avslag"
+        gebyrService.oppdaterManueltOverstyrtGebyr(
+            behandling,
+            OppdaterManueltGebyrDto(
+                rolleId = bm.id!!,
+                overstyrtGebyr = ManueltOverstyrGebyrDto(ilagtGebyr = null, begrunnelse = "Begrunnelse"),
+            ),
+        )
+
+        bm.manueltOverstyrtGebyr.shouldNotBeNull()
+        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
+        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe null
+        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
     @Test

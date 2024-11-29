@@ -50,7 +50,7 @@ class GebyrService(
             (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
                 it.copy(
                     overstyrGebyr = request.overstyrtGebyr != null,
-                    ilagtGebyr = request.overstyrtGebyr?.ilagtGebyr ?: !beregning.ilagtGebyr,
+                    ilagtGebyr = request.overstyrtGebyr?.ilagtGebyr ?: (behandling.avslag == null).ifTrue { !beregning.ilagtGebyr },
                     begrunnelse = request.overstyrtGebyr?.begrunnelse ?: it.begrunnelse,
                 )
             }
@@ -74,11 +74,6 @@ class GebyrService(
             feilListe.validerSann(
                 request.overstyrtGebyr?.ilagtGebyr == null,
                 "Kan ikke sette gebyr til samme som beregnet gebyr når det ikke er avslag",
-            )
-        } else {
-            feilListe.validerSann(
-                request.overstyrtGebyr?.ilagtGebyr != null,
-                "Må sette gebyr hvis det er avslag",
             )
         }
 
