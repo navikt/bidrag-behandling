@@ -64,7 +64,6 @@ abstract class CommonVedtakTilBehandlingTest {
     lateinit var personConsumer: BidragPersonConsumer
     lateinit var vedtakService: VedtakService
 
-    @MockkBean
     lateinit var beregningService: BeregningService
     lateinit var dtomapper: Dtomapper
     val unleash = FakeUnleash()
@@ -102,7 +101,11 @@ abstract class CommonVedtakTilBehandlingTest {
                 dtomapper,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService)
-
+        beregningService =
+            BeregningService(
+                behandlingService,
+                vedtakGrunnlagMapper,
+            )
         val behandlingTilVedtakMapping =
             BehandlingTilVedtakMapping(
                 sakConsumer,
@@ -123,6 +126,7 @@ abstract class CommonVedtakTilBehandlingTest {
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
+
         unleash.enableAll()
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

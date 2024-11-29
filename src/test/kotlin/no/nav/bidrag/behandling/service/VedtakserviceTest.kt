@@ -121,6 +121,7 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var entityManager: EntityManager
 
     lateinit var vedtakService: VedtakService
+
     lateinit var beregningService: BeregningService
 
     @MockK
@@ -138,6 +139,7 @@ class VedtakserviceTest : TestContainerRunner() {
         stubTokenUtils()
         unleash.enableAll()
         bidragPersonConsumer = stubPersonConsumer()
+
         val personService = PersonService(bidragPersonConsumer)
         val validerBeregning = ValiderBeregning()
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
@@ -149,7 +151,11 @@ class VedtakserviceTest : TestContainerRunner() {
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
-
+        beregningService =
+            BeregningService(
+                behandlingService,
+                vedtakGrunnlagMapper,
+            )
         val dtomapper =
             Dtomapper(
                 tilgangskontrollService,
@@ -338,11 +344,13 @@ class VedtakserviceTest : TestContainerRunner() {
             request.stønadsendringListe.shouldHaveSize(1)
             request.engangsbeløpListe shouldHaveSize 3
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 177
+                request.grunnlagListe shouldHaveSize 179
             }
         }
 
         assertSoftly(opprettVedtakRequest) {
+            hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 7
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 2
@@ -354,7 +362,7 @@ class VedtakserviceTest : TestContainerRunner() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 22
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 20
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 2

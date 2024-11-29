@@ -25,7 +25,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljer
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
-import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
@@ -575,18 +574,7 @@ class Dtomapper(
                         roller.filter { it.harGebyrsøknad }.map { rolle ->
                             vedtakGrunnlagMapper
                                 .beregnGebyr(this, rolle)
-                                .let {
-                                    GebyrRolleDto(
-                                        inntekt =
-                                            GebyrRolleDto.GebyrInntektDto(
-                                                skattepliktigInntekt = it.skattepliktigInntekt,
-                                                maksBarnetillegg = it.maksBarnetillegg,
-                                            ),
-                                        manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
-                                        beregnetIlagtGebyr = it.ilagtGebyr,
-                                        rolle = rolle.tilDto(),
-                                    )
-                                }
+                                .tilDto(rolle)
                         },
                     valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
                 ),

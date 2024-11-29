@@ -203,7 +203,7 @@ class VedtakGrunnlagMapper(
                         byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     )
                 TypeBehandling.BIDRAG -> {
-                    grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true) + byggGrunnlagManueltOverstyrtGebyr())
+                    grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true))
                 }
                 else -> {}
             }
@@ -220,9 +220,6 @@ class VedtakGrunnlagMapper(
                 if (validering.run { tilSærbidragAvslagskode() } == Resultatkode.ALLE_UTGIFTER_ER_FORELDET) {
                     grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
                 }
-            }
-            TypeBehandling.BIDRAG -> {
-                grunnlagListe.addAll(byggGrunnlagManueltOverstyrtGebyr())
             }
 
             else -> {}

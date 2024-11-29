@@ -100,12 +100,15 @@ class BehandlingTilVedtakMapping(
         }
     }
 
+    private fun Behandling.byggGrunnlagForGebyr(): Set<GrunnlagDto> = byggGrunnlagManueltOverstyrtGebyr()
+
     private fun Behandling.mapEngangsbeløpGebyr(grunnlagsliste: List<GrunnlagDto>): GebyrResulat {
         val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
+        val grunnlagslisteGebyr = grunnlagsliste + byggGrunnlagForGebyr()
         val engangsbeløpListe =
             listOfNotNull(
                 bidragspliktig!!.harGebyrsøknad.ifTrue {
-                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagsliste)
+                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyr)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_SKYLDNER,
@@ -124,7 +127,7 @@ class BehandlingTilVedtakMapping(
                     )
                 },
                 bidragsmottaker!!.harGebyrsøknad.ifTrue {
-                    val beregning = mapper.beregnGebyr(this, bidragsmottaker!!, grunnlagsliste)
+                    val beregning = mapper.beregnGebyr(this, bidragsmottaker!!, grunnlagslisteGebyr)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_MOTTAKER,
@@ -182,7 +185,8 @@ class BehandlingTilVedtakMapping(
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val grunnlagListe = byggGrunnlagGenereltAvslag()
-            val resultatEngangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
+            val grunnlagslisteGebyr = byggGrunnlagForGebyr()
+            val resultatEngangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList() + grunnlagslisteGebyr)
 
             return byggOpprettVedtakRequestObjekt()
                 .copy(
