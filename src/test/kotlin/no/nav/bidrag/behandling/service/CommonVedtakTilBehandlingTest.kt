@@ -99,6 +99,7 @@ abstract class CommonVedtakTilBehandlingTest {
                 personRepository,
                 notatService,
                 dtomapper,
+                personService,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService)
         beregningService =

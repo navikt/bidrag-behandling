@@ -170,6 +170,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 personRepository,
                 notatService,
                 dtomapper,
+                personService,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService)
 

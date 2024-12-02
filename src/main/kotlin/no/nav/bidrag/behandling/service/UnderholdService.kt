@@ -38,6 +38,7 @@ class UnderholdService(
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
     private val dtomapper: Dtomapper,
+    private val personService: PersonService,
 ) {
     fun oppdatereBegrunnelse(
         behandling: Behandling,
@@ -118,7 +119,7 @@ class UnderholdService(
         behandling: Behandling,
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
-        gjelderBarn.validere(behandling)
+        gjelderBarn.validere(behandling, personService)
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
