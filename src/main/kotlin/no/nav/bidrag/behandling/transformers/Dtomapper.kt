@@ -117,7 +117,8 @@ class Dtomapper(
     fun tilDto(
         behandling: Behandling,
         inkluderHistoriskeInntekter: Boolean = false,
-    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter)
+        lesemodus: Boolean = false,
+    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter, lesemodus)
 
     fun tilUnderholdDto(underholdskostnad: Underholdskostnad) = underholdskostnad.tilDto()
 
@@ -545,9 +546,10 @@ class Dtomapper(
     private fun Behandling.tilDto(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
         inkluderHistoriskeInntekter: Boolean,
+        lesemodus: Boolean = false,
     ): BehandlingDtoV2 {
         val kanIkkeBehandlesBegrunnelse =
-            validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
+            if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
         return BehandlingDtoV2(
             id = id!!,
