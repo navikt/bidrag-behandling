@@ -124,6 +124,7 @@ class UnderholdServiceTest {
                 personRepository,
                 notatService,
                 dtomapper,
+                personService,
             )
 
         stubUnderholdskostnadRepository(underholdskostnadRepository)
@@ -390,6 +391,31 @@ class UnderholdServiceTest {
 
             // så
             respons.statusCode shouldBe HttpStatus.CONFLICT
+        }
+
+        @Test
+        open fun `feil dersom barns personident ikke finnes`() {
+            // gitt
+            val personidentBarn = "12345678910"
+            every { personConsumer.hentPerson(personidentBarn) }.throws(HttpClientErrorException(HttpStatus.NOT_FOUND))
+
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val request = BarnDto(personident = Personident(personidentBarn))
+
+            // hvis
+            val respons =
+                assertFailsWith<HttpClientErrorException> {
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
+                }
+
+            // så
+            respons.statusCode shouldBe HttpStatus.BAD_REQUEST
         }
     }
 

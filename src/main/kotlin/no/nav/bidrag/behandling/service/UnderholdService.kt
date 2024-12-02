@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
@@ -26,7 +27,9 @@ import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
@@ -38,6 +41,7 @@ class UnderholdService(
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
     private val dtomapper: Dtomapper,
+    private val personService: PersonService,
 ) {
     fun oppdatereBegrunnelse(
         behandling: Behandling,
@@ -118,7 +122,7 @@ class UnderholdService(
         behandling: Behandling,
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
-        gjelderBarn.validere(behandling)
+        gjelderBarn.validere(behandling, personService)
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
