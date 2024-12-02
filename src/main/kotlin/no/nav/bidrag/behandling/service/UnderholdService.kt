@@ -58,6 +58,12 @@ class UnderholdService(
             }
         }
 
+        notatService.sletteNotat(
+            behandling,
+            Notattype.UNDERHOLDSKOSTNAD,
+            rolleSøknadsbarn ?: behandling.bidragsmottaker!!,
+        )
+
         notatService.oppdatereNotat(
             behandling,
             Notattype.UNDERHOLDSKOSTNAD,
