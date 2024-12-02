@@ -24,7 +24,6 @@ import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubPersonConsumer
 import stubPersonRepository

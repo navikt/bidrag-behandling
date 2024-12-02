@@ -25,7 +25,10 @@ fun OppdatereUnderholdRequest.validere() {
     }
 }
 
-fun BarnDto.validere(behandling: Behandling, personService: PersonService) {
+fun BarnDto.validere(
+    behandling: Behandling,
+    personService: PersonService,
+) {
     if ((navn.isNullOrBlank() || fødselsdato == null) && (personident == null || personident.verdi.isEmpty())) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
