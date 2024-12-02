@@ -568,20 +568,7 @@ class Dtomapper(
             saksnummer = saksnummer,
             søknadsid = soknadsid,
             behandlerenhet = behandlerEnhet,
-            gebyr =
-                if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
-                    GebyrDto(
-                        gebyrRoller =
-                            roller.filter { it.harGebyrsøknad }.map { rolle ->
-                                vedtakGrunnlagMapper
-                                    .beregnGebyr(this, rolle)
-                                    .tilDto(rolle)
-                            },
-                        valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
-                    )
-                } else {
-                    null
-                },
+            gebyr = mapGebyr(),
             roller =
                 roller.map { it.tilDto() }.toSet(),
             søknadRefId = soknadRefId,
@@ -616,6 +603,21 @@ class Dtomapper(
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
         )
     }
+
+    fun Behandling.mapGebyr() =
+        if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
+            GebyrDto(
+                gebyrRoller =
+                    roller.filter { it.harGebyrsøknad }.map { rolle ->
+                        vedtakGrunnlagMapper
+                            .beregnGebyr(this, rolle)
+                            .tilDto(rolle)
+                    },
+                valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
+            )
+        } else {
+            null
+        }
 
     fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
         BeregnApi()
@@ -690,7 +692,7 @@ class Dtomapper(
                 ),
         )
 
-    private fun Behandling.tilBeregnetBoforhold() =
+    fun Behandling.tilBeregnetBoforhold() =
         if (tilType() == TypeBehandling.BIDRAG) {
             try {
                 BeregnApi().beregnBoforhold(

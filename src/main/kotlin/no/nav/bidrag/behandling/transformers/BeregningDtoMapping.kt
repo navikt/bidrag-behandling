@@ -84,6 +84,7 @@ fun BeregnGebyrResultat.tilDto(rolle: Rolle) =
             ),
         manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
         beregnetIlagtGebyr = ilagtGebyr,
+        beløpGebyrsats = beløpGebyrsats,
         rolle = rolle.tilDto(),
     )
 

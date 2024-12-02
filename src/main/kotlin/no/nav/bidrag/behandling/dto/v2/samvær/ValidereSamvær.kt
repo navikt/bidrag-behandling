@@ -57,7 +57,11 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
         ingenLøpendeSamvær = perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null,
         overlappendePerioder = perioder.finnOverlappendePerioder(),
         manglerSamvær = perioder.isEmpty(),
-        hullIPerioder = perioder.map { it.tilDatoperiode() }.finnHullIPerioder(behandling.virkningstidspunktEllerSøktFomDato),
+        hullIPerioder =
+            perioder.map { it.tilDatoperiode() }.finnHullIPerioder(behandling.virkningstidspunktEllerSøktFomDato).filter {
+                it.til !=
+                    null
+            },
     )
 }
 
