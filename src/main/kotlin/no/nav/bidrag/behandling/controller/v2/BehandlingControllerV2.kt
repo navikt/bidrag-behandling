@@ -81,7 +81,7 @@ class BehandlingControllerV2(
         val resultat =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return dtomapper.tilDto(resultat, inkluderHistoriskeInntekter)
+        return dtomapper.tilDto(resultat, inkluderHistoriskeInntekter, true)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")

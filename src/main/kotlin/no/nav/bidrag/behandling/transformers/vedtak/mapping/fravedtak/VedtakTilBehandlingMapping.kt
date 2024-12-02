@@ -375,7 +375,7 @@ class VedtakTilBehandlingMapping(
     ): MutableSet<Samvær> =
         filtrerBasertPåEgenReferanse(
             Grunnlagstype.SAMVÆRSPERIODE,
-        ).groupBy { it.gjelderReferanse }
+        ).groupBy { it.gjelderBarnReferanse }
             .map { (gjelderReferanse, perioder) ->
                 val person = hentPersonMedReferanse(gjelderReferanse)!!
                 val samvær =

@@ -252,7 +252,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(samvær) {
             size shouldBe 1
             val samværBarn = samvær.first()
-            samværBarn.rolle.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
+            samværBarn.rolle.rolletype shouldBe Rolletype.BARN
             samværBarn.perioder shouldHaveSize 4
             assertSoftly(samværBarn.perioder.first()) {
                 samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
