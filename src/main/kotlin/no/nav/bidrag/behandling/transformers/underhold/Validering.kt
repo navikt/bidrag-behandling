@@ -74,7 +74,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
 
     when (this.type) {
         Underholdselement.BARN -> {
-            val rolle = underhold.person.rolle.firstOrNull()
+            val rolle = underhold.barnetsRolleIBehandlingen
             if (rolle != null) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,

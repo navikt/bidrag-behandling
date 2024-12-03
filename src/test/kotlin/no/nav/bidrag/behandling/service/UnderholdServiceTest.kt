@@ -440,10 +440,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -497,10 +494,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -560,10 +554,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -625,10 +616,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -694,10 +682,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -755,10 +740,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
 
                 underholdskostnad.shouldNotBeNull()
@@ -825,10 +807,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -866,10 +845,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 

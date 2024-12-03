@@ -23,7 +23,7 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
 
 fun List<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = map { it.tilStønadTilBarnetilsynDto() }.toSet()
 
-fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.person.rolle.isEmpty() } != null
+fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
 
 fun BarnDto.annetBarnMedSammeNavnOgFødselsdatoEksistererFraFør(behandling: Behandling) =
     behandling.underholdskostnader

@@ -90,7 +90,7 @@ data class ValideringsfeilUnderhold(
                 navn = underholdskostnad!!.person.navn,
                 ident = underholdskostnad.person.ident,
                 fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
-                medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
+                medIBehandling = underholdskostnad.barnetsRolleIBehandlingen != null,
             )
 
     data class UnderholdBarnDto(

@@ -46,6 +46,8 @@ open class Underholdskostnad(
     )
     open val faktiskeTilsynsutgifter: MutableSet<FaktiskTilsynsutgift> = mutableSetOf(),
 ) {
+    val barnetsRolleIBehandlingen get() = person.rolle.filter { behandling.id == it.behandling.id }.firstOrNull()
+
     override fun toString(): String =
         "Underholdskostnad(id=$id, behandling=${behandling.id}, person=${person.id}, harTilsynsordning=$harTilsynsordning, faktiskeTilsynsutgifter=$faktiskeTilsynsutgifter, barnetilsyn=$barnetilsyn, tilleggsstønad=$tilleggsstønad)"
 }
