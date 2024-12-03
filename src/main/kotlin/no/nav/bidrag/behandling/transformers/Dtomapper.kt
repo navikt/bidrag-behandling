@@ -171,7 +171,7 @@ class Dtomapper(
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
-        val rolleSøknadsbarn = this.person.rolle.firstOrNull()
+        val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,

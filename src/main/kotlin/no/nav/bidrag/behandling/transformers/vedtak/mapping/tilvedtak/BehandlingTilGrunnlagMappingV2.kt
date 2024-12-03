@@ -307,7 +307,7 @@ class BehandlingTilGrunnlagMappingV2(
             underholdskostnader
                 .flatMap { u ->
                     u.faktiskeTilsynsutgifter.map {
-                        val underholdRolle = u.person.rolle.find { it.behandling.id == id }
+                        val underholdRolle = u.barnetsRolleIBehandlingen
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)
