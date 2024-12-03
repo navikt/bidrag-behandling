@@ -2,10 +2,18 @@ package no.nav.bidrag.behandling.transformers.underhold
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
+import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
+import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -66,3 +74,79 @@ fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad) =
                 else -> null
             },
     )
+
+fun Set<Underholdskostnad>.justerePerioderEtterVirkningsdato() = forEach { it.justerePerioder() }
+
+fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overskriveAktiverte: Boolean = true) {
+    val barnetilsyn = konvertereData<MutableSet<BarnetilsynGrunnlagDto>>()!!
+
+    val virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+
+    barnetilsyn
+        .groupBy { it.barnPersonId }
+        .forEach { (gjelder, perioder) ->
+            perioder
+                .filter { it.periodeFra < virkningstidspunkt }
+                .forEach { periode ->
+                    if (virkningstidspunkt >= periode.periodeTil) {
+                        barnetilsyn.remove(periode)
+                    } else {
+                        barnetilsyn.add(periode.copy(periodeFra = virkningstidspunkt))
+                        barnetilsyn.remove(periode)
+                    }
+                }
+
+            behandling.overskriveBearbeidaBarnetilsynsgrunnlag(gjelder, perioder, overskriveAktiverte)
+        }
+}
+
+private fun Underholdskostnad.justerePerioder() {
+    val virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+
+    barnetilsyn.filter { it.fom < virkningstidspunkt }.forEach { periode ->
+        if (periode.tom != null && virkningstidspunkt >= periode.tom) {
+            barnetilsyn.remove(periode)
+        } else {
+            periode.fom = virkningstidspunkt
+        }
+    }
+
+    faktiskeTilsynsutgifter.filter { it.fom < virkningstidspunkt }.forEach { periode ->
+        if (periode.tom != null && virkningstidspunkt >= periode.tom) {
+            faktiskeTilsynsutgifter.remove(periode)
+        } else {
+            periode.fom = virkningstidspunkt
+        }
+    }
+
+    tilleggsstønad.filter { it.fom < virkningstidspunkt }.forEach { periode ->
+        if (periode.tom != null && virkningstidspunkt >= periode.tom) {
+            tilleggsstønad.remove(periode)
+        } else {
+            periode.fom = virkningstidspunkt
+        }
+    }
+}
+
+private fun Behandling.overskriveBearbeidaBarnetilsynsgrunnlag(
+    gjelder: String?,
+    perioder: List<BarnetilsynGrunnlagDto>,
+    overskriveAktiverte: Boolean = true,
+) {
+    val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
+
+    val grunnlagSomSkalOverskrives =
+        if (overskriveAktiverte) {
+            henteAktiverteGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, true),
+                grunnlagsdatatype.innhentesForRolle(this)!!,
+            )
+        } else {
+            henteUaktiverteGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, true),
+                grunnlagsdatatype.innhentesForRolle(this)!!,
+            )
+        }
+
+    grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let { it.data = tilJson(perioder) }
+}

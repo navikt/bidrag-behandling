@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.http.HttpStatus
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
 import stubUnderholdskostnadRepository
@@ -861,6 +862,20 @@ class UnderholdServiceTest {
                     tilleggsstønad.shouldBeEmpty()
                 }
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("Tester justering av perioder i fbm endring av virkningsdato")
+    open inner class OppdatereVirkningsdato {
+        @Test
+        @Transactional
+        open fun `skal justere perioder etter virkningsdato`() {
+            // gitt
+
+            // hvis
+
+            // så
         }
     }
 }

@@ -47,6 +47,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.web.mock.stubSjablonService
+import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -86,6 +87,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværskl
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -721,6 +723,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             behandling.inntekter.addAll(inntekterBp)
             behandling.inntekter.addAll(inntekterBm)
         }
+
         else -> {}
     }
 
@@ -838,7 +841,11 @@ fun opprettAlleAktiveGrunnlagFraFil(
             grunnlagListe.addAll(
                 listOf(
                     opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBP),
-                    opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN),
+                    opprettGrunnlagFraFil(
+                        behandling,
+                        filJsonString,
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    ),
                 ).flatten(),
             )
         }
@@ -1618,6 +1625,28 @@ fun lagVedtaksdata(filnavn: String): VedtakDto {
     return grunnlag
 }
 
+fun oppretteBarnetilsynGrunnlagDto(
+    behandling: Behandling,
+    beløp: Int = 4000,
+    periodeFra: LocalDate? = null,
+    periodeFraAntallMndTilbake: Long = 1,
+    periodeTil: LocalDate? = null,
+    periodeTilAntallMndTilbake: Long? = null,
+    barnPersonId: String =
+        behandling.søknadsbarn
+            .first()
+            .personident!!
+            .verdi,
+) = BarnetilsynGrunnlagDto(
+    beløp = beløp,
+    periodeFra = periodeFra ?: LocalDate.now().minusMonths(periodeFraAntallMndTilbake),
+    periodeTil = periodeTil ?: periodeTilAntallMndTilbake?.let { LocalDate.now().minusMonths(it) },
+    skolealder = null,
+    tilsynstype = null,
+    barnPersonId = barnPersonId,
+    partPersonId = behandling.bidragsmottaker!!.personident!!.verdi,
+)
+
 fun opprettLøpendeBidragGrunnlag(
     gjelderBarn: TestDataPerson,
     stønadstype: Stønadstype,
@@ -1788,7 +1817,11 @@ fun Behandling.leggTilSamvær(
             samvær = samværBarn,
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
-            samværsklasse = samværsklasse ?: BeregnSamværsklasseApi(stubSjablonService()).beregnSamværsklasse(samværsklasseDetaljer).delberegningSamværsklasse.samværsklasse,
+            samværsklasse =
+                samværsklasse ?: BeregnSamværsklasseApi(stubSjablonService())
+                    .beregnSamværsklasse(
+                        samværsklasseDetaljer,
+                    ).delberegningSamværsklasse.samværsklasse,
             beregningJson = if (medBeregning) commonObjectmapper.writeValueAsString(samværsklasseDetaljer) else null,
         ),
     )
@@ -1821,4 +1854,153 @@ fun Behandling.leggTilBarnetillegg(
         ),
     )
     inntekter.add(inntekt)
+}
+
+fun Behandling.leggeTilGjeldendeBarnetillegg() {
+    this.grunnlag.add(
+        Grunnlag(
+            aktiv = LocalDateTime.now().minusDays(5),
+            behandling = this,
+            innhentet = LocalDateTime.now().minusDays(5),
+            erBearbeidet = false,
+            rolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!,
+            type = Grunnlagsdatatype.BARNETILSYN,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    setOf(
+                        oppretteBarnetilsynGrunnlagDto(this, periodeFraAntallMndTilbake = 13),
+                    ),
+                ),
+        ),
+    )
+
+    this.grunnlag.add(
+        Grunnlag(
+            aktiv = LocalDateTime.now().minusDays(5),
+            behandling = this,
+            innhentet = LocalDateTime.now().minusDays(5),
+            gjelder = testdataBarn1.ident,
+            erBearbeidet = true,
+            rolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!,
+            type = Grunnlagsdatatype.BARNETILSYN,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    setOf(
+                        oppretteBarnetilsynGrunnlagDto(this, periodeFraAntallMndTilbake = 13),
+                    ),
+                ),
+        ),
+    )
+}
+
+fun Behandling.leggeTilNyttBarnetilsyn(
+    innhentet: LocalDateTime = LocalDateTime.now(),
+) {
+    val barnetilsynInnhentesForRolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!
+
+    this.grunnlag.add(
+        Grunnlag(
+            aktiv = null,
+            behandling = this,
+            innhentet = innhentet,
+            erBearbeidet = false,
+            rolle = barnetilsynInnhentesForRolle,
+            type = Grunnlagsdatatype.BARNETILSYN,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    setOf(
+                        oppretteBarnetilsynGrunnlagDto(this, barnPersonId = testdataBarn2.ident),
+                        BarnetilsynGrunnlagDto(
+                            beløp = 4500,
+                            periodeFra = LocalDate.now().minusYears(1),
+                            periodeTil = LocalDate.now().minusMonths(6),
+                            skolealder = Skolealder.IKKE_ANGITT,
+                            tilsynstype = Tilsynstype.IKKE_ANGITT,
+                            barnPersonId = testdataBarn1.ident,
+                            partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                        ),
+                        BarnetilsynGrunnlagDto(
+                            beløp = 4600,
+                            periodeFra = LocalDate.now().minusMonths(6),
+                            periodeTil = LocalDate.now().minusMonths(4),
+                            skolealder = Skolealder.OVER,
+                            tilsynstype = Tilsynstype.HELTID,
+                            barnPersonId = testdataBarn1.ident,
+                            partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                        ),
+                        BarnetilsynGrunnlagDto(
+                            beløp = 4700,
+                            periodeFra = LocalDate.now().minusMonths(4),
+                            periodeTil = null,
+                            skolealder = null,
+                            tilsynstype = null,
+                            barnPersonId = testdataBarn1.ident,
+                            partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                        ),
+                    ),
+                ),
+        ),
+    )
+
+    this.grunnlag.add(
+        Grunnlag(
+            aktiv = null,
+            behandling = this,
+            innhentet = innhentet,
+            gjelder = testdataBarn1.ident,
+            erBearbeidet = true,
+            rolle = barnetilsynInnhentesForRolle,
+            type = Grunnlagsdatatype.BARNETILSYN,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    setOf(
+                        BarnetilsynGrunnlagDto(
+                            beløp = 4500,
+                            periodeFra = LocalDate.now().minusYears(1),
+                            periodeTil = LocalDate.now().minusMonths(6),
+                            skolealder = Skolealder.IKKE_ANGITT,
+                            tilsynstype = Tilsynstype.IKKE_ANGITT,
+                            barnPersonId = testdataBarn1.ident,
+                            partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                        ),
+                        BarnetilsynGrunnlagDto(
+                            beløp = 4600,
+                            periodeFra = LocalDate.now().minusMonths(6),
+                            periodeTil = LocalDate.now().minusMonths(4),
+                            skolealder = Skolealder.OVER,
+                            tilsynstype = Tilsynstype.HELTID,
+                            barnPersonId = testdataBarn1.ident,
+                            partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                        ),
+                        BarnetilsynGrunnlagDto(
+                            beløp = 4700,
+                            periodeFra = LocalDate.now().minusMonths(4),
+                            periodeTil = null,
+                            skolealder = null,
+                            tilsynstype = null,
+                            barnPersonId = testdataBarn1.ident,
+                            partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                        ),
+                    ),
+                ),
+        ),
+    )
+
+    this.grunnlag.add(
+        Grunnlag(
+            aktiv = null,
+            behandling = this,
+            innhentet = innhentet,
+            gjelder = testdataBarn2.ident,
+            erBearbeidet = true,
+            rolle = barnetilsynInnhentesForRolle,
+            type = Grunnlagsdatatype.BARNETILSYN,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    setOf(
+                        oppretteBarnetilsynGrunnlagDto(this, barnPersonId = testdataBarn2.ident),
+                    ),
+                ),
+        ),
+    )
 }

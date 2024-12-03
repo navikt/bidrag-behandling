@@ -5,11 +5,14 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
@@ -454,3 +457,23 @@ fun Inntekt.erDetSammeSom(grunnlag: SummertÅrsinntekt): Boolean {
         opprinneligPeriode!! == grunnlag.periode
     }
 }
+
+fun Behandling.henteUaktiverteGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolle: Rolle,
+): Set<Grunnlag> =
+    grunnlag
+        .hentAlleIkkeAktiv()
+        .filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet()
+
+fun Behandling.henteAktiverteGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolle: Rolle,
+): Set<Grunnlag> =
+    grunnlag
+        .hentAlleAktiv()
+        .filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet()
