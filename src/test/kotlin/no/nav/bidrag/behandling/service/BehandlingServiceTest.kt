@@ -794,10 +794,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 1
             opprettetBehandling.underholdskostnader shouldHaveSize 1
             opprettetBehandling.underholdskostnader.filter {
-                Rolletype.BARN ==
-                    it.person.rolle
-                        .first()
-                        .rolletype
+                Rolletype.BARN == it.barnetsRolleIBehandlingen?.rolletype
             } shouldHaveSize 1
             opprettetBehandling.underholdskostnader.filter { it.person.ident != null } shouldHaveSize 1
         }
@@ -1407,6 +1404,19 @@ class BehandlingServiceTest : TestContainerRunner() {
                 mutableSetOf(
                     Rolle(
                         behandling,
+                        ident = testdataBP.ident,
+                        rolletype = Rolletype.BIDRAGSPLIKTIG,
+                        fødselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                    Rolle(
+                        behandling,
+                        ident = testdataBM.ident,
+                        rolletype = Rolletype.BIDRAGSMOTTAKER,
+                        fødselsdato = LocalDate.parse("2021-01-01"),
+                        harGebyrsøknad = true,
+                    ),
+                    Rolle(
+                        behandling,
                         ident = identOriginaltMedISaken,
                         rolletype = Rolletype.BARN,
                         fødselsdato = LocalDate.parse("2021-01-01"),
@@ -1441,6 +1451,24 @@ class BehandlingServiceTest : TestContainerRunner() {
                     behandling.id!!,
                     listOf(
                         OpprettRolleDto(
+                            Rolletype.BIDRAGSPLIKTIG,
+                            Personident(testdataBP.ident),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            null,
+                            false,
+                            harGebyrsøknad = true,
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BIDRAGSMOTTAKER,
+                            Personident(testdataBM.ident),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            null,
+                            false,
+                            harGebyrsøknad = false,
+                        ),
+                        OpprettRolleDto(
                             Rolletype.BARN,
                             Personident(identOriginaltMedISaken),
                             null,
@@ -1473,6 +1501,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 )
             val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+            behandlingEtter.bidragspliktig!!.harGebyrsøknad shouldBe true
+            behandlingEtter.bidragsmottaker!!.harGebyrsøknad shouldBe false
             behandlingEtter.søknadsbarn shouldHaveSize 3
             behandlingEtter.søknadsbarn.find { it.ident == "1111234" }!!.innbetaltBeløp shouldBe BigDecimal("100.254")
             behandlingEtter.husstandsmedlem shouldHaveSize 3

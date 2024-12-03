@@ -34,6 +34,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -67,6 +68,9 @@ class UnderholdServiceTest {
 
     @MockkBean
     lateinit var personConsumer: BidragPersonConsumer
+
+    @MockkBean
+    lateinit var behandlingService: BehandlingService
 
     @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
@@ -105,8 +109,8 @@ class UnderholdServiceTest {
                 ValiderBeregning(),
                 evnevurderingService,
                 personService,
+                BeregnGebyrApi(stubSjablonService()),
             )
-
         dtomapper =
             Dtomapper(
                 tilgangskontrollService,
@@ -121,6 +125,7 @@ class UnderholdServiceTest {
                 personRepository,
                 notatService,
                 dtomapper,
+                personService,
             )
 
         stubUnderholdskostnadRepository(underholdskostnadRepository)
@@ -388,6 +393,31 @@ class UnderholdServiceTest {
             // så
             respons.statusCode shouldBe HttpStatus.CONFLICT
         }
+
+        @Test
+        open fun `feil dersom barns personident ikke finnes`() {
+            // gitt
+            val personidentBarn = "12345678910"
+            every { personConsumer.hentPerson(personidentBarn) }.throws(HttpClientErrorException(HttpStatus.NOT_FOUND))
+
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val request = BarnDto(personident = Personident(personidentBarn))
+
+            // hvis
+            val respons =
+                assertFailsWith<HttpClientErrorException> {
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
+                }
+
+            // så
+            respons.statusCode shouldBe HttpStatus.BAD_REQUEST
+        }
     }
 
     @Nested
@@ -411,10 +441,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -468,10 +495,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -531,10 +555,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -596,10 +617,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -665,10 +683,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -726,10 +741,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
 
                 underholdskostnad.shouldNotBeNull()
@@ -796,10 +808,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -837,10 +846,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 

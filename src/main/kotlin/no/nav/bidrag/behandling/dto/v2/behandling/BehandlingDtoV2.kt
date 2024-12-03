@@ -10,6 +10,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.gebyr.ManueltOverstyrGebyrDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
@@ -116,6 +118,7 @@ data class BehandlingDtoV2(
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
+    val gebyr: GebyrDto? = null,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
@@ -126,6 +129,26 @@ data class BehandlingDtoV2(
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
+}
+
+data class GebyrDto(
+    val gebyrRoller: List<GebyrRolleDto>,
+    val valideringsfeil: List<GebyrValideringsfeilDto>? = null,
+)
+
+data class GebyrRolleDto(
+    val inntekt: GebyrInntektDto,
+    val beløpGebyrsats: BigDecimal,
+    val manueltOverstyrtGebyr: ManueltOverstyrGebyrDto? = null,
+    val beregnetIlagtGebyr: Boolean,
+    val rolle: RolleDto,
+) {
+    data class GebyrInntektDto(
+        val skattepliktigInntekt: BigDecimal,
+        val maksBarnetillegg: BigDecimal? = null,
+    ) {
+        val totalInntekt get() = skattepliktigInntekt + (maksBarnetillegg ?: BigDecimal.ZERO)
+    }
 }
 
 data class PersoninfoDto(

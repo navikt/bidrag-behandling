@@ -393,6 +393,7 @@ fun oppretteBehandlingRoller(
                 behandling = behandling,
                 fødselsdato = testdataBM.fødselsdato,
                 id = if (generateId) (1).toLong() else null,
+                harGebyrsøknad = typeBehandling == TypeBehandling.BIDRAG,
             ),
             Rolle(
                 ident = testdataBarn1.ident,
@@ -422,6 +423,7 @@ fun oppretteBehandlingRoller(
                 behandling = behandling,
                 fødselsdato = testdataBP.fødselsdato,
                 id = if (generateId) (4).toLong() else null,
+                harGebyrsøknad = typeBehandling == TypeBehandling.BIDRAG,
             ),
         )
     }

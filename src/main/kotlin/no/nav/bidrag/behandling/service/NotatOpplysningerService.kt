@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
@@ -72,6 +73,8 @@ import no.nav.bidrag.transport.notat.NotatBoforholdDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBarnetilleggDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragsevneDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto
+import no.nav.bidrag.transport.notat.NotatGebyrRolleDto
+import no.nav.bidrag.transport.notat.NotatGebyrRolleDto.NotatGebyrInntektDto
 import no.nav.bidrag.transport.notat.NotatInntektDto
 import no.nav.bidrag.transport.notat.NotatInntekterDto
 import no.nav.bidrag.transport.notat.NotatInntektspostDto
@@ -282,11 +285,32 @@ class NotatOpplysningerService(
                             )
                         },
                 ),
+            gebyr =
+                mapper.run { behandling.mapGebyr() }?.gebyrRoller?.map {
+                    NotatGebyrRolleDto(
+                        rolle = it.rolle.tilNotatRolle(),
+                        inntekt =
+                            NotatGebyrInntektDto(
+                                skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
+                                maksBarnetillegg = it.inntekt.maksBarnetillegg,
+                            ),
+                        beregnetIlagtGebyr = it.beregnetIlagtGebyr,
+                        beløpGebyrsats = it.beløpGebyrsats,
+                        manueltOverstyrtGebyr =
+                            it.manueltOverstyrtGebyr?.let {
+                                NotatGebyrRolleDto.NotatManueltOverstyrGebyrDto(
+                                    ilagtGebyr = it.ilagtGebyr,
+                                    begrunnelse = it.begrunnelse,
+                                )
+                            },
+                    )
+                },
             boforhold =
                 NotatBoforholdDto(
                     begrunnelse = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     andreVoksneIHusstanden = mapper.tilAndreVoksneIHusstanden(behandling),
+                    beregnetBoforhold = mapper.run { behandling.tilBeregnetBoforhold() },
                     barn =
                         behandling.husstandsmedlem.barn
                             .toSet()
@@ -626,6 +650,14 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         begrunnelse = tilNotatVirkningstidspunkt(),
+    )
+
+private fun RolleDto.tilNotatRolle() =
+    NotatPersonDto(
+        rolle = rolletype,
+        navn = navn,
+        fødselsdato = fødselsdato,
+        ident = ident?.let { Personident(ident) },
     )
 
 private fun PersoninfoDto.tilNotatRolle(behandling: Behandling) =

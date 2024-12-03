@@ -57,6 +57,7 @@ class UnderholdService(
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
     private val dtomapper: Dtomapper,
+    private val personService: PersonService,
 ) {
     fun oppdatereBegrunnelse(
         behandling: Behandling,
@@ -64,11 +65,12 @@ class UnderholdService(
     ) {
         val rolleSøknadsbarn =
             request.underholdsid?.let {
-                henteOgValidereUnderholdskostnad(behandling, it).person.rolle.firstOrNull()
+                henteOgValidereUnderholdskostnad(behandling, it).barnetsRolleIBehandlingen
             }
 
         if (request.underholdsid == null) {
-            val underholdHarAndreBarn = behandling.underholdskostnader.find { it.person.rolle.isEmpty() } != null
+            val underholdHarAndreBarn =
+                behandling.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
             if (!underholdHarAndreBarn) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
@@ -114,7 +116,7 @@ class UnderholdService(
     ): UnderholdDto {
         request.validere()
         request.harTilsynsordning?.let { underholdskostnad.harTilsynsordning = it }
-        val rolleSøknadsbarn = underholdskostnad.person.rolle.firstOrNull()
+        val rolleSøknadsbarn = underholdskostnad.barnetsRolleIBehandlingen
         request.begrunnelse?.let {
             notatService.oppdatereNotat(
                 underholdskostnad.behandling,
@@ -131,7 +133,7 @@ class UnderholdService(
         behandling: Behandling,
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
-        gjelderBarn.validere(behandling)
+        gjelderBarn.validere(behandling, personService)
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
@@ -394,7 +396,7 @@ class UnderholdService(
     ): UnderholdDto? {
         behandling.underholdskostnader.remove(underholdskostnad)
         underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
-        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.person.rolle.isEmpty()) {
+        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.barnetsRolleIBehandlingen == null) {
             personRepository.deleteById(underholdskostnad.person.id!!)
             if (!behandling.harAndreBarnIUnderhold()) {
                 notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)

@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
+import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
@@ -28,6 +29,7 @@ import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -67,6 +69,9 @@ class DtoMapperTest : TestContainerRunner() {
     lateinit var validering: ValiderBeregning
 
     @MockK
+    lateinit var behandlingService: BehandlingService
+
+    @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
     @MockkBean
@@ -87,6 +92,7 @@ class DtoMapperTest : TestContainerRunner() {
                 ValiderBeregning(),
                 evnevurderingService,
                 personService,
+                BeregnGebyrApi(stubSjablonService()),
             )
         dtomapper =
             Dtomapper(
