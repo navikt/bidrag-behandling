@@ -243,7 +243,7 @@ class VedtakTilBehandlingMapping(
                             Underholdskostnad(
                                 id = index.toLong(),
                                 behandling = behandling,
-                                person = Person(ident = rolle.ident!!, rolle = mutableSetOf(rolle)),
+                                person = Person(id = index.toLong(), ident = rolle.ident!!, rolle = mutableSetOf(rolle)),
                             )
                         } else {
                             underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = Personident(rolle.ident!!)))
@@ -296,6 +296,7 @@ class VedtakTilBehandlingMapping(
                                 behandling = behandling,
                                 person =
                                     Person(
+                                        id = 1,
                                         ident = gjelderBarn.ident?.verdi,
                                         navn = gjelderBarn.navn,
                                         fødselsdato = gjelderBarn.fødselsdato,
