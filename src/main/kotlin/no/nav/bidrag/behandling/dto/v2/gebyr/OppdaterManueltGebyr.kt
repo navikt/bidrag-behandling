@@ -5,12 +5,16 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 
 data class OppdaterManueltGebyrDto(
     val rolleId: Long,
-    val overstyrtGebyr: ManueltOverstyrGebyrDto?,
+    val overstyrGebyr: Boolean = false,
+    val begrunnelse: String? = null,
+    @Deprecated("Bruk begrunnelse")
+    val overstyrtGebyr: ManueltOverstyrGebyrDto? = null,
 )
 
 data class OppdaterGebyrResponsDto(
     val rolle: RolleDto,
-    val overstyrtGebyr: ManueltOverstyrGebyrDto?,
+    val overstyrGebyr: Boolean = false,
+    val begrunnelse: String? = null,
 )
 
 data class ManueltOverstyrGebyrDto(

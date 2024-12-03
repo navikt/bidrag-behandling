@@ -8,9 +8,10 @@ import no.nav.bidrag.behandling.transformers.validerSann
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+
+val defaultIlagtGebyrVedAvslag = false
 
 @Service
 class GebyrService(
@@ -23,16 +24,16 @@ class GebyrService(
             .filter { it.harGebyrsøknad }
             .forEach { rolle ->
                 rolle.manueltOverstyrtGebyr =
-                    (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
-                        it.copy(
-                            overstyrGebyr = behandling.avslag != null,
-                            ilagtGebyr =
-                                (behandling.avslag == null).ifTrue {
-                                    val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                                    !beregning.ilagtGebyr
-                                },
-                        )
-                    }
+                    (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).copy(
+                        overstyrGebyr = false,
+                        ilagtGebyr =
+                            if (behandling.avslag == null) {
+                                val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+                                !beregning.ilagtGebyr
+                            } else {
+                                defaultIlagtGebyrVedAvslag
+                            },
+                    )
             }
     }
 
@@ -49,9 +50,15 @@ class GebyrService(
         rolle.manueltOverstyrtGebyr =
             (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
                 it.copy(
-                    overstyrGebyr = request.overstyrtGebyr != null,
-                    ilagtGebyr = request.overstyrtGebyr?.ilagtGebyr ?: (behandling.avslag == null).ifTrue { !beregning.ilagtGebyr },
-                    begrunnelse = request.overstyrtGebyr?.begrunnelse ?: it.begrunnelse,
+                    overstyrGebyr = request.overstyrGebyr,
+                    ilagtGebyr =
+                        if (behandling.avslag == null) {
+                            request.overstyrGebyr != beregning.ilagtGebyr
+                        } else {
+                            // Default så er det fritatt ved avslag
+                            request.overstyrGebyr != defaultIlagtGebyrVedAvslag
+                        },
+                    begrunnelse = request.begrunnelse ?: it.begrunnelse,
                 )
             }
     }
@@ -69,13 +76,6 @@ class GebyrService(
             rolle.harGebyrsøknad,
             "Kan ikke endre gebyr på en rolle som ikke har gebyrsøknad",
         )
-
-        if (avslag == null) {
-            feilListe.validerSann(
-                request.overstyrtGebyr?.ilagtGebyr == null,
-                "Kan ikke sette gebyr til samme som beregnet gebyr når det ikke er avslag",
-            )
-        }
 
         if (feilListe.isNotEmpty()) {
             ugyldigForespørsel(feilListe.toSet().joinToString("\n"))

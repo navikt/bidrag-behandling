@@ -19,7 +19,6 @@ class GebyrValideringsfeilTest {
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(1)
         resultat.first().manglerBegrunnelse shouldBe true
-        resultat.first().måBestemmeGebyr shouldBe false
     }
 
     @Test
@@ -33,7 +32,6 @@ class GebyrValideringsfeilTest {
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(1)
         resultat.first().manglerBegrunnelse shouldBe true
-        resultat.first().måBestemmeGebyr shouldBe true
     }
 
     @Test

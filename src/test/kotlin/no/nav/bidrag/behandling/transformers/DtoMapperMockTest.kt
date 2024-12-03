@@ -250,6 +250,7 @@ class DtoMapperMockTest {
         )
 
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, null)
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
@@ -259,25 +260,24 @@ class DtoMapperMockTest {
         gebyr.valideringsfeil!!.shouldHaveSize(1)
         assertSoftly(gebyr.valideringsfeil.first()) {
             it.gjelder.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
-            it.måBestemmeGebyr shouldBe true
-            it.manglerBegrunnelse shouldBe false
+            it.manglerBegrunnelse shouldBe true
             it.harFeil shouldBe true
         }
         assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(90000)
             it.inntekt.maksBarnetillegg shouldBe null
             it.inntekt.totalInntekt shouldBe BigDecimal(90000)
+            it.endeligIlagtGebyr shouldBe false
             it.beregnetIlagtGebyr shouldBe false
-            it.manueltOverstyrtGebyr.shouldNotBeNull()
-            it.manueltOverstyrtGebyr.ilagtGebyr shouldBe false
-            it.manueltOverstyrtGebyr.begrunnelse shouldBe "Begrunnelse"
+            it.begrunnelse shouldBe "Begrunnelse"
         }
         assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSPLIKTIG }!!) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(0)
             it.inntekt.maksBarnetillegg shouldBe null
             it.inntekt.totalInntekt shouldBe BigDecimal(0)
             it.beregnetIlagtGebyr shouldBe false
-            it.manueltOverstyrtGebyr.shouldBeNull()
+            it.endeligIlagtGebyr shouldBe true
+            it.begrunnelse shouldBe null
         }
     }
 }

@@ -43,7 +43,8 @@ class GebyrController(
         return behandling.roller.find { it.id == rolleId }!!.let { rolle ->
             OppdaterGebyrResponsDto(
                 rolle.tilDto(),
-                rolle.manueltOverstyrtGebyr?.tilDto(),
+                overstyrGebyr = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true,
+                begrunnelse = if (rolle.manueltOverstyrtGebyr?.overstyrGebyr == true) rolle.manueltOverstyrtGebyr?.begrunnelse else null,
             )
         }
     }

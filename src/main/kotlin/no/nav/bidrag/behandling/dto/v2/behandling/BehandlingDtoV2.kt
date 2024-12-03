@@ -137,6 +137,8 @@ data class GebyrRolleDto(
     val beløpGebyrsats: BigDecimal,
     val manueltOverstyrtGebyr: ManueltOverstyrGebyrDto? = null,
     val beregnetIlagtGebyr: Boolean,
+    val endeligIlagtGebyr: Boolean,
+    val begrunnelse: String? = null,
     val rolle: RolleDto,
 ) {
     data class GebyrInntektDto(

@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
+import no.nav.bidrag.behandling.service.defaultIlagtGebyrVedAvslag
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.gebyr.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -83,7 +84,9 @@ fun BeregnGebyrResultat.tilDto(rolle: Rolle) =
                 maksBarnetillegg = maksBarnetillegg,
             ),
         manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
-        beregnetIlagtGebyr = ilagtGebyr,
+        beregnetIlagtGebyr = if (rolle.behandling.avslag == null) ilagtGebyr else defaultIlagtGebyrVedAvslag,
+        begrunnelse = rolle.manueltOverstyrtGebyr?.begrunnelse,
+        endeligIlagtGebyr = rolle.manueltOverstyrtGebyr?.ilagtGebyr == true,
         beløpGebyrsats = beløpGebyrsats,
         rolle = rolle.tilDto(),
     )
