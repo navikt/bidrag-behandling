@@ -46,7 +46,10 @@ class UnderholdService(
     ) {
         val rolleSøknadsbarn =
             request.underholdsid?.let {
-                henteOgValidereUnderholdskostnad(behandling, it).person.rolle.firstOrNull()
+                henteOgValidereUnderholdskostnad(
+                    behandling,
+                    it,
+                ).person.rolle.filter { it.behandling.id == behandling.id }.firstOrNull()
             }
 
         if (request.underholdsid == null) {
@@ -58,12 +61,6 @@ class UnderholdService(
                 )
             }
         }
-
-        notatService.sletteNotat(
-            behandling,
-            Notattype.UNDERHOLDSKOSTNAD,
-            rolleSøknadsbarn ?: behandling.bidragsmottaker!!,
-        )
 
         notatService.oppdatereNotat(
             behandling,
