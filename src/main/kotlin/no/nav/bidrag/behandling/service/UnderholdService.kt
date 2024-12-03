@@ -225,10 +225,8 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
-                val uSaved =
-                    underholdskostnadRepository
-                        .save(underholdskostnad)
-                uSaved
+                underholdskostnadRepository
+                    .save(underholdskostnad)
                     .faktiskeTilsynsutgifter
                     .sortedBy { it.id }
                     .last()
