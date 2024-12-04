@@ -280,10 +280,10 @@ data class IkkeAktiveInntekter(
     val ingenEndringer
         get() =
             barnetillegg.isEmpty() &&
-                utvidetBarnetrygd.isEmpty() &&
-                kontantstøtte.isEmpty() &&
-                småbarnstillegg.isEmpty() &&
-                årsinntekter.isEmpty()
+                    utvidetBarnetrygd.isEmpty() &&
+                    kontantstøtte.isEmpty() &&
+                    småbarnstillegg.isEmpty() &&
+                    årsinntekter.isEmpty()
 }
 
 data class Grunnlagsinnhentingsfeil(
@@ -384,7 +384,7 @@ data class PeriodeAndreVoksneIHusstanden(
     val totalAntallHusstandsmedlemmer: Int,
     @Schema(
         description =
-            "Detaljer om husstandsmedlemmer som bor hos BP for gjeldende periode. " +
+        "Detaljer om husstandsmedlemmer som bor hos BP for gjeldende periode. " +
                 "Antall hustandsmedlemmer er begrenset til maks 10 personer",
     )
     val husstandsmedlemmer: List<AndreVoksneIHusstandenDetaljerDto> = emptyList(),
@@ -544,26 +544,16 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
 
 fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
     when (this) {
-        Grunnlagsdatatype.BARNETILSYN ->
-            when (this.behandlingstypeMotRolletyper[behandling.tilType()]!!.first()) {
-                Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
-                Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
-                else -> null
+        Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+            val t = this.behandlingstypeMotRolletyper[behandling.tilType()]
+            t?.let {
+                when (it.first()) {
+                    Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
+                    Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
+                    else -> null
+                }
             }
-
-        Grunnlagsdatatype.BOFORHOLD ->
-            when (this.behandlingstypeMotRolletyper[behandling.tilType()]!!.first()) {
-                Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
-                Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
-                else -> null
-            }
-
-        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN ->
-            when (this.behandlingstypeMotRolletyper[behandling.tilType()]!!.first()) {
-                Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
-                Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
-                else -> null
-            }
+        }
 
         else -> null
     }
