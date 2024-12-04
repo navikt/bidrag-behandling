@@ -453,4 +453,49 @@ class InntektServiceMockTest {
         response.beregnetGebyrErEndret shouldBe true
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
     }
+
+    @Test
+    fun `skal ikke oppdatere gebyr ved hvis ingen endring av beregnet gebyr`() {
+        val behandling = oppretteBehandling(1)
+        val virkningstidspunkt = LocalDate.now().plusMonths(4)
+        behandling.virkningstidspunkt = virkningstidspunkt
+        behandling.roller = oppretteBehandlingRoller(behandling, generateId = true)
+
+        behandling.bidragsmottaker!!.harGebyrsøknad = true
+        behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
+            RolleManueltOverstyrtGebyr(
+                overstyrGebyr = true,
+                ilagtGebyr = false,
+                beregnetIlagtGebyr = true,
+            )
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        val forespørselOmOppdateringAvInntekter =
+            OppdatereInntektRequest(
+                oppdatereManuellInntekt =
+                    OppdatereManuellInntekt(
+                        type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                        beløp = BigDecimal(3052003),
+                        datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
+                        datoTom =
+                            LocalDate
+                                .now()
+                                .minusYears(1)
+                                .withMonth(12)
+                                .withDayOfMonth(31),
+                        ident = Personident(behandling.bidragsmottaker!!.ident!!),
+                        gjelderBarn = null,
+                    ),
+            )
+
+        // hvis
+        val response =
+            inntektService.oppdatereInntektManuelt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
+
+        response.beregnetGebyrErEndret shouldBe false
+        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
+        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
+    }
 }

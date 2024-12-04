@@ -10,19 +10,19 @@ import org.junit.jupiter.api.Test
 
 class GebyrValideringsfeilTest {
     @Test
-    fun `skal feile validering hvis ingen begrunnelse for manuelt overstyrt gebyr`() {
+    fun `skal feile validering hvis ingen begrunnelse for overstyrt gebyr`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, null)
+        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, null, true)
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(1)
         resultat.first().manglerBegrunnelse shouldBe true
     }
 
     @Test
-    fun `skal feile validering hvis gebyr ikke satt ved avslag`() {
+    fun `skal feile validering hvis gebyr begrunnelse ikke satt ved avslag`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.bidragspliktig!!.harGebyrsøknad = false

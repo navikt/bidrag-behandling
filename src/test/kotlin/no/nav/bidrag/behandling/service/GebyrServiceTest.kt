@@ -207,7 +207,21 @@ class GebyrServiceTest {
     fun `skal oppdatere gebyr når det endres til ikke avslag`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
+        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(false, true, "Begrunnelse", true)
+        gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
+
+        bm.manueltOverstyrtGebyr.shouldNotBeNull()
+        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
+    }
+
+    @Test
+    fun `skal oppdatere gebyr når det endres til ikke avslag hvis overstyrt`() {
+        val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
+        val bm = behandling.bidragsmottaker!!
+        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
@@ -228,6 +242,40 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
         bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
+        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
+    }
+
+    @Test
+    fun `skal rekalkulere men ikke oppdatere gebyr når beregnet verdi er samme`() {
+        val behandling = opprettBehandlingForGebyrberegning(BigDecimal(10000000))
+        val bp = behandling.bidragspliktig
+        bp!!.harGebyrsøknad = false
+        val bm = behandling.bidragsmottaker!!
+        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        val resultat = gebyrService.rekalkulerGebyr(behandling)
+
+        resultat shouldBe false
+        bm.manueltOverstyrtGebyr.shouldNotBeNull()
+        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
+        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
+        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
+    }
+
+    @Test
+    fun `skal rekalkulere og oppdatere gebyr når beregnet verdi er endret`() {
+        val behandling = opprettBehandlingForGebyrberegning(BigDecimal(1000))
+        val bp = behandling.bidragspliktig
+        bp!!.harGebyrsøknad = false
+        val bm = behandling.bidragsmottaker!!
+        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        val resultat = gebyrService.rekalkulerGebyr(behandling)
+
+        resultat shouldBe true
+        bm.manueltOverstyrtGebyr.shouldNotBeNull()
+        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 }
