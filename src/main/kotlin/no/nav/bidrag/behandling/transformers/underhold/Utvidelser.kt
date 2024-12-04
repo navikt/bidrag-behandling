@@ -34,16 +34,16 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
         id = this.id,
         periode = DatoperiodeDto(this.fom, this.tom),
         skolealder =
-        when (this.under_skolealder) {
-            true -> Skolealder.UNDER
-            false -> Skolealder.OVER
-            else -> null
-        },
+            when (this.under_skolealder) {
+                true -> Skolealder.UNDER
+                false -> Skolealder.OVER
+                else -> null
+            },
         tilsynstype =
-        when (this.omfang) {
-            Tilsynstype.IKKE_ANGITT -> null
-            else -> this.omfang
-        },
+            when (this.omfang) {
+                Tilsynstype.IKKE_ANGITT -> null
+                else -> this.omfang
+            },
         kilde = this.kilde,
     )
 
@@ -56,7 +56,7 @@ fun Underholdskostnad.harIkkeBarnetilsynITabellFraFør(personident: String) =
         .first()
         .personident
         ?.verdi == personident &&
-            this.barnetilsyn.isEmpty()
+        this.barnetilsyn.isEmpty()
 
 fun BarnDto.annetBarnMedSammeNavnOgFødselsdatoEksistererFraFør(behandling: Behandling) =
     behandling.underholdskostnader
@@ -78,11 +78,11 @@ fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad) =
         kilde = Kilde.OFFENTLIG,
         omfang = this.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
         under_skolealder =
-        when (this.skolealder) {
-            Skolealder.OVER -> false
-            Skolealder.UNDER -> true
-            else -> null
-        },
+            when (this.skolealder) {
+                Skolealder.OVER -> false
+                Skolealder.UNDER -> true
+                else -> null
+            },
     )
 
 fun Set<Underholdskostnad>.justerePerioderEtterVirkningsdato() = forEach { it.justerePerioder() }
@@ -182,8 +182,8 @@ fun Behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres() {
 
             log.info {
                 "Ikke-aktive grunnlag type ${Grunnlagsdatatype.BOFORHOLD} med id ${ikkeaktivtGrunnlag.id} " +
-                        " for rolle ${rolleInnhentetFor.rolletype} i behandling ${this.id} har ingen " +
-                        "endringer som må aksepteres av saksbehandler. Aktiverer automatisk det nyinnhenta grunnlaget."
+                    " for rolle ${rolleInnhentetFor.rolletype} i behandling ${this.id} har ingen " +
+                    "endringer som må aksepteres av saksbehandler. Aktiverer automatisk det nyinnhenta grunnlaget."
             }
 
             ikkeaktivtGrunnlag.aktiv = LocalDateTime.now()
@@ -194,9 +194,10 @@ fun Behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres() {
 
 private fun Behandling.aktivereOriginaltBarnetilsynsgrunnlagHvisAktivertForAlleBarn() {
     val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
-    val nyesteOriginaleBarnetilsynsgrunnlag = grunnlagsdatatype.innhentesForRolle(this)?.let {
-        this.henteNyesteGrunnlag(Grunnlagstype(grunnlagsdatatype, false), it)
-    }
+    val nyesteOriginaleBarnetilsynsgrunnlag =
+        grunnlagsdatatype.innhentesForRolle(this)?.let {
+            this.henteNyesteGrunnlag(Grunnlagstype(grunnlagsdatatype, false), it)
+        }
 
     nyesteOriginaleBarnetilsynsgrunnlag?.let {
         if (nyesteOriginaleBarnetilsynsgrunnlag.aktiv == null &&
