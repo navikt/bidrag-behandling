@@ -62,7 +62,6 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
-import no.nav.bidrag.behandling.transformers.gebyr.tilDto
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
@@ -393,6 +392,7 @@ class Dtomapper(
                 grunnlag
                     .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
                     .konvertereData<Set<Bostatus>>()
+                    ?.sortedBy { it.periodeFom }
                     ?.map {
                         val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
                         OpplysningerFraFolkeregisteretMedDetaljer(
@@ -752,8 +752,15 @@ class Dtomapper(
             ?.filter { it.relasjon != Familierelasjon.BARN }
             ?.filter {
                 it.borISammeHusstandDtoListe.any { p ->
-                    val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!, p.periodeTil?.plusMonths(1))
-                    periodeBorHosBP.fom <= periode.fom && periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
+                    val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                    val periodeBPErInnenfor =
+                        periodeBorHosBP.fom >= periode.fom &&
+                            periodeBorHosBP.til != null &&
+                            periode.til != null &&
+                            periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
+                    val periodeBPLøpendeErInnenfor =
+                        periodeBorHosBP.fom >= periode.fom && periodeBorHosBP.til == null && periode.til == null
+                    periode.omsluttesAv(periodeBorHosBP) || periodeBPErInnenfor || periodeBPLøpendeErInnenfor
                 }
             }?.map { it.tilAndreVoksneIHusstandenDetaljerDto(Saksnummer(boforholdAndreVoksneIHusstanden?.behandling?.saksnummer!!)) }
             ?.sorter() ?: emptyList()
@@ -798,6 +805,7 @@ class Dtomapper(
     private fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(erAktivert: Boolean = true): Set<PeriodeAndreVoksneIHusstanden> =
         find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
             .konvertereData<Set<Bostatus>>()
+            ?.sortedBy { it.periodeFom }
             ?.map {
                 val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
                 PeriodeAndreVoksneIHusstanden(

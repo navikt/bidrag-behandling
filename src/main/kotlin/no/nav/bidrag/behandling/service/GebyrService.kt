@@ -16,6 +16,26 @@ class GebyrService(
     private val vedtakGrunnlagMapper: VedtakGrunnlagMapper,
 ) {
     @Transactional
+    fun rekalkulerGebyr(behandling: Behandling): Boolean =
+        behandling
+            .roller
+            .filter { it.harGebyrsøknad }
+            .map { rolle ->
+                val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+                val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()
+                val beregnetGebyrErEndret = manueltOverstyrtGebyr.beregnetIlagtGebyr != beregning.ilagtGebyr
+                if (beregnetGebyrErEndret) {
+                    rolle.manueltOverstyrtGebyr =
+                        manueltOverstyrtGebyr.copy(
+                            overstyrGebyr = false,
+                            ilagtGebyr = beregning.ilagtGebyr,
+                            beregnetIlagtGebyr = beregning.ilagtGebyr,
+                        )
+                }
+                beregnetGebyrErEndret
+            }.any { it }
+
+    @Transactional
     fun oppdaterGebyrEtterEndringÅrsakAvslag(behandling: Behandling) {
         behandling
             .roller
@@ -26,6 +46,7 @@ class GebyrService(
                     (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).copy(
                         overstyrGebyr = false,
                         ilagtGebyr = beregning.ilagtGebyr,
+                        beregnetIlagtGebyr = beregning.ilagtGebyr,
                     )
             }
     }
@@ -45,6 +66,7 @@ class GebyrService(
                 it.copy(
                     overstyrGebyr = request.overstyrGebyr,
                     ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+                    beregnetIlagtGebyr = beregning.ilagtGebyr,
                     begrunnelse = request.begrunnelse ?: it.begrunnelse,
                 )
             }

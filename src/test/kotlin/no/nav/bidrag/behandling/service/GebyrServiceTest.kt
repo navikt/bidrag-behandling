@@ -67,6 +67,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
@@ -104,6 +105,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
@@ -111,7 +113,7 @@ class GebyrServiceTest {
     fun `skal fjerne manuelt overstyrt gebyr`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(overstyrGebyr = true, ilagtGebyr = true, begrunnelse = "Begrunnelse")
+        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(overstyrGebyr = true, ilagtGebyr = true, beregnetIlagtGebyr = false, begrunnelse = "Begrunnelse")
         gebyrService.oppdaterManueltOverstyrtGebyr(
             behandling,
             OppdaterGebyrDto(
@@ -123,6 +125,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
@@ -149,7 +152,7 @@ class GebyrServiceTest {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, null)
+        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, null, true)
         gebyrService.oppdaterManueltOverstyrtGebyr(
             behandling,
             OppdaterGebyrDto(
@@ -161,6 +164,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
     }
 
@@ -181,6 +185,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
@@ -194,6 +199,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
     }
 
@@ -207,6 +213,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
@@ -220,6 +227,7 @@ class GebyrServiceTest {
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
         bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
         bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
+        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
         bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 }

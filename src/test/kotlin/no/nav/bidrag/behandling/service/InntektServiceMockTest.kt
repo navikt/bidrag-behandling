@@ -8,12 +8,21 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.ident.Personident
@@ -22,6 +31,8 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import stubInntektRepository
+import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
@@ -35,14 +46,26 @@ class InntektServiceMockTest {
     @MockK
     lateinit var notatService: NotatService
 
-    @MockK
     lateinit var inntektRepository: InntektRepository
+
+    @MockK
+    lateinit var evnevurderingService: BeregningEvnevurderingService
 
     lateinit var inntektService: InntektService
 
     @BeforeEach
     fun initMock() {
-        inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
+        inntektRepository = stubInntektRepository()
+        val personService = PersonService(stubPersonConsumer())
+        val vedtakGrunnlagMapper =
+            VedtakGrunnlagMapper(
+                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
+                ValiderBeregning(),
+                evnevurderingService,
+                personService,
+                BeregnGebyrApi(stubSjablonService()),
+            )
+        inntektService = InntektService(behandlingRepository, inntektRepository, notatService, GebyrService(vedtakGrunnlagMapper))
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }
 
@@ -385,5 +408,49 @@ class InntektServiceMockTest {
             datoFom shouldBe virkningstidspunkt
             datoTom shouldBe null
         }
+    }
+
+    @Test
+    fun `skal oppdatere gebyr ved endring av inntekter`() {
+        val behandling = oppretteBehandling(1)
+        val virkningstidspunkt = LocalDate.now().plusMonths(4)
+        behandling.virkningstidspunkt = virkningstidspunkt
+        behandling.roller = oppretteBehandlingRoller(behandling, generateId = true)
+
+        behandling.bidragsmottaker!!.harGebyrsøknad = true
+        behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
+            RolleManueltOverstyrtGebyr(
+                overstyrGebyr = false,
+                ilagtGebyr = false,
+                beregnetIlagtGebyr = false,
+            )
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        val forespørselOmOppdateringAvInntekter =
+            OppdatereInntektRequest(
+                oppdatereManuellInntekt =
+                    OppdatereManuellInntekt(
+                        type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                        beløp = BigDecimal(3052003),
+                        datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
+                        datoTom =
+                            LocalDate
+                                .now()
+                                .minusYears(1)
+                                .withMonth(12)
+                                .withDayOfMonth(31),
+                        ident = Personident(behandling.bidragsmottaker!!.ident!!),
+                        gjelderBarn = null,
+                    ),
+            )
+
+        // hvis
+        val response =
+            inntektService.oppdatereInntektManuelt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
+
+        response.beregnetGebyrErEndret shouldBe true
+        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
     }
 }
