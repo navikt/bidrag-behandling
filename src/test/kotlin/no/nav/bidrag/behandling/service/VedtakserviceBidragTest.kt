@@ -222,7 +222,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             shouldHaveSize(2)
             val gebyrMottaker = it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!
 
-            gebyrMottaker.beløp shouldBe BigDecimal(1277)
+            gebyrMottaker.beløp shouldBe null
+            gebyrMottaker.valutakode shouldBe null
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -238,6 +239,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val gebyrSkyldner = it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!
 
             gebyrSkyldner.beløp shouldBe BigDecimal(1277)
+            gebyrSkyldner.valutakode shouldBe "NOK"
             gebyrSkyldner.kravhaver shouldBe Personident("NAV")
             gebyrSkyldner.mottaker shouldBe Personident("NAV")
             gebyrSkyldner.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -397,7 +399,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             shouldHaveSize(2)
             val gebyrMottaker = it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!
 
-            gebyrMottaker.beløp shouldBe BigDecimal(1277)
+            gebyrMottaker.beløp shouldBe null
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -843,7 +845,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.any { it.type == Engangsbeløptype.GEBYR_MOTTAKER }.shouldBeTrue()
             it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!) {
-                beløp shouldBe BigDecimal(1277)
+                beløp shouldBe null
+                valutakode shouldBe null
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -855,6 +858,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             }
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!) {
                 beløp shouldBe BigDecimal(1277)
+                valutakode shouldBe "NOK"
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -940,6 +944,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!) {
                 beløp shouldBe BigDecimal(1277)
+                valutakode shouldBe "NOK"
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -958,7 +963,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 opprettVedtakRequest.grunnlagListe.validerHarReferanseTilSjablonIReferanser(SjablonTallNavn.FASTSETTELSESGEBYR_BELØP, sluttberegningGebyrBM.grunnlagsreferanseListe)
             }
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!) {
-                beløp shouldBe BigDecimal(1277)
+                beløp shouldBe null
+                valutakode shouldBe null
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
