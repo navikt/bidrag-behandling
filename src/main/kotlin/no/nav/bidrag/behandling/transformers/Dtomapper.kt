@@ -743,6 +743,7 @@ class Dtomapper(
         erAktivert: Boolean = true,
     ): List<AndreVoksneIHusstandenDetaljerDto> {
         val grunnlag = if (erAktivert) hentSisteAktiv() else hentSisteIkkeAktiv()
+        val behandling = firstOrNull()?.behandling ?: return emptyList()
 
         val boforholdAndreVoksneIHusstanden =
             grunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet }
@@ -751,6 +752,9 @@ class Dtomapper(
             .konvertereData<List<RelatertPersonGrunnlagDto>>()
             ?.filter { it.relasjon != Familierelasjon.BARN }
             ?.filter {
+                it.fødselsdato == null ||
+                    it.fødselsdato!!.withDayOfMonth(1).isBefore(behandling.virkningstidspunktEllerSøktFomDato.minusYears(18))
+            }?.filter {
                 it.borISammeHusstandDtoListe.any { p ->
                     val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
                     val periodeBPErInnenfor =
