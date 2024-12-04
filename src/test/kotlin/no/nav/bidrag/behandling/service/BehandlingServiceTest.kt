@@ -1644,7 +1644,14 @@ class BehandlingServiceTest : TestContainerRunner() {
                 g.filter { it.aktiv == null } shouldHaveSize 3
             }
 
-            val nyVirkningsdato = b.virkningstidspunkt!!.plusMonths(5)
+            val ikkeAktive = b.grunnlag.hentSisteIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type }
+
+            val nyVirkningsdato =
+                ikkeAktive
+                    .flatMap { it.konvertereData<Set<BarnetilsynGrunnlagDto>>()!! }
+                    .minBy { it.periodeFra }
+                    .periodeFra
+                    .plusMonths(6)
 
             // hvis
             behandlingService.oppdatereVirkningstidspunkt(

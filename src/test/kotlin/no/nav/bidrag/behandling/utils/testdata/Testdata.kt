@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
@@ -43,6 +44,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -1893,10 +1895,18 @@ fun Behandling.leggeTilGjeldendeBarnetillegg() {
                 ),
         ),
     )
+
+    this.grunnlag
+        .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
+        .forEach { g ->
+            val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
+            g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
+        }
 }
 
 fun Behandling.leggeTilNyttBarnetilsyn(
     innhentet: LocalDateTime = LocalDateTime.now(),
+    fraDato: LocalDate = LocalDate.now().minusYears(1),
 ) {
     val barnetilsynInnhentesForRolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!
 
@@ -1914,8 +1924,8 @@ fun Behandling.leggeTilNyttBarnetilsyn(
                         oppretteBarnetilsynGrunnlagDto(this, barnPersonId = testdataBarn2.ident),
                         BarnetilsynGrunnlagDto(
                             beløp = 4500,
-                            periodeFra = LocalDate.now().minusYears(1),
-                            periodeTil = LocalDate.now().minusMonths(6),
+                            periodeFra = fraDato,
+                            periodeTil = fraDato.plusMonths(6),
                             skolealder = Skolealder.IKKE_ANGITT,
                             tilsynstype = Tilsynstype.IKKE_ANGITT,
                             barnPersonId = testdataBarn1.ident,
@@ -1923,8 +1933,8 @@ fun Behandling.leggeTilNyttBarnetilsyn(
                         ),
                         BarnetilsynGrunnlagDto(
                             beløp = 4600,
-                            periodeFra = LocalDate.now().minusMonths(6),
-                            periodeTil = LocalDate.now().minusMonths(4),
+                            periodeFra = fraDato.plusMonths(6),
+                            periodeTil = fraDato.plusMonths(8),
                             skolealder = Skolealder.OVER,
                             tilsynstype = Tilsynstype.HELTID,
                             barnPersonId = testdataBarn1.ident,
@@ -1932,7 +1942,7 @@ fun Behandling.leggeTilNyttBarnetilsyn(
                         ),
                         BarnetilsynGrunnlagDto(
                             beløp = 4700,
-                            periodeFra = LocalDate.now().minusMonths(4),
+                            periodeFra = fraDato.plusMonths(8),
                             periodeTil = null,
                             skolealder = null,
                             tilsynstype = null,
@@ -1958,8 +1968,8 @@ fun Behandling.leggeTilNyttBarnetilsyn(
                     setOf(
                         BarnetilsynGrunnlagDto(
                             beløp = 4500,
-                            periodeFra = LocalDate.now().minusYears(1),
-                            periodeTil = LocalDate.now().minusMonths(6),
+                            periodeFra = fraDato,
+                            periodeTil = fraDato.plusMonths(6),
                             skolealder = Skolealder.IKKE_ANGITT,
                             tilsynstype = Tilsynstype.IKKE_ANGITT,
                             barnPersonId = testdataBarn1.ident,
@@ -1967,8 +1977,8 @@ fun Behandling.leggeTilNyttBarnetilsyn(
                         ),
                         BarnetilsynGrunnlagDto(
                             beløp = 4600,
-                            periodeFra = LocalDate.now().minusMonths(6),
-                            periodeTil = LocalDate.now().minusMonths(4),
+                            periodeFra = fraDato.plusMonths(6),
+                            periodeTil = fraDato.plusMonths(8),
                             skolealder = Skolealder.OVER,
                             tilsynstype = Tilsynstype.HELTID,
                             barnPersonId = testdataBarn1.ident,
@@ -1976,7 +1986,7 @@ fun Behandling.leggeTilNyttBarnetilsyn(
                         ),
                         BarnetilsynGrunnlagDto(
                             beløp = 4700,
-                            periodeFra = LocalDate.now().minusMonths(4),
+                            periodeFra = fraDato.plusMonths(8),
                             periodeTil = null,
                             skolealder = null,
                             tilsynstype = null,

@@ -45,11 +45,13 @@ import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -723,7 +725,7 @@ class GrunnlagService(
 
                 if (nyesteBearbeidaBarnetilsynFørLagring.isEmpty() && nyesteBearbeidaBarnetilsynEtterLagring.isNotEmpty()) {
                     grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
-                        behandling.underholdskostnader.find { it.person.personident?.verdi == barnetilsyn.key }?.let {
+                        behandling.underholdskostnader.find { it.barnetsRolleIBehandlingen?.personident?.verdi == barnetilsyn.key }?.let {
                             if (it.barnetilsyn.isEmpty()) {
                                 it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
                             }
@@ -731,7 +733,7 @@ class GrunnlagService(
                     }
                 }
 
-                aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+                behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
             }
         }
 
@@ -1434,30 +1436,6 @@ class GrunnlagService(
             is SummerteInntekter<*> -> grunnlag.inntekter.isNotEmpty()
             else -> false
         }
-
-    private fun Behandling.henteNyesteGrunnlag(
-        grunnlagstype: Grunnlagstype,
-        rolle: Rolle,
-        gjelder: Personident?,
-    ): Grunnlag? =
-        grunnlag
-            .filter {
-                it.type == grunnlagstype.type &&
-                    it.rolle.id == rolle.id &&
-                    grunnlagstype.erBearbeidet == it.erBearbeidet &&
-                    it.gjelder == gjelder?.verdi
-            }.toSet()
-            .maxByOrNull { it.innhentet }
-
-    private fun Behandling.henteNyesteGrunnlag(
-        grunnlagstype: Grunnlagstype,
-        rolleInnhentetFor: Rolle,
-    ): Grunnlag? =
-        grunnlag
-            .filter {
-                it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && grunnlagstype.erBearbeidet == it.erBearbeidet
-            }.toSet()
-            .maxByOrNull { it.innhentet }
 
     private inline fun <reified T> Behandling.hentSisteInnhentetGrunnlagSet(
         grunnlagstype: Grunnlagstype,

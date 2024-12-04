@@ -1,9 +1,12 @@
 package no.nav.bidrag.behandling.transformers.grunnlag
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -127,3 +130,27 @@ operator fun BeregnGrunnlag.plus(grunnlag: List<GrunnlagDto>) =
     copy(
         grunnlagListe = (grunnlagListe + grunnlag).toSet().toList(),
     )
+
+fun Behandling.henteNyesteGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolleInnhentetFor: Rolle,
+): Grunnlag? =
+    grunnlag
+        .filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolleInnhentetFor.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet()
+        .maxByOrNull { it.innhentet }
+
+fun Behandling.henteNyesteGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolle: Rolle,
+    gjelder: Personident?,
+): Grunnlag? =
+    grunnlag
+        .filter {
+            it.type == grunnlagstype.type &&
+                it.rolle.id == rolle.id &&
+                grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                it.gjelder == gjelder?.verdi
+        }.toSet()
+        .maxByOrNull { it.innhentet }

@@ -7,9 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
-import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
-import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -29,7 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarnetilsyn
-import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
+import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioderEtterVirkningsdato
@@ -269,7 +267,7 @@ class UnderholdService(
     fun tilpasseUnderholdEtterVirkningsdato(behandling: Behandling) {
         tilpasseAktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
         tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
-        aktivereBarnetilsynHvisIngenEndringerMåAksepteres(behandling)
+        behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
         behandling.underholdskostnader.justerePerioderEtterVirkningsdato()
     }
 
@@ -448,34 +446,5 @@ class UnderholdService(
                 return
             }
         sisteAktiveGrunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(true)
-    }
-
-    private fun aktivereBarnetilsynHvisIngenEndringerMåAksepteres(behandling: Behandling) {
-        val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
-        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv().toSet()
-        if (ikkeAktiveGrunnlag.isEmpty()) return
-        val endringerSomMåBekreftes = ikkeAktiveGrunnlag.henteEndringerIBarnetilsyn(aktiveGrunnlag, behandling)
-        val rolleInnhentetFor = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(behandling)!!
-
-        behandling.underholdskostnader
-            .filter { it.person.rolle.isNotEmpty() }
-            .filter { u ->
-                endringerSomMåBekreftes?.stønadTilBarnetilsyn?.none { it.key == u.person.personident } ?: true
-            }.forEach { u ->
-                val ikkeaktivtGrunnlag =
-                    ikkeAktiveGrunnlag
-                        .hentGrunnlagForType(
-                            Grunnlagsdatatype.BARNETILSYN,
-                            rolleInnhentetFor.personident!!.verdi,
-                        ).find { it.gjelder != null && it.gjelder == u.person.personident!!.verdi } ?: return@forEach
-
-                log.info {
-                    "Ikke-aktive grunnlag type ${Grunnlagsdatatype.BOFORHOLD} med id ${ikkeaktivtGrunnlag.id} " +
-                        " for rolle ${rolleInnhentetFor.rolletype} i behandling ${behandling.id} har ingen " +
-                        "endringer som må aksepteres av saksbehandler. Aktiverer automatisk det nyinnhenta grunnlaget."
-                }
-
-                ikkeaktivtGrunnlag.aktiv = LocalDateTime.now()
-            }
     }
 }

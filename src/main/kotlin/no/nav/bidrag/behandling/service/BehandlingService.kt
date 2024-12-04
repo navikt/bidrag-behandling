@@ -360,7 +360,6 @@ class BehandlingService(
                     oppdaterInntekter()
                     oppdatereUnderhold()
                     oppdaterSamvær()
-                    // TODO Underholdskostnad
                 }
             }
         }
@@ -488,7 +487,7 @@ class BehandlingService(
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
         oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
 
-        // TODO oppdater underholdskostnader ( legge til når ny barn legges til )
+        // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
         behandlingRepository.save(behandling)
 

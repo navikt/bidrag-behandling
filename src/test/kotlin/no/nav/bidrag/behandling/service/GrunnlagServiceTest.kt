@@ -274,9 +274,14 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
 
+                assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) {
+                    filter { it.aktiv == null } shouldHaveSize 0
+                    filter { it.aktiv != null } shouldHaveSize 2
+                    filter { it.aktiv != null && it.erBearbeidet } shouldHaveSize 1
+                    filter { it.aktiv != null && !it.erBearbeidet } shouldHaveSize 1
+                }
+
                 behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 2
-                behandling.grunnlag.filter { !it.erBearbeidet && it.type == Grunnlagsdatatype.BARNETILSYN } shouldHaveSize 1
-                behandling.grunnlag.filter { it.erBearbeidet && it.type == Grunnlagsdatatype.BARNETILSYN } shouldHaveSize 1
 
                 val barnetilsyn =
                     behandling.grunnlag.find { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype && Grunnlagsdatatype.BARNETILSYN == it.type }
