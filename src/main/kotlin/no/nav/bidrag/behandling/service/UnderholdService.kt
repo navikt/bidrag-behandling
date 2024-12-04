@@ -194,7 +194,11 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.barnetilsyn.add(barnetilsyn)
-                underholdskostnadRepository.save(underholdskostnad).barnetilsyn.last()
+                underholdskostnadRepository
+                    .save(underholdskostnad)
+                    .barnetilsyn
+                    .sortedBy { it.id }
+                    .last()
             }
 
         return OppdatereUnderholdResponse(
@@ -299,7 +303,11 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
-                underholdskostnadRepository.save(underholdskostnad).faktiskeTilsynsutgifter.last()
+                underholdskostnadRepository
+                    .save(underholdskostnad)
+                    .faktiskeTilsynsutgifter
+                    .sortedBy { it.id }
+                    .last()
             }
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
@@ -335,7 +343,11 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.tilleggsstønad.add(tilleggsstønad)
-                underholdskostnadRepository.save(underholdskostnad).tilleggsstønad.last()
+                underholdskostnadRepository
+                    .save(underholdskostnad)
+                    .tilleggsstønad
+                    .sortedBy { it.id }
+                    .last()
             }
 
         return OppdatereUnderholdResponse(
