@@ -19,7 +19,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
-import no.nav.bidrag.behandling.service.defaultIlagtGebyrVedAvslag
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.gebyr.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -76,20 +75,27 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 
-fun BeregnGebyrResultat.tilDto(rolle: Rolle) =
-    GebyrRolleDto(
+fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
+    val erManueltOverstyrt = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true
+
+    return GebyrRolleDto(
         inntekt =
             GebyrRolleDto.GebyrInntektDto(
                 skattepliktigInntekt = skattepliktigInntekt,
                 maksBarnetillegg = maksBarnetillegg,
             ),
-        manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
-        beregnetIlagtGebyr = if (rolle.behandling.avslag == null) ilagtGebyr else defaultIlagtGebyrVedAvslag,
-        begrunnelse = rolle.manueltOverstyrtGebyr?.begrunnelse,
-        endeligIlagtGebyr = rolle.manueltOverstyrtGebyr?.ilagtGebyr == true,
+        beregnetIlagtGebyr = ilagtGebyr,
+        begrunnelse = if (erManueltOverstyrt) rolle.manueltOverstyrtGebyr?.begrunnelse else null,
+        endeligIlagtGebyr =
+            if (erManueltOverstyrt) {
+                rolle.manueltOverstyrtGebyr!!.ilagtGebyr == true
+            } else {
+                ilagtGebyr
+            },
         beløpGebyrsats = beløpGebyrsats,
         rolle = rolle.tilDto(),
     )
+}
 
 fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnlag =
     BeregnValgteInntekterGrunnlag(

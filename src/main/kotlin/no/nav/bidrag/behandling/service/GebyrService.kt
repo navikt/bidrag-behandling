@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
-import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterManueltGebyrDto
+import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.validerSann
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
@@ -10,8 +10,6 @@ import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-
-val defaultIlagtGebyrVedAvslag = false
 
 @Service
 class GebyrService(
@@ -23,16 +21,11 @@ class GebyrService(
             .roller
             .filter { it.harGebyrsøknad }
             .forEach { rolle ->
+                val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
                 rolle.manueltOverstyrtGebyr =
                     (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).copy(
                         overstyrGebyr = false,
-                        ilagtGebyr =
-                            if (behandling.avslag == null) {
-                                val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                                !beregning.ilagtGebyr
-                            } else {
-                                defaultIlagtGebyrVedAvslag
-                            },
+                        ilagtGebyr = beregning.ilagtGebyr,
                     )
             }
     }
@@ -40,7 +33,7 @@ class GebyrService(
     @Transactional
     fun oppdaterManueltOverstyrtGebyr(
         behandling: Behandling,
-        request: OppdaterManueltGebyrDto,
+        request: OppdaterGebyrDto,
     ) {
         val rolle =
             behandling.roller.find { it.id == request.rolleId }
@@ -51,19 +44,13 @@ class GebyrService(
             (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
                 it.copy(
                     overstyrGebyr = request.overstyrGebyr,
-                    ilagtGebyr =
-                        if (behandling.avslag == null) {
-                            request.overstyrGebyr != beregning.ilagtGebyr
-                        } else {
-                            // Default så er det fritatt ved avslag
-                            request.overstyrGebyr != defaultIlagtGebyrVedAvslag
-                        },
+                    ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
                     begrunnelse = request.begrunnelse ?: it.begrunnelse,
                 )
             }
     }
 
-    private fun Behandling.validerOppdatering(request: OppdaterManueltGebyrDto) {
+    private fun Behandling.validerOppdatering(request: OppdaterGebyrDto) {
         val feilListe = mutableSetOf<String>()
 
         feilListe.validerSann(tilType() == TypeBehandling.BIDRAG, "Kan bare oppdatere gebyr på en bidragsbehandling")
@@ -75,6 +62,10 @@ class GebyrService(
         feilListe.validerSann(
             rolle.harGebyrsøknad,
             "Kan ikke endre gebyr på en rolle som ikke har gebyrsøknad",
+        )
+        feilListe.validerSann(
+            request.overstyrGebyr || request.begrunnelse.isNullOrEmpty(),
+            "Kan ikke sette begrunnelse hvis gebyr ikke er overstyrt",
         )
 
         if (feilListe.isNotEmpty()) {

@@ -106,7 +106,7 @@ class VedtakGrunnlagMapper(
                     }
             } else {
                 beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse())
-            }.filterNotNull()
+            }
         val delberegningSumInntekt = gebyrBeregning.gebyrDelberegningSumInntekt
         val inntektSiste12Mnd = gebyrBeregning.finnInntektSiste12Mnd(rolle)
         return BeregnGebyrResultat(
