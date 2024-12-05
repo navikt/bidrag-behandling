@@ -89,6 +89,9 @@ class InntektService(
                 it.datoFom = it.bestemDatoFomForOffentligInntekt()
                 it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }
+
+        val manuelleInntekterSomErFjernet = behandling.inntekter.filter { !it.taMed && it.kilde == Kilde.MANUELL }
+        behandling.inntekter.removeAll(manuelleInntekterSomErFjernet)
     }
 
     @Transactional
