@@ -75,18 +75,27 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 
-fun BeregnGebyrResultat.tilDto(rolle: Rolle) =
-    GebyrRolleDto(
+fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
+    val erManueltOverstyrt = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true
+
+    return GebyrRolleDto(
         inntekt =
             GebyrRolleDto.GebyrInntektDto(
                 skattepliktigInntekt = skattepliktigInntekt,
                 maksBarnetillegg = maksBarnetillegg,
             ),
-        manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr?.tilDto(),
         beregnetIlagtGebyr = ilagtGebyr,
+        begrunnelse = if (erManueltOverstyrt) rolle.manueltOverstyrtGebyr?.begrunnelse else null,
+        endeligIlagtGebyr =
+            if (erManueltOverstyrt) {
+                rolle.manueltOverstyrtGebyr!!.ilagtGebyr == true
+            } else {
+                ilagtGebyr
+            },
         beløpGebyrsats = beløpGebyrsats,
         rolle = rolle.tilDto(),
     )
+}
 
 fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnlag =
     BeregnValgteInntekterGrunnlag(

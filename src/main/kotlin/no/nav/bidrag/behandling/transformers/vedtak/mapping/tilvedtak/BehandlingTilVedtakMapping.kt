@@ -110,9 +110,10 @@ class BehandlingTilVedtakMapping(
                 bidragspliktig!!.harGebyrsøknad.ifTrue {
                     val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyr)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
+                    val ilagtGebyr = beregning.ilagtGebyr
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_SKYLDNER,
-                        beløp = beregning.beløpGebyrsats,
+                        beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
                         betaltBeløp = null,
                         resultatkode = beregning.resultatkode.name,
                         eksternReferanse = null,
@@ -122,16 +123,17 @@ class BehandlingTilVedtakMapping(
                         skyldner = Personident(bidragspliktig!!.ident!!),
                         kravhaver = skyldnerNav,
                         mottaker = skyldnerNav,
-                        valutakode = "NOK",
+                        valutakode = if (ilagtGebyr) "NOK" else null,
                         sak = Saksnummer(saksnummer),
                     )
                 },
                 bidragsmottaker!!.harGebyrsøknad.ifTrue {
                     val beregning = mapper.beregnGebyr(this, bidragsmottaker!!, grunnlagslisteGebyr)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
+                    val ilagtGebyr = beregning.ilagtGebyr
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_MOTTAKER,
-                        beløp = beregning.beløpGebyrsats,
+                        beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
                         betaltBeløp = null,
                         resultatkode = beregning.resultatkode.name,
                         eksternReferanse = null,
@@ -141,7 +143,7 @@ class BehandlingTilVedtakMapping(
                         skyldner = Personident(bidragsmottaker!!.ident!!),
                         kravhaver = skyldnerNav,
                         mottaker = skyldnerNav,
-                        valutakode = "NOK",
+                        valutakode = if (ilagtGebyr) "NOK" else null,
                         sak = Saksnummer(saksnummer),
                     )
                 },

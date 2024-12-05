@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
@@ -91,10 +92,21 @@ class VedtakGrunnlagMapper(
         val gebyrBeregning =
             if (behandling.avslag != null) {
                 beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse()) +
-                    mapper.run { behandling.tilGrunnlagInntektSiste12Mnd(rolle) }
+                    mapper.run {
+                        val grunnlagSkatteGrunnlag = behandling.tilGrunnlagInntektSiste12Mnd(rolle)
+                        if (grunnlagSkatteGrunnlag != null) {
+                            listOf(grunnlagSkatteGrunnlag) +
+                                behandling.grunnlag
+                                    .toList()
+                                    .mapAinntekt(behandling.tilPersonobjekter())
+                                    .filter { it.gjelderReferanse == rolle.tilGrunnlagsreferanse() }
+                        } else {
+                            emptyList()
+                        }
+                    }
             } else {
                 beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse())
-            }.filterNotNull()
+            }
         val delberegningSumInntekt = gebyrBeregning.gebyrDelberegningSumInntekt
         val inntektSiste12Mnd = gebyrBeregning.finnInntektSiste12Mnd(rolle)
         return BeregnGebyrResultat(

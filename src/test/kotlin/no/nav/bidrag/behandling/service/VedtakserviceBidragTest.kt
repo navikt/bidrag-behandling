@@ -90,6 +90,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubPersonConsumer
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.YearMonth
 
 @ExtendWith(SpringExtension::class)
@@ -221,7 +222,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             shouldHaveSize(2)
             val gebyrMottaker = it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!
 
-            gebyrMottaker.beløp shouldBe BigDecimal(1277)
+            gebyrMottaker.beløp shouldBe null
+            gebyrMottaker.valutakode shouldBe null
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -237,6 +239,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val gebyrSkyldner = it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!
 
             gebyrSkyldner.beløp shouldBe BigDecimal(1277)
+            gebyrSkyldner.valutakode shouldBe "NOK"
             gebyrSkyldner.kravhaver shouldBe Personident("NAV")
             gebyrSkyldner.mottaker shouldBe Personident("NAV")
             gebyrSkyldner.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -396,7 +399,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             shouldHaveSize(2)
             val gebyrMottaker = it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!
 
-            gebyrMottaker.beløp shouldBe BigDecimal(1277)
+            gebyrMottaker.beløp shouldBe null
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -842,7 +845,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.any { it.type == Engangsbeløptype.GEBYR_MOTTAKER }.shouldBeTrue()
             it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!) {
-                beløp shouldBe BigDecimal(1277)
+                beløp shouldBe null
+                valutakode shouldBe null
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -854,6 +858,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             }
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!) {
                 beløp shouldBe BigDecimal(1277)
+                valutakode shouldBe "NOK"
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -891,11 +896,13 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.inntekter.add(
             Inntekt(
                 belop = BigDecimal(90000),
-                datoFom = behandling.virkningstidspunkt,
+                datoFom = null,
                 datoTom = null,
-                ident = behandling.bidragsmottaker!!.ident!!,
+                ident = behandling.bidragspliktig!!.ident!!,
                 taMed = false,
-                kilde = Kilde.MANUELL,
+                opprinneligFom = LocalDate.parse("2023-02-01"),
+                opprinneligTom = LocalDate.parse("2024-01-31"),
+                kilde = Kilde.OFFENTLIG,
                 behandling = behandling,
                 type = Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                 id = 1,
@@ -935,35 +942,39 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
             it.any { it.type == Engangsbeløptype.GEBYR_MOTTAKER }.shouldBeTrue()
             it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
-            assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!) {
-                beløp shouldBe BigDecimal(1277)
-                kravhaver shouldBe Personident("NAV")
-                mottaker shouldBe Personident("NAV")
-                innkreving shouldBe Innkrevingstype.MED_INNKREVING
-                resultatkode shouldBe Resultatkode.GEBYR_FRITTATT.name
-                sak shouldBe Saksnummer(SAKSNUMMER)
-                skyldner shouldBe Personident(testdataBM.ident)
-                grunnlagReferanseListe shouldHaveSize 2
-                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe)
-                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE, grunnlagReferanseListe)
-                val sluttberegningGebyrBM = opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe).firstOrNull()
-                sluttberegningGebyrBM!!.gjelderReferanse shouldBe behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
-                sluttberegningGebyrBM.grunnlagsreferanseListe shouldHaveSize 2
-                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR, sluttberegningGebyrBM.grunnlagsreferanseListe)
-                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilSjablonIReferanser(SjablonTallNavn.FASTSETTELSESGEBYR_BELØP, sluttberegningGebyrBM.grunnlagsreferanseListe)
-            }
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!) {
                 beløp shouldBe BigDecimal(1277)
+                valutakode shouldBe "NOK"
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
                 resultatkode shouldBe Resultatkode.GEBYR_ILAGT.name
                 sak shouldBe Saksnummer(SAKSNUMMER)
                 skyldner shouldBe Personident(testdataBP.ident)
+                grunnlagReferanseListe shouldHaveSize 2
+                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe)
+                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE, grunnlagReferanseListe)
+                val sluttberegningGebyrBM = opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe).firstOrNull()
+                sluttberegningGebyrBM!!.gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                sluttberegningGebyrBM.grunnlagsreferanseListe shouldHaveSize 2
+                opprettVedtakRequest.grunnlagListe.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT }.shouldHaveSize(1)
+                opprettVedtakRequest.grunnlagListe.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT && it.gjelderReferanse == behandling.bidragspliktig!!.tilGrunnlagsreferanse() }.shouldHaveSize(1)
+                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR, sluttberegningGebyrBM.grunnlagsreferanseListe)
+                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilSjablonIReferanser(SjablonTallNavn.FASTSETTELSESGEBYR_BELØP, sluttberegningGebyrBM.grunnlagsreferanseListe)
+            }
+            assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!) {
+                beløp shouldBe null
+                valutakode shouldBe null
+                kravhaver shouldBe Personident("NAV")
+                mottaker shouldBe Personident("NAV")
+                innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                resultatkode shouldBe Resultatkode.GEBYR_FRITTATT.name
+                sak shouldBe Saksnummer(SAKSNUMMER)
+                skyldner shouldBe Personident(testdataBM.ident)
                 grunnlagReferanseListe shouldHaveSize 1
                 opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe)
                 val sluttberegningGebyrBP = opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe).firstOrNull()
-                sluttberegningGebyrBP!!.gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                sluttberegningGebyrBP!!.gjelderReferanse shouldBe behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
                 sluttberegningGebyrBP.grunnlagsreferanseListe shouldHaveSize 2
                 opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR, sluttberegningGebyrBP.grunnlagsreferanseListe)
                 opprettVedtakRequest.grunnlagListe.validerHarReferanseTilSjablonIReferanser(SjablonTallNavn.FASTSETTELSESGEBYR_BELØP, sluttberegningGebyrBP.grunnlagsreferanseListe)

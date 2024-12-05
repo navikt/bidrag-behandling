@@ -1,16 +1,12 @@
 package no.nav.bidrag.behandling.dto.v2.gebyr
 
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 
-data class OppdaterManueltGebyrDto(
+data class OppdaterGebyrDto(
     val rolleId: Long,
-    val overstyrtGebyr: ManueltOverstyrGebyrDto?,
-)
-
-data class OppdaterGebyrResponsDto(
-    val rolle: RolleDto,
-    val overstyrtGebyr: ManueltOverstyrGebyrDto?,
+    @Schema(description = "Om gebyr skal overstyres. Settes til motsatte verdi av beregnet verdi")
+    val overstyrGebyr: Boolean = false,
+    val begrunnelse: String? = null,
 )
 
 data class ManueltOverstyrGebyrDto(

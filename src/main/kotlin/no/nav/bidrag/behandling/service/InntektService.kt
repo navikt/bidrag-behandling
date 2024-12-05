@@ -54,6 +54,7 @@ class InntektService(
     private val behandlingRepository: BehandlingRepository,
     private val inntektRepository: InntektRepository,
     private val notatService: NotatService,
+    private val gebyrService: GebyrService,
 ) {
     @Transactional
     fun rekalkulerPerioderInntekter(behandlingsid: Long) {
@@ -174,8 +175,10 @@ class InntektService(
         behandling.validerKanOppdatere()
 
         val oppdatertInntekt = oppdatereInntekt(oppdatereInntektRequest, behandling)
+        val beregnetGebyrErEndret = gebyrService.rekalkulerGebyr(behandling)
         return OppdatereInntektResponse(
             inntekt = oppdatertInntekt,
+            beregnetGebyrErEndret = beregnetGebyrErEndret,
             beregnetInntekter =
                 behandling.roller
                     .filter { it.ident == oppdatertInntekt?.ident?.verdi }

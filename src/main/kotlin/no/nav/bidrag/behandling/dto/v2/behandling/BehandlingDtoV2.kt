@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
-import no.nav.bidrag.behandling.dto.v2.gebyr.ManueltOverstyrGebyrDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
@@ -139,10 +138,13 @@ data class GebyrDto(
 data class GebyrRolleDto(
     val inntekt: GebyrInntektDto,
     val beløpGebyrsats: BigDecimal,
-    val manueltOverstyrtGebyr: ManueltOverstyrGebyrDto? = null,
     val beregnetIlagtGebyr: Boolean,
+    val endeligIlagtGebyr: Boolean,
+    val begrunnelse: String? = null,
     val rolle: RolleDto,
 ) {
+    val erManueltOverstyrt get() = beregnetIlagtGebyr != endeligIlagtGebyr
+
     data class GebyrInntektDto(
         val skattepliktigInntekt: BigDecimal,
         val maksBarnetillegg: BigDecimal? = null,
