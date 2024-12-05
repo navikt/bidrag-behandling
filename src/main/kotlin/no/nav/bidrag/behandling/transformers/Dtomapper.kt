@@ -610,7 +610,7 @@ class Dtomapper(
         if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
             GebyrDto(
                 gebyrRoller =
-                    roller.filter { it.harGebyrsøknad }.map { rolle ->
+                    roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->
                         vedtakGrunnlagMapper
                             .beregnGebyr(this, rolle)
                             .tilDto(rolle)
