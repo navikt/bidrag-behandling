@@ -2,13 +2,12 @@ package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
-import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterManueltGebyrDto
+import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.validerSann
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -17,29 +16,45 @@ class GebyrService(
     private val vedtakGrunnlagMapper: VedtakGrunnlagMapper,
 ) {
     @Transactional
+    fun rekalkulerGebyr(behandling: Behandling): Boolean =
+        behandling
+            .roller
+            .filter { it.harGebyrsøknad }
+            .map { rolle ->
+                val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+                val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()
+                val beregnetGebyrErEndret = manueltOverstyrtGebyr.beregnetIlagtGebyr != beregning.ilagtGebyr
+                if (beregnetGebyrErEndret) {
+                    rolle.manueltOverstyrtGebyr =
+                        manueltOverstyrtGebyr.copy(
+                            overstyrGebyr = false,
+                            ilagtGebyr = beregning.ilagtGebyr,
+                            beregnetIlagtGebyr = beregning.ilagtGebyr,
+                        )
+                }
+                beregnetGebyrErEndret
+            }.any { it }
+
+    @Transactional
     fun oppdaterGebyrEtterEndringÅrsakAvslag(behandling: Behandling) {
         behandling
             .roller
             .filter { it.harGebyrsøknad }
             .forEach { rolle ->
+                val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
                 rolle.manueltOverstyrtGebyr =
-                    (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
-                        it.copy(
-                            overstyrGebyr = behandling.avslag != null,
-                            ilagtGebyr =
-                                (behandling.avslag == null).ifTrue {
-                                    val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                                    !beregning.ilagtGebyr
-                                },
-                        )
-                    }
+                    (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).copy(
+                        overstyrGebyr = false,
+                        ilagtGebyr = beregning.ilagtGebyr,
+                        beregnetIlagtGebyr = beregning.ilagtGebyr,
+                    )
             }
     }
 
     @Transactional
     fun oppdaterManueltOverstyrtGebyr(
         behandling: Behandling,
-        request: OppdaterManueltGebyrDto,
+        request: OppdaterGebyrDto,
     ) {
         val rolle =
             behandling.roller.find { it.id == request.rolleId }
@@ -49,14 +64,15 @@ class GebyrService(
         rolle.manueltOverstyrtGebyr =
             (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
                 it.copy(
-                    overstyrGebyr = request.overstyrtGebyr != null,
-                    ilagtGebyr = request.overstyrtGebyr?.ilagtGebyr ?: (behandling.avslag == null).ifTrue { !beregning.ilagtGebyr },
-                    begrunnelse = request.overstyrtGebyr?.begrunnelse ?: it.begrunnelse,
+                    overstyrGebyr = request.overstyrGebyr,
+                    ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+                    beregnetIlagtGebyr = beregning.ilagtGebyr,
+                    begrunnelse = request.begrunnelse ?: it.begrunnelse,
                 )
             }
     }
 
-    private fun Behandling.validerOppdatering(request: OppdaterManueltGebyrDto) {
+    private fun Behandling.validerOppdatering(request: OppdaterGebyrDto) {
         val feilListe = mutableSetOf<String>()
 
         feilListe.validerSann(tilType() == TypeBehandling.BIDRAG, "Kan bare oppdatere gebyr på en bidragsbehandling")
@@ -69,13 +85,10 @@ class GebyrService(
             rolle.harGebyrsøknad,
             "Kan ikke endre gebyr på en rolle som ikke har gebyrsøknad",
         )
-
-        if (avslag == null) {
-            feilListe.validerSann(
-                request.overstyrtGebyr?.ilagtGebyr == null,
-                "Kan ikke sette gebyr til samme som beregnet gebyr når det ikke er avslag",
-            )
-        }
+        feilListe.validerSann(
+            request.overstyrGebyr || request.begrunnelse.isNullOrEmpty(),
+            "Kan ikke sette begrunnelse hvis gebyr ikke er overstyrt",
+        )
 
         if (feilListe.isNotEmpty()) {
             ugyldigForespørsel(feilListe.toSet().joinToString("\n"))

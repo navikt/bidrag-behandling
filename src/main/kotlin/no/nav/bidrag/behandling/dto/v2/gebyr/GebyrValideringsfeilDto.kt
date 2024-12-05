@@ -11,7 +11,6 @@ fun Behandling.validerGebyr() =
         .map {
             GebyrValideringsfeilDto(
                 gjelder = it.tilDto(),
-                måBestemmeGebyr = avslag != null && it.manueltOverstyrtGebyr?.ilagtGebyr == null,
                 manglerBegrunnelse =
                     if (it.manueltOverstyrtGebyr?.overstyrGebyr == true) {
                         it.manueltOverstyrtGebyr?.begrunnelse.isNullOrEmpty()
@@ -23,10 +22,9 @@ fun Behandling.validerGebyr() =
 
 data class GebyrValideringsfeilDto(
     val gjelder: RolleDto,
-    val måBestemmeGebyr: Boolean,
     val manglerBegrunnelse: Boolean,
 ) {
     @get:JsonIgnore
     val harFeil
-        get() = manglerBegrunnelse || måBestemmeGebyr
+        get() = manglerBegrunnelse
 }

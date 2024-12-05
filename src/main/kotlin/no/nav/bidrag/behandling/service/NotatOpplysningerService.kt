@@ -294,11 +294,13 @@ class NotatOpplysningerService(
                         beregnetIlagtGebyr = it.beregnetIlagtGebyr,
                         beløpGebyrsats = it.beløpGebyrsats,
                         manueltOverstyrtGebyr =
-                            it.manueltOverstyrtGebyr?.let {
+                            if (it.erManueltOverstyrt) {
                                 NotatGebyrRolleDto.NotatManueltOverstyrGebyrDto(
-                                    ilagtGebyr = it.ilagtGebyr,
+                                    ilagtGebyr = it.endeligIlagtGebyr,
                                     begrunnelse = it.begrunnelse,
                                 )
+                            } else {
+                                null
                             },
                     )
                 },

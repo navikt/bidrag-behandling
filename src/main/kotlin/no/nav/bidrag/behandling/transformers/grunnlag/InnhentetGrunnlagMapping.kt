@@ -312,7 +312,7 @@ private fun List<Grunnlag>.mapBarnetilsyn(personobjekter: Set<GrunnlagDto>) =
             )
         }.toSet()
 
-private fun List<Grunnlag>.mapAinntekt(personobjekter: Set<GrunnlagDto>) =
+fun List<Grunnlag>.mapAinntekt(personobjekter: Set<GrunnlagDto>) =
     filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
         .groupBy { it.rolle.ident }
         .map { (ident, grunnlagListe) ->
@@ -370,7 +370,7 @@ private fun List<Grunnlag>.mapUtvidetbarnetrygd(personobjekter: Set<GrunnlagDto>
             )
         }.toSet()
 
-private fun List<Grunnlag>.mapSkattegrunnlag(personobjekter: Set<GrunnlagDto>) =
+fun List<Grunnlag>.mapSkattegrunnlag(personobjekter: Set<GrunnlagDto>) =
     filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
         .groupBy { it.rolle.ident }
         .flatMap { (ident, grunnlagListe) ->
