@@ -110,22 +110,19 @@ class InntektServiceMockTest {
         inntektService.rekalkulerPerioderInntekter(behandling.id!!)
 
         val inntekter = behandling.inntekter.toList()
+
+        inntekter.shouldHaveSize(3)
         assertSoftly(inntekter[0]) {
-            taMed shouldBe false
-            datoFom shouldBe null
-            datoTom shouldBe null
-        }
-        assertSoftly(inntekter[1]) {
             taMed shouldBe true
             datoFom shouldBe LocalDate.parse("2023-08-01")
             datoTom shouldBe LocalDate.parse("2024-07-31")
         }
-        assertSoftly(inntekter[2]) {
+        assertSoftly(inntekter[1]) {
             taMed shouldBe true
             datoFom shouldBe virkningstidspunkt
             datoTom shouldBe LocalDate.parse("2024-07-31")
         }
-        assertSoftly(inntekter[3]) {
+        assertSoftly(inntekter[2]) {
             taMed shouldBe true
             datoFom shouldBe LocalDate.parse("2024-01-01")
             datoTom shouldBe null
