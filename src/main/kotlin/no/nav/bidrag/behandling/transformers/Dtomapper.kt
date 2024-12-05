@@ -206,14 +206,6 @@ class Dtomapper(
                 this.søknadsbarn.first(),
             )
 
-        try {
-            val t1 = beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
-            val t2 = t1.finnAlleDelberegningUnderholdskostnad()
-            val t3 = t2.tilUnderholdskostnadDto()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
         return beregnBarnebidragApi
             .beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
             .finnAlleDelberegningUnderholdskostnad()

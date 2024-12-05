@@ -311,12 +311,12 @@ class DtoMapperTest : TestContainerRunner() {
                         LocalDate.now().minusMonths(6).minusDays(1),
                     )
                 tilsynstype shouldBe null
-                skolealder shouldBe null
+                skolealder shouldBe Skolealder.UNDER
                 kilde shouldBe Kilde.OFFENTLIG
             }
 
             assertSoftly(nyttBarnetilsyn.elementAt(1)) {
-                skolealder shouldBe Skolealder.OVER
+                skolealder shouldBe Skolealder.UNDER
                 tilsynstype shouldBe Tilsynstype.HELTID
                 periode shouldBe
                     DatoperiodeDto(
@@ -327,7 +327,7 @@ class DtoMapperTest : TestContainerRunner() {
             }
 
             assertSoftly(nyttBarnetilsyn.elementAt(2)) {
-                skolealder shouldBe null
+                skolealder shouldBe Skolealder.UNDER
                 tilsynstype shouldBe null
                 periode shouldBe DatoperiodeDto(LocalDate.now().minusMonths(4), null)
                 kilde shouldBe Kilde.OFFENTLIG
