@@ -247,7 +247,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
                     .size shouldBe
                     1
-                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(11)
+                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(12)
             }
         }
 
