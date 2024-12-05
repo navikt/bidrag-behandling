@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
@@ -45,6 +46,8 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -186,7 +189,7 @@ class NotatOpplysningerService(
                 .hentAlleBearbeidaBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsmedlem,
-                    behandling.rolleGrunnlagSkalHentesFor!!,
+                    Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                 )
 
         val opplysningerSivilstand =
@@ -243,8 +246,8 @@ class NotatOpplysningerService(
                                     it.stønadTilBarnetilsyn.map {
                                         NotatUnderholdBarnDto.NotatStønadTilBarnetilsynDto(
                                             periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
-                                            skolealder = it.skolealder,
-                                            tilsynstype = it.tilsynstype,
+                                            skolealder = it.skolealder ?: Skolealder.IKKE_ANGITT,
+                                            tilsynstype = it.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
                                             kilde = it.kilde,
                                         )
                                     },
@@ -500,7 +503,7 @@ private fun DelberegningBarnetilleggDto.tilNotatDto() =
 private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
-        gjelder = this.rolleGrunnlagSkalHentesFor!!.tilNotatRolle(),
+        gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
 private fun Behandling.tilNotatVirkningstidspunkt() =

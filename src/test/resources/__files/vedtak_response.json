@@ -68,6 +68,16 @@
             "skolealder": "IKKE_ANGITT",
             "beløp": 2000.0,
             "tilsynstype": "HELTID"
+          },
+          {
+            "periode": {
+              "fom": "2023-01-01",
+              "til": "2024-01-01"
+            },
+            "gjelderBarn": "person_PERSON_SØKNADSBARN_20050623_68",
+            "skolealder": "OVER",
+            "beløp": 3000.0,
+            "tilsynstype": "HELTID"
           }
         ]
       },

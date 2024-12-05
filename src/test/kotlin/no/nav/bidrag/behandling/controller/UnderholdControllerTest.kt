@@ -334,6 +334,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         }
 
         @Test
+        @Transactional
         open fun `skal oppdatere faktiske tilsynsutgifter`() {
             // gitt
             val behandling =

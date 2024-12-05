@@ -90,6 +90,10 @@ open class Rolle(
     )
     open var person: Person? = null,
 ) {
+    val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
+
+    val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato
+
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 }

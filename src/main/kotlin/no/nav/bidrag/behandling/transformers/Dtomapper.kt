@@ -53,8 +53,10 @@ import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
+import no.nav.bidrag.behandling.transformers.behandling.tilBarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
@@ -177,9 +179,16 @@ class Dtomapper(
             gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.sortedBy { it.fom }.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn =
-                rolleSøknadsbarn?.let { this.barnetilsyn.sortedBy { it.fom }.tilStønadTilBarnetilsynDtos() }
+                rolleSøknadsbarn?.let {
+                    this.barnetilsyn
+                        .sortedBy { it.fom }
+                        .toSet()
+                        .tilStønadTilBarnetilsynDtos()
+                }
                     ?: emptySet(),
-            tilleggsstønad = rolleSøknadsbarn?.let { this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos() } ?: emptySet(),
+            tilleggsstønad =
+                rolleSøknadsbarn?.let { this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos() }
+                    ?: emptySet(),
             underholdskostnad = rolleSøknadsbarn?.let { this.behandling.tilBeregnetUnderholdskostnad() } ?: emptySet(),
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
@@ -502,6 +511,11 @@ class Dtomapper(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
                 ),
+            stønadTilBarnetilsyn =
+                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBarnetilsyn(
+                    aktiveGrunnlag.toSet(),
+                    behandling,
+                ),
         )
     }
 
@@ -798,6 +812,10 @@ class Dtomapper(
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
                 find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+            stønadTilBarnetilsyn =
+                filter { it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
+                    .toSet()
+                    .tilBarnetilsynAktiveGrunnlagDto(),
         )
 
     private fun List<Grunnlag>.tilAndreVoksneIHusstanden(erAktivert: Boolean) =

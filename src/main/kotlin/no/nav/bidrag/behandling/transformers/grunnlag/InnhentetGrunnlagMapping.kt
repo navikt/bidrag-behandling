@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjekt
@@ -152,13 +153,13 @@ fun List<Grunnlag>.opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMan
         RelatertPersonGrunnlagDto(
             fødselsdato = it.fødselsdato,
             gjelderPersonId = it.ident,
-            partPersonId = behandling.rolleGrunnlagSkalHentesFor!!.ident,
+            partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
             navn = it.navn,
             relasjon = Familierelasjon.BARN,
             borISammeHusstandDtoListe = emptyList(),
         ).tilGrunnlagsobjekt(
             LocalDateTime.now(),
-            personobjekter.hentPersonNyesteIdent(behandling.rolleGrunnlagSkalHentesFor!!.ident)!!.referanse,
+            personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident)!!.referanse,
             personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
         )
     }

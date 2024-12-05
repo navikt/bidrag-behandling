@@ -299,6 +299,11 @@ class BehandlingService(
     ) {
         val erVirkningstidspunktEndret = request.virkningstidspunkt != behandling.virkningstidspunkt
 
+        fun oppdatereUnderhold() {
+            log.info { "Tilpasse perioder for underhold til ny virkningsdato i behandling ${behandling.id}" }
+            underholdService.tilpasseUnderholdEtterVirkningsdato(behandling)
+        }
+
         fun oppdaterBoforhold() {
             log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
             grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
@@ -353,8 +358,8 @@ class BehandlingService(
                     oppdaterBoforhold()
                     oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
+                    oppdatereUnderhold()
                     oppdaterSamvær()
-                    // TODO Underholdskostnad
                 }
             }
         }
@@ -482,7 +487,7 @@ class BehandlingService(
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
         oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
 
-        // TODO oppdater underholdskostnader ( legge til når ny barn legges til )
+        // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
         behandlingRepository.save(behandling)
 

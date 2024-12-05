@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -13,6 +14,8 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
+import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
@@ -31,6 +34,8 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
+import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -39,6 +44,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import org.junit.jupiter.api.BeforeEach
@@ -88,7 +94,14 @@ class DtoMapperTest : TestContainerRunner() {
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
-        dtomapper = Dtomapper(tilgangskontrollService, validering, validerBehandlingService, vedtakGrunnlagsmapper, BeregnBarnebidragApi())
+        dtomapper =
+            Dtomapper(
+                tilgangskontrollService,
+                validering,
+                validerBehandlingService,
+                vedtakGrunnlagsmapper,
+                BeregnBarnebidragApi(),
+            )
         stubUtils.stubTilgangskontrollPersonISak()
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
         every { tilgangskontrollService.harTilgang(any(), any()) } returns true
@@ -181,6 +194,143 @@ class DtoMapperTest : TestContainerRunner() {
                     }?.perioder
                     ?.maxBy { it.datoFom!! }!!
                     .bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+            }
+        }
+
+        @Test
+        fun `skal returnere diff for Barnetilsyn`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    false,
+                    false,
+                    false,
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val barnetilsynInnhentesForRolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(behandling)!!
+            barnetilsynInnhentesForRolle shouldBe behandling.bidragsmottaker!!
+            val innhentet = LocalDateTime.now()
+
+            // gjeldende barnetilsyn
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = LocalDateTime.now().minusDays(5),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now().minusDays(5),
+                    gjelder = testdataBarn1.ident,
+                    erBearbeidet = true,
+                    rolle = barnetilsynInnhentesForRolle,
+                    type = Grunnlagsdatatype.BARNETILSYN,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4000,
+                                    periodeFra = LocalDate.now().minusYears(13),
+                                    periodeTil = null,
+                                    skolealder = null,
+                                    tilsynstype = null,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            // nytt barnetilsyn
+            behandling.grunnlag.add(
+                Grunnlag(
+                    aktiv = null,
+                    behandling = behandling,
+                    innhentet = innhentet,
+                    gjelder = testdataBarn1.ident,
+                    erBearbeidet = true,
+                    rolle = barnetilsynInnhentesForRolle,
+                    type = Grunnlagsdatatype.BARNETILSYN,
+                    data =
+                        commonObjectmapper.writeValueAsString(
+                            setOf(
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4500,
+                                    periodeFra = LocalDate.now().minusYears(1),
+                                    periodeTil = LocalDate.now().minusMonths(6),
+                                    skolealder = Skolealder.IKKE_ANGITT,
+                                    tilsynstype = Tilsynstype.IKKE_ANGITT,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4600,
+                                    periodeFra = LocalDate.now().minusMonths(6),
+                                    periodeTil = LocalDate.now().minusMonths(4),
+                                    skolealder = Skolealder.OVER,
+                                    tilsynstype = Tilsynstype.HELTID,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
+                                BarnetilsynGrunnlagDto(
+                                    beløp = 4700,
+                                    periodeFra = LocalDate.now().minusMonths(4),
+                                    periodeTil = null,
+                                    skolealder = null,
+                                    tilsynstype = null,
+                                    barnPersonId = testdataBarn1.ident,
+                                    partPersonId = barnetilsynInnhentesForRolle.ident!!,
+                                ),
+                            ),
+                        ),
+                ),
+            )
+
+            // hvis
+            val ikkeAktivereGrunnlagsdata =
+                dtomapper.tilAktivereGrunnlagResponseV2(behandling).ikkeAktiverteEndringerIGrunnlagsdata
+
+            // så
+            ikkeAktivereGrunnlagsdata.stønadTilBarnetilsyn shouldNotBe null
+
+            assertSoftly(ikkeAktivereGrunnlagsdata.stønadTilBarnetilsyn!!) {
+                stønadTilBarnetilsyn shouldNotBe null
+                grunnlag shouldNotBe null
+                innhentetTidspunkt shouldBe innhentet
+            }
+
+            ikkeAktivereGrunnlagsdata.stønadTilBarnetilsyn.stønadTilBarnetilsyn.shouldHaveSize(1)
+
+            val nyttBarnetilsyn = ikkeAktivereGrunnlagsdata.stønadTilBarnetilsyn.stønadTilBarnetilsyn[Personident(testdataBarn1.ident)]
+            nyttBarnetilsyn?.shouldHaveSize(3)
+
+            assertSoftly(nyttBarnetilsyn!!.elementAt(0)) {
+                periode shouldBe
+                    DatoperiodeDto(
+                        LocalDate.now().minusYears(1),
+                        LocalDate.now().minusMonths(6).minusDays(1),
+                    )
+                tilsynstype shouldBe null
+                skolealder shouldBe Skolealder.UNDER
+                kilde shouldBe Kilde.OFFENTLIG
+            }
+
+            assertSoftly(nyttBarnetilsyn.elementAt(1)) {
+                skolealder shouldBe Skolealder.UNDER
+                tilsynstype shouldBe Tilsynstype.HELTID
+                periode shouldBe
+                    DatoperiodeDto(
+                        LocalDate.now().minusMonths(6),
+                        LocalDate.now().minusMonths(4).minusDays(1),
+                    )
+                kilde shouldBe Kilde.OFFENTLIG
+            }
+
+            assertSoftly(nyttBarnetilsyn.elementAt(2)) {
+                skolealder shouldBe Skolealder.UNDER
+                tilsynstype shouldBe null
+                periode shouldBe DatoperiodeDto(LocalDate.now().minusMonths(4), null)
+                kilde shouldBe Kilde.OFFENTLIG
             }
         }
 

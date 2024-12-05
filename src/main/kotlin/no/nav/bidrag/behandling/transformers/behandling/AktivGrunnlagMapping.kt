@@ -5,28 +5,37 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandIkkeAktivGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynIkkeAktiveGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3Måneder
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.inntekt.tilIkkeAktivInntektDto
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektspostEndring
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -117,13 +126,85 @@ fun List<Grunnlag>.henteEndringerIArbeidsforhold(alleAktiveGrunnlag: List<Grunnl
     return emptySet()
 }
 
+fun List<Grunnlag>.henteEndringerIBarnetilsyn(
+    aktiveGrunnlag: Set<Grunnlag>,
+    behandling: Behandling,
+): StønadTilBarnetilsynIkkeAktiveGrunnlagDto? {
+    fun Personident.erSøknadsbarn() = behandling.søknadsbarn.find { it.personident == this } != null
+
+    fun Behandling.henteUnderholdskostnadPersonident(personident: Personident) =
+        this.underholdskostnader.find {
+            it.person.rolle
+                .first()
+                .personident == personident
+        }
+
+    val innhentaForRolle = behandling.bidragsmottaker!!
+
+    val virkningsdato = behandling.virkningstidspunktEllerSøktFomDato
+    val aktiveBarnetilsyn = aktiveGrunnlag.hentAlleBearbeidaBarnetilsyn(virkningsdato, innhentaForRolle)
+    val nyeBarnetilsyn =
+        toSet()
+            .hentAlleBearbeidaBarnetilsyn(virkningsdato, innhentaForRolle)
+            .filter { Personident(it.barnPersonId).erSøknadsbarn() }
+            .toSet()
+
+    val aktiveBarnetilsynsdata =
+        aktiveBarnetilsyn
+            .filtrerePerioderEtterVirkningstidspunkt(virkningsdato)
+            .groupBy { it.barnPersonId }
+            .map { (personidentBarn, barnetilsyn) ->
+                Personident(personidentBarn) to barnetilsyn
+            }.toMap()
+
+    val nyeBarnetilsynsdata: Map<Personident, Set<BarnetilsynGrunnlagDto>> =
+        nyeBarnetilsyn
+            .filtrerePerioderEtterVirkningstidspunkt(virkningsdato)
+            .groupBy { it.barnPersonId }
+            .map { (personidentBarn, barnetilsyn) ->
+                Personident(personidentBarn) to barnetilsyn.toSet()
+            }.toMap()
+
+    val nyeBarnetilsynsdataTilknyttetSøknadsbarn =
+        nyeBarnetilsynsdata.filter { (k, v) ->
+            k.erSøknadsbarn() &&
+                v.isNotEmpty() &&
+                !aktiveBarnetilsynsdata[k].isNullOrEmpty() &&
+                !v.toSet().erLik(aktiveBarnetilsynsdata[k]!!.toSet(), virkningsdato)
+        }
+
+    if (aktiveBarnetilsynsdata.values.isNotEmpty() && nyeBarnetilsynsdataTilknyttetSøknadsbarn.values.isNotEmpty()) {
+        return StønadTilBarnetilsynIkkeAktiveGrunnlagDto(
+            stønadTilBarnetilsyn =
+                nyeBarnetilsynsdataTilknyttetSøknadsbarn
+                    .map {
+                        it.key to
+                            it.value
+                                .tilBarnetilsyn(behandling.henteUnderholdskostnadPersonident(it.key)!!)
+                                .toSet()
+                                .tilStønadTilBarnetilsynDtos()
+                    }.toMap(),
+            grunnlag =
+                nyeBarnetilsyn
+                    .groupBy { it.barnPersonId }
+                    .map { (personidentBarn, barnetilsyn) ->
+                        Personident(personidentBarn) to barnetilsyn.toSet()
+                    }.toMap(),
+            innhentetTidspunkt =
+                find { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }?.innhentet
+                    ?: LocalDateTime.now(),
+        )
+    }
+    return null
+}
+
 fun List<Grunnlag>.henteEndringerIBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     behandling: Behandling,
 ): Set<HusstandsmedlemGrunnlagDto> {
     val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
     val husstandsmedlemmer = behandling.husstandsmedlem
-    val rolle = behandling.rolleGrunnlagSkalHentesFor!!
+    val rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!
 
     val aktiveBoforholdsdata =
         aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlemmer, rolle).toSet()
@@ -245,6 +326,29 @@ fun Set<ArbeidsforholdGrunnlagDto>.erDetSammeSom(settB: Set<ArbeidsforholdGrunnl
     }
 }
 
+fun Set<BarnetilsynGrunnlagDto>.erLik(
+    detAndreSettet: Set<BarnetilsynGrunnlagDto>,
+    virkningsdato: LocalDate,
+): Boolean {
+    if (this.size != detAndreSettet.size) return false
+
+    fun BarnetilsynGrunnlagDto.justereFradato() =
+        if (virkningsdato.isAfter(LocalDate.now())) {
+            maxOf(virkningsdato.withDayOfMonth(1))
+        } else {
+            maxOf(virkningsdato.withDayOfMonth(1), periodeFra)
+        }
+    return this.all { barnetilsyn ->
+        detAndreSettet.any {
+            it.justereFradato() == barnetilsyn.justereFradato() &&
+                it.periodeTil == barnetilsyn.periodeTil &&
+                it.barnPersonId == barnetilsyn.barnPersonId &&
+                it.skolealder == barnetilsyn.skolealder &&
+                it.tilsynstype == barnetilsyn.tilsynstype
+        }
+    }
+}
+
 fun List<BoforholdResponseV2>.erDetSammeSom(
     other: List<BoforholdResponseV2>,
     virkniningstidspunkt: LocalDate,
@@ -353,3 +457,23 @@ fun Inntekt.erDetSammeSom(grunnlag: SummertÅrsinntekt): Boolean {
         opprinneligPeriode!! == grunnlag.periode
     }
 }
+
+fun Behandling.henteUaktiverteGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolle: Rolle,
+): Set<Grunnlag> =
+    grunnlag
+        .hentAlleIkkeAktiv()
+        .filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet()
+
+fun Behandling.henteAktiverteGrunnlag(
+    grunnlagstype: Grunnlagstype,
+    rolle: Rolle,
+): Set<Grunnlag> =
+    grunnlag
+        .hentAlleAktiv()
+        .filter {
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+        }.toSet()
