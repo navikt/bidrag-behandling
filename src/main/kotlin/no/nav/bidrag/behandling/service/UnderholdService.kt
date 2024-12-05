@@ -194,6 +194,7 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.barnetilsyn.add(barnetilsyn)
+                underholdskostnad.harTilsynsordning = true
                 underholdskostnadRepository
                     .save(underholdskostnad)
                     .barnetilsyn
@@ -303,6 +304,7 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
+                underholdskostnad.harTilsynsordning = true
                 underholdskostnadRepository
                     .save(underholdskostnad)
                     .faktiskeTilsynsutgifter
@@ -343,6 +345,7 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.tilleggsstønad.add(tilleggsstønad)
+                underholdskostnad.harTilsynsordning = true
                 underholdskostnadRepository
                     .save(underholdskostnad)
                     .tilleggsstønad

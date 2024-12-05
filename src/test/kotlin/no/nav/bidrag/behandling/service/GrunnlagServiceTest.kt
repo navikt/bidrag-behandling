@@ -305,16 +305,21 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 behandling.underholdskostnader.flatMap { it.barnetilsyn } shouldHaveSize 2
 
-                val stønadTilBarnetilsyn =
+                val uTestbarn1 =
                     behandling.underholdskostnader
                         .find {
                             it.person.rolle
                                 .first()
                                 .personident
                                 ?.verdi == testdataBarn1.ident
-                        }!!
-                        .barnetilsyn
-                        .sortedBy { it.fom }
+                        }
+
+                assertSoftly(uTestbarn1) {
+                    shouldNotBeNull()
+                    harTilsynsordning shouldBe true
+                }
+
+                val stønadTilBarnetilsyn = uTestbarn1!!.barnetilsyn.sortedBy { it.fom }
                 stønadTilBarnetilsyn shouldHaveSize 2
 
                 assertSoftly(stønadTilBarnetilsyn.elementAt(0)) {

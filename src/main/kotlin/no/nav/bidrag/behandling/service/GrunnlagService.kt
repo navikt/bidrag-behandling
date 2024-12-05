@@ -728,6 +728,7 @@ class GrunnlagService(
                         behandling.underholdskostnader.find { it.barnetsRolleIBehandlingen?.personident?.verdi == barnetilsyn.key }?.let {
                             if (it.barnetilsyn.isEmpty()) {
                                 it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
+                                it.harTilsynsordning = true
                             }
                         }
                     }
