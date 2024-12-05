@@ -33,6 +33,8 @@ val summertYtelsetyper =
         Inntektsrapportering.SMÅBARNSTILLEGG,
         Inntektsrapportering.UTVIDET_BARNETRYGD,
     )
+
+@OptIn(ExperimentalStdlibApi::class)
 val summertSkattegrunnlagstyper =
     Inntektsrapportering.entries
         .filter { !it.kanLeggesInnManuelt && it.hentesAutomatisk }

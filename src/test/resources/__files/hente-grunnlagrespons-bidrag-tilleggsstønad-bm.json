@@ -1,0 +1,24 @@
+{
+  "ainntektListe": [],
+  "arbeidsforholdListe": [],
+  "barnetilleggListe": [],
+  "barnetilsynListe": [],
+  "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
+  "husstandsmedlemmerOgEgneBarnListe": [],
+  "kontantstøtteListe": [],
+  "sivilstandListe": [],
+  "skattegrunnlagListe": [],
+  "småbarnstilleggListe": [],
+  "tilleggsstønadBarnetilsynListe": [
+    {
+      "partPersonId": "1344124",
+      "harInnvilgetVedtak": true
+    },
+    {
+      "partPersonId": "54545454545",
+      "harInnvilgetVedtak": false
+    }
+  ],
+  "utvidetBarnetrygdListe": [],
+  "feilrapporteringListe": []
+}

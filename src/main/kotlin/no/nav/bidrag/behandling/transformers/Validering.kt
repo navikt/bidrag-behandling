@@ -91,6 +91,7 @@ fun Behandling.validerKanOppdatere() {
     }
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 fun OpprettBehandlingRequest.valider() {
     val feilliste = mutableListOf<String>()
     (stønadstype == null && engangsbeløpstype == null).ifTrue {

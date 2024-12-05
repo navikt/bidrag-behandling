@@ -535,6 +535,72 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbp.filter { it.erBearbeidet } shouldHaveSize 5
                 }
             }
+
+            @Test
+            @Transactional
+            open fun `skal hente og lagre informasjon om tillegsstønad`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-bidrag-tilleggsstønad-bm.json",
+                            )
+
+                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                    }
+                }
+
+                behandling.underholdskostnader shouldHaveSize 2
+                behandling.underholdskostnader.flatMap { it.barnetilsyn } shouldHaveSize 0
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+
+                behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 1
+
+                val uTestbarn1 =
+                    behandling.underholdskostnader.find {
+                        it.person.rolle
+                            .first()
+                            .personident
+                            ?.verdi == testdataBarn1.ident
+                    }
+
+                assertSoftly(uTestbarn1) {
+                    shouldNotBeNull()
+                    harTilsynsordning shouldBe true
+                }
+
+                val uTestbarn2 =
+                    behandling.underholdskostnader.find {
+                        it.person.rolle
+                            .first()
+                            .personident
+                            ?.verdi == testdataBarn2.ident
+                    }
+
+                assertSoftly(uTestbarn2) {
+                    shouldNotBeNull()
+                    harTilsynsordning shouldBe false
+                }
+            }
         }
 
         @Nested
@@ -4871,6 +4937,7 @@ fun oppretteFeilrapporteringerForPerson(
     feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
 ): List<FeilrapporteringDto> = oppretteFeilrapporteringer(setOf(personident), feiltype)
 
+@OptIn(ExperimentalStdlibApi::class)
 fun oppretteFeilrapporteringer(
     personidenter: Set<String>,
     feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
