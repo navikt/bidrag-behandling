@@ -25,9 +25,12 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
+
+const val ALDER_VED_SKOLESTART = 6L
 
 fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
     StønadTilBarnetilsynDto(
@@ -51,13 +54,6 @@ fun Set<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = map { it.tilStønadTilBarn
 
 fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
 
-fun Underholdskostnad.harIkkeBarnetilsynITabellFraFør(personident: String) =
-    person.rolle
-        .first()
-        .personident
-        ?.verdi == personident &&
-        this.barnetilsyn.isEmpty()
-
 fun BarnDto.annetBarnMedSammeNavnOgFødselsdatoEksistererFraFør(behandling: Behandling) =
     behandling.underholdskostnader
         .filter { it.person.ident == null }
@@ -70,20 +66,18 @@ fun BarnDto.annetBarnMedSammePersonidentEksistererFraFør(behandling: Behandling
 
 fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) = this.map { it.tilBarnetilsyn(u) }.toSet()
 
-fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad) =
-    Barnetilsyn(
+fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
+    fun erUnderSkolealder(fødselsdato: LocalDate) = fødselsdato.plusYears(ALDER_VED_SKOLESTART).year > LocalDate.now().year
+
+    return Barnetilsyn(
         underholdskostnad = u,
         fom = this.periodeFra,
         tom = this.periodeTil?.minusDays(1),
         kilde = Kilde.OFFENTLIG,
         omfang = this.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-        under_skolealder =
-            when (this.skolealder) {
-                Skolealder.OVER -> false
-                Skolealder.UNDER -> true
-                else -> null
-            },
+        under_skolealder = erUnderSkolealder(u.person.henteFødselsdato),
     )
+}
 
 fun Set<Underholdskostnad>.justerePerioderEtterVirkningsdato() = forEach { it.justerePerioder() }
 

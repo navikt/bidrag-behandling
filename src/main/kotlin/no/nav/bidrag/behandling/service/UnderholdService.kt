@@ -167,6 +167,12 @@ class UnderholdService(
         val oppdatertBarnetilsyn: Barnetilsyn =
             request.id?.let { id ->
                 val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
+
+                // dersom periode endres skal kilde alltid være manuell
+                if (barnetilsyn.fom != request.periode.fom || barnetilsyn.tom != request.periode.tom) {
+                    barnetilsyn.kilde = Kilde.MANUELL
+                }
+
                 barnetilsyn.fom = request.periode.fom
                 barnetilsyn.tom = request.periode.tom
                 barnetilsyn.under_skolealder =
@@ -176,7 +182,7 @@ class UnderholdService(
                         else -> null
                     }
                 barnetilsyn.omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT
-                barnetilsyn.kilde = Kilde.MANUELL
+
                 barnetilsyn
             } ?: run {
                 val barnetilsyn =

@@ -679,6 +679,130 @@ class UnderholdServiceTest {
                     kilde shouldBe Kilde.MANUELL
                 }
             }
+
+            @Test
+            open fun `skal sette kilde til manuell dersom periode på offentlig barnetilsynsinnslag endres`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val underholdskostnad =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                underholdskostnad.shouldNotBeNull()
+
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        id = 1,
+                        underholdskostnad = underholdskostnad,
+                        fom = LocalDate.now(),
+                        under_skolealder = true,
+                        kilde = Kilde.OFFENTLIG,
+                        omfang = Tilsynstype.HELTID,
+                    ),
+                )
+
+                underholdskostnad.barnetilsyn shouldHaveSize 1
+
+                val request =
+                    StønadTilBarnetilsynDto(
+                        id = 1,
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
+                        skolealder = Skolealder.OVER,
+                        tilsynstype = Tilsynstype.DELTID,
+                    )
+
+                // hvis
+                underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+
+                // så
+                val u = behandling.underholdskostnader.first()
+                u.shouldNotBeNull()
+                u.barnetilsyn.shouldNotBeEmpty()
+                u.barnetilsyn shouldHaveSize 1
+
+                assertSoftly(u.barnetilsyn.first()) {
+                    fom shouldBe request.periode.fom
+                    tom shouldBe request.periode.tom
+                    under_skolealder shouldBe false
+                    omfang shouldBe request.tilsynstype
+                    kilde shouldBe Kilde.MANUELL
+                }
+            }
+
+            @Test
+            open fun `skal ikke endre kilde på offentlig innslag så lenge periode ikke endres`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val underholdskostnad =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                underholdskostnad.shouldNotBeNull()
+
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        id = 1,
+                        underholdskostnad = underholdskostnad,
+                        fom = LocalDate.now(),
+                        under_skolealder = true,
+                        kilde = Kilde.OFFENTLIG,
+                        omfang = Tilsynstype.HELTID,
+                    ),
+                )
+
+                underholdskostnad.barnetilsyn shouldHaveSize 1
+
+                val request =
+                    StønadTilBarnetilsynDto(
+                        id = 1,
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now(),
+                                null,
+                            ),
+                        skolealder = Skolealder.OVER,
+                        tilsynstype = Tilsynstype.DELTID,
+                    )
+
+                // hvis
+                underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+
+                // så
+                val u = behandling.underholdskostnader.first()
+                u.shouldNotBeNull()
+                u.barnetilsyn.shouldNotBeEmpty()
+                u.barnetilsyn shouldHaveSize 1
+
+                assertSoftly(u.barnetilsyn.first()) {
+                    fom shouldBe request.periode.fom
+                    tom shouldBe request.periode.tom
+                    under_skolealder shouldBe false
+                    omfang shouldBe request.tilsynstype
+                    kilde shouldBe Kilde.OFFENTLIG
+                }
+            }
         }
 
         @Nested

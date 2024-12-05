@@ -37,6 +37,8 @@ open class Person(
 ) {
     val personident get() = ident?.let { Personident(it) } ?: rolle.first().ident?.let { Personident(it) }
 
+    val henteFødselsdato get() = fødselsdato ?: rolle.first().fødselsdato
+
     override fun toString(): String =
         "Person(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, opprettet=$opprettet, roller=$rolle)"
 }
