@@ -10,6 +10,7 @@ import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFrekvens
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.util.visningsnavn
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping
 
 @BehandlingRestControllerV1
 class VisningsnavnController {
+    @OptIn(ExperimentalStdlibApi::class)
     @Suppress("unused")
     @GetMapping("/visningsnavn")
     fun hentVisningsnavn(): Map<String, String> =
@@ -31,5 +33,6 @@ class VisningsnavnController {
             Samværsklasse.entries.associate { it.name to it.visningsnavn.intern } +
             SamværskalkulatorFerietype.entries.associate { it.name to it.visningsnavn.intern } +
             SamværskalkulatorNetterFrekvens.entries.associate { it.name to it.visningsnavn.intern } +
+            Engangsbeløptype.entries.associate { it.name to it.visningsnavn.intern } +
             Utgiftstype.entries.associate { it.name to it.visningsnavn.intern }
 }

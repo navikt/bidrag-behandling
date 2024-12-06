@@ -47,6 +47,19 @@ data class DelberegningBidragspliktigesBeregnedeTotalbidragDto(
     )
 }
 
+data class DelberegningBarnetilleggDto(
+    val barnetillegg: List<BarnetilleggDetaljerDto> = emptyList(),
+    val skattFaktor: BigDecimal = BigDecimal.ZERO,
+    val sumNettoBeløp: BigDecimal = BigDecimal.ZERO,
+    val sumBruttoBeløp: BigDecimal = BigDecimal.ZERO,
+) {
+    data class BarnetilleggDetaljerDto(
+        val bruttoBeløp: BigDecimal,
+        val nettoBeløp: BigDecimal,
+        val visningsnavn: String,
+    )
+}
+
 data class DelberegningBidragsevneDto(
     val sumInntekt25Prosent: BigDecimal,
     val bidragsevne: BigDecimal,

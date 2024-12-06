@@ -30,11 +30,27 @@ class NotatService {
             behandling.notater.add(
                 Notat(
                     behandling = behandling,
-                    rolle = rolle ?: behandling.rolleGrunnlagSkalHentesFor!!,
+                    rolle = rolle,
                     innhold = notattekst,
                     type = notattype,
                 ),
             )
+        }
+    }
+
+    @Transactional
+    fun sletteNotat(
+        behandling: Behandling,
+        notattype: Notattype,
+        rolle: Rolle,
+    ) {
+        val notat = behandling.notater.find { it.rolle == rolle && it.type == notattype }
+        notat?.let {
+            log.info { "Sletter notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
+            rolle.notat.remove(notat)
+            behandling.notater.remove(notat)
+        } ?: {
+            log.info { "Fant ingen notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
         }
     }
 

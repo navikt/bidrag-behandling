@@ -46,7 +46,7 @@ data class OpprettBehandlingRequest(
 fun OpprettBehandlingRequest.tilKanBehandlesINyLøsningRequest(): KanBehandlesINyLøsningRequest =
     KanBehandlesINyLøsningRequest(
         saksnummer = this.saksnummer,
-        roller = this.roller.map { SjekkRolleDto(it.rolletype, it.ident) },
+        roller = this.roller.map { SjekkRolleDto(it.rolletype, it.ident, it.erUkjent) },
         stønadstype = this.stønadstype,
         engangsbeløpstype = this.engangsbeløpstype,
     )

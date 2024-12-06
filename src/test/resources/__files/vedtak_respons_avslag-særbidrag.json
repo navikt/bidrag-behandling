@@ -70,7 +70,7 @@
       "type": "PERSON_SØKNADSBARN",
       "innhold": {
         "navn": null,
-        "ident": "{barnId}",
+        "ident": "{barn1Ident}",
         "fødselsdato": "{barnfDato}"
       },
       "grunnlagsreferanseListe": [],
@@ -93,7 +93,7 @@
       "type": "SÆRBIDRAG",
       "sak": "2400042",
       "skyldner": "{bpIdent}",
-      "kravhaver": "{barnId}",
+      "kravhaver": "{barn1Ident}",
       "mottaker": "{bmIdent}",
       "beløp": null,
       "valutakode": "NOK",

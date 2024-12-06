@@ -19,7 +19,6 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -58,9 +57,11 @@ class BehandlingService(
     private val tilgangskontrollService: TilgangskontrollService,
     private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
+    private val samværService: SamværService,
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val gebyrService: GebyrService,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -254,8 +255,7 @@ class BehandlingService(
                 log.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid" }
                 secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
                 request.valider(it)
-                it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
-                it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
+                oppdaterAvslagÅrsak(it, request)
                 request.henteOppdatereNotat()?.let { n ->
                     notatService.oppdatereNotat(
                         it,
@@ -269,11 +269,40 @@ class BehandlingService(
             }
 
     @Transactional
+    fun oppdaterAvslagÅrsak(
+        behandling: Behandling,
+        request: OppdatereVirkningstidspunkt,
+    ) {
+        fun oppdaterGebyr() {
+            log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
+            gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
+        }
+        val erAvslagÅrsakEndret = request.årsak != behandling.årsak || request.avslag != behandling.avslag
+
+        if (erAvslagÅrsakEndret) {
+            behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
+            behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
+
+            when (behandling.tilType()) {
+                TypeBehandling.BIDRAG -> {
+                    oppdaterGebyr()
+                }
+                else -> {}
+            }
+        }
+    }
+
+    @Transactional
     fun oppdaterVirkningstidspunkt(
         request: OppdatereVirkningstidspunkt,
         behandling: Behandling,
     ) {
         val erVirkningstidspunktEndret = request.virkningstidspunkt != behandling.virkningstidspunkt
+
+        fun oppdatereUnderhold() {
+            log.info { "Tilpasse perioder for underhold til ny virkningsdato i behandling ${behandling.id}" }
+            underholdService.tilpasseUnderholdEtterVirkningsdato(behandling)
+        }
 
         fun oppdaterBoforhold() {
             log.info { "Virkningstidspunkt er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
@@ -289,6 +318,11 @@ class BehandlingService(
             grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)
             boforholdService.oppdatereSivilstandshistorikk(behandling)
             grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+        }
+
+        fun oppdaterSamvær() {
+            log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
+            samværService.rekalkulerPerioderSamvær(behandling.id!!)
         }
 
         fun oppdaterInntekter() {
@@ -324,8 +358,8 @@ class BehandlingService(
                     oppdaterBoforhold()
                     oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
-                    // TODO Underholdskostnad
-                    // TODO Samvær
+                    oppdatereUnderhold()
+                    oppdaterSamvær()
                 }
             }
         }
@@ -370,11 +404,11 @@ class BehandlingService(
     fun henteBehandling(
         behandlingsid: Long,
         inkluderHistoriskeInntekter: Boolean = false,
-    ): BehandlingDtoV2 {
+    ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         behandling.oppdatereVirkningstidspunktSærbidrag()
-        return mapper.tilDto(behandling, true)
+        return behandling
     }
 
     @Transactional
@@ -419,6 +453,9 @@ class BehandlingService(
         log.info { "Oppdater roller i behandling $behandlingId" }
         secureLogger.info { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
         val eksisterendeRoller = behandling.roller
+
+        behandling.oppdaterEksisterendeRoller(oppdaterRollerListe)
+
         val rollerSomLeggesTil =
             oppdaterRollerListe
                 .filter { !it.erSlettet }
@@ -450,6 +487,8 @@ class BehandlingService(
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
         oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
 
+        // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
+
         behandlingRepository.save(behandling)
 
         if (behandling.søknadsbarn.isEmpty()) {
@@ -459,6 +498,18 @@ class BehandlingService(
         }
 
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
+    }
+
+    private fun Behandling.oppdaterEksisterendeRoller(oppdaterRollerListe: List<OpprettRolleDto>) {
+        oppdaterRollerListe
+            .filter { !it.erSlettet }
+            .filter { roller.any { br -> br.ident == it.ident?.verdi } }
+            .forEach {
+                roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
+                    eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
+                    eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
+                }
+            }
     }
 
     private fun oppdatereSamværForRoller(

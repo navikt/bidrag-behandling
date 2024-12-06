@@ -10,9 +10,15 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
+import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
+import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -27,7 +33,11 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.gebyrBeløp
+import no.nav.bidrag.transport.behandling.felles.grunnlag.gebyrDelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.felles.toCompactString
@@ -43,10 +53,11 @@ fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
 
 @Component
 class VedtakGrunnlagMapper(
-    private val mapper: BehandlingTilGrunnlagMappingV2,
+    val mapper: BehandlingTilGrunnlagMappingV2,
     val validering: ValiderBeregning,
     private val beregningEvnevurderingService: BeregningEvnevurderingService,
     private val personService: PersonService,
+    private val beregnGebyrApi: BeregnGebyrApi,
 ) {
     fun Behandling.tilSærbidragAvslagskode() = validering.run { tilSærbidragAvslagskode() }
 
@@ -65,6 +76,71 @@ class VedtakGrunnlagMapper(
                 byggGrunnlagGenereltAvslag(),
             )
         }
+
+    private fun Behandling.gebyrGrunnlagslisteDefaultVerdi(rolle: Rolle) =
+        if (avslag != null) {
+            emptyList()
+        } else {
+            beregnetInntekterGrunnlagForRolle(rolle)
+        }
+
+    fun beregnGebyr(
+        behandling: Behandling,
+        rolle: Rolle,
+        grunnlagsliste: List<GrunnlagDto> = behandling.gebyrGrunnlagslisteDefaultVerdi(rolle),
+    ): BeregnGebyrResultat {
+        val gebyrBeregning =
+            if (behandling.avslag != null) {
+                beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse()) +
+                    mapper.run {
+                        val grunnlagSkatteGrunnlag = behandling.tilGrunnlagInntektSiste12Mnd(rolle)
+                        if (grunnlagSkatteGrunnlag != null) {
+                            listOf(grunnlagSkatteGrunnlag) +
+                                behandling.grunnlag
+                                    .toList()
+                                    .mapAinntekt(behandling.tilPersonobjekter())
+                                    .filter { it.gjelderReferanse == rolle.tilGrunnlagsreferanse() }
+                        } else {
+                            emptyList()
+                        }
+                    }
+            } else {
+                beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse())
+            }
+        val delberegningSumInntekt = gebyrBeregning.gebyrDelberegningSumInntekt
+        val inntektSiste12Mnd = gebyrBeregning.finnInntektSiste12Mnd(rolle)
+        return BeregnGebyrResultat(
+            skattepliktigInntekt =
+                delberegningSumInntekt?.skattepliktigInntekt ?: inntektSiste12Mnd?.innhold?.beløp ?: BigDecimal.ZERO,
+            maksBarnetillegg = delberegningSumInntekt?.barnetillegg,
+            resultatkode = gebyrBeregning.sluttberegningGebyr!!.innhold.tilResultatkode(),
+            beløpGebyrsats = gebyrBeregning.gebyrBeløp!!,
+            grunnlagsreferanseListeEngangsbeløp =
+                listOfNotNull(
+                    gebyrBeregning.sluttberegningGebyr!!.referanse,
+                    inntektSiste12Mnd?.referanse,
+                ),
+            ilagtGebyr = gebyrBeregning.sluttberegningGebyr!!.innhold.ilagtGebyr,
+            grunnlagsliste = gebyrBeregning,
+        )
+    }
+
+    fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
+        BeregnApi()
+            .beregnInntekt(tilInntektberegningDto(rolle))
+            .inntektPerBarnListe
+            .filter { it.inntektGjelderBarnIdent != null }
+            .flatMap { beregningBarn ->
+                beregningBarn.summertInntektListe.map {
+                    GrunnlagDto(
+                        referanse = "${Grunnlagstype.DELBEREGNING_SUM_INNTEKT}_${rolle.tilGrunnlagsreferanse()}",
+                        type = Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
+                        innhold = POJONode(it),
+                        gjelderReferanse = rolle.tilGrunnlagsreferanse(),
+                        gjelderBarnReferanse = beregningBarn.inntektGjelderBarnIdent!!.verdi,
+                    )
+                }
+            }
 
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
@@ -95,9 +171,7 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
                     TypeBehandling.BIDRAG -> {
-                        grunnlagsliste.addAll(tilGrunnlagTilleggsstønad(søknadsbarn))
-                        grunnlagsliste.addAll(tilGrunnlagFaktiskeTilsynsutgifter(søknadsbarn))
-                        grunnlagsliste.addAll(tilGrunnlagBarnetilsyn(søknadsbarn))
+                        grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
                     }
 
@@ -140,6 +214,9 @@ class VedtakGrunnlagMapper(
                     grunnlagListe.addAll(
                         byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     )
+                TypeBehandling.BIDRAG -> {
+                    grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true))
+                }
                 else -> {}
             }
             return grunnlagListe.toSet()

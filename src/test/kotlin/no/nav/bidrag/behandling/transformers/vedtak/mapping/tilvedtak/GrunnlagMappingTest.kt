@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers
+package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -29,17 +29,6 @@ import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagGenerelt
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagNotater
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSærbidragKategori
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSøknad
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagUtgiftDirekteBetalt
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagUtgiftsposter
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagVirkningsttidspunkt
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilBehandlingreferanseListe
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonGrunnlag
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
@@ -56,6 +45,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -180,7 +170,7 @@ class GrunnlagMappingTest {
                     testdataHusstandsmedlem1 to Stønadstype.BIDRAG,
                 ),
             )
-        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, personService)
+        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, personService, BeregnGebyrApi(stubSjablonService()))
     }
 
     @Nested

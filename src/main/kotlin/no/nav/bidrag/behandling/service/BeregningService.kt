@@ -63,7 +63,7 @@ class BeregningService(
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
         behandling.run {
             mapper.run {
-                validering.run { validerForBeregning() }
+                validering.run { validerForBeregningForskudd() }
                 return if (avslag != null) {
                     søknadsbarn.map {
                         tilResultatAvslag(it)
@@ -157,6 +157,7 @@ class BeregningService(
     private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =
         ResultatBidragsberegningBarn(
             barn = barn.mapTilResultatBarn(),
+            avslaskode = avslag,
             resultat =
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =
@@ -166,8 +167,7 @@ class BeregningService(
                                 periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
                                 resultat =
                                     ResultatBeregningBidrag(
-                                        beløp = BigDecimal.ZERO, // TODO null eller 0?
-                                        kode = avslag!!,
+                                        beløp = BigDecimal.ZERO,
                                     ),
                             ),
                         ),
@@ -213,6 +213,7 @@ class BeregningService(
         )
 
     // TODO: For testing av evnevurdering. Skal fjernes når testing er ferdig
+    @OptIn(ExperimentalStdlibApi::class)
     fun beregnBPsLavesteInntektForEvne(behandling: Behandling): BigDecimal {
         val bidragsevneBeregning = BidragsevneBeregning()
         val sjablonListe = hentSjabloner()

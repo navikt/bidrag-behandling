@@ -16,12 +16,11 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
-import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
-import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
@@ -30,7 +29,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.web.client.HttpClientErrorException
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional
@@ -50,6 +48,12 @@ class UtgiftserviceMockTest {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     @MockK
+    lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
+
+    @MockK
+    lateinit var behandlingService: BehandlingService
+
+    @MockK
     lateinit var personService: PersonService
 
     lateinit var utgiftService: UtgiftService
@@ -61,13 +65,14 @@ class UtgiftserviceMockTest {
     fun initMock() {
         stubSjablonProvider()
         validering = ValiderBeregning()
-        val personService = PersonService(stubPersonConsumer())
+        val beregnBarnebidragApi = BeregnBarnebidragApi()
         mapper =
             Dtomapper(
                 tilgangskontrollService,
                 validering,
                 validerBehandling,
-                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
+                vedtakGrunnlagMapper,
+                beregnBarnebidragApi,
             )
         utgiftService = UtgiftService(behandlingRepository, notatService, utgiftRepository, mapper)
         every { validerBehandling.kanBehandlesINyLøsning(any()) } returns null

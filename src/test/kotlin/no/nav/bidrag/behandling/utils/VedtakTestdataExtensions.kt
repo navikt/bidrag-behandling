@@ -4,6 +4,7 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
@@ -21,6 +22,13 @@ fun OpprettVedtakRequestDto.hentGrunnlagstype(
     gjelderReferanse: String? = null,
 ) = grunnlagListe.find {
     it.type == grunnlagstype && (gjelderReferanse == null || it.gjelderReferanse == gjelderReferanse)
+}
+
+fun OpprettVedtakRequestDto.hentNotat(
+    notatType: NotatGrunnlag.NotatType,
+    gjelderReferanse: String? = null,
+) = grunnlagListe.find {
+    it.type == Grunnlagstype.NOTAT && (gjelderReferanse == null || it.gjelderReferanse == gjelderReferanse) && it.innholdTilObjekt<NotatGrunnlag>().type == notatType
 }
 
 fun List<OpprettGrunnlagRequestDto>.hentPerson(ident: String) =

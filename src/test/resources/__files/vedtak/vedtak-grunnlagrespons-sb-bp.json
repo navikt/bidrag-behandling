@@ -313,7 +313,7 @@
   "barnetilleggListe": [
     {
       "partPersonId": "{personId}",
-      "barnPersonId": "{barnId}",
+      "barnPersonId": "{barn1Ident}",
       "periodeFra": "{virkningstidspunkt-minus-5m}",
       "periodeTil": "{virkningstidspunkt-plus-8m}",
       "barnetilleggType": "PENSJON",
@@ -354,7 +354,7 @@
       "relasjon": "BARN",
       "fødselsdato": "2017-07-07",
       "partPersonId": "{personId}",
-      "gjelderPersonId": "{barnId}",
+      "gjelderPersonId": "{barn1Ident}",
       "borISammeHusstandDtoListe": [
         {
           "periodeFra": "2022-07-26",
@@ -380,7 +380,7 @@
       "relasjon": "BARN",
       "fødselsdato": "2015-05-13",
       "partPersonId": "{personId}",
-      "gjelderPersonId": "{barnId2}",
+      "gjelderPersonId": "{barn2Ident}",
       "borISammeHusstandDtoListe": [
         {
           "periodeFra": "2022-07-26",

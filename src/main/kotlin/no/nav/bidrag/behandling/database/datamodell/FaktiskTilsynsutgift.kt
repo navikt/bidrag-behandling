@@ -14,7 +14,7 @@ import java.time.LocalDate
 open class FaktiskTilsynsutgift(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "underholdskostnad_id", nullable = false)
     open val underholdskostnad: Underholdskostnad,
@@ -23,4 +23,7 @@ open class FaktiskTilsynsutgift(
     open var tilsynsutgift: BigDecimal,
     open var kostpenger: BigDecimal? = null,
     open var kommentar: String? = null,
-)
+) {
+    override fun toString(): String =
+        "FaktiskTilsynsutgift(id=$id, underholdskostnad=${underholdskostnad.id}, fom=$fom, tom=$tom, tilsynsutgift=$tilsynsutgift, kostpenger=$kostpenger, kommentar=$kommentar)"
+}
