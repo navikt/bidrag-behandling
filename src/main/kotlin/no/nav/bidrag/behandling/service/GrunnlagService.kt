@@ -725,12 +725,14 @@ class GrunnlagService(
 
                 if (nyesteBearbeidaBarnetilsynFørLagring.isEmpty() && nyesteBearbeidaBarnetilsynEtterLagring.isNotEmpty()) {
                     grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
-                        behandling.underholdskostnader.find { it.barnetsRolleIBehandlingen?.personident?.verdi == barnetilsyn.key }?.let {
-                            if (it.barnetilsyn.isEmpty()) {
-                                it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
-                                it.harTilsynsordning = true
+                        behandling.underholdskostnader
+                            .find { it.barnetsRolleIBehandlingen?.personident?.verdi == barnetilsyn.key }
+                            ?.let {
+                                if (it.barnetilsyn.isEmpty()) {
+                                    it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
+                                    it.harTilsynsordning = true
+                                }
                             }
-                        }
                     }
                 }
 
@@ -1652,6 +1654,15 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.småbarnstilleggListe.toSet(),
+                )
+            }
+
+            Grunnlagsdatatype.TILLEGGSSTØNAD -> {
+                lagreGrunnlagHvisEndret(
+                    behandling,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.tilleggsstønadBarnetilsynListe.toSet(),
                 )
             }
 

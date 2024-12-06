@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
-import no.nav.bidrag.behandling.transformers.gebyr.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
@@ -453,33 +452,6 @@ fun List<DelberegningUnderholdskostnad>.tilUnderholdskostnadDto() =
                 total = it.underholdskostnad,
             )
         }.toSet()
-
-fun List<GrunnlagDto>.finneFaktiskTilsynsutgiftsperioder(): List<DelberegningUnderholdskostnad> =
-    this
-        .filtrerBasertPåEgenReferanse(
-            Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
-        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
-        .sortedBy {
-            it.periode.fom
-        }
-
-fun List<GrunnlagDto>.finneTilleggsstønadsperioder(): List<DelberegningUnderholdskostnad> =
-    this
-        .filtrerBasertPåEgenReferanse(
-            Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
-        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
-        .sortedBy {
-            it.periode.fom
-        }
-
-fun List<GrunnlagDto>.finneBarnetilleggsperioder(): List<DelberegningUnderholdskostnad> =
-    this
-        .filtrerBasertPåEgenReferanse(
-            Grunnlagstype.BARNETILLEGG_PERIODE,
-        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
-        .sortedBy {
-            it.periode.fom
-        }
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<DelberegningUnderholdskostnad> =
     this

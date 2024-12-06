@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping
 
 @BehandlingRestControllerV1
 class VisningsnavnController {
+    @OptIn(ExperimentalStdlibApi::class)
     @Suppress("unused")
     @GetMapping("/visningsnavn")
     fun hentVisningsnavn(): Map<String, String> =

@@ -38,6 +38,7 @@ val årsinntekterPrioriteringsliste =
         Inntektsrapportering.LIGNINGSINNTEKT,
     )
 
+@OptIn(ExperimentalStdlibApi::class)
 val manuelleInntekter = Inntektsrapportering.entries.filter { it.kanLeggesInnManuelt }
 val ligningsinntekter =
     listOf(

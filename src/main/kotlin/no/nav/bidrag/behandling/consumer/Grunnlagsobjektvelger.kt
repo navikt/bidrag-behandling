@@ -54,11 +54,7 @@ enum class Grunnlagsobjektvelger(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
-    SIVILSTAND(
-        mapOf(
-            TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
-        ),
-    ),
+    SIVILSTAND(mapOf(TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER))),
     SKATTEGRUNNLAG(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
@@ -71,6 +67,7 @@ enum class Grunnlagsobjektvelger(
                 ),
         ),
     ),
+    TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
     UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
@@ -81,6 +78,7 @@ enum class Grunnlagsobjektvelger(
     ;
 
     companion object {
+        @OptIn(ExperimentalStdlibApi::class)
         fun requestobjekter(
             behandlingstype: TypeBehandling,
             rolletype: Rolletype,

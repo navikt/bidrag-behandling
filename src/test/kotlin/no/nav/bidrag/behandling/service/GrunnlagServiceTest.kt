@@ -80,8 +80,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.error.ShouldHaveDimensions.shouldHaveSize
-import org.assertj.core.error.ShouldHaveSize.shouldHaveSize
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -534,6 +532,49 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbp.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
                     gbp.filter { it.erBearbeidet } shouldHaveSize 5
                 }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal hente og lagre informasjon om tillegsstønad`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-bidrag-tilleggsstønad-bm.json",
+                            )
+
+                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                    }
+                }
+
+                behandling.grunnlag
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.TILLEGGSSTØNAD == it.type && !it.erBearbeidet } shouldHaveSize 0
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+
+                behandling.grunnlag
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.TILLEGGSSTØNAD == it.type && !it.erBearbeidet } shouldHaveSize 1
             }
         }
 
@@ -1172,7 +1213,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
                 alleAktiveGrunnlag.size shouldBe 3
                 val sistInnhentaSmåbarnstillegg =
-                    behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
+                        .maxBy { it.innhentet }
                 sistInnhentaSmåbarnstillegg.aktiv shouldBe null
 
                 val gjeldendeSmåbarnstillegg =
@@ -4347,7 +4390,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre ny innhenting av skattegrunnlag med teknisk feil dersom forrige innhenting var OK`() {
             // gitt
-            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling =
+                oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -4494,7 +4538,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre endret skattegrunnlag med teknisk feil dersom forrige innhenting hadde teknisk feil`() {
             // gitt
-            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling =
+                oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -4871,6 +4916,7 @@ fun oppretteFeilrapporteringerForPerson(
     feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
 ): List<FeilrapporteringDto> = oppretteFeilrapporteringer(setOf(personident), feiltype)
 
+@OptIn(ExperimentalStdlibApi::class)
 fun oppretteFeilrapporteringer(
     personidenter: Set<String>,
     feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,

@@ -474,6 +474,7 @@ enum class Grunnlagsdatatype(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
         ),
     ),
+    TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     @Schema(deprecated = true)
@@ -506,6 +507,7 @@ enum class Grunnlagsdatatype(
     ;
 
     companion object {
+        @OptIn(ExperimentalStdlibApi::class)
         fun grunnlagsdatatypeobjekter(
             behandlingstype: TypeBehandling,
             rolletype: Rolletype? = null,
@@ -520,6 +522,7 @@ enum class Grunnlagsdatatype(
                 false -> entries.filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }
 
+        @OptIn(ExperimentalStdlibApi::class)
         fun gjeldende() = Grunnlagsdatatype.entries.filter { it.erGjeldende }
     }
 }

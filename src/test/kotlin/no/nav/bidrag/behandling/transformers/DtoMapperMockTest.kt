@@ -5,11 +5,14 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
@@ -18,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
@@ -28,11 +32,15 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.assertj.core.error.ShouldNotBeNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import stubPersonConsumer
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 @ExtendWith(MockKExtension::class)
 class DtoMapperMockTest {
@@ -275,6 +283,42 @@ class DtoMapperMockTest {
             it.beregnetIlagtGebyr shouldBe false
             it.endeligIlagtGebyr shouldBe true
             it.begrunnelse shouldBe null
+        }
+    }
+
+    @Test
+    fun `skal legge til informasjon om tilleggsstønad`() {
+        // gitt
+        val behandling =
+            oppretteTestbehandling(
+                setteDatabaseider = true,
+                inkludereBp = true,
+                behandlingstype = TypeBehandling.BIDRAG,
+            )
+
+        val innhentetForRolle = behandling.bidragsmottaker!!
+        val tilleggsstønadsgrunnlag = TilleggsstønadGrunnlagDto(innhentetForRolle.personident!!.verdi, true)
+        val innhentetGrunnlag =
+            Grunnlag(
+                behandling,
+                Grunnlagsdatatype.TILLEGGSSTØNAD,
+                false,
+                commonObjectmapper.writeValueAsString(setOf(tilleggsstønadsgrunnlag)),
+                LocalDateTime.now(),
+                rolle = innhentetForRolle,
+            )
+        behandling.grunnlag.add(innhentetGrunnlag)
+
+        every { validerBehandlingService.kanBehandlesINyLøsning(any()) } returns null
+
+        // hvis
+        val dto = dtomapper.tilDto(behandling)
+
+        // så
+        assertSoftly(dto.roller.find { Rolletype.BIDRAGSMOTTAKER == it.rolletype }) {
+            ShouldNotBeNull.shouldNotBeNull()
+            it!!.harInnvilgetTilleggsstønad shouldNotBe null
+            it.harInnvilgetTilleggsstønad shouldBe true
         }
     }
 }

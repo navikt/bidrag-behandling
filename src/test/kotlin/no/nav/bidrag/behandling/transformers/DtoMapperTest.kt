@@ -27,7 +27,10 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrun
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
@@ -45,8 +48,10 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
+import org.assertj.core.error.ShouldNotBeNull.shouldNotBeNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -301,7 +306,8 @@ class DtoMapperTest : TestContainerRunner() {
 
             ikkeAktivereGrunnlagsdata.stønadTilBarnetilsyn.stønadTilBarnetilsyn.shouldHaveSize(1)
 
-            val nyttBarnetilsyn = ikkeAktivereGrunnlagsdata.stønadTilBarnetilsyn.stønadTilBarnetilsyn[Personident(testdataBarn1.ident)]
+            val nyttBarnetilsyn =
+                ikkeAktivereGrunnlagsdata.stønadTilBarnetilsyn.stønadTilBarnetilsyn[Personident(testdataBarn1.ident)]
             nyttBarnetilsyn?.shouldHaveSize(3)
 
             assertSoftly(nyttBarnetilsyn!!.elementAt(0)) {
@@ -474,6 +480,7 @@ class DtoMapperTest : TestContainerRunner() {
 
         @Test
         fun `skal mappe ident, navn, og begrunnelse til annet barn`() {
+            // gitt
             val behandling =
                 oppretteTestbehandling(
                     setteDatabaseider = true,
@@ -513,6 +520,78 @@ class DtoMapperTest : TestContainerRunner() {
             dto.gjelderBarn.navn shouldBe "Annet Barn Bm"
             dto.gjelderBarn.ident.shouldBeNull()
             dto.begrunnelse shouldBe "Underholdskostnad for Bms andre barn"
+        }
+
+        @Test
+        fun `skal legge til informasjon om tilleggsstønad`() {
+            // gitt
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val innhentetForRolle = behandling.bidragsmottaker!!
+            val tilleggsstønadsgrunnlag = TilleggsstønadGrunnlagDto(innhentetForRolle.personident!!.verdi, true)
+            val innhentetGrunnlag =
+                Grunnlag(
+                    behandling,
+                    Grunnlagsdatatype.TILLEGGSSTØNAD,
+                    false,
+                    commonObjectmapper.writeValueAsString(setOf(tilleggsstønadsgrunnlag)),
+                    LocalDateTime.now(),
+                    rolle = innhentetForRolle,
+                )
+            behandling.grunnlag.add(innhentetGrunnlag)
+
+            every { validerBehandlingService.kanBehandlesINyLøsning(any()) } returns null
+
+            every { personService.hentPerson(innhentetForRolle.personident!!.verdi) } returns
+                PersonDto(
+                    ident = innhentetForRolle.personident!!,
+                    navn = testdataBM.navn,
+                    fødselsdato = testdataBM.fødselsdato,
+                )
+
+            every { personService.hentNyesteIdent(testdataBP.ident) } returns Personident(testdataBP.ident)
+
+            every { personService.hentPerson(innhentetForRolle.personident!!.verdi) } returns
+                PersonDto(
+                    ident = innhentetForRolle.personident!!,
+                    navn = testdataBP.navn,
+                    fødselsdato = testdataBP.fødselsdato,
+                )
+
+            every { personService.hentNyesteIdent(testdataBM.ident) } returns Personident(testdataBM.ident)
+
+            every { personService.hentPerson(testdataBarn1.ident) } returns
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
+
+            every { personService.hentNyesteIdent(testdataBarn1.ident) } returns Personident(testdataBarn1.ident)
+
+            every { personService.hentPerson(testdataBarn2.ident) } returns
+                PersonDto(
+                    ident = Personident(testdataBarn1.ident),
+                    navn = testdataBarn1.navn,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                )
+
+            every { personService.hentNyesteIdent(testdataBarn2.ident) } returns Personident(testdataBarn2.ident)
+
+            // hvis
+            val dto = dtomapper.tilDto(behandling)
+
+            // så
+            assertSoftly(dto.roller.find { Rolletype.BIDRAGSMOTTAKER == it.rolletype }) {
+                shouldNotBeNull()
+                it!!.harInnvilgetTilleggsstønad shouldNotBe null
+                it.harInnvilgetTilleggsstønad shouldBe true
+            }
         }
     }
 }
