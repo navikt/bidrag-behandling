@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.domene.ident.Personident
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -14,7 +15,7 @@ import java.time.LocalDateTime
 open class Person(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     open val ident: String? = null,
     open val navn: String? = null,
     open val fødselsdato: LocalDate? = null,
@@ -34,6 +35,10 @@ open class Person(
     )
     open val rolle: MutableSet<Rolle> = mutableSetOf(),
 ) {
+    val personident get() = ident?.let { Personident(it) } ?: rolle.first().ident?.let { Personident(it) }
+
+    val henteFødselsdato get() = fødselsdato ?: rolle.first().fødselsdato
+
     override fun toString(): String =
         "Person(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, opprettet=$opprettet, roller=$rolle)"
 }

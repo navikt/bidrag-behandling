@@ -92,9 +92,7 @@ class BidragTilgangskontrollConsumer(
     @BrukerCacheable(TILGANG_TEMA_CACHE)
     fun sjekkTilgangTema(tema: String): Boolean {
         return try {
-            val headers = HttpHeaders()
-            headers.contentType = MediaType.TEXT_PLAIN
-            postForEntity(createUri("/api/tilgang/tema"), tema, headers) ?: false
+            postForEntity(createUri("/api/tilgang/tema"), tema) ?: false
         } catch (e: HttpStatusCodeException) {
             if (e.statusCode == HttpStatus.FORBIDDEN) return false
             throw e

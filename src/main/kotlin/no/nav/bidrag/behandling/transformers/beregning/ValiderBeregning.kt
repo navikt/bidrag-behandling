@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
@@ -165,6 +166,17 @@ class ValiderBeregning(
     }
 
     fun Behandling.validerForBeregningBidrag() {
+        val gebyrValideringsfeil = validerGebyr()
+        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+            erKlageEllerOmgjøring &&
+                opprinneligVirkningstidspunkt != null &&
+                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
+        val virkningstidspunktFeil =
+            VirkningstidspunktFeilDto(
+                manglerÅrsakEllerAvslag = avslag == null && årsak == null,
+                manglerVirkningstidspunkt = virkningstidspunkt == null,
+                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
+            ).takeIf { it.harFeil }
         val feil =
             if (avslag == null) {
                 val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
@@ -215,8 +227,10 @@ class ValiderBeregning(
                 val harFeil =
                     inntekterFeil != null ||
                         husstandsmedlemsfeil.isNotEmpty() ||
+                        virkningstidspunktFeil != null ||
                         andreVoksneIHusstandenFeil != null ||
                         samværValideringsfeil.isNotEmpty() ||
+                        gebyrValideringsfeil.isNotEmpty() ||
                         måBekrefteOpplysninger.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
@@ -224,22 +238,30 @@ class ValiderBeregning(
                         husstandsmedlem = husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
                         andreVoksneIHusstanden = andreVoksneIHusstandenFeil,
                         måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
+                        virkningstidspunkt = virkningstidspunktFeil,
+                        gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
                         samvær = samværValideringsfeil.takeIf { it.isNotEmpty() },
                         underholdskostnad = null, // TODO: Legg til validering av underholdskostnad
                     )
                 }
             } else {
-                null
+                val harFeil = virkningstidspunktFeil != null || gebyrValideringsfeil.isNotEmpty()
+                harFeil.ifTrue {
+                    BeregningValideringsfeil(
+                        virkningstidspunkt = virkningstidspunktFeil,
+                        gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
+                    )
+                }
             }
 
         if (feil != null) {
             secureLogger.warn {
-                "Feil ved validering av behandling for beregning av særbidrag" +
+                "Feil ved validering av behandling for beregning av bidrag" +
                     commonObjectmapper.writeValueAsString(feil)
             }
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
-                "Feil ved validering av behandling for beregning av særbidrag",
+                "Feil ved validering av behandling for beregning av bidrag",
                 commonObjectmapper.writeValueAsBytes(feil),
                 Charset.defaultCharset(),
             )

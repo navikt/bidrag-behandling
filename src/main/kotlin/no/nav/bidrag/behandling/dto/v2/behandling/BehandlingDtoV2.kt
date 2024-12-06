@@ -4,18 +4,22 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
+import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -39,6 +43,7 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -112,6 +117,7 @@ data class BehandlingDtoV2(
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
+    val gebyr: GebyrDto? = null,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
@@ -122,6 +128,29 @@ data class BehandlingDtoV2(
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
+}
+
+data class GebyrDto(
+    val gebyrRoller: List<GebyrRolleDto>,
+    val valideringsfeil: List<GebyrValideringsfeilDto>? = null,
+)
+
+data class GebyrRolleDto(
+    val inntekt: GebyrInntektDto,
+    val beløpGebyrsats: BigDecimal,
+    val beregnetIlagtGebyr: Boolean,
+    val endeligIlagtGebyr: Boolean,
+    val begrunnelse: String? = null,
+    val rolle: RolleDto,
+) {
+    val erManueltOverstyrt get() = beregnetIlagtGebyr != endeligIlagtGebyr
+
+    data class GebyrInntektDto(
+        val skattepliktigInntekt: BigDecimal,
+        val maksBarnetillegg: BigDecimal? = null,
+    ) {
+        val totalInntekt get() = skattepliktigInntekt + (maksBarnetillegg ?: BigDecimal.ZERO)
+    }
 }
 
 data class PersoninfoDto(
@@ -221,6 +250,7 @@ data class AktiveGrunnlagsdata(
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
+    val stønadTilBarnetilsyn: StønadTilBarnetilsynAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
@@ -233,6 +263,7 @@ data class IkkeAktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandIkkeAktivGrunnlagDto? = null,
+    val stønadTilBarnetilsyn: StønadTilBarnetilsynIkkeAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
     @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
@@ -310,6 +341,17 @@ data class SivilstandIkkeAktivGrunnlagDto(
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
 )
 
+data class StønadTilBarnetilsynAktiveGrunnlagDto(
+    val grunnlag: Map<Personident, Set<BarnetilsynGrunnlagDto>> = emptyMap(),
+    val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
+)
+
+data class StønadTilBarnetilsynIkkeAktiveGrunnlagDto(
+    val stønadTilBarnetilsyn: Map<Personident, Set<StønadTilBarnetilsynDto>> = emptyMap(),
+    val grunnlag: Map<Personident, Set<BarnetilsynGrunnlagDto>> = emptyMap(),
+    val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
+)
+
 data class HusstandsmedlemGrunnlagDto(
     val perioder: Set<BostatusperiodeGrunnlagDto>,
     val ident: String? = null,
@@ -361,7 +403,7 @@ data class AndreVoksneIHusstandenDetaljerDto(
 
 @Schema(enumAsRef = true, name = "OpplysningerType")
 enum class Grunnlagsdatatype(
-    val behandlinstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
+    val behandlingstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
     val erGjeldende: Boolean = true,
 ) {
     ARBEIDSFORHOLD(
@@ -432,6 +474,7 @@ enum class Grunnlagsdatatype(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
         ),
     ),
+    TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     @Schema(deprecated = true)
@@ -464,6 +507,7 @@ enum class Grunnlagsdatatype(
     ;
 
     companion object {
+        @OptIn(ExperimentalStdlibApi::class)
         fun grunnlagsdatatypeobjekter(
             behandlingstype: TypeBehandling,
             rolletype: Rolletype? = null,
@@ -471,13 +515,14 @@ enum class Grunnlagsdatatype(
             when (rolletype != null) {
                 true ->
                     entries
-                        .filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }
-                        .filter { it.behandlinstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
+                        .filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }
+                        .filter { it.behandlingstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
                         .toSet()
 
-                false -> entries.filter { it.behandlinstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
+                false -> entries.filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
             }
 
+        @OptIn(ExperimentalStdlibApi::class)
         fun gjeldende() = Grunnlagsdatatype.entries.filter { it.erGjeldende }
     }
 }
@@ -499,5 +544,21 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
         Grunnlagsdatatype.BARNETILLEGG -> Inntektsrapportering.BARNETILLEGG
         Grunnlagsdatatype.BARNETILSYN -> Inntektsrapportering.BARNETILSYN
         Grunnlagsdatatype.KONTANTSTØTTE -> Inntektsrapportering.KONTANTSTØTTE
+        else -> null
+    }
+
+fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
+    when (this) {
+        Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+            val t = this.behandlingstypeMotRolletyper[behandling.tilType()]
+            t?.let {
+                when (it.first()) {
+                    Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
+                    Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
+                    else -> null
+                }
+            }
+        }
+
         else -> null
     }

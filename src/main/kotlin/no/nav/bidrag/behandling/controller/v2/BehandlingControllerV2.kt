@@ -81,7 +81,7 @@ class BehandlingControllerV2(
         val resultat =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return dtomapper.tilDto(resultat, inkluderHistoriskeInntekter)
+        return dtomapper.tilDto(resultat, inkluderHistoriskeInntekter, true)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")
@@ -272,7 +272,10 @@ class BehandlingControllerV2(
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
         @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
-    ): BehandlingDtoV2 = behandlingService.henteBehandling(behandlingsid, inkluderHistoriskeInntekter)
+    ): BehandlingDtoV2 {
+        val behandling = behandlingService.henteBehandling(behandlingsid, inkluderHistoriskeInntekter)
+        return dtomapper.tilDto(behandling, true)
+    }
 
     @Suppress("unused")
     @DeleteMapping("/behandling/{behandlingsid}")

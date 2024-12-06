@@ -7,6 +7,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
@@ -27,10 +28,12 @@ import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFre
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
@@ -169,13 +172,15 @@ class GrunnlagByggerBidragTest {
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         val grunnlag = mapper.run { behandling.tilGrunnlagSamvær(behandling.tilPersonobjekter().søknadsbarn.first()) }
 
+        val søknadsbarnGrunnlagsreferanse = behandling.søknadsbarn.first().tilGrunnlagsreferanse()
+        val bpGrunnlagsreferanse = behandling.bidragspliktig!!.tilGrunnlagsreferanse()
         assertSoftly(grunnlag) {
             shouldHaveSize(10)
             it.filtrerBasertPåEgenReferanse(Grunnlagstype.SAMVÆRSPERIODE) shouldHaveSize 2
             val perioder = it.filtrerBasertPåEgenReferanse(Grunnlagstype.SAMVÆRSPERIODE)
             assertSoftly(perioder[0]) {
-                gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
-                gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                gjelderBarnReferanse shouldBe søknadsbarnGrunnlagsreferanse
+                gjelderReferanse shouldBe bpGrunnlagsreferanse
                 val innhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
                 innhold.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
                 innhold.manueltRegistrert shouldBe true
@@ -185,21 +190,25 @@ class GrunnlagByggerBidragTest {
             }
 
             assertSoftly(perioder[1]) {
-                gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
-                gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                gjelderBarnReferanse shouldBe søknadsbarnGrunnlagsreferanse
+                gjelderReferanse shouldBe bpGrunnlagsreferanse
                 val innhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
                 innhold.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
                 innhold.manueltRegistrert shouldBe true
                 innhold.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt!!.plusMonths(1))
                 innhold.periode.til shouldBe null
-                grunnlagsreferanseListe shouldHaveSize 8
+                grunnlagsreferanseListe shouldHaveSize 1
 
                 grunnlag.filtrerBasertPåEgenReferanse(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 5
                 grunnlag.filtrerBasertPåEgenReferanse(Grunnlagstype.SAMVÆRSKALKULATOR) shouldHaveSize 1
                 grunnlag.filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE) shouldHaveSize 1
                 grunnlag.filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER) shouldHaveSize 1
 
-                val samværskalkulatorDetaljer = grunnlag.filtrerBasertPåEgenReferanse(Grunnlagstype.SAMVÆRSKALKULATOR).first().innholdTilObjekt<SamværskalkulatorDetaljer>()
+                val samværskalkulatorGrunnlag = grunnlag.filtrerBasertPåEgenReferanse(Grunnlagstype.SAMVÆRSKALKULATOR).first()
+                samværskalkulatorGrunnlag.gjelderReferanse shouldBe bpGrunnlagsreferanse
+                samværskalkulatorGrunnlag.gjelderBarnReferanse shouldBe søknadsbarnGrunnlagsreferanse
+                samværskalkulatorGrunnlag.grunnlagsreferanseListe shouldHaveSize 0
+                val samværskalkulatorDetaljer = samværskalkulatorGrunnlag.innholdTilObjekt<SamværskalkulatorDetaljer>()
                 samværskalkulatorDetaljer.regelmessigSamværNetter shouldBe BigDecimal(4)
                 samværskalkulatorDetaljer.ferier shouldHaveSize 5
                 samværskalkulatorDetaljer.ferier.filter { it.type == SamværskalkulatorFerietype.JUL_NYTTÅR } shouldHaveSize 1
@@ -213,6 +222,22 @@ class GrunnlagByggerBidragTest {
                     it.bidragsmottakerNetter shouldBe BigDecimal(14)
                     it.bidragspliktigNetter shouldBe BigDecimal(1)
                 }
+
+                val delberegningSamværsklasse = grunnlag.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE, it).first()
+                val innholdSamværsklasse = delberegningSamværsklasse.innholdTilObjekt<DelberegningSamværsklasse>()
+                delberegningSamværsklasse.grunnlagsreferanseListe shouldHaveSize 2
+                delberegningSamværsklasse.gjelderBarnReferanse shouldBe søknadsbarnGrunnlagsreferanse
+                delberegningSamværsklasse.gjelderReferanse shouldBe bpGrunnlagsreferanse
+                grunnlag.harReferanseTilGrunnlag(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER, delberegningSamværsklasse)
+                grunnlag.harReferanseTilGrunnlag(Grunnlagstype.SAMVÆRSKALKULATOR, delberegningSamværsklasse)
+                innholdSamværsklasse.samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
+                innholdSamværsklasse.gjennomsnittligSamværPerMåned shouldBe BigDecimal("8.01")
+
+                val delberegningSamværsklasseNetter = grunnlag.finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER, it).first()
+                delberegningSamværsklasseNetter.grunnlagsreferanseListe.shouldHaveSize(5)
+                delberegningSamværsklasseNetter.gjelderReferanse shouldBe null
+                delberegningSamværsklasseNetter.gjelderBarnReferanse shouldBe null
+                grunnlag.finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON_SAMVARSFRADRAG, delberegningSamværsklasseNetter) shouldHaveSize 5
             }
         }
     }

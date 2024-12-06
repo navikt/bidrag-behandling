@@ -32,7 +32,7 @@ open class Inntekt(
     open var taMed: Boolean,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "behandling_id", nullable = false)
     open val behandling: Behandling? = null,

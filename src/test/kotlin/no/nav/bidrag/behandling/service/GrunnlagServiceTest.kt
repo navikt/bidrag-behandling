@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.GrunnlagServiceTest.Companion.tilAinntektspostDto
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
@@ -45,6 +46,8 @@ import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
 import no.nav.bidrag.behandling.utils.testdata.voksenPersonIBpsHusstand
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
@@ -229,6 +232,108 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         .inntekter
                         .filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }
                         .size shouldBe 2
+                }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal hente og lagre barnetilsyn`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-bidrag-barnetilsyn-bm.json",
+                            )
+
+                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                    }
+                }
+
+                behandling.underholdskostnader shouldHaveSize 2
+                behandling.underholdskostnader.flatMap { it.barnetilsyn } shouldHaveSize 0
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+
+                assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) {
+                    filter { it.aktiv == null } shouldHaveSize 0
+                    filter { it.aktiv != null } shouldHaveSize 2
+                    filter { it.aktiv != null && it.erBearbeidet } shouldHaveSize 1
+                    filter { it.aktiv != null && !it.erBearbeidet } shouldHaveSize 1
+                }
+
+                behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 2
+
+                val barnetilsyn =
+                    behandling.grunnlag.find { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype && Grunnlagsdatatype.BARNETILSYN == it.type }
+                assertSoftly(barnetilsyn) {
+                    it.shouldNotBeNull()
+                    it.aktiv.shouldNotBeNull()
+                    it.innhentet.shouldNotBeNull()
+                    it.data.shouldNotBeNull()
+                }
+
+                assertSoftly(jsonListeTilObjekt<BarnetilsynGrunnlagDto>(barnetilsyn?.data!!).sortedBy { it.periodeFra }) {
+                    shouldHaveSize(2)
+                    it.elementAt(0).beløp shouldBe 4000
+                    it.elementAt(0).periodeFra shouldBe LocalDate.of(2023, 1, 1)
+                    it.elementAt(0).periodeTil shouldBe LocalDate.of(2024, 1, 1)
+                    it.elementAt(0).skolealder shouldBe Skolealder.OVER
+                    it.elementAt(0).tilsynstype shouldBe Tilsynstype.HELTID
+                    it.elementAt(0).partPersonId shouldBe "313213213"
+                    it.elementAt(0).barnPersonId shouldBe "1344124"
+                }
+
+                behandling.underholdskostnader.flatMap { it.barnetilsyn } shouldHaveSize 2
+
+                val uTestbarn1 =
+                    behandling.underholdskostnader
+                        .find {
+                            it.person.rolle
+                                .first()
+                                .personident
+                                ?.verdi == testdataBarn1.ident
+                        }
+
+                assertSoftly(uTestbarn1) {
+                    shouldNotBeNull()
+                    harTilsynsordning shouldBe true
+                }
+
+                val stønadTilBarnetilsyn = uTestbarn1!!.barnetilsyn.sortedBy { it.fom }
+                stønadTilBarnetilsyn shouldHaveSize 2
+
+                assertSoftly(stønadTilBarnetilsyn.elementAt(0)) {
+                    it.omfang shouldBe Tilsynstype.HELTID
+                    it.under_skolealder shouldBe true
+                    it.fom shouldBe LocalDate.of(2023, 1, 1)
+                    it.tom shouldBe LocalDate.of(2023, 12, 31)
+                    it.kilde shouldBe Kilde.OFFENTLIG
+                }
+
+                assertSoftly(stønadTilBarnetilsyn.elementAt(1)) {
+                    it.omfang shouldBe Tilsynstype.HELTID
+                    it.under_skolealder shouldBe true
+                    it.fom shouldBe LocalDate.of(2024, 1, 1)
+                    it.tom shouldBe null
+                    it.kilde shouldBe Kilde.OFFENTLIG
                 }
             }
 
@@ -427,6 +532,49 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbp.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
                     gbp.filter { it.erBearbeidet } shouldHaveSize 5
                 }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal hente og lagre informasjon om tillegsstønad`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                navnResponsfil = "hente-grunnlagrespons-bidrag-tilleggsstønad-bm.json",
+                            )
+
+                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                    }
+                }
+
+                behandling.grunnlag
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.TILLEGGSSTØNAD == it.type && !it.erBearbeidet } shouldHaveSize 0
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+
+                behandling.grunnlag
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.TILLEGGSSTØNAD == it.type && !it.erBearbeidet } shouldHaveSize 1
             }
         }
 
@@ -1065,7 +1213,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
                 alleAktiveGrunnlag.size shouldBe 3
                 val sistInnhentaSmåbarnstillegg =
-                    behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
+                        .maxBy { it.innhentet }
                 sistInnhentaSmåbarnstillegg.aktiv shouldBe null
 
                 val gjeldendeSmåbarnstillegg =
@@ -1561,7 +1711,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                behandling.grunnlag.size shouldBe totaltAntallGrunnlag + 1
+                behandling.grunnlag.size shouldBe totaltAntallGrunnlag + 2
 
                 val grunnlagBarnetillegg =
                     behandling.grunnlag
@@ -2745,7 +2895,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandling = behandling,
                         innhentet = LocalDateTime.now().minusDays(3),
                         data = commonObjectmapper.writeValueAsString(voksneIBpsHusstand),
-                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                        rolle = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.innhentesForRolle(behandling)!!,
                         type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                         erBearbeidet = true,
                     ),
@@ -2757,7 +2907,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandling = behandling,
                         innhentet = LocalDateTime.now().minusDays(3),
                         data = bfg!!.data,
-                        rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                        rolle = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.innhentesForRolle(behandling)!!,
                         type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                         erBearbeidet = false,
                     ),
@@ -4240,7 +4390,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre ny innhenting av skattegrunnlag med teknisk feil dersom forrige innhenting var OK`() {
             // gitt
-            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling =
+                oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -4387,7 +4538,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre endret skattegrunnlag med teknisk feil dersom forrige innhenting hadde teknisk feil`() {
             // gitt
-            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling =
+                oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -4764,6 +4916,7 @@ fun oppretteFeilrapporteringerForPerson(
     feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
 ): List<FeilrapporteringDto> = oppretteFeilrapporteringer(setOf(personident), feiltype)
 
+@OptIn(ExperimentalStdlibApi::class)
 fun oppretteFeilrapporteringer(
     personidenter: Set<String>,
     feiltype: HentGrunnlagFeiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,

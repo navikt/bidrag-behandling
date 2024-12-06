@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.ValideringsfeilUnderhold
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
+import no.nav.bidrag.behandling.service.PersonService
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 
@@ -24,7 +25,10 @@ fun OppdatereUnderholdRequest.validere() {
     }
 }
 
-fun BarnDto.validere(behandling: Behandling) {
+fun BarnDto.validere(
+    behandling: Behandling,
+    personService: PersonService,
+) {
     if ((navn.isNullOrBlank() || fødselsdato == null) && (personident == null || personident.verdi.isEmpty())) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
@@ -57,6 +61,12 @@ fun BarnDto.validere(behandling: Behandling) {
             "Det finnes allerede underhold for barn med samme navn og fødselsdato i behandling ${behandling.id}.",
         )
     }
+
+    this.personident?.let {
+        if (personService.hentPerson(it.verdi) == null) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Fant ikke barn med oppgitt personident.")
+        }
+    }
 }
 
 fun SletteUnderholdselement.validere(behandling: Behandling) {
@@ -64,28 +74,16 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
 
     when (this.type) {
         Underholdselement.BARN -> {
-            val rolle = underhold.person.rolle.firstOrNull()
+            val rolle = underhold.barnetsRolleIBehandlingen
             if (rolle != null) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
-                    "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}",
+                    "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}. Barnet kan derfor ikke slettes.",
                 )
             }
 
             if (this.idElement != underhold.person.id) {
                 ressursIkkeFunnetException("Fant ikke barn med person.id ${this.idElement} i behandling ${behandling.id}")
-            }
-
-            if (underhold.barnetilsyn.isNotEmpty() ||
-                underhold.tilleggsstønad.isNotEmpty() ||
-                underhold.faktiskeTilsynsutgifter.isNotEmpty()
-            ) {
-                throw HttpClientErrorException(
-                    HttpStatus.BAD_REQUEST,
-                    "Kan ikke slette barn med person.id ${this.idElement} fra underholdskostnad " +
-                        "(id = ${this.idUnderhold} i behandling ${behandling.id}  så lenge det er reigstrert stønad " +
-                        "til barnetilsyn, tilleggsstønad, eller faktiskte tilsysnsutgifter på barnet.",
-                )
             }
         }
 

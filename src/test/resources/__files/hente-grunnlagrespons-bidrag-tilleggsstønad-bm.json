@@ -1,0 +1,20 @@
+{
+  "ainntektListe": [],
+  "arbeidsforholdListe": [],
+  "barnetilleggListe": [],
+  "barnetilsynListe": [],
+  "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
+  "husstandsmedlemmerOgEgneBarnListe": [],
+  "kontantstøtteListe": [],
+  "sivilstandListe": [],
+  "skattegrunnlagListe": [],
+  "småbarnstilleggListe": [],
+  "tilleggsstønadBarnetilsynListe": [
+    {
+      "partPersonId": "313213213",
+      "harInnvilgetVedtak": true
+    }
+  ],
+  "utvidetBarnetrygdListe": [],
+  "feilrapporteringListe": []
+}

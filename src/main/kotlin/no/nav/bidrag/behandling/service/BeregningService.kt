@@ -213,6 +213,7 @@ class BeregningService(
         )
 
     // TODO: For testing av evnevurdering. Skal fjernes når testing er ferdig
+    @OptIn(ExperimentalStdlibApi::class)
     fun beregnBPsLavesteInntektForEvne(behandling: Behandling): BigDecimal {
         val bidragsevneBeregning = BidragsevneBeregning()
         val sjablonListe = hentSjabloner()

@@ -54,6 +54,15 @@ import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
+fun MutableSet<String>.validerSann(
+    betingelse: Boolean,
+    melding: String,
+) {
+    if (!betingelse) {
+        add(melding)
+    }
+}
+
 fun bestemRollerSomMåHaMinstEnInntekt(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
         TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
@@ -82,6 +91,7 @@ fun Behandling.validerKanOppdatere() {
     }
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 fun OpprettBehandlingRequest.valider() {
     val feilliste = mutableListOf<String>()
     (stønadstype == null && engangsbeløpstype == null).ifTrue {

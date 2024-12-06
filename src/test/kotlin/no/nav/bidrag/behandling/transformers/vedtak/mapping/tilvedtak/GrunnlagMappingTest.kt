@@ -45,6 +45,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -169,7 +170,7 @@ class GrunnlagMappingTest {
                     testdataHusstandsmedlem1 to Stønadstype.BIDRAG,
                 ),
             )
-        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, personService)
+        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, personService, BeregnGebyrApi(stubSjablonService()))
     }
 
     @Nested

@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -28,6 +29,7 @@ import stubPersonConsumer
 import stubPersonRepository
 import stubSaksbehandlernavnProvider
 import stubTokenUtils
+import stubUnderholdskostnadRepository
 
 @ExtendWith(SpringExtension::class)
 abstract class CommonVedtakTilBehandlingTest {
@@ -61,6 +63,7 @@ abstract class CommonVedtakTilBehandlingTest {
     lateinit var sakConsumer: BidragSakConsumer
     lateinit var personConsumer: BidragPersonConsumer
     lateinit var vedtakService: VedtakService
+
     lateinit var beregningService: BeregningService
     lateinit var dtomapper: Dtomapper
     val unleash = FakeUnleash()
@@ -68,17 +71,26 @@ abstract class CommonVedtakTilBehandlingTest {
 
     @BeforeEach
     fun initMocks() {
+        stubUnderholdskostnadRepository(underholdskostnadRepository)
         val validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
         val personService = PersonService(personConsumer)
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        val vedtakGrunnlagMapper =
+            VedtakGrunnlagMapper(
+                behandlingTilGrunnlagMappingV2,
+                validerBeregning,
+                evnevurderingService,
+                personService,
+                BeregnGebyrApi(stubSjablonService()),
+            )
         dtomapper =
             Dtomapper(
                 tilgangskontrollService,
                 validerBeregning,
                 validerBehandlingService,
-                VedtakGrunnlagMapper(behandlingTilGrunnlagMappingV2, validerBeregning, evnevurderingService, personService),
+                vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
         val underholdService =
@@ -87,22 +99,20 @@ abstract class CommonVedtakTilBehandlingTest {
                 personRepository,
                 notatService,
                 dtomapper,
-            )
-        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService)
-        val vedtakGrunnlagMapper =
-            VedtakGrunnlagMapper(
-                BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
-                validerBeregning,
-                evnevurderingService,
                 personService,
             )
-
+        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService)
         beregningService =
             BeregningService(
                 behandlingService,
                 vedtakGrunnlagMapper,
             )
-        val behandlingTilVedtakMapping = BehandlingTilVedtakMapping(sakConsumer, vedtakGrunnlagMapper, beregningService)
+        val behandlingTilVedtakMapping =
+            BehandlingTilVedtakMapping(
+                sakConsumer,
+                vedtakGrunnlagMapper,
+                beregningService,
+            )
 
         vedtakService =
             VedtakService(
@@ -117,6 +127,7 @@ abstract class CommonVedtakTilBehandlingTest {
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
             )
+
         unleash.enableAll()
         every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

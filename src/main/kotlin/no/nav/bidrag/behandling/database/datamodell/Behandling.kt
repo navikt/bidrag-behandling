@@ -164,7 +164,6 @@ open class Behandling(
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
-    val rolleGrunnlagSkalHentesFor get() = if (stonadstype == Stønadstype.FORSKUDD) bidragsmottaker else bidragspliktig
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -23,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
@@ -34,6 +36,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
@@ -50,8 +53,10 @@ import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
+import no.nav.bidrag.behandling.transformers.behandling.tilBarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
@@ -59,6 +64,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
@@ -74,6 +80,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -81,6 +88,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
@@ -110,7 +118,8 @@ class Dtomapper(
     fun tilDto(
         behandling: Behandling,
         inkluderHistoriskeInntekter: Boolean = false,
-    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter)
+        lesemodus: Boolean = false,
+    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter, lesemodus)
 
     fun tilUnderholdDto(underholdskostnad: Underholdskostnad) = underholdskostnad.tilDto()
 
@@ -163,16 +172,23 @@ class Dtomapper(
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
-        val rolleSøknadsbarn = this.person.rolle.firstOrNull()
+        val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
             gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.sortedBy { it.fom }.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn =
-                rolleSøknadsbarn?.let { this.barnetilsyn.sortedBy { it.fom }.tilStønadTilBarnetilsynDtos() }
+                rolleSøknadsbarn?.let {
+                    this.barnetilsyn
+                        .sortedBy { it.fom }
+                        .toSet()
+                        .tilStønadTilBarnetilsynDtos()
+                }
                     ?: emptySet(),
-            tilleggsstønad = rolleSøknadsbarn?.let { this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos() } ?: emptySet(),
+            tilleggsstønad =
+                rolleSøknadsbarn?.let { this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos() }
+                    ?: emptySet(),
             underholdskostnad = rolleSøknadsbarn?.let { this.behandling.tilBeregnetUnderholdskostnad() } ?: emptySet(),
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
@@ -385,6 +401,7 @@ class Dtomapper(
                 grunnlag
                     .find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
                     .konvertereData<Set<Bostatus>>()
+                    ?.sortedBy { it.periodeFom }
                     ?.map {
                         val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
                         OpplysningerFraFolkeregisteretMedDetaljer(
@@ -494,6 +511,11 @@ class Dtomapper(
                     aktiveGrunnlag,
                     behandling.virkningstidspunktEllerSøktFomDato,
                 ),
+            stønadTilBarnetilsyn =
+                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBarnetilsyn(
+                    aktiveGrunnlag.toSet(),
+                    behandling,
+                ),
         )
     }
 
@@ -538,9 +560,10 @@ class Dtomapper(
     private fun Behandling.tilDto(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
         inkluderHistoriskeInntekter: Boolean,
+        lesemodus: Boolean = false,
     ): BehandlingDtoV2 {
         val kanIkkeBehandlesBegrunnelse =
-            validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest())
+            if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
         return BehandlingDtoV2(
             id = id!!,
@@ -561,8 +584,8 @@ class Dtomapper(
             saksnummer = saksnummer,
             søknadsid = soknadsid,
             behandlerenhet = behandlerEnhet,
-            roller =
-                roller.map { it.tilDto() }.toSet(),
+            gebyr = mapGebyr(),
+            roller = roller.map { it.tilDto() }.toSet(),
             søknadRefId = soknadRefId,
             vedtakRefId = refVedtaksid,
             virkningstidspunkt =
@@ -595,6 +618,38 @@ class Dtomapper(
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
         )
     }
+
+    fun Behandling.mapGebyr() =
+        if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
+            GebyrDto(
+                gebyrRoller =
+                    roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->
+                        vedtakGrunnlagMapper
+                            .beregnGebyr(this, rolle)
+                            .tilDto(rolle)
+                    },
+                valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
+            )
+        } else {
+            null
+        }
+
+    fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
+        BeregnApi()
+            .beregnInntekt(tilInntektberegningDto(rolle))
+            .inntektPerBarnListe
+            .filter { it.inntektGjelderBarnIdent != null }
+            .flatMap { beregningBarn ->
+                beregningBarn.summertInntektListe.map {
+                    GrunnlagDto(
+                        referanse = "${Grunnlagstype.DELBEREGNING_SUM_INNTEKT}_${rolle.tilGrunnlagsreferanse()}",
+                        type = Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
+                        innhold = POJONode(it),
+                        gjelderReferanse = rolle.tilGrunnlagsreferanse(),
+                        gjelderBarnReferanse = beregningBarn.inntektGjelderBarnIdent!!.verdi,
+                    )
+                }
+            }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(
@@ -652,7 +707,7 @@ class Dtomapper(
                 ),
         )
 
-    private fun Behandling.tilBeregnetBoforhold() =
+    fun Behandling.tilBeregnetBoforhold() =
         if (tilType() == TypeBehandling.BIDRAG) {
             try {
                 BeregnApi().beregnBoforhold(
@@ -701,6 +756,7 @@ class Dtomapper(
         erAktivert: Boolean = true,
     ): List<AndreVoksneIHusstandenDetaljerDto> {
         val grunnlag = if (erAktivert) hentSisteAktiv() else hentSisteIkkeAktiv()
+        val behandling = firstOrNull()?.behandling ?: return emptyList()
 
         val boforholdAndreVoksneIHusstanden =
             grunnlag.find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet }
@@ -709,9 +765,22 @@ class Dtomapper(
             .konvertereData<List<RelatertPersonGrunnlagDto>>()
             ?.filter { it.relasjon != Familierelasjon.BARN }
             ?.filter {
+                it.fødselsdato == null ||
+                    it.fødselsdato!!
+                        .withDayOfMonth(1)
+                        .isBefore(behandling.virkningstidspunktEllerSøktFomDato.minusYears(18))
+            }?.filter {
                 it.borISammeHusstandDtoListe.any { p ->
-                    val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!, p.periodeTil?.plusMonths(1))
-                    periodeBorHosBP.fom <= periode.fom && periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
+                    val periodeBorHosBP =
+                        ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                    val periodeBPErInnenfor =
+                        periodeBorHosBP.fom >= periode.fom &&
+                            periodeBorHosBP.til != null &&
+                            periode.til != null &&
+                            periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
+                    val periodeBPLøpendeErInnenfor =
+                        periodeBorHosBP.fom >= periode.fom && periodeBorHosBP.til == null && periode.til == null
+                    periode.omsluttesAv(periodeBorHosBP) || periodeBPErInnenfor || periodeBPLøpendeErInnenfor
                 }
             }?.map { it.tilAndreVoksneIHusstandenDetaljerDto(Saksnummer(boforholdAndreVoksneIHusstanden?.behandling?.saksnummer!!)) }
             ?.sorter() ?: emptyList()
@@ -745,6 +814,10 @@ class Dtomapper(
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
                 find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+            stønadTilBarnetilsyn =
+                filter { it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
+                    .toSet()
+                    .tilBarnetilsynAktiveGrunnlagDto(),
         )
 
     private fun List<Grunnlag>.tilAndreVoksneIHusstanden(erAktivert: Boolean) =
@@ -756,6 +829,7 @@ class Dtomapper(
     private fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(erAktivert: Boolean = true): Set<PeriodeAndreVoksneIHusstanden> =
         find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
             .konvertereData<Set<Bostatus>>()
+            ?.sortedBy { it.periodeFom }
             ?.map {
                 val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
                 PeriodeAndreVoksneIHusstanden(

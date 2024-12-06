@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -25,13 +26,16 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
@@ -163,8 +167,15 @@ class BehandlingTilGrunnlagMappingV2(
             tilGrunnlagFaktiskeTilsynsutgifter(personobjekter),
         ).flatten()
 
+    fun Behandling.tilGrunnlagInntektSiste12Mnd(rolle: Rolle) =
+        tilGrunnlagInntekt()
+            .filter { it.gjelderReferanse == rolle.tilGrunnlagsreferanse() }
+            .find {
+                it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND
+            }
+
     fun Behandling.tilGrunnlagInntekt(
-        personobjekter: Set<GrunnlagDto>,
+        personobjekter: Set<GrunnlagDto> = tilPersonobjekter(),
         søknadsbarn: GrunnlagDto? = null,
         inkluderAlle: Boolean = true,
     ): Set<GrunnlagDto> {
@@ -230,16 +241,22 @@ class BehandlingTilGrunnlagMappingV2(
         return samvær
             .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
             .flatMap { samvær ->
+                val bpGrunnlagsreferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                val barnGrunnlagsreferanse = samvær.rolle.tilGrunnlagPerson().referanse
                 samvær.perioder.flatMap {
                     val grunnlagBeregning =
-                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it) } ?: emptyList()
+                        it.beregning?.let { beregnSamværsklasseApi.beregnSamværsklasse(it, bpGrunnlagsreferanse, barnGrunnlagsreferanse) }
+                            ?: emptyList()
                     val grunnlagPeriode =
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseSamværsperiode(),
                             type = Grunnlagstype.SAMVÆRSPERIODE,
-                            gjelderReferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse(),
-                            grunnlagsreferanseListe = grunnlagBeregning.map { it.referanse },
-                            gjelderBarnReferanse = samvær.rolle.tilGrunnlagPerson().referanse,
+                            gjelderReferanse = bpGrunnlagsreferanse,
+                            grunnlagsreferanseListe =
+                                grunnlagBeregning
+                                    .filtrerBasertPåEgenReferanse(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE)
+                                    .map { it.referanse },
+                            gjelderBarnReferanse = barnGrunnlagsreferanse,
                             innhold =
                                 POJONode(
                                     SamværsperiodeGrunnlag(
@@ -290,7 +307,7 @@ class BehandlingTilGrunnlagMappingV2(
             underholdskostnader
                 .flatMap { u ->
                     u.faktiskeTilsynsutgifter.map {
-                        val underholdRolle = u.person.rolle.find { it.behandling.id == id }
+                        val underholdRolle = u.barnetsRolleIBehandlingen
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)

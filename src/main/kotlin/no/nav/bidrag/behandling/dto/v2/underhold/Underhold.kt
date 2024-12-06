@@ -90,7 +90,7 @@ data class ValideringsfeilUnderhold(
                 navn = underholdskostnad!!.person.navn,
                 ident = underholdskostnad.person.ident,
                 fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
-                medIBehandling = underholdskostnad.person.rolle.any { it.behandling.id == underholdskostnad.behandling.id },
+                medIBehandling = underholdskostnad.barnetsRolleIBehandlingen != null,
             )
 
     data class UnderholdBarnDto(
@@ -144,8 +144,8 @@ data class FaktiskTilsynsutgiftDto(
 data class StønadTilBarnetilsynDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
-    val skolealder: Skolealder,
-    val tilsynstype: Tilsynstype,
+    val skolealder: Skolealder? = null,
+    val tilsynstype: Tilsynstype? = null,
     val kilde: Kilde = Kilde.MANUELL,
 )
 

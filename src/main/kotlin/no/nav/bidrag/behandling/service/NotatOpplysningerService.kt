@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
@@ -44,6 +46,8 @@ import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -69,6 +73,8 @@ import no.nav.bidrag.transport.notat.NotatBoforholdDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBarnetilleggDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragsevneDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto
+import no.nav.bidrag.transport.notat.NotatGebyrRolleDto
+import no.nav.bidrag.transport.notat.NotatGebyrRolleDto.NotatGebyrInntektDto
 import no.nav.bidrag.transport.notat.NotatInntektDto
 import no.nav.bidrag.transport.notat.NotatInntekterDto
 import no.nav.bidrag.transport.notat.NotatInntektspostDto
@@ -183,7 +189,7 @@ class NotatOpplysningerService(
                 .hentAlleBearbeidaBoforhold(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.husstandsmedlem,
-                    behandling.rolleGrunnlagSkalHentesFor!!,
+                    Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                 )
 
         val opplysningerSivilstand =
@@ -240,8 +246,8 @@ class NotatOpplysningerService(
                                     it.stønadTilBarnetilsyn.map {
                                         NotatUnderholdBarnDto.NotatStønadTilBarnetilsynDto(
                                             periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
-                                            skolealder = it.skolealder,
-                                            tilsynstype = it.tilsynstype,
+                                            skolealder = it.skolealder ?: Skolealder.IKKE_ANGITT,
+                                            tilsynstype = it.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
                                             kilde = it.kilde,
                                         )
                                     },
@@ -279,11 +285,34 @@ class NotatOpplysningerService(
                             )
                         },
                 ),
+            gebyr =
+                mapper.run { behandling.mapGebyr() }?.gebyrRoller?.map {
+                    NotatGebyrRolleDto(
+                        rolle = it.rolle.tilNotatRolle(),
+                        inntekt =
+                            NotatGebyrInntektDto(
+                                skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
+                                maksBarnetillegg = it.inntekt.maksBarnetillegg,
+                            ),
+                        beregnetIlagtGebyr = it.beregnetIlagtGebyr,
+                        beløpGebyrsats = it.beløpGebyrsats,
+                        manueltOverstyrtGebyr =
+                            if (it.erManueltOverstyrt) {
+                                NotatGebyrRolleDto.NotatManueltOverstyrGebyrDto(
+                                    ilagtGebyr = it.endeligIlagtGebyr,
+                                    begrunnelse = it.begrunnelse,
+                                )
+                            } else {
+                                null
+                            },
+                    )
+                },
             boforhold =
                 NotatBoforholdDto(
                     begrunnelse = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     andreVoksneIHusstanden = mapper.tilAndreVoksneIHusstanden(behandling),
+                    beregnetBoforhold = mapper.run { behandling.tilBeregnetBoforhold() },
                     barn =
                         behandling.husstandsmedlem.barn
                             .toSet()
@@ -474,7 +503,7 @@ private fun DelberegningBarnetilleggDto.tilNotatDto() =
 private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
-        gjelder = this.rolleGrunnlagSkalHentesFor!!.tilNotatRolle(),
+        gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
 private fun Behandling.tilNotatVirkningstidspunkt() =
@@ -623,6 +652,14 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         begrunnelse = tilNotatVirkningstidspunkt(),
+    )
+
+private fun RolleDto.tilNotatRolle() =
+    NotatPersonDto(
+        rolle = rolletype,
+        navn = navn,
+        fødselsdato = fødselsdato,
+        ident = ident?.let { Personident(ident) },
     )
 
 private fun PersoninfoDto.tilNotatRolle(behandling: Behandling) =

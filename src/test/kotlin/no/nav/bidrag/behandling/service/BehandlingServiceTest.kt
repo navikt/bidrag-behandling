@@ -30,6 +30,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
@@ -40,6 +42,8 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetillegg
+import no.nav.bidrag.behandling.utils.testdata.leggeTilNyttBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
@@ -69,6 +73,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -106,6 +111,9 @@ class BehandlingServiceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var testdataManager: TestdataManager
+
+    @Autowired
+    lateinit var dtomapper: Dtomapper
 
     @PersistenceContext
     lateinit var entityManager: EntityManager
@@ -213,9 +221,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             kjøreStubber(behandling, true)
 
             // hvis
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
 
             // så
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
+
             val ytelser =
                 setOf(
                     Inntektsrapportering.BARNETILLEGG,
@@ -236,7 +247,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
                     .size shouldBe
                     1
-                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(11)
+                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(12)
             }
         }
 
@@ -407,7 +418,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingRepository.save(behandling)
             kjøreStubber(behandling)
 
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
+
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
 
             assertSoftly(behandlingDto) {
                 it.inntekter.beregnetInntekter shouldHaveSize 3
@@ -525,7 +539,10 @@ class BehandlingServiceTest : TestContainerRunner() {
             kjøreStubber(behandling)
 
             // hvis
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
+
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
 
             // så
             val ytelser =
@@ -605,9 +622,12 @@ class BehandlingServiceTest : TestContainerRunner() {
             )
 
             // hvis
-            val behandlingDto = behandlingService.henteBehandling(behandling.id!!)
+            val hentetBehandling = behandlingService.henteBehandling(behandling.id!!)
 
             // så
+            // TODO: flytte til kontroller test - lagt inn her for enkelhetsskyld ifbm refaktorisering
+            val behandlingDto = dtomapper.tilDto(hentetBehandling, true)
+
             assertSoftly {
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata shouldNotBe null
                 behandlingDto.ikkeAktiverteEndringerIGrunnlagsdata.inntekter.årsinntekter shouldHaveSize 0
@@ -774,10 +794,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 1
             opprettetBehandling.underholdskostnader shouldHaveSize 1
             opprettetBehandling.underholdskostnader.filter {
-                Rolletype.BARN ==
-                    it.person.rolle
-                        .first()
-                        .rolletype
+                Rolletype.BARN == it.barnetsRolleIBehandlingen?.rolletype
             } shouldHaveSize 1
             opprettetBehandling.underholdskostnader.filter { it.person.ident != null } shouldHaveSize 1
         }
@@ -1247,7 +1264,76 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
 
             @Test
-            open fun `skal aktivere andre voksne i husstan`() {
+            open fun `skal aktivere andre voksne i husstanden`() {
+            }
+        }
+
+        @Nested
+        open inner class Bidrag {
+            @Test
+            @Transactional
+            open fun `skal aktivere barnetilsyn`() {
+                // gitt
+                val b =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+                kjøreStubber(b)
+                val barnetilsynInnhentesForRolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(b)!!
+                barnetilsynInnhentesForRolle shouldBe b.bidragsmottaker!!
+                val innhentet = LocalDateTime.now()
+
+                // gjeldende barnetilsyn
+                b.leggeTilGjeldendeBarnetillegg()
+
+                // nytt barnetilsyn
+                b.leggeTilNyttBarnetilsyn()
+
+                testdataManager.lagreBehandlingNewTransaction(b)
+
+                assertSoftly(b.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) { g ->
+                    g shouldHaveSize 5
+                    g.filter { it.aktiv == null } shouldHaveSize 3
+                }
+
+                // hvis
+                behandlingService.aktivereGrunnlag(
+                    b.id!!,
+                    AktivereGrunnlagRequestV2(
+                        b.bidragsmottaker!!.personident!!,
+                        Grunnlagsdatatype.BARNETILSYN,
+                        true,
+                        Personident(testdataBarn1.ident),
+                    ),
+                )
+
+                // så
+                var oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!).get()
+                assertSoftly(oppdatertBehandling.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) { a ->
+                    a shouldHaveSize 5
+                    a.filter { it.aktiv != null } shouldHaveSize 3
+                }
+
+                // hvis
+                behandlingService.aktivereGrunnlag(
+                    b.id!!,
+                    AktivereGrunnlagRequestV2(
+                        b.bidragsmottaker!!.personident!!,
+                        Grunnlagsdatatype.BARNETILSYN,
+                        true,
+                        Personident(testdataBarn2.ident),
+                    ),
+                )
+
+                oppdatertBehandling = behandlingRepository.findBehandlingById(b.id!!).get()
+                assertSoftly(oppdatertBehandling.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) { a ->
+                    a shouldHaveSize 5
+                    a.filter { it.aktiv != null } shouldHaveSize 5
+                }
             }
         }
     }
@@ -1318,6 +1404,19 @@ class BehandlingServiceTest : TestContainerRunner() {
                 mutableSetOf(
                     Rolle(
                         behandling,
+                        ident = testdataBP.ident,
+                        rolletype = Rolletype.BIDRAGSPLIKTIG,
+                        fødselsdato = LocalDate.parse("2021-01-01"),
+                    ),
+                    Rolle(
+                        behandling,
+                        ident = testdataBM.ident,
+                        rolletype = Rolletype.BIDRAGSMOTTAKER,
+                        fødselsdato = LocalDate.parse("2021-01-01"),
+                        harGebyrsøknad = true,
+                    ),
+                    Rolle(
+                        behandling,
                         ident = identOriginaltMedISaken,
                         rolletype = Rolletype.BARN,
                         fødselsdato = LocalDate.parse("2021-01-01"),
@@ -1352,6 +1451,24 @@ class BehandlingServiceTest : TestContainerRunner() {
                     behandling.id!!,
                     listOf(
                         OpprettRolleDto(
+                            Rolletype.BIDRAGSPLIKTIG,
+                            Personident(testdataBP.ident),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            null,
+                            false,
+                            harGebyrsøknad = true,
+                        ),
+                        OpprettRolleDto(
+                            Rolletype.BIDRAGSMOTTAKER,
+                            Personident(testdataBM.ident),
+                            null,
+                            fødselsdato = LocalDate.now().minusMonths(144),
+                            null,
+                            false,
+                            harGebyrsøknad = false,
+                        ),
+                        OpprettRolleDto(
                             Rolletype.BARN,
                             Personident(identOriginaltMedISaken),
                             null,
@@ -1384,6 +1501,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 )
             val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+            behandlingEtter.bidragspliktig!!.harGebyrsøknad shouldBe true
+            behandlingEtter.bidragsmottaker!!.harGebyrsøknad shouldBe false
             behandlingEtter.søknadsbarn shouldHaveSize 3
             behandlingEtter.søknadsbarn.find { it.ident == "1111234" }!!.innbetaltBeløp shouldBe BigDecimal("100.254")
             behandlingEtter.husstandsmedlem shouldHaveSize 3
@@ -1495,6 +1614,59 @@ class BehandlingServiceTest : TestContainerRunner() {
                 jsonListeTilObjekt<Sivilstand>(
                     s.first { it.erBearbeidet && it.aktiv == null }.data,
                 ).minByOrNull { it.periodeFom }!!.periodeFom shouldBeEqual nyVirkningsdato
+            }
+        }
+
+        @Test
+        @Transactional
+        open fun `skal oppdatere ikke aktivert barnetilsyn ved endring av virkningsdato fremover i tid`() {
+            // gitt
+            val b =
+                testdataManager.oppretteBehandling(
+                    false,
+                    false,
+                    false,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+            kjøreStubber(b)
+            val barnetilsynInnhentesForRolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(b)!!
+            barnetilsynInnhentesForRolle shouldBe b.bidragsmottaker!!
+            stubUtils.stubbeGrunnlagsinnhentingForBehandling(b)
+            stubPersonConsumer()
+            grunnlagService.oppdatereGrunnlagForBehandling(b)
+
+            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilNyttBarnetilsyn()
+
+            assertSoftly(b.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) { g ->
+                g shouldHaveSize 5
+                g.filter { it.aktiv == null } shouldHaveSize 3
+            }
+
+            val ikkeAktive = b.grunnlag.hentSisteIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type }
+
+            val nyVirkningsdato =
+                ikkeAktive
+                    .flatMap { it.konvertereData<Set<BarnetilsynGrunnlagDto>>()!! }
+                    .minBy { it.periodeFra }
+                    .periodeFra
+                    .plusMonths(6)
+
+            // hvis
+            behandlingService.oppdatereVirkningstidspunkt(
+                b.id!!,
+                OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
+            )
+
+            // så
+            entityManager.flush()
+            entityManager.refresh(b)
+            assertSoftly(b.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) { s ->
+                s shouldHaveSize 5
+                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(
+                    s.first { it.erBearbeidet && it.aktiv == null }.data,
+                ).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual nyVirkningsdato
             }
         }
 

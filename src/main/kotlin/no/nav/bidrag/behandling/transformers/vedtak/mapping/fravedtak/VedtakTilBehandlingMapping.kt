@@ -243,7 +243,7 @@ class VedtakTilBehandlingMapping(
                             Underholdskostnad(
                                 id = index.toLong(),
                                 behandling = behandling,
-                                person = Person(ident = rolle.ident!!, rolle = mutableSetOf(rolle)),
+                                person = Person(id = index.toLong(), ident = rolle.ident!!, rolle = mutableSetOf(rolle)),
                             )
                         } else {
                             underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = Personident(rolle.ident!!)))
@@ -296,6 +296,7 @@ class VedtakTilBehandlingMapping(
                                 behandling = behandling,
                                 person =
                                     Person(
+                                        id = 1,
                                         ident = gjelderBarn.ident?.verdi,
                                         navn = gjelderBarn.navn,
                                         fødselsdato = gjelderBarn.fødselsdato,
@@ -375,7 +376,7 @@ class VedtakTilBehandlingMapping(
     ): MutableSet<Samvær> =
         filtrerBasertPåEgenReferanse(
             Grunnlagstype.SAMVÆRSPERIODE,
-        ).groupBy { it.gjelderReferanse }
+        ).groupBy { it.gjelderBarnReferanse }
             .map { (gjelderReferanse, perioder) ->
                 val person = hentPersonMedReferanse(gjelderReferanse)!!
                 val samvær =

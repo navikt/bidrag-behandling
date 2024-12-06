@@ -1,13 +1,20 @@
 package no.nav.bidrag.behandling.service
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
@@ -19,18 +26,28 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarnetilsyn
+import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
+import no.nav.bidrag.behandling.transformers.underhold.justerePerioderEtterVirkningsdato
+import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.ident.Personident
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDateTime
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
+
+private val log = KotlinLogging.logger {}
 
 @Service
 class UnderholdService(
@@ -38,6 +55,7 @@ class UnderholdService(
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
     private val dtomapper: Dtomapper,
+    private val personService: PersonService,
 ) {
     fun oppdatereBegrunnelse(
         behandling: Behandling,
@@ -45,11 +63,12 @@ class UnderholdService(
     ) {
         val rolleSøknadsbarn =
             request.underholdsid?.let {
-                henteOgValidereUnderholdskostnad(behandling, it).person.rolle.firstOrNull()
+                henteOgValidereUnderholdskostnad(behandling, it).barnetsRolleIBehandlingen
             }
 
         if (request.underholdsid == null) {
-            val underholdHarAndreBarn = behandling.underholdskostnader.find { it.person.rolle.isEmpty() } != null
+            val underholdHarAndreBarn =
+                behandling.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
             if (!underholdHarAndreBarn) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
@@ -95,7 +114,7 @@ class UnderholdService(
     ): UnderholdDto {
         request.validere()
         request.harTilsynsordning?.let { underholdskostnad.harTilsynsordning = it }
-        val rolleSøknadsbarn = underholdskostnad.person.rolle.firstOrNull()
+        val rolleSøknadsbarn = underholdskostnad.barnetsRolleIBehandlingen
         request.begrunnelse?.let {
             notatService.oppdatereNotat(
                 underholdskostnad.behandling,
@@ -112,7 +131,7 @@ class UnderholdService(
         behandling: Behandling,
         gjelderBarn: BarnDto,
     ): Underholdskostnad {
-        gjelderBarn.validere(behandling)
+        gjelderBarn.validere(behandling, personService)
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
@@ -148,6 +167,12 @@ class UnderholdService(
         val oppdatertBarnetilsyn: Barnetilsyn =
             request.id?.let { id ->
                 val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
+
+                // dersom periode endres skal kilde alltid være manuell
+                if (barnetilsyn.fom != request.periode.fom || barnetilsyn.tom != request.periode.tom) {
+                    barnetilsyn.kilde = Kilde.MANUELL
+                }
+
                 barnetilsyn.fom = request.periode.fom
                 barnetilsyn.tom = request.periode.tom
                 barnetilsyn.under_skolealder =
@@ -156,8 +181,8 @@ class UnderholdService(
                         Skolealder.OVER -> false
                         else -> null
                     }
-                barnetilsyn.omfang = request.tilsynstype
-                barnetilsyn.kilde = Kilde.MANUELL
+                barnetilsyn.omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT
+
                 barnetilsyn
             } ?: run {
                 val barnetilsyn =
@@ -170,12 +195,17 @@ class UnderholdService(
                                 Skolealder.OVER -> false
                                 else -> null
                             },
-                        omfang = request.tilsynstype,
+                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
                         kilde = Kilde.MANUELL,
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.barnetilsyn.add(barnetilsyn)
-                underholdskostnadRepository.save(underholdskostnad).barnetilsyn.last()
+                underholdskostnad.harTilsynsordning = true
+                underholdskostnadRepository
+                    .save(underholdskostnad)
+                    .barnetilsyn
+                    .sortedBy { it.id }
+                    .last()
             }
 
         return OppdatereUnderholdResponse(
@@ -184,6 +214,72 @@ class UnderholdService(
                 dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
+    }
+
+    fun oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
+        behandling: Behandling,
+        gjelderSøknadsbarn: Personident,
+        overskriveManuelleOpplysninger: Boolean,
+    ) {
+        val ikkeAktiverteGrunnlag =
+            behandling.grunnlag.hentAlleIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type }
+
+        val nyesteIkkeaktiverteGrunnlag =
+            ikkeAktiverteGrunnlag
+                .filter { !it.erBearbeidet }
+                .maxByOrNull { it.innhentet }
+
+        val ikkeaktivertBearbeidaGrunnlagForSøknadsbarn =
+            ikkeAktiverteGrunnlag
+                .filter { it.erBearbeidet }
+                .find { it.gjelder == gjelderSøknadsbarn.verdi }
+
+        if (nyesteIkkeaktiverteGrunnlag == null || ikkeaktivertBearbeidaGrunnlagForSøknadsbarn == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ingen grunnlag av type BARNETILSYN å aktivere for søknadsbarn i behandling $behandling.id",
+            )
+        }
+
+        val data =
+            behandling.grunnlag
+                .hentAlleIkkeAktiv()
+                .filter { it.gjelder == gjelderSøknadsbarn.verdi }
+                .toSet()
+                .hentAlleBearbeidaBarnetilsyn(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.bidragsmottaker!!,
+                )
+
+        val u = behandling.underholdskostnader.find { it.person.personident == gjelderSøknadsbarn }
+        if (u == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ingen underholdskostnad tilknyttet søknadsbarn i behandling $behandling.id i forbindelse med aktivering av BARNETILSYN.",
+            )
+        }
+
+        if (overskriveManuelleOpplysninger) {
+            u.barnetilsyn.clear()
+            u.barnetilsyn.addAll(data.tilBarnetilsyn(u))
+        } else {
+            val gamleOffentligeBarnetilsyn = u.barnetilsyn.filter { it.kilde == Kilde.OFFENTLIG }
+            u.barnetilsyn.removeAll(gamleOffentligeBarnetilsyn)
+            u.barnetilsyn.addAll(data.tilBarnetilsyn(u))
+        }
+
+        ikkeaktivertBearbeidaGrunnlagForSøknadsbarn.aktiv = LocalDateTime.now()
+        if (ikkeAktiverteGrunnlag.filter { it.erBearbeidet }.find { it.gjelder != gjelderSøknadsbarn.verdi } == null) {
+            nyesteIkkeaktiverteGrunnlag.aktiv = LocalDateTime.now()
+        }
+    }
+
+    @Transactional
+    fun tilpasseUnderholdEtterVirkningsdato(behandling: Behandling) {
+        tilpasseAktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
+        tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
+        behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
+        behandling.underholdskostnader.justerePerioderEtterVirkningsdato()
     }
 
     @Transactional
@@ -214,7 +310,12 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
-                underholdskostnadRepository.save(underholdskostnad).faktiskeTilsynsutgifter.last()
+                underholdskostnad.harTilsynsordning = true
+                underholdskostnadRepository
+                    .save(underholdskostnad)
+                    .faktiskeTilsynsutgifter
+                    .sortedBy { it.id }
+                    .last()
             }
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
@@ -250,7 +351,12 @@ class UnderholdService(
                         underholdskostnad = underholdskostnad,
                     )
                 underholdskostnad.tilleggsstønad.add(tilleggsstønad)
-                underholdskostnadRepository.save(underholdskostnad).tilleggsstønad.last()
+                underholdskostnad.harTilsynsordning = true
+                underholdskostnadRepository
+                    .save(underholdskostnad)
+                    .tilleggsstønad
+                    .sortedBy { it.id }
+                    .last()
             }
 
         return OppdatereUnderholdResponse(
@@ -309,7 +415,7 @@ class UnderholdService(
     ): UnderholdDto? {
         behandling.underholdskostnader.remove(underholdskostnad)
         underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
-        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.person.rolle.isEmpty()) {
+        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.barnetsRolleIBehandlingen == null) {
             personRepository.deleteById(underholdskostnad.person.id!!)
             if (!behandling.harAndreBarnIUnderhold()) {
                 notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
@@ -335,5 +441,31 @@ class UnderholdService(
         val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
         behandling.underholdskostnader.add(u)
         return u
+    }
+
+    private fun tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling: Behandling) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
+        val sisteAktiveGrunnlag =
+            behandling.henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, false),
+                grunnlagsdatatype.innhentesForRolle(behandling)!!,
+            ) ?: run {
+                log.warn { "Fant ingen aktive barnetilsynsgrunnlag som må tilpasses nytt virkingstidspunkt." }
+                return
+            }
+        sisteAktiveGrunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(false)
+    }
+
+    private fun tilpasseAktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling: Behandling) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
+        val sisteAktiveGrunnlag =
+            behandling.henteNyesteAktiveGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, false),
+                grunnlagsdatatype.innhentesForRolle(behandling)!!,
+            ) ?: run {
+                log.warn { "Fant ingen aktive barnetilsynsgrunnlag som må tilpasses nytt virkingstidspunkt." }
+                return
+            }
+        sisteAktiveGrunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(true)
     }
 }

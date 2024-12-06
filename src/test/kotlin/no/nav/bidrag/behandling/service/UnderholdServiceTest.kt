@@ -5,9 +5,12 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.date.shouldBeBefore
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -17,8 +20,16 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
@@ -30,10 +41,16 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetillegg
+import no.nav.bidrag.behandling.utils.testdata.leggeTilNyttBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -43,6 +60,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -51,6 +69,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
+import stubUnderholdskostnadRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertFailsWith
@@ -65,6 +84,9 @@ class UnderholdServiceTest {
 
     @MockkBean
     lateinit var personConsumer: BidragPersonConsumer
+
+    @MockkBean
+    lateinit var behandlingService: BehandlingService
 
     @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
@@ -103,8 +125,8 @@ class UnderholdServiceTest {
                 ValiderBeregning(),
                 evnevurderingService,
                 personService,
+                BeregnGebyrApi(stubSjablonService()),
             )
-
         dtomapper =
             Dtomapper(
                 tilgangskontrollService,
@@ -119,19 +141,10 @@ class UnderholdServiceTest {
                 personRepository,
                 notatService,
                 dtomapper,
+                personService,
             )
 
-        every { underholdskostnadRepository.save(any()) }.answers {
-            val underholdskostnad = firstArg<Underholdskostnad>()
-            underholdskostnad.tilleggsstønad.forEachIndexed { index, tilleggsstønad ->
-                tilleggsstønad.id = index.toLong()
-            }
-            underholdskostnad.barnetilsyn.forEachIndexed { index, barnetilsyn -> barnetilsyn.id = index.toLong() }
-            underholdskostnad.faktiskeTilsynsutgifter.forEachIndexed { index, faktiskeTilsynsutgifter ->
-                faktiskeTilsynsutgifter.id = index.toLong()
-            }
-            underholdskostnad
-        }
+        stubUnderholdskostnadRepository(underholdskostnadRepository)
     }
 
     @Nested
@@ -396,6 +409,31 @@ class UnderholdServiceTest {
             // så
             respons.statusCode shouldBe HttpStatus.CONFLICT
         }
+
+        @Test
+        open fun `feil dersom barns personident ikke finnes`() {
+            // gitt
+            val personidentBarn = "12345678910"
+            every { personConsumer.hentPerson(personidentBarn) }.throws(HttpClientErrorException(HttpStatus.NOT_FOUND))
+
+            val behandling =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            val request = BarnDto(personident = Personident(personidentBarn))
+
+            // hvis
+            val respons =
+                assertFailsWith<HttpClientErrorException> {
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
+                }
+
+            // så
+            respons.statusCode shouldBe HttpStatus.BAD_REQUEST
+        }
     }
 
     @Nested
@@ -419,10 +457,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -476,10 +511,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -539,10 +571,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -569,7 +598,7 @@ class UnderholdServiceTest {
                                 Skolealder.UNDER -> true
                                 else -> null
                             },
-                        request.tilsynstype,
+                        request.tilsynstype!!,
                         kilde = Kilde.OFFENTLIG,
                     ),
                 )
@@ -604,10 +633,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -653,6 +679,130 @@ class UnderholdServiceTest {
                     kilde shouldBe Kilde.MANUELL
                 }
             }
+
+            @Test
+            open fun `skal sette kilde til manuell dersom periode på offentlig barnetilsynsinnslag endres`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val underholdskostnad =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                underholdskostnad.shouldNotBeNull()
+
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        id = 1,
+                        underholdskostnad = underholdskostnad,
+                        fom = LocalDate.now(),
+                        under_skolealder = true,
+                        kilde = Kilde.OFFENTLIG,
+                        omfang = Tilsynstype.HELTID,
+                    ),
+                )
+
+                underholdskostnad.barnetilsyn shouldHaveSize 1
+
+                val request =
+                    StønadTilBarnetilsynDto(
+                        id = 1,
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
+                        skolealder = Skolealder.OVER,
+                        tilsynstype = Tilsynstype.DELTID,
+                    )
+
+                // hvis
+                underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+
+                // så
+                val u = behandling.underholdskostnader.first()
+                u.shouldNotBeNull()
+                u.barnetilsyn.shouldNotBeEmpty()
+                u.barnetilsyn shouldHaveSize 1
+
+                assertSoftly(u.barnetilsyn.first()) {
+                    fom shouldBe request.periode.fom
+                    tom shouldBe request.periode.tom
+                    under_skolealder shouldBe false
+                    omfang shouldBe request.tilsynstype
+                    kilde shouldBe Kilde.MANUELL
+                }
+            }
+
+            @Test
+            open fun `skal ikke endre kilde på offentlig innslag så lenge periode ikke endres`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val underholdskostnad =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                underholdskostnad.shouldNotBeNull()
+
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        id = 1,
+                        underholdskostnad = underholdskostnad,
+                        fom = LocalDate.now(),
+                        under_skolealder = true,
+                        kilde = Kilde.OFFENTLIG,
+                        omfang = Tilsynstype.HELTID,
+                    ),
+                )
+
+                underholdskostnad.barnetilsyn shouldHaveSize 1
+
+                val request =
+                    StønadTilBarnetilsynDto(
+                        id = 1,
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now(),
+                                null,
+                            ),
+                        skolealder = Skolealder.OVER,
+                        tilsynstype = Tilsynstype.DELTID,
+                    )
+
+                // hvis
+                underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+
+                // så
+                val u = behandling.underholdskostnader.first()
+                u.shouldNotBeNull()
+                u.barnetilsyn.shouldNotBeEmpty()
+                u.barnetilsyn shouldHaveSize 1
+
+                assertSoftly(u.barnetilsyn.first()) {
+                    fom shouldBe request.periode.fom
+                    tom shouldBe request.periode.tom
+                    under_skolealder shouldBe false
+                    omfang shouldBe request.tilsynstype
+                    kilde shouldBe Kilde.OFFENTLIG
+                }
+            }
         }
 
         @Nested
@@ -673,10 +823,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -734,10 +881,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
 
                 underholdskostnad.shouldNotBeNull()
@@ -804,10 +948,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -845,10 +986,7 @@ class UnderholdServiceTest {
 
                 val underholdskostnad =
                     behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! ==
-                            it.person.rolle
-                                .first()
-                                .ident
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
                     }
                 underholdskostnad.shouldNotBeNull()
 
@@ -869,6 +1007,240 @@ class UnderholdServiceTest {
                     faktiskTilsynsutgift.shouldBeEmpty()
                     tilleggsstønad.shouldBeEmpty()
                 }
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Tester justering av perioder i fbm endring av virkningsdato")
+    open inner class OppdatereVirkningsdato {
+        @Test
+        open fun `skal tilpasse perioder for aktive bearbeida barnetilsynsgrunnlag etter virkningstidspunkt`() {
+            // gitt
+            val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
+
+            val b =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            b.leggeTilGjeldendeBarnetillegg()
+
+            val nyVirkningsdato =
+                b
+                    .henteNyesteAktiveGrunnlag(
+                        Grunnlagstype(grunnlagsdatatype, false),
+                        grunnlagsdatatype.innhentesForRolle(b)!!,
+                    ).konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                    ?.minBy { it.periodeFra }
+                    ?.periodeFra
+                    ?.plusMonths(4)
+
+            nyVirkningsdato shouldNotBe null
+
+            b.grunnlag
+                .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
+                .maxBy { it.innhentet }
+                .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                ?.minBy { it.periodeFra }
+                ?.periodeFra
+                ?.shouldBeBefore(nyVirkningsdato!!)
+            b.virkningstidspunkt = nyVirkningsdato
+
+            // hvis
+            underholdService.tilpasseUnderholdEtterVirkningsdato(b)
+
+            // så
+            val aktiveBearbeidaBarnetilsyn =
+                b.grunnlag.hentAlleAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            aktiveBearbeidaBarnetilsyn shouldHaveSize 1
+            assertSoftly(aktiveBearbeidaBarnetilsyn.first()) {
+                gjelder.shouldNotBeNull()
+                aktiv.shouldNotBeNull()
+                erBearbeidet shouldBe true
+            }
+
+            aktiveBearbeidaBarnetilsyn.first().konvertereData<Set<BarnetilsynGrunnlagDto>>()?.shouldHaveSize(1)
+
+            assertSoftly(aktiveBearbeidaBarnetilsyn.first().konvertereData<Set<BarnetilsynGrunnlagDto>>()?.first()) {
+                it?.periodeFra.shouldNotBeNull()
+                it!!.periodeFra shouldBe nyVirkningsdato
+                it.periodeTil shouldBe null
+                it.beløp shouldBe 4000
+                it.barnPersonId shouldBe testdataBarn1.ident
+            }
+        }
+
+        @Test
+        open fun `skal tilpasse perioder for ikke-aktive bearbeida barnetilsynsgrunnlag etter virkningstidspunkt`() {
+            // gitt
+            val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
+
+            val b =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilNyttBarnetilsyn()
+
+            val nyVirkningsdato =
+                b
+                    .henteNyesteIkkeAktiveGrunnlag(
+                        Grunnlagstype(grunnlagsdatatype, false),
+                        grunnlagsdatatype.innhentesForRolle(b)!!,
+                    ).konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                    ?.filter { it.barnPersonId == testdataBarn1.ident }
+                    ?.minBy { it.periodeFra }
+                    ?.periodeFra
+                    ?.plusMonths(1)
+
+            nyVirkningsdato shouldNotBe null
+
+            b.grunnlag
+                .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv == null }
+                .maxBy { it.innhentet }
+                .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                ?.minBy { it.periodeFra }
+                ?.periodeFra
+                ?.shouldBeBefore(nyVirkningsdato!!)
+            b.virkningstidspunkt = nyVirkningsdato
+
+            // hvis
+            underholdService.tilpasseUnderholdEtterVirkningsdato(b)
+
+            // så
+            val ikkeaktiveBearbeidaBarnetilsyn =
+                b.grunnlag.hentAlleIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            ikkeaktiveBearbeidaBarnetilsyn shouldHaveSize 1
+            assertSoftly(ikkeaktiveBearbeidaBarnetilsyn.find { it.gjelder == testdataBarn1.ident }!!) {
+                gjelder.shouldNotBeNull()
+                aktiv.shouldBeNull()
+                erBearbeidet shouldBe true
+            }
+
+            ikkeaktiveBearbeidaBarnetilsyn
+                .find { it.gjelder == testdataBarn1.ident }!!
+                .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                ?.shouldHaveSize(4)
+
+            assertSoftly(
+                ikkeaktiveBearbeidaBarnetilsyn
+                    .find { it.gjelder == testdataBarn1.ident }!!
+                    .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                    ?.minBy { it.periodeFra },
+            ) {
+                it?.periodeFra.shouldNotBeNull()
+                it!!.periodeFra shouldBe nyVirkningsdato
+                it.periodeTil shouldNotBe null
+                it.beløp shouldBe 4500
+                it.barnPersonId shouldBe testdataBarn1.ident
+            }
+        }
+
+        @Test
+        open fun `skal tilpasse perioder etter virkningsdato for alle tabeller i underholdskostnad`() {
+            // gitt
+            val b =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            b.leggeTilGjeldendeBarnetillegg()
+            val u =
+                b.underholdskostnader.find { it.barnetsRolleIBehandlingen?.personident?.verdi == testdataBarn1.ident }!!
+
+            u.barnetilsyn.first().fom = b.virkningstidspunktEllerSøktFomDato.minusMonths(2)
+
+            u.faktiskeTilsynsutgifter.add(
+                FaktiskTilsynsutgift(
+                    underholdskostnad = u,
+                    fom = b.virkningstidspunktEllerSøktFomDato.minusMonths(2),
+                    tilsynsutgift = BigDecimal(5000),
+                    kostpenger = BigDecimal(900),
+                ),
+            )
+
+            u.tilleggsstønad.add(
+                Tilleggsstønad(
+                    underholdskostnad = u,
+                    dagsats = BigDecimal(120),
+                    fom = b.virkningstidspunktEllerSøktFomDato.minusMonths(2),
+                ),
+            )
+
+            b.virkningstidspunkt = b.virkningstidspunkt?.plusMonths(1)
+
+            // hvis
+            underholdService.tilpasseUnderholdEtterVirkningsdato(b)
+
+            // så
+            u.barnetilsyn.first().fom shouldBe b.virkningstidspunkt
+            u.faktiskeTilsynsutgifter.first().fom shouldBe b.virkningstidspunkt
+            u.tilleggsstønad.first().fom shouldBe b.virkningstidspunkt
+        }
+    }
+
+    @Nested
+    @DisplayName("Tester automatisk aktivering av barnetilsyn")
+    open inner class Aktivere {
+        @Test
+        open fun `skal aktivere nytt barnetilsynsgrunnlag dersom det ikke inneholder endringer som må godkjennes`() {
+            // gitt
+            val b =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilNyttBarnetilsyn()
+
+            // hvis
+            b.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
+
+            // så
+            val ikkeaktiveBearbeidaBarnetilsyn =
+                b.grunnlag.hentAlleIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            ikkeaktiveBearbeidaBarnetilsyn shouldHaveSize 1
+            assertSoftly(ikkeaktiveBearbeidaBarnetilsyn.find { it.gjelder == testdataBarn1.ident }!!) {
+                gjelder.shouldNotBeNull()
+                aktiv.shouldBeNull()
+                erBearbeidet shouldBe true
+            }
+
+            ikkeaktiveBearbeidaBarnetilsyn
+                .find { it.gjelder == testdataBarn1.ident }!!
+                .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                ?.shouldHaveSize(3)
+
+            val aktiveBearbeidaBarnetilsyn = b.grunnlag.hentAlleAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            aktiveBearbeidaBarnetilsyn shouldHaveSize 2
+
+            aktiveBearbeidaBarnetilsyn.filter { it.gjelder == testdataBarn2.ident } shouldHaveSize 1
+
+            assertSoftly(aktiveBearbeidaBarnetilsyn.find { it.gjelder == testdataBarn2.ident }) {
+                it?.aktiv.shouldNotBeNull()
+                it?.erBearbeidet shouldBe true
+            }
+
+            val dataTestbarn2 = aktiveBearbeidaBarnetilsyn.find { it.gjelder == testdataBarn2.ident }.konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
+            dataTestbarn2 shouldHaveSize 1
+
+            assertSoftly(dataTestbarn2.first()) {
+                beløp shouldBe 4000
+                barnPersonId shouldBe testdataBarn2.ident
+                periodeFra shouldBeGreaterThan b.virkningstidspunktEllerSøktFomDato
+                periodeTil shouldBe null
+                tilsynstype shouldBe null
+                skolealder shouldBe null
             }
         }
     }

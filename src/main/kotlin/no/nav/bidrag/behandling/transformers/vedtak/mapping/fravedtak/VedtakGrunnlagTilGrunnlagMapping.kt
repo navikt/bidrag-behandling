@@ -143,7 +143,7 @@ fun List<GrunnlagDto>.hentInnhentetSivilstand() =
             }
         }
 
-fun List<GrunnlagDto>.hentBarnetilsynListe() =
+fun List<GrunnlagDto>.henteGrunnlagBarnetilsyn() =
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN)
         .flatMap {
             val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
@@ -388,11 +388,6 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                     Grunnlagsdatatype.BARNETILLEGG,
                     Inntektsrapportering.BARNETILLEGG,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG),
-                ),
-                opprettGrunnlagBearbeidet(
-                    Grunnlagsdatatype.BARNETILSYN,
-                    Inntektsrapportering.BARNETILSYN,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
                 ),
                 opprettGrunnlagBearbeidet(
                     Grunnlagsdatatype.UTVIDET_BARNETRYGD,

@@ -14,12 +14,15 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
+import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -70,6 +73,28 @@ import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+
+fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
+    val erManueltOverstyrt = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true
+
+    return GebyrRolleDto(
+        inntekt =
+            GebyrRolleDto.GebyrInntektDto(
+                skattepliktigInntekt = skattepliktigInntekt,
+                maksBarnetillegg = maksBarnetillegg,
+            ),
+        beregnetIlagtGebyr = ilagtGebyr,
+        begrunnelse = if (erManueltOverstyrt) rolle.manueltOverstyrtGebyr?.begrunnelse else null,
+        endeligIlagtGebyr =
+            if (erManueltOverstyrt) {
+                rolle.manueltOverstyrtGebyr!!.ilagtGebyr == true
+            } else {
+                ilagtGebyr
+            },
+        beløpGebyrsats = beløpGebyrsats,
+        rolle = rolle.tilDto(),
+    )
+}
 
 fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnlag =
     BeregnValgteInntekterGrunnlag(
@@ -427,33 +452,6 @@ fun List<DelberegningUnderholdskostnad>.tilUnderholdskostnadDto() =
                 total = it.underholdskostnad,
             )
         }.toSet()
-
-fun List<GrunnlagDto>.finneFaktiskTilsynsutgiftsperioder(): List<DelberegningUnderholdskostnad> =
-    this
-        .filtrerBasertPåEgenReferanse(
-            Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
-        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
-        .sortedBy {
-            it.periode.fom
-        }
-
-fun List<GrunnlagDto>.finneTilleggsstønadsperioder(): List<DelberegningUnderholdskostnad> =
-    this
-        .filtrerBasertPåEgenReferanse(
-            Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
-        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
-        .sortedBy {
-            it.periode.fom
-        }
-
-fun List<GrunnlagDto>.finneBarnetilleggsperioder(): List<DelberegningUnderholdskostnad> =
-    this
-        .filtrerBasertPåEgenReferanse(
-            Grunnlagstype.BARNETILLEGG_PERIODE,
-        ).innholdTilObjekt<DelberegningUnderholdskostnad>()
-        .sortedBy {
-            it.periode.fom
-        }
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<DelberegningUnderholdskostnad> =
     this

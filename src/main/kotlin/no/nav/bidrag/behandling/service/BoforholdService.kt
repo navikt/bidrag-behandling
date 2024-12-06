@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereHusstandsmedlem
@@ -107,7 +108,7 @@ class BoforholdService(
             behandling = behandling,
             notattype = Notattype.BOFORHOLD,
             notattekst = request.henteNyttNotat() ?: "",
-            rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+            rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
         )
 
         return OppdatereBoforholdResponse(
@@ -1187,7 +1188,7 @@ class BoforholdService(
                 data = tilJson(boforholdrespons),
                 innhentet = LocalDateTime.now(),
                 aktiv = LocalDateTime.now(),
-                rolle = behandling.rolleGrunnlagSkalHentesFor!!,
+                rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                 gjelder = personidentBarn.verdi,
             ),
         )
