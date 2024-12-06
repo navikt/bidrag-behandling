@@ -58,6 +58,7 @@ import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
 import java.time.LocalDate
@@ -111,7 +112,31 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
-fun Rolle.tilDto() = RolleDto(id!!, rolletype, ident, navn ?: hentPersonVisningsnavn(ident), fødselsdato)
+fun Rolle.tilDto() =
+    RolleDto(
+        id!!,
+        rolletype,
+        ident,
+        navn ?: hentPersonVisningsnavn(ident),
+        fødselsdato,
+        this.harInnvilgetTilleggsstønad(),
+    )
+
+fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
+    val tilleggsstønad =
+        this.behandling.grunnlag
+            .filter { Grunnlagsdatatype.TILLEGGSSTØNAD == it.type && !it.erBearbeidet }
+            .filter { this == it.rolle }
+
+    if (tilleggsstønad.isNotEmpty()) {
+        return tilleggsstønad
+            .maxBy { it.innhentet }
+            .konvertereData<Set<TilleggsstønadGrunnlagDto>>()
+            ?.first()
+            ?.harInnvilgetVedtak
+    }
+    return null
+}
 
 fun Map<Grunnlagsdatatype, FeilrapporteringDto?>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this

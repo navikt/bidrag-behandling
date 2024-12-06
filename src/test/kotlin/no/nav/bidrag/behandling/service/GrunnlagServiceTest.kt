@@ -80,8 +80,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGru
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.error.ShouldHaveDimensions.shouldHaveSize
-import org.assertj.core.error.ShouldHaveSize.shouldHaveSize
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -564,8 +562,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     }
                 }
 
-                behandling.underholdskostnader shouldHaveSize 2
-                behandling.underholdskostnader.flatMap { it.barnetilsyn } shouldHaveSize 0
+                behandling.grunnlag
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.TILLEGGSSTØNAD == it.type && !it.erBearbeidet } shouldHaveSize 0
 
                 // hvis
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -573,33 +572,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
 
-                behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 1
-
-                val uTestbarn1 =
-                    behandling.underholdskostnader.find {
-                        it.person.rolle
-                            .first()
-                            .personident
-                            ?.verdi == testdataBarn1.ident
-                    }
-
-                assertSoftly(uTestbarn1) {
-                    shouldNotBeNull()
-                    harTilsynsordning shouldBe true
-                }
-
-                val uTestbarn2 =
-                    behandling.underholdskostnader.find {
-                        it.person.rolle
-                            .first()
-                            .personident
-                            ?.verdi == testdataBarn2.ident
-                    }
-
-                assertSoftly(uTestbarn2) {
-                    shouldNotBeNull()
-                    harTilsynsordning shouldBe false
-                }
+                behandling.grunnlag
+                    .filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype }
+                    .filter { Grunnlagsdatatype.TILLEGGSSTØNAD == it.type && !it.erBearbeidet } shouldHaveSize 1
             }
         }
 
@@ -1238,7 +1213,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
                 alleAktiveGrunnlag.size shouldBe 3
                 val sistInnhentaSmåbarnstillegg =
-                    behandling.grunnlag.filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }.maxBy { it.innhentet }
+                    behandling.grunnlag
+                        .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
+                        .maxBy { it.innhentet }
                 sistInnhentaSmåbarnstillegg.aktiv shouldBe null
 
                 val gjeldendeSmåbarnstillegg =
@@ -4413,7 +4390,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal ikke lagre ny innhenting av skattegrunnlag med teknisk feil dersom forrige innhenting var OK`() {
             // gitt
-            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling =
+                oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag
@@ -4560,7 +4538,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Transactional
         open fun `skal lagre endret skattegrunnlag med teknisk feil dersom forrige innhenting hadde teknisk feil`() {
             // gitt
-            val behandling = oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
+            val behandling =
+                oppretteTestbehandling(true, setteDatabaseider = true, inkludereInntektsgrunnlag = true)
 
             val skattegrunnlag =
                 behandling.grunnlag

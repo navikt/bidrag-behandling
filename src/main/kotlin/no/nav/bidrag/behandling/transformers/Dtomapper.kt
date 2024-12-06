@@ -585,8 +585,7 @@ class Dtomapper(
             søknadsid = soknadsid,
             behandlerenhet = behandlerEnhet,
             gebyr = mapGebyr(),
-            roller =
-                roller.map { it.tilDto() }.toSet(),
+            roller = roller.map { it.tilDto() }.toSet(),
             søknadRefId = soknadRefId,
             vedtakRefId = refVedtaksid,
             virkningstidspunkt =
@@ -767,10 +766,13 @@ class Dtomapper(
             ?.filter { it.relasjon != Familierelasjon.BARN }
             ?.filter {
                 it.fødselsdato == null ||
-                    it.fødselsdato!!.withDayOfMonth(1).isBefore(behandling.virkningstidspunktEllerSøktFomDato.minusYears(18))
+                    it.fødselsdato!!
+                        .withDayOfMonth(1)
+                        .isBefore(behandling.virkningstidspunktEllerSøktFomDato.minusYears(18))
             }?.filter {
                 it.borISammeHusstandDtoListe.any { p ->
-                    val periodeBorHosBP = ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                    val periodeBorHosBP =
+                        ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
                     val periodeBPErInnenfor =
                         periodeBorHosBP.fom >= periode.fom &&
                             periodeBorHosBP.til != null &&

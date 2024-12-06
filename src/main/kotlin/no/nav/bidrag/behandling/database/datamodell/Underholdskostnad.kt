@@ -25,7 +25,6 @@ open class Underholdskostnad(
     @JoinColumn(name = "person_id", nullable = false)
     open val person: Person,
     open var harTilsynsordning: Boolean? = null,
-    open var harTilleggsstønad: Boolean? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "underholdskostnad",

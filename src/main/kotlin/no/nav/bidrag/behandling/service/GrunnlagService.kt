@@ -740,23 +740,6 @@ class GrunnlagService(
             }
         }
 
-        // Oppdatere tilleggsstønad
-        innhentetGrunnlag.hentGrunnlagDto?.let { grunnlag ->
-            if (grunnlag.tilleggsstønadBarnetilsynListe.isNotEmpty() &&
-                feilrapporteringer.filter { Grunnlagsdatatype.BARNETILSYN == it.key }.isEmpty()
-            ) {
-                val uSøknadsbarn =
-                    behandling.underholdskostnader.filter {
-                        it.barnetsRolleIBehandlingen != null &&
-                            it.barnetsRolleIBehandlingen!!.personident != null
-                    }
-                grunnlag.tilleggsstønadBarnetilsynListe.forEach { ts ->
-                    val u = uSøknadsbarn.find { it.barnetsRolleIBehandlingen!!.personident!!.verdi == ts.partPersonId }
-                    u?.harTilsynsordning = ts.harInnvilgetVedtak
-                }
-            }
-        }
-
         return feilrapporteringer
     }
 
@@ -1679,9 +1662,7 @@ class GrunnlagService(
                     behandling,
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
-                    innhentetGrunnlag.tilleggsstønadBarnetilsynListe
-                        .filter { harBarnRolleIBehandling(it.partPersonId, behandling) }
-                        .toSet(),
+                    innhentetGrunnlag.tilleggsstønadBarnetilsynListe.toSet(),
                 )
             }
 
