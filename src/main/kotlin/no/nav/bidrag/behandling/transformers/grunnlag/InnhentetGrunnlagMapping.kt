@@ -203,10 +203,12 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
             )
         }.toSet()
 
+fun List<Grunnlag>.tilInnhentetGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
+    mapBarnetilsyn(personobjekter)
+
 fun List<Grunnlag>.tilInnhentetGrunnlagInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
     mapSkattegrunnlag(personobjekter) + mapAinntekt(personobjekter) +
         mapKontantstøtte(personobjekter) +
-        mapBarnetilsyn(personobjekter) +
         mapBarnetillegg(personobjekter) +
         mapUtvidetbarnetrygd(personobjekter) + mapSmåbarnstillegg(personobjekter)
 
