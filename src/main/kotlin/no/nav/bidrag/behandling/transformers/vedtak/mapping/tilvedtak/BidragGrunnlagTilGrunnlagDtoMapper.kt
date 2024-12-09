@@ -35,6 +35,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivils
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettTilleggsstønadGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
@@ -372,11 +373,8 @@ fun List<TilleggsstønadGrunnlagDto>.tilGrunnlagsobjekt(
     søktFomDato: LocalDate,
 ) = GrunnlagDto(
     referanse =
-        opprettBarnetilleggGrunnlagsreferanse(
-            gjelderReferanse,
-            kilde = GrunnlagDatakilde.TILLEGGSSTØNAD_SAK,
-        ),
-    type = Grunnlagstype.INNHENTET_TILLEGGSTØNAD,
+        opprettTilleggsstønadGrunnlagsreferanse(gjelderReferanse),
+    type = Grunnlagstype.INNHENTET_TILLEGGSSTØNAD,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(

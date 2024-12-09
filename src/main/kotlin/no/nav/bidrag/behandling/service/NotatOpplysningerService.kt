@@ -296,15 +296,8 @@ class NotatOpplysningerService(
                             ),
                         beregnetIlagtGebyr = it.beregnetIlagtGebyr,
                         beløpGebyrsats = it.beløpGebyrsats,
-                        manueltOverstyrtGebyr =
-                            if (it.erManueltOverstyrt) {
-                                NotatGebyrRolleDto.NotatManueltOverstyrGebyrDto(
-                                    ilagtGebyr = it.endeligIlagtGebyr,
-                                    begrunnelse = it.begrunnelse,
-                                )
-                            } else {
-                                null
-                            },
+                        endeligIlagtGebyr = it.endeligIlagtGebyr,
+                        begrunnelse = it.begrunnelse,
                     )
                 },
             boforhold =
@@ -676,6 +669,7 @@ private fun Rolle.tilNotatRolle() =
         navn = hentPersonVisningsnavn(ident),
         fødselsdato = fødselsdato,
         ident = ident?.let { Personident(it) },
+        innbetaltBeløp = innbetaltBeløp,
     )
 
 private fun Inntekt.tilNotatInntektDto() =

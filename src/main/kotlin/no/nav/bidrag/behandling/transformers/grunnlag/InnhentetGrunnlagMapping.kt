@@ -205,7 +205,7 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
         }.toSet()
 
 fun List<Grunnlag>.tilInnhentetGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
-    mapBarnetilsyn(personobjekter)
+    mapBarnetilsyn(personobjekter) + mapTilleggsstønad(personobjekter)
 
 fun List<Grunnlag>.tilInnhentetGrunnlagInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
     mapSkattegrunnlag(personobjekter) + mapAinntekt(personobjekter) +
@@ -301,7 +301,7 @@ private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
             )
         }.toSet()
 
-private fun List<Grunnlag>.mapTilleggstønad(personobjekter: Set<GrunnlagDto>) =
+private fun List<Grunnlag>.mapTilleggsstønad(personobjekter: Set<GrunnlagDto>) =
     filter { it.type == Grunnlagsdatatype.TILLEGGSSTØNAD && !it.erBearbeidet }
         .groupBy { it.rolle.ident }
         .map { (partPersonId, grunnlagListe) ->
