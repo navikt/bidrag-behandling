@@ -48,7 +48,11 @@ data class InntektDtoV2(
     val inntektstyper: Set<Inntektstype> = emptySet(),
     val historisk: Boolean? = false,
 ) {
-    val månedsbeløp: BigDecimal get() = beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+    @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
+    val månedsbeløp: BigDecimal?
+        get() = if (Inntektsrapportering.BARNETILLEGG == rapporteringstype) {
+            beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+        } else null
 }
 
 data class InntekterDtoV2(
@@ -163,7 +167,7 @@ data class OppdatereManuellInntekt(
     val ident: Personident,
     @Schema(
         description =
-            "Ident til barnet en ytelse gjelder for. " +
+        "Ident til barnet en ytelse gjelder for. " +
                 "sBenyttes kun for ytelser som er koblet til ett spesifikt barn, f.eks kontantstøtte",
         type = "String",
         example = "12345678910",
