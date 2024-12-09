@@ -30,6 +30,7 @@ class GebyrService(
                             overstyrGebyr = false,
                             ilagtGebyr = beregning.ilagtGebyr,
                             beregnetIlagtGebyr = beregning.ilagtGebyr,
+                            begrunnelse = null,
                         )
                 }
                 beregnetGebyrErEndret
@@ -47,6 +48,7 @@ class GebyrService(
                         overstyrGebyr = false,
                         ilagtGebyr = beregning.ilagtGebyr,
                         beregnetIlagtGebyr = beregning.ilagtGebyr,
+                        begrunnelse = null,
                     )
             }
     }
@@ -67,7 +69,7 @@ class GebyrService(
                     overstyrGebyr = request.overstyrGebyr,
                     ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
                     beregnetIlagtGebyr = beregning.ilagtGebyr,
-                    begrunnelse = request.begrunnelse ?: it.begrunnelse,
+                    begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
                 )
             }
     }

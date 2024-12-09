@@ -13,6 +13,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektPerBarn
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 data class InntektDtoV2(
@@ -46,7 +47,16 @@ data class InntektDtoV2(
     @Schema(required = true)
     val inntektstyper: Set<Inntektstype> = emptySet(),
     val historisk: Boolean? = false,
-)
+) {
+    @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
+    val månedsbeløp: BigDecimal?
+        get() =
+            if (Inntektsrapportering.BARNETILLEGG == rapporteringstype) {
+                beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+            } else {
+                null
+            }
+}
 
 data class InntekterDtoV2(
     val barnetillegg: Set<InntektDtoV2> = emptySet(),

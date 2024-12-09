@@ -687,7 +687,7 @@ class VedtakInnhentetGrunnlagTest {
                     .tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
-                this shouldHaveSize 13
+                this shouldHaveSize 12
                 assertSoftly(hentBarnetillegg()) {
                     it shouldHaveSize 2
                     it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse) shouldHaveSize 1

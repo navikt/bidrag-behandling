@@ -4574,6 +4574,102 @@
       "grunnlagsreferanseListe": [],
       "gjelderReferanse": null,
       "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "SLUTTBEREGNING_GEBYR_person_PERSON_BIDRAGSPLIKTIG_19830916_286",
+      "type": "SLUTTBEREGNING_GEBYR",
+      "innhold": {
+        "ilagtGebyr": true
+      },
+      "grunnlagsreferanseListe": [
+        "DELBEREGNING_INNTEKTSBASERT_GEBYR_person_PERSON_BIDRAGSPLIKTIG_19830916_286",
+        "sjablon_FastsettelsesgebyrBeløp_202401"
+      ],
+      "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "sjablon_FastsettelsesgebyrBeløp_202401",
+      "type": "SJABLON_SJABLONTALL",
+      "innhold": {
+        "verdi": 1277.0,
+        "periode": {
+          "fom": "2024-01",
+          "til": null
+        },
+        "sjablon": "FASTSETTELSESGEBYR_BELØP"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null,
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "DELBEREGNING_INNTEKTSBASERT_GEBYR_person_PERSON_BIDRAGSPLIKTIG_19830916_286",
+      "type": "DELBEREGNING_INNTEKTSBASERT_GEBYR",
+      "innhold": {
+        "sumInntekt": 678300.0,
+        "ileggesGebyr": true
+      },
+      "grunnlagsreferanseListe": [
+        "delberegning_DELBEREGNING_SUM_INNTEKT_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20201003_608_202204",
+        "sjablon_NedreInntektsgrenseGebyrBeløp_202401"
+      ],
+      "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "sjablon_NedreInntektsgrenseGebyrBeløp_202401",
+      "type": "SJABLON_SJABLONTALL",
+      "innhold": {
+        "verdi": 331200.0,
+        "periode": {
+          "fom": "2024-01",
+          "til": null
+        },
+        "sjablon": "NEDRE_INNTEKTSGRENSE_GEBYR_BELØP"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null,
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "SLUTTBEREGNING_GEBYR_person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+      "type": "SLUTTBEREGNING_GEBYR",
+      "innhold": {
+        "ilagtGebyr": false
+      },
+      "grunnlagsreferanseListe": [
+        "DELBEREGNING_INNTEKTSBASERT_GEBYR_person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+        "MANUELT_OVERSTYRT_GEBYR_person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+        "sjablon_FastsettelsesgebyrBeløp_202401"
+      ],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "MANUELT_OVERSTYRT_GEBYR_person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+      "type": "MANUELT_OVERSTYRT_GEBYR",
+      "innhold": {
+        "ilagtGebyr": false,
+        "begrunnelse": "test"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "DELBEREGNING_INNTEKTSBASERT_GEBYR_person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+      "type": "DELBEREGNING_INNTEKTSBASERT_GEBYR",
+      "innhold": {
+        "sumInntekt": 473500.0,
+        "ileggesGebyr": true
+      },
+      "grunnlagsreferanseListe": [
+        "delberegning_DELBEREGNING_SUM_INNTEKT_person_PERSON_BIDRAGSMOTTAKER_19790718_284_person_PERSON_SØKNADSBARN_20201003_608_202204",
+        "sjablon_NedreInntektsgrenseGebyrBeløp_202401"
+      ],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+      "gjelderBarnReferanse": null
     }
   ],
   "stønadsendringListe": [
@@ -4711,7 +4807,7 @@
       "skyldner": "{bpIdent}",
       "kravhaver": "NAV",
       "mottaker": "NAV",
-      "beløp": 0,
+      "beløp": 1270,
       "valutakode": "NOK",
       "resultatkode": "GEBYR_ILAGT",
       "innkreving": "MED_INNKREVING",
@@ -4720,7 +4816,9 @@
       "referanse": "c41b3d5e-bad9-4ede-ab2e-35b68df8ca26",
       "delytelseId": null,
       "eksternReferanse": null,
-      "grunnlagReferanseListe": [],
+      "grunnlagReferanseListe": [
+        "sluttberegning_person_PERSON_SØKNADSBARN_20201003_608_202408"
+      ],
       "betaltBeløp": null
     },
     {
@@ -4729,16 +4827,18 @@
       "skyldner": "{bmIdent}",
       "kravhaver": "NAV",
       "mottaker": "NAV",
-      "beløp": 0,
-      "valutakode": "NOK",
-      "resultatkode": "GEBYR_ILAGT",
+      "beløp": null,
+      "valutakode": null,
+      "resultatkode": "GEBYR_FRITTATT",
       "innkreving": "MED_INNKREVING",
       "beslutning": "ENDRING",
       "omgjørVedtakId": null,
       "referanse": "8df09483-4547-488c-921a-821dfd24a4b5",
       "delytelseId": null,
       "eksternReferanse": null,
-      "grunnlagReferanseListe": [],
+      "grunnlagReferanseListe": [
+        "SLUTTBEREGNING_GEBYR_person_PERSON_BIDRAGSMOTTAKER_19790718_284"
+      ],
       "betaltBeløp": null
     },
     {
