@@ -333,11 +333,11 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                 inntektsrapportering = type,
                 manueltRegistrert = kilde == Kilde.MANUELL,
                 valgt = taMed,
-                inntekstpostListe =
+                inntektspostListe =
                     inntektsposter.map {
                         InntektsrapporteringPeriode.Inntektspost(
                             beløp = it.beløp,
-                            inntekstype = it.inntektstype,
+                            inntektstype = it.inntektstype,
                             kode = it.kode,
                         )
                     },

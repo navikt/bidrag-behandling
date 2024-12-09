@@ -173,7 +173,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20220726_40",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 1440,
@@ -199,7 +199,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"
@@ -219,7 +219,7 @@
         },
         "versjon": "2024.07.17.133247_d9a0155",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "samletLoennsinntektMedTrygdeavgiftspliktOgMedTrekkplikt",
             "beløp": 400000,
@@ -255,7 +255,7 @@
         },
         "versjon": "2024.07.17.133247_d9a0155",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "gevinstVedRealisasjonAvAksje",
             "beløp": 10000,
@@ -296,7 +296,7 @@
         },
         "versjon": "2024.07.17.133247_d9a0155",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "naeringsinntektFraKompensasjonsytelseUtbetaltAvNavInnenAnnenNaering",
             "beløp": 50000,
@@ -342,7 +342,7 @@
         },
         "versjon": "2024.07.17.133247_d9a0155",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2023-07",
@@ -367,7 +367,7 @@
         },
         "versjon": "2024.07.17.133247_d9a0155",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "samletLoennsinntektMedTrygdeavgiftspliktOgMedTrekkplikt",
             "beløp": 850000,
@@ -398,7 +398,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"

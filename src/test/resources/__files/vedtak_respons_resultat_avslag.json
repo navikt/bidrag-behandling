@@ -163,7 +163,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 2665000,
@@ -194,7 +194,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 31979998,
@@ -225,7 +225,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 25011998,
@@ -256,7 +256,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
             "beløp": 4000.0,
@@ -292,7 +292,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "annenArbeidsinntekt",
             "beløp": 5000.0,
@@ -323,7 +323,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2021-01",
@@ -348,7 +348,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 2859998,
@@ -379,7 +379,7 @@
         },
         "versjon": "2024.02.23.111749_bc71ca7",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2021-01",
@@ -404,7 +404,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"

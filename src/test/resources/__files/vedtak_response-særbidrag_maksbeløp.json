@@ -169,7 +169,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 125000,
@@ -200,7 +200,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 300000,
@@ -231,7 +231,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "gevinstOgAnnenInntektFraVirtuellEiendel",
             "beløp": 25000,
@@ -262,7 +262,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 300000,
@@ -293,7 +293,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "loennsinntektUtenTrygdeavgiftspliktOgMedTrekkplikt",
             "beløp": 6500000,
@@ -324,7 +324,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"
@@ -344,7 +344,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20050916_101",
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "KONTANTSTØTTE"
@@ -364,7 +364,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "arbeidsavklaringspenger",
             "beløp": 6000,
@@ -405,7 +405,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 720000,
@@ -446,7 +446,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "samletLoennsinntektMedTrygdeavgiftspliktOgMedTrekkplikt",
             "beløp": 850000,
@@ -477,7 +477,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "foreldrepenger",
             "beløp": 5000,
@@ -508,7 +508,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 1350000,
@@ -544,7 +544,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
             "beløp": 15000,
@@ -600,7 +600,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "tapVedRealisasjonAvAnnetFinansprodukt",
             "beløp": 30000,
@@ -641,7 +641,7 @@
         },
         "versjon": "2024.08.22.122424_e684831",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "sykepenger",
             "beløp": 12000,
@@ -682,7 +682,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"

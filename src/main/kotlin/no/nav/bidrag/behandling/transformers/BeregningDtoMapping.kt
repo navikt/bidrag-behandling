@@ -495,9 +495,9 @@ fun List<GrunnlagDto>.finnBarnetillegg(
                         nettoBeløp =
                             beregnNettoBarnetillegg(it.beløp, skattFaktor),
                         visningsnavn =
-                            it.inntekstpostListe
+                            it.inntektspostListe
                                 .first()
-                                .inntekstype!!
+                                .inntektstype!!
                                 .visningsnavn.intern,
                     )
                 },

@@ -666,12 +666,12 @@ private fun BaseGrunnlag.tilInntekt(
         )
 
     inntektBO.inntektsposter =
-        inntektPeriode.inntekstpostListe
+        inntektPeriode.inntektspostListe
             .mapIndexed { i, it ->
                 Inntektspost(
                     id = if (id != null) id + i else null,
                     kode = it.kode,
-                    inntektstype = it.inntekstype,
+                    inntektstype = it.inntektstype,
                     beløp = it.beløp,
                     inntekt = inntektBO,
                 )
