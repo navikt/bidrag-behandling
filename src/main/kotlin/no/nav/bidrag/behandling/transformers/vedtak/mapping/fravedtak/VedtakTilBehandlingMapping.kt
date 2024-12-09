@@ -140,7 +140,9 @@ class VedtakTilBehandlingMapping(
             )
 
         behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
+        oppdaterDirekteOppgjørBeløp(behandling, lesemodus)
         grunnlagListe.oppdaterRolleGebyr(behandling)
+
         behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
         behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling, lesemodus)
         behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)

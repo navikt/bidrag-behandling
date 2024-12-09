@@ -49,7 +49,7 @@ private val LOGGER = KotlinLogging.logger {}
 
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
-private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), fødselsdato)
+private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp)
 
 @Service
 class BeregningService(
