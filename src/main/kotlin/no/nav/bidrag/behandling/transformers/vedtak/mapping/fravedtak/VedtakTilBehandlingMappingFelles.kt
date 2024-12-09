@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
@@ -40,12 +41,15 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -147,8 +151,35 @@ internal fun List<GrunnlagDto>.mapRoller(
     lesemodus: Boolean,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
-        .mapIndexed { i, it -> it.tilRolle(behandling, if (lesemodus) i.toLong() else null) }
-        .toMutableSet()
+        .mapIndexed { i, it ->
+            it.tilRolle(behandling, if (lesemodus) i.toLong() else null)
+        }.toMutableSet()
+
+internal fun List<GrunnlagDto>.oppdaterRolleGebyr(behandling: Behandling) =
+    filtrerBasertPåEgenReferanse(Grunnlagstype.SLUTTBEREGNING_GEBYR)
+        .groupBy { it.gjelderReferanse }
+        .forEach { (gjelderReferanse, grunnlag) ->
+            val person = hentPersonMedReferanse(gjelderReferanse)!!
+            val rolle = behandling.roller.find { it.ident == person.personIdent }!!
+            rolle.harGebyrsøknad = true
+            val sluttberegning = grunnlag.first().innholdTilObjekt<SluttberegningGebyr>()
+            val manueltOverstyrtGebyr =
+                finnGrunnlagSomErReferertAv(
+                    Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
+                    grunnlag.first(),
+                ).firstOrNull()?.innholdTilObjekt<ManueltOverstyrtGebyr>()
+            rolle.manueltOverstyrtGebyr =
+                RolleManueltOverstyrtGebyr(
+                    manueltOverstyrtGebyr != null,
+                    sluttberegning.ilagtGebyr,
+                    manueltOverstyrtGebyr?.begrunnelse,
+                    if (manueltOverstyrtGebyr != null) {
+                        !sluttberegning.ilagtGebyr
+                    } else {
+                        sluttberegning.ilagtGebyr
+                    },
+                )
+        }
 
 internal fun List<GrunnlagDto>.mapHusstandsmedlem(
     behandling: Behandling,

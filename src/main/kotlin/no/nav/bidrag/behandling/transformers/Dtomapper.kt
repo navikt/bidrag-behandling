@@ -620,7 +620,7 @@ class Dtomapper(
     }
 
     fun Behandling.mapGebyr() =
-        if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
+        if (roller.any { it.harGebyrsøknad }) {
             GebyrDto(
                 gebyrRoller =
                     roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->

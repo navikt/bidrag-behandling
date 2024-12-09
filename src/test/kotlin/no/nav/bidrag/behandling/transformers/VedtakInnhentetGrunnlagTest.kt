@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.utils.opprettAinntektGrunnlagListe
@@ -686,7 +687,7 @@ class VedtakInnhentetGrunnlagTest {
                     .tilInnhentetGrunnlagInntekt(personobjekter)
                     .toList(),
             ) {
-                this shouldHaveSize 13
+                this shouldHaveSize 12
                 assertSoftly(hentBarnetillegg()) {
                     it shouldHaveSize 2
                     it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse) shouldHaveSize 1
@@ -766,23 +767,6 @@ class VedtakInnhentetGrunnlagTest {
                         }
                     }
                 }
-                assertSoftly(hentBarnetilsyn()) {
-                    it shouldHaveSize 1
-                    assertSoftly(it[0]) {
-                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
-                        val barnetilsyn = it.innholdTilObjekt<InnhentetBarnetilsyn>()
-                        barnetilsyn.grunnlag shouldHaveSize 2
-                        barnetilsyn.datakilde shouldBe GrunnlagDatakilde.FAMILIE_EF_SAK
-                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 2
-                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag2.referanse) shouldHaveSize 0
-                        assertSoftly(barnetilsyn.grunnlag[0]) {
-                            periode.fom shouldBe LocalDate.parse("2022-01-01")
-                            periode.til shouldBe LocalDate.parse("2022-07-31")
-                            tilsynstype shouldBe Tilsynstype.HELTID
-                            skolealder shouldBe Skolealder.OVER
-                        }
-                    }
-                }
             }
         }
 
@@ -797,8 +781,6 @@ class VedtakInnhentetGrunnlagTest {
         fun List<GrunnlagDto>.hentBarnetillegg() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG }
 
         fun List<GrunnlagDto>.hentKontantstøtte() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE }
-
-        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN }
     }
 
     @Nested
@@ -856,6 +838,50 @@ class VedtakInnhentetGrunnlagTest {
                                 beskrivelse shouldBe "Foreldrepermisjon"
                                 prosent shouldBe 50.0
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class InnhentetUnderholdskostnadTest {
+        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN }
+
+        @Test
+        fun `skal mappe innhentet barnetilsyn`() {
+            val behandling = oppretteBehandling()
+            behandling.roller =
+                mutableSetOf(
+                    opprettRolle(behandling, testdataBM),
+                    opprettRolle(behandling, testdataBarn1),
+                    opprettRolle(behandling, testdataBarn2),
+                )
+            val grunnlagListe =
+                listOf(
+                    opprettBarnetilsynListe().tilGrunnlagEntity(behandling),
+                ).flatten()
+            assertSoftly(
+                grunnlagListe
+                    .tilInnhentetGrunnlagUnderholdskostnad(personobjekter)
+                    .toList(),
+            ) {
+                this shouldHaveSize 1
+                assertSoftly(hentBarnetilsyn()) {
+                    it shouldHaveSize 1
+                    assertSoftly(it[0]) {
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
+                        val barnetilsyn = it.innholdTilObjekt<InnhentetBarnetilsyn>()
+                        barnetilsyn.grunnlag shouldHaveSize 2
+                        barnetilsyn.datakilde shouldBe GrunnlagDatakilde.FAMILIE_EF_SAK
+                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 2
+                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag2.referanse) shouldHaveSize 0
+                        assertSoftly(barnetilsyn.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2022-07-31")
+                            tilsynstype shouldBe Tilsynstype.HELTID
+                            skolealder shouldBe Skolealder.OVER
                         }
                     }
                 }
