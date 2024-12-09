@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.utils.opprettAinntektGrunnlagListe
@@ -239,8 +240,8 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag1.referanse
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.gjelderPerson shouldBe søknadsbarnGrunnlag1.referanse
+                    grunnlag.grunnlag.relasjon shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 3
                     grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2016-11-30")
                     grunnlag.grunnlag.perioder[0].til shouldBe LocalDate.parse("2016-12-31")
@@ -255,16 +256,16 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe personGrunnlagHusstandsmedlemListe[0].referanse
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe false
+                    grunnlag.grunnlag.gjelderPerson shouldBe personGrunnlagHusstandsmedlemListe[0].referanse
+                    grunnlag.grunnlag.relasjon shouldBe false
                     grunnlag.grunnlag.perioder shouldHaveSize 2
                 }
                 assertSoftly(husstandGrunnlag[2]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag2.referanse
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.gjelderPerson shouldBe søknadsbarnGrunnlag2.referanse
+                    grunnlag.grunnlag.relasjon shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 2
 
                     grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2005-05-21")
@@ -277,16 +278,16 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe personGrunnlagHusstandsmedlemListe[1].referanse
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.gjelderPerson shouldBe personGrunnlagHusstandsmedlemListe[1].referanse
+                    grunnlag.grunnlag.relasjon shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 2
                 }
                 assertSoftly(husstandGrunnlag[4]) {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe "person_PERSON_HUSSTANDSMEDLEM_20010509_innhentet_-653873409"
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe false
+                    grunnlag.grunnlag.gjelderPerson shouldBe "person_PERSON_HUSSTANDSMEDLEM_20010509_innhentet_-653873409"
+                    grunnlag.grunnlag.relasjon shouldBe false
                     grunnlag.grunnlag.perioder shouldHaveSize 1
                 }
             }
@@ -354,10 +355,10 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag1.referanse
+                    grunnlag.grunnlag.gjelderPerson shouldBe søknadsbarnGrunnlag1.referanse
                     grunnlag.grunnlag.navn shouldBe testdataBarn1.navn
                     grunnlag.grunnlag.fødselsdato shouldBe testdataBarn1.fødselsdato
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.relasjon shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 0
                 }
             }
@@ -469,10 +470,10 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag1.referanse
+                    grunnlag.grunnlag.gjelderPerson shouldBe søknadsbarnGrunnlag1.referanse
                     grunnlag.grunnlag.navn shouldBe testdataBarn1.navn
                     grunnlag.grunnlag.fødselsdato shouldBe testdataBarn1.fødselsdato
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.relasjon shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 4
                     grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2022-01-01")
                     grunnlag.grunnlag.perioder[0].til shouldBe LocalDate.parse("2022-06-08")
@@ -490,8 +491,8 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag2.referanse
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.gjelderPerson shouldBe søknadsbarnGrunnlag2.referanse
+                    grunnlag.grunnlag.relasjon shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 1
                     grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2023-07-01")
                     grunnlag.grunnlag.perioder[0].til shouldBe null
@@ -500,8 +501,8 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe personGrunnlagHusstandsmedlemListe[0].referanse
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe false
+                    grunnlag.grunnlag.gjelderPerson shouldBe personGrunnlagHusstandsmedlemListe[0].referanse
+                    grunnlag.grunnlag.relasjon shouldBe false
                     grunnlag.grunnlag.perioder shouldHaveSize 1
                     grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2020-07-01")
                     grunnlag.grunnlag.perioder[0].til shouldBe null
@@ -511,8 +512,8 @@ class VedtakInnhentetGrunnlagTest {
                     this.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
                     it.gjelderReferanse.shouldBe(grunnlagBp.referanse)
                     val grunnlag = it.innholdTilObjekt<InnhentetHusstandsmedlem>()
-                    grunnlag.grunnlag.relatertPerson shouldBe søknadsbarnGrunnlag1.referanse
-                    grunnlag.grunnlag.erBarnAvBmBp shouldBe true
+                    grunnlag.grunnlag.gjelderPerson shouldBe søknadsbarnGrunnlag1.referanse
+                    grunnlag.grunnlag.relasjon shouldBe true
                     grunnlag.grunnlag.perioder shouldHaveSize 3
                     grunnlag.grunnlag.perioder[0].fom shouldBe LocalDate.parse("2022-01-01")
                     grunnlag.grunnlag.perioder[0].til shouldBe LocalDate.parse("2022-06-08")
@@ -526,7 +527,7 @@ class VedtakInnhentetGrunnlagTest {
             }
         }
 
-        fun List<GrunnlagDto>.hentHusstandsmedlemMedReferanse(referanse: String) = this.filter { it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.relatertPerson == referanse }
+        fun List<GrunnlagDto>.hentHusstandsmedlemMedReferanse(referanse: String) = this.filter { it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson == referanse }
 
         fun List<GrunnlagDto>.hentGrunnlagHusstand() = filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }
 
@@ -766,23 +767,6 @@ class VedtakInnhentetGrunnlagTest {
                         }
                     }
                 }
-                assertSoftly(hentBarnetilsyn()) {
-                    it shouldHaveSize 1
-                    assertSoftly(it[0]) {
-                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
-                        val barnetilsyn = it.innholdTilObjekt<InnhentetBarnetilsyn>()
-                        barnetilsyn.grunnlag shouldHaveSize 2
-                        barnetilsyn.datakilde shouldBe GrunnlagDatakilde.FAMILIE_EF_SAK
-                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 2
-                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag2.referanse) shouldHaveSize 0
-                        assertSoftly(barnetilsyn.grunnlag[0]) {
-                            periode.fom shouldBe LocalDate.parse("2022-01-01")
-                            periode.til shouldBe LocalDate.parse("2022-07-31")
-                            tilsynstype shouldBe Tilsynstype.HELTID
-                            skolealder shouldBe Skolealder.OVER
-                        }
-                    }
-                }
             }
         }
 
@@ -797,8 +781,6 @@ class VedtakInnhentetGrunnlagTest {
         fun List<GrunnlagDto>.hentBarnetillegg() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG }
 
         fun List<GrunnlagDto>.hentKontantstøtte() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE }
-
-        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN }
     }
 
     @Nested
@@ -856,6 +838,50 @@ class VedtakInnhentetGrunnlagTest {
                                 beskrivelse shouldBe "Foreldrepermisjon"
                                 prosent shouldBe 50.0
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class InnhentetUnderholdskostnadTest {
+        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN }
+
+        @Test
+        fun `skal mappe innhentet barnetilsyn`() {
+            val behandling = oppretteBehandling()
+            behandling.roller =
+                mutableSetOf(
+                    opprettRolle(behandling, testdataBM),
+                    opprettRolle(behandling, testdataBarn1),
+                    opprettRolle(behandling, testdataBarn2),
+                )
+            val grunnlagListe =
+                listOf(
+                    opprettBarnetilsynListe().tilGrunnlagEntity(behandling),
+                ).flatten()
+            assertSoftly(
+                grunnlagListe
+                    .tilInnhentetGrunnlagUnderholdskostnad(personobjekter)
+                    .toList(),
+            ) {
+                this shouldHaveSize 1
+                assertSoftly(hentBarnetilsyn()) {
+                    it shouldHaveSize 1
+                    assertSoftly(it[0]) {
+                        it.gjelderReferanse.shouldBe(grunnlagBm.referanse)
+                        val barnetilsyn = it.innholdTilObjekt<InnhentetBarnetilsyn>()
+                        barnetilsyn.grunnlag shouldHaveSize 2
+                        barnetilsyn.datakilde shouldBe GrunnlagDatakilde.FAMILIE_EF_SAK
+                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag1.referanse) shouldHaveSize 2
+                        barnetilsyn.hentBarnetilsynForBarn(søknadsbarnGrunnlag2.referanse) shouldHaveSize 0
+                        assertSoftly(barnetilsyn.grunnlag[0]) {
+                            periode.fom shouldBe LocalDate.parse("2022-01-01")
+                            periode.til shouldBe LocalDate.parse("2022-07-31")
+                            tilsynstype shouldBe Tilsynstype.HELTID
+                            skolealder shouldBe Skolealder.OVER
                         }
                     }
                 }
