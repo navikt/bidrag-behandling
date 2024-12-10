@@ -174,7 +174,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 167
+                request.grunnlagListe shouldHaveSize 171
             }
         }
 
@@ -285,7 +285,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 28
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 8
@@ -302,7 +302,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 5
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_TILLEGGSSTØNAD) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_BARNETILSYN) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG) shouldHaveSize 1
@@ -1136,8 +1137,8 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     assertSoftly(sluttberegningPeriode) {
         val innhold = innholdTilObjekt<SluttberegningBarnebidrag>()
         innhold.resultatVisningsnavn!!.intern shouldBe "Kostnadsberegnet bidrag"
-        innhold.beregnetBeløp shouldBe BigDecimal("5741.53")
-        innhold.resultatBeløp shouldBe BigDecimal("5740")
+        innhold.beregnetBeløp shouldBe BigDecimal("5816.77")
+        innhold.resultatBeløp shouldBe BigDecimal("5820")
         it.grunnlagsreferanseListe shouldHaveSize 8
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe).first().referanse shouldBe søknadsbarn1Grunnlag.referanse
@@ -1145,7 +1146,7 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD, it.grunnlagsreferanseListe) shouldHaveSize 1
-        hentGrunnlagstyperForReferanser(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE, it.grunnlagsreferanseListe) shouldHaveSize 2
+        hentGrunnlagstyperForReferanser(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE, it.grunnlagsreferanseListe) shouldHaveSize 0
         hentGrunnlagstyperForReferanser(Grunnlagstype.SAMVÆRSPERIODE, it.grunnlagsreferanseListe) shouldHaveSize 1
     }
 
@@ -1157,14 +1158,14 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndel>()
-        innhold.andelBeløp shouldBe BigDecimal("6752.53")
+        innhold.andelBeløp shouldBe BigDecimal("6827.77")
         it.grunnlagsreferanseListe shouldHaveSize 6
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningUnderholdskostnad>()
-        innhold.underholdskostnad shouldBe BigDecimal("8103.04")
-        innhold.nettoTilsynsutgift shouldBe BigDecimal("1287.04")
+        innhold.underholdskostnad shouldBe BigDecimal("8193.32")
+        innhold.nettoTilsynsutgift shouldBe BigDecimal("1377.32")
         innhold.barnetilsynMedStønad shouldBe BigDecimal("630.00")
         it.grunnlagsreferanseListe shouldHaveSize 7
     }
@@ -1311,7 +1312,7 @@ private fun OpprettVedtakRequestDto.validerInntekter() {
         assertSoftly(it[0].innholdTilObjekt<InntektsrapporteringPeriode>()) {
             periode.fom shouldBe YearMonth.parse("2023-02")
             periode.til shouldBe null
-            inntekstpostListe shouldHaveSize 0
+            inntektspostListe shouldHaveSize 0
             beløp shouldBe 500000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER
             gjelderBarn shouldBe null
@@ -1321,7 +1322,7 @@ private fun OpprettVedtakRequestDto.validerInntekter() {
         assertSoftly(it[1].innholdTilObjekt<InntektsrapporteringPeriode>()) {
             periode.fom shouldBe YearMonth.parse("2023-07")
             periode.til shouldBe null
-            inntekstpostListe shouldHaveSize 1
+            inntektspostListe shouldHaveSize 1
             beløp shouldBe 3000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.BARNETILLEGG
             gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
@@ -1332,7 +1333,7 @@ private fun OpprettVedtakRequestDto.validerInntekter() {
         assertSoftly(it[3].innholdTilObjekt<InntektsrapporteringPeriode>()) {
             periode.fom shouldBe YearMonth.parse("2023-07")
             periode.til shouldBe null
-            inntekstpostListe shouldHaveSize 1
+            inntektspostListe shouldHaveSize 1
             beløp shouldBe 3000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.BARNETILLEGG
             gjelderBarn shouldBe søknadsbarnGrunnlag.referanse

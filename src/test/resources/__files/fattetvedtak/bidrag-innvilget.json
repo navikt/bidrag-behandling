@@ -218,7 +218,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20130615_285",
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "KONTANTSTØTTE"
@@ -239,7 +239,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20130615_285",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 12000,
@@ -266,7 +266,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20130615_285",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 24000,
@@ -293,7 +293,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20130615_285",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 96000,
@@ -320,7 +320,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20130615_285",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 24000,
@@ -347,7 +347,7 @@
         },
         "versjon": "2024.11.13.150507_432a08d",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "sykepenger",
             "beløp": 18000,
@@ -379,7 +379,7 @@
         },
         "versjon": "2024.11.13.150507_432a08d",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "foreldrepenger",
             "beløp": 30000,
@@ -426,7 +426,7 @@
         },
         "versjon": "2024.11.13.150507_432a08d",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "sykepenger",
             "beløp": 18000,
@@ -473,7 +473,7 @@
         },
         "versjon": "2024.11.13.150507_432a08d",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2024-08",
@@ -497,7 +497,7 @@
         },
         "versjon": "2024.11.13.150507_432a08d",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "overgangsstoenadTilEnsligMorEllerFarSomBegynteAaLoepe1April2014EllerSenere",
             "beløp": 31466,
@@ -529,7 +529,7 @@
         },
         "versjon": "2024.11.13.150507_432a08d",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "foreldrepenger",
             "beløp": 45000,
@@ -561,7 +561,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "SMÅBARNSTILLEGG"
@@ -582,7 +582,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "UTVIDET_BARNETRYGD"
@@ -603,7 +603,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "UTVIDET_BARNETRYGD"
@@ -624,7 +624,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"
@@ -645,7 +645,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"
@@ -666,7 +666,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20130615_285",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 55200,
@@ -693,7 +693,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20130615_285",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 30000,
@@ -720,7 +720,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"
@@ -741,7 +741,7 @@
         },
         "versjon": null,
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "LØNN_MANUELT_BEREGNET"

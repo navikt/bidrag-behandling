@@ -403,7 +403,7 @@ private fun List<GrunnlagDto>.hentGrunnlagBarnetilsyn(
                 Grunnlagsdatatype.BARNETILSYN,
                 grunnlag,
                 gjelderIdent,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_BARNETILSYN),
                 lesemodus,
             )
 
@@ -413,7 +413,7 @@ private fun List<GrunnlagDto>.hentGrunnlagBarnetilsyn(
                     Grunnlagsdatatype.BARNETILSYN,
                     barnetsGrunnlag,
                     gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_BARNETILSYN),
                     lesemodus,
                     true,
                     personidentBarn,
@@ -684,12 +684,12 @@ private fun BaseGrunnlag.tilInntekt(
         )
 
     inntektBO.inntektsposter =
-        inntektPeriode.inntekstpostListe
+        inntektPeriode.inntektspostListe
             .mapIndexed { i, it ->
                 Inntektspost(
                     id = if (id != null) id + i else null,
                     kode = it.kode,
-                    inntektstype = it.inntekstype,
+                    inntektstype = it.inntektstype,
                     beløp = it.beløp,
                     inntekt = inntektBO,
                 )

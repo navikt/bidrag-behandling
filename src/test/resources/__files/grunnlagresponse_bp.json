@@ -3151,6 +3151,12 @@
       "beløp": 1000.0
     }
   ],
+  "tilleggsstønadBarnetilsynListe": [
+    {
+      "partPersonId": "{bmIdent}",
+      "harInnvilgetVedtak": true
+    }
+  ],
   "småbarnstilleggListe": [
     {
       "personId": "{bpIdent}",

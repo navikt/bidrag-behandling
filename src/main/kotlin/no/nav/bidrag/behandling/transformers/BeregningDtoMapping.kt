@@ -29,7 +29,6 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -43,9 +42,11 @@ import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPerio
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsfradrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
@@ -54,7 +55,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningVoksneIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsklassePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonBidragsevnePeriode
@@ -64,6 +64,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -71,7 +72,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 
 fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
@@ -468,46 +468,44 @@ fun List<GrunnlagDto>.finnBarnetillegg(
 ): DelberegningBarnetilleggDto {
     val personGrunnlag = find { it.type == personGrunnlagstype } ?: return DelberegningBarnetilleggDto()
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return DelberegningBarnetilleggDto()
-    val evne =
-        filtrerBasertPåEgenReferanse(
-            Grunnlagstype.DELBEREGNING_BIDRAGSEVNE,
-        ).lastOrNull() ?: return DelberegningBarnetilleggDto()
+    val nettoBarnetillegg =
+        finnOgKonverterGrunnlagSomErReferertAv<DelberegningNettoBarnetillegg>(
+            Grunnlagstype.DELBEREGNING_NETTO_BARNETILLEGG,
+            sluttberegning,
+        ).find { it.gjelderReferanse == personGrunnlag.referanse }
 
-    val skattFaktor = evne.innholdTilObjekt<DelberegningBidragsevne>().skatt.sumSkattFaktor
-    val barnetillegg =
-        finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
-            Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
-            sluttberegning.grunnlagsreferanseListe,
-        ).filter { it.gjelderReferanse == personGrunnlag.referanse }
-            .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering == Inntektsrapportering.BARNETILLEGG }
-
-    val sumBarnetillegg = barnetillegg.sumOf { it.innholdTilObjekt<InntektsrapporteringPeriode>().beløp }
+    val delberegningBarnetilleggSkattesats =
+        nettoBarnetillegg?.let {
+            finnOgKonverterGrunnlagSomErReferertAv<DelberegningBarnetilleggSkattesats>(
+                Grunnlagstype.DELBEREGNING_BARNETILLEGG_SKATTESATS,
+                nettoBarnetillegg.grunnlag,
+            ).firstOrNull()
+        }
+    val delberegningSumInntekt =
+        delberegningBarnetilleggSkattesats?.let {
+            finnOgKonverterGrunnlagSomErReferertAv<DelberegningSumInntekt>(
+                Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
+                nettoBarnetillegg.grunnlag,
+            ).firstOrNull()
+        }
     return DelberegningBarnetilleggDto(
-        skattFaktor = skattFaktor,
-        sumBruttoBeløp = sumBarnetillegg.divide(BigDecimal(12), 10, RoundingMode.HALF_UP),
-        sumNettoBeløp = beregnNettoBarnetillegg(sumBarnetillegg, skattFaktor),
+        sumInntekt = delberegningSumInntekt?.innhold?.totalinntekt ?: BigDecimal.ZERO,
+        skattFaktor = delberegningBarnetilleggSkattesats?.innhold?.skattFaktor ?: BigDecimal.ZERO,
+        sumBruttoBeløp = nettoBarnetillegg?.innhold?.summertBruttoBarnetillegg ?: BigDecimal.ZERO,
+        sumNettoBeløp = nettoBarnetillegg?.innhold?.summertNettoBarnetillegg ?: BigDecimal.ZERO,
         barnetillegg =
-            barnetillegg
-                .map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }
-                .map {
+            nettoBarnetillegg
+                ?.innhold
+                ?.barnetilleggTypeListe
+                ?.map {
                     DelberegningBarnetilleggDto.BarnetilleggDetaljerDto(
-                        bruttoBeløp = it.beløp.divide(BigDecimal(12), 10, RoundingMode.HALF_UP),
-                        nettoBeløp =
-                            beregnNettoBarnetillegg(it.beløp, skattFaktor),
-                        visningsnavn =
-                            it.inntekstpostListe
-                                .first()
-                                .inntekstype!!
-                                .visningsnavn.intern,
+                        bruttoBeløp = it.bruttoBarnetillegg,
+                        nettoBeløp = it.nettoBarnetillegg,
+                        visningsnavn = it.barnetilleggType.visningsnavn.intern,
                     )
-                },
+                } ?: emptyList(),
     )
 }
-
-private fun beregnNettoBarnetillegg(
-    bruttoBeløp: BigDecimal,
-    skattfaktor: BigDecimal,
-): BigDecimal = (bruttoBeløp - (bruttoBeløp * skattfaktor)).divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
 
 fun List<GrunnlagDto>.finnDelberegningUnderholdskostnad(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUnderholdskostnad? {
     val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null

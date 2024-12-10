@@ -162,7 +162,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20220726_1487",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 1476,
@@ -188,7 +188,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20220726_1487",
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2023-08",
@@ -213,7 +213,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 340000,
@@ -244,7 +244,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 240000,
@@ -275,7 +275,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "tapVedRealisasjonAvAnnetFinansprodukt",
             "beløp": 30000,
@@ -316,7 +316,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2023-01",
@@ -341,7 +341,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 240000,
@@ -372,7 +372,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 668000,
@@ -403,7 +403,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "samletLoennsinntektMedTrygdeavgiftspliktOgMedTrekkplikt",
             "beløp": 600000,
@@ -439,7 +439,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 673000,
@@ -470,7 +470,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 573000,
@@ -501,7 +501,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2023-07",
@@ -526,7 +526,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 1055000,
@@ -557,7 +557,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 573000,
@@ -588,7 +588,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2023-03",
@@ -613,7 +613,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "samletLoennsinntektMedTrygdeavgiftspliktOgMedTrekkplikt",
             "beløp": 850000,
@@ -644,7 +644,7 @@
         },
         "versjon": "2024.05.02.123207_f346fb0",
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "opprinneligPeriode": {
           "fom": "2019-03",
@@ -669,7 +669,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20150513_1489",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 1476,
@@ -695,7 +695,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20150513_1489",
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "KONTANTSTØTTE"
@@ -715,7 +715,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20150513_1489",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 6660,
@@ -741,7 +741,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20150513_1489",
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "KONTANTSTØTTE"
@@ -761,7 +761,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20050916_1488",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 1476,
@@ -787,7 +787,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20050916_1488",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 2796,
@@ -813,7 +813,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20050916_1488",
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "opprinneligPeriode": null,
         "inntektsrapportering": "KONTANTSTØTTE"
@@ -833,7 +833,7 @@
         },
         "versjon": null,
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20050916_1488",
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "BARNETILLEGG",
             "beløp": 6660,

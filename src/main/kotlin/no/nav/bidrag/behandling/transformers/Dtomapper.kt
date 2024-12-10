@@ -363,6 +363,7 @@ class Dtomapper(
                     fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
                     ident = tilgangskontrollertPersoninfo.ident,
                     erBeskyttet = tilgangskontrollertPersoninfo.erBeskyttet,
+                    null,
                 ),
             kilde = kilde,
             medIBehandling = behandling.roller.any { it.ident == this.ident },

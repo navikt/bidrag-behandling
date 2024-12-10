@@ -527,7 +527,7 @@ class VedtakInnhentetGrunnlagTest {
             }
         }
 
-        fun List<GrunnlagDto>.hentHusstandsmedlemMedReferanse(referanse: String) = this.filter { it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.relatertPerson == referanse }
+        fun List<GrunnlagDto>.hentHusstandsmedlemMedReferanse(referanse: String) = this.filter { it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson == referanse }
 
         fun List<GrunnlagDto>.hentGrunnlagHusstand() = filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }
 
@@ -847,7 +847,7 @@ class VedtakInnhentetGrunnlagTest {
 
     @Nested
     inner class InnhentetUnderholdskostnadTest {
-        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN }
+        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_BARNETILSYN }
 
         @Test
         fun `skal mappe innhentet barnetilsyn`() {

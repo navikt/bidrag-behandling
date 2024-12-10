@@ -4,9 +4,9 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
-import no.nav.bidrag.domene.enums.barnetillegg.Barnetilleggstype
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
@@ -349,7 +349,7 @@ fun opprettBarnetilleggListe() =
         BarnetilleggGrunnlagDto(
             partPersonId = testdataBP.ident,
             barnPersonId = testdataBarn1.ident,
-            barnetilleggType = Barnetilleggstype.PENSJON.toString(),
+            barnetilleggType = Inntektstype.PENSJON.toString(),
             periodeFra = LocalDate.parse("2022-01-01"),
             periodeTil = LocalDate.parse("2022-04-30"),
             beløpBrutto = BigDecimal(1000),
@@ -358,7 +358,7 @@ fun opprettBarnetilleggListe() =
         BarnetilleggGrunnlagDto(
             partPersonId = testdataBM.ident,
             barnPersonId = testdataBarn1.ident,
-            barnetilleggType = Barnetilleggstype.PENSJON.toString(),
+            barnetilleggType = Inntektstype.PENSJON.toString(),
             periodeFra = LocalDate.parse("2022-01-01"),
             periodeTil = LocalDate.parse("2022-04-30"),
             beløpBrutto = BigDecimal(1000),
@@ -367,7 +367,7 @@ fun opprettBarnetilleggListe() =
         BarnetilleggGrunnlagDto(
             partPersonId = testdataBM.ident,
             barnPersonId = testdataBarn1.ident,
-            barnetilleggType = Barnetilleggstype.PENSJON.toString(),
+            barnetilleggType = Inntektstype.PENSJON.toString(),
             periodeFra = LocalDate.parse("2022-05-01"),
             periodeTil = LocalDate.parse("2022-12-31"),
             beløpBrutto = BigDecimal(2000),
@@ -376,7 +376,7 @@ fun opprettBarnetilleggListe() =
         BarnetilleggGrunnlagDto(
             partPersonId = testdataBM.ident,
             barnPersonId = testdataBarn1.ident,
-            barnetilleggType = Barnetilleggstype.PENSJON.toString(),
+            barnetilleggType = Inntektstype.PENSJON.toString(),
             periodeFra = LocalDate.parse("2022-01-01"),
             periodeTil = LocalDate.parse("2022-06-30"),
             beløpBrutto = BigDecimal(3000),
@@ -385,7 +385,7 @@ fun opprettBarnetilleggListe() =
         BarnetilleggGrunnlagDto(
             partPersonId = testdataBM.ident,
             barnPersonId = testdataBarn2.ident,
-            barnetilleggType = Barnetilleggstype.PENSJON.toString(),
+            barnetilleggType = Inntektstype.PENSJON.toString(),
             periodeFra = LocalDate.parse("2022-01-01"),
             periodeTil = LocalDate.parse("2022-12-31"),
             beløpBrutto = BigDecimal(2000),
@@ -394,7 +394,7 @@ fun opprettBarnetilleggListe() =
         BarnetilleggGrunnlagDto(
             partPersonId = testdataBM.ident,
             barnPersonId = testdataBarn2.ident,
-            barnetilleggType = Barnetilleggstype.PENSJON.toString(),
+            barnetilleggType = Inntektstype.PENSJON.toString(),
             periodeFra = LocalDate.parse("2023-01-01"),
             periodeTil = LocalDate.parse("2023-12-31"),
             beløpBrutto = BigDecimal(1000),
