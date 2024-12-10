@@ -847,7 +847,7 @@ class VedtakInnhentetGrunnlagTest {
 
     @Nested
     inner class InnhentetUnderholdskostnadTest {
-        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN }
+        fun List<GrunnlagDto>.hentBarnetilsyn() = this.filter { it.type == Grunnlagstype.INNHENTET_BARNETILSYN }
 
         @Test
         fun `skal mappe innhentet barnetilsyn`() {

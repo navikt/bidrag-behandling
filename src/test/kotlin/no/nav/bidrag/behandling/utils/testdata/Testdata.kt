@@ -823,6 +823,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BOFORHOLD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.ARBEIDSFORHOLD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BARNETILSYN),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.TILLEGGSSTØNAD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BARNETILLEGG),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.KONTANTSTØTTE),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SMÅBARNSTILLEGG),

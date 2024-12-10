@@ -403,7 +403,7 @@ private fun List<GrunnlagDto>.hentGrunnlagBarnetilsyn(
                 Grunnlagsdatatype.BARNETILSYN,
                 grunnlag,
                 gjelderIdent,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_BARNETILSYN),
                 lesemodus,
             )
 
@@ -413,7 +413,7 @@ private fun List<GrunnlagDto>.hentGrunnlagBarnetilsyn(
                     Grunnlagsdatatype.BARNETILSYN,
                     barnetsGrunnlag,
                     gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_BARNETILSYN),
                     lesemodus,
                     true,
                     personidentBarn,

@@ -144,7 +144,7 @@ fun List<GrunnlagDto>.hentInnhentetSivilstand() =
         }
 
 fun List<GrunnlagDto>.henteGrunnlagBarnetilsyn() =
-    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN)
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_BARNETILSYN)
         .flatMap {
             val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
             val innhold = it.innholdTilObjekt<InnhentetBarnetilsyn>()

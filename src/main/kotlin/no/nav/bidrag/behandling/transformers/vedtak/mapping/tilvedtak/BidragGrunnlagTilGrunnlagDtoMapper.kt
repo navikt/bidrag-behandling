@@ -223,7 +223,7 @@ fun List<BarnetilsynGrunnlagDto>.tilGrunnlagsobjekt(
     personobjekter: Set<GrunnlagDto>,
 ) = GrunnlagDto(
     referanse = opprettBarnetilsynGrunnlagsreferanse(gjelderReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN,
+    type = Grunnlagstype.INNHENTET_BARNETILSYN,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(

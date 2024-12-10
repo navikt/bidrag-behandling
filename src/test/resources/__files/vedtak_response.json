@@ -54,7 +54,7 @@
     },
     {
       "referanse": "innhentet_barnetilsyn_person_PERSON_BIDRAGSMOTTAKER_19780825_69",
-      "type": "INNHENTET_INNTEKT_BARNETILSYN",
+      "type": "INNHENTET_BARNETILSYN",
       "innhold": {
         "datakilde": "FAMILIE_EF_SAK",
         "hentetTidspunkt": "2024-01-01T00:00:00",
