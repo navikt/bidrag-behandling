@@ -172,7 +172,11 @@ class VedtakTilBehandlingMapping(
         }
 
         behandling.roller.forEach { r ->
-            notatMedType(NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+            notatMedType(
+                NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+                false,
+                grunnlagListe.hentPerson(r.ident)?.referanse,
+            )?.let {
                 behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD, it, r))
             }
         }
@@ -246,10 +250,19 @@ class VedtakTilBehandlingMapping(
                             Underholdskostnad(
                                 id = index.toLong(),
                                 behandling = behandling,
-                                person = Person(id = index.toLong(), ident = rolle.ident!!, rolle = mutableSetOf(rolle)),
+                                person =
+                                    Person(
+                                        id = index.toLong(),
+                                        ident = rolle.ident!!,
+                                        fødselsdato = rolle.fødselsdato,
+                                        rolle = mutableSetOf(rolle),
+                                    ),
                             )
                         } else {
-                            underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = Personident(rolle.ident!!)))
+                            underholdService.oppretteUnderholdskostnad(
+                                behandling,
+                                BarnDto(personident = Personident(rolle.ident!!)),
+                            )
                         }
 
                     underholdskostnad.tilleggsstønad.addAll(
@@ -308,10 +321,19 @@ class VedtakTilBehandlingMapping(
                         } else {
                             underholdService.oppretteUnderholdskostnad(
                                 behandling,
-                                BarnDto(personident = gjelderBarn.ident, navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato),
+                                BarnDto(
+                                    personident = gjelderBarn.ident,
+                                    navn = gjelderBarn.navn,
+                                    fødselsdato = gjelderBarn.fødselsdato,
+                                ),
                             )
                         }
-                    underholdskostnad.faktiskeTilsynsutgifter.addAll(innhold.mapFaktiskTilsynsutgift(underholdskostnad, lesemodus))
+                    underholdskostnad.faktiskeTilsynsutgifter.addAll(
+                        innhold.mapFaktiskTilsynsutgift(
+                            underholdskostnad,
+                            lesemodus,
+                        ),
+                    )
                     underholdskostnad
                 }.toMutableSet()
 
@@ -394,8 +416,10 @@ class VedtakTilBehandlingMapping(
                     perioder.mapIndexed { index, it ->
                         val periodeInnhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
                         val beregning =
-                            finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.SAMVÆRSKALKULATOR, it.grunnlagsreferanseListe)
-                                .firstOrNull()
+                            finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                                Grunnlagstype.SAMVÆRSKALKULATOR,
+                                it.grunnlagsreferanseListe,
+                            ).firstOrNull()
                                 ?.innholdTilObjekt<SamværskalkulatorDetaljer>()
                         Samværsperiode(
                             id = if (lesemodus) index.toLong() else null,

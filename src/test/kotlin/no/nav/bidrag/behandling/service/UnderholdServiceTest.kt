@@ -347,7 +347,7 @@ class UnderholdServiceTest {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            val annetBarnMedPersonident = Person(ident = "11223312345")
+            val annetBarnMedPersonident = Person(ident = "11223312345", fødselsdato = LocalDate.now())
 
             behandling.underholdskostnader.add(
                 Underholdskostnad(id = 101, behandling = behandling, person = annetBarnMedPersonident),
