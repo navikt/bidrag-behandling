@@ -174,7 +174,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 171
+                request.grunnlagListe shouldHaveSize 172
             }
         }
 
@@ -227,7 +227,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
-            gebyrMottaker.resultatkode shouldBe Resultatkode.GEBYR_FRITTATT.name
+            gebyrMottaker.resultatkode shouldBe Resultatkode.GEBYR_FRITATT.name
             gebyrMottaker.sak shouldBe Saksnummer(SAKSNUMMER)
             gebyrMottaker.skyldner shouldBe Personident(testdataBM.ident)
             gebyrMottaker.grunnlagReferanseListe shouldHaveSize 1
@@ -302,7 +302,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 5
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_TILLEGGSSTØNAD) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_TILLEGGSSTØNAD_BEGRENSET) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_BARNETILSYN) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD) shouldHaveSize 1
@@ -404,7 +404,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
-            gebyrMottaker.resultatkode shouldBe Resultatkode.GEBYR_FRITTATT.name
+            gebyrMottaker.resultatkode shouldBe Resultatkode.GEBYR_FRITATT.name
             gebyrMottaker.sak shouldBe Saksnummer(SAKSNUMMER)
             gebyrMottaker.skyldner shouldBe Personident(testdataBM.ident)
             gebyrMottaker.grunnlagReferanseListe shouldHaveSize 1
@@ -851,7 +851,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
-                resultatkode shouldBe Resultatkode.GEBYR_FRITTATT.name
+                resultatkode shouldBe Resultatkode.GEBYR_FRITATT.name
                 sak shouldBe Saksnummer(SAKSNUMMER)
                 skyldner shouldBe Personident(testdataBM.ident)
                 grunnlagReferanseListe shouldHaveSize 1
@@ -969,7 +969,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
-                resultatkode shouldBe Resultatkode.GEBYR_FRITTATT.name
+                resultatkode shouldBe Resultatkode.GEBYR_FRITATT.name
                 sak shouldBe Saksnummer(SAKSNUMMER)
                 skyldner shouldBe Personident(testdataBM.ident)
                 grunnlagReferanseListe shouldHaveSize 1

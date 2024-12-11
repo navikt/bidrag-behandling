@@ -292,7 +292,7 @@ internal fun opprettGrunnlagForBostatusperioder(
             )
         }.toSet()
 
-internal fun SluttberegningGebyr.tilResultatkode() = if (ilagtGebyr) Resultatkode.GEBYR_ILAGT else Resultatkode.GEBYR_FRITTATT
+internal fun SluttberegningGebyr.tilResultatkode() = if (ilagtGebyr) Resultatkode.GEBYR_ILAGT else Resultatkode.GEBYR_FRITATT
 
 fun List<BaseGrunnlag>.finnInntektSiste12Mnd(rolle: Rolle) =
     filter {

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.inntekt
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -106,6 +107,7 @@ data class OppdatereInntektRequest(
 data class OppdatereInntektResponse(
     @Schema(description = "Inntekt som ble oppdatert")
     val inntekt: InntektDtoV2?,
+    val gebyr: GebyrDto? = null,
     val beregnetGebyrErEndret: Boolean = false,
     @Schema(description = "Periodiserte inntekter")
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),

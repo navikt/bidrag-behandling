@@ -14,12 +14,14 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -51,12 +53,22 @@ class InntektServiceMockTest {
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    @MockK
+    lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockK
+    lateinit var validerBeregning: ValiderBeregning
+
+    @MockK
+    lateinit var validerBehandlingService: ValiderBehandlingService
+
     lateinit var inntektService: InntektService
 
     @BeforeEach
     fun initMock() {
         inntektRepository = stubInntektRepository()
         val personService = PersonService(stubPersonConsumer())
+
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
@@ -65,7 +77,15 @@ class InntektServiceMockTest {
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
-        inntektService = InntektService(behandlingRepository, inntektRepository, notatService, GebyrService(vedtakGrunnlagMapper))
+        val dtomapper =
+            Dtomapper(
+                tilgangskontrollService,
+                validerBeregning,
+                validerBehandlingService,
+                vedtakGrunnlagMapper,
+                BeregnBarnebidragApi(),
+            )
+        inntektService = InntektService(behandlingRepository, inntektRepository, notatService, GebyrService(vedtakGrunnlagMapper), dtomapper)
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }
 
