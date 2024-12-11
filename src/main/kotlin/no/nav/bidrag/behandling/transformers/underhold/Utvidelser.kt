@@ -154,7 +154,10 @@ private fun Behandling.overskriveBearbeidaBarnetilsynsgrunnlag(
             )
         }
 
-    grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let { it.data = tilJson(perioder) }
+    grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let {
+        it.data = tilJson(perioder)
+        it.aktiv = LocalDateTime.now()
+    }
 }
 
 fun Behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres() {
