@@ -5,6 +5,3 @@ from rolle r
 where p.id = r.person_id
   and p.ident is not null
   and p.fødselsdato is null;
-
--- Gjøre fødselsdatokolonnen påkrevd
-alter table person alter column fødselsdato set not null;
