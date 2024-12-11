@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -27,6 +28,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 private val LOGGER = KotlinLogging.logger {}
@@ -157,13 +159,16 @@ class VedtakService(
         return vedtakTilBehandlingMapping.run { vedtak.tilBeregningResultatSærbidrag() }
     }
 
-    fun fatteVedtak(behandlingId: Long): Int {
+    fun fatteVedtak(
+        behandlingId: Long,
+        request: FatteVedtakRequestDto? = null,
+    ): Int {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         behandling.validerKanFatteVedtak()
         return when (behandling.tilType()) {
             TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling)
             TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling)
-            TypeBehandling.BIDRAG -> fatteVedtakBidrag(behandling)
+            TypeBehandling.BIDRAG -> fatteVedtakBidrag(behandling, request)
             else -> throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Fatte vedtak av behandlingstype ${behandling.tilType()} støttes ikke",
@@ -232,7 +237,10 @@ class VedtakService(
         return response.vedtaksid
     }
 
-    fun fatteVedtakBidrag(behandling: Behandling): Int {
+    fun fatteVedtakBidrag(
+        behandling: Behandling,
+        request: FatteVedtakRequestDto?,
+    ): Int {
         val isEnabled = unleashInstance.isEnabled(toggleFatteVedtakName, false)
         if (isEnabled.not()) {
             throw HttpClientErrorException(
@@ -243,13 +251,19 @@ class VedtakService(
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
         val request =
-            behandlingTilVedtakMapping.run {
-                if (behandling.avslag != null) {
-                    behandling.byggOpprettVedtakRequestAvslagForBidrag()
-                } else {
-                    behandling.byggOpprettVedtakRequestBidrag()
-                }
-            }
+            behandlingTilVedtakMapping
+                .run {
+                    if (behandling.avslag != null) {
+                        behandling.byggOpprettVedtakRequestAvslagForBidrag()
+                    } else {
+                        behandling.byggOpprettVedtakRequestBidrag()
+                    }
+                }.copy(
+                    innkrevingUtsattTilDato =
+                        request?.innkrevingUtsattAntallDager?.let {
+                            LocalDate.now().plusDays(it)
+                        },
+                )
 
         request.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $request" }

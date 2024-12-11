@@ -13,6 +13,7 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
@@ -166,7 +167,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -174,7 +175,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 172
+                request.grunnlagListe shouldHaveSize 173
             }
         }
 
@@ -283,6 +284,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             validerNotater(behandling)
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 6
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 28
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
@@ -392,7 +394,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -511,7 +513,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         behandling.søknadsbarn.first().innbetaltBeløp = BigDecimal(10000)
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -578,7 +580,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -653,7 +655,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -741,7 +743,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -799,7 +801,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -934,7 +936,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
@@ -1016,7 +1018,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        vedtakService.fatteVedtak(behandling.id!!)
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
 
