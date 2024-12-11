@@ -156,7 +156,9 @@ private fun Behandling.overskriveBearbeidaBarnetilsynsgrunnlag(
 
     grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let {
         it.data = tilJson(perioder)
-        it.aktiv = LocalDateTime.now()
+        if (overskriveAktiverte) {
+            it.aktiv = LocalDateTime.now()
+        }
     }
 }
 
