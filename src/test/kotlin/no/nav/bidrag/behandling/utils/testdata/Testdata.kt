@@ -679,7 +679,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         Underholdskostnad(
                             id = if (generateId) 1 else null,
                             behandling = behandling,
-                            person = Person(ident = it.ident, rolle = mutableSetOf(it)),
+                            person = Person(ident = it.ident, fødselsdato = it.fødselsdato, rolle = mutableSetOf(it)),
                         )
                     }.toMutableSet()
             husstandsmedlem.add(
@@ -1196,7 +1196,7 @@ fun oppretteTestbehandling(
         var idUnderholdskostnad = if (setteDatabaseider) 1 else null
         // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
         behandling.søknadsbarn.forEach {
-            val personSøknadsbarn = Person(ident = it.ident, rolle = mutableSetOf(it))
+            val personSøknadsbarn = Person(ident = it.ident, fødselsdato = it.fødselsdato, rolle = mutableSetOf(it))
             behandling.underholdskostnader.add(
                 Underholdskostnad(
                     id = idUnderholdskostnad?.toLong(),
@@ -1715,7 +1715,7 @@ fun Behandling.leggTilFaktiskTilsynsutgift(
             Underholdskostnad(
                 id = if (medId) 1 else null,
                 behandling = this,
-                person = Person(ident = barn.ident),
+                person = Person(ident = barn.ident, fødselsdato = barn.fødselsdato),
             ).also { underholdskostnader.add(it) }
         }
     underholdskostnad.faktiskeTilsynsutgifter.add(
