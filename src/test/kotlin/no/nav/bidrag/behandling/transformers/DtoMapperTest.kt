@@ -492,7 +492,7 @@ class DtoMapperTest : TestContainerRunner() {
                 no.nav.bidrag.behandling.database.datamodell.Underholdskostnad(
                     3,
                     behandling,
-                    Person(10, navn = "Annet Barn Bm"),
+                    Person(10, navn = "Annet Barn Bm", fødselsdato = LocalDate.now()),
                 ),
             )
 

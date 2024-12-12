@@ -131,7 +131,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
         open fun `skal ikke opprette ny person for annet barn oppgitt med personident dersom person med samme ident allerede eksisterer`() {
             // gitt
             val behandling = oppretteTestbehandling(inkludereBp = true, behandlingstype = TypeBehandling.BIDRAG)
-            val eksisterendePerson = Person(ident = "11223312345")
+            val eksisterendePerson = Person(ident = "11223312345", fødselsdato = LocalDate.now())
             testdataManager.lagrePersonIEgenTransaksjon(eksisterendePerson)
 
             testdataManager.lagreBehandlingNewTransaction(behandling)
@@ -437,7 +437,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             behandling.underholdskostnader.add(
                 Underholdskostnad(
                     behandling = behandling,
-                    person = Person(navn = navnAnnetBarnBp),
+                    person = Person(navn = navnAnnetBarnBp, fødselsdato = LocalDate.now()),
                 ),
             )
             val lagretBehandling = testdataManager.lagreBehandlingNewTransaction(behandling)

@@ -18,7 +18,7 @@ open class Person(
     open var id: Long? = null,
     open val ident: String? = null,
     open val navn: String? = null,
-    open val fødselsdato: LocalDate? = null,
+    open val fødselsdato: LocalDate,
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @OneToMany(
         fetch = FetchType.LAZY,

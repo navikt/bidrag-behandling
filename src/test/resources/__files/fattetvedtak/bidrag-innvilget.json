@@ -4829,7 +4829,7 @@
       "mottaker": "NAV",
       "beløp": null,
       "valutakode": null,
-      "resultatkode": "GEBYR_FRITTATT",
+      "resultatkode": "GEBYR_FRITATT",
       "innkreving": "MED_INNKREVING",
       "beslutning": "ENDRING",
       "omgjørVedtakId": null,

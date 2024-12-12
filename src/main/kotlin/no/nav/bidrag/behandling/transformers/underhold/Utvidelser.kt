@@ -69,10 +69,12 @@ fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) = this.map 
 fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
     fun erUnderSkolealder(fødselsdato: LocalDate) = fødselsdato.plusYears(ALDER_VED_SKOLESTART).year > LocalDate.now().year
 
+    val justerForDato = maxOf(u.behandling.virkningstidspunkt!!, LocalDate.now().withDayOfMonth(1))
+    val tilOgMedDato = this.periodeTil?.minusDays(1)
     return Barnetilsyn(
         underholdskostnad = u,
         fom = this.periodeFra,
-        tom = this.periodeTil?.minusDays(1),
+        tom = if (tilOgMedDato != null && tilOgMedDato.isAfter(justerForDato)) null else tilOgMedDato,
         kilde = Kilde.OFFENTLIG,
         omfang = this.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
         under_skolealder = erUnderSkolealder(u.person.henteFødselsdato),

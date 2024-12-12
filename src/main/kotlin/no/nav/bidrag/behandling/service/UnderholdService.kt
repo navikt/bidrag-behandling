@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
@@ -143,6 +144,9 @@ class UnderholdService(
                 val person =
                     Person(
                         ident = personidentBarn.verdi,
+                        fødselsdato =
+                            personService.hentPersonFødselsdato(personidentBarn.verdi)
+                                ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
                         rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
                     )
                 person.rolle.forEach { it.person = person }
@@ -152,7 +156,7 @@ class UnderholdService(
         } ?: run {
             lagreUnderholdskostnad(
                 behandling,
-                Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato),
+                Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
             )
         }
     }
