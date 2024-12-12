@@ -30,7 +30,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarneti
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
-import no.nav.bidrag.behandling.transformers.underhold.justerePerioderEtterVirkningsdato
+import no.nav.bidrag.behandling.transformers.underhold.justerePerioder
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
@@ -92,10 +92,10 @@ class UnderholdService(
     ) {
         if (!harTilsynsordning &&
             (
-                underholdskostnad.barnetilsyn.isNotEmpty() ||
-                    underholdskostnad.tilleggsstønad.isNotEmpty() ||
-                    underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty()
-            )
+                    underholdskostnad.barnetilsyn.isNotEmpty() ||
+                            underholdskostnad.tilleggsstønad.isNotEmpty() ||
+                            underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty()
+                    )
         ) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -190,11 +190,11 @@ class UnderholdService(
                         fom = request.periode.fom,
                         tom = request.periode.tom,
                         under_skolealder =
-                            when (request.skolealder) {
-                                Skolealder.UNDER -> true
-                                Skolealder.OVER -> false
-                                else -> null
-                            },
+                        when (request.skolealder) {
+                            Skolealder.UNDER -> true
+                            Skolealder.OVER -> false
+                            else -> null
+                        },
                         omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
                         kilde = Kilde.MANUELL,
                         underholdskostnad = underholdskostnad,
@@ -211,7 +211,7 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
             underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -278,8 +278,8 @@ class UnderholdService(
     fun tilpasseUnderholdEtterVirkningsdato(behandling: Behandling) {
         tilpasseAktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
         tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
+        oppdatereUnderholdsperioderEtterEndretVirkningsdato(behandling)
         behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
-        behandling.underholdskostnader.justerePerioderEtterVirkningsdato()
     }
 
     @Transactional
@@ -320,9 +320,9 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
             underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
-                    underholdskostnad.behandling,
-                ),
+            dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
+                underholdskostnad.behandling,
+            ),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -362,7 +362,7 @@ class UnderholdService(
         return OppdatereUnderholdResponse(
             tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
             underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -441,6 +441,10 @@ class UnderholdService(
         val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
         behandling.underholdskostnader.add(u)
         return u
+    }
+
+    private fun oppdatereUnderholdsperioderEtterEndretVirkningsdato(b: Behandling) {
+        b.underholdskostnader.forEach { it.justerePerioder() }
     }
 
     private fun tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling: Behandling) {
