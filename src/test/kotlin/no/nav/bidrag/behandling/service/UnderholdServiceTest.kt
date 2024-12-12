@@ -168,9 +168,9 @@ class UnderholdServiceTest {
                     id = universalid,
                     underholdskostnad = underholdskostnad,
                     dagsats =
-                    BigDecimal(
-                        350,
-                    ),
+                        BigDecimal(
+                            350,
+                        ),
                     fom = LocalDate.now(),
                 )
             underholdskostnad.tilleggsstønad.add(tilleggsstønad)
@@ -323,11 +323,11 @@ class UnderholdServiceTest {
 
             every { personRepository.save(any()) } returns barn
             every { underholdskostnadRepository.save(any()) } returns
-                    Underholdskostnad(
-                        id = universalid,
-                        behandling = behandling,
-                        person = barn,
-                    )
+                Underholdskostnad(
+                    id = universalid,
+                    behandling = behandling,
+                    person = barn,
+                )
 
             // hvis
             underholdService.oppretteUnderholdskostnad(behandling, request)
@@ -359,11 +359,11 @@ class UnderholdServiceTest {
             every { personRepository.save(any()) } returns annetBarnMedPersonident
             every { personRepository.findFirstByIdent(annetBarnMedPersonident.ident!!) } returns annetBarnMedPersonident
             every { underholdskostnadRepository.save(any()) } returns
-                    Underholdskostnad(
-                        id = 102,
-                        behandling = behandling,
-                        person = annetBarnMedPersonident,
-                    )
+                Underholdskostnad(
+                    id = 102,
+                    behandling = behandling,
+                    person = annetBarnMedPersonident,
+                )
 
             // hvis
             val respons =
@@ -395,11 +395,11 @@ class UnderholdServiceTest {
 
             every { personRepository.save(any()) } returns generalen
             every { underholdskostnadRepository.save(any()) } returns
-                    Underholdskostnad(
-                        id = 102,
-                        behandling = behandling,
-                        person = generalen,
-                    )
+                Underholdskostnad(
+                    id = 102,
+                    behandling = behandling,
+                    person = generalen,
+                )
 
             // hvis
             val respons =
@@ -465,10 +465,10 @@ class UnderholdServiceTest {
                 val request =
                     OppdatereTilleggsstønadRequest(
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
                         dagsats = BigDecimal(365),
                     )
 
@@ -529,10 +529,10 @@ class UnderholdServiceTest {
                     OppdatereTilleggsstønadRequest(
                         id = 1,
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
                         dagsats = BigDecimal(365),
                     )
 
@@ -579,10 +579,10 @@ class UnderholdServiceTest {
                 val request =
                     StønadTilBarnetilsynDto(
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
                         skolealder = Skolealder.OVER,
                         tilsynstype = Tilsynstype.HELTID,
                     )
@@ -594,11 +594,11 @@ class UnderholdServiceTest {
                         fom = request.periode.fom,
                         tom = request.periode.tom,
                         under_skolealder =
-                        when (request.skolealder) {
-                            Skolealder.OVER -> false
-                            Skolealder.UNDER -> true
-                            else -> null
-                        },
+                            when (request.skolealder) {
+                                Skolealder.OVER -> false
+                                Skolealder.UNDER -> true
+                                else -> null
+                            },
                         request.tilsynstype!!,
                         kilde = Kilde.OFFENTLIG,
                     ),
@@ -655,10 +655,10 @@ class UnderholdServiceTest {
                     StønadTilBarnetilsynDto(
                         id = 1,
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
                         skolealder = Skolealder.OVER,
                         tilsynstype = Tilsynstype.DELTID,
                     )
@@ -717,10 +717,10 @@ class UnderholdServiceTest {
                     StønadTilBarnetilsynDto(
                         id = 1,
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
                         skolealder = Skolealder.OVER,
                         tilsynstype = Tilsynstype.DELTID,
                     )
@@ -779,10 +779,10 @@ class UnderholdServiceTest {
                     StønadTilBarnetilsynDto(
                         id = 1,
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now(),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now(),
+                                null,
+                            ),
                         skolealder = Skolealder.OVER,
                         tilsynstype = Tilsynstype.DELTID,
                     )
@@ -831,10 +831,10 @@ class UnderholdServiceTest {
                 val request =
                     OppdatereFaktiskTilsynsutgiftRequest(
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
                         utgift = BigDecimal(6000),
                         kostpenger = BigDecimal(1000),
                         kommentar = "Kostpenger gjelder ikke fredager",
@@ -902,10 +902,10 @@ class UnderholdServiceTest {
                     OppdatereFaktiskTilsynsutgiftRequest(
                         id = 1,
                         periode =
-                        DatoperiodeDto(
-                            LocalDate.now().minusMonths(6).withDayOfMonth(1),
-                            null,
-                        ),
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
                         utgift = BigDecimal(6000),
                         kostpenger = BigDecimal(1000),
                         kommentar = "Kostpenger gjelder ikke fredager",
@@ -1201,12 +1201,14 @@ class UnderholdServiceTest {
                 oppretteBarnetilsynGrunnlagDto(
                     b,
                     periodeFraAntallMndTilbake = 13,
-                    periodeTilAntallMndTilbake = 1
-                )
+                    periodeTilAntallMndTilbake = 1,
+                ),
             )
 
-            val originaltGrunnlag = b.grunnlag.hentAlleAktiv()
-                .find { Grunnlagsdatatype.BARNETILSYN == it.type && !it.erBearbeidet }
+            val originaltGrunnlag =
+                b.grunnlag
+                    .hentAlleAktiv()
+                    .find { Grunnlagsdatatype.BARNETILSYN == it.type && !it.erBearbeidet }
 
             originaltGrunnlag.shouldNotBeNull()
             originaltGrunnlag.aktiv.shouldNotBeNull()
@@ -1222,8 +1224,8 @@ class UnderholdServiceTest {
                     fom = b.virkningstidspunktEllerSøktFomDato,
                     kilde = Kilde.MANUELL,
                     omfang = Tilsynstype.HELTID,
-                    under_skolealder = false
-                )
+                    under_skolealder = false,
+                ),
             )
 
             b.virkningstidspunkt = LocalDate.now()
@@ -1255,7 +1257,7 @@ class UnderholdServiceTest {
                 perioderBearbeida.shouldBeEmpty()
             }
 
-            assertSoftly (u.barnetilsyn){
+            assertSoftly(u.barnetilsyn) {
                 shouldHaveSize(1)
                 find { Kilde.MANUELL == it.kilde }.shouldNotBeNull()
                 find { Kilde.MANUELL == it.kilde }!!.fom shouldBe b.virkningstidspunktEllerSøktFomDato
@@ -1308,8 +1310,10 @@ class UnderholdServiceTest {
                 it?.erBearbeidet shouldBe true
             }
 
-            val dataTestbarn2 = aktiveBearbeidaBarnetilsyn.find { it.gjelder == testdataBarn2.ident }
-                .konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
+            val dataTestbarn2 =
+                aktiveBearbeidaBarnetilsyn
+                    .find { it.gjelder == testdataBarn2.ident }
+                    .konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
             dataTestbarn2 shouldHaveSize 1
 
             assertSoftly(dataTestbarn2.first()) {
