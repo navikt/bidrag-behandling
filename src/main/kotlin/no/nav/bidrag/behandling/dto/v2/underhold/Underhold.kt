@@ -114,6 +114,9 @@ data class UnderholdskostnadDto(
     data class Beregningsdetaljer(
         val tilsynsutgifterBarn: List<TilsynsutgiftBarn> = emptyList(),
         val sjablonMaksTilsynsutgift: BigDecimal,
+        val sjablonMaksFradrag: BigDecimal,
+        val sjablonAntallBarn: Int,
+        val skattAlminneligInntektFaktor: BigDecimal,
         val totalTilsynsutgift: BigDecimal,
         val sumTilsynsutgifter: BigDecimal,
         val endeligBeløp: BigDecimal,
@@ -123,7 +126,8 @@ data class UnderholdskostnadDto(
         val erBegrensetAvMaksTilsyn: Boolean,
         val fordelingFaktor: BigDecimal,
         val skattefradrag: BigDecimal,
-        val skattefradragFaktor: BigDecimal,
+        val maksFradragAndel: BigDecimal,
+        val beløpTrukkeFraSkattefradrag: BigDecimal,
     )
 
     data class TilsynsutgiftBarn(

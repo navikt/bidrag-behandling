@@ -66,6 +66,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsklassePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonBidragsevnePeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonMaksFradragPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonMaksTilsynPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
@@ -486,6 +487,16 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
             Grunnlagstype.SJABLON_MAKS_TILSYN,
             grunnlagsreferanseListe,
         )
+    val sjablonMaksfradrag =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<SjablonMaksFradragPeriode>(
+            Grunnlagstype.SJABLON_MAKS_FRADRAG,
+            grunnlagsreferanseListe,
+        )
+    val sjablonSkattesats =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<SjablonSjablontallPeriode>(
+            Grunnlagstype.SJABLON_SJABLONTALL,
+            nettoTilsyn.grunnlag.grunnlagsreferanseListe,
+        ).find { it.innhold.sjablon == SjablonTallNavn.SKATT_ALMINNELIG_INNTEKT_PROSENT }
     val maksTilsynBeløp = sjablonMaksTilsyn.firstOrNull()?.innhold?.maksBeløpTilsyn ?: BigDecimal.ZERO
     val søknadsbarnEndeligBeløp =
         nettoTilsyn.innhold.tilsynsutgiftBarnListe
@@ -500,6 +511,9 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     val sumTilsynsutgifter = nettoTilsyn.innhold.tilsynsutgiftBarnListe.sumOf { it.sumTilsynsutgifter }
     val erBegrensetAvMaksTilsyn =
         nettoTilsyn.innhold.totalTilsynsutgift.setScale(0, RoundingMode.HALF_UP) != sumTilsynsutgifter.setScale(0, RoundingMode.HALF_UP)
+    val sjablonMaksFradragBeløp = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO
+    val antallBarn = nettoTilsyn.innhold.tilsynsutgiftBarnListe.size
+    val maksfradragAndel = sjablonMaksFradragBeløp.divide(antallBarn.toBigDecimal(), 10, RoundingMode.HALF_UP)
     return Beregningsdetaljer(
         erBegrensetAvMaksTilsyn = erBegrensetAvMaksTilsyn,
         endeligBeløp = søknadsbarnEndeligBeløp,
@@ -511,7 +525,12 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
         sumTilsynsutgifter = sumTilsynsutgifter,
         fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
         skattefradrag = nettoTilsyn.innhold.skattefradrag,
-        skattefradragFaktor = nettoTilsyn.innhold.skattefradrag,
+        maksFradragAndel = maksfradragAndel,
+        beløpTrukkeFraSkattefradrag = minOf(maksfradragAndel, nettoTilsyn.innhold.andelTilsynsutgiftBeløp),
+        sjablonMaksFradrag = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO,
+        skattAlminneligInntektFaktor =
+            sjablonSkattesats?.innhold?.verdi?.divide(BigDecimal(100), 10, RoundingMode.HALF_UP) ?: BigDecimal.ZERO,
+        sjablonAntallBarn = antallBarn,
         tilsynsutgifterBarn =
             nettoTilsyn.innhold.tilsynsutgiftBarnListe.sortedBy { it.gjelderBarn }.map { fu ->
                 tilsynsutgifterBarn(grunnlagsreferanseListe, fu)
