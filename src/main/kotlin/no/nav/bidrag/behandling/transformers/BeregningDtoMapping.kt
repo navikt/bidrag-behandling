@@ -492,19 +492,26 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
             .find { it.gjelderBarn == gjelderBarnReferanse }
             ?.endeligSumTilsynsutgifter
             ?: BigDecimal.ZERO
+    val søknadsbarnFaktiskBeløp =
+        nettoTilsyn.innhold.tilsynsutgiftBarnListe
+            .find { it.gjelderBarn == gjelderBarnReferanse }
+            ?.sumTilsynsutgifter
+            ?: BigDecimal.ZERO
     val sumTilsynsutgifter = nettoTilsyn.innhold.tilsynsutgiftBarnListe.sumOf { it.sumTilsynsutgifter }
     val erBegrensetAvMaksTilsyn =
         nettoTilsyn.innhold.totalTilsynsutgift.setScale(0, RoundingMode.HALF_UP) != sumTilsynsutgifter.setScale(0, RoundingMode.HALF_UP)
     return Beregningsdetaljer(
         erBegrensetAvMaksTilsyn = erBegrensetAvMaksTilsyn,
         endeligBeløp = søknadsbarnEndeligBeløp,
-        sjablonMaksTilsynsutgift = maksTilsynBeløp,
-        faktiskBeløp = nettoTilsyn.innhold.andelTilsynsutgiftBeløp,
+        faktiskBeløp = søknadsbarnFaktiskBeløp,
+        andelBeløp = nettoTilsyn.innhold.andelTilsynsutgiftBeløp,
         nettoBeløp = nettoTilsyn.innhold.nettoTilsynsutgift,
+        sjablonMaksTilsynsutgift = maksTilsynBeløp,
         totalTilsynsutgift = nettoTilsyn.innhold.totalTilsynsutgift,
         sumTilsynsutgifter = sumTilsynsutgifter,
         fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
         skattefradrag = nettoTilsyn.innhold.skattefradrag,
+        skattefradragFaktor = nettoTilsyn.innhold.skattefradrag,
         tilsynsutgifterBarn =
             nettoTilsyn.innhold.tilsynsutgiftBarnListe.sortedBy { it.gjelderBarn }.map { fu ->
                 tilsynsutgifterBarn(grunnlagsreferanseListe, fu)
