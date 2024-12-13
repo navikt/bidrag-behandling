@@ -206,10 +206,10 @@ class Dtomapper(
                 this.søknadsbarn.first(),
             )
 
-        return beregnBarnebidragApi
-            .beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+        val underholdBeregning = beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+        return underholdBeregning
             .finnAlleDelberegningUnderholdskostnad()
-            .tilUnderholdskostnadDto()
+            .tilUnderholdskostnadDto((underholdBeregning + grunnlag.grunnlagListe).toSet().toList())
     }
 
     private fun Person.tilPersoninfoDto(rolle: Rolle?): PersoninfoDto {
