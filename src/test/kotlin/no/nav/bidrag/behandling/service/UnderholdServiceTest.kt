@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -1086,7 +1087,13 @@ class UnderholdServiceTest {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            b.leggeTilGjeldendeBarnetilsyn(oppretteBarnetilsynGrunnlagDto(b, skolealder = Skolealder.UNDER, tilsynstype = Tilsynstype.DELTID))
+            b.leggeTilGjeldendeBarnetilsyn(
+                oppretteBarnetilsynGrunnlagDto(
+                    b,
+                    skolealder = Skolealder.UNDER,
+                    tilsynstype = Tilsynstype.DELTID,
+                ),
+            )
             b.leggeTilNyttBarnetilsyn()
 
             val nyVirkningsdato =
@@ -1182,7 +1189,13 @@ class UnderholdServiceTest {
             underholdService.tilpasseUnderholdEtterVirkningsdato(b)
 
             // så
-            u.barnetilsyn.first().fom shouldBe b.virkningstidspunkt
+            u.barnetilsyn.first().fom shouldBe
+                b.grunnlag
+                    .hentSisteAktiv()
+                    .find { Grunnlagsdatatype.BARNETILSYN == it.type }
+                    .konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
+                    .minBy { it.periodeFra }
+                    .periodeFra
             u.faktiskeTilsynsutgifter.first().fom shouldBe b.virkningstidspunkt
             u.tilleggsstønad.first().fom shouldBe b.virkningstidspunkt
         }
@@ -1257,11 +1270,7 @@ class UnderholdServiceTest {
                 perioderBearbeida.shouldBeEmpty()
             }
 
-            assertSoftly(u.barnetilsyn) {
-                shouldHaveSize(1)
-                find { Kilde.MANUELL == it.kilde }.shouldNotBeNull()
-                find { Kilde.MANUELL == it.kilde }!!.fom shouldBe b.virkningstidspunktEllerSøktFomDato
-            }
+            u.barnetilsyn.shouldHaveSize(0)
         }
     }
 

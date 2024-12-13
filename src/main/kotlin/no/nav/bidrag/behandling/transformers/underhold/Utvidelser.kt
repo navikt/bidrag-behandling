@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -102,6 +103,20 @@ fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overs
 
             behandling.overskriveBearbeidaBarnetilsynsgrunnlag(gjelder, barnetilsyn, overskriveAktiverte)
         }
+}
+
+fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag() {
+    val barnetilsynFraGrunnlag =
+        behandling.grunnlag
+            .hentSisteAktiv()
+            .find { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+            ?.filter { this.person.ident == it.barnPersonId }
+
+    barnetilsynFraGrunnlag?.let { g ->
+        barnetilsyn.clear()
+        g.forEach { barnetilsyn.add(it.tilBarnetilsyn(this)) }
+    }
 }
 
 fun Underholdskostnad.justerePerioder() {

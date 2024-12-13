@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
+import no.nav.bidrag.behandling.transformers.underhold.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag
 import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioder
@@ -448,7 +449,10 @@ class UnderholdService(
     }
 
     private fun oppdatereUnderholdsperioderEtterEndretVirkningsdato(b: Behandling) {
-        b.underholdskostnader.forEach { it.justerePerioder() }
+        b.underholdskostnader.forEach {
+            it.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag()
+            it.justerePerioder()
+        }
     }
 
     private fun tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling: Behandling) {
