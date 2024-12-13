@@ -114,7 +114,7 @@ fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertG
             ?.filter { this.person.ident == it.barnPersonId }
 
     barnetilsynFraGrunnlag?.let { g ->
-        barnetilsyn.clear()
+        barnetilsyn.removeAll(barnetilsyn.filter { Kilde.OFFENTLIG == it.kilde })
         g.forEach { barnetilsyn.add(it.tilBarnetilsyn(this)) }
     }
 }

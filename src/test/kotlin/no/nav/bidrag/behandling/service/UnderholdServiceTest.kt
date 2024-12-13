@@ -1270,7 +1270,12 @@ class UnderholdServiceTest {
                 perioderBearbeida.shouldBeEmpty()
             }
 
-            u.barnetilsyn.shouldHaveSize(0)
+            assertSoftly(u.barnetilsyn) {
+                shouldHaveSize(1)
+                first().kilde shouldBe Kilde.MANUELL
+                first().fom shouldBe b.virkningstidspunkt
+                first().tom shouldBe null
+            }
         }
     }
 
