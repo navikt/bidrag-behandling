@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -72,17 +73,17 @@ fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) = this.map 
 fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
     fun erUnderSkolealder(fødselsdato: LocalDate) = fødselsdato.plusYears(ALDER_VED_SKOLESTART).year > LocalDate.now().year
 
+    val justerForDato = maxOf(u.behandling.virkningstidspunkt!!, LocalDate.now().withDayOfMonth(1))
+    val tilOgMedDato = this.periodeTil?.minusDays(1)
     return Barnetilsyn(
         underholdskostnad = u,
         fom = this.periodeFra,
-        tom = this.periodeTil?.minusDays(1),
+        tom = if (tilOgMedDato != null && tilOgMedDato.isAfter(justerForDato)) null else tilOgMedDato,
         kilde = Kilde.OFFENTLIG,
         omfang = this.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
         under_skolealder = erUnderSkolealder(u.person.henteFødselsdato),
     )
 }
-
-fun Set<Underholdskostnad>.justerePerioderEtterVirkningsdato() = forEach { it.justerePerioder() }
 
 fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overskriveAktiverte: Boolean = true) {
     val barnetilsyn = konvertereData<MutableSet<BarnetilsynGrunnlagDto>>()!!
@@ -107,7 +108,21 @@ fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overs
         }
 }
 
-private fun Underholdskostnad.justerePerioder() {
+fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag() {
+    val barnetilsynFraGrunnlag =
+        behandling.grunnlag
+            .hentSisteAktiv()
+            .find { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+            ?.filter { this.person.ident == it.barnPersonId }
+
+    barnetilsynFraGrunnlag?.let { g ->
+        barnetilsyn.removeAll(barnetilsyn.filter { Kilde.OFFENTLIG == it.kilde })
+        g.forEach { barnetilsyn.add(it.tilBarnetilsyn(this)) }
+    }
+}
+
+fun Underholdskostnad.justerePerioder() {
     val virkningsdato = behandling.virkningstidspunktEllerSøktFomDato
 
     barnetilsyn.filter { it.fom < virkningsdato }.forEach { periode ->
@@ -155,7 +170,10 @@ private fun Behandling.overskriveBearbeidaBarnetilsynsgrunnlag(
             )
         }
 
-    grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let { it.data = tilJson(perioder) }
+    grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let {
+        it.data = tilJson(perioder)
+        it.aktiv = it.aktiv?.let { LocalDateTime.now() }
+    }
 }
 
 fun Behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres() {

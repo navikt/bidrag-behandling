@@ -625,7 +625,7 @@ private fun OpprettVedtakRequestDto.validerInntektrapportering() {
         assertSoftly(it[0].innholdTilObjekt<InntektsrapporteringPeriode>()) {
             periode.fom shouldBe YearMonth.parse("2022-01")
             periode.til shouldBe YearMonth.parse("2022-07")
-            inntekstpostListe shouldHaveSize 0
+            inntektspostListe shouldHaveSize 0
             beløp shouldBe 50000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER
             gjelderBarn shouldBe null
@@ -635,7 +635,7 @@ private fun OpprettVedtakRequestDto.validerInntektrapportering() {
         assertSoftly(it[1].innholdTilObjekt<InntektsrapporteringPeriode>()) {
             periode.fom shouldBe YearMonth.parse("2022-07")
             periode.til shouldBe YearMonth.parse("2022-10")
-            inntekstpostListe shouldHaveSize 0
+            inntektspostListe shouldHaveSize 0
             beløp shouldBe 60000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT
             gjelderBarn shouldBe null
@@ -650,7 +650,7 @@ private fun OpprettVedtakRequestDto.validerInntektrapportering() {
             assertSoftly(innholdTilObjekt<InntektsrapporteringPeriode>()) {
                 periode.fom shouldBe YearMonth.parse("2022-10")
                 periode.til shouldBe null
-                inntekstpostListe shouldHaveSize 1
+                inntektspostListe shouldHaveSize 1
                 beløp shouldBe 60000.toBigDecimal()
                 inntektsrapportering shouldBe Inntektsrapportering.AINNTEKT_BEREGNET_12MND
                 gjelderBarn shouldBe null
@@ -661,7 +661,7 @@ private fun OpprettVedtakRequestDto.validerInntektrapportering() {
         assertSoftly(it[3].innholdTilObjekt<InntektsrapporteringPeriode>()) {
             periode.fom shouldBe YearMonth.parse("2022-01")
             periode.til shouldBe null
-            inntekstpostListe shouldHaveSize 0
+            inntektspostListe shouldHaveSize 0
             beløp shouldBe 60000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.BARNETILLEGG
             gjelderBarn shouldBe søknadsbarnGrunnlag.referanse
@@ -671,7 +671,7 @@ private fun OpprettVedtakRequestDto.validerInntektrapportering() {
         assertSoftly(it[4].innholdTilObjekt<InntektsrapporteringPeriode>()) {
             periode.fom shouldBe YearMonth.parse("2022-01")
             periode.til shouldBe null
-            inntekstpostListe shouldHaveSize 0
+            inntektspostListe shouldHaveSize 0
             beløp shouldBe 60000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.AINNTEKT_BEREGNET_12MND
             gjelderBarn shouldBe null

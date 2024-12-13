@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
@@ -33,6 +34,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
@@ -40,12 +42,15 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -115,6 +120,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                         barn.ident,
                         barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
                         barn.fødselsdato,
+                        hentDirekteOppgjørBeløp(barnIdent.verdi),
                     ),
                 perioder =
                     stønadsendring.periodeListe.map {
@@ -147,8 +153,51 @@ internal fun List<GrunnlagDto>.mapRoller(
     lesemodus: Boolean,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
-        .mapIndexed { i, it -> it.tilRolle(behandling, if (lesemodus) i.toLong() else null) }
-        .toMutableSet()
+        .mapIndexed { i, it ->
+            it.tilRolle(behandling, if (lesemodus) i.toLong() else null)
+        }.toMutableSet()
+
+internal fun VedtakDto.oppdaterDirekteOppgjørBeløp(
+    behandling: Behandling,
+    lesemodus: Boolean,
+) = if (lesemodus) {
+    behandling.søknadsbarn.forEach {
+        it.innbetaltBeløp = hentDirekteOppgjørBeløp(it.ident!!)
+    }
+} else {
+    null
+}
+
+internal fun VedtakDto.hentDirekteOppgjørBeløp(kravhaver: String) =
+    engangsbeløpListe
+        .find { it.type == Engangsbeløptype.DIREKTE_OPPGJØR && it.kravhaver.verdi == kravhaver }
+        ?.beløp
+
+internal fun List<GrunnlagDto>.oppdaterRolleGebyr(behandling: Behandling) =
+    filtrerBasertPåEgenReferanse(Grunnlagstype.SLUTTBEREGNING_GEBYR)
+        .groupBy { it.gjelderReferanse }
+        .forEach { (gjelderReferanse, grunnlag) ->
+            val person = hentPersonMedReferanse(gjelderReferanse)!!
+            val rolle = behandling.roller.find { it.ident == person.personIdent }!!
+            rolle.harGebyrsøknad = true
+            val sluttberegning = grunnlag.first().innholdTilObjekt<SluttberegningGebyr>()
+            val manueltOverstyrtGebyr =
+                finnGrunnlagSomErReferertAv(
+                    Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
+                    grunnlag.first(),
+                ).firstOrNull()?.innholdTilObjekt<ManueltOverstyrtGebyr>()
+            rolle.manueltOverstyrtGebyr =
+                RolleManueltOverstyrtGebyr(
+                    manueltOverstyrtGebyr != null,
+                    sluttberegning.ilagtGebyr,
+                    manueltOverstyrtGebyr?.begrunnelse,
+                    if (manueltOverstyrtGebyr != null) {
+                        !sluttberegning.ilagtGebyr
+                    } else {
+                        sluttberegning.ilagtGebyr
+                    },
+                )
+        }
 
 internal fun List<GrunnlagDto>.mapHusstandsmedlem(
     behandling: Behandling,
@@ -354,7 +403,7 @@ private fun List<GrunnlagDto>.hentGrunnlagBarnetilsyn(
                 Grunnlagsdatatype.BARNETILSYN,
                 grunnlag,
                 gjelderIdent,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_BARNETILSYN),
                 lesemodus,
             )
 
@@ -364,7 +413,7 @@ private fun List<GrunnlagDto>.hentGrunnlagBarnetilsyn(
                     Grunnlagsdatatype.BARNETILSYN,
                     barnetsGrunnlag,
                     gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN),
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_BARNETILSYN),
                     lesemodus,
                     true,
                     personidentBarn,
@@ -635,12 +684,12 @@ private fun BaseGrunnlag.tilInntekt(
         )
 
     inntektBO.inntektsposter =
-        inntektPeriode.inntekstpostListe
+        inntektPeriode.inntektspostListe
             .mapIndexed { i, it ->
                 Inntektspost(
                     id = if (id != null) id + i else null,
                     kode = it.kode,
-                    inntektstype = it.inntekstype,
+                    inntektstype = it.inntektstype,
                     beløp = it.beløp,
                     inntekt = inntektBO,
                 )

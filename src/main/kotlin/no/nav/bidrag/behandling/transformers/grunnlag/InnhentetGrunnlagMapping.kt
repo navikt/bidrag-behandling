@@ -42,6 +42,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -192,7 +193,7 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
                                             månedsinntekt.inntektPostListe.map { post ->
                                                 BeregnetInntekt.InntektPost(
                                                     kode = post.kode,
-                                                    inntekstype = post.inntekstype,
+                                                    inntektstype = post.inntekstype,
                                                     beløp = post.beløp,
                                                 )
                                             },
@@ -203,10 +204,12 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
             )
         }.toSet()
 
+fun List<Grunnlag>.tilInnhentetGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
+    mapBarnetilsyn(personobjekter) + mapTilleggsstønad(personobjekter)
+
 fun List<Grunnlag>.tilInnhentetGrunnlagInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
     mapSkattegrunnlag(personobjekter) + mapAinntekt(personobjekter) +
         mapKontantstøtte(personobjekter) +
-        mapBarnetilsyn(personobjekter) +
         mapBarnetillegg(personobjekter) +
         mapUtvidetbarnetrygd(personobjekter) + mapSmåbarnstillegg(personobjekter)
 
@@ -295,6 +298,21 @@ private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
                 grunnlag.innhentet,
                 gjelder.referanse,
                 personobjekter,
+            )
+        }.toSet()
+
+private fun List<Grunnlag>.mapTilleggsstønad(personobjekter: Set<GrunnlagDto>) =
+    filter { it.type == Grunnlagsdatatype.TILLEGGSSTØNAD && !it.erBearbeidet }
+        .groupBy { it.rolle.ident }
+        .map { (partPersonId, grunnlagListe) ->
+            val grunnlag = grunnlagListe.first()
+            val tilleggsstønadListe =
+                grunnlag.konvertereData<List<TilleggsstønadGrunnlagDto>>() ?: emptyList()
+            val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
+            tilleggsstønadListe.tilGrunnlagsobjekt(
+                grunnlag.innhentet,
+                gjelder.referanse,
+                first().behandling.søktFomDato,
             )
         }.toSet()
 

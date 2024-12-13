@@ -28,6 +28,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.Ainntektspost
 import no.nav.bidrag.transport.behandling.inntekt.request.Barnetillegg
@@ -69,6 +70,9 @@ fun opprettGrunnlagFraFil(
 
         Grunnlagsdatatype.BARNETILSYN ->
             grunnlag.barnetilsynListe.tilGrunnlagEntity(behandling)
+
+        Grunnlagsdatatype.TILLEGGSSTØNAD ->
+            grunnlag.tilleggsstønadBarnetilsynListe.tilGrunnlagEntity(behandling)
 
         Grunnlagsdatatype.KONTANTSTØTTE ->
             grunnlag.kontantstøtteListe.tilGrunnlagEntity(behandling)
@@ -133,6 +137,17 @@ fun List<BarnetilleggGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
         .map { (partPersonId, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.BARNETILLEGG,
+                grunnlag,
+                partPersonId,
+            )
+        }
+
+@JvmName("tilleggsstønadGrunnlagDtoTilGrunnlagEntity")
+fun List<TilleggsstønadGrunnlagDto>.tilGrunnlagEntity(behandling: Behandling) =
+    groupBy { it.partPersonId }
+        .map { (partPersonId, grunnlag) ->
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.TILLEGGSSTØNAD,
                 grunnlag,
                 partPersonId,
             )

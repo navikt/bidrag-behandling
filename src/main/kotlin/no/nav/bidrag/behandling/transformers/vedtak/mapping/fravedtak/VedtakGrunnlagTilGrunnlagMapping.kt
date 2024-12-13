@@ -77,7 +77,7 @@ fun List<GrunnlagDto>.hentBeregnetInntekt(): Map<String, SummerteInntekter<Summe
                                             InntektPost(
                                                 kode = it.kode,
                                                 beløp = it.beløp,
-                                                inntekstype = it.inntekstype,
+                                                inntekstype = it.inntektstype,
                                             )
                                         },
                                 )
@@ -144,7 +144,7 @@ fun List<GrunnlagDto>.hentInnhentetSivilstand() =
         }
 
 fun List<GrunnlagDto>.henteGrunnlagBarnetilsyn() =
-    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN)
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_BARNETILSYN)
         .flatMap {
             val gjelder = hentPersonMedReferanse(it.gjelderReferanse)!!
             val innhold = it.innholdTilObjekt<InnhentetBarnetilsyn>()
@@ -448,9 +448,9 @@ private fun BaseGrunnlag.tilInntektBearbeidet(grunnlagsListe: List<GrunnlagDto>)
             periode = ÅrMånedsperiode(opprinneligFom, opprinneligTom),
             sumInntekt = inntektPeriode.beløp,
             inntektPostListe =
-                inntektPeriode.inntekstpostListe.map {
+                inntektPeriode.inntektspostListe.map {
                     InntektPost(
-                        inntekstype = it.inntekstype,
+                        inntekstype = it.inntektstype,
                         beløp = it.beløp,
                         kode = it.kode,
                     )

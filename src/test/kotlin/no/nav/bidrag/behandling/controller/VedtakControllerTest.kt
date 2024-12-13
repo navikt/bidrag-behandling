@@ -108,7 +108,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                HttpEntity(""),
+                null,
                 Int::class.java,
             )
 
@@ -153,7 +153,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                HttpEntity(""),
+                null,
                 Int::class.java,
             )
 
@@ -247,7 +247,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                HttpEntity(""),
+                null,
                 BeregningValideringsfeil::class.java,
             )
 
@@ -282,7 +282,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                HttpEntity(""),
+                null,
                 BeregningValideringsfeil::class.java,
             )
 

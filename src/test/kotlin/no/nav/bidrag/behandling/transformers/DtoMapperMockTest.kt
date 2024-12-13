@@ -321,4 +321,87 @@ class DtoMapperMockTest {
             it.harInnvilgetTilleggsstønad shouldBe true
         }
     }
+
+    @Test
+    fun `skal vise månedsinntekt`() {
+        // gitt
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.inntekter.add(
+            Inntekt(
+                belop = BigDecimal(2000),
+                datoFom = behandling.virkningstidspunkt?.plusMonths(1),
+                datoTom = null,
+                ident = behandling.bidragsmottaker!!.ident!!,
+                taMed = false,
+                gjelderBarn = behandling.søknadsbarn.first().ident,
+                kilde = Kilde.MANUELL,
+                behandling = behandling,
+                type = Inntektsrapportering.BARNETILLEGG,
+                id = 1,
+            ),
+        )
+        behandling.inntekter.add(
+            Inntekt(
+                belop = BigDecimal(0),
+                datoFom = behandling.virkningstidspunkt?.plusMonths(2),
+                datoTom = null,
+                ident = behandling.bidragspliktig!!.ident!!,
+                gjelderBarn = behandling.søknadsbarn.first().ident,
+                taMed = true,
+                kilde = Kilde.MANUELL,
+                behandling = behandling,
+                type = Inntektsrapportering.BARNETILLEGG,
+                id = 1,
+            ),
+        )
+
+        behandling.inntekter.add(
+            Inntekt(
+                belop = BigDecimal(-1),
+                datoFom = behandling.virkningstidspunkt?.plusMonths(2),
+                datoTom = null,
+                ident = behandling.bidragspliktig!!.ident!!,
+                gjelderBarn = behandling.søknadsbarn.first().ident,
+                taMed = true,
+                kilde = Kilde.MANUELL,
+                behandling = behandling,
+                type = Inntektsrapportering.BARNETILLEGG,
+                id = 1,
+            ),
+        )
+
+        behandling.inntekter.add(
+            Inntekt(
+                belop = BigDecimal(144),
+                datoFom = behandling.virkningstidspunkt?.plusMonths(3),
+                datoTom = null,
+                ident = behandling.bidragspliktig!!.ident!!,
+                gjelderBarn = behandling.søknadsbarn.first().ident,
+                taMed = true,
+                kilde = Kilde.MANUELL,
+                behandling = behandling,
+                type = Inntektsrapportering.BARNETILLEGG,
+                id = 1,
+            ),
+        )
+
+        // hvis
+        val behandlingDto = dtomapper.tilDto(behandling)
+
+        // så
+        behandlingDto.shouldNotBeNull()
+
+        val barnetillegg = behandlingDto.inntekter.barnetillegg shouldHaveSize 3
+
+        assertSoftly(barnetillegg) { bt ->
+            bt.forEach {
+                when (it.beløp) {
+                    BigDecimal(-1) -> it.månedsbeløp shouldBe BigDecimal.ZERO
+                    BigDecimal.ZERO -> it.månedsbeløp shouldBe BigDecimal.ZERO
+                    BigDecimal(144) -> it.månedsbeløp shouldBe BigDecimal(12)
+                    BigDecimal(2000) -> it.månedsbeløp shouldBe BigDecimal(167)
+                }
+            }
+        }
+    }
 }

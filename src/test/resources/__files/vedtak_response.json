@@ -54,7 +54,7 @@
     },
     {
       "referanse": "innhentet_barnetilsyn_person_PERSON_BIDRAGSMOTTAKER_19780825_69",
-      "type": "INNHENTET_INNTEKT_BARNETILSYN",
+      "type": "INNHENTET_BARNETILSYN",
       "innhold": {
         "datakilde": "FAMILIE_EF_SAK",
         "hentetTidspunkt": "2024-01-01T00:00:00",
@@ -350,7 +350,7 @@
           "til": "2022-01"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "versjon": "V1",
         "inntektsrapportering": "LIGNINGSINNTEKT"
@@ -371,7 +371,7 @@
           "til": "2024-06"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "inntektsrapportering": "SAKSBEHANDLER_BEREGNET_INNTEKT"
       },
@@ -393,7 +393,7 @@
           "til": "2024-02"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 5330000,
@@ -420,7 +420,7 @@
           "til": "2024-02"
         },
         "gjelderBarn": "person_PERSON_SØKNADSBARN_20050623_68",
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "inntektsrapportering": "BARNETILLEGG"
       },
@@ -442,7 +442,7 @@
           "til": "2023-07"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 2859987,
@@ -473,7 +473,7 @@
           "til": "2023-07"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
             "beløp": 4000,
@@ -509,7 +509,7 @@
           "til": "2023-01"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "annenArbeidsinntekt",
             "beløp": 5000,
@@ -536,7 +536,7 @@
           "til": null
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": true,
         "inntektsrapportering": "UTVIDET_BARNETRYGD"
       },
@@ -558,7 +558,7 @@
           "til": "2024-01"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 25245987,
@@ -589,7 +589,7 @@
           "til": "2024-01"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "fastloenn",
             "beløp": 31979987,
@@ -620,7 +620,7 @@
           "til": "2024-01"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "arbeidsavklaringspenger",
             "beløp": 10000,
@@ -656,7 +656,7 @@
           "til": "2023-07"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [
+        "inntektspostListe": [
           {
             "kode": "annenSkattepliktigKapitalinntektFraVirtuellValuta",
             "beløp": 50000,
@@ -697,7 +697,7 @@
           "til": "2022-01"
         },
         "gjelderBarn": null,
-        "inntekstpostListe": [],
+        "inntektspostListe": [],
         "manueltRegistrert": false,
         "versjon": "V1",
         "inntektsrapportering": "KAPITALINNTEKT"

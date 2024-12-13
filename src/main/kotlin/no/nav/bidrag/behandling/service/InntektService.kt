@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -55,6 +56,7 @@ class InntektService(
     private val inntektRepository: InntektRepository,
     private val notatService: NotatService,
     private val gebyrService: GebyrService,
+    private val dtomapper: Dtomapper,
 ) {
     @Transactional
     fun rekalkulerPerioderInntekter(behandlingsid: Long) {
@@ -181,6 +183,7 @@ class InntektService(
         val beregnetGebyrErEndret = gebyrService.rekalkulerGebyr(behandling)
         return OppdatereInntektResponse(
             inntekt = oppdatertInntekt,
+            gebyr = dtomapper.run { behandling.mapGebyr() },
             beregnetGebyrErEndret = beregnetGebyrErEndret,
             beregnetInntekter =
                 behandling.roller

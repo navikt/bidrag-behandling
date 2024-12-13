@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
@@ -386,6 +387,12 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 it.fødselsdato shouldBe testdataBM.fødselsdato
                 it.navn shouldBe null
                 it.deleted shouldBe false
+                it.harGebyrsøknad shouldBe true
+                it.manueltOverstyrtGebyr.shouldNotBeNull()
+                it.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
+                it.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+                it.manueltOverstyrtGebyr!!.begrunnelse shouldBe "test"
+                it.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
             }
             val bidragspliktig = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
             bidragspliktig shouldNotBe null
@@ -394,6 +401,12 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 it.fødselsdato shouldBe testdataBP.fødselsdato
                 it.navn shouldBe null
                 it.deleted shouldBe false
+                it.harGebyrsøknad shouldBe true
+                it.manueltOverstyrtGebyr.shouldNotBeNull()
+                it.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
+                it.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
+                it.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+                it.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
             }
             val søknadsbarn = roller.find { it.rolletype == Rolletype.BARN }
 

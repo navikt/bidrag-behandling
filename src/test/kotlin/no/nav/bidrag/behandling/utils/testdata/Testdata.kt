@@ -679,7 +679,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         Underholdskostnad(
                             id = if (generateId) 1 else null,
                             behandling = behandling,
-                            person = Person(ident = it.ident, rolle = mutableSetOf(it)),
+                            person = Person(ident = it.ident, fødselsdato = it.fødselsdato, rolle = mutableSetOf(it)),
                         )
                     }.toMutableSet()
             husstandsmedlem.add(
@@ -823,6 +823,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BOFORHOLD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.ARBEIDSFORHOLD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BARNETILSYN),
+            opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.TILLEGGSSTØNAD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.BARNETILLEGG),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.KONTANTSTØTTE),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SMÅBARNSTILLEGG),
@@ -1195,7 +1196,7 @@ fun oppretteTestbehandling(
         var idUnderholdskostnad = if (setteDatabaseider) 1 else null
         // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
         behandling.søknadsbarn.forEach {
-            val personSøknadsbarn = Person(ident = it.ident, rolle = mutableSetOf(it))
+            val personSøknadsbarn = Person(ident = it.ident, fødselsdato = it.fødselsdato, rolle = mutableSetOf(it))
             behandling.underholdskostnader.add(
                 Underholdskostnad(
                     id = idUnderholdskostnad?.toLong(),
@@ -1636,6 +1637,8 @@ fun oppretteBarnetilsynGrunnlagDto(
     periodeFraAntallMndTilbake: Long = 1,
     periodeTil: LocalDate? = null,
     periodeTilAntallMndTilbake: Long? = null,
+    skolealder: Skolealder = Skolealder.OVER,
+    tilsynstype: Tilsynstype = Tilsynstype.HELTID,
     barnPersonId: String =
         behandling.søknadsbarn
             .first()
@@ -1643,10 +1646,10 @@ fun oppretteBarnetilsynGrunnlagDto(
             .verdi,
 ) = BarnetilsynGrunnlagDto(
     beløp = beløp,
-    periodeFra = periodeFra ?: LocalDate.now().minusMonths(periodeFraAntallMndTilbake),
-    periodeTil = periodeTil ?: periodeTilAntallMndTilbake?.let { LocalDate.now().minusMonths(it) },
-    skolealder = null,
-    tilsynstype = null,
+    periodeFra = periodeFra ?: LocalDate.now().minusMonths(periodeFraAntallMndTilbake).withDayOfMonth(1),
+    periodeTil = periodeTil ?: periodeTilAntallMndTilbake?.let { LocalDate.now().minusMonths(it).withDayOfMonth(1) },
+    skolealder = skolealder,
+    tilsynstype = tilsynstype,
     barnPersonId = barnPersonId,
     partPersonId = behandling.bidragsmottaker!!.personident!!.verdi,
 )
@@ -1714,7 +1717,7 @@ fun Behandling.leggTilFaktiskTilsynsutgift(
             Underholdskostnad(
                 id = if (medId) 1 else null,
                 behandling = this,
-                person = Person(ident = barn.ident),
+                person = Person(ident = barn.ident, fødselsdato = barn.fødselsdato),
             ).also { underholdskostnader.add(it) }
         }
     underholdskostnad.faktiskeTilsynsutgifter.add(
@@ -1860,7 +1863,13 @@ fun Behandling.leggTilBarnetillegg(
     inntekter.add(inntekt)
 }
 
-fun Behandling.leggeTilGjeldendeBarnetillegg() {
+fun Behandling.leggeTilGjeldendeBarnetilsyn(
+    grunnlagBarnetilsyn: BarnetilsynGrunnlagDto =
+        oppretteBarnetilsynGrunnlagDto(
+            this,
+            periodeFraAntallMndTilbake = 13,
+        ),
+) {
     this.grunnlag.add(
         Grunnlag(
             aktiv = LocalDateTime.now().minusDays(5),
@@ -1869,12 +1878,7 @@ fun Behandling.leggeTilGjeldendeBarnetillegg() {
             erBearbeidet = false,
             rolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!,
             type = Grunnlagsdatatype.BARNETILSYN,
-            data =
-                commonObjectmapper.writeValueAsString(
-                    setOf(
-                        oppretteBarnetilsynGrunnlagDto(this, periodeFraAntallMndTilbake = 13),
-                    ),
-                ),
+            data = commonObjectmapper.writeValueAsString(setOf(grunnlagBarnetilsyn)),
         ),
     )
 
@@ -1887,12 +1891,7 @@ fun Behandling.leggeTilGjeldendeBarnetillegg() {
             erBearbeidet = true,
             rolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!,
             type = Grunnlagsdatatype.BARNETILSYN,
-            data =
-                commonObjectmapper.writeValueAsString(
-                    setOf(
-                        oppretteBarnetilsynGrunnlagDto(this, periodeFraAntallMndTilbake = 13),
-                    ),
-                ),
+            data = commonObjectmapper.writeValueAsString(setOf(grunnlagBarnetilsyn)),
         ),
     )
 
@@ -1926,8 +1925,8 @@ fun Behandling.leggeTilNyttBarnetilsyn(
                             beløp = 4500,
                             periodeFra = fraDato,
                             periodeTil = fraDato.plusMonths(6),
-                            skolealder = Skolealder.IKKE_ANGITT,
-                            tilsynstype = Tilsynstype.IKKE_ANGITT,
+                            skolealder = Skolealder.OVER,
+                            tilsynstype = Tilsynstype.HELTID,
                             barnPersonId = testdataBarn1.ident,
                             partPersonId = barnetilsynInnhentesForRolle.ident!!,
                         ),

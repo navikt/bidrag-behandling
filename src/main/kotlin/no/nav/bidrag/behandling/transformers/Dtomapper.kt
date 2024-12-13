@@ -364,6 +364,7 @@ class Dtomapper(
                     fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
                     ident = tilgangskontrollertPersoninfo.ident,
                     erBeskyttet = tilgangskontrollertPersoninfo.erBeskyttet,
+                    null,
                 ),
             kilde = kilde,
             medIBehandling = behandling.roller.any { it.ident == this.ident },
@@ -621,7 +622,7 @@ class Dtomapper(
     }
 
     fun Behandling.mapGebyr() =
-        if (roller.filter { it.harGebyrsøknad }.isNotEmpty()) {
+        if (roller.any { it.harGebyrsøknad }) {
             GebyrDto(
                 gebyrRoller =
                     roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->

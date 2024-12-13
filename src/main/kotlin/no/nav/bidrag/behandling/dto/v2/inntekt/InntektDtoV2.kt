@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.inntekt
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -13,6 +14,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektPerBarn
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 data class InntektDtoV2(
@@ -46,7 +48,16 @@ data class InntektDtoV2(
     @Schema(required = true)
     val inntektstyper: Set<Inntektstype> = emptySet(),
     val historisk: Boolean? = false,
-)
+) {
+    @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
+    val månedsbeløp: BigDecimal?
+        get() =
+            if (Inntektsrapportering.BARNETILLEGG == rapporteringstype) {
+                beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+            } else {
+                null
+            }
+}
 
 data class InntekterDtoV2(
     val barnetillegg: Set<InntektDtoV2> = emptySet(),
@@ -96,6 +107,7 @@ data class OppdatereInntektRequest(
 data class OppdatereInntektResponse(
     @Schema(description = "Inntekt som ble oppdatert")
     val inntekt: InntektDtoV2?,
+    val gebyr: GebyrDto? = null,
     val beregnetGebyrErEndret: Boolean = false,
     @Schema(description = "Periodiserte inntekter")
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),

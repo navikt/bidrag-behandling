@@ -292,7 +292,7 @@ internal fun opprettGrunnlagForBostatusperioder(
             )
         }.toSet()
 
-internal fun SluttberegningGebyr.tilResultatkode() = if (ilagtGebyr) Resultatkode.GEBYR_ILAGT else Resultatkode.GEBYR_FRITTATT
+internal fun SluttberegningGebyr.tilResultatkode() = if (ilagtGebyr) Resultatkode.GEBYR_ILAGT else Resultatkode.GEBYR_FRITATT
 
 fun List<BaseGrunnlag>.finnInntektSiste12Mnd(rolle: Rolle) =
     filter {
@@ -333,11 +333,11 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                 inntektsrapportering = type,
                 manueltRegistrert = kilde == Kilde.MANUELL,
                 valgt = taMed,
-                inntekstpostListe =
+                inntektspostListe =
                     inntektsposter.map {
                         InntektsrapporteringPeriode.Inntektspost(
                             beløp = it.beløp,
-                            inntekstype = it.inntektstype,
+                            inntektstype = it.inntektstype,
                             kode = it.kode,
                         )
                     },

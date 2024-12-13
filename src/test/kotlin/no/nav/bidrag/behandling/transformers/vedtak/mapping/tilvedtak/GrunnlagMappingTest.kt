@@ -850,13 +850,13 @@ class GrunnlagMappingTest {
                         innhold.valgt shouldBe false
                         innhold.manueltRegistrert shouldBe false
                         innhold.gjelderBarn.shouldBeNull()
-                        innhold.inntekstpostListe shouldHaveSize 2
+                        innhold.inntektspostListe shouldHaveSize 2
                         inntekt.grunnlagsreferanseListe shouldHaveSize 3
-                        with(innhold.inntekstpostListe[0]) {
+                        with(innhold.inntektspostListe[0]) {
                             beløp shouldBe BigDecimal(5000)
                             kode shouldBe "fisking"
                         }
-                        with(innhold.inntekstpostListe[1]) {
+                        with(innhold.inntektspostListe[1]) {
                             beløp shouldBe BigDecimal(40000)
                             kode shouldBe "krypto"
                         }
@@ -870,17 +870,17 @@ class GrunnlagMappingTest {
                         innhold.valgt shouldBe true
                         innhold.manueltRegistrert shouldBe false
                         innhold.gjelderBarn.shouldBeNull()
-                        innhold.inntekstpostListe shouldHaveSize 2
+                        innhold.inntektspostListe shouldHaveSize 2
                         inntekt.grunnlagsreferanseListe shouldHaveSize 1
-                        with(innhold.inntekstpostListe[0]) {
+                        with(innhold.inntektspostListe[0]) {
                             beløp shouldBe BigDecimal(5000)
                             kode shouldBe ""
-                            inntekstype shouldBe Inntektstype.NÆRINGSINNTEKT
+                            inntektstype shouldBe Inntektstype.NÆRINGSINNTEKT
                         }
-                        with(innhold.inntekstpostListe[1]) {
+                        with(innhold.inntektspostListe[1]) {
                             beløp shouldBe BigDecimal(28000)
                             kode shouldBe ""
-                            inntekstype shouldBe Inntektstype.LØNNSINNTEKT
+                            inntektstype shouldBe Inntektstype.LØNNSINNTEKT
                         }
                     }
 
@@ -894,7 +894,7 @@ class GrunnlagMappingTest {
                         innhold.manueltRegistrert shouldBe true
                         inntekt.grunnlagsreferanseListe shouldHaveSize 0
                         innhold.gjelderBarn.shouldBeNull()
-                        innhold.inntekstpostListe shouldHaveSize 0
+                        innhold.inntektspostListe shouldHaveSize 0
                     }
 
                     assertSoftly(this[3]) { inntekt ->
@@ -906,12 +906,12 @@ class GrunnlagMappingTest {
                         innhold.valgt shouldBe true
                         innhold.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
                         innhold.manueltRegistrert shouldBe false
-                        innhold.inntekstpostListe shouldHaveSize 1
+                        innhold.inntektspostListe shouldHaveSize 1
                         inntekt.grunnlagsreferanseListe shouldHaveSize 3
-                        with(innhold.inntekstpostListe[0]) {
+                        with(innhold.inntektspostListe[0]) {
                             beløp shouldBe BigDecimal(5000)
                             kode shouldBe ""
-                            inntekstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
+                            inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
                         }
                     }
 
@@ -925,11 +925,11 @@ class GrunnlagMappingTest {
                         innhold.gjelderBarn shouldBe søknadsbarnGrunnlag1.referanse
                         innhold.manueltRegistrert shouldBe false
                         inntekt.grunnlagsreferanseListe shouldHaveSize 3
-                        innhold.inntekstpostListe shouldHaveSize 1
-                        with(innhold.inntekstpostListe[0]) {
+                        innhold.inntektspostListe shouldHaveSize 1
+                        with(innhold.inntektspostListe[0]) {
                             beløp shouldBe BigDecimal(5000)
                             kode shouldBe ""
-                            inntekstype shouldBe Inntektstype.KONTANTSTØTTE
+                            inntektstype shouldBe Inntektstype.KONTANTSTØTTE
                         }
                     }
                 }

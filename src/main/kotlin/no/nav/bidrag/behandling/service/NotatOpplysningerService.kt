@@ -59,7 +59,9 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.inntekt.util.InntektUtil
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.dokument.JournalpostType
 import no.nav.bidrag.transport.dokument.OpprettDokumentDto
 import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
@@ -81,6 +83,7 @@ import no.nav.bidrag.transport.notat.NotatInntektspostDto
 import no.nav.bidrag.transport.notat.NotatMaksGodkjentBeløpDto
 import no.nav.bidrag.transport.notat.NotatMalType
 import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderhold
+import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderhold.NotatBarnetilsynOffentligeOpplysninger
 import no.nav.bidrag.transport.notat.NotatPersonDto
 import no.nav.bidrag.transport.notat.NotatResultatBeregningInntekterDto
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto
@@ -227,15 +230,7 @@ class NotatOpplysningerService(
             samvær = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
             underholdskostnader =
                 NotatUnderholdDto(
-                    offentligeOpplysninger =
-                        behandling.søknadsbarn.map {
-                            NotatOffentligeOpplysningerUnderhold(
-                                gjelder = it.behandling.bidragsmottaker!!.tilNotatRolle(),
-                                gjelderBarn = it.tilNotatRolle(),
-                                barnetilsyn = emptyList(),
-                                harTilleggsstønad = false,
-                            )
-                        },
+                    offentligeOpplysninger = behandling.tilUnderholdOpplysning(),
                     underholdskostnaderBarn =
                         mapper.run { behandling.underholdskostnader.tilDtos() }.map {
                             NotatUnderholdBarnDto(
@@ -296,15 +291,8 @@ class NotatOpplysningerService(
                             ),
                         beregnetIlagtGebyr = it.beregnetIlagtGebyr,
                         beløpGebyrsats = it.beløpGebyrsats,
-                        manueltOverstyrtGebyr =
-                            if (it.erManueltOverstyrt) {
-                                NotatGebyrRolleDto.NotatManueltOverstyrGebyrDto(
-                                    ilagtGebyr = it.endeligIlagtGebyr,
-                                    begrunnelse = it.begrunnelse,
-                                )
-                            } else {
-                                null
-                            },
+                        endeligIlagtGebyr = it.endeligIlagtGebyr,
+                        begrunnelse = it.begrunnelse,
                     )
                 },
             boforhold =
@@ -594,6 +582,36 @@ private fun DelberegningBidragsevneDto.tilNotatDto() =
             ),
     )
 
+private fun Behandling.tilUnderholdOpplysning(): List<NotatOffentligeOpplysningerUnderhold> {
+    val opplysningerBarnetilsyn =
+        grunnlag
+            .hentSisteAktiv()
+            .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.BARNETILSYN && !it.erBearbeidet }
+            ?.konvertereData<List<BarnetilsynGrunnlagDto>>()
+            ?: emptyList()
+
+    val opplysningerTilleggstønad =
+        grunnlag
+            .hentSisteAktiv()
+            .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.TILLEGGSSTØNAD && !it.erBearbeidet }
+            ?.konvertereData<List<TilleggsstønadGrunnlagDto>>()
+            ?: emptyList()
+    return søknadsbarn.map { rolle ->
+        NotatOffentligeOpplysningerUnderhold(
+            gjelder = rolle.behandling.bidragsmottaker!!.tilNotatRolle(),
+            gjelderBarn = rolle.tilNotatRolle(),
+            barnetilsyn =
+                opplysningerBarnetilsyn.filter { it.barnPersonId == rolle.ident }.map {
+                    NotatBarnetilsynOffentligeOpplysninger(
+                        periode = ÅrMånedsperiode(it.periodeFra, it.periodeTil),
+                    )
+                },
+            harTilleggsstønad =
+                opplysningerTilleggstønad.find { it.partPersonId == rolle.ident }?.harInnvilgetVedtak ?: false,
+        )
+    }
+}
+
 private fun TotalBeregningUtgifterDto.tilNotatDto() =
     NotatTotalBeregningUtgifterDto(
         betaltAvBp,
@@ -676,6 +694,7 @@ private fun Rolle.tilNotatRolle() =
         navn = hentPersonVisningsnavn(ident),
         fødselsdato = fødselsdato,
         ident = ident?.let { Personident(it) },
+        innbetaltBeløp = innbetaltBeløp,
     )
 
 private fun Inntekt.tilNotatInntektDto() =

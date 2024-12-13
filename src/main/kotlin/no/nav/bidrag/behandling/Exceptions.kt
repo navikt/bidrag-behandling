@@ -135,6 +135,12 @@ fun rolleManglerIdent(
         "Manger personident for rolle $rolletype i behandling $behandlingId",
     )
 
+fun fantIkkeFødselsdatoTilPerson(behandlingsid: Long): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Fant ikke fødselsdato til person i behandling med id $behandlingsid",
+    )
+
 fun fantIkkeFødselsdatoTilSøknadsbarn(behandlingsid: Long): Nothing =
     throw HttpClientErrorException(
         HttpStatus.INTERNAL_SERVER_ERROR,

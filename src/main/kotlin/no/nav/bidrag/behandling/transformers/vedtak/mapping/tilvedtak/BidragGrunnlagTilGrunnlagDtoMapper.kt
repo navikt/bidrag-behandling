@@ -23,6 +23,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetKontantstøtt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSivilstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSkattegrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetSmåbarnstillegg
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetTilleggstønad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetUtvidetBarnetrygd
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
@@ -45,6 +46,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SkattegrunnlagGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.felles.toCompactString
 import java.time.LocalDate
@@ -220,7 +222,7 @@ fun List<BarnetilsynGrunnlagDto>.tilGrunnlagsobjekt(
     personobjekter: Set<GrunnlagDto>,
 ) = GrunnlagDto(
     referanse = opprettBarnetilsynGrunnlagsreferanse(gjelderReferanse),
-    type = Grunnlagstype.INNHENTET_INNTEKT_BARNETILSYN,
+    type = Grunnlagstype.INNHENTET_BARNETILSYN,
     gjelderReferanse = gjelderReferanse,
     innhold =
         POJONode(
@@ -357,6 +359,31 @@ fun List<BarnetilleggGrunnlagDto>.tilGrunnlagsobjekt(
                             barnetilleggType = it.barnetilleggType,
                             barnType = it.barnType,
                             beløpBrutto = it.beløpBrutto,
+                        )
+                    },
+            ),
+        ),
+)
+
+@JvmName("tilInnhentetTilleggsstønadGrunnlag")
+fun List<TilleggsstønadGrunnlagDto>.tilGrunnlagsobjekt(
+    hentetTidspunkt: LocalDateTime,
+    gjelderReferanse: String,
+    søktFomDato: LocalDate,
+) = GrunnlagDto(
+    referanse =
+        "innhentet_tilleggsstønad_begrenset_$gjelderReferanse",
+    type = Grunnlagstype.INNHENTET_TILLEGGSSTØNAD_BEGRENSET,
+    gjelderReferanse = gjelderReferanse,
+    innhold =
+        POJONode(
+            InnhentetTilleggstønad(
+                hentetTidspunkt = hentetTidspunkt,
+                grunnlag =
+                    map {
+                        InnhentetTilleggstønad.Tilleggsstønad(
+                            periode = Datoperiode(søktFomDato, null),
+                            harInnvilgetVedtak = it.harInnvilgetVedtak,
                         )
                     },
             ),
