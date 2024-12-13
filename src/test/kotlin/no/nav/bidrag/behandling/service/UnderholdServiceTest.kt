@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -44,8 +45,9 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
-import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetillegg
+import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggeTilNyttBarnetilsyn
+import no.nav.bidrag.behandling.utils.testdata.oppretteBarnetilsynGrunnlagDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -1026,7 +1028,7 @@ class UnderholdServiceTest {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilGjeldendeBarnetilsyn()
 
             val nyVirkningsdato =
                 b
@@ -1085,7 +1087,13 @@ class UnderholdServiceTest {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilGjeldendeBarnetilsyn(
+                oppretteBarnetilsynGrunnlagDto(
+                    b,
+                    skolealder = Skolealder.UNDER,
+                    tilsynstype = Tilsynstype.DELTID,
+                ),
+            )
             b.leggeTilNyttBarnetilsyn()
 
             val nyVirkningsdato =
@@ -1152,7 +1160,7 @@ class UnderholdServiceTest {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilGjeldendeBarnetilsyn()
             val u =
                 b.underholdskostnader.find { it.barnetsRolleIBehandlingen?.personident?.verdi == testdataBarn1.ident }!!
 
@@ -1181,9 +1189,93 @@ class UnderholdServiceTest {
             underholdService.tilpasseUnderholdEtterVirkningsdato(b)
 
             // så
-            u.barnetilsyn.first().fom shouldBe b.virkningstidspunkt
+            u.barnetilsyn.first().fom shouldBe
+                b.grunnlag
+                    .hentSisteAktiv()
+                    .find { Grunnlagsdatatype.BARNETILSYN == it.type }
+                    .konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
+                    .minBy { it.periodeFra }
+                    .periodeFra
             u.faktiskeTilsynsutgifter.first().fom shouldBe b.virkningstidspunkt
             u.tilleggsstønad.first().fom shouldBe b.virkningstidspunkt
+        }
+
+        @Test
+        open fun `skal aktivere grunnlag og justere perioder for barnetilsyn etter endring av virkningsdato`() {
+            // gitt
+            val b =
+                oppretteTestbehandling(
+                    setteDatabaseider = true,
+                    inkludereBp = true,
+                    behandlingstype = TypeBehandling.BIDRAG,
+                )
+
+            b.leggeTilGjeldendeBarnetilsyn(
+                oppretteBarnetilsynGrunnlagDto(
+                    b,
+                    periodeFraAntallMndTilbake = 13,
+                    periodeTilAntallMndTilbake = 1,
+                ),
+            )
+
+            val originaltGrunnlag =
+                b.grunnlag
+                    .hentAlleAktiv()
+                    .find { Grunnlagsdatatype.BARNETILSYN == it.type && !it.erBearbeidet }
+
+            originaltGrunnlag.shouldNotBeNull()
+            originaltGrunnlag.aktiv.shouldNotBeNull()
+
+            val dataOriginaltGrunnlag = originaltGrunnlag.konvertereData<Set<BarnetilsynGrunnlagDto>>()
+
+            val u =
+                b.underholdskostnader.find { it.barnetsRolleIBehandlingen?.personident?.verdi == testdataBarn1.ident }!!
+
+            u.barnetilsyn.add(
+                Barnetilsyn(
+                    underholdskostnad = u,
+                    fom = b.virkningstidspunktEllerSøktFomDato,
+                    kilde = Kilde.MANUELL,
+                    omfang = Tilsynstype.HELTID,
+                    under_skolealder = false,
+                ),
+            )
+
+            b.virkningstidspunkt = LocalDate.now()
+
+            // hvis
+            underholdService.tilpasseUnderholdEtterVirkningsdato(b)
+
+            // så
+            assertSoftly(b.grunnlag.hentAlleAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type }) {
+                shouldHaveSize(2)
+
+                val ikkeBearbeida = find { !it.erBearbeidet }
+                val bearbeida = find { it.erBearbeidet }
+
+                ikkeBearbeida.shouldNotBeNull()
+                bearbeida.shouldNotBeNull()
+
+                ikkeBearbeida.aktiv?.toLocalDate() shouldBe originaltGrunnlag.aktiv!!.toLocalDate()
+                bearbeida.aktiv?.toLocalDate() shouldBe LocalDate.now()
+
+                val perioderIkkeBearbeida = ikkeBearbeida.konvertereData<Set<BarnetilsynGrunnlagDto>>()
+                val perioderBearbeida = bearbeida.konvertereData<Set<BarnetilsynGrunnlagDto>>()
+
+                perioderIkkeBearbeida.shouldNotBeNull()
+                perioderIkkeBearbeida.shouldHaveSize(1)
+                perioderIkkeBearbeida.first().periodeFra shouldBe dataOriginaltGrunnlag!!.first().periodeFra
+                perioderIkkeBearbeida.first().periodeTil shouldBe dataOriginaltGrunnlag.first().periodeTil
+
+                perioderBearbeida.shouldBeEmpty()
+            }
+
+            assertSoftly(u.barnetilsyn) {
+                shouldHaveSize(1)
+                first().kilde shouldBe Kilde.MANUELL
+                first().fom shouldBe b.virkningstidspunkt
+                first().tom shouldBe null
+            }
         }
     }
 
@@ -1200,7 +1292,7 @@ class UnderholdServiceTest {
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
 
-            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilGjeldendeBarnetilsyn()
             b.leggeTilNyttBarnetilsyn()
 
             // hvis
@@ -1221,7 +1313,8 @@ class UnderholdServiceTest {
                 .konvertereData<Set<BarnetilsynGrunnlagDto>>()
                 ?.shouldHaveSize(3)
 
-            val aktiveBearbeidaBarnetilsyn = b.grunnlag.hentAlleAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            val aktiveBearbeidaBarnetilsyn =
+                b.grunnlag.hentAlleAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
             aktiveBearbeidaBarnetilsyn shouldHaveSize 2
 
             aktiveBearbeidaBarnetilsyn.filter { it.gjelder == testdataBarn2.ident } shouldHaveSize 1
@@ -1231,7 +1324,10 @@ class UnderholdServiceTest {
                 it?.erBearbeidet shouldBe true
             }
 
-            val dataTestbarn2 = aktiveBearbeidaBarnetilsyn.find { it.gjelder == testdataBarn2.ident }.konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
+            val dataTestbarn2 =
+                aktiveBearbeidaBarnetilsyn
+                    .find { it.gjelder == testdataBarn2.ident }
+                    .konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
             dataTestbarn2 shouldHaveSize 1
 
             assertSoftly(dataTestbarn2.first()) {
@@ -1239,8 +1335,8 @@ class UnderholdServiceTest {
                 barnPersonId shouldBe testdataBarn2.ident
                 periodeFra shouldBeGreaterThan b.virkningstidspunktEllerSøktFomDato
                 periodeTil shouldBe null
-                tilsynstype shouldBe null
-                skolealder shouldBe null
+                tilsynstype shouldBe Tilsynstype.HELTID
+                skolealder shouldBe Skolealder.OVER
             }
         }
     }

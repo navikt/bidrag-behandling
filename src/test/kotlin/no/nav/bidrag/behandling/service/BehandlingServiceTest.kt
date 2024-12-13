@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -42,7 +43,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
-import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetillegg
+import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggeTilNyttBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -1288,7 +1289,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 val innhentet = LocalDateTime.now()
 
                 // gjeldende barnetilsyn
-                b.leggeTilGjeldendeBarnetillegg()
+                b.leggeTilGjeldendeBarnetilsyn()
 
                 // nytt barnetilsyn
                 b.leggeTilNyttBarnetilsyn()
@@ -1619,7 +1620,7 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
-        open fun `skal oppdatere ikke aktivert barnetilsyn ved endring av virkningsdato fremover i tid`() {
+        open fun `skal oppdatere barnetilsyn ved endring av virkningsdato fremover i tid`() {
             // gitt
             val b =
                 testdataManager.oppretteBehandling(
@@ -1636,15 +1637,32 @@ class BehandlingServiceTest : TestContainerRunner() {
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(b)
 
-            b.leggeTilGjeldendeBarnetillegg()
+            b.leggeTilGjeldendeBarnetilsyn()
             b.leggeTilNyttBarnetilsyn()
 
             assertSoftly(b.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) { g ->
                 g shouldHaveSize 5
                 g.filter { it.aktiv == null } shouldHaveSize 3
+                g
+                    .filter { it.aktiv != null }
+                    .maxBy { it.aktiv!! }
+                    .aktiv!!
+                    .toLocalDate() shouldBeLessThan LocalDate.now()
             }
 
             val ikkeAktive = b.grunnlag.hentSisteIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type }
+
+            val aktivtIkkebearbeidaGrunnlag =
+                b.grunnlag
+                    .hentSisteAktiv()
+                    .find { Grunnlagsdatatype.BARNETILSYN == it.type && !it.erBearbeidet }
+
+            val fraDatoAktivtIkkebearbeidaGrunnlag =
+                aktivtIkkebearbeidaGrunnlag
+                    .konvertereData<Set<BarnetilsynGrunnlagDto>>()!!
+                    .minBy { it.periodeFra }
+                    .periodeFra
+            aktivtIkkebearbeidaGrunnlag shouldNotBe null
 
             val nyVirkningsdato =
                 ikkeAktive
@@ -1662,11 +1680,42 @@ class BehandlingServiceTest : TestContainerRunner() {
             // så
             entityManager.flush()
             entityManager.refresh(b)
+
+            val alleBarnetilsynsgrunnlag = b.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }
+            alleBarnetilsynsgrunnlag shouldHaveSize 5
+
             assertSoftly(b.grunnlag.filter { Grunnlagsdatatype.BARNETILSYN == it.type }) { s ->
                 s shouldHaveSize 5
                 jsonListeTilObjekt<BarnetilsynGrunnlagDto>(
                     s.first { it.erBearbeidet && it.aktiv == null }.data,
                 ).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual nyVirkningsdato
+            }
+
+            // Verifisere ikke-bearbeida grunnlag
+            assertSoftly(
+                alleBarnetilsynsgrunnlag.filter { !it.erBearbeidet },
+            ) { g ->
+                g.shouldHaveSize(2)
+                g.filter { it.aktiv != null } shouldHaveSize 1
+                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(g.find { it.aktiv != null }!!.data).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual fraDatoAktivtIkkebearbeidaGrunnlag
+                g.find { it.aktiv != null }!!.aktiv!!.toLocalDate() shouldBe aktivtIkkebearbeidaGrunnlag!!.aktiv!!.toLocalDate()
+            }
+
+            // Verifisere aktiverte bearbeida grunnlag
+            assertSoftly(
+                alleBarnetilsynsgrunnlag.filter { it.erBearbeidet && it.aktiv != null },
+            ) { aktive ->
+                aktive.shouldHaveSize(2)
+                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(aktive.first().data).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual nyVirkningsdato
+                aktive.forEach { it.aktiv!!.toLocalDate() shouldBe LocalDate.now() }
+            }
+
+            // Verifisere ikke-aktiverte bearbeida grunnlag
+            assertSoftly(
+                alleBarnetilsynsgrunnlag.filter { it.erBearbeidet && it.aktiv == null },
+            ) { ikkeAktive ->
+                ikkeAktive.shouldHaveSize(1)
+                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(ikkeAktive.first().data).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual nyVirkningsdato
             }
         }
 

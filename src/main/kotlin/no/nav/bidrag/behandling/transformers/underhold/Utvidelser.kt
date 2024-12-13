@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -81,8 +82,6 @@ fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
     )
 }
 
-fun Set<Underholdskostnad>.justerePerioderEtterVirkningsdato() = forEach { it.justerePerioder() }
-
 fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overskriveAktiverte: Boolean = true) {
     val barnetilsyn = konvertereData<MutableSet<BarnetilsynGrunnlagDto>>()!!
 
@@ -106,7 +105,21 @@ fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overs
         }
 }
 
-private fun Underholdskostnad.justerePerioder() {
+fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag() {
+    val barnetilsynFraGrunnlag =
+        behandling.grunnlag
+            .hentSisteAktiv()
+            .find { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
+            .konvertereData<Set<BarnetilsynGrunnlagDto>>()
+            ?.filter { this.person.ident == it.barnPersonId }
+
+    barnetilsynFraGrunnlag?.let { g ->
+        barnetilsyn.removeAll(barnetilsyn.filter { Kilde.OFFENTLIG == it.kilde })
+        g.forEach { barnetilsyn.add(it.tilBarnetilsyn(this)) }
+    }
+}
+
+fun Underholdskostnad.justerePerioder() {
     val virkningsdato = behandling.virkningstidspunktEllerSøktFomDato
 
     barnetilsyn.filter { it.fom < virkningsdato }.forEach { periode ->
@@ -156,9 +169,7 @@ private fun Behandling.overskriveBearbeidaBarnetilsynsgrunnlag(
 
     grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let {
         it.data = tilJson(perioder)
-        if (overskriveAktiverte) {
-            it.aktiv = LocalDateTime.now()
-        }
+        it.aktiv = it.aktiv?.let { LocalDateTime.now() }
     }
 }
 

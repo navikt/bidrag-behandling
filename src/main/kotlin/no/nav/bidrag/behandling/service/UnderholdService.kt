@@ -29,9 +29,10 @@ import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
+import no.nav.bidrag.behandling.transformers.underhold.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag
 import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
-import no.nav.bidrag.behandling.transformers.underhold.justerePerioderEtterVirkningsdato
+import no.nav.bidrag.behandling.transformers.underhold.justerePerioder
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
@@ -282,8 +283,8 @@ class UnderholdService(
     fun tilpasseUnderholdEtterVirkningsdato(behandling: Behandling) {
         tilpasseAktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
         tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
+        oppdatereUnderholdsperioderEtterEndretVirkningsdato(behandling)
         behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
-        behandling.underholdskostnader.justerePerioderEtterVirkningsdato()
     }
 
     @Transactional
@@ -445,6 +446,13 @@ class UnderholdService(
         val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
         behandling.underholdskostnader.add(u)
         return u
+    }
+
+    private fun oppdatereUnderholdsperioderEtterEndretVirkningsdato(b: Behandling) {
+        b.underholdskostnader.forEach {
+            it.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag()
+            it.justerePerioder()
+        }
     }
 
     private fun tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling: Behandling) {
