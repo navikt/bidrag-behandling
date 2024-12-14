@@ -119,17 +119,16 @@ data class UnderholdskostnadDto(
         val skattesatsFaktor: BigDecimal,
         val totalTilsynsutgift: BigDecimal,
         val sumTilsynsutgifter: BigDecimal,
-        val endeligBeløp: BigDecimal,
-        val bruttoBeløp: BigDecimal,
-        val andelBeløp: BigDecimal,
-        val nettoBeløp: BigDecimal,
+        val faktiskTilsynsutgift: BigDecimal,
+        val bruttoTilsynsutgift: BigDecimal,
+        val nettoTilsynsutgift: BigDecimal,
         val erBegrensetAvMaksTilsyn: Boolean,
         val fordelingFaktor: BigDecimal,
         val skattefradragPerBarn: BigDecimal,
-        val maksFradragAndel: BigDecimal,
+        val maksfradragAndel: BigDecimal,
         val skattefradrag: BigDecimal,
-        val skattMaksFradrag: BigDecimal,
-        val skattTotalTilsynsutgift: BigDecimal,
+        val skattefradragMaksFradrag: BigDecimal,
+        val skattefradragTotalTilsynsutgift: BigDecimal,
     )
 
     data class TilsynsutgiftBarn(

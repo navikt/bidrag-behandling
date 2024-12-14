@@ -499,11 +499,6 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
             nettoTilsyn.grunnlag.grunnlagsreferanseListe,
         ).find { it.innhold.sjablon == SjablonTallNavn.SKATT_ALMINNELIG_INNTEKT_PROSENT }
     val maksTilsynBeløp = sjablonMaksTilsyn.firstOrNull()?.innhold?.maksBeløpTilsyn ?: BigDecimal.ZERO
-    val søknadsbarnEndeligBeløp =
-        nettoTilsyn.innhold.tilsynsutgiftBarnListe
-            .find { it.gjelderBarn == gjelderBarnReferanse }
-            ?.endeligSumTilsynsutgifter
-            ?: BigDecimal.ZERO
     val søknadsbarnFaktiskBeløp =
         nettoTilsyn.innhold.tilsynsutgiftBarnListe
             .find { it.gjelderBarn == gjelderBarnReferanse }
@@ -523,23 +518,22 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
             nettoTilsyn.innhold.tilsynsutgiftBarnListe.sortedBy { it.gjelderBarn }.map { fu ->
                 tilsynsutgifterBarn(grunnlagsreferanseListe, fu)
             },
-        endeligBeløp = søknadsbarnEndeligBeløp,
-        bruttoBeløp = søknadsbarnFaktiskBeløp,
         erBegrensetAvMaksTilsyn = erBegrensetAvMaksTilsyn,
         sjablonMaksTilsynsutgift = maksTilsynBeløp,
         totalTilsynsutgift = nettoTilsyn.innhold.totalTilsynsutgift,
         sumTilsynsutgifter = sumTilsynsutgifter,
         fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
         skattefradragPerBarn = nettoTilsyn.innhold.skattefradrag,
-        maksFradragAndel = maksfradragAndel,
+        maksfradragAndel = maksfradragAndel, // TODO Remove
         sjablonMaksFradrag = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO,
-        skattTotalTilsynsutgift = bruttoTotalTilsynsutgift,
-        skattMaksFradrag = bruttoMaksFradrag,
+        skattefradragTotalTilsynsutgift = bruttoTotalTilsynsutgift,
+        skattefradragMaksFradrag = bruttoMaksFradrag,
         skattefradrag = minOf(bruttoTotalTilsynsutgift, bruttoMaksFradrag),
         skattesatsFaktor = skattesatsFaktor,
         antallBarn = antallBarn,
-        andelBeløp = nettoTilsyn.innhold.andelTilsynsutgiftBeløp,
-        nettoBeløp = nettoTilsyn.innhold.nettoTilsynsutgift,
+        faktiskTilsynsutgift = søknadsbarnFaktiskBeløp,
+        bruttoTilsynsutgift = nettoTilsyn.innhold.andelTilsynsutgiftBeløp,
+        nettoTilsynsutgift = nettoTilsyn.innhold.nettoTilsynsutgift,
     )
 }
 
