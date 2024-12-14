@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -145,7 +146,15 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
-        return underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
+        val oppdatertFaktiskTilsynsutgift = underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
+        return OppdatereUnderholdResponse(
+            faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
+                    underholdskostnad.behandling,
+                ),
+            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
+        )
     }
 
     @ResponseStatus(HttpStatus.CREATED)

@@ -84,6 +84,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
 
@@ -514,27 +515,31 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     val sjablonMaksFradragBeløp = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO
     val antallBarn = nettoTilsyn.innhold.tilsynsutgiftBarnListe.size
     val maksfradragAndel = sjablonMaksFradragBeløp.divide(antallBarn.toBigDecimal(), 10, RoundingMode.HALF_UP)
+    val skattesatsFaktor = sjablonSkattesats?.innhold?.verdi?.divide(BigDecimal(100), 10, RoundingMode.HALF_UP) ?: BigDecimal.ZERO
+    val bruttoMaksFradrag = sjablonMaksFradragBeløp.multiply(skattesatsFaktor, MathContext(10, RoundingMode.HALF_UP))
+    val bruttoTotalTilsynsutgift = nettoTilsyn.innhold.totalTilsynsutgift.multiply(skattesatsFaktor, MathContext(10, RoundingMode.HALF_UP))
     return Beregningsdetaljer(
-        erBegrensetAvMaksTilsyn = erBegrensetAvMaksTilsyn,
-        endeligBeløp = søknadsbarnEndeligBeløp,
-        faktiskBeløp = søknadsbarnFaktiskBeløp,
-        andelBeløp = nettoTilsyn.innhold.andelTilsynsutgiftBeløp,
-        nettoBeløp = nettoTilsyn.innhold.nettoTilsynsutgift,
-        sjablonMaksTilsynsutgift = maksTilsynBeløp,
-        totalTilsynsutgift = nettoTilsyn.innhold.totalTilsynsutgift,
-        sumTilsynsutgifter = sumTilsynsutgifter,
-        fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
-        skattefradrag = nettoTilsyn.innhold.skattefradrag,
-        maksFradragAndel = maksfradragAndel,
-        beløpTrukkeFraSkattefradrag = minOf(maksfradragAndel, nettoTilsyn.innhold.andelTilsynsutgiftBeløp),
-        sjablonMaksFradrag = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO,
-        skattAlminneligInntektFaktor =
-            sjablonSkattesats?.innhold?.verdi?.divide(BigDecimal(100), 10, RoundingMode.HALF_UP) ?: BigDecimal.ZERO,
-        sjablonAntallBarn = antallBarn,
         tilsynsutgifterBarn =
             nettoTilsyn.innhold.tilsynsutgiftBarnListe.sortedBy { it.gjelderBarn }.map { fu ->
                 tilsynsutgifterBarn(grunnlagsreferanseListe, fu)
             },
+        endeligBeløp = søknadsbarnEndeligBeløp,
+        bruttoBeløp = søknadsbarnFaktiskBeløp,
+        erBegrensetAvMaksTilsyn = erBegrensetAvMaksTilsyn,
+        sjablonMaksTilsynsutgift = maksTilsynBeløp,
+        totalTilsynsutgift = nettoTilsyn.innhold.totalTilsynsutgift,
+        sumTilsynsutgifter = sumTilsynsutgifter,
+        fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
+        skattefradragPerBarn = nettoTilsyn.innhold.skattefradrag,
+        maksFradragAndel = maksfradragAndel,
+        sjablonMaksFradrag = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO,
+        skattTotalTilsynsutgift = bruttoTotalTilsynsutgift,
+        skattMaksFradrag = bruttoMaksFradrag,
+        skattefradrag = minOf(bruttoTotalTilsynsutgift, bruttoMaksFradrag),
+        skattesatsFaktor = skattesatsFaktor,
+        antallBarn = antallBarn,
+        andelBeløp = nettoTilsyn.innhold.andelTilsynsutgiftBeløp,
+        nettoBeløp = nettoTilsyn.innhold.nettoTilsynsutgift,
     )
 }
 

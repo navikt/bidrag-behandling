@@ -291,7 +291,7 @@ class UnderholdService(
     fun oppdatereFaktiskeTilsynsutgifter(
         underholdskostnad: Underholdskostnad,
         request: OppdatereFaktiskTilsynsutgiftRequest,
-    ): OppdatereUnderholdResponse {
+    ): FaktiskTilsynsutgift {
         request.validere(underholdskostnad)
 
         val oppdatertFaktiskTilsynsutgift =
@@ -322,14 +322,7 @@ class UnderholdService(
                     .sortedBy { it.id }
                     .last()
             }
-        return OppdatereUnderholdResponse(
-            faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
-            underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
-                    underholdskostnad.behandling,
-                ),
-            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
-        )
+        return oppdatertFaktiskTilsynsutgift
     }
 
     @Transactional
