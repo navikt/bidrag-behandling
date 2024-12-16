@@ -5,7 +5,10 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.mockk.junit5.MockKExtension
-import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
+import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.dto.v2.underhold.Underholdsperiode
+import no.nav.bidrag.behandling.transformers.underhold.finneOverlappendePerioder
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -18,16 +21,16 @@ class ValideringTest {
         @Test
         fun `skal identifisere og gruppere perioder som overlapper`() {
             // gitt
-            val førstePeriode = Datoperiode(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 9, 1))
-            val periodeSomOverlapperFørstePeriode = Datoperiode(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 8, 1))
+            val førstePeriode = Underholdsperiode(Underholdselement.STØNAD_TIL_BARNETILSYN, DatoperiodeDto(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 9, 1)))
+            val periodeSomOverlapperFørstePeriode = Underholdsperiode(Underholdselement.STØNAD_TIL_BARNETILSYN, DatoperiodeDto(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 8, 1)))
             val periodeSomOverlapperFørsteOgAndrePeriode =
-                Datoperiode(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1))
-            val duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode = Datoperiode(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1))
-            val periodeSomIkkeOverlapperAndrePerioder = Datoperiode(LocalDate.of(2024, 9, 2), LocalDate.of(2024, 11, 1))
+                Underholdsperiode(Underholdselement.STØNAD_TIL_BARNETILSYN, DatoperiodeDto(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1)))
+            val duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode = Underholdsperiode(Underholdselement.STØNAD_TIL_BARNETILSYN, DatoperiodeDto(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1)))
+            val periodeSomIkkeOverlapperAndrePerioder = Underholdsperiode(Underholdselement.STØNAD_TIL_BARNETILSYN, DatoperiodeDto(LocalDate.of(2024, 9, 2), LocalDate.of(2024, 11, 1)))
 
             // hvis
             val resultat =
-                finneOverlappendeDatoperioder(
+                finneOverlappendePerioder(
                     setOf(
                         periodeSomOverlapperFørstePeriode,
                         duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode,

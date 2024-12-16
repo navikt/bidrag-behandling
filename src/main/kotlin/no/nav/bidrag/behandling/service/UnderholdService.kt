@@ -370,7 +370,7 @@ class UnderholdService(
             tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
             underholdskostnad =
                 dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
-            valideringsfeil = underholdskostnad.tilleggsstønad.validerePerioderTilleggsstønad(),
+            valideringsfeil = underholdskostnad.tilleggsstønad.validerePerioderTilleggsstønad(underholdskostnad),
         )
     }
 

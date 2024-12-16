@@ -67,6 +67,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -173,6 +174,8 @@ class Dtomapper(
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
         val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
+        val beregnetUnderholdskostnad = rolleSøknadsbarn?.let { this.behandling.tilBeregnetUnderholdskostnad() } ?: emptySet()
+
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
@@ -189,13 +192,13 @@ class Dtomapper(
             tilleggsstønad =
                 rolleSøknadsbarn?.let { this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos() }
                     ?: emptySet(),
-            underholdskostnad = rolleSøknadsbarn?.let { this.behandling.tilBeregnetUnderholdskostnad() } ?: emptySet(),
+            underholdskostnad = beregnetUnderholdskostnad,
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
                     this.behandling,
                     rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
                 ),
-            // valideringsfeil =
+            valideringsfeil = this.validerePerioder(beregnetUnderholdskostnad),
         )
     }
 

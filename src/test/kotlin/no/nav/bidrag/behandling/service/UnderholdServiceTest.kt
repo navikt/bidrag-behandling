@@ -40,10 +40,11 @@ import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.dto.v2.underhold.Underholdsperiode
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
-import no.nav.bidrag.behandling.transformers.finneOverlappendeDatoperioder
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
+import no.nav.bidrag.behandling.transformers.underhold.finneOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
@@ -62,8 +63,6 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.Datoperiode
-import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import org.junit.jupiter.api.BeforeEach
@@ -157,14 +156,30 @@ class UnderholdServiceTest {
     open inner class Slette {
         @Test
         open fun test() {
-            val p1 = Datoperiode(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 9, 1))
-            val p2 = Datoperiode(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 8, 1))
-            val p3 = Datoperiode(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1))
-            val p4 = Datoperiode(LocalDate.of(2024, 9, 2), LocalDate.of(2024, 11, 1))
+            val p1 =
+                Underholdsperiode(
+                    Underholdselement.TILLEGGSSTØNAD,
+                    DatoperiodeDto(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 9, 1)),
+                )
+            val p2 =
+                Underholdsperiode(
+                    Underholdselement.TILLEGGSSTØNAD,
+                    DatoperiodeDto(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 8, 1)),
+                )
+            val p3 =
+                Underholdsperiode(
+                    Underholdselement.TILLEGGSSTØNAD,
+                    DatoperiodeDto(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1)),
+                )
+            val p4 =
+                Underholdsperiode(
+                    Underholdselement.TILLEGGSSTØNAD,
+                    DatoperiodeDto(LocalDate.of(2024, 9, 2), LocalDate.of(2024, 11, 1)),
+                )
 
-            val datosett = setOf(p1, p2, p3, p4)
+            val perioder = setOf(p1, p2, p3, p4)
 
-            val r3 = finneOverlappendeDatoperioder(datosett)
+            val r3 = finneOverlappendePerioder(perioder)
             r3.shouldNotBeNull()
         }
 
@@ -568,6 +583,293 @@ class UnderholdServiceTest {
                     fom shouldBe request.periode.fom
                     tom shouldBe request.periode.tom
                 }
+            }
+
+            @Test
+            fun `skal gi valideringsfeil dersom tilleggsstønad mangler tilsynsutgift`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val underholdskostnad =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                underholdskostnad.shouldNotBeNull()
+
+                val request =
+                    OppdatereTilleggsstønadRequest(
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
+                        dagsats = BigDecimal(365),
+                    )
+
+                // hvis
+                val respons = underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
+
+                // så
+                respons.valideringsfeil.shouldNotBeNull()
+                respons.valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 1
+                respons.valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift
+                    .first()
+                    .periode.fom shouldBe request.periode.fom
+            }
+
+            @Test
+            fun `skal gi valideringsfeil dersom det ikke finnes tilsynsutgift for alle tilleggsstønadsperiodene`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val u =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                u.shouldNotBeNull()
+
+                u.tilleggsstønad.add(
+                    Tilleggsstønad(
+                        id = 10L,
+                        u,
+                        fom = LocalDate.now().minusMonths(8).withDayOfMonth(1),
+                        tom =
+                            LocalDate
+                                .now()
+                                .minusMonths(6)
+                                .withDayOfMonth(1)
+                                .minusDays(1),
+                        dagsats = BigDecimal(64),
+                    ),
+                )
+
+                u.tilleggsstønad.add(
+                    Tilleggsstønad(
+                        id = 11L,
+                        u,
+                        fom = LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                        tom =
+                            LocalDate
+                                .now()
+                                .minusMonths(4)
+                                .withDayOfMonth(1)
+                                .minusDays(1),
+                        dagsats = BigDecimal(64),
+                    ),
+                )
+
+                u.tilleggsstønad.add(
+                    Tilleggsstønad(
+                        id = 12L,
+                        u,
+                        fom = LocalDate.now().minusMonths(4).withDayOfMonth(1),
+                        tom =
+                            LocalDate
+                                .now()
+                                .minusMonths(2)
+                                .withDayOfMonth(1)
+                                .minusDays(1),
+                        dagsats = BigDecimal(64),
+                    ),
+                )
+
+                u.faktiskeTilsynsutgifter.add(
+                    FaktiskTilsynsutgift(
+                        id = 20L,
+                        u,
+                        fom = LocalDate.now().minusMonths(8).withDayOfMonth(1),
+                        tom =
+                            LocalDate
+                                .now()
+                                .minusMonths(6)
+                                .withDayOfMonth(1)
+                                .minusDays(1),
+                        tilsynsutgift = BigDecimal(4000),
+                    ),
+                )
+
+                u.faktiskeTilsynsutgifter.add(
+                    FaktiskTilsynsutgift(
+                        id = 22L,
+                        u,
+                        fom = LocalDate.now().minusMonths(4).withDayOfMonth(1),
+                        tom =
+                            LocalDate
+                                .now()
+                                .minusMonths(2)
+                                .withDayOfMonth(1)
+                                .minusDays(1),
+                        tilsynsutgift = BigDecimal(4200),
+                    ),
+                )
+
+                val request =
+                    OppdatereTilleggsstønadRequest(
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
+                        dagsats = BigDecimal(365),
+                    )
+
+                // hvis
+                val respons = underholdService.oppdatereTilleggsstønad(u, request)
+
+                // så
+                respons.valideringsfeil.shouldNotBeNull()
+                respons.valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 1
+                respons.valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift
+                    .first()
+                    .periode.fom shouldBe request.periode.fom
+            }
+
+            @Test
+            fun `skal gi valideringsfeil dersom tilleggsstønad har fremtidig periode`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val u =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                u.shouldNotBeNull()
+
+                val request =
+                    OppdatereTilleggsstønadRequest(
+                        periode =
+                            DatoperiodeDto(LocalDate.now().withDayOfMonth(2), null),
+                        dagsats = BigDecimal(365),
+                    )
+
+                // hvis
+                val respons = underholdService.oppdatereTilleggsstønad(u, request)
+
+                // så
+                respons.valideringsfeil.shouldNotBeNull()
+                respons.valideringsfeil.fremtidigePerioder shouldHaveSize 1
+                respons.valideringsfeil.fremtidigePerioder
+                    .first()
+                    .periode.fom shouldBe request.periode.fom
+                respons.valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 1
+                respons.valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift
+                    .first()
+                    .periode.fom shouldBe request.periode.fom
+            }
+
+            @Test
+            fun `skal ikke gi valideringsfeil dersom tilleggsstønad har tilsynsutgift`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val u =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                u.shouldNotBeNull()
+
+                val request =
+                    OppdatereTilleggsstønadRequest(
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                null,
+                            ),
+                        dagsats = BigDecimal(365),
+                    )
+
+                val tilleggsstønad =
+                    Tilleggsstønad(1L, u, fom = request.periode.fom, tom = request.periode.tom, request.dagsats)
+
+                u.tilleggsstønad.add(tilleggsstønad)
+
+                val faktiskTilsynsutgift =
+                    FaktiskTilsynsutgift(
+                        1L,
+                        u,
+                        fom = tilleggsstønad.fom,
+                        tom = tilleggsstønad.tom,
+                        tilsynsutgift = BigDecimal(5000),
+                    )
+                u.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
+
+                // hvis
+                val respons = underholdService.oppdatereTilleggsstønad(u, request)
+
+                // så
+                respons.valideringsfeil.shouldBeNull()
+            }
+
+            @Test
+            fun `skal gi valideringsfeil dersom tom-dato er i inneværende måned`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val u =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                u.shouldNotBeNull()
+
+                val request =
+                    OppdatereTilleggsstønadRequest(
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.now().minusMonths(6).withDayOfMonth(1),
+                                LocalDate.now().withDayOfMonth(1),
+                            ),
+                        dagsats = BigDecimal(365),
+                    )
+
+                // hvis
+                val respons = underholdService.oppdatereTilleggsstønad(u, request)
+
+                // så
+                respons.valideringsfeil.shouldNotBeNull()
+                respons.valideringsfeil.fremtidigePerioder.shouldHaveSize(1)
+                respons.valideringsfeil.fremtidigePerioder
+                    .first()
+                    .periode.tom shouldBe request.periode.tom
             }
         }
 
