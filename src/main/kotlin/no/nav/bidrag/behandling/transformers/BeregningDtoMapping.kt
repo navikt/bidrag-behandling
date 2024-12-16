@@ -20,7 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
-import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.Beregningsdetaljer
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.UnderholdskostnadPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -70,6 +70,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonMaksFradragPeri
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonMaksTilsynPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
@@ -84,7 +85,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
-import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
 
@@ -476,7 +476,7 @@ fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostna
 fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
     gjelderBarnReferanse: String?,
-): Beregningsdetaljer? {
+): UnderholdskostnadPeriodeBeregningsdetaljer? {
     val nettoTilsyn =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningNettoTilsynsutgift>(
             Grunnlagstype.DELBEREGNING_NETTO_TILSYNSUTGIFT,
@@ -499,11 +499,6 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
             nettoTilsyn.grunnlag.grunnlagsreferanseListe,
         ).find { it.innhold.sjablon == SjablonTallNavn.SKATT_ALMINNELIG_INNTEKT_PROSENT }
     val maksTilsynBeløp = sjablonMaksTilsyn.firstOrNull()?.innhold?.maksBeløpTilsyn ?: BigDecimal.ZERO
-    val søknadsbarnFaktiskBeløp =
-        nettoTilsyn.innhold.tilsynsutgiftBarnListe
-            .find { it.gjelderBarn == gjelderBarnReferanse }
-            ?.sumTilsynsutgifter
-            ?: BigDecimal.ZERO
     val sumTilsynsutgifter = nettoTilsyn.innhold.tilsynsutgiftBarnListe.sumOf { it.sumTilsynsutgifter }
     val erBegrensetAvMaksTilsyn =
         nettoTilsyn.innhold.totalTilsynsutgift.setScale(0, RoundingMode.HALF_UP) != sumTilsynsutgifter.setScale(0, RoundingMode.HALF_UP)
@@ -511,28 +506,30 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     val antallBarn = nettoTilsyn.innhold.tilsynsutgiftBarnListe.size
     val maksfradragAndel = sjablonMaksFradragBeløp.divide(antallBarn.toBigDecimal(), 10, RoundingMode.HALF_UP)
     val skattesatsFaktor = sjablonSkattesats?.innhold?.verdi?.divide(BigDecimal(100), 10, RoundingMode.HALF_UP) ?: BigDecimal.ZERO
-    val bruttoMaksFradrag = sjablonMaksFradragBeløp.multiply(skattesatsFaktor, MathContext(10, RoundingMode.HALF_UP))
-    val bruttoTotalTilsynsutgift = nettoTilsyn.innhold.totalTilsynsutgift.multiply(skattesatsFaktor, MathContext(10, RoundingMode.HALF_UP))
-    return Beregningsdetaljer(
+    return UnderholdskostnadPeriodeBeregningsdetaljer(
         tilsynsutgifterBarn =
-            nettoTilsyn.innhold.tilsynsutgiftBarnListe.sortedBy { it.gjelderBarn }.map { fu ->
-                tilsynsutgifterBarn(grunnlagsreferanseListe, fu)
-            },
+            nettoTilsyn.innhold.tilsynsutgiftBarnListe
+                .map { fu ->
+                    tilsynsutgifterBarn(grunnlagsreferanseListe, fu)
+                }.sortedWith(
+                    compareByDescending<UnderholdskostnadDto.TilsynsutgiftBarn> { it.gjelderBarn.medIBehandlingen }
+                        .thenByDescending { it.gjelderBarn.fødselsdato },
+                ),
         erBegrensetAvMaksTilsyn = erBegrensetAvMaksTilsyn,
         sjablonMaksTilsynsutgift = maksTilsynBeløp,
         totalTilsynsutgift = nettoTilsyn.innhold.totalTilsynsutgift,
         sumTilsynsutgifter = sumTilsynsutgifter,
         fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
-        skattefradragPerBarn = nettoTilsyn.innhold.skattefradrag,
+        skattefradragPerBarn = nettoTilsyn.innhold.skattefradragPerBarn,
         maksfradragAndel = maksfradragAndel, // TODO Remove
         sjablonMaksFradrag = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO,
-        skattefradragTotalTilsynsutgift = bruttoTotalTilsynsutgift,
-        skattefradragMaksFradrag = bruttoMaksFradrag,
-        skattefradrag = minOf(bruttoTotalTilsynsutgift, bruttoMaksFradrag),
+        skattefradragTotalTilsynsutgift = nettoTilsyn.innhold.skattefradragTotalTilsynsutgift,
+        skattefradragMaksFradrag = nettoTilsyn.innhold.skattefradragMaksfradrag,
+        skattefradrag = nettoTilsyn.innhold.skattefradrag,
         skattesatsFaktor = skattesatsFaktor,
-        antallBarn = antallBarn,
-        faktiskTilsynsutgift = søknadsbarnFaktiskBeløp,
-        bruttoTilsynsutgift = nettoTilsyn.innhold.andelTilsynsutgiftBeløp,
+        antallBarnBMUnderTolvÅr = nettoTilsyn.innhold.antallBarnBMUnderTolvÅr,
+        bruttoTilsynsutgift = nettoTilsyn.innhold.bruttoTilsynsutgift,
+        justertBruttoTilsynsutgift = nettoTilsyn.innhold.justertBruttoTilsynsutgift,
         nettoTilsynsutgift = nettoTilsyn.innhold.nettoTilsynsutgift,
     )
 }
@@ -552,13 +549,29 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
             Grunnlagstype.DELBEREGNING_TILLEGGSSTØNAD,
             grunnlagsreferanseListe,
         ).find { it.gjelderBarnReferanse == tilsynsutgiftBarn.gjelderBarn }
-    val person = hentPersonMedReferanse(tilsynsutgiftBarn.gjelderBarn)?.innholdTilObjekt<Person>()
+
+    val tilleggsstønadPeriode =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<TilleggsstønadPeriode>(
+            Grunnlagstype.TILLEGGSSTØNAD_PERIODE,
+            grunnlagsreferanseListe,
+        ).find { it.gjelderBarnReferanse == tilsynsutgiftBarn.gjelderBarn }
+    val personGrunnlag = hentPersonMedReferanse(tilsynsutgiftBarn.gjelderBarn)
+    val person = personGrunnlag?.innholdTilObjekt<Person>()
     val navn = if (person?.navn.isNullOrEmpty()) hentPersonVisningsnavn(person?.ident?.verdi) else person?.navn
     return UnderholdskostnadDto.TilsynsutgiftBarn(
-        gjelderBarn = PersoninfoDto(1, person?.ident, navn),
+        gjelderBarn =
+            PersoninfoDto(
+                1,
+                person?.ident,
+                navn,
+                person?.fødselsdato,
+                medIBehandlingen =
+                    personGrunnlag?.type == Grunnlagstype.PERSON_SØKNADSBARN,
+            ),
         totalTilsynsutgift = faktiskUtgiftPeriode.innhold.faktiskUtgiftBeløp,
         beløp = tilsynsutgiftBarn.sumTilsynsutgifter,
         kostpenger = faktiskUtgiftPeriode.innhold.kostpengerBeløp,
+        tilleggsstønadDagsats = tilleggsstønadPeriode?.innhold?.beløpDagsats,
         tilleggsstønad = delberegningTilleggsstønad?.innhold?.beregnetBeløp,
     )
 }

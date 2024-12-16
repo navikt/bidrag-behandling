@@ -264,6 +264,37 @@ class NotatOpplysningerService(
                                             tilsynsutgifter = it.tilsynsutgifter,
                                             barnetrygd = it.barnetrygd,
                                             total = it.total,
+                                            beregningsdetaljer =
+                                                it.beregningsdetaljer?.let {
+                                                    NotatUnderholdBarnDto.NotatUnderholdskostnadPeriodeBeregningsdetaljer(
+                                                        tilsynsutgifterBarn =
+                                                            it.tilsynsutgifterBarn.map {
+                                                                NotatUnderholdBarnDto.NotatTilsynsutgiftBarn(
+                                                                    gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
+                                                                    totalTilsynsutgift = it.totalTilsynsutgift,
+                                                                    beløp = it.beløp,
+                                                                    kostpenger = it.kostpenger,
+                                                                    tilleggsstønad = it.tilleggsstønad,
+                                                                )
+                                                            },
+                                                        justertBruttoTilsynsutgift = it.justertBruttoTilsynsutgift,
+                                                        erBegrensetAvMaksTilsyn = it.erBegrensetAvMaksTilsyn,
+                                                        bruttoTilsynsutgift = it.bruttoTilsynsutgift,
+                                                        fordelingFaktor = it.fordelingFaktor,
+                                                        maksfradragAndel = it.maksfradragAndel,
+                                                        skattefradrag = it.skattefradrag,
+                                                        skattefradragMaksFradrag = it.skattefradragMaksFradrag,
+                                                        skattefradragPerBarn = it.skattefradragPerBarn,
+                                                        skattefradragTotalTilsynsutgift = it.skattefradragTotalTilsynsutgift,
+                                                        skattesatsFaktor = it.skattesatsFaktor,
+                                                        sumTilsynsutgifter = it.sumTilsynsutgifter,
+                                                        totalTilsynsutgift = it.totalTilsynsutgift,
+                                                        antallBarnBMUnderTolvÅr = it.antallBarnBMUnderTolvÅr,
+                                                        nettoTilsynsutgift = it.nettoTilsynsutgift,
+                                                        sjablonMaksFradrag = it.sjablonMaksFradrag,
+                                                        sjablonMaksTilsynsutgift = it.sjablonMaksTilsynsutgift,
+                                                    )
+                                                },
                                         )
                                     },
                                 faktiskTilsynsutgift =

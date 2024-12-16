@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
+import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.http.HttpStatus
@@ -112,7 +113,13 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling!!, underholdsid)
 
-        return underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+        val oppdatertBarnetilsyn = underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+        return OppdatereUnderholdResponse(
+            stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
+        )
     }
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -187,7 +194,13 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
-        return underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
+        val oppdatertTilleggsstønad = underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
+        return OppdatereUnderholdResponse(
+            tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
+        )
     }
 
     @Deprecated("Erstattes av oppdatereBegrunnelse og angiTilsynsordning")
