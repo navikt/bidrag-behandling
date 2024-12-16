@@ -132,7 +132,7 @@ fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
         return tilleggsstønad
             .maxBy { it.innhentet }
             .konvertereData<Set<TilleggsstønadGrunnlagDto>>()
-            ?.first()
+            ?.firstOrNull()
             ?.harInnvilgetVedtak
     }
     return null
