@@ -517,6 +517,7 @@ private fun DelberegningBarnetilleggDto.tilNotatDto() =
         sumNettoBeløp = sumNettoBeløp,
         sumBruttoBeløp = sumBruttoBeløp,
         skattFaktor = skattFaktor,
+        delberegningSkattesats = delberegningSkattesats,
     )
 
 private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =

@@ -613,6 +613,7 @@ fun List<GrunnlagDto>.finnBarnetillegg(
     return DelberegningBarnetilleggDto(
         sumInntekt = delberegningSumInntekt?.innhold?.totalinntekt ?: BigDecimal.ZERO,
         skattFaktor = delberegningBarnetilleggSkattesats?.innhold?.skattFaktor ?: BigDecimal.ZERO,
+        delberegningSkattesats = delberegningBarnetilleggSkattesats?.innhold,
         sumBruttoBeløp = nettoBarnetillegg?.innhold?.summertBruttoBarnetillegg ?: BigDecimal.ZERO,
         sumNettoBeløp = nettoBarnetillegg?.innhold?.summertNettoBarnetillegg ?: BigDecimal.ZERO,
         barnetillegg =
