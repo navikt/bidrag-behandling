@@ -345,7 +345,7 @@ class VedtakserviceTest : TestContainerRunner() {
             request.stønadsendringListe.shouldHaveSize(1)
             request.engangsbeløpListe shouldHaveSize 3
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 187
+                request.grunnlagListe shouldHaveSize 188
             }
         }
 
