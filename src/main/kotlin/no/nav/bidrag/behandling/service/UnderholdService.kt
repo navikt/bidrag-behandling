@@ -356,42 +356,42 @@ class UnderholdService(
     fun sletteFraUnderhold(
         behandling: Behandling,
         request: SletteUnderholdselement,
-    ): UnderholdDto? {
+    ) {
         request.validere(behandling)
 
         val underholdskostnad = behandling.underholdskostnader.find { request.idUnderhold == it.id }!!
 
         when (request.type) {
-            Underholdselement.BARN -> return sletteUnderholdskostnad(behandling, underholdskostnad)
-            Underholdselement.FAKTISK_TILSYNSUTGIFT -> return sletteFaktiskTilsynsutgift(
-                underholdskostnad,
-                request.idElement,
-            )
+            Underholdselement.BARN -> sletteUnderholdskostnad(behandling, underholdskostnad)
+            Underholdselement.FAKTISK_TILSYNSUTGIFT ->
+                sletteFaktiskTilsynsutgift(
+                    underholdskostnad,
+                    request.idElement,
+                )
 
-            Underholdselement.TILLEGGSSTØNAD -> return sletteTilleggsstønad(underholdskostnad, request.idElement)
-            Underholdselement.STØNAD_TIL_BARNETILSYN -> return sletteStønadTilBarnetilsyn(
-                underholdskostnad,
-                request.idElement,
-            )
+            Underholdselement.TILLEGGSSTØNAD -> sletteTilleggsstønad(underholdskostnad, request.idElement)
+            Underholdselement.STØNAD_TIL_BARNETILSYN ->
+                sletteStønadTilBarnetilsyn(
+                    underholdskostnad,
+                    request.idElement,
+                )
         }
     }
 
     private fun sletteStønadTilBarnetilsyn(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
-    ): UnderholdDto {
+    ) {
         val stønadTilBarnetilsyn = underholdskostnad.barnetilsyn.find { idElement == it.id }
         underholdskostnad.barnetilsyn.remove(stønadTilBarnetilsyn)
-        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     private fun sletteTilleggsstønad(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
-    ): UnderholdDto {
+    ) {
         val tilleggsstønad = underholdskostnad.tilleggsstønad.find { idElement == it.id }
         underholdskostnad.tilleggsstønad.remove(tilleggsstønad)
-        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     private fun sletteUnderholdskostnad(
@@ -413,10 +413,9 @@ class UnderholdService(
     private fun sletteFaktiskTilsynsutgift(
         underholdskostnad: Underholdskostnad,
         idElement: Long,
-    ): UnderholdDto {
+    ) {
         val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { idElement == it.id }
         underholdskostnad.faktiskeTilsynsutgifter.remove(faktiskTilsynsutgift)
-        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     private fun lagreUnderholdskostnad(

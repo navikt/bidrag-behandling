@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
-import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
@@ -60,7 +59,7 @@ class UnderholdController(
     fun sletteFraUnderhold(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: SletteUnderholdselement,
-    ): UnderholdDto? {
+    ): OppdatereUnderholdResponse {
         log.info { "Sletter fra underholdskostnad i behandling $behandlingsid" }
         secureLogger.info { "Sletter fra underholdskostnad i behandling $behandlingsid med forespørsel $request" }
 
@@ -69,13 +68,13 @@ class UnderholdController(
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        val underholdDto = underholdService.sletteFraUnderhold(behandling, request)
+        underholdService.sletteFraUnderhold(behandling, request)
 
-        if (Underholdselement.BARN == request.type && underholdDto == null) {
-            return null
-        }
-
-        return underholdDto
+        return OppdatereUnderholdResponse(
+            underholdskostnad = dtomapper.run { behandling.tilBeregnetUnderholdskostnad().first().perioder },
+            beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
+            valideringsfeil = null,
+        )
     }
 
     @ResponseStatus(HttpStatus.CREATED)
