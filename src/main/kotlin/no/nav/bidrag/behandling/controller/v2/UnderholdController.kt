@@ -40,7 +40,7 @@ class UnderholdController(
     private val underholdService: UnderholdService,
     private val dtomapper: Dtomapper,
 ) {
-    @ResponseStatus(HttpStatus.ACCEPTED)
+    @ResponseStatus(HttpStatus.OK)
     @DeleteMapping("/behandling/{behandlingsid}/underhold")
     @Operation(
         description =

@@ -465,8 +465,8 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             // så
             assertSoftly(svar) {
                 shouldNotBeNull()
-                statusCode shouldBe HttpStatus.ACCEPTED
-                body.shouldBeNull()
+                statusCode shouldBe HttpStatus.OK
+                body.shouldNotBeNull()
             }
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!).get()
 
