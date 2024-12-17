@@ -57,6 +57,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import stubPersonConsumer
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -64,7 +65,6 @@ class DtoMapperTest : TestContainerRunner() {
     @Autowired
     lateinit var testdataManager: TestdataManager
 
-    @MockkBean
     lateinit var personService: PersonService
 
     @MockK
@@ -91,6 +91,7 @@ class DtoMapperTest : TestContainerRunner() {
     @BeforeEach
     fun initMocks() {
         stubSjablonProvider()
+        personService = PersonService(stubPersonConsumer())
         grunnlagsmapper = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         vedtakGrunnlagsmapper =
             VedtakGrunnlagMapper(
@@ -460,15 +461,6 @@ class DtoMapperTest : TestContainerRunner() {
                     innhold = "Underholdskostnad for søknadsbarn",
                 ),
             )
-
-            every { personService.hentPerson(testdataBarn1.ident) } returns
-                PersonDto(
-                    ident = Personident(testdataBarn1.ident),
-                    navn = testdataBarn1.navn,
-                    fødselsdato = testdataBarn1.fødselsdato,
-                )
-
-            every { personService.hentNyesteIdent(any()) } returns Personident(testdataBarn1.ident)
 
             // hvis
             val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.first())

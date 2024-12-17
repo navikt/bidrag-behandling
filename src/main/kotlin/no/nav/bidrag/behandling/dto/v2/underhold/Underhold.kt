@@ -14,6 +14,12 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
+data class OpprettUnderholdskostnadBarnResponse(
+    val underholdskostnad: UnderholdDto,
+    val valideringsfeil: ValideringsfeilUnderhold? = null,
+    val beregnetUnderholdskostnader: Set<BeregnetUnderholdskostnad>,
+)
+
 data class OppdatereUnderholdResponse(
     val stønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
     val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,

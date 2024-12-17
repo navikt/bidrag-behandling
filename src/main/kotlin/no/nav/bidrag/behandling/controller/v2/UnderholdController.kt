@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRe
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
+import no.nav.bidrag.behandling.dto.v2.underhold.OpprettUnderholdskostnadBarnResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
@@ -302,12 +303,16 @@ class UnderholdController(
     fun oppretteUnderholdForBarn(
         @PathVariable behandlingsid: Long,
         @RequestBody(required = true) gjelderBarn: BarnDto,
-    ): UnderholdDto {
+    ): OpprettUnderholdskostnadBarnResponse {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        return dtomapper.tilUnderholdDto(underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn))
+        return OpprettUnderholdskostnadBarnResponse(
+            underholdskostnad = dtomapper.tilUnderholdDto(underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn)),
+            beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
+            valideringsfeil = null,
+        )
     }
 }
