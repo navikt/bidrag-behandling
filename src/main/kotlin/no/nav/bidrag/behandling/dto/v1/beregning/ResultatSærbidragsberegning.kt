@@ -8,6 +8,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.årsbeløpTilMåndesbeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetBidragPerBarn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import java.math.BigDecimal
@@ -50,6 +51,7 @@ data class DelberegningBidragspliktigesBeregnedeTotalbidragDto(
 data class DelberegningBarnetilleggDto(
     val barnetillegg: List<BarnetilleggDetaljerDto> = emptyList(),
     val skattFaktor: BigDecimal = BigDecimal.ZERO,
+    val delberegningSkattesats: DelberegningBarnetilleggSkattesats? = null,
     val sumInntekt: BigDecimal = BigDecimal.ZERO,
     val sumNettoBeløp: BigDecimal = BigDecimal.ZERO,
     val sumBruttoBeløp: BigDecimal = BigDecimal.ZERO,

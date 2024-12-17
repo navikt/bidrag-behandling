@@ -2,9 +2,9 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
@@ -277,16 +277,11 @@ class BehandlingTilGrunnlagMappingV2(
     fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(personobjekter: Set<GrunnlagDto> = emptySet()): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
-        fun FaktiskTilsynsutgift.tilPersonGrunnlag(): GrunnlagDto {
-            val person = underholdskostnad.person
-            val fødselsdato =
-                person.fødselsdato ?: personService.hentPersonFødselsdato(person.ident)
-                    ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
-
-            return GrunnlagDto(
+        fun Underholdskostnad.tilPersonGrunnlag(): GrunnlagDto =
+            GrunnlagDto(
                 referanse =
                     Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER.tilPersonreferanse(
-                        fødselsdato.toCompactString(),
+                        person.fødselsdato.toCompactString(),
                         (person.ident + person.fødselsdato + person.navn).hashCode(),
                     ),
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
@@ -295,18 +290,23 @@ class BehandlingTilGrunnlagMappingV2(
                         Person(
                             ident = person.ident?.let { Personident(it) },
                             navn = person.navn,
-                            fødselsdato = fødselsdato,
+                            fødselsdato = person.fødselsdato,
                         ).valider(),
                     ),
             )
-        }
 
-        fun FaktiskTilsynsutgift.opprettPersonGrunnlag(): GrunnlagDto {
+        fun Underholdskostnad.opprettPersonGrunnlag(): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag()
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
         }
 
+        val barnUtenPerioder =
+            underholdskostnader
+                .filter { it.barnetsRolleIBehandlingen == null && it.faktiskeTilsynsutgifter.isEmpty() }
+                .map { u ->
+                    personobjekter.hentPerson(u.person.ident) ?: u.opprettPersonGrunnlag()
+                }
         return (
             underholdskostnader
                 .flatMap { u ->
@@ -315,7 +315,7 @@ class BehandlingTilGrunnlagMappingV2(
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)
-                            } ?: personobjekter.hentPerson(u.person.ident) ?: it.opprettPersonGrunnlag()
+                            } ?: personobjekter.hentPerson(u.person.ident) ?: u.opprettPersonGrunnlag()
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
@@ -335,7 +335,7 @@ class BehandlingTilGrunnlagMappingV2(
                                 ),
                         )
                     }
-                } + grunnlagslistePersoner
+                } + grunnlagslistePersoner + barnUtenPerioder
         ).toSet().toList()
     }
 

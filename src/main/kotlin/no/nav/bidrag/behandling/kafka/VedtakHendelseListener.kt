@@ -85,7 +85,7 @@ class VedtakHendelseListener(
                         behandlingId = behandling.id!!,
                         soknadFra = behandling.soknadFra,
                         stonadType = vedtak.stønadstype,
-                        engangsBelopType = vedtak.engangsbeløptype,
+                        engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,
                         erFattetBeregnet = true,
                         vedtakType = vedtak.type,
                     ),

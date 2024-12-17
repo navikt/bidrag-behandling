@@ -109,20 +109,34 @@ data class UnderholdskostnadDto(
     val tilsynsutgifter: BigDecimal = BigDecimal.ZERO,
     val barnetrygd: BigDecimal = BigDecimal.ZERO,
     val total: BigDecimal,
-    val beregningsdetaljer: Beregningsdetaljer? = null,
+    val beregningsdetaljer: UnderholdskostnadPeriodeBeregningsdetaljer? = null,
 ) {
-    data class Beregningsdetaljer(
+    data class UnderholdskostnadPeriodeBeregningsdetaljer(
         val tilsynsutgifterBarn: List<TilsynsutgiftBarn> = emptyList(),
+        val sjablonMaksTilsynsutgift: BigDecimal,
+        val sjablonMaksFradrag: BigDecimal,
+        val antallBarnBMUnderTolvÅr: Int,
+        val skattesatsFaktor: BigDecimal,
         val totalTilsynsutgift: BigDecimal,
-        val endeligBeløp: BigDecimal,
-        val faktiskBeløp: BigDecimal,
+        val sumTilsynsutgifter: BigDecimal,
+        val bruttoTilsynsutgift: BigDecimal,
+        val justertBruttoTilsynsutgift: BigDecimal,
+        val nettoTilsynsutgift: BigDecimal,
+        val erBegrensetAvMaksTilsyn: Boolean,
         val fordelingFaktor: BigDecimal,
+        val skattefradragPerBarn: BigDecimal,
+        val maksfradragAndel: BigDecimal,
         val skattefradrag: BigDecimal,
+        val skattefradragMaksFradrag: BigDecimal,
+        val skattefradragTotalTilsynsutgift: BigDecimal,
     )
 
     data class TilsynsutgiftBarn(
+        val gjelderBarn: PersoninfoDto,
+        val totalTilsynsutgift: BigDecimal,
         val beløp: BigDecimal,
         val kostpenger: BigDecimal? = null,
+        val tilleggsstønadDagsats: BigDecimal? = null,
         val tilleggsstønad: BigDecimal? = null,
     )
 }
