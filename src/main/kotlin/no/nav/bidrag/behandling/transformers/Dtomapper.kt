@@ -37,11 +37,11 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
+import no.nav.bidrag.behandling.dto.v2.underhold.BeregnetUnderholdskostnad
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
-import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
@@ -179,17 +179,19 @@ class Dtomapper(
             gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.sortedBy { it.fom }.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn =
-                rolleSøknadsbarn?.let {
-                    this.barnetilsyn
-                        .sortedBy { it.fom }
-                        .toSet()
-                        .tilStønadTilBarnetilsynDtos()
-                }
-                    ?: emptySet(),
-            tilleggsstønad =
-                rolleSøknadsbarn?.let { this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos() }
-                    ?: emptySet(),
-            underholdskostnad = rolleSøknadsbarn?.let { this.behandling.tilBeregnetUnderholdskostnad() } ?: emptySet(),
+                this.barnetilsyn
+                    .sortedBy { it.fom }
+                    .toSet()
+                    .tilStønadTilBarnetilsynDtos(),
+            tilleggsstønad = this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos(),
+            underholdskostnad =
+                this.behandling
+                    .tilBeregnetUnderholdskostnad()
+                    .perioderForBarn(person),
+            beregnetUnderholdskostnad =
+                this.behandling
+                    .tilBeregnetUnderholdskostnad()
+                    .perioderForBarn(person),
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
                     this.behandling,
@@ -198,18 +200,41 @@ class Dtomapper(
         )
     }
 
-    private fun Behandling.tilBeregnetUnderholdskostnad(): Set<UnderholdskostnadDto> {
-        // TODO: Beregning støtter per nå kun ett søknadsbarn. Skal støtte flere søknadsbarn i fremtiden.
-        val grunnlag =
-            vedtakGrunnlagMapper.byggGrunnlagForBeregning(
-                this,
-                this.søknadsbarn.first(),
-            )
+    fun Set<BeregnetUnderholdskostnad>.perioderForBarn(person: Person) =
+        find { bu ->
+            bu.gjelderBarn.ident?.verdi == person.ident
+        }?.perioder ?: emptySet()
 
-        val underholdBeregning = beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
-        return underholdBeregning
-            .finnAlleDelberegningUnderholdskostnad()
-            .tilUnderholdskostnadDto(underholdBeregning)
+    fun Behandling.tilBeregnetUnderholdskostnad(): Set<BeregnetUnderholdskostnad> =
+        this.søknadsbarn
+            .map {
+                val grunnlag =
+                    vedtakGrunnlagMapper.byggGrunnlagForBeregning(
+                        this,
+                        it,
+                    )
+
+                val underholdBeregning = beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+                BeregnetUnderholdskostnad(
+                    it.tilPersoninfoDto(),
+                    underholdBeregning
+                        .finnAlleDelberegningUnderholdskostnad()
+                        .tilUnderholdskostnadDto(underholdBeregning),
+                )
+            }.toSet()
+
+    private fun Rolle.tilPersoninfoDto(): PersoninfoDto {
+        val personinfo =
+            this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
+
+        return PersoninfoDto(
+            id = this.id,
+            ident = ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
+            navn = personinfo?.navn ?: this.navn,
+            fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
+            kilde = ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+            medIBehandlingen = ident != null,
+        )
     }
 
     private fun Person.tilPersoninfoDto(rolle: Rolle?): PersoninfoDto {

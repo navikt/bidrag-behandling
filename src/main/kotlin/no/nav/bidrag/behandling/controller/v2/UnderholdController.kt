@@ -116,8 +116,8 @@ class UnderholdController(
         val oppdatertBarnetilsyn = underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
         return OppdatereUnderholdResponse(
             stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
-            underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            underholdskostnad = dtomapper.run { behandling.tilBeregnetUnderholdskostnad().perioderForBarn(underholdskostnad.person) },
+            beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -156,10 +156,8 @@ class UnderholdController(
         val oppdatertFaktiskTilsynsutgift = underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
         return OppdatereUnderholdResponse(
             faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
-            underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
-                    underholdskostnad.behandling,
-                ),
+            underholdskostnad = dtomapper.run { behandling.tilBeregnetUnderholdskostnad().first().perioder },
+            beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -197,8 +195,8 @@ class UnderholdController(
         val oppdatertTilleggsstønad = underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
         return OppdatereUnderholdResponse(
             tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
-            underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            underholdskostnad = dtomapper.run { behandling.tilBeregnetUnderholdskostnad().first().perioder },
+            beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
