@@ -90,6 +90,7 @@ class DtoMapperTest : TestContainerRunner() {
 
     @BeforeEach
     fun initMocks() {
+        stubSjablonProvider()
         grunnlagsmapper = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         vedtakGrunnlagsmapper =
             VedtakGrunnlagMapper(
