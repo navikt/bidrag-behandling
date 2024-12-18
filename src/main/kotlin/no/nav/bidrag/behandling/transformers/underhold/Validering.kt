@@ -155,7 +155,11 @@ fun finneOverlappendePerioder(
         val perioderSomOverlapperGjeldendePeriode =
             nestePeriodesett
                 .filter {
-                    it.periode.tilDatoperiode().overlapper(gjeldendePeriode.periode.tilDatoperiode())
+                    // Korrigerer feil i no.nav.bidrag.domene.tid.Periode.overlapper (per 17.12.2024)
+                    val korrigertPeriode =
+                        gjeldendePeriode.periode.tilDatoperiode().copy(til = gjeldendePeriode.periode.tom?.minusDays(1))
+                    val overlapper = it.periode.tilDatoperiode().overlapper(korrigertPeriode)
+                    overlapper
                 }.toSet()
         if (perioderSomOverlapperGjeldendePeriode.isNotEmpty()) {
             overlappendePerioder[gjeldendePeriode] = perioderSomOverlapperGjeldendePeriode
@@ -168,28 +172,82 @@ fun finneOverlappendePerioder(
     return overlappendePerioder
 }
 
+fun Underholdskostnad.validere(perioderUnderholdskostnadDto: Set<UnderholdskostnadDto>): ValideringsfeilUnderhold? {
+    val barnetilsynValidert = this.barnetilsyn.validerePerioder()
+    val faktiskeTilsynsutgifterValidert = this.faktiskeTilsynsutgifter.validerePerioderFaktiskTilsynsutgift()
+    val tilleggsstønadValidert = this.tilleggsstønad.validerePerioderTilleggsstønad(this)
+
+    val fremtidigePerioder: Set<Underholdsperiode> =
+        (
+            barnetilsynValidert?.fremtidigePerioder?.toMutableSet()
+                ?: emptySet()
+        ) + (
+            faktiskeTilsynsutgifterValidert?.fremtidigePerioder?.toMutableSet()
+                ?: emptySet()
+        ) + (tilleggsstønadValidert?.fremtidigePerioder ?: emptySet())
+
+    val overlappendePerioder =
+        (barnetilsynValidert?.overlappendePerioder ?: emptyMap()) +
+            (tilleggsstønadValidert?.overlappendePerioder ?: emptyMap())
+
+    val tilleggsstønadUtenFaktiskUtgift = tilleggsstønadValidert?.tilleggsstønadsperioderUtenFaktiskTilsynsutgift ?: emptySet()
+
+    val manglerPerioderForTilsynsutgifter = this.harTilsynsordning ?: false && this.faktiskeTilsynsutgifter.isEmpty()
+    val harIngenPerioder = this.barnetsRolleIBehandlingen?.let { perioderUnderholdskostnadDto.isEmpty() } ?: false
+
+    return if (fremtidigePerioder.isNotEmpty() ||
+        overlappendePerioder.isNotEmpty() ||
+        tilleggsstønadUtenFaktiskUtgift.isNotEmpty() ||
+        manglerPerioderForTilsynsutgifter ||
+        harIngenPerioder
+    ) {
+        ValideringsfeilUnderhold(
+            gjelderUnderholdskostnad = this,
+            fremtidigePerioder = fremtidigePerioder,
+            overlappendePerioder = overlappendePerioder,
+            tilleggsstønadsperioderUtenFaktiskTilsynsutgift = tilleggsstønadUtenFaktiskUtgift,
+            manglerPerioderForTilsynsutgifter = manglerPerioderForTilsynsutgifter,
+            harIngenPerioder = harIngenPerioder,
+        )
+    } else {
+        null
+    }
+}
+
 fun Set<Barnetilsyn>.validerePerioder() =
     if (isEmpty()) {
         null
     } else {
-        ValideringsfeilUnderhold(
-            gjelderUnderholdskostnad = this.first().underholdskostnad,
-            overlappendePerioder =
-                finneOverlappendePerioder(this.barnetilsynTilUnderholdsperioder()),
-            fremtidigePerioder =
-                this.barnetilsynTilDatoperioder().finneFremtidigePerioder(Underholdselement.STØNAD_TIL_BARNETILSYN),
-        )
+        val overlappendePerioder = finneOverlappendePerioder(this.barnetilsynTilUnderholdsperioder())
+        val fremtidigePerioder =
+            this.barnetilsynTilDatoperioder().finneFremtidigePerioder(Underholdselement.STØNAD_TIL_BARNETILSYN)
+
+        if (overlappendePerioder.isNotEmpty() || fremtidigePerioder.isNotEmpty()) {
+            ValideringsfeilUnderhold(
+                gjelderUnderholdskostnad = this.first().underholdskostnad,
+                overlappendePerioder = overlappendePerioder,
+                fremtidigePerioder = fremtidigePerioder,
+            )
+        } else {
+            null
+        }
     }
 
 fun Set<FaktiskTilsynsutgift>.validerePerioderFaktiskTilsynsutgift() =
     if (isEmpty()) {
         null
     } else {
-        ValideringsfeilUnderhold(
-            gjelderUnderholdskostnad = this.first().underholdskostnad,
-            fremtidigePerioder =
-                this.tilsynsutgiftTilDatoperioder().finneFremtidigePerioder(Underholdselement.FAKTISK_TILSYNSUTGIFT),
-        )
+        val fremtidigePerioder =
+            this.tilsynsutgiftTilDatoperioder().finneFremtidigePerioder(Underholdselement.FAKTISK_TILSYNSUTGIFT)
+
+        if (fremtidigePerioder.isNotEmpty()) {
+            ValideringsfeilUnderhold(
+                gjelderUnderholdskostnad = this.first().underholdskostnad,
+                fremtidigePerioder = fremtidigePerioder,
+            )
+        } else {
+            null
+        }
     }
 
 fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad(u: Underholdskostnad) =
@@ -202,11 +260,13 @@ fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad(u: Underholdskostnad) =
             this.finneTilleggsstønadsperioderSomIkkeOverlapperMedFaktiskTilsynsutgiftsperioder(
                 u.faktiskeTilsynsutgifter,
             )
+        val overlappendePerioder = finneOverlappendePerioder(this.tilleggsstønadTilUnderholdsperioder())
 
-        if (fremtidigePerioder.isNotEmpty() || perioderSomManglerTilsynsutgift.isNotEmpty()) {
+        if (fremtidigePerioder.isNotEmpty() || perioderSomManglerTilsynsutgift.isNotEmpty() || overlappendePerioder.isNotEmpty()) {
             ValideringsfeilUnderhold(
                 gjelderUnderholdskostnad = this.first().underholdskostnad,
                 fremtidigePerioder = fremtidigePerioder,
+                overlappendePerioder = overlappendePerioder,
                 tilleggsstønadsperioderUtenFaktiskTilsynsutgift = perioderSomManglerTilsynsutgift,
             )
         } else {
@@ -214,24 +274,25 @@ fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad(u: Underholdskostnad) =
         }
     }
 
+/*
 fun Underholdskostnad.validerePerioder(perioderUnderholdskostnadDto: Set<UnderholdskostnadDto>) =
     ValideringsfeilUnderhold(
         gjelderUnderholdskostnad = this,
         overlappendePerioder =
-            finneOverlappendePerioder(
-                this.barnetilsyn.barnetilsynTilUnderholdsperioder(),
-            ) +
+        finneOverlappendePerioder(
+            this.barnetilsyn.barnetilsynTilUnderholdsperioder(),
+        ) +
                 finneOverlappendePerioder(
                     this.tilleggsstønad.tilleggsstønadTilUnderholdsperioder(),
                 ),
         tilleggsstønadsperioderUtenFaktiskTilsynsutgift =
-            this.tilleggsstønad.finneTilleggsstønadsperioderSomIkkeOverlapperMedFaktiskTilsynsutgiftsperioder(
-                this.faktiskeTilsynsutgifter,
-            ),
+        this.tilleggsstønad.finneTilleggsstønadsperioderSomIkkeOverlapperMedFaktiskTilsynsutgiftsperioder(
+            this.faktiskeTilsynsutgifter,
+        ),
         fremtidigePerioder =
-            this.barnetilsyn
-                .barnetilsynTilDatoperioder()
-                .finneFremtidigePerioder(Underholdselement.STØNAD_TIL_BARNETILSYN) +
+        this.barnetilsyn
+            .barnetilsynTilDatoperioder()
+            .finneFremtidigePerioder(Underholdselement.STØNAD_TIL_BARNETILSYN) +
                 this.faktiskeTilsynsutgifter
                     .tilsynsutgiftTilDatoperioder()
                     .finneFremtidigePerioder(Underholdselement.FAKTISK_TILSYNSUTGIFT) +
@@ -240,13 +301,15 @@ fun Underholdskostnad.validerePerioder(perioderUnderholdskostnadDto: Set<Underho
                     .finneFremtidigePerioder(Underholdselement.TILLEGGSSTØNAD),
         harIngenPerioder = this.barnetsRolleIBehandlingen?.let { perioderUnderholdskostnadDto.isEmpty() } ?: false,
         manglerPerioderForTilsynsutgifter =
-            this.harTilsynsordning?.let {
-                this.barnetilsyn.isEmpty() &&
+        this.harTilsynsordning?.let {
+            this.barnetilsyn.isEmpty() &&
                     this.faktiskeTilsynsutgifter.isEmpty() &&
                     this.tilleggsstønad.isEmpty()
-            }
-                ?: false,
+        }
+            ?: false,
     )
+
+ */
 
 fun StønadTilBarnetilsynDto.validerePerioderStønadTilBarnetilsyn(underholdskostnad: Underholdskostnad) {
     this.id?.let { id ->
@@ -289,21 +352,6 @@ private fun Set<DatoperiodeDto>.redusereMed(perioderSomTrekkesFra: Set<Datoperio
 
     if (perioderSomTrekkesFra.isEmpty()) return this
 
-    val start = this.minBy { it.fom }.fom
-    val slutt = this.maxBy { it.tom ?: maksTillatteTomdato }.tom ?: maksTillatteTomdato
-
-    val minsteDatoSomTrekkesFra = perioderSomTrekkesFra.minBy { it.fom }.fom
-    val størsteDatoSomTrekkesFra =
-        perioderSomTrekkesFra.maxBy { it.tom ?: maksTillatteTomdato }.tom ?: maksTillatteTomdato
-
-    val datoerIkkeIPerioderSomTrekkesFra: MutableSet<LocalDate> = mutableSetOf()
-    if (start < minsteDatoSomTrekkesFra) {
-        leggeTilDatoer(start, minsteDatoSomTrekkesFra, datoerIkkeIPerioderSomTrekkesFra)
-    }
-    if (slutt > størsteDatoSomTrekkesFra) {
-        leggeTilDatoer(størsteDatoSomTrekkesFra, slutt, datoerIkkeIPerioderSomTrekkesFra)
-    }
-
     val alleDatoerMellomStartOgSlutt =
         perioderSomTrekkesFra
             .sortedBy { it.fom }
@@ -311,24 +359,25 @@ private fun Set<DatoperiodeDto>.redusereMed(perioderSomTrekkesFra: Set<Datoperio
                 leggeTilDatoer(it.fom, it.tom ?: maksTillatteTomdato).toMutableSet()
             }.toMutableSet()
 
-    perioderSomTrekkesFra.forEach {
-        alleDatoerMellomStartOgSlutt.removeAll(leggeTilDatoer(it.fom, it.tom ?: maksTillatteTomdato))
-    }
+    val datoerIkkeIPerioderSomTrekkesFra =
+        this
+            .sortedBy { it.fom }
+            .flatMap {
+                leggeTilDatoer(it.fom, it.tom ?: maksTillatteTomdato).toMutableSet()
+            }.toMutableSet()
 
-    // legger til datoer som ikke finnes i perioder som trekkes fra
-    datoerIkkeIPerioderSomTrekkesFra.addAll(alleDatoerMellomStartOgSlutt)
+    datoerIkkeIPerioderSomTrekkesFra.removeAll(alleDatoerMellomStartOgSlutt)
 
     if (datoerIkkeIPerioderSomTrekkesFra.isEmpty()) return emptySet()
 
     val perioderSomInneholderDatoerSomIkkeFinnesIPeriodeneSomTrekkesFra: MutableSet<DatoperiodeDto> = mutableSetOf()
-    this.forEach {
-        if (it.fom >= datoerIkkeIPerioderSomTrekkesFra.min() &&
-            (
-                it.tom
-                    ?: maksTillatteTomdato
-            ) >= datoerIkkeIPerioderSomTrekkesFra.max()
-        ) {
-            perioderSomInneholderDatoerSomIkkeFinnesIPeriodeneSomTrekkesFra.add(it)
+    this.forEach periode@{
+        val datoer = leggeTilDatoer(it.fom, it.tom ?: maksTillatteTomdato)
+        datoer.forEach { dato ->
+            if (datoerIkkeIPerioderSomTrekkesFra.contains(dato)) {
+                perioderSomInneholderDatoerSomIkkeFinnesIPeriodeneSomTrekkesFra.add(it)
+                return@periode
+            }
         }
     }
     return perioderSomInneholderDatoerSomIkkeFinnesIPeriodeneSomTrekkesFra

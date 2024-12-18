@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
@@ -37,10 +36,7 @@ import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbei
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.validere
-import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
-import no.nav.bidrag.behandling.transformers.underhold.validerePerioderFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
-import no.nav.bidrag.behandling.transformers.underhold.validerePerioderTilleggsstønad
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -168,7 +164,7 @@ class UnderholdService(
     fun oppdatereStønadTilBarnetilsynManuelt(
         underholdskostnad: Underholdskostnad,
         request: StønadTilBarnetilsynDto,
-    ): OppdatereUnderholdResponse {
+    ): StønadTilBarnetilsynDto {
         request.validerePerioderStønadTilBarnetilsyn(underholdskostnad)
 
         val oppdatertBarnetilsyn: Barnetilsyn =
@@ -215,12 +211,7 @@ class UnderholdService(
                     .last()
             }
 
-        return OppdatereUnderholdResponse(
-            stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
-            underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
-            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
-        )
+        return oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto()
     }
 
     fun oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
@@ -293,7 +284,7 @@ class UnderholdService(
     fun oppdatereFaktiskeTilsynsutgifter(
         underholdskostnad: Underholdskostnad,
         request: OppdatereFaktiskTilsynsutgiftRequest,
-    ): OppdatereUnderholdResponse {
+    ): FaktiskTilsynsutgift {
         request.validere(underholdskostnad)
 
         val oppdatertFaktiskTilsynsutgift =
@@ -324,21 +315,15 @@ class UnderholdService(
                     .sortedBy { it.id }
                     .last()
             }
-        return OppdatereUnderholdResponse(
-            faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
-            underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
-                    underholdskostnad.behandling,
-                ),
-            valideringsfeil = underholdskostnad.faktiskeTilsynsutgifter.validerePerioderFaktiskTilsynsutgift(),
-        )
+
+        return oppdatertFaktiskTilsynsutgift
     }
 
     @Transactional
     fun oppdatereTilleggsstønad(
         underholdskostnad: Underholdskostnad,
         request: OppdatereTilleggsstønadRequest,
-    ): OppdatereUnderholdResponse {
+    ): Tilleggsstønad {
         request.validere(underholdskostnad)
 
         val oppdatertTilleggsstønad =
@@ -366,12 +351,7 @@ class UnderholdService(
                     .last()
             }
 
-        return OppdatereUnderholdResponse(
-            tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
-            underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
-            valideringsfeil = underholdskostnad.tilleggsstønad.validerePerioderTilleggsstønad(underholdskostnad),
-        )
+        return oppdatertTilleggsstønad
     }
 
     @Transactional

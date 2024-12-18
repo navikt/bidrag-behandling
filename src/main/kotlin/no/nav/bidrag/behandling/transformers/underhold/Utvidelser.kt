@@ -47,6 +47,9 @@ fun Set<Barnetilsyn>.barnetilsynTilUnderholdsperioder() =
 
 fun Set<FaktiskTilsynsutgift>.tilsynsutgiftTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
 
+fun Set<FaktiskTilsynsutgift>.tilFaktiskTilsynsutgiftUnderholdsperioder() =
+    this.map { Underholdsperiode(Underholdselement.FAKTISK_TILSYNSUTGIFT, DatoperiodeDto(it.fom, it.tom)) }.toSet()
+
 fun Set<Tilleggsstønad>.tilleggsstønadTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
 
 fun Set<Tilleggsstønad>.tilleggsstønadTilUnderholdsperioder() =

@@ -21,6 +21,9 @@ import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioderFaktiskTilsynsutgift
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioderTilleggsstønad
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -111,7 +114,12 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling!!, underholdsid)
 
-        return underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+        return OppdatereUnderholdResponse(
+            stønadTilBarnetilsyn = underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
+        )
     }
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -145,7 +153,16 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
-        return underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
+        val oppdatertFaktiskTilsynsutgift = underholdService.oppdatereFaktiskeTilsynsutgifter(underholdskostnad, request)
+
+        return OppdatereUnderholdResponse(
+            faktiskTilsynsutgift = dtomapper.tilFaktiskTilsynsutgiftDto(oppdatertFaktiskTilsynsutgift),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(
+                    underholdskostnad.behandling,
+                ),
+            valideringsfeil = underholdskostnad.faktiskeTilsynsutgifter.validerePerioderFaktiskTilsynsutgift(),
+        )
     }
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -177,8 +194,14 @@ class UnderholdController(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
+        val oppdatertTilleggsstønad = underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
 
-        return underholdService.oppdatereTilleggsstønad(underholdskostnad, request)
+        return OppdatereUnderholdResponse(
+            tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
+            underholdskostnad =
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            valideringsfeil = underholdskostnad.tilleggsstønad.validerePerioderTilleggsstønad(underholdskostnad),
+        )
     }
 
     @Deprecated("Erstattes av oppdatereBegrunnelse og angiTilsynsordning")
