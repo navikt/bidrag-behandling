@@ -24,8 +24,6 @@ import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholds
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioderFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioderTilleggsstønad
-import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -119,7 +117,7 @@ class UnderholdController(
         return OppdatereUnderholdResponse(
             stønadTilBarnetilsyn = underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request),
             underholdskostnad =
-            dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
@@ -202,7 +200,7 @@ class UnderholdController(
             tilleggsstønad = dtomapper.tilTilleggsstønadDto(oppdatertTilleggsstønad),
             underholdskostnad =
                 dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
-            valideringsfeil = underholdskostnad.tilleggsstønad.validerePerioderTilleggsstønad(underholdskostnad)
+            valideringsfeil = underholdskostnad.tilleggsstønad.validerePerioderTilleggsstønad(underholdskostnad),
         )
     }
 
