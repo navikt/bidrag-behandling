@@ -42,6 +42,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -337,7 +338,42 @@ class VedtakTilBehandlingMapping(
                     underholdskostnad
                 }.toMutableSet()
 
-        return (underholdskostnadAndreBarn + underholdskostnadSøknadsbarn).toMutableSet()
+        val faktiskPeriodeGjelderReferanser =
+            filtrerBasertPåEgenReferanse(
+                Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
+            ).map { it.gjelderBarnReferanse }
+
+        val underholdskostnadAndreBarnBMUtenTilsynsutgifer =
+            filtrerOgKonverterBasertPåEgenReferanse<no.nav.bidrag.transport.behandling.felles.grunnlag.Person>(
+                Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
+            ).filter { !faktiskPeriodeGjelderReferanser.contains(it.referanse) }
+                .map {
+                    val gjelderBarn = hentPersonMedReferanse(it.referanse)!!.personObjekt
+                    if (lesemodus) {
+                        Underholdskostnad(
+                            id = 1,
+                            behandling = behandling,
+                            person =
+                                Person(
+                                    id = 1,
+                                    ident = gjelderBarn.ident?.verdi,
+                                    navn = gjelderBarn.navn,
+                                    fødselsdato = gjelderBarn.fødselsdato,
+                                ),
+                        )
+                    } else {
+                        underholdService.oppretteUnderholdskostnad(
+                            behandling,
+                            BarnDto(
+                                personident = gjelderBarn.ident,
+                                navn = gjelderBarn.navn,
+                                fødselsdato = gjelderBarn.fødselsdato,
+                            ),
+                        )
+                    }
+                }
+
+        return (underholdskostnadAndreBarn + underholdskostnadSøknadsbarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
     }
 
     private fun List<TilleggsstønadPeriode>.mapTillegsstønad(

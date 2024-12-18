@@ -169,7 +169,7 @@ class Dtomapper(
         aktiveGrunnlag: List<Grunnlag>,
     ) = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
 
-    fun Set<Underholdskostnad>.tilDtos() = this.map { it.tilDto() }.toSet()
+    fun Set<Underholdskostnad>.tilDtos() = this.map { it.tilDto() }.sortedByDescending { it.gjelderBarn.fødselsdato }.toSet()
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
@@ -210,10 +210,10 @@ class Dtomapper(
                 this.søknadsbarn.first(),
             )
 
-        return beregnBarnebidragApi
-            .beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+        val underholdBeregning = beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+        return underholdBeregning
             .finnAlleDelberegningUnderholdskostnad()
-            .tilUnderholdskostnadDto()
+            .tilUnderholdskostnadDto(underholdBeregning)
     }
 
     private fun Person.tilPersoninfoDto(rolle: Rolle?): PersoninfoDto {
