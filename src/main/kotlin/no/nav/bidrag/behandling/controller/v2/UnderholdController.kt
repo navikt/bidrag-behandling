@@ -116,11 +116,10 @@ class UnderholdController(
 
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling!!, underholdsid)
 
-        val oppdatertBarnetilsyn = underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
         return OppdatereUnderholdResponse(
-            stønadTilBarnetilsyn = oppdatertBarnetilsyn.tilStønadTilBarnetilsynDto(),
+            stønadTilBarnetilsyn = underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request),
             underholdskostnad =
-                dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
+            dtomapper.tilUnderholdskostnadsperioderForBehandlingMedKunEttSøknadsbarn(underholdskostnad.behandling),
             valideringsfeil = underholdskostnad.barnetilsyn.validerePerioder(),
         )
     }
