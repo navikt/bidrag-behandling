@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRe
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
+import no.nav.bidrag.behandling.dto.v2.underhold.OpprettUnderholdskostnadBarnResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
@@ -76,7 +77,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                     "${rootUriV2()}/behandling/${behandling.id}/underhold/opprette",
                     HttpMethod.POST,
                     HttpEntity(request),
-                    UnderholdDto::class.java,
+                    OpprettUnderholdskostnadBarnResponse::class.java,
                 )
 
             // så
@@ -85,7 +86,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 statusCode shouldBe HttpStatus.CREATED
             }
 
-            assertSoftly(svar.body) {
+            assertSoftly(svar.body!!.underholdskostnad) {
                 shouldNotBeNull()
                 id shouldBeGreaterThan 0L
                 harTilsynsordning.shouldBeNull()
@@ -95,7 +96,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 tilleggsstønad.shouldBeEmpty()
             }
 
-            assertSoftly(svar.body!!.gjelderBarn) {
+            assertSoftly(svar.body!!.underholdskostnad.gjelderBarn) {
                 id.shouldNotBeNull()
                 navn shouldBe request.navn
                 fødselsdato shouldBe request.fødselsdato
@@ -143,7 +144,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 "${rootUriV2()}/behandling/${behandling.id}/underhold/opprette",
                 HttpMethod.POST,
                 HttpEntity(request),
-                UnderholdDto::class.java,
+                OpprettUnderholdskostnadBarnResponse::class.java,
             )
 
             // så
