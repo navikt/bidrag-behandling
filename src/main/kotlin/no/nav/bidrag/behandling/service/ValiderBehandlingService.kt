@@ -46,6 +46,9 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
+        if (request.vedtakstype == Vedtakstype.REVURDERING) {
+            return "Kan ikke behandle begrenset revurdering"
+        }
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
         val harBPMinstEnBidragsstønad =
