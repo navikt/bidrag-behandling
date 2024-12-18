@@ -27,10 +27,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrun
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
-import no.nav.bidrag.behandling.utils.testdata.testdataBM
-import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
@@ -539,42 +536,6 @@ class DtoMapperTest : TestContainerRunner() {
             behandling.grunnlag.add(innhentetGrunnlag)
 
             every { validerBehandlingService.kanBehandlesINyLøsning(any()) } returns null
-
-            every { personService.hentPerson(innhentetForRolle.personident!!.verdi) } returns
-                PersonDto(
-                    ident = innhentetForRolle.personident!!,
-                    navn = testdataBM.navn,
-                    fødselsdato = testdataBM.fødselsdato,
-                )
-
-            every { personService.hentNyesteIdent(testdataBP.ident) } returns Personident(testdataBP.ident)
-
-            every { personService.hentPerson(innhentetForRolle.personident!!.verdi) } returns
-                PersonDto(
-                    ident = innhentetForRolle.personident!!,
-                    navn = testdataBP.navn,
-                    fødselsdato = testdataBP.fødselsdato,
-                )
-
-            every { personService.hentNyesteIdent(testdataBM.ident) } returns Personident(testdataBM.ident)
-
-            every { personService.hentPerson(testdataBarn1.ident) } returns
-                PersonDto(
-                    ident = Personident(testdataBarn1.ident),
-                    navn = testdataBarn1.navn,
-                    fødselsdato = testdataBarn1.fødselsdato,
-                )
-
-            every { personService.hentNyesteIdent(testdataBarn1.ident) } returns Personident(testdataBarn1.ident)
-
-            every { personService.hentPerson(testdataBarn2.ident) } returns
-                PersonDto(
-                    ident = Personident(testdataBarn1.ident),
-                    navn = testdataBarn1.navn,
-                    fødselsdato = testdataBarn1.fødselsdato,
-                )
-
-            every { personService.hentNyesteIdent(testdataBarn2.ident) } returns Personident(testdataBarn2.ident)
 
             // hvis
             val dto = dtomapper.tilDto(behandling)
