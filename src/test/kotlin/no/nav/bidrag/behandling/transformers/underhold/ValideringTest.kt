@@ -114,15 +114,15 @@ class ValideringTest {
             u.barnetilsyn.add(Barnetilsyn(2L, u, fom, null, false, Tilsynstype.HELTID, Kilde.MANUELL))
 
             // hvis
-            val valideringsfeil = u.barnetilsyn.validerePerioder()
+            val valideringsfeil = u.valider()
 
             // så
-            valideringsfeil.shouldNotBeNull()
-            valideringsfeil.fremtidigePerioder shouldHaveSize 1
-            valideringsfeil.fremtidigePerioder
+            valideringsfeil.stønadTilBarnetilsyn.shouldNotBeNull()
+            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder shouldHaveSize 1
+            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
                 .periode.fom shouldBe fom
-            valideringsfeil.fremtidigePerioder
+            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
                 .periode.tom shouldBe null
         }
@@ -155,15 +155,15 @@ class ValideringTest {
             )
 
             // hvis
-            val valideringsfeil = u.barnetilsyn.validerePerioder()
+            val valideringsfeil = u.valider()
 
             // så
-            valideringsfeil.shouldNotBeNull()
-            valideringsfeil.fremtidigePerioder shouldHaveSize 1
-            valideringsfeil.fremtidigePerioder
+            valideringsfeil.stønadTilBarnetilsyn.shouldNotBeNull()
+            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder shouldHaveSize 1
+            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
                 .periode.fom shouldBe fom
-            valideringsfeil.fremtidigePerioder
+            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
                 .periode.tom shouldBe ugyldigTom
         }
@@ -207,11 +207,11 @@ class ValideringTest {
             )
 
             // hvis
-            val valideringsfeil = u.barnetilsyn.validerePerioder()
+            val valideringsfeil = u.valider()
 
             // så
-            valideringsfeil.shouldNotBeNull()
-            valideringsfeil.overlappendePerioder.size shouldBe 1
+            valideringsfeil.stønadTilBarnetilsyn.shouldNotBeNull()
+            valideringsfeil.stønadTilBarnetilsyn.overlappendePerioder.size shouldBe 1
         }
 
         @Test
@@ -254,10 +254,10 @@ class ValideringTest {
             )
 
             // hvis
-            val valideringsfeil = u.barnetilsyn.validerePerioder()
+            val valideringsfeil = u.valider()
 
             // så
-            valideringsfeil.shouldBeNull()
+            valideringsfeil.stønadTilBarnetilsyn.shouldBeNull()
         }
     }
 
@@ -423,9 +423,9 @@ class ValideringTest {
                     ),
                 )
 
+            underholdskostnad.tilleggsstønad.addAll(tilleggsstønad)
             // hvis
-            val valideringsfeil = tilleggsstønad.validerePerioderTilleggsstønad(underholdskostnad)
-
+            val valideringsfeil = underholdskostnad.valider()
             // så
             valideringsfeil.shouldNotBeNull()
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 1
@@ -533,8 +533,9 @@ class ValideringTest {
                 ),
             )
 
+            u.tilleggsstønad.addAll(tilleggsstønad)
             // hvis
-            val valideringsfeil = tilleggsstønad.validerePerioderTilleggsstønad(u)
+            val valideringsfeil = u.valider()
 
             // så
             valideringsfeil.shouldNotBeNull()
@@ -577,13 +578,13 @@ class ValideringTest {
                     ),
                 )
 
+            u.tilleggsstønad.addAll(tilleggsstønad)
             // hvis
-            val valideringsfeil = tilleggsstønad.validerePerioderTilleggsstønad(u)
-
+            val valideringsfeil = u.valider()
             // så
-            valideringsfeil.shouldNotBeNull()
-            valideringsfeil.fremtidigePerioder shouldHaveSize 1
-            valideringsfeil.fremtidigePerioder
+            valideringsfeil.tilleggsstønad.shouldNotBeNull()
+            valideringsfeil.tilleggsstønad.fremtidigePerioder shouldHaveSize 1
+            valideringsfeil.tilleggsstønad.fremtidigePerioder
                 .first()
                 .periode.fom shouldBe tilleggsstønad.first().fom
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 1
@@ -633,10 +634,10 @@ class ValideringTest {
             u.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
 
             // hvis
-            val valideringsfeil = u.tilleggsstønad.validerePerioderTilleggsstønad(u)
+            val valideringsfeil = u.valider()
 
             // så
-            valideringsfeil.shouldBeNull()
+            valideringsfeil.tilleggsstønad.shouldBeNull()
         }
 
         @Test
@@ -669,12 +670,12 @@ class ValideringTest {
             )
 
             // hvis
-            val valideringsfeil = u.tilleggsstønad.validerePerioderTilleggsstønad(u)
+            val valideringsfeil = u.valider()
 
             // så
-            valideringsfeil.shouldNotBeNull()
-            valideringsfeil.fremtidigePerioder.shouldHaveSize(1)
-            valideringsfeil.fremtidigePerioder
+            valideringsfeil.tilleggsstønad.shouldNotBeNull()
+            valideringsfeil.tilleggsstønad.fremtidigePerioder.shouldHaveSize(1)
+            valideringsfeil.tilleggsstønad.fremtidigePerioder
                 .first()
                 .periode.tom shouldBe LocalDate.now().withDayOfMonth(1)
         }
@@ -731,12 +732,12 @@ class ValideringTest {
             u.tilleggsstønad.add(Tilleggsstønad(13L, u, fom, tom, BigDecimal(365)))
 
             // hvis
-            val valideringsfeil = u.tilleggsstønad.validerePerioderTilleggsstønad(u)
+            val valideringsfeil = u.valider()
 
             // så
-            valideringsfeil.shouldNotBeNull()
+            valideringsfeil.tilleggsstønad.shouldNotBeNull()
 
-            assertSoftly(valideringsfeil.overlappendePerioder) {
+            assertSoftly(valideringsfeil.tilleggsstønad.overlappendePerioder) {
                 size shouldBe 1
                 keys shouldHaveSize 1
                 keys.first() shouldBe Underholdsperiode(Underholdselement.TILLEGGSSTØNAD, DatoperiodeDto(fom, tom))
@@ -744,7 +745,7 @@ class ValideringTest {
             }
 
             assertSoftly(
-                valideringsfeil.overlappendePerioder.entries
+                valideringsfeil.tilleggsstønad.overlappendePerioder.entries
                     .first()
                     .value,
             ) {
