@@ -82,7 +82,7 @@ class UnderholdController(
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "Forespørsel oppdatert uten feil",
             ),
         ],
@@ -126,7 +126,7 @@ class UnderholdController(
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "Forespørsel oppdatert uten feil",
             ),
         ],
@@ -164,7 +164,7 @@ class UnderholdController(
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "Forespørsel oppdatert uten feil",
             ),
         ],
@@ -201,7 +201,7 @@ class UnderholdController(
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "Forespørsel oppdatert uten feil",
             ),
         ],
@@ -226,7 +226,7 @@ class UnderholdController(
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "Forespørsel oppdatert uten feil",
             ),
         ],
@@ -254,7 +254,7 @@ class UnderholdController(
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "Forespørsel oppdatert uten feil",
             ),
         ],
