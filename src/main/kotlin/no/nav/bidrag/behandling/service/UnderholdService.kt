@@ -19,10 +19,8 @@ import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -103,26 +101,6 @@ class UnderholdService(
         }
 
         underholdskostnad.harTilsynsordning = harTilsynsordning
-    }
-
-    @Deprecated("Erstattes av oppdatereBegrunnelse og oppdatereTilsynsordning")
-    @Transactional
-    fun oppdatereUnderhold(
-        underholdskostnad: Underholdskostnad,
-        request: OppdatereUnderholdRequest,
-    ): UnderholdDto {
-        request.validere()
-        request.harTilsynsordning?.let { underholdskostnad.harTilsynsordning = it }
-        val rolleSøknadsbarn = underholdskostnad.barnetsRolleIBehandlingen
-        request.begrunnelse?.let {
-            notatService.oppdatereNotat(
-                underholdskostnad.behandling,
-                Notattype.UNDERHOLDSKOSTNAD,
-                it,
-                rolleSøknadsbarn ?: underholdskostnad.behandling.bidragsmottaker!!,
-            )
-        }
-        return dtomapper.tilUnderholdDto(underholdskostnad)
     }
 
     @Transactional
@@ -397,7 +375,7 @@ class UnderholdService(
     private fun sletteUnderholdskostnad(
         behandling: Behandling,
         underholdskostnad: Underholdskostnad,
-    ): UnderholdDto? {
+    ) {
         behandling.underholdskostnader.remove(underholdskostnad)
         underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
         if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.barnetsRolleIBehandlingen == null) {
@@ -407,7 +385,6 @@ class UnderholdService(
             }
         }
         underholdskostnadRepository.deleteById(underholdskostnad.id!!)
-        return null
     }
 
     private fun sletteFaktiskTilsynsutgift(

@@ -36,7 +36,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
@@ -967,48 +966,6 @@ class UnderholdServiceTest {
 
                 // så
                 respons.shouldNotBeNull()
-            }
-        }
-
-        @Nested
-        @DisplayName("Tester oppdatering av underhold ")
-        open inner class Underholdstest {
-            @Test
-            open fun `skal angi tilsynsordning og legge inn begrunnelse`() {
-                // gitt
-                val behandling =
-                    oppretteTestbehandling(
-                        setteDatabaseider = true,
-                        inkludereBp = true,
-                        behandlingstype = TypeBehandling.BIDRAG,
-                    )
-
-                val barnIBehandling = behandling.søknadsbarn.first()
-                barnIBehandling.ident.shouldNotBeNull()
-
-                val underholdskostnad =
-                    behandling.underholdskostnader.find {
-                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
-                    }
-                underholdskostnad.shouldNotBeNull()
-
-                val request =
-                    OppdatereUnderholdRequest(
-                        harTilsynsordning = true,
-                        begrunnelse = "Barmet går i SFO",
-                    )
-
-                // hvis
-                val underholdDto = underholdService.oppdatereUnderhold(underholdskostnad, request)
-
-                // så
-                assertSoftly(underholdDto) {
-                    harTilsynsordning shouldBe request.harTilsynsordning
-                    begrunnelse shouldBe request.begrunnelse
-                    stønadTilBarnetilsyn.shouldBeEmpty()
-                    faktiskTilsynsutgift.shouldBeEmpty()
-                    tilleggsstønad.shouldBeEmpty()
-                }
             }
         }
     }
