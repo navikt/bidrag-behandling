@@ -67,6 +67,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
+import no.nav.bidrag.behandling.transformers.underhold.valider
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -173,6 +174,11 @@ class Dtomapper(
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
         val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
+        val beregnetUnderholdskostnad =
+            this.behandling
+                .tilBeregnetUnderholdskostnad()
+                .perioderForBarn(person)
+
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
@@ -184,19 +190,14 @@ class Dtomapper(
                     .toSet()
                     .tilStønadTilBarnetilsynDtos(),
             tilleggsstønad = this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos(),
-            underholdskostnad =
-                this.behandling
-                    .tilBeregnetUnderholdskostnad()
-                    .perioderForBarn(person),
-            beregnetUnderholdskostnad =
-                this.behandling
-                    .tilBeregnetUnderholdskostnad()
-                    .perioderForBarn(person),
+            underholdskostnad = beregnetUnderholdskostnad,
+            beregnetUnderholdskostnad = beregnetUnderholdskostnad,
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
                     this.behandling,
                     rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
                 ),
+            valideringsfeil = this.valider().takeIf { it.harFeil },
         )
     }
 
