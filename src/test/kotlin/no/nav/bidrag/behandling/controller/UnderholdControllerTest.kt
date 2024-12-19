@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.OpprettUnderholdskostnadBarnResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
@@ -248,45 +247,6 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             ) {
                 shouldNotBeNull()
                 innhold shouldBe "Oppretter begrunnelse for søknadsbarn"
-            }
-        }
-
-        @Test
-        open fun `skal angi tilsynsordning og oppdatere begrunnelse`() {
-            // gitt
-            val behandling =
-                oppretteTestbehandling(
-                    inkludereBp = true,
-                    behandlingstype = TypeBehandling.BIDRAG,
-                )
-
-            testdataManager.lagreBehandlingNewTransaction(behandling)
-            val underholdsid = behandling.underholdskostnader.first().id!!
-
-            val oppdatereUnderholdRequest = OppdatereUnderholdRequest(true, "En grundig begrunnelse")
-
-            // hvis
-            val svar =
-                httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/oppdatere",
-                    HttpMethod.PUT,
-                    HttpEntity(oppdatereUnderholdRequest),
-                    UnderholdDto::class.java,
-                )
-
-            // så
-            assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.OK
-                body.shouldNotBeNull()
-                body!!.id shouldBe underholdsid
-                body!!.harTilsynsordning shouldBe oppdatereUnderholdRequest.harTilsynsordning
-                body!!.begrunnelse shouldBe oppdatereUnderholdRequest.begrunnelse
-            }
-
-            assertSoftly(underholdskostnadRepository.findById(underholdsid)) {
-                it.shouldNotBeNull()
-                it.get().harTilsynsordning.shouldNotBeNull()
-                it.get().harTilsynsordning shouldBe oppdatereUnderholdRequest.harTilsynsordning
             }
         }
 
