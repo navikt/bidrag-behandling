@@ -14,12 +14,20 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
+data class OpprettUnderholdskostnadBarnResponse(
+    val underholdskostnad: UnderholdDto,
+    val valideringsfeil: ValideringsfeilUnderhold? = null,
+    val beregnetUnderholdskostnader: Set<BeregnetUnderholdskostnad>,
+)
+
 data class OppdatereUnderholdResponse(
     val stønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
     val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,
     val tilleggsstønad: TilleggsstønadDto? = null,
+    @Deprecated("Bruk beregnetUnderholdskostnader")
     val underholdskostnad: Set<UnderholdskostnadDto>,
     val valideringsfeil: ValideringsfeilUnderhold? = null,
+    val beregnetUnderholdskostnader: Set<BeregnetUnderholdskostnad>,
 )
 
 data class SletteUnderholdselement(
@@ -50,6 +58,7 @@ data class UnderholdDto(
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val underholdskostnad: Set<UnderholdskostnadDto>,
     val begrunnelse: String? = null,
+    val beregnetUnderholdskostnad: Set<UnderholdskostnadDto>,
 )
 
 data class OppdatereUnderholdRequest(
@@ -100,6 +109,11 @@ data class ValideringsfeilUnderhold(
         val medIBehandling: Boolean,
     )
 }
+
+data class BeregnetUnderholdskostnad(
+    val gjelderBarn: PersoninfoDto,
+    val perioder: Set<UnderholdskostnadDto>,
+)
 
 data class UnderholdskostnadDto(
     val periode: DatoperiodeDto,

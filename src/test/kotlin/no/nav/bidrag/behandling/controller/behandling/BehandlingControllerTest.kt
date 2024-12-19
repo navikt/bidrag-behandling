@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -28,7 +29,8 @@ class BehandlingControllerTest : KontrollerTestRunner() {
             søknadsid: Long = 100,
         ): OpprettBehandlingRequest =
             OpprettBehandlingRequest(
-                Vedtakstype.FASTSETTELSE,
+                søknadstype = BisysSøknadstype.SØKNAD,
+                vedtakstype = Vedtakstype.FASTSETTELSE,
                 stønadstype = Stønadstype.FORSKUDD,
                 søktFomDato = LocalDate.now().minusMonths(4),
                 mottattdato = LocalDate.now(),

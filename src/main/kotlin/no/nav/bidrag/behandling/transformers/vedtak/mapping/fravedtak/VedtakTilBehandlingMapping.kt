@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -82,6 +83,7 @@ class VedtakTilBehandlingMapping(
         enhet: String? = null,
         opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
         opprinneligVedtakstype: Vedtakstype? = null,
+        søknadstype: BisysSøknadstype? = null,
     ): Behandling {
         val opprettetAv =
             if (lesemodus) {
@@ -102,6 +104,7 @@ class VedtakTilBehandlingMapping(
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
+                søknadstype = søknadstype,
                 vedtakstype = vedtakType ?: type,
                 opprinneligVedtakstype = opprinneligVedtakstype,
                 virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato,

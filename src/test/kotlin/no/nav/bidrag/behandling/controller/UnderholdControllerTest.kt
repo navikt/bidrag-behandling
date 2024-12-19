@@ -18,8 +18,8 @@ import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
+import no.nav.bidrag.behandling.dto.v2.underhold.OpprettUnderholdskostnadBarnResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
@@ -76,16 +76,16 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                     "${rootUriV2()}/behandling/${behandling.id}/underhold/opprette",
                     HttpMethod.POST,
                     HttpEntity(request),
-                    UnderholdDto::class.java,
+                    OpprettUnderholdskostnadBarnResponse::class.java,
                 )
 
             // så
             assertSoftly(svar) {
                 shouldNotBeNull()
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
             }
 
-            assertSoftly(svar.body) {
+            assertSoftly(svar.body!!.underholdskostnad) {
                 shouldNotBeNull()
                 id shouldBeGreaterThan 0L
                 harTilsynsordning.shouldBeNull()
@@ -95,7 +95,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 tilleggsstønad.shouldBeEmpty()
             }
 
-            assertSoftly(svar.body!!.gjelderBarn) {
+            assertSoftly(svar.body!!.underholdskostnad.gjelderBarn) {
                 id.shouldNotBeNull()
                 navn shouldBe request.navn
                 fødselsdato shouldBe request.fødselsdato
@@ -143,7 +143,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 "${rootUriV2()}/behandling/${behandling.id}/underhold/opprette",
                 HttpMethod.POST,
                 HttpEntity(request),
-                UnderholdDto::class.java,
+                OpprettUnderholdskostnadBarnResponse::class.java,
             )
 
             // så
@@ -191,7 +191,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             svar.shouldNotBeNull()
-            svar.statusCode shouldBe HttpStatus.CREATED
+            svar.statusCode shouldBe HttpStatus.OK
 
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
             oppdatertBehandling.shouldNotBeNull()
@@ -231,7 +231,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             svar.shouldNotBeNull()
-            svar.statusCode shouldBe HttpStatus.CREATED
+            svar.statusCode shouldBe HttpStatus.OK
 
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
             oppdatertBehandling.shouldNotBeNull()
@@ -247,45 +247,6 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             ) {
                 shouldNotBeNull()
                 innhold shouldBe "Oppretter begrunnelse for søknadsbarn"
-            }
-        }
-
-        @Test
-        open fun `skal angi tilsynsordning og oppdatere begrunnelse`() {
-            // gitt
-            val behandling =
-                oppretteTestbehandling(
-                    inkludereBp = true,
-                    behandlingstype = TypeBehandling.BIDRAG,
-                )
-
-            testdataManager.lagreBehandlingNewTransaction(behandling)
-            val underholdsid = behandling.underholdskostnader.first().id!!
-
-            val oppdatereUnderholdRequest = OppdatereUnderholdRequest(true, "En grundig begrunnelse")
-
-            // hvis
-            val svar =
-                httpHeaderTestRestTemplate.exchange(
-                    "${rootUriV2()}/behandling/${behandling.id}/underhold/$underholdsid/oppdatere",
-                    HttpMethod.PUT,
-                    HttpEntity(oppdatereUnderholdRequest),
-                    UnderholdDto::class.java,
-                )
-
-            // så
-            assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
-                body.shouldNotBeNull()
-                body!!.id shouldBe underholdsid
-                body!!.harTilsynsordning shouldBe oppdatereUnderholdRequest.harTilsynsordning
-                body!!.begrunnelse shouldBe oppdatereUnderholdRequest.begrunnelse
-            }
-
-            assertSoftly(underholdskostnadRepository.findById(underholdsid)) {
-                it.shouldNotBeNull()
-                it.get().harTilsynsordning.shouldNotBeNull()
-                it.get().harTilsynsordning shouldBe oppdatereUnderholdRequest.harTilsynsordning
             }
         }
 
@@ -319,7 +280,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
                 body!!.faktiskTilsynsutgift.shouldBeNull()
                 body!!.tilleggsstønad.shouldBeNull()
@@ -365,7 +326,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
                 body!!.stønadTilBarnetilsyn.shouldBeNull()
                 body!!.tilleggsstønad.shouldBeNull()
@@ -408,7 +369,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
                 body!!.stønadTilBarnetilsyn.shouldBeNull()
                 body!!.faktiskTilsynsutgift.shouldBeNull()
@@ -465,8 +426,8 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             // så
             assertSoftly(svar) {
                 shouldNotBeNull()
-                statusCode shouldBe HttpStatus.ACCEPTED
-                body.shouldBeNull()
+                statusCode shouldBe HttpStatus.OK
+                body.shouldNotBeNull()
             }
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!).get()
 

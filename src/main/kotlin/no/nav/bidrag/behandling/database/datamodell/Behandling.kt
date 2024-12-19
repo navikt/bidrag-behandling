@@ -15,6 +15,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -159,6 +160,8 @@ open class Behandling(
     )
     open var underholdskostnader: MutableSet<Underholdskostnad> = mutableSetOf(),
     open var deleted: Boolean = false,
+    @Enumerated(EnumType.STRING)
+    open var søknadstype: BisysSøknadstype? = null,
 ) {
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
