@@ -83,7 +83,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             // så
             assertSoftly(svar) {
                 shouldNotBeNull()
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
             }
 
             assertSoftly(svar.body!!.underholdskostnad) {
@@ -192,7 +192,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             svar.shouldNotBeNull()
-            svar.statusCode shouldBe HttpStatus.CREATED
+            svar.statusCode shouldBe HttpStatus.OK
 
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
             oppdatertBehandling.shouldNotBeNull()
@@ -232,7 +232,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             svar.shouldNotBeNull()
-            svar.statusCode shouldBe HttpStatus.CREATED
+            svar.statusCode shouldBe HttpStatus.OK
 
             val oppdatertBehandling = behandlingRepository.findBehandlingById(lagretBehandling.id!!)
             oppdatertBehandling.shouldNotBeNull()
@@ -276,7 +276,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
                 body!!.id shouldBe underholdsid
                 body!!.harTilsynsordning shouldBe oppdatereUnderholdRequest.harTilsynsordning
@@ -320,7 +320,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
                 body!!.faktiskTilsynsutgift.shouldBeNull()
                 body!!.tilleggsstønad.shouldBeNull()
@@ -366,7 +366,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
                 body!!.stønadTilBarnetilsyn.shouldBeNull()
                 body!!.tilleggsstønad.shouldBeNull()
@@ -409,7 +409,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             // så
             assertSoftly(svar) {
-                statusCode shouldBe HttpStatus.CREATED
+                statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
                 body!!.stønadTilBarnetilsyn.shouldBeNull()
                 body!!.faktiskTilsynsutgift.shouldBeNull()
