@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -46,7 +47,7 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
-        if (request.vedtakstype == Vedtakstype.REVURDERING) {
+        if (request.vedtakstype == Vedtakstype.REVURDERING || request.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
             return "Kan ikke behandle begrenset revurdering"
         }
         val bp = request.bidragspliktig

@@ -578,6 +578,7 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
         stønadstype = stonadstype,
         saksnummer = saksnummer,
         vedtakstype = vedtakstype,
+        søknadstype = søknadstype,
         harReferanseTilAnnenBehandling = soknadRefId != null,
         roller =
             roller.map {

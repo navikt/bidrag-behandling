@@ -22,7 +22,7 @@ import java.time.LocalDate
 class ValideringOpprettBehandlingTest {
     private fun opprettOpprettBehandlingRequest() =
         OpprettBehandlingRequest(
-            Vedtakstype.FASTSETTELSE,
+            vedtakstype = Vedtakstype.FASTSETTELSE,
             engangsbeløpstype = Engangsbeløptype.SÆRBIDRAG,
             søktFomDato = LocalDate.now().minusMonths(4),
             mottattdato = LocalDate.now(),
