@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetilsyn
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
@@ -252,7 +253,17 @@ fun Underholdskostnad.valider(): UnderholdskostnadValideringsfeil =
             tilleggsstønad.finneTilleggsstønadsperioderSomIkkeOverlapperMedFaktiskTilsynsutgiftsperioder(
                 faktiskeTilsynsutgifter,
             ),
+        manglerPerioderForTilsynsordning = manglerPerioderForTilsynsordning(),
     )
+
+fun Underholdskostnad.manglerPerioderForTilsynsordning(): Boolean {
+    val harOffentligeOpplysninger = hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
+    if (harOffentligeOpplysninger || barnetsRolleIBehandlingen == null) return false
+    return this.harTilsynsordning == true &&
+        this.barnetilsyn.isEmpty() &&
+        this.faktiskeTilsynsutgifter.isEmpty() &&
+        this.tilleggsstønad.isEmpty()
+}
 
 fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad() =
     if (isEmpty()) {

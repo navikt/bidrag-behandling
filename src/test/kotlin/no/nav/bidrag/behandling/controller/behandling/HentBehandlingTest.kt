@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -63,7 +64,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/" + behandling.id,
                 HttpMethod.GET,
                 null,
-                Any::class.java,
+                BeregningValideringsfeil::class.java,
             )
 
         // så

@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværValideringsfeilDto
-import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeilTabell
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeil
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.erSøknadsbarn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -219,7 +219,7 @@ data class BeregningValideringsfeil(
     val sivilstand: SivilstandPeriodeseringsfeil? = null,
     val samvær: Set<SamværValideringsfeilDto>? = null,
     val gebyr: Set<GebyrValideringsfeilDto>? = null,
-    val underholdskostnad: Set<UnderholdskostnadValideringsfeilTabell>? = null,
+    val underholdskostnad: Set<UnderholdskostnadValideringsfeil>? = null,
     val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )
 

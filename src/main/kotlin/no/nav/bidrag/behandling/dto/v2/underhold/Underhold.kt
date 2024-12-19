@@ -79,8 +79,8 @@ data class Periodiseringsfeil(
 )
 
 data class Underholdsperiode(
-    val underholdselement: Underholdselement,
-    val periode: DatoperiodeDto,
+    val underholdselement: Underholdselement = Underholdselement.BARN,
+    val periode: DatoperiodeDto = DatoperiodeDto(LocalDate.now(), LocalDate.now()),
 )
 
 data class UnderholdskostnadValideringsfeil(
@@ -91,7 +91,8 @@ data class UnderholdskostnadValideringsfeil(
     val stønadTilBarnetilsyn: UnderholdskostnadValideringsfeilTabell? = null,
     @Schema(description = "Tilleggsstønadsperioder som ikke overlapper fullstendig med faktiske tilsynsutgifter.")
     val tilleggsstønadsperioderUtenFaktiskTilsynsutgift: Set<Underholdsperiode> = emptySet(),
-    val manglerPerioderForTilsynsutgifter: Boolean = false,
+    @Schema(description = "Minst en periode må legges til hvis det ikke finnes noen offentlige opplysninger for stønad til barnetilsyn")
+    val manglerPerioderForTilsynsordning: Boolean = false,
 ) {
     @get:JsonIgnore
     val harFeil
@@ -100,7 +101,7 @@ data class UnderholdskostnadValideringsfeil(
                 faktiskTilsynsutgift?.harFeil == true ||
                 stønadTilBarnetilsyn?.harFeil == true ||
                 tilleggsstønadsperioderUtenFaktiskTilsynsutgift.isNotEmpty() ||
-                manglerPerioderForTilsynsutgifter
+                manglerPerioderForTilsynsordning
     val underholdskostnadsid get() = gjelderUnderholdskostnad.id
     val barn
         get() =
@@ -121,9 +122,9 @@ data class UnderholdskostnadValideringsfeil(
 
 data class UnderholdskostnadValideringsfeilTabell(
     @Schema(description = "Overlappende perioder i stønad til barnetilsyn eller tillegsstønad.")
-    val overlappendePerioder: Map<Underholdsperiode, Set<Underholdsperiode>> = emptyMap(),
+    val overlappendePerioder: Map<Underholdsperiode, Set<Underholdsperiode>> = mapOf(),
     @Schema(description = "Perioder som starter senere enn starten av dagens måned.")
-    val fremtidigePerioder: Set<Underholdsperiode> = emptySet(),
+    val fremtidigePerioder: Set<Underholdsperiode> = setOf(),
     @Schema(description = """Er sann hvis antall perioder er 0."""")
     val harIngenPerioder: Boolean = false,
     @Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
