@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
@@ -25,4 +26,5 @@ data class OpprettBehandlingFraVedtakRequest(
     @Schema(required = true)
     val søknadsid: Long,
     val søknadsreferanseid: Long? = null,
+    val søknadstype: BisysSøknadstype? = null,
 )

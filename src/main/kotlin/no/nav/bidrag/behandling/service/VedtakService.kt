@@ -137,6 +137,7 @@ class VedtakService(
                 søknadRefId = request.søknadsreferanseid,
                 enhet = request.behandlerenhet,
                 søknadId = request.søknadsid,
+                søknadstype = request.søknadstype,
                 lesemodus = false,
                 opprinneligVedtakstidspunkt = hentOpprinneligVedtakstidspunkt(vedtak).toSet(),
                 opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
