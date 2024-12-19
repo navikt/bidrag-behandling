@@ -12,26 +12,22 @@ import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
-import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.OpprettUnderholdskostnadBarnResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioder
 import no.nav.bidrag.commons.util.secureLogger
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseStatus
 
 private val log = KotlinLogging.logger {}
 
@@ -41,7 +37,6 @@ class UnderholdController(
     private val underholdService: UnderholdService,
     private val dtomapper: Dtomapper,
 ) {
-    @ResponseStatus(HttpStatus.OK)
     @DeleteMapping("/behandling/{behandlingsid}/underhold")
     @Operation(
         description =
@@ -78,7 +73,6 @@ class UnderholdController(
         )
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/barnetilsyn")
     @Operation(
         description =
@@ -122,7 +116,6 @@ class UnderholdController(
         )
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/faktisk_tilsynsutgift")
     @Operation(
         description =
@@ -162,7 +155,6 @@ class UnderholdController(
         )
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilleggsstonad")
     @Operation(
         description =
@@ -201,37 +193,6 @@ class UnderholdController(
         )
     }
 
-    @Deprecated("Erstattes av oppdatereBegrunnelse og angiTilsynsordning")
-    @ResponseStatus(HttpStatus.CREATED)
-    @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/oppdatere")
-    @Operation(
-        description = "Angir om et barn har tilsynsordning.",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "201",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
-    fun oppdatereUnderhold(
-        @PathVariable behandlingsid: Long,
-        @PathVariable underholdsid: Long,
-        @RequestBody(required = true) request: OppdatereUnderholdRequest,
-    ): UnderholdDto {
-        val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
-
-        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
-
-        return underholdService.oppdatereUnderhold(underholdskostnad, request)
-    }
-
-    @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/begrunnelse")
     @Operation(
         description = "Oppdatere begrunnelse for underhold relatert til søknadsbarn eller andre barn.",
@@ -257,7 +218,6 @@ class UnderholdController(
         underholdService.oppdatereBegrunnelse(behandling, request)
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")
     @Operation(
         description = "Angir om søknadsbarn har tilsynsordning.",
@@ -286,7 +246,6 @@ class UnderholdController(
         underholdService.oppdatereTilsynsordning(underholdskostnad, harTilsynsordning)
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/behandling/{behandlingsid}/underhold/opprette")
     @Operation(
         description = "Oppretter underholdselement med faktiske utgifter for BMs andre barn. Legges manuelt inn av saksbehandler.",
