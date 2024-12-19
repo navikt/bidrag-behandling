@@ -114,6 +114,7 @@ class BehandlingService(
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
         val behandling =
             Behandling(
+                søknadstype = opprettBehandling.søknadstype,
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
                 innkrevingstype =
