@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.4.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>no.nav</groupId>
@@ -28,7 +28,7 @@
         <kotlin-logging-jvm.version>7.0.3</kotlin-logging-jvm.version>
         <flyway.version>10.21.0</flyway.version>
         <jackson.version>2.18.1</jackson.version>
-        <testcontainers.version>1.20.3</testcontainers.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
         <spring-boot-testcontainers.version>3.3.5</spring-boot-testcontainers.version>
         <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
         <snakeyaml.version>2.3</snakeyaml.version>
@@ -37,7 +37,7 @@
         <arrow-core.version>1.2.4</arrow-core.version>
         <checker-qual.version>3.48.2</checker-qual.version>
         <asm.version>9.7.1</asm.version>
-        <swagger.version>2.2.25</swagger.version>
+        <swagger.version>2.2.26</swagger.version>
         <jetbrains.annotations.version>26.0.1</jetbrains.annotations.version>
         <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
     </properties>
@@ -436,6 +436,12 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.getunleash</groupId>
