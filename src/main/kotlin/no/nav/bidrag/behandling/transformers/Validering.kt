@@ -72,7 +72,12 @@ fun bestemRollerSomMåHaMinstEnInntekt(typeBehandling: TypeBehandling) =
 fun bestemRollerSomKanHaInntekter(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
         TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
-        TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG -> listOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN)
+        TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG ->
+            listOf(
+                Rolletype.BIDRAGSPLIKTIG,
+                Rolletype.BIDRAGSMOTTAKER,
+                Rolletype.BARN,
+            )
     }
 
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)

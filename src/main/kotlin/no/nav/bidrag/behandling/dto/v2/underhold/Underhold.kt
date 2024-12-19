@@ -5,18 +5,16 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
-import no.nav.bidrag.behandling.dto.v2.validering.OverlappendeBostatusperiode
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
 data class OpprettUnderholdskostnadBarnResponse(
     val underholdskostnad: UnderholdDto,
-    val valideringsfeil: ValideringsfeilUnderhold? = null,
+    val valideringsfeil: Set<UnderholdskostnadValideringsfeil>? = null,
     val beregnetUnderholdskostnader: Set<BeregnetUnderholdskostnad>,
 )
 
@@ -26,7 +24,7 @@ data class OppdatereUnderholdResponse(
     val tilleggsstønad: TilleggsstønadDto? = null,
     @Deprecated("Bruk beregnetUnderholdskostnader")
     val underholdskostnad: Set<UnderholdskostnadDto>,
-    val valideringsfeil: ValideringsfeilUnderhold? = null,
+    val valideringsfeil: Set<UnderholdskostnadValideringsfeil>? = null,
     val beregnetUnderholdskostnader: Set<BeregnetUnderholdskostnad>,
 )
 
@@ -59,6 +57,7 @@ data class UnderholdDto(
     val underholdskostnad: Set<UnderholdskostnadDto>,
     val begrunnelse: String? = null,
     val beregnetUnderholdskostnad: Set<UnderholdskostnadDto>,
+    val valideringsfeil: UnderholdskostnadValideringsfeil?,
 )
 
 data class OppdatereUnderholdRequest(
@@ -72,34 +71,44 @@ data class OppdatereBegrunnelseRequest(
     val begrunnelse: String,
 )
 
-data class ValideringsfeilUnderhold(
+data class Periodiseringsfeil(
+    val gjelderTabell: Underholdselement,
+    val overlappendePerioder: Map<DatoperiodeDto, Set<DatoperiodeDto>>,
+    val harFremtidigPeriode: Boolean,
+    val harIngenPerioder: Boolean,
+)
+
+data class Underholdsperiode(
+    val underholdselement: Underholdselement,
+    val periode: DatoperiodeDto,
+)
+
+data class UnderholdskostnadValideringsfeil(
     @JsonIgnore
-    val underholdskostnad: Underholdskostnad?,
-    val hullIPerioder: List<Datoperiode> = emptyList(),
-    val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
-    @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
-    val fremtidigPeriode: Boolean = false,
-    @Schema(description = """Er sann hvis antall perioder er 0."""")
-    val harIngenPerioder: Boolean = false,
-    @Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
+    val gjelderUnderholdskostnad: Underholdskostnad,
+    val tilleggsstønad: UnderholdskostnadValideringsfeilTabell? = null,
+    val faktiskTilsynsutgift: UnderholdskostnadValideringsfeilTabell? = null,
+    val stønadTilBarnetilsyn: UnderholdskostnadValideringsfeilTabell? = null,
+    @Schema(description = "Tilleggsstønadsperioder som ikke overlapper fullstendig med faktiske tilsynsutgifter.")
+    val tilleggsstønadsperioderUtenFaktiskTilsynsutgift: Set<Underholdsperiode> = emptySet(),
     val manglerPerioderForTilsynsutgifter: Boolean = false,
 ) {
     @get:JsonIgnore
     val harFeil
         get() =
-            hullIPerioder.isNotEmpty() ||
-                overlappendePerioder.isNotEmpty() ||
-                manglerPerioderForTilsynsutgifter ||
-                fremtidigPeriode ||
-                harIngenPerioder
-    val underholdskostnadId get() = underholdskostnad!!.id
+            tilleggsstønad?.harFeil == true ||
+                faktiskTilsynsutgift?.harFeil == true ||
+                stønadTilBarnetilsyn?.harFeil == true ||
+                tilleggsstønadsperioderUtenFaktiskTilsynsutgift.isNotEmpty() ||
+                manglerPerioderForTilsynsutgifter
+    val underholdskostnadsid get() = gjelderUnderholdskostnad.id
     val barn
         get() =
             UnderholdBarnDto(
-                navn = underholdskostnad!!.person.navn,
-                ident = underholdskostnad.person.ident,
-                fødselsdato = underholdskostnad.person.fødselsdato ?: LocalDate.now(),
-                medIBehandling = underholdskostnad.barnetsRolleIBehandlingen != null,
+                navn = gjelderUnderholdskostnad.person.navn,
+                ident = gjelderUnderholdskostnad.person.personident?.verdi,
+                fødselsdato = gjelderUnderholdskostnad.person.henteFødselsdato!!,
+                medIBehandling = gjelderUnderholdskostnad.barnetsRolleIBehandlingen != null,
             )
 
     data class UnderholdBarnDto(
@@ -108,6 +117,25 @@ data class ValideringsfeilUnderhold(
         val fødselsdato: LocalDate,
         val medIBehandling: Boolean,
     )
+}
+
+data class UnderholdskostnadValideringsfeilTabell(
+    @Schema(description = "Overlappende perioder i stønad til barnetilsyn eller tillegsstønad.")
+    val overlappendePerioder: Map<Underholdsperiode, Set<Underholdsperiode>> = emptyMap(),
+    @Schema(description = "Perioder som starter senere enn starten av dagens måned.")
+    val fremtidigePerioder: Set<Underholdsperiode> = emptySet(),
+    @Schema(description = """Er sann hvis antall perioder er 0."""")
+    val harIngenPerioder: Boolean = false,
+    @Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
+    val manglerPerioderForTilsynsutgifter: Boolean = false,
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            overlappendePerioder.isNotEmpty() ||
+                fremtidigePerioder.isNotEmpty() ||
+                manglerPerioderForTilsynsutgifter ||
+                harIngenPerioder
 }
 
 data class BeregnetUnderholdskostnad(

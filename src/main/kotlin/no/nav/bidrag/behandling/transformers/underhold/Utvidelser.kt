@@ -3,7 +3,9 @@ package no.nav.bidrag.behandling.transformers.underhold
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
@@ -16,6 +18,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
+import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.dto.v2.underhold.Underholdsperiode
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
@@ -25,6 +29,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -32,6 +37,23 @@ import java.time.LocalDateTime
 private val log = KotlinLogging.logger {}
 
 const val ALDER_VED_SKOLESTART = 6L
+
+fun DatoperiodeDto.tilDatoperiode() = Datoperiode(fom = this.fom, til = this.tom?.plusDays(1))
+
+fun Set<Barnetilsyn>.barnetilsynTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
+
+fun Set<Barnetilsyn>.barnetilsynTilUnderholdsperioder() =
+    this.map { Underholdsperiode(Underholdselement.STØNAD_TIL_BARNETILSYN, DatoperiodeDto(it.fom, it.tom)) }.toSet()
+
+fun Set<FaktiskTilsynsutgift>.tilsynsutgiftTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
+
+fun Set<FaktiskTilsynsutgift>.tilFaktiskTilsynsutgiftUnderholdsperioder() =
+    this.map { Underholdsperiode(Underholdselement.FAKTISK_TILSYNSUTGIFT, DatoperiodeDto(it.fom, it.tom)) }.toSet()
+
+fun Set<Tilleggsstønad>.tilleggsstønadTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
+
+fun Set<Tilleggsstønad>.tilleggsstønadTilUnderholdsperioder() =
+    this.map { Underholdsperiode(Underholdselement.TILLEGGSSTØNAD, DatoperiodeDto(it.fom, it.tom)) }.toSet()
 
 fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
     StønadTilBarnetilsynDto(
@@ -78,7 +100,7 @@ fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
         tom = if (tilOgMedDato != null && tilOgMedDato.isAfter(justerForDato)) null else tilOgMedDato,
         kilde = Kilde.OFFENTLIG,
         omfang = this.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-        under_skolealder = erUnderSkolealder(u.person.henteFødselsdato),
+        under_skolealder = erUnderSkolealder(u.person.henteFødselsdato!!),
     )
 }
 

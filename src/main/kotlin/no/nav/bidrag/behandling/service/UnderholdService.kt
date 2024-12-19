@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.underhold.justerePerioder
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.validere
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -142,7 +143,7 @@ class UnderholdService(
         underholdskostnad: Underholdskostnad,
         request: StønadTilBarnetilsynDto,
     ): Barnetilsyn {
-        request.validere(underholdskostnad)
+        request.validerePerioderStønadTilBarnetilsyn(underholdskostnad)
 
         val oppdatertBarnetilsyn: Barnetilsyn =
             request.id?.let { id ->
