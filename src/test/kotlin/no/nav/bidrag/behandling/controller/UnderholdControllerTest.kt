@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.controller
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -282,15 +283,16 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             assertSoftly(svar) {
                 statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
-                body!!.faktiskTilsynsutgift.shouldBeNull()
-                body!!.tilleggsstønad.shouldBeNull()
-                body!!.stønadTilBarnetilsyn.shouldNotBeNull()
-                body!!.stønadTilBarnetilsyn!!.kilde shouldBe Kilde.MANUELL
-                body!!.stønadTilBarnetilsyn!!.periode.shouldNotBeNull()
-                body!!.stønadTilBarnetilsyn!!.periode.fom shouldBe forespørsel.periode.fom
-                body!!.stønadTilBarnetilsyn!!.periode.tom shouldBe forespørsel.periode.tom
-                body!!.stønadTilBarnetilsyn!!.skolealder shouldBe forespørsel.skolealder
-                body!!.stønadTilBarnetilsyn!!.tilsynstype shouldBe forespørsel.tilsynstype
+                body!!.faktiskTilsynsutgift.shouldBeEmpty()
+                body!!.tilleggsstønad.shouldBeEmpty()
+                body!!.stønadTilBarnetilsyn.shouldNotBeEmpty()
+                assertSoftly(body!!.stønadTilBarnetilsyn.last()) {
+                    periode.shouldNotBeNull()
+                    periode.fom shouldBe forespørsel.periode.fom
+                    periode.tom shouldBe forespørsel.periode.tom
+                    skolealder shouldBe forespørsel.skolealder
+                    tilsynstype shouldBe forespørsel.tilsynstype
+                }
             }
         }
 
@@ -328,15 +330,17 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             assertSoftly(svar) {
                 statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
-                body!!.stønadTilBarnetilsyn.shouldBeNull()
-                body!!.tilleggsstønad.shouldBeNull()
+                body!!.stønadTilBarnetilsyn.shouldBeEmpty()
+                body!!.tilleggsstønad.shouldBeEmpty()
                 body!!.faktiskTilsynsutgift.shouldNotBeNull()
-                body!!.faktiskTilsynsutgift!!.periode.shouldNotBeNull()
-                body!!.faktiskTilsynsutgift!!.periode.fom shouldBe forespørsel.periode.fom
-                body!!.faktiskTilsynsutgift!!.periode.tom shouldBe forespørsel.periode.tom
-                body!!.faktiskTilsynsutgift!!.utgift shouldBe forespørsel.utgift
-                body!!.faktiskTilsynsutgift!!.kostpenger shouldBe forespørsel.kostpenger
-                body!!.faktiskTilsynsutgift!!.kommentar shouldBe forespørsel.kommentar
+                assertSoftly(body!!.faktiskTilsynsutgift.last()) {
+                    periode.shouldNotBeNull()
+                    periode.fom shouldBe forespørsel.periode.fom
+                    periode.tom shouldBe forespørsel.periode.tom
+                    utgift shouldBe forespørsel.utgift
+                    kostpenger shouldBe forespørsel.kostpenger
+                    kommentar shouldBe forespørsel.kommentar
+                }
             }
         }
 
@@ -371,13 +375,15 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             assertSoftly(svar) {
                 statusCode shouldBe HttpStatus.OK
                 body.shouldNotBeNull()
-                body!!.stønadTilBarnetilsyn.shouldBeNull()
-                body!!.faktiskTilsynsutgift.shouldBeNull()
-                body!!.tilleggsstønad.shouldNotBeNull()
-                body!!.tilleggsstønad!!.periode.shouldNotBeNull()
-                body!!.tilleggsstønad!!.periode.fom shouldBe forespørsel.periode.fom
-                body!!.tilleggsstønad!!.periode.tom shouldBe forespørsel.periode.tom
-                body!!.tilleggsstønad!!.dagsats shouldBe forespørsel.dagsats
+                body!!.stønadTilBarnetilsyn.shouldBeEmpty()
+                body!!.faktiskTilsynsutgift.shouldBeEmpty()
+                body!!.tilleggsstønad.shouldNotBeEmpty()
+                assertSoftly(body!!.tilleggsstønad.last()) {
+                    periode.shouldNotBeNull()
+                    periode.fom shouldBe forespørsel.periode.fom
+                    periode.tom shouldBe forespørsel.periode.tom
+                    dagsats shouldBe forespørsel.dagsats
+                }
             }
         }
     }
