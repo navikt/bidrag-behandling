@@ -10,8 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
-import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.dto.v2.underhold.Underholdsperiode
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -29,35 +27,20 @@ class ValideringTest {
         fun `skal identifisere og gruppere perioder som overlapper`() {
             // gitt
             val førstePeriode =
-                Underholdsperiode(
-                    Underholdselement.STØNAD_TIL_BARNETILSYN,
-                    DatoperiodeDto(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 9, 1)),
-                )
+                DatoperiodeDto(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 9, 1))
             val periodeSomOverlapperFørstePeriode =
-                Underholdsperiode(
-                    Underholdselement.STØNAD_TIL_BARNETILSYN,
-                    DatoperiodeDto(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 8, 1)),
-                )
+                DatoperiodeDto(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 8, 1))
             val periodeSomOverlapperFørsteOgAndrePeriode =
-                Underholdsperiode(
-                    Underholdselement.STØNAD_TIL_BARNETILSYN,
-                    DatoperiodeDto(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1)),
-                )
+                DatoperiodeDto(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1))
             val duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode =
-                Underholdsperiode(
-                    Underholdselement.STØNAD_TIL_BARNETILSYN,
-                    DatoperiodeDto(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1)),
-                )
+                DatoperiodeDto(LocalDate.of(2024, 3, 1), LocalDate.of(2024, 7, 1))
             val periodeSomIkkeOverlapperAndrePerioder =
-                Underholdsperiode(
-                    Underholdselement.STØNAD_TIL_BARNETILSYN,
-                    DatoperiodeDto(LocalDate.of(2024, 9, 2), LocalDate.of(2024, 11, 1)),
-                )
+                DatoperiodeDto(LocalDate.of(2024, 9, 2), LocalDate.of(2024, 11, 1))
 
             // hvis
             val resultat =
                 finneOverlappendePerioder(
-                    setOf(
+                    listOf(
                         periodeSomOverlapperFørstePeriode,
                         duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode,
                         periodeSomIkkeOverlapperAndrePerioder,
@@ -72,13 +55,13 @@ class ValideringTest {
                 shouldHaveSize(2)
             }
 
-            assertSoftly(resultat[førstePeriode]) {
+            assertSoftly(resultat.map { it.periode }) {
                 shouldNotBeNull()
                 shouldHaveSize(2)
                 contains(periodeSomOverlapperFørstePeriode) && contains(periodeSomOverlapperFørsteOgAndrePeriode)
             }
 
-            assertSoftly(resultat[periodeSomOverlapperFørstePeriode]) {
+            assertSoftly(resultat.map { it.periode }) {
                 shouldNotBeNull()
                 shouldHaveSize(1)
                 contains(periodeSomOverlapperFørsteOgAndrePeriode)
@@ -121,10 +104,10 @@ class ValideringTest {
             valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder shouldHaveSize 1
             valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
-                .periode.fom shouldBe fom
+                .fom shouldBe fom
             valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
-                .periode.tom shouldBe null
+                .tom shouldBe null
         }
 
         @Test
@@ -162,10 +145,10 @@ class ValideringTest {
             valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder shouldHaveSize 1
             valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
-                .periode.fom shouldBe fom
+                .fom shouldBe fom
             valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
                 .first()
-                .periode.tom shouldBe ugyldigTom
+                .tom shouldBe ugyldigTom
         }
 
         @Test
@@ -322,13 +305,13 @@ class ValideringTest {
             valideringsfeil.fremtidigePerioder shouldHaveSize 1
             valideringsfeil.fremtidigePerioder
                 .first()
-                .periode.fom shouldBe
+                .fom shouldBe
                 LocalDate
                     .now()
                     .withDayOfMonth(2)
             valideringsfeil.fremtidigePerioder
                 .first()
-                .periode.tom shouldBe null
+                .tom shouldBe null
         }
 
         @Test
@@ -431,7 +414,7 @@ class ValideringTest {
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 1
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift
                 .first()
-                .periode.fom shouldBe tilleggsstønad.first().fom
+                .fom shouldBe tilleggsstønad.first().fom
         }
 
         @Test
@@ -541,11 +524,11 @@ class ValideringTest {
             valideringsfeil.shouldNotBeNull()
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 2
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift
-                .minBy { it.periode.fom }
-                .periode.fom shouldBe fomdatoFørstePeriodeUtenTilsynsutgift
+                .minBy { it.fom }
+                .fom shouldBe fomdatoFørstePeriodeUtenTilsynsutgift
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift
-                .maxBy { it.periode.fom }
-                .periode.fom shouldBe fomdatoAndrePeriodeUtenTilsynsutgift
+                .maxBy { it.fom }
+                .fom shouldBe fomdatoAndrePeriodeUtenTilsynsutgift
         }
 
         @Test
@@ -586,11 +569,11 @@ class ValideringTest {
             valideringsfeil.tilleggsstønad.fremtidigePerioder shouldHaveSize 1
             valideringsfeil.tilleggsstønad.fremtidigePerioder
                 .first()
-                .periode.fom shouldBe tilleggsstønad.first().fom
+                .fom shouldBe tilleggsstønad.first().fom
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift shouldHaveSize 1
             valideringsfeil.tilleggsstønadsperioderUtenFaktiskTilsynsutgift
                 .first()
-                .periode.fom shouldBe tilleggsstønad.first().fom
+                .fom shouldBe tilleggsstønad.first().fom
         }
 
         @Test
@@ -677,7 +660,7 @@ class ValideringTest {
             valideringsfeil.tilleggsstønad.fremtidigePerioder.shouldHaveSize(1)
             valideringsfeil.tilleggsstønad.fremtidigePerioder
                 .first()
-                .periode.tom shouldBe LocalDate.now().withDayOfMonth(1)
+                .tom shouldBe LocalDate.now().withDayOfMonth(1)
         }
 
         @Test
@@ -739,19 +722,15 @@ class ValideringTest {
 
             assertSoftly(valideringsfeil.tilleggsstønad.overlappendePerioder) {
                 size shouldBe 1
-                keys shouldHaveSize 1
-                keys.first() shouldBe Underholdsperiode(Underholdselement.TILLEGGSSTØNAD, DatoperiodeDto(fom, tom))
-                values shouldHaveSize 1
+                first() shouldBe DatoperiodeDto(fom, tom)
             }
 
             assertSoftly(
-                valideringsfeil.tilleggsstønad.overlappendePerioder.entries
-                    .first()
-                    .value,
+                valideringsfeil.tilleggsstønad.overlappendePerioder.map { it.periode },
             ) {
                 shouldHaveSize(2)
-                minBy { it.periode.fom }.periode.fom shouldBe fomLavesteTilOverlappendePeriode
-                maxBy { it.periode.fom }.periode.fom shouldBe fomHøyesteTilOverlappendePeriode
+                minBy { it.fom }.fom shouldBe fomLavesteTilOverlappendePeriode
+                maxBy { it.fom }.fom shouldBe fomHøyesteTilOverlappendePeriode
             }
         }
     }

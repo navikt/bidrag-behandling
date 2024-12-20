@@ -18,8 +18,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
-import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
-import no.nav.bidrag.behandling.dto.v2.underhold.Underholdsperiode
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
@@ -40,20 +38,15 @@ const val ALDER_VED_SKOLESTART = 6L
 
 fun DatoperiodeDto.tilDatoperiode() = Datoperiode(fom = this.fom, til = this.tom?.plusDays(1))
 
-fun Set<Barnetilsyn>.barnetilsynTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
+fun Set<Barnetilsyn>.barnetilsynTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }
 
-fun Set<Barnetilsyn>.barnetilsynTilUnderholdsperioder() =
-    this.map { Underholdsperiode(Underholdselement.STØNAD_TIL_BARNETILSYN, DatoperiodeDto(it.fom, it.tom)) }.toSet()
+fun Set<Barnetilsyn>.barnetilsynTilUnderholdsperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }
 
-fun Set<FaktiskTilsynsutgift>.tilsynsutgiftTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
+fun Set<FaktiskTilsynsutgift>.tilsynsutgiftTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }
 
-fun Set<FaktiskTilsynsutgift>.tilFaktiskTilsynsutgiftUnderholdsperioder() =
-    this.map { Underholdsperiode(Underholdselement.FAKTISK_TILSYNSUTGIFT, DatoperiodeDto(it.fom, it.tom)) }.toSet()
+fun Set<Tilleggsstønad>.tilleggsstønadTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }
 
-fun Set<Tilleggsstønad>.tilleggsstønadTilDatoperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }.toSet()
-
-fun Set<Tilleggsstønad>.tilleggsstønadTilUnderholdsperioder() =
-    this.map { Underholdsperiode(Underholdselement.TILLEGGSSTØNAD, DatoperiodeDto(it.fom, it.tom)) }.toSet()
+fun Set<Tilleggsstønad>.tilleggsstønadTilUnderholdsperioder() = this.map { DatoperiodeDto(it.fom, it.tom) }
 
 fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
     StønadTilBarnetilsynDto(

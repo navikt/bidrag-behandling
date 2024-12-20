@@ -90,7 +90,7 @@ data class UnderholdskostnadValideringsfeil(
     val faktiskTilsynsutgift: UnderholdskostnadValideringsfeilTabell? = null,
     val stønadTilBarnetilsyn: UnderholdskostnadValideringsfeilTabell? = null,
     @Schema(description = "Tilleggsstønadsperioder som ikke overlapper fullstendig med faktiske tilsynsutgifter.")
-    val tilleggsstønadsperioderUtenFaktiskTilsynsutgift: Set<Underholdsperiode> = emptySet(),
+    val tilleggsstønadsperioderUtenFaktiskTilsynsutgift: Set<DatoperiodeDto> = emptySet(),
     @Schema(description = "Minst en periode må legges til hvis det ikke finnes noen offentlige opplysninger for stønad til barnetilsyn")
     val manglerPerioderForTilsynsordning: Boolean = false,
 ) {
@@ -122,9 +122,9 @@ data class UnderholdskostnadValideringsfeil(
 
 data class UnderholdskostnadValideringsfeilTabell(
     @Schema(description = "Overlappende perioder i stønad til barnetilsyn eller tillegsstønad.")
-    val overlappendePerioder: Map<Underholdsperiode, Set<Underholdsperiode>> = mapOf(),
+    val overlappendePerioder: List<OverlappendePeriode> = listOf(),
     @Schema(description = "Perioder som starter senere enn starten av dagens måned.")
-    val fremtidigePerioder: Set<Underholdsperiode> = setOf(),
+    val fremtidigePerioder: List<DatoperiodeDto> = listOf(),
     @Schema(description = """Er sann hvis antall perioder er 0."""")
     val harIngenPerioder: Boolean = false,
     @Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
@@ -138,6 +138,11 @@ data class UnderholdskostnadValideringsfeilTabell(
                 manglerPerioderForTilsynsutgifter ||
                 harIngenPerioder
 }
+
+data class OverlappendePeriode(
+    val periode: DatoperiodeDto,
+    val overlapperMedPerioder: List<DatoperiodeDto>,
+)
 
 data class BeregnetUnderholdskostnad(
     val gjelderBarn: PersoninfoDto,
