@@ -66,7 +66,7 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
         kilde = this.kilde,
     )
 
-fun Set<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = map { it.tilStønadTilBarnetilsynDto() }.toSet()
+fun Set<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = sortedBy { it.fom }.map { it.tilStønadTilBarnetilsynDto() }.toSet()
 
 fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
 

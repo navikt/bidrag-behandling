@@ -142,54 +142,51 @@ class UnderholdService(
     fun oppdatereStønadTilBarnetilsynManuelt(
         underholdskostnad: Underholdskostnad,
         request: StønadTilBarnetilsynDto,
-    ): Barnetilsyn {
+    ) {
         request.validerePerioderStønadTilBarnetilsyn(underholdskostnad)
 
-        val oppdatertBarnetilsyn: Barnetilsyn =
-            request.id?.let { id ->
-                val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
+        request.id?.let { id ->
+            val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
 
-                // dersom periode endres skal kilde alltid være manuell
-                if (barnetilsyn.fom != request.periode.fom || barnetilsyn.tom != request.periode.tom) {
-                    barnetilsyn.kilde = Kilde.MANUELL
-                }
-
-                barnetilsyn.fom = request.periode.fom
-                barnetilsyn.tom = request.periode.tom
-                barnetilsyn.under_skolealder =
-                    when (request.skolealder) {
-                        Skolealder.UNDER -> true
-                        Skolealder.OVER -> false
-                        else -> null
-                    }
-                barnetilsyn.omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT
-
-                barnetilsyn
-            } ?: run {
-                val barnetilsyn =
-                    Barnetilsyn(
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        under_skolealder =
-                            when (request.skolealder) {
-                                Skolealder.UNDER -> true
-                                Skolealder.OVER -> false
-                                else -> null
-                            },
-                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-                        kilde = Kilde.MANUELL,
-                        underholdskostnad = underholdskostnad,
-                    )
-                underholdskostnad.barnetilsyn.add(barnetilsyn)
-                underholdskostnad.harTilsynsordning = true
-                underholdskostnadRepository
-                    .save(underholdskostnad)
-                    .barnetilsyn
-                    .sortedBy { it.id }
-                    .last()
+            // dersom periode endres skal kilde alltid være manuell
+            if (barnetilsyn.fom != request.periode.fom || barnetilsyn.tom != request.periode.tom) {
+                barnetilsyn.kilde = Kilde.MANUELL
             }
 
-        return oppdatertBarnetilsyn
+            barnetilsyn.fom = request.periode.fom
+            barnetilsyn.tom = request.periode.tom
+            barnetilsyn.under_skolealder =
+                when (request.skolealder) {
+                    Skolealder.UNDER -> true
+                    Skolealder.OVER -> false
+                    else -> null
+                }
+            barnetilsyn.omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT
+
+            barnetilsyn
+        } ?: run {
+            val barnetilsyn =
+                Barnetilsyn(
+                    fom = request.periode.fom,
+                    tom = request.periode.tom,
+                    under_skolealder =
+                        when (request.skolealder) {
+                            Skolealder.UNDER -> true
+                            Skolealder.OVER -> false
+                            else -> null
+                        },
+                    omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
+                    kilde = Kilde.MANUELL,
+                    underholdskostnad = underholdskostnad,
+                )
+            underholdskostnad.barnetilsyn.add(barnetilsyn)
+            underholdskostnad.harTilsynsordning = true
+            underholdskostnadRepository
+                .save(underholdskostnad)
+                .barnetilsyn
+                .sortedBy { it.id }
+                .last()
+        }
     }
 
     fun oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
@@ -262,73 +259,58 @@ class UnderholdService(
     fun oppdatereFaktiskeTilsynsutgifter(
         underholdskostnad: Underholdskostnad,
         request: OppdatereFaktiskTilsynsutgiftRequest,
-    ): FaktiskTilsynsutgift {
+    ) {
         request.validere(underholdskostnad)
 
-        val oppdatertFaktiskTilsynsutgift =
-            request.id?.let { id ->
-                underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
-                val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }!!
-                faktiskTilsynsutgift.fom = request.periode.fom
-                faktiskTilsynsutgift.tom = request.periode.tom
-                faktiskTilsynsutgift.kostpenger = request.kostpenger
-                faktiskTilsynsutgift.tilsynsutgift = request.utgift
-                faktiskTilsynsutgift.kommentar = request.kommentar
-                faktiskTilsynsutgift
-            } ?: run {
-                val faktiskTilsynsutgift =
-                    FaktiskTilsynsutgift(
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        kostpenger = request.kostpenger,
-                        tilsynsutgift = request.utgift,
-                        kommentar = request.kommentar,
-                        underholdskostnad = underholdskostnad,
-                    )
-                underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
-                underholdskostnad.harTilsynsordning = true
-                underholdskostnadRepository
-                    .save(underholdskostnad)
-                    .faktiskeTilsynsutgifter
-                    .sortedBy { it.id }
-                    .last()
-            }
-        return oppdatertFaktiskTilsynsutgift
+        request.id?.let { id ->
+            underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
+            val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }!!
+            faktiskTilsynsutgift.fom = request.periode.fom
+            faktiskTilsynsutgift.tom = request.periode.tom
+            faktiskTilsynsutgift.kostpenger = request.kostpenger
+            faktiskTilsynsutgift.tilsynsutgift = request.utgift
+            faktiskTilsynsutgift.kommentar = request.kommentar
+            faktiskTilsynsutgift
+        } ?: run {
+            val faktiskTilsynsutgift =
+                FaktiskTilsynsutgift(
+                    fom = request.periode.fom,
+                    tom = request.periode.tom,
+                    kostpenger = request.kostpenger,
+                    tilsynsutgift = request.utgift,
+                    kommentar = request.kommentar,
+                    underholdskostnad = underholdskostnad,
+                )
+            underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
+            underholdskostnad.harTilsynsordning = true
+        }
     }
 
     @Transactional
     fun oppdatereTilleggsstønad(
         underholdskostnad: Underholdskostnad,
         request: OppdatereTilleggsstønadRequest,
-    ): Tilleggsstønad {
+    ) {
         request.validere(underholdskostnad)
 
-        val oppdatertTilleggsstønad =
-            request.id?.let { id ->
-                val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
-                tilleggsstønad.fom = request.periode.fom
-                tilleggsstønad.tom = request.periode.tom
-                tilleggsstønad.dagsats = request.dagsats
-                tilleggsstønad.underholdskostnad = underholdskostnad
-                tilleggsstønad
-            } ?: run {
-                val tilleggsstønad =
-                    Tilleggsstønad(
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        dagsats = request.dagsats,
-                        underholdskostnad = underholdskostnad,
-                    )
-                underholdskostnad.tilleggsstønad.add(tilleggsstønad)
-                underholdskostnad.harTilsynsordning = true
-                underholdskostnadRepository
-                    .save(underholdskostnad)
-                    .tilleggsstønad
-                    .sortedBy { it.id }
-                    .last()
-            }
-
-        return oppdatertTilleggsstønad
+        request.id?.let { id ->
+            val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
+            tilleggsstønad.fom = request.periode.fom
+            tilleggsstønad.tom = request.periode.tom
+            tilleggsstønad.dagsats = request.dagsats
+            tilleggsstønad.underholdskostnad = underholdskostnad
+            tilleggsstønad
+        } ?: run {
+            val tilleggsstønad =
+                Tilleggsstønad(
+                    fom = request.periode.fom,
+                    tom = request.periode.tom,
+                    dagsats = request.dagsats,
+                    underholdskostnad = underholdskostnad,
+                )
+            underholdskostnad.tilleggsstønad.add(tilleggsstønad)
+            underholdskostnad.harTilsynsordning = true
+        }
     }
 
     @Transactional

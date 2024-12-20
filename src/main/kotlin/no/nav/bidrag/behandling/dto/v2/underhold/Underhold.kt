@@ -19,11 +19,9 @@ data class OpprettUnderholdskostnadBarnResponse(
 )
 
 data class OppdatereUnderholdResponse(
-    val stønadTilBarnetilsyn: StønadTilBarnetilsynDto? = null,
-    val faktiskTilsynsutgift: FaktiskTilsynsutgiftDto? = null,
-    val tilleggsstønad: TilleggsstønadDto? = null,
-    @Deprecated("Bruk beregnetUnderholdskostnader")
-    val underholdskostnad: Set<UnderholdskostnadDto>,
+    val stønadTilBarnetilsyn: Set<StønadTilBarnetilsynDto> = emptySet(),
+    val faktiskTilsynsutgift: Set<FaktiskTilsynsutgiftDto> = emptySet(),
+    val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val valideringsfeil: Set<UnderholdskostnadValideringsfeil>? = null,
     val beregnetUnderholdskostnader: Set<BeregnetUnderholdskostnad>,
 )
@@ -85,7 +83,7 @@ data class Underholdsperiode(
 
 data class UnderholdskostnadValideringsfeil(
     @JsonIgnore
-    val gjelderUnderholdskostnad: Underholdskostnad,
+    val gjelderUnderholdskostnad: Underholdskostnad? = null,
     val tilleggsstønad: UnderholdskostnadValideringsfeilTabell? = null,
     val faktiskTilsynsutgift: UnderholdskostnadValideringsfeilTabell? = null,
     val stønadTilBarnetilsyn: UnderholdskostnadValideringsfeilTabell? = null,
@@ -102,15 +100,17 @@ data class UnderholdskostnadValideringsfeil(
                 stønadTilBarnetilsyn?.harFeil == true ||
                 tilleggsstønadsperioderUtenFaktiskTilsynsutgift.isNotEmpty() ||
                 manglerPerioderForTilsynsordning
-    val underholdskostnadsid get() = gjelderUnderholdskostnad.id
+    val underholdskostnadsid get() = gjelderUnderholdskostnad?.id ?: -1
     val barn
         get() =
-            UnderholdBarnDto(
-                navn = gjelderUnderholdskostnad.person.navn,
-                ident = gjelderUnderholdskostnad.person.personident?.verdi,
-                fødselsdato = gjelderUnderholdskostnad.person.henteFødselsdato!!,
-                medIBehandling = gjelderUnderholdskostnad.barnetsRolleIBehandlingen != null,
-            )
+            gjelderUnderholdskostnad?.let {
+                UnderholdBarnDto(
+                    navn = gjelderUnderholdskostnad.person.navn,
+                    ident = gjelderUnderholdskostnad.person.personident?.verdi,
+                    fødselsdato = gjelderUnderholdskostnad.person.henteFødselsdato!!,
+                    medIBehandling = gjelderUnderholdskostnad.barnetsRolleIBehandlingen != null,
+                )
+            } ?: UnderholdBarnDto(null, null, LocalDate.now(), false)
 
     data class UnderholdBarnDto(
         val navn: String?,

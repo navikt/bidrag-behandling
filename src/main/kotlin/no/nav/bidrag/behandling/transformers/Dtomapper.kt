@@ -183,13 +183,9 @@ class Dtomapper(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
             gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
-            faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.sortedBy { it.fom }.tilFaktiskeTilsynsutgiftDtos(),
-            stønadTilBarnetilsyn =
-                this.barnetilsyn
-                    .sortedBy { it.fom }
-                    .toSet()
-                    .tilStønadTilBarnetilsynDtos(),
-            tilleggsstønad = this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos(),
+            faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
+            stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
+            tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
             underholdskostnad = beregnetUnderholdskostnad,
             beregnetUnderholdskostnad = beregnetUnderholdskostnad,
             begrunnelse =
@@ -356,7 +352,7 @@ class Dtomapper(
             total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats),
         )
 
-    fun List<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()
+    fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()
 
     fun FaktiskTilsynsutgift.tilDto() =
         FaktiskTilsynsutgiftDto(
@@ -372,7 +368,7 @@ class Dtomapper(
                 ) ?: BigDecimal.ZERO,
         )
 
-    fun List<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilDto() }.toSet()
+    fun Set<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = sortedBy { it.fom }.map { it.tilDto() }.toSet()
 
     private fun Husstandsmedlem.boforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>): BoforholdBarn {
         val tilgangskontrollertPersoninfo =
