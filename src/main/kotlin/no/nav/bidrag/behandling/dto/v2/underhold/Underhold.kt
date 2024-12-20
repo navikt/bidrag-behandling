@@ -69,18 +69,6 @@ data class OppdatereBegrunnelseRequest(
     val begrunnelse: String,
 )
 
-data class Periodiseringsfeil(
-    val gjelderTabell: Underholdselement,
-    val overlappendePerioder: Map<DatoperiodeDto, Set<DatoperiodeDto>>,
-    val harFremtidigPeriode: Boolean,
-    val harIngenPerioder: Boolean,
-)
-
-data class Underholdsperiode(
-    val underholdselement: Underholdselement = Underholdselement.BARN,
-    val periode: DatoperiodeDto = DatoperiodeDto(LocalDate.now(), LocalDate.now()),
-)
-
 data class UnderholdskostnadValideringsfeil(
     @JsonIgnore
     val gjelderUnderholdskostnad: Underholdskostnad? = null,
@@ -91,6 +79,8 @@ data class UnderholdskostnadValideringsfeil(
     val tilleggsstønadsperioderUtenFaktiskTilsynsutgift: Set<DatoperiodeDto> = emptySet(),
     @Schema(description = "Minst en periode må legges til hvis det ikke finnes noen offentlige opplysninger for stønad til barnetilsyn")
     val manglerPerioderForTilsynsordning: Boolean = false,
+    @Schema(description = "Må ha fylt ut begrunnelse hvis minst en periode er lagt til underholdskostnad")
+    val manglerBegrunnelse: Boolean = false,
 ) {
     @get:JsonIgnore
     val harFeil
@@ -99,6 +89,7 @@ data class UnderholdskostnadValideringsfeil(
                 faktiskTilsynsutgift?.harFeil == true ||
                 stønadTilBarnetilsyn?.harFeil == true ||
                 tilleggsstønadsperioderUtenFaktiskTilsynsutgift.isNotEmpty() ||
+                manglerBegrunnelse ||
                 manglerPerioderForTilsynsordning
     val underholdskostnadsid get() = gjelderUnderholdskostnad?.id ?: -1
     val barn

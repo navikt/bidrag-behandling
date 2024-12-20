@@ -18,7 +18,9 @@ import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeilTabell
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
+import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
@@ -139,61 +141,67 @@ fun List<DatoperiodeDto>.finneFremtidigePerioder() =
                 ) ?: false
         }.map { it }
 
-fun finneOverlappendePerioder(perioder: List<DatoperiodeDto>): List<OverlappendePeriode> =
-    perioder.sortedBy { it.fom }.mapIndexedNotNull { index, gjeldendePeriode ->
+fun List<DatoperiodeDto>.finneOverlappendePerioder(): List<OverlappendePeriode> {
+    val allePerioderSomOverlapper = mutableListOf<DatoperiodeDto>()
+    return sortedBy { it.fom }.mapIndexedNotNull { index, gjeldendePeriode ->
         val overlappendePerioder: MutableList<DatoperiodeDto> = mutableListOf()
-        perioder.drop(index + 1).forEachIndexed { indexNestePeriode, nestePeriode ->
+        sortedBy { it.fom }.drop(index + 1).forEachIndexed { indexNestePeriode, nestePeriode ->
             // Korrigerer feil i no.nav.bidrag.domene.tid.Periode.overlapper (per 17.12.2024)
+            if (allePerioderSomOverlapper.contains(nestePeriode)) return@forEachIndexed
             val korrigertPeriode =
                 gjeldendePeriode.tilDatoperiode().copy(til = gjeldendePeriode.tom?.minusDays(1))
             val overlapper = nestePeriode.tilDatoperiode().overlapper(korrigertPeriode)
             if (overlapper) {
+                allePerioderSomOverlapper.add(nestePeriode)
                 overlappendePerioder.add(nestePeriode)
             }
         }
         if (overlappendePerioder.isNotEmpty()) OverlappendePeriode(gjeldendePeriode, overlappendePerioder) else null
     }
+}
 
 fun Set<Barnetilsyn>.validerePerioderBarnetilsyn() =
-    if (isEmpty()) {
-        null
-    } else {
-        val overlappendePerioder = finneOverlappendePerioder(this.barnetilsynTilUnderholdsperioder())
-        val fremtidigePerioder =
-            this.barnetilsynTilDatoperioder().finneFremtidigePerioder()
 
-        UnderholdskostnadValideringsfeilTabell(
-            overlappendePerioder = overlappendePerioder,
-            fremtidigePerioder = fremtidigePerioder,
-        )
-    }
+    UnderholdskostnadValideringsfeilTabell(
+        overlappendePerioder = barnetilsynTilDatoperioder().finneOverlappendePerioder(),
+        fremtidigePerioder = barnetilsynTilDatoperioder().finneFremtidigePerioder(),
+    )
 
-fun Set<FaktiskTilsynsutgift>.validerePerioderFaktiskTilsynsutgift() =
-    if (isEmpty()) {
-        null
-    } else {
-        val fremtidigePerioder =
-            this.tilsynsutgiftTilDatoperioder().finneFremtidigePerioder()
-
-        UnderholdskostnadValideringsfeilTabell(
-            fremtidigePerioder = fremtidigePerioder,
-        )
-    }
+fun Set<FaktiskTilsynsutgift>.validerePerioderFaktiskTilsynsutgift(): UnderholdskostnadValideringsfeilTabell =
+    UnderholdskostnadValideringsfeilTabell(
+        fremtidigePerioder = tilsynsutgiftTilDatoperioder().finneFremtidigePerioder(),
+    )
 
 fun Set<Underholdskostnad>.valider() = this.map { it.valider() }.filter { it.harFeil }.toSet()
 
 fun Underholdskostnad.valider(): UnderholdskostnadValideringsfeil =
     UnderholdskostnadValideringsfeil(
         gjelderUnderholdskostnad = this,
-        stønadTilBarnetilsyn = barnetilsyn.validerePerioderBarnetilsyn()?.takeIf { it.harFeil },
-        tilleggsstønad = tilleggsstønad.validerePerioderTilleggsstønad()?.takeIf { it.harFeil },
-        faktiskTilsynsutgift = faktiskeTilsynsutgifter.validerePerioderFaktiskTilsynsutgift()?.takeIf { it.harFeil },
+        stønadTilBarnetilsyn = barnetilsyn.validerePerioderBarnetilsyn().takeIf { it.harFeil },
+        tilleggsstønad = tilleggsstønad.validerePerioderTilleggsstønad().takeIf { it.harFeil },
+        faktiskTilsynsutgift = faktiskeTilsynsutgifter.validerePerioderFaktiskTilsynsutgift().takeIf { it.harFeil },
         tilleggsstønadsperioderUtenFaktiskTilsynsutgift =
             tilleggsstønad.finneTilleggsstønadsperioderSomIkkeOverlapperMedFaktiskTilsynsutgiftsperioder(
                 faktiskeTilsynsutgifter,
             ),
         manglerPerioderForTilsynsordning = manglerPerioderForTilsynsordning(),
+        manglerBegrunnelse = manglerBegrunnelse(),
     )
+
+fun Underholdskostnad.manglerBegrunnelse(): Boolean {
+    val begrunnelse =
+        NotatService.henteUnderholdsnotat(
+            this.behandling,
+            barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+        )
+    if (!begrunnelse.isNullOrEmpty()) return false
+    return this.harTilsynsordning == true &&
+        (
+            this.barnetilsyn.any { it.kilde == Kilde.MANUELL } ||
+                this.faktiskeTilsynsutgifter.isNotEmpty() ||
+                this.tilleggsstønad.isNotEmpty()
+        )
+}
 
 fun Underholdskostnad.manglerPerioderForTilsynsordning(): Boolean {
     val harOffentligeOpplysninger = hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
@@ -205,18 +213,10 @@ fun Underholdskostnad.manglerPerioderForTilsynsordning(): Boolean {
 }
 
 fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad() =
-    if (isEmpty()) {
-        null
-    } else {
-        val fremtidigePerioder =
-            this.tilleggsstønadTilDatoperioder().finneFremtidigePerioder()
-        val overlappendePerioder = finneOverlappendePerioder(this.tilleggsstønadTilUnderholdsperioder())
-
-        UnderholdskostnadValideringsfeilTabell(
-            fremtidigePerioder = fremtidigePerioder,
-            overlappendePerioder = overlappendePerioder,
-        )
-    }
+    UnderholdskostnadValideringsfeilTabell(
+        fremtidigePerioder = tilleggsstønadTilDatoperioder().finneFremtidigePerioder(),
+        overlappendePerioder = tilleggsstønadTilUnderholdsperioder().finneOverlappendePerioder(),
+    )
 
 /*
 fun Underholdskostnad.validerePerioder(perioderUnderholdskostnadDto: Set<UnderholdskostnadDto>) =

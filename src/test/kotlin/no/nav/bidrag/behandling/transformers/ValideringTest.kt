@@ -28,15 +28,13 @@ class ValideringTest {
 
             // hvis
             val resultat =
-                finneOverlappendePerioder(
-                    listOf(
-                        periodeSomOverlapperFørstePeriode,
-                        duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode,
-                        periodeSomIkkeOverlapperAndrePerioder,
-                        førstePeriode,
-                        periodeSomOverlapperFørsteOgAndrePeriode,
-                    ),
-                )
+                listOf(
+                    periodeSomOverlapperFørstePeriode,
+                    duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode,
+                    periodeSomIkkeOverlapperAndrePerioder,
+                    førstePeriode,
+                    periodeSomOverlapperFørsteOgAndrePeriode,
+                ).finneOverlappendePerioder()
 
             // så
             assertSoftly(resultat) {

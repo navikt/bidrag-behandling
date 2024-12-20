@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.transformers.underhold
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -39,32 +41,25 @@ class ValideringTest {
 
             // hvis
             val resultat =
-                finneOverlappendePerioder(
-                    listOf(
-                        periodeSomOverlapperFørstePeriode,
-                        duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode,
-                        periodeSomIkkeOverlapperAndrePerioder,
-                        førstePeriode,
-                        periodeSomOverlapperFørsteOgAndrePeriode,
-                    ),
-                )
+                listOf(
+                    periodeSomOverlapperFørstePeriode,
+                    duplikatAvPeriodeSomOverlapperFørsteOgAndrePeriode,
+                    periodeSomIkkeOverlapperAndrePerioder,
+                    førstePeriode,
+                    periodeSomOverlapperFørsteOgAndrePeriode,
+                ).finneOverlappendePerioder()
 
             // så
             assertSoftly(resultat) {
                 shouldNotBeNull()
-                shouldHaveSize(2)
-            }
-
-            assertSoftly(resultat.map { it.periode }) {
-                shouldNotBeNull()
-                shouldHaveSize(2)
-                contains(periodeSomOverlapperFørstePeriode) && contains(periodeSomOverlapperFørsteOgAndrePeriode)
-            }
-
-            assertSoftly(resultat.map { it.periode }) {
-                shouldNotBeNull()
                 shouldHaveSize(1)
-                contains(periodeSomOverlapperFørsteOgAndrePeriode)
+            }
+
+            assertSoftly(resultat.first()) {
+                it.overlapperMedPerioder.shouldHaveSize(2)
+                it.periode.shouldBe(førstePeriode)
+                it.overlapperMedPerioder.shouldContain(periodeSomOverlapperFørstePeriode)
+                it.overlapperMedPerioder.shouldContain(periodeSomOverlapperFørsteOgAndrePeriode)
             }
         }
     }
@@ -369,7 +364,7 @@ class ValideringTest {
             val valideringsfeil = faktiskeTilsynsutgifter.validerePerioderFaktiskTilsynsutgift()
 
             // så
-            valideringsfeil.shouldBeNull()
+            valideringsfeil.harFeil.shouldBeFalse()
         }
     }
 
@@ -720,17 +715,16 @@ class ValideringTest {
             // så
             valideringsfeil.tilleggsstønad.shouldNotBeNull()
 
-            assertSoftly(valideringsfeil.tilleggsstønad.overlappendePerioder) {
-                size shouldBe 1
-                first() shouldBe DatoperiodeDto(fom, tom)
-            }
-
             assertSoftly(
-                valideringsfeil.tilleggsstønad.overlappendePerioder.map { it.periode },
+                valideringsfeil.tilleggsstønad,
             ) {
-                shouldHaveSize(2)
-                minBy { it.fom }.fom shouldBe fomLavesteTilOverlappendePeriode
-                maxBy { it.fom }.fom shouldBe fomHøyesteTilOverlappendePeriode
+                it.overlappendePerioder.shouldHaveSize(1)
+                assertSoftly(it.overlappendePerioder.first()) {
+                    it.overlapperMedPerioder.shouldHaveSize(2)
+                    it.overlapperMedPerioder.shouldContain(DatoperiodeDto(fomLavesteTilOverlappendePeriode, fomHøyesteTilOverlappendePeriode.minusDays(1)))
+                    it.overlapperMedPerioder.shouldContain(DatoperiodeDto(fomHøyesteTilOverlappendePeriode, null))
+                    it.periode shouldBe DatoperiodeDto(fom, tom)
+                }
             }
         }
     }
