@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.controller
 
-import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
@@ -247,14 +248,12 @@ class VedtakControllerTest : KontrollerTestRunner() {
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
                 null,
-                Any::class.java,
+                BeregningValideringsfeil::class.java,
             )
 
         response.statusCode shouldBe HttpStatus.BAD_REQUEST
         response.headers[HttpHeaders.WARNING]!!.first() shouldContain "Validering feilet - Feil ved validering av behandling for beregning"
-        assertSoftly((response.body as LinkedHashMap<*, *>)["måBekrefteNyeOpplysninger"] as ArrayList<*>) {
-            (first() as LinkedHashMap<*, *>)["type"] as String shouldBe Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER.name
-        }
+        response.body!!.måBekrefteNyeOpplysninger.map { it.type } shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
     @Test
@@ -284,14 +283,12 @@ class VedtakControllerTest : KontrollerTestRunner() {
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
                 null,
-                Any::class.java,
+                BeregningValideringsfeil::class.java,
             )
 
         response.statusCode shouldBe HttpStatus.BAD_REQUEST
         response.headers[HttpHeaders.WARNING]!!.first() shouldContain "Validering feilet - Feil ved validering av behandling for beregning"
-        assertSoftly((response.body as LinkedHashMap<*, *>)["måBekrefteNyeOpplysninger"] as ArrayList<*>) {
-            (first() as LinkedHashMap<*, *>)["type"] as String shouldBe Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER.name
-        }
+        response.body!!.måBekrefteNyeOpplysninger.map { it.type } shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
     private fun save(behandling: Behandling) {

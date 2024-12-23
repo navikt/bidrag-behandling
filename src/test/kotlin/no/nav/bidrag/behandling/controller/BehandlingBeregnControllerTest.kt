@@ -3,8 +3,6 @@ package no.nav.bidrag.behandling.controller
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.maps.shouldHaveSize
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
@@ -188,33 +186,24 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
             returnert shouldNotBe null
             returnert.statusCode shouldBe HttpStatus.BAD_REQUEST
             returnert.body shouldNotBe null
-        }
-
-        val body = returnert.body as LinkedHashMap<*, *>
-
-        body["virkningstidspukt"] shouldBe null
-        body["husstandsmedlem"] shouldBe null
-        body["sivilstand"] shouldNotBe null
-
-        assertSoftly(body["sivilstand"] as LinkedHashMap<*, *>) {
-            shouldNotBeNull()
-            get("hullIPerioder") shouldNotBe null
-            get("hullIPerioder") as ArrayList<*> shouldHaveSize 0
-            get("overlappendePerioder") shouldNotBe null
-            get("overlappendePerioder") as ArrayList<*> shouldHaveSize 0
-            get("fremtidigPeriode") as Boolean shouldBe false
-            get("manglerPerioder") as Boolean shouldBe true
-            get("ingenLøpendePeriode") as Boolean shouldBe false
-        }
-
-        assertSoftly(body["inntekter"] as LinkedHashMap<*, *>) {
-            shouldHaveSize(5)
-            get("barnetillegg") shouldBe null
-            get("utvidetBarnetrygd") shouldBe null
-            get("kontantstøtte") shouldBe null
-            get("småbarnstillegg") shouldBe null
-            get("årsinntekter") shouldNotBe null
-            get("årsinntekter") as ArrayList<*> shouldHaveSize 1
+            returnert.body!!.virkningstidspunkt shouldBe null
+            returnert.body!!.husstandsmedlem shouldBe null
+            returnert.body!!.sivilstand shouldNotBe null
+            assertSoftly(returnert.body!!.sivilstand!!) {
+                hullIPerioder shouldHaveSize 0
+                overlappendePerioder shouldHaveSize 0
+                fremtidigPeriode shouldBe false
+                manglerPerioder shouldBe true
+                ingenLøpendePeriode shouldBe false
+            }
+            assertSoftly(returnert.body!!.inntekter!!) {
+                barnetillegg shouldBe null
+                utvidetBarnetrygd shouldBe null
+                kontantstøtte shouldBe null
+                småbarnstillegg shouldBe null
+                årsinntekter shouldNotBe null
+                årsinntekter!! shouldHaveSize 1
+            }
         }
     }
 

@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -12,7 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
+import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -29,6 +28,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.ident.Personident
@@ -64,92 +64,54 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/" + behandling.id,
                 HttpMethod.GET,
                 null,
-                BeregningValideringsfeil::class.java,
+                BehandlingDtoV2::class.java,
             )
 
         // så
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
-        val inntekter = (behandlingRes.body as LinkedHashMap<*, *>)["inntekter"] as LinkedHashMap<*, *>
-        inntekter shouldHaveSize (10)
+        assertSoftly(behandlingRes.body!!) {
+            it.inntekter.beregnetInntekter shouldHaveSize 3
+            val beregnetInntekterBM =
+                it.inntekter.beregnetInntekter.find { it.rolle == Rolletype.BIDRAGSMOTTAKER }!!
+            beregnetInntekterBM.inntekter shouldHaveSize 3
+            val inntekterAlle =
+                beregnetInntekterBM.inntekter.find { it.inntektGjelderBarnIdent == null }
+            val inntekterBarn1 =
+                beregnetInntekterBM.inntekter.hentInntektForBarn(testdataBarn1.ident)
+            val inntekterBarn2 =
+                beregnetInntekterBM.inntekter.hentInntektForBarn(testdataBarn2.ident)
+            inntekterAlle.shouldNotBeNull()
+            inntekterBarn1.shouldNotBeNull()
+            inntekterBarn2.shouldNotBeNull()
 
-        val beregnaInntekter = inntekter["beregnetInntekter"] as ArrayList<*>
-        beregnaInntekter shouldHaveSize 3
-
-        val beregnaInntekterBm = beregnaInntekter.filter { (it as LinkedHashMap<*, *>)["rolle"] == "BM" } as ArrayList<*>
-
-        assertSoftly((beregnaInntekterBm.first() as LinkedHashMap<*, *>)["inntekter"] as ArrayList<*>) {
-            shouldHaveSize(3)
-            val inntekterIkkeBarn = find { (it as LinkedHashMap<*, *>)["inntektGjelderBarnIdent"] == null }
-            val inntekterBa1 = find { (it as LinkedHashMap<*, *>)["inntektGjelderBarnIdent"] != null && it["inntektGjelderBarnIdent"] as String == testdataBarn1.ident }
-            val inntekterBa2 = find { (it as LinkedHashMap<*, *>)["inntektGjelderBarnIdent"] != null && it["inntektGjelderBarnIdent"] as String == testdataBarn2.ident }
-
-            inntekterIkkeBarn.shouldNotBeNull()
-            inntekterBa1.shouldNotBeNull()
-            inntekterBa2.shouldNotBeNull()
-
-            assertSoftly(inntekterIkkeBarn as LinkedHashMap<*, *>) {
-                get("summertInntektListe") as ArrayList<*> shouldHaveSize 3
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["skattepliktigInntekt"] as Int shouldBe 55000
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["barnetillegg"] shouldBe null
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["kontantstøtte"] shouldBe null
+            assertSoftly(it.inntekter.barnetillegg.toList()) {
+                this shouldHaveSize 2
+                this[0].gjelderBarn shouldBe Personident(testdataBarn1.ident)
+                this[0].inntektsposter shouldHaveSize 1
+                this[0].inntektsposter.first().beløp shouldBe this[0].beløp
+                this[0].inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
             }
 
-            assertSoftly(inntekterBa1 as LinkedHashMap<*, *>) {
-                get("summertInntektListe") as ArrayList<*> shouldHaveSize 5
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["skattepliktigInntekt"] as Int shouldBe 55000
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["barnetillegg"] as Int shouldBe 5000
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["kontantstøtte"] shouldBe null
+            assertSoftly(inntekterAlle) {
+                summertInntektListe shouldHaveSize 3
+                summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
+                summertInntektListe[0].barnetillegg shouldBe null
+                summertInntektListe[0].kontantstøtte shouldBe null
             }
-
-            assertSoftly(inntekterBa2 as LinkedHashMap<*, *>) {
-                get("summertInntektListe") as ArrayList<*> shouldHaveSize 3
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["skattepliktigInntekt"] as Int shouldBe 55000
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["barnetillegg"] shouldBe null
-                ((get("summertInntektListe") as ArrayList<*>).first() as LinkedHashMap<*, *>)["kontantstøtte"] shouldBe null
+            assertSoftly(inntekterBarn2) {
+                summertInntektListe shouldHaveSize 3
+                summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
+                summertInntektListe[0].barnetillegg shouldBe null
+                summertInntektListe[0].kontantstøtte shouldBe null
+            }
+            assertSoftly(inntekterBarn1) {
+                summertInntektListe shouldHaveSize 5
+                summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
+                summertInntektListe[0].barnetillegg shouldBe BigDecimal(5000)
+                summertInntektListe[0].kontantstøtte shouldBe null
             }
         }
-
-        assertSoftly(inntekter["barnetillegg"] as ArrayList<*>) {
-            shouldHaveSize(2)
-
-            (first() as LinkedHashMap<*, *>)["gjelderBarn"] as String shouldBe Personident(testdataBarn1.ident).verdi
-            (first() as LinkedHashMap<*, *>)["inntektsposter"] as ArrayList<*> shouldHaveSize 1
-            (((first() as LinkedHashMap<*, *>)["inntektsposter"] as ArrayList<*>).first() as LinkedHashMap<*, *>)["beløp"] as Int shouldBe (first() as LinkedHashMap<*, *>)["beløp"] as Int
-            (((first() as LinkedHashMap<*, *>)["inntektsposter"] as ArrayList<*>).first() as LinkedHashMap<*, *>)["inntektstype"] as String shouldBe Inntektstype.BARNETILLEGG_PENSJON.name
-        }
-
-        /*
-                assertSoftly(behandlingRes.body!!) {
-
-                    assertSoftly(it.inntekter.barnetillegg.toList()) {
-                        this shouldHaveSize 2
-                        this[0].gjelderBarn shouldBe Personident(testdataBarn1.ident)
-                        this[0].inntektsposter shouldHaveSize 1
-                        this[0].inntektsposter.first().beløp shouldBe this[0].beløp
-                        this[0].inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
-                    }
-
-                    assertSoftly(inntekterAlle) {
-                        summertInntektListe shouldHaveSize 3
-                        summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
-                        summertInntektListe[0].barnetillegg shouldBe null
-                        summertInntektListe[0].kontantstøtte shouldBe null
-                    }
-                    assertSoftly(inntekterBarn2) {
-                        summertInntektListe shouldHaveSize 3
-                        summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
-                        summertInntektListe[0].barnetillegg shouldBe null
-                        summertInntektListe[0].kontantstøtte shouldBe null
-                    }
-                    assertSoftly(inntekterBarn1) {
-                        summertInntektListe shouldHaveSize 5
-                        summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
-                        summertInntektListe[0].barnetillegg shouldBe BigDecimal(5000)
-                        summertInntektListe[0].kontantstøtte shouldBe null
-                    }
-                }
-         */
     }
 
     @Test
@@ -179,20 +141,21 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/" + behandling.id,
                 HttpMethod.GET,
                 null,
-                Any::class.java,
+                BehandlingDtoV2::class.java,
             )
 
         // så
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
-        assertSoftly((behandlingRes.body as LinkedHashMap<*, *>)["utgift"] as LinkedHashMap<*, *>) {
-            get("avslag") as String shouldBe Resultatkode.ALLE_UTGIFTER_ER_FORELDET.name
+        assertSoftly(behandlingRes.body!!) {
+            it.utgift!!.avslag shouldBe Resultatkode.ALLE_UTGIFTER_ER_FORELDET
         }
     }
 
     @Test
     fun `skal hente behandling særbidrag med avslag godkjent beløp lavere enn forskuddsats`() {
         // gitt
+
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal.ZERO
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
@@ -216,14 +179,14 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 "${rootUriV2()}/behandling/" + behandling.id,
                 HttpMethod.GET,
                 null,
-                Any::class.java,
+                BehandlingDtoV2::class.java,
             )
 
         // så
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
 
-        assertSoftly((behandlingRes.body as LinkedHashMap<*, *>)["utgift"] as LinkedHashMap<*, *>) {
-            get("avslag") as String shouldBe Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS.name
+        assertSoftly(behandlingRes.body!!) {
+            it.utgift!!.avslag shouldBe Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS
         }
     }
 

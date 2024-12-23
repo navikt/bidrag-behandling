@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -39,19 +40,13 @@ class ValideringTest {
             // så
             assertSoftly(resultat) {
                 shouldNotBeNull()
-                shouldHaveSize(2)
-            }
-
-            assertSoftly(resultat.map { it.periode }) {
-                shouldNotBeNull()
-                shouldHaveSize(2)
-                contains(periodeSomOverlapperFørstePeriode) && contains(periodeSomOverlapperFørsteOgAndrePeriode)
-            }
-
-            assertSoftly(resultat.map { it.periode }) {
-                shouldNotBeNull()
                 shouldHaveSize(1)
-                contains(periodeSomOverlapperFørsteOgAndrePeriode)
+            }
+
+            assertSoftly(resultat.first()) {
+                shouldNotBeNull()
+                it.overlapperMedPerioder.shouldContain(periodeSomOverlapperFørstePeriode)
+                it.overlapperMedPerioder.shouldContain(periodeSomOverlapperFørsteOgAndrePeriode)
             }
         }
     }
