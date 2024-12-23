@@ -23,7 +23,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
-import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag
@@ -52,7 +51,6 @@ class UnderholdService(
     private val underholdskostnadRepository: UnderholdskostnadRepository,
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
-    private val dtomapper: Dtomapper,
     private val personService: PersonService,
 ) {
     fun oppdatereBegrunnelse(
@@ -181,11 +179,6 @@ class UnderholdService(
                 )
             underholdskostnad.barnetilsyn.add(barnetilsyn)
             underholdskostnad.harTilsynsordning = true
-            underholdskostnadRepository
-                .save(underholdskostnad)
-                .barnetilsyn
-                .sortedBy { it.id }
-                .last()
         }
     }
 

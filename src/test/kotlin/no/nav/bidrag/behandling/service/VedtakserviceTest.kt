@@ -169,7 +169,6 @@ class VedtakserviceTest : TestContainerRunner() {
                 underholdskostnadRepository,
                 personRepository,
                 notatService,
-                dtomapper,
                 personService,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService)
