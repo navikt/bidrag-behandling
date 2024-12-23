@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfei
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
@@ -219,6 +220,9 @@ fun StønadTilBarnetilsynDto.validerePerioderStønadTilBarnetilsyn(underholdskos
             ressursIkkeFunnetException("Fant ikke barnetilsyn med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
+    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+        ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
+    }
 }
 
 fun OppdatereFaktiskTilsynsutgiftRequest.validere(underholdskostnad: Underholdskostnad) {
@@ -227,6 +231,9 @@ fun OppdatereFaktiskTilsynsutgiftRequest.validere(underholdskostnad: Underholdsk
             ressursIkkeFunnetException("Fant ikke faktisk tilsynsutgift med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
+    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+        ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
+    }
 }
 
 fun OppdatereTilleggsstønadRequest.validere(underholdskostnad: Underholdskostnad) {
@@ -234,6 +241,9 @@ fun OppdatereTilleggsstønadRequest.validere(underholdskostnad: Underholdskostna
         if (id > 0 && underholdskostnad.tilleggsstønad.find { id == it.id } == null) {
             ressursIkkeFunnetException("Fant ikke tilleggsstønad med id $id i behandling ${underholdskostnad.behandling.id}")
         }
+    }
+    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+        ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
     }
 }
 

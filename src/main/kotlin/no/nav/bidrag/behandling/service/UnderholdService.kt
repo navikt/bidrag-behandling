@@ -258,23 +258,27 @@ class UnderholdService(
                     underholdskostnad = underholdskostnad,
                 ),
             )
-//            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode)) {
-//                underholdskostnad.barnetilsyn.add(
-//                    Barnetilsyn(
-//                        fom = periodeFomJuli,
-//                        tom = request.periode.tom,
-//                        under_skolealder =
-//                            when (request.skolealder) {
-//                                Skolealder.UNDER -> true
-//                                Skolealder.OVER -> false
-//                                else -> null
-//                            },
-//                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-//                        kilde = kilde,
-//                        underholdskostnad = underholdskostnad,
-//                    ),
-//                )
-//            }
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+                underholdskostnad.barnetilsyn.none {
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                }
+            ) {
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        fom = periodeFomJuli,
+                        tom = request.periode.tom,
+                        under_skolealder =
+                            when (request.skolealder) {
+                                Skolealder.UNDER -> true
+                                Skolealder.OVER -> false
+                                else -> null
+                            },
+                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
+                        kilde = kilde,
+                        underholdskostnad = underholdskostnad,
+                    ),
+                )
+            }
             underholdskostnad.harTilsynsordning = true
         }
     }
@@ -306,18 +310,22 @@ class UnderholdService(
                     underholdskostnad = underholdskostnad,
                 ),
             )
-//            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode)) {
-//                underholdskostnad.faktiskeTilsynsutgifter.add(
-//                    FaktiskTilsynsutgift(
-//                        fom = periodeFomJuli,
-//                        tom = request.periode.tom,
-//                        kostpenger = request.kostpenger,
-//                        tilsynsutgift = request.utgift,
-//                        kommentar = request.kommentar,
-//                        underholdskostnad = underholdskostnad,
-//                    ),
-//                )
-//            }
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+                underholdskostnad.faktiskeTilsynsutgifter.none {
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                }
+            ) {
+                underholdskostnad.faktiskeTilsynsutgifter.add(
+                    FaktiskTilsynsutgift(
+                        fom = periodeFomJuli,
+                        tom = request.periode.tom,
+                        kostpenger = request.kostpenger,
+                        tilsynsutgift = request.utgift,
+                        kommentar = request.kommentar,
+                        underholdskostnad = underholdskostnad,
+                    ),
+                )
+            }
             underholdskostnad.harTilsynsordning = true
         }
     }
@@ -345,16 +353,20 @@ class UnderholdService(
                     underholdskostnad = underholdskostnad,
                 ),
             )
-//            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode)) {
-//                underholdskostnad.tilleggsstønad.add(
-//                    Tilleggsstønad(
-//                        fom = periodeFomJuli,
-//                        tom = request.periode.tom,
-//                        dagsats = request.dagsats,
-//                        underholdskostnad = underholdskostnad,
-//                    ),
-//                )
-//            }
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+                underholdskostnad.tilleggsstønad.none {
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                }
+            ) {
+                underholdskostnad.tilleggsstønad.add(
+                    Tilleggsstønad(
+                        fom = periodeFomJuli,
+                        tom = request.periode.tom,
+                        dagsats = request.dagsats,
+                        underholdskostnad = underholdskostnad,
+                    ),
+                )
+            }
             underholdskostnad.harTilsynsordning = true
         }
     }
