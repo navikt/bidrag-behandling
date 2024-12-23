@@ -1869,6 +1869,7 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
             this,
             periodeFraAntallMndTilbake = 13,
         ),
+    leggTilBarnetilsyn: Boolean = true,
 ) {
     this.grunnlag.add(
         Grunnlag(
@@ -1895,12 +1896,14 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
         ),
     )
 
-    this.grunnlag
-        .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
-        .forEach { g ->
-            val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
-            g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
-        }
+    if (leggTilBarnetilsyn) {
+        this.grunnlag
+            .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
+            .forEach { g ->
+                val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
+                g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
+            }
+    }
 }
 
 fun Behandling.leggeTilNyttBarnetilsyn(

@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -37,6 +38,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -142,15 +144,18 @@ class UnderholdService(
         request: StønadTilBarnetilsynDto,
     ) {
         request.validerePerioderStønadTilBarnetilsyn(underholdskostnad)
-
+        val offentligBarnetilsyn = underholdskostnad.hentSisteBearbeidetBarnetilsyn() ?: emptyList()
+        val overlapperMedOffentligPeriode =
+            offentligBarnetilsyn.any {
+                val periode = Datoperiode(it.periodeFra, it.periodeTil)
+                val forespørselPeriode = Datoperiode(request.periode.fom, request.periode.tom)
+                periode.inneholder(forespørselPeriode)
+            }
+        val kilde = if (overlapperMedOffentligPeriode) Kilde.OFFENTLIG else Kilde.MANUELL
         request.id?.let { id ->
             val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
 
-            // dersom periode endres skal kilde alltid være manuell
-            if (barnetilsyn.fom != request.periode.fom || barnetilsyn.tom != request.periode.tom) {
-                barnetilsyn.kilde = Kilde.MANUELL
-            }
-
+            barnetilsyn.kilde = kilde
             barnetilsyn.fom = request.periode.fom
             barnetilsyn.tom = request.periode.tom
             barnetilsyn.under_skolealder =
@@ -174,7 +179,7 @@ class UnderholdService(
                             else -> null
                         },
                     omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-                    kilde = Kilde.MANUELL,
+                    kilde = kilde,
                     underholdskostnad = underholdskostnad,
                 )
             underholdskostnad.barnetilsyn.add(barnetilsyn)
