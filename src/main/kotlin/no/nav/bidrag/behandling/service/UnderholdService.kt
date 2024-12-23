@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
-import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -17,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
@@ -38,12 +38,13 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Period
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
@@ -144,18 +145,15 @@ class UnderholdService(
         request: StønadTilBarnetilsynDto,
     ) {
         request.validerePerioderStønadTilBarnetilsyn(underholdskostnad)
-        val offentligBarnetilsyn = underholdskostnad.hentSisteBearbeidetBarnetilsyn() ?: emptyList()
-        val overlapperMedOffentligPeriode =
-            offentligBarnetilsyn.any {
-                val periode = Datoperiode(it.periodeFra, it.periodeTil)
-                val forespørselPeriode = Datoperiode(request.periode.fom, request.periode.tom)
-                periode.inneholder(forespørselPeriode)
-            }
-        val kilde = if (overlapperMedOffentligPeriode) Kilde.OFFENTLIG else Kilde.MANUELL
+
         request.id?.let { id ->
             val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
 
-            barnetilsyn.kilde = kilde
+            // dersom periode endres skal kilde alltid være manuell
+            if (barnetilsyn.fom != request.periode.fom || barnetilsyn.tom != request.periode.tom) {
+                barnetilsyn.kilde = Kilde.MANUELL
+            }
+
             barnetilsyn.fom = request.periode.fom
             barnetilsyn.tom = request.periode.tom
             barnetilsyn.under_skolealder =
@@ -168,10 +166,10 @@ class UnderholdService(
 
             barnetilsyn
         } ?: run {
-            val barnetilsyn =
+            underholdskostnad.barnetilsyn.add(
                 Barnetilsyn(
                     fom = request.periode.fom,
-                    tom = request.periode.tom,
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
                     under_skolealder =
                         when (request.skolealder) {
                             Skolealder.UNDER -> true
@@ -179,10 +177,31 @@ class UnderholdService(
                             else -> null
                         },
                     omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-                    kilde = kilde,
+                    kilde = Kilde.MANUELL,
                     underholdskostnad = underholdskostnad,
+                ),
+            )
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode)) {
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        fom =
+                            LocalDate
+                                .now()
+                                .withMonth(7)
+                                .withDayOfMonth(1),
+                        tom = null,
+                        under_skolealder =
+                            when (request.skolealder) {
+                                Skolealder.UNDER -> true
+                                Skolealder.OVER -> false
+                                else -> null
+                            },
+                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
+                        kilde = Kilde.MANUELL,
+                        underholdskostnad = underholdskostnad,
+                    ),
                 )
-            underholdskostnad.barnetilsyn.add(barnetilsyn)
+            }
             underholdskostnad.harTilsynsordning = true
         }
     }
@@ -270,16 +289,32 @@ class UnderholdService(
             faktiskTilsynsutgift.kommentar = request.kommentar
             faktiskTilsynsutgift
         } ?: run {
-            val faktiskTilsynsutgift =
+            underholdskostnad.faktiskeTilsynsutgifter.add(
                 FaktiskTilsynsutgift(
                     fom = request.periode.fom,
-                    tom = request.periode.tom,
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
                     kostpenger = request.kostpenger,
                     tilsynsutgift = request.utgift,
                     kommentar = request.kommentar,
                     underholdskostnad = underholdskostnad,
+                ),
+            )
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode)) {
+                underholdskostnad.faktiskeTilsynsutgifter.add(
+                    FaktiskTilsynsutgift(
+                        fom =
+                            LocalDate
+                                .now()
+                                .withMonth(7)
+                                .withDayOfMonth(1),
+                        tom = null,
+                        kostpenger = request.kostpenger,
+                        tilsynsutgift = request.utgift,
+                        kommentar = request.kommentar,
+                        underholdskostnad = underholdskostnad,
+                    ),
                 )
-            underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
+            }
             underholdskostnad.harTilsynsordning = true
         }
     }
@@ -299,14 +334,28 @@ class UnderholdService(
             tilleggsstønad.underholdskostnad = underholdskostnad
             tilleggsstønad
         } ?: run {
-            val tilleggsstønad =
+            underholdskostnad.tilleggsstønad.add(
                 Tilleggsstønad(
                     fom = request.periode.fom,
-                    tom = request.periode.tom,
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
                     dagsats = request.dagsats,
                     underholdskostnad = underholdskostnad,
+                ),
+            )
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode)) {
+                underholdskostnad.tilleggsstønad.add(
+                    Tilleggsstønad(
+                        fom =
+                            LocalDate
+                                .now()
+                                .withMonth(7)
+                                .withDayOfMonth(1),
+                        tom = null,
+                        dagsats = request.dagsats,
+                        underholdskostnad = underholdskostnad,
+                    ),
                 )
-            underholdskostnad.tilleggsstønad.add(tilleggsstønad)
+            }
             underholdskostnad.harTilsynsordning = true
         }
     }
@@ -335,6 +384,27 @@ class UnderholdService(
                     request.idElement,
                 )
         }
+    }
+
+    private fun Underholdskostnad.begrensTomDatoForTolvÅr(periode: DatoperiodeDto): LocalDate? =
+        if (erPeriodeFørOgEtterFyltTolvÅr(periode)) {
+            LocalDate
+                .now()
+                .withMonth(7)
+                .withDayOfMonth(1)
+                .minusDays(1)
+        } else {
+            periode.tom
+        }
+
+    private fun Underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(periode: DatoperiodeDto) =
+        !erBarnOverTolvÅrForDato(periode.fom) && erBarnOverTolvÅrForDato(periode.tom ?: LocalDate.now())
+
+    private fun Underholdskostnad.erBarnOverTolvÅrForDato(dato: LocalDate?): Boolean {
+        if (dato == null) return false
+        val fødselsdato = person.fødselsdato
+        val period = Period.between(fødselsdato.withMonth(7).withDayOfMonth(1), dato)
+        return period.years >= 12
     }
 
     private fun sletteStønadTilBarnetilsyn(

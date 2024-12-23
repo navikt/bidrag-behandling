@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.OpprettUnderholdskostnadBarnResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
+import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
@@ -65,12 +66,18 @@ class UnderholdController(
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
+        val underholdskostnad = henteOgValidereUnderholdskostnad(behandling!!, request.idUnderhold)
+
         underholdService.sletteFraUnderhold(behandling, request)
 
-        return OppdatereUnderholdResponse(
-            beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
-            valideringsfeil = behandling.underholdskostnader.valider(),
-        )
+        return if (request.type == Underholdselement.BARN) {
+            OppdatereUnderholdResponse(
+                beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
+                valideringsfeil = behandling.underholdskostnader.valider(),
+            )
+        } else {
+            underholdskostnad.tilRespons()
+        }
     }
 
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/barnetilsyn")
