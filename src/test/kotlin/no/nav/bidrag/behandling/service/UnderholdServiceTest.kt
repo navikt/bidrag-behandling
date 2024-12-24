@@ -141,7 +141,6 @@ class UnderholdServiceTest {
                 underholdskostnadRepository,
                 personRepository,
                 notatService,
-                dtomapper,
                 personService,
             )
 
@@ -744,7 +743,7 @@ class UnderholdServiceTest {
             }
 
             @Test
-            open fun `skal ikke endre kilde på offentlig innslag så lenge periode ikke endres`() {
+            open fun `skal endre kilde på manuell innslag til offentlig hvis periode matcher`() {
                 // gitt
                 val behandling =
                     oppretteTestbehandling(
@@ -753,6 +752,14 @@ class UnderholdServiceTest {
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
 
+                behandling.leggeTilGjeldendeBarnetilsyn(
+                    oppretteBarnetilsynGrunnlagDto(
+                        behandling = behandling,
+                        periodeFra = LocalDate.parse("2024-01-01"),
+                        periodeTil = LocalDate.parse("2024-08-01"),
+                    ),
+                    false,
+                )
                 val barnIBehandling = behandling.søknadsbarn.first()
                 barnIBehandling.ident.shouldNotBeNull()
 
@@ -766,9 +773,9 @@ class UnderholdServiceTest {
                     Barnetilsyn(
                         id = 1,
                         underholdskostnad = underholdskostnad,
-                        fom = LocalDate.now(),
+                        fom = LocalDate.parse("2023-01-01"),
                         under_skolealder = true,
-                        kilde = Kilde.OFFENTLIG,
+                        kilde = Kilde.MANUELL,
                         omfang = Tilsynstype.HELTID,
                     ),
                 )
@@ -780,8 +787,8 @@ class UnderholdServiceTest {
                         id = 1,
                         periode =
                             DatoperiodeDto(
-                                LocalDate.now(),
-                                null,
+                                LocalDate.parse("2024-03-01"),
+                                LocalDate.parse("2024-06-30"),
                             ),
                         skolealder = Skolealder.OVER,
                         tilsynstype = Tilsynstype.DELTID,
@@ -802,6 +809,76 @@ class UnderholdServiceTest {
                     under_skolealder shouldBe false
                     omfang shouldBe request.tilsynstype
                     kilde shouldBe Kilde.OFFENTLIG
+                }
+            }
+
+            @Test
+            open fun `skal endre kilde på offentlig innslag til manuell hvis periode ikke matcher`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        setteDatabaseider = true,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+
+                behandling.leggeTilGjeldendeBarnetilsyn(
+                    oppretteBarnetilsynGrunnlagDto(
+                        behandling = behandling,
+                        periodeFra = LocalDate.parse("2024-01-01"),
+                        periodeTil = LocalDate.parse("2024-08-01"),
+                    ),
+                    false,
+                )
+                val barnIBehandling = behandling.søknadsbarn.first()
+                barnIBehandling.ident.shouldNotBeNull()
+
+                val underholdskostnad =
+                    behandling.underholdskostnader.find {
+                        barnIBehandling.ident!! == it.barnetsRolleIBehandlingen?.ident
+                    }
+                underholdskostnad.shouldNotBeNull()
+
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        id = 1,
+                        underholdskostnad = underholdskostnad,
+                        fom = LocalDate.parse("2024-01-01"),
+                        under_skolealder = true,
+                        kilde = Kilde.OFFENTLIG,
+                        omfang = Tilsynstype.HELTID,
+                    ),
+                )
+
+                underholdskostnad.barnetilsyn shouldHaveSize 1
+
+                val request =
+                    StønadTilBarnetilsynDto(
+                        id = 1,
+                        periode =
+                            DatoperiodeDto(
+                                LocalDate.parse("2023-12-01"),
+                                null,
+                            ),
+                        skolealder = Skolealder.OVER,
+                        tilsynstype = Tilsynstype.DELTID,
+                    )
+
+                // hvis
+                underholdService.oppdatereStønadTilBarnetilsynManuelt(underholdskostnad, request)
+
+                // så
+                val u = behandling.underholdskostnader.first()
+                u.shouldNotBeNull()
+                u.barnetilsyn.shouldNotBeEmpty()
+                u.barnetilsyn shouldHaveSize 1
+
+                assertSoftly(u.barnetilsyn.first()) {
+                    fom shouldBe request.periode.fom
+                    tom shouldBe request.periode.tom
+                    under_skolealder shouldBe false
+                    omfang shouldBe request.tilsynstype
+                    kilde shouldBe Kilde.MANUELL
                 }
             }
         }
@@ -868,7 +945,7 @@ class UnderholdServiceTest {
             }
 
             @Test
-            open fun `skal eksisterende periode med faktiske tilsynsutgifter`() {
+            open fun `skal endre eksisterende periode med faktiske tilsynsutgifter`() {
                 // gitt
                 val behandling =
                     oppretteTestbehandling(

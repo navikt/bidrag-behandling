@@ -1619,9 +1619,17 @@ fun erstattVariablerITestFil(filnavn: String): String {
     stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
     stringValue = stringValue.replace("{barn2Ident}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
+    stringValue = stringValue.replace("{hustandsmedlem1}", testdataHusstandsmedlem1.ident)
+    stringValue = stringValue.replace("{hustandsmedlem1fDato}", testdataHusstandsmedlem1.fødselsdato.toString())
     stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)
     stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
     return stringValue
+}
+
+fun lagGrunnlagsdata(filnavn: String): HentGrunnlagDto {
+    val stringValue = erstattVariablerITestFil(filnavn)
+    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(stringValue)
+    return grunnlag
 }
 
 fun lagVedtaksdata(filnavn: String): VedtakDto {
@@ -1869,6 +1877,7 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
             this,
             periodeFraAntallMndTilbake = 13,
         ),
+    leggTilBarnetilsyn: Boolean = true,
 ) {
     this.grunnlag.add(
         Grunnlag(
@@ -1895,12 +1904,14 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
         ),
     )
 
-    this.grunnlag
-        .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
-        .forEach { g ->
-            val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
-            g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
-        }
+    if (leggTilBarnetilsyn) {
+        this.grunnlag
+            .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
+            .forEach { g ->
+                val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
+                g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
+            }
+    }
 }
 
 fun Behandling.leggeTilNyttBarnetilsyn(

@@ -49,7 +49,7 @@ enum class Grunnlagsobjektvelger(
     ),
     HUSSTANDSMEDLEMMER_OG_EGNE_BARN(
         mapOf(
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),

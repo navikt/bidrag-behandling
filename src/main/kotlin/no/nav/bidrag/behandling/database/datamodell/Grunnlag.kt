@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListe
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.hibernate.annotations.ColumnTransformer
@@ -105,6 +106,12 @@ fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
         .hentSisteAktiv()
         .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
         .konvertereData<List<BoforholdResponseV2>>()
+
+fun Underholdskostnad.hentSisteBearbeidetBarnetilsyn() =
+    behandling.grunnlag
+        .hentSisteAktiv()
+        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BARNETILSYN && it.gjelder == this.person.ident }
+        .konvertereData<List<BarnetilsynGrunnlagDto>>()
 
 fun Husstandsmedlem.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gjelderRolle: Rolle): List<RelatertPersonGrunnlagDto> {
     val nyesteIkkebearbeidaBoforholdsgrunnlag =

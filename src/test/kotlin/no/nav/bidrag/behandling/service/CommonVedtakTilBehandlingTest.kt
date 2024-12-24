@@ -98,7 +98,6 @@ abstract class CommonVedtakTilBehandlingTest {
                 underholdskostnadRepository,
                 personRepository,
                 notatService,
-                dtomapper,
                 personService,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService)
