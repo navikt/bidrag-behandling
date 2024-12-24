@@ -421,6 +421,11 @@ enum class Grunnlagsdatatype(
         ),
     ),
     BARNETILSYN(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    ANDRE_BARN(
+        mapOf(
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
+        ),
+    ),
     BOFORHOLD(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
@@ -549,7 +554,7 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
 
 fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
     when (this) {
-        Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+        Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, Grunnlagsdatatype.ANDRE_BARN -> {
             val t = this.behandlingstypeMotRolletyper[behandling.tilType()]
             t?.let {
                 when (it.first()) {

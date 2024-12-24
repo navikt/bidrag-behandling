@@ -113,13 +113,17 @@ class UnderholdService(
     }
 
     @Transactional
-    fun oppretteUnderholdskostnad(
+    fun opprettEllerOppdaterUnderholdskostnad(
         behandling: Behandling,
         gjelderBarn: BarnDto,
+        kilde: Kilde? = null,
     ): Underholdskostnad {
         gjelderBarn.validere(behandling, personService)
 
-        return gjelderBarn.personident?.let { personidentBarn ->
+        return behandling.underholdskostnader.find { it.person.ident == gjelderBarn.personident?.verdi }?.let {
+            it.kilde = kilde
+            it
+        } ?: gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
             personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
                 rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }

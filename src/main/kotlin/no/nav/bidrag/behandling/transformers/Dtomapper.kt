@@ -182,7 +182,7 @@ class Dtomapper(
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
-            gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
+            gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn, kilde),
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
             tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
@@ -234,7 +234,10 @@ class Dtomapper(
         )
     }
 
-    private fun Person.tilPersoninfoDto(rolle: Rolle?): PersoninfoDto {
+    private fun Person.tilPersoninfoDto(
+        rolle: Rolle?,
+        kilde: Kilde?,
+    ): PersoninfoDto {
         val personinfo =
             this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
                 ?: rolle?.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
@@ -244,7 +247,7 @@ class Dtomapper(
             ident = rolle?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
             navn = personinfo?.navn ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
-            kilde = rolle?.ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+            kilde = kilde,
             medIBehandlingen = rolle?.ident != null,
         )
     }
