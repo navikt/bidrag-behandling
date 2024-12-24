@@ -805,21 +805,22 @@ class GrunnlagService(
         val andreBarnIkkeIBehandling =
             husstandsmedlemmerOgEgneBarn
                 .filter { it.erBarn }
-                .filter { !søknadsbarnidenter.contains(it.partPersonId) }
+                .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
 
         andreBarnIkkeIBehandling.forEach {
-            secureLogger.info { "$it er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
-            underholdService.opprettEllerOppdaterUnderholdskostnad(
+            secureLogger.info { "$it er annen barn til BM. Oppretter eller oppdaterer underholdskostnad til kilde OFFENTLIG" }
+            behandling.underholdskostnader.find { u -> u.person.ident == it.gjelderPersonId }?.let {
+                it.kilde = Kilde.OFFENTLIG
+            } ?: underholdService.oppretteUnderholdskostnad(
                 behandling,
-                BarnDto(personident = Personident(it.partPersonId!!), fødselsdato = it.fødselsdato),
+                BarnDto(personident = Personident(it.gjelderPersonId!!), fødselsdato = it.fødselsdato),
                 kilde = Kilde.OFFENTLIG,
             )
         }
 
-        val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.partPersonId }
+        val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.gjelderPersonId }
         behandling.underholdskostnader
             .filter { it.barnetsRolleIBehandlingen == null }
-            .filter { it.kilde != Kilde.OFFENTLIG }
             .filter { !andreBarnIdenter.contains(it.person.ident) }
             .forEach {
                 secureLogger.info { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }
@@ -1373,6 +1374,9 @@ class GrunnlagService(
                         ) {
                             it.aktiv = LocalDateTime.now()
                         }
+                    }
+                    Grunnlagsdatatype.ANDRE_BARN -> {
+                        it.aktiv = LocalDateTime.now()
                     }
 
                     else -> it.aktiv = LocalDateTime.now()

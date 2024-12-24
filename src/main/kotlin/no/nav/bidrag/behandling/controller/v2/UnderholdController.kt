@@ -261,7 +261,7 @@ class UnderholdController(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         return OpprettUnderholdskostnadBarnResponse(
-            underholdskostnad = dtomapper.tilUnderholdDto(underholdService.opprettEllerOppdaterUnderholdskostnad(behandling, gjelderBarn)),
+            underholdskostnad = dtomapper.tilUnderholdDto(underholdService.oppretteUnderholdskostnad(behandling, gjelderBarn)),
             beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
             valideringsfeil = behandling.underholdskostnader.valider(),
         )

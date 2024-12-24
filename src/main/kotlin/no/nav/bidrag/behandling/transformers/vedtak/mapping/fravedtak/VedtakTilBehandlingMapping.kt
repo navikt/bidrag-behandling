@@ -263,7 +263,7 @@ class VedtakTilBehandlingMapping(
                                     ),
                             )
                         } else {
-                            underholdService.opprettEllerOppdaterUnderholdskostnad(
+                            underholdService.oppretteUnderholdskostnad(
                                 behandling,
                                 BarnDto(personident = Personident(rolle.ident!!)),
                             )
@@ -323,7 +323,7 @@ class VedtakTilBehandlingMapping(
                                     ),
                             )
                         } else {
-                            underholdService.opprettEllerOppdaterUnderholdskostnad(
+                            underholdService.oppretteUnderholdskostnad(
                                 behandling,
                                 BarnDto(
                                     personident = gjelderBarn.ident,
@@ -365,7 +365,7 @@ class VedtakTilBehandlingMapping(
                                 ),
                         )
                     } else {
-                        underholdService.opprettEllerOppdaterUnderholdskostnad(
+                        underholdService.oppretteUnderholdskostnad(
                             behandling,
                             BarnDto(
                                 personident = gjelderBarn.ident,

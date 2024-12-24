@@ -329,7 +329,7 @@ class UnderholdServiceTest {
                 )
 
             // hvis
-            underholdService.opprettEllerOppdaterUnderholdskostnad(behandling, request)
+            underholdService.oppretteUnderholdskostnad(behandling, request)
 
             // så
             val u = behandling.underholdskostnader.find { it.id == universalid }
@@ -367,7 +367,7 @@ class UnderholdServiceTest {
             // hvis
             val respons =
                 assertFailsWith<HttpClientErrorException> {
-                    underholdService.opprettEllerOppdaterUnderholdskostnad(behandling, request)
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
                 }
 
             // så
@@ -403,7 +403,7 @@ class UnderholdServiceTest {
             // hvis
             val respons =
                 assertFailsWith<HttpClientErrorException> {
-                    underholdService.opprettEllerOppdaterUnderholdskostnad(behandling, request)
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
                 }
 
             // så
@@ -428,7 +428,7 @@ class UnderholdServiceTest {
             // hvis
             val respons =
                 assertFailsWith<HttpClientErrorException> {
-                    underholdService.opprettEllerOppdaterUnderholdskostnad(behandling, request)
+                    underholdService.oppretteUnderholdskostnad(behandling, request)
                 }
 
             // så

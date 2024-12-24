@@ -169,7 +169,14 @@ class Dtomapper(
         aktiveGrunnlag: List<Grunnlag>,
     ) = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
 
-    fun Set<Underholdskostnad>.tilDtos() = this.map { it.tilDto() }.sortedByDescending { it.gjelderBarn.fødselsdato }.toSet()
+    fun Set<Underholdskostnad>.tilDtos() =
+        this
+            .map { it.tilDto() }
+            .sortedWith(
+                compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
+                    .thenByDescending { it.gjelderBarn.kilde == Kilde.MANUELL }
+                    .thenBy { it.gjelderBarn.fødselsdato },
+            ).toSet()
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
@@ -227,9 +234,9 @@ class Dtomapper(
         return PersoninfoDto(
             id = this.id,
             ident = ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
-            navn = personinfo?.navn ?: this.navn,
+            navn = hentPersonVisningsnavn(personinfo?.navn) ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
-            kilde = ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+            kilde = null,
             medIBehandlingen = ident != null,
         )
     }
@@ -245,7 +252,7 @@ class Dtomapper(
         return PersoninfoDto(
             id = this.id,
             ident = rolle?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
-            navn = personinfo?.navn ?: this.navn,
+            navn = hentPersonVisningsnavn(personinfo?.navn) ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
             kilde = kilde,
             medIBehandlingen = rolle?.ident != null,

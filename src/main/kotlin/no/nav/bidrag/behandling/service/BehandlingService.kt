@@ -190,7 +190,7 @@ class BehandlingService(
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandlingDo.underholdskostnader.add(
-                    underholdService.opprettEllerOppdaterUnderholdskostnad(behandling, BarnDto(personident = it.ident)),
+                    underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident)),
                 )
             }
         }
