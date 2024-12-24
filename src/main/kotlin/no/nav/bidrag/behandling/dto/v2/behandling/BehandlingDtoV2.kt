@@ -554,7 +554,11 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
 
 fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
     when (this) {
-        Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN, Grunnlagsdatatype.ANDRE_BARN -> {
+        Grunnlagsdatatype.BARNETILSYN,
+        Grunnlagsdatatype.BOFORHOLD,
+        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+        Grunnlagsdatatype.ANDRE_BARN,
+        -> {
             val t = this.behandlingstypeMotRolletyper[behandling.tilType()]
             t?.let {
                 when (it.first()) {
