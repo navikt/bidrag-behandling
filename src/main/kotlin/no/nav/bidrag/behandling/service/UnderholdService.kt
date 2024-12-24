@@ -116,7 +116,7 @@ class UnderholdService(
     fun oppretteUnderholdskostnad(
         behandling: Behandling,
         gjelderBarn: BarnDto,
-        kilde: Kilde? = null,
+        kilde: Kilde = Kilde.MANUELL,
     ): Underholdskostnad {
         gjelderBarn.validere(behandling, personService)
 
@@ -125,7 +125,7 @@ class UnderholdService(
             personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
                 rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
                 rolleSøknadsbarn?.person = eksisterendePerson
-                lagreUnderholdskostnad(behandling, eksisterendePerson)
+                lagreUnderholdskostnad(behandling, eksisterendePerson, if (rolleSøknadsbarn == null) kilde else null)
             } ?: run {
                 val person =
                     Person(
@@ -143,6 +143,7 @@ class UnderholdService(
             lagreUnderholdskostnad(
                 behandling,
                 Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
+                kilde = Kilde.MANUELL,
             )
         }
     }
@@ -461,8 +462,9 @@ class UnderholdService(
     private fun lagreUnderholdskostnad(
         behandling: Behandling,
         person: Person,
+        kilde: Kilde? = null,
     ): Underholdskostnad {
-        val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
+        val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person, kilde = kilde))
         behandling.underholdskostnader.add(u)
         return u
     }

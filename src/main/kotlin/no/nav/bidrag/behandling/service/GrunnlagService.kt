@@ -1265,7 +1265,7 @@ class GrunnlagService(
                 idTilRolleInnhentetFor = innhentetForRolle.id!!,
                 gjelder = gjelderPerson,
             )
-            if (grunnlagstype.erBearbeidet && aktivert != null) {
+            if (grunnlagstype.erBearbeidet && aktivert != null || Grunnlagsdatatype.ANDRE_BARN == grunnlagstype.type) {
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, innhentetForRolle, behandling)
             }
         } else if (erGrunnlagEndret) {
@@ -1374,9 +1374,6 @@ class GrunnlagService(
                         ) {
                             it.aktiv = LocalDateTime.now()
                         }
-                    }
-                    Grunnlagsdatatype.ANDRE_BARN -> {
-                        it.aktiv = LocalDateTime.now()
                     }
 
                     else -> it.aktiv = LocalDateTime.now()
