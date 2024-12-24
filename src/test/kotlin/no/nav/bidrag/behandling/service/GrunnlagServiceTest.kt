@@ -34,6 +34,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.lagGrunnlagsdata
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
@@ -233,6 +234,52 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         .filter { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }
                         .size shouldBe 2
                 }
+            }
+
+            @Test
+            @Transactional
+            open fun `skal hente og lagre andre barn til bidragsmottaker`() {
+                // gitt
+                val behandling =
+                    oppretteTestbehandling(
+                        false,
+                        false,
+                        false,
+                        inkludereBp = true,
+                        behandlingstype = TypeBehandling.BIDRAG,
+                    )
+                testdataManager.lagreBehandlingNewTransaction(behandling)
+
+                stubbeHentingAvPersoninfoForTestpersoner()
+                stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                behandling.roller.forEach {
+                    when (it.rolletype) {
+                        Rolletype.BIDRAGSMOTTAKER ->
+                            stubUtils.stubHenteGrunnlag(
+                                rolle = it,
+                                responsobjekt = lagGrunnlagsdata("hente-grunnlagrespons-bidrag-andre-barn-bm"),
+                            )
+
+                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                    }
+                }
+
+                behandling.underholdskostnader shouldHaveSize 2
+
+                // hvis
+                grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+                // så
+                behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
+
+                behandling.underholdskostnader.shouldHaveSize(3)
+                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen != null }
+                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen == null }
+                andreBarnUnderholdskostnader.shouldHaveSize(1)
+                søknadsbarnUnderholdskostnader.shouldHaveSize(2)
+                søknadsbarnUnderholdskostnader.first().kilde shouldBe null
+                andreBarnUnderholdskostnader.first().kilde shouldBe Kilde.OFFENTLIG
+                andreBarnUnderholdskostnader.first().person.ident shouldBe testdataHusstandsmedlem1.ident
             }
 
             @Test
