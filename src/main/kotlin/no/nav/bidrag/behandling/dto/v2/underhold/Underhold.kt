@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -91,23 +92,28 @@ data class UnderholdskostnadValideringsfeil(
                 tilleggsstønadsperioderUtenFaktiskTilsynsutgift.isNotEmpty() ||
                 manglerBegrunnelse ||
                 manglerPerioderForTilsynsordning
-    val underholdskostnadsid get() = gjelderUnderholdskostnad?.id ?: -1
-    val barn
+    val id get() = gjelderUnderholdskostnad?.id ?: -1
+    val gjelderBarn
         get() =
             gjelderUnderholdskostnad?.let {
                 UnderholdBarnDto(
-                    navn = gjelderUnderholdskostnad.person.navn,
+                    navn =
+                        gjelderUnderholdskostnad.person.navn ?: hentPersonVisningsnavn(gjelderUnderholdskostnad.person.personident?.verdi),
                     ident = gjelderUnderholdskostnad.person.personident?.verdi,
                     fødselsdato = gjelderUnderholdskostnad.person.henteFødselsdato!!,
-                    medIBehandling = gjelderUnderholdskostnad.barnetsRolleIBehandlingen != null,
+                    medIBehandlingen = gjelderUnderholdskostnad.barnetsRolleIBehandlingen != null,
+                    kilde = gjelderUnderholdskostnad.kilde,
+                    id = gjelderUnderholdskostnad.person?.id,
                 )
-            } ?: UnderholdBarnDto(null, null, LocalDate.now(), false)
+            } ?: UnderholdBarnDto(null, null, null, LocalDate.now(), false)
 
     data class UnderholdBarnDto(
+        val id: Long?,
         val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
-        val medIBehandling: Boolean,
+        val medIBehandlingen: Boolean,
+        val kilde: Kilde? = null,
     )
 }
 

@@ -250,7 +250,7 @@ class Dtomapper(
                 ?: rolle?.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
 
         return PersoninfoDto(
-            id = this.id,
+            id = id,
             ident = rolle?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
             navn = hentPersonVisningsnavn(personinfo?.navn) ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
