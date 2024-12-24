@@ -252,7 +252,7 @@ class Dtomapper(
         return PersoninfoDto(
             id = id,
             ident = rolle?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
-            navn = hentPersonVisningsnavn(personinfo?.navn) ?: this.navn,
+            navn = hentPersonVisningsnavn(personinfo?.ident?.verdi) ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
             kilde = kilde,
             medIBehandlingen = rolle?.ident != null,
