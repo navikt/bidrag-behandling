@@ -22,12 +22,17 @@ import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
@@ -40,6 +45,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.behandling.utils.testdata.testdataBarnBm
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.AppContext
@@ -95,6 +101,33 @@ fun stubPersonRepository(): PersonRepository {
     return personRepositoryMock
 }
 
+fun stubHusstandrepository(husstandsmedlemRepository: HusstandsmedlemRepository = mockkClass(HusstandsmedlemRepository::class)): HusstandsmedlemRepository {
+    every { husstandsmedlemRepository.save(any()) }.answers {
+        val husstandsmedlem = firstArg<Husstandsmedlem>()
+        husstandsmedlem.id = husstandsmedlem.id ?: 1
+        husstandsmedlem
+    }
+    return husstandsmedlemRepository
+}
+
+fun stubSivilstandrepository(sivilstandrepo: SivilstandRepository = mockkClass(SivilstandRepository::class)): SivilstandRepository {
+    every { sivilstandrepo.save(any()) }.answers {
+        val sivilstand = firstArg<Sivilstand>()
+        sivilstand.id = sivilstand.id ?: 1
+        sivilstand
+    }
+    return sivilstandrepo
+}
+
+fun stubBehandlingrepository(behandlingRepository: BehandlingRepository = mockkClass(BehandlingRepository::class)): BehandlingRepository {
+    every { behandlingRepository.save(any()) }.answers {
+        val behandling = firstArg<Behandling>()
+        behandling.id = behandling.id ?: 1
+        behandling
+    }
+    return behandlingRepository
+}
+
 fun stubUnderholdskostnadRepository(underholdskostnadRepository: UnderholdskostnadRepository = mockkClass(UnderholdskostnadRepository::class)): UnderholdskostnadRepository {
     every { underholdskostnadRepository.save(any()) }.answers {
         val underholdskostnad = firstArg<Underholdskostnad>()
@@ -121,17 +154,17 @@ fun stubInntektRepository(inntektRepository: InntektRepository = mockkClass(Innt
     return inntektRepository
 }
 
-fun stubPersonConsumer(): BidragPersonConsumer {
+fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): BidragPersonConsumer {
     try {
         clearMocks(BidragPersonConsumer::class)
     } catch (e: Exception) {
         // Ignore
     }
-    val personConsumerMock = mockkClass(BidragPersonConsumer::class)
+    val personConsumerMock = bidragPersonConsumer ?: mockkClass(BidragPersonConsumer::class)
     every { personConsumerMock.hentPerson(any<String>()) }.answers {
         val personId = firstArg<String>()
         val personer =
-            listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1)
+            listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1, testdataBarnBm)
         personer.find { it.ident == personId }?.tilPersonDto() ?: PersonDto(
             Personident(firstArg<String>()),
             fødselsdato = LocalDate.parse("2015-05-01"),

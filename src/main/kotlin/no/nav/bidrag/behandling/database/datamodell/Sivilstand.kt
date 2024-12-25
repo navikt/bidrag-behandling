@@ -26,5 +26,5 @@ open class Sivilstand(
     open val kilde: Kilde,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
 )

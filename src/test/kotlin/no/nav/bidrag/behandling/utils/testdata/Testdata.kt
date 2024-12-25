@@ -1619,6 +1619,8 @@ fun erstattVariablerITestFil(filnavn: String): String {
     stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
     stringValue = stringValue.replace("{barn2Ident}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
+    stringValue = stringValue.replace("{barnBM1Ident}", testdataBarnBm.ident)
+    stringValue = stringValue.replace("{barnBM1fDato}", testdataBarnBm.fødselsdato.toString())
     stringValue = stringValue.replace("{hustandsmedlem1}", testdataHusstandsmedlem1.ident)
     stringValue = stringValue.replace("{hustandsmedlem1fDato}", testdataHusstandsmedlem1.fødselsdato.toString())
     stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)

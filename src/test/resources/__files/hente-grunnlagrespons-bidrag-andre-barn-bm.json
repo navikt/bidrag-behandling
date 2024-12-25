@@ -19,7 +19,7 @@
     },
     {
       "partPersonId": "{bmIdent}",
-      "relatertPersonPersonId": "{hustandsmedlem1}",
+      "relatertPersonPersonId": "{barnBM1Ident}",
       "navn": "Brostein Nilsen",
       "fødselsdato": "2022-01-24",
       "erBarnAvBmBp": true,

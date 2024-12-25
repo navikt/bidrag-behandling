@@ -284,7 +284,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.first().kilde shouldBe null
                 andreBarnUnderholdskostnader.first().kilde shouldBe Kilde.OFFENTLIG
-                andreBarnUnderholdskostnader.first().person.ident shouldBe testdataHusstandsmedlem1.ident
+                andreBarnUnderholdskostnader.first().person.ident shouldBe testdataBarnBm.ident
             }
 
             @Test
@@ -303,7 +303,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     Underholdskostnad(
                         behandling = behandling,
                         kilde = Kilde.OFFENTLIG,
-                        person = Person(ident = testdataBarnBm.ident, fødselsdato = testdataBarnBm.fødselsdato),
+                        person = Person(ident = testdataHusstandsmedlem1.ident, fødselsdato = testdataHusstandsmedlem1.fødselsdato),
                     ),
                 )
                 behandling.grunnlag.add(
@@ -364,8 +364,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     søknadsbarnUnderholdskostnader.first().kilde shouldBe null
                     val andreBarnHusstandsmedlem = andreBarnUnderholdskostnader.find { it.person.ident == testdataHusstandsmedlem1.ident }!!
                     val andreBarnBarnBM = andreBarnUnderholdskostnader.find { it.person.ident == testdataBarnBm.ident }!!
-                    andreBarnHusstandsmedlem.kilde shouldBe Kilde.OFFENTLIG
-                    andreBarnBarnBM.kilde shouldBe Kilde.MANUELL
+                    andreBarnHusstandsmedlem.kilde shouldBe Kilde.MANUELL
+                    andreBarnBarnBM.kilde shouldBe Kilde.OFFENTLIG
 
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.ANDRE_BARN }.shouldHaveSize(2)
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.ANDRE_BARN && it.aktiv != null }.shouldHaveSize(2)
@@ -5019,6 +5019,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
         Mockito
             .`when`(bidragPersonConsumer.hentPerson(testdataHusstandsmedlem1.ident))
             .thenReturn(testdataHusstandsmedlem1.tilPersonDto())
+        Mockito
+            .`when`(bidragPersonConsumer.hentPerson(testdataBarnBm.ident))
+            .thenReturn(testdataBarnBm.tilPersonDto())
     }
 }
 
