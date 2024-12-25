@@ -218,6 +218,10 @@ class ValiderBeregning(
                             MåBekrefteNyeOpplysninger(
                                 grunnlagSomMåBekreftes.type,
                                 rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
+                                underholdskostnad =
+                                    (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BARNETILSYN).ifTrue {
+                                        underholdskostnader.find { u -> u.person.ident == grunnlagSomMåBekreftes.rolle.ident }
+                                    },
                                 husstandsmedlem =
                                     (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
                                         husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }

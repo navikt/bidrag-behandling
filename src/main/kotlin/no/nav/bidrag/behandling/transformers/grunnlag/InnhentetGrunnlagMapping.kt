@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilAndreBarnTilBMGrunnlagsobjektInnhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjekt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjektInnhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonGrunnlag
@@ -29,6 +30,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
@@ -70,6 +72,29 @@ fun List<Grunnlag>.tilInnhentetSivilstand(personobjekter: Set<GrunnlagDto>): Set
             sivilstandListe.tilGrunnlagsobjekt(
                 grunnlag.innhentet,
                 gjelder.referanse,
+            )
+        }.toSet()
+
+fun List<Grunnlag>.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
+    filter { it.type == Grunnlagsdatatype.ANDRE_BARN }
+        .groupBy { it.rolle.ident }
+        .map { (partPersonId, grunnlagListe) ->
+            val grunnlag = grunnlagListe.first()
+            val andreBarn =
+                grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
+            val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
+            GrunnlagDto(
+                referanse =
+                    opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(gjelder.referanse),
+                type = Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER,
+                gjelderReferanse = gjelder.referanse,
+                innhold =
+                    POJONode(
+                        andreBarn.tilAndreBarnTilBMGrunnlagsobjektInnhold(
+                            grunnlag.innhentet,
+                            gjelder.referanse,
+                        ),
+                    ),
             )
         }.toSet()
 

@@ -46,6 +46,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataBarnBm
+import no.nav.bidrag.behandling.utils.testdata.testdataBarnBm2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.behandling.utils.testdata.tilTransformerInntekterRequest
 import no.nav.bidrag.behandling.utils.testdata.voksenPersonIBpsHusstand
@@ -5022,6 +5023,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
         Mockito
             .`when`(bidragPersonConsumer.hentPerson(testdataBarnBm.ident))
             .thenReturn(testdataBarnBm.tilPersonDto())
+        Mockito
+            .`when`(bidragPersonConsumer.hentPerson(testdataBarnBm2.ident))
+            .thenReturn(testdataBarnBm2.tilPersonDto())
     }
 }
 

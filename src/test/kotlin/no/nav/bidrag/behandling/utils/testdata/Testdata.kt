@@ -161,6 +161,14 @@ val testdataBarnBm =
         fødselsdato = LocalDate.parse("2001-05-09"),
     )
 
+val testdataBarnBm2 =
+    TestDataPerson(
+        navn = "Huststand Dett 2",
+        ident = "123123333333333",
+        rolletype = Rolletype.BARN,
+        fødselsdato = LocalDate.parse("2001-05-09"),
+    )
+
 val voksenPersonIBpsHusstand =
     Testperson(navn = "Gillinger Owa", personident = "01010012345", fødselsdato = LocalDate.of(2000, 1, 1))
 
@@ -1620,7 +1628,9 @@ fun erstattVariablerITestFil(filnavn: String): String {
     stringValue = stringValue.replace("{barn2Ident}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
     stringValue = stringValue.replace("{barnBM1Ident}", testdataBarnBm.ident)
+    stringValue = stringValue.replace("{barnBM2Ident}", testdataBarnBm2.ident)
     stringValue = stringValue.replace("{barnBM1fDato}", testdataBarnBm.fødselsdato.toString())
+    stringValue = stringValue.replace("{barnBM2fDato}", testdataBarnBm2.fødselsdato.toString())
     stringValue = stringValue.replace("{hustandsmedlem1}", testdataHusstandsmedlem1.ident)
     stringValue = stringValue.replace("{hustandsmedlem1fDato}", testdataHusstandsmedlem1.fødselsdato.toString())
     stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)

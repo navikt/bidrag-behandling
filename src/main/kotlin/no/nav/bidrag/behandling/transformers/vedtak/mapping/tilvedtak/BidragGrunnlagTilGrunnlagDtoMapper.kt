@@ -15,6 +15,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetArbeidsforhold
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetBarnetilsyn
@@ -82,6 +83,22 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
             ),
     )
 }
+
+fun List<RelatertPersonGrunnlagDto>.tilAndreBarnTilBMGrunnlagsobjektInnhold(
+    hentetTidspunkt: LocalDateTime,
+    gjelderPersonReferanse: String,
+) = InnhentetAndreBarnTilBidragsmottaker(
+    hentetTidspunkt = hentetTidspunkt,
+    grunnlag =
+        map {
+            InnhentetAndreBarnTilBidragsmottaker.AndreBarnTilBidragsmottakerPDL(
+                gjelderPerson = gjelderPersonReferanse,
+                relasjon = it.relasjon,
+                navn = it.navn,
+                fødselsdato = it.fødselsdato,
+            )
+        },
+)
 
 fun RelatertPersonGrunnlagDto.tilGrunnlagsobjektInnhold(
     hentetTidspunkt: LocalDateTime,

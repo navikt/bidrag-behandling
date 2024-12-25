@@ -87,7 +87,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Period
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
@@ -679,7 +681,7 @@ class GrunnlagService(
                 }
             }
             if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi) {
-                periodisereOgLagreAndreBarnTilBM(behandling, it.husstandsmedlemmerOgEgneBarnListe.toSet())
+                lagreAndreBarnTilBMGrunnlag(behandling, it.husstandsmedlemmerOgEgneBarnListe.toSet())
             }
         }
 
@@ -797,7 +799,7 @@ class GrunnlagService(
         aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
     }
 
-    private fun periodisereOgLagreAndreBarnTilBM(
+    private fun lagreAndreBarnTilBMGrunnlag(
         behandling: Behandling,
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
     ) {
@@ -805,6 +807,7 @@ class GrunnlagService(
         val andreBarnIkkeIBehandling =
             husstandsmedlemmerOgEgneBarn
                 .filter { it.erBarn }
+                .filter { erUnder13År(it.fødselsdato) }
                 .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
 
         andreBarnIkkeIBehandling.forEach {
@@ -827,6 +830,17 @@ class GrunnlagService(
                 it.kilde = Kilde.MANUELL
             }
     }
+
+    private fun erUnder13År(fødselsdato: LocalDate?) =
+        Period
+            .between(
+                fødselsdato,
+                LocalDate
+                    .now()
+                    .plusYears(1)
+                    .withMonth(1)
+                    .withDayOfMonth(1),
+            ).years < 13
 
     private fun periodisereOgLagreBpsBoforholdAndreVoksne(
         behandling: Behandling,

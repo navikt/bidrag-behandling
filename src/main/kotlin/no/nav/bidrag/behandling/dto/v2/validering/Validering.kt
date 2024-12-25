@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.validering
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
@@ -228,7 +229,11 @@ data class MåBekrefteNyeOpplysninger(
     val rolle: RolleDto,
     @JsonIgnore
     val husstandsmedlem: Husstandsmedlem? = null,
+    @JsonIgnore
+    val underholdskostnad: Underholdskostnad? = null,
 ) {
+    val underholdskostnadId get() = underholdskostnad?.id
+
     @get:Schema(
         description = "Barn som det må bekreftes nye opplysninger for. Vil bare være satt hvis type = BOFORHOLD",
     )
