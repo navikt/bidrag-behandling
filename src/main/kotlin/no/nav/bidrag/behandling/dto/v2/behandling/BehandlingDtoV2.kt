@@ -521,7 +521,7 @@ enum class Grunnlagsdatatype(
                 true ->
                     entries
                         .filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }
-                        .filter { it.behandlingstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
+                        .filter { it.behandlingstypeMotRolletyper[behandlingstype]?.any { it == rolletype } == true }
                         .toSet()
 
                 false -> entries.filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
@@ -551,6 +551,8 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
         Grunnlagsdatatype.KONTANTSTØTTE -> Inntektsrapportering.KONTANTSTØTTE
         else -> null
     }
+
+fun Grunnlagsdatatype.innhentesForRolle2(behandling: Behandling) = this.behandlingstypeMotRolletyper[behandling.tilType()]
 
 fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
     when (this) {

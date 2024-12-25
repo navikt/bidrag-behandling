@@ -59,6 +59,7 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
@@ -1681,6 +1682,7 @@ class GrunnlagService(
             }
 
             Grunnlagsdatatype.BOFORHOLD -> {
+                if (behandling.tilType() == TypeBehandling.BIDRAG && rolleInhentetFor.rolletype == Rolletype.BIDRAGSMOTTAKER) return
                 lagreGrunnlagHvisEndret(
                     behandling,
                     rolleInhentetFor,
