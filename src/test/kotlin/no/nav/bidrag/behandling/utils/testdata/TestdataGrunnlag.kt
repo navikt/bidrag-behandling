@@ -53,7 +53,23 @@ fun opprettGrunnlagFraFil(
 
     return when (type) {
         Grunnlagsdatatype.BOFORHOLD -> {
-            grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling)
+            grunnlag.husstandsmedlemmerOgEgneBarnListe
+                .filter {
+                    if (behandling.tilType() == TypeBehandling.FORSKUDD) {
+                        it.partPersonId == behandling.bidragsmottaker!!.ident
+                    } else {
+                        it.partPersonId == behandling.bidragspliktig!!.ident
+                    }
+                }.tilGrunnlagEntity(behandling)
+        }
+        Grunnlagsdatatype.ANDRE_BARN -> {
+            if (behandling.tilType() == TypeBehandling.BIDRAG) {
+                grunnlag.husstandsmedlemmerOgEgneBarnListe
+                    .filter { it.partPersonId == behandling.bidragsmottaker!!.ident }
+                    .tilGrunnlagEntity(behandling, Grunnlagsdatatype.ANDRE_BARN)
+            } else {
+                emptyList()
+            }
         }
         Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
             grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN)

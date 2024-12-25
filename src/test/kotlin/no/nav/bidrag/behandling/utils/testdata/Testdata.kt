@@ -849,6 +849,23 @@ fun opprettAlleAktiveGrunnlagFraFil(
                 ).flatten(),
             )
         }
+        TypeBehandling.BIDRAG -> {
+            grunnlagListe.addAll(
+                listOf(
+                    opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.ANDRE_BARN),
+                ).flatten(),
+            )
+            grunnlagListe.addAll(
+                listOf(
+                    opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBP),
+                    opprettGrunnlagFraFil(
+                        behandling,
+                        filJsonString,
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    ),
+                ).flatten(),
+            )
+        }
 
         else -> {
             grunnlagListe.addAll(

@@ -3271,6 +3271,14 @@
           "periodeTil": null
         }
       ]
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "gjelderPersonId": "3223123213",
+      "navn": "FIKTIV PEDAGOG",
+      "fødselsdato": "2022-05-09",
+      "relasjon": "BARN",
+      "borISammeHusstandDtoListe": []
     }
   ],
   "sivilstandListe": [
