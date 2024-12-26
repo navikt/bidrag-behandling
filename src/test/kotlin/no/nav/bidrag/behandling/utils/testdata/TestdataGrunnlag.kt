@@ -56,9 +56,9 @@ fun opprettGrunnlagFraFil(
             grunnlag.husstandsmedlemmerOgEgneBarnListe
                 .filter {
                     if (behandling.tilType() == TypeBehandling.FORSKUDD) {
-                        it.partPersonId == behandling.bidragsmottaker!!.ident
+                        it.partPersonId == behandling.bidragsmottaker?.ident
                     } else {
-                        it.partPersonId == behandling.bidragspliktig!!.ident
+                        it.partPersonId == behandling.bidragspliktig?.ident
                     }
                 }.tilGrunnlagEntity(behandling)
         }
