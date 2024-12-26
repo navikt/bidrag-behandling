@@ -47,6 +47,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.erUnder13År
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
@@ -88,9 +89,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.Period
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
@@ -808,7 +807,7 @@ class GrunnlagService(
         val andreBarnIkkeIBehandling =
             husstandsmedlemmerOgEgneBarn
                 .filter { it.erBarn }
-                .filter { erUnder13År(it.fødselsdato) }
+                .filter { it.fødselsdato.erUnder13År() }
                 .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
 
         andreBarnIkkeIBehandling.forEach {
@@ -831,17 +830,6 @@ class GrunnlagService(
                 it.kilde = Kilde.MANUELL
             }
     }
-
-    private fun erUnder13År(fødselsdato: LocalDate?) =
-        Period
-            .between(
-                fødselsdato,
-                LocalDate
-                    .now()
-                    .plusYears(1)
-                    .withMonth(1)
-                    .withDayOfMonth(1),
-            ).years < 13
 
     private fun periodisereOgLagreBpsBoforholdAndreVoksne(
         behandling: Behandling,

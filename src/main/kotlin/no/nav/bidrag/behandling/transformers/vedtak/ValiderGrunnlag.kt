@@ -6,7 +6,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
 
@@ -54,6 +56,14 @@ fun OpprettVedtakRequestDto.validerGrunnlagsreferanser() {
                 "Engangsbeløp(${it.type}, ${it.mottaker})",
             ),
         )
+    }
+
+    val allePersoner = grunnlagListe.hentAllePersoner()
+    allePersoner.forEach { person ->
+        val personer = allePersoner.filter { it.personIdent == person.personIdent }
+        if (personer.size > 1) {
+            feilListe.add("Det finnes flere grunnlag for person ${person.type} med referanser ${personer.map { it.referanse }}")
+        }
     }
 
     if (feilListe.isNotEmpty()) {

@@ -8,14 +8,15 @@ import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBidragsmottakerReferanse
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetArbeidsforhold
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetBarnetilsyn
@@ -53,6 +54,30 @@ import no.nav.bidrag.transport.felles.toCompactString
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse: Grunnlagsreferanse): GrunnlagDto {
+    val personnavn = navn ?: hentPersonVisningsnavn(gjelderPersonId)
+
+    return GrunnlagDto(
+        referanse =
+            opprettPersonBarnBidragsmottakerReferanse(fødselsdato!!, gjelderPersonId, navn),
+        grunnlagsreferanseListe = listOf(referanse),
+        type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
+        innhold =
+            POJONode(
+                Person(
+                    ident = gjelderPersonId?.let { Personident(it) },
+                    navn = if (gjelderPersonId.isNullOrEmpty()) personnavn else null,
+                    fødselsdato =
+                        finnFødselsdato(
+                            gjelderPersonId,
+                            fødselsdato,
+                        ) // Avbryter prosesering dersom fødselsdato til husstandsmedlem er ukjent
+                            ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
+                ).valider(),
+            ),
+    )
+}
+
 fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
     val personnavn = navn ?: hentPersonVisningsnavn(gjelderPersonId)
 
@@ -83,22 +108,6 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
             ),
     )
 }
-
-fun List<RelatertPersonGrunnlagDto>.tilAndreBarnTilBMGrunnlagsobjektInnhold(
-    hentetTidspunkt: LocalDateTime,
-    gjelderPersonReferanse: String,
-) = InnhentetAndreBarnTilBidragsmottaker(
-    hentetTidspunkt = hentetTidspunkt,
-    grunnlag =
-        map {
-            InnhentetAndreBarnTilBidragsmottaker.AndreBarnTilBidragsmottakerPDL(
-                gjelderPerson = gjelderPersonReferanse,
-                relasjon = it.relasjon,
-                navn = it.navn,
-                fødselsdato = it.fødselsdato,
-            )
-        },
-)
 
 fun RelatertPersonGrunnlagDto.tilGrunnlagsobjektInnhold(
     hentetTidspunkt: LocalDateTime,

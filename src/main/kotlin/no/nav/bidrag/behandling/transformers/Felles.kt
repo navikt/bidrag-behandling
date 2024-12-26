@@ -8,6 +8,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.Period
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =
@@ -85,3 +86,13 @@ fun finnCutoffDatoFom(
 }
 
 fun LocalDate.erOverEllerLik18År() = plusYears(18).isBefore(LocalDate.now()) || plusYears(18).isEqual(LocalDate.now())
+
+fun LocalDate?.erUnder13År(basertPåDato: LocalDate = LocalDate.now()) =
+    Period
+        .between(
+            this,
+            basertPåDato
+                .plusYears(1)
+                .withMonth(1)
+                .withDayOfMonth(1),
+        ).years < 13

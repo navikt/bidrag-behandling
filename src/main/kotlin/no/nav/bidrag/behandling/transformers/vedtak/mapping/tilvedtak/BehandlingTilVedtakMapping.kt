@@ -57,17 +57,14 @@ class BehandlingTilVedtakMapping(
         mapper.run {
             val stønadsendringPerioder =
                 beregning.map { it.byggStønadsendringerForVedtak(behandling) }
+            val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
 
-            val grunnlagListeVedtak = byggGrunnlagForVedtak()
+            val grunnlagListeVedtak =
+                byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
             val stønadsendringGrunnlagListe = byggGrunnlagGenerelt()
 
             val grunnlagListe =
-                (
-                    grunnlagListeVedtak +
-                        stønadsendringPerioder.flatMap(
-                            StønadsendringPeriode::grunnlag,
-                        ) + stønadsendringGrunnlagListe
-                ).toSet()
+                (grunnlagListeVedtak + stønadsendringGrunnlag + stønadsendringGrunnlagListe).toSet()
             val engangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
 
             return byggOpprettVedtakRequestObjekt().copy(

@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
 import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
+import no.nav.bidrag.behandling.transformers.erUnder13År
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -39,6 +40,7 @@ import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
@@ -152,7 +154,7 @@ class VedtakTilBehandlingMapping(
         behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
         behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
-        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus)
+        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, vedtakstidspunkt)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
         notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
@@ -243,6 +245,7 @@ class VedtakTilBehandlingMapping(
     private fun List<GrunnlagDto>.mapUnderholdskostnad(
         behandling: Behandling,
         lesemodus: Boolean,
+        vedtakstidspunkt: LocalDateTime,
     ): MutableSet<Underholdskostnad> {
         if (behandling.tilType() != TypeBehandling.BIDRAG) return mutableSetOf()
         val underholdskostnadSøknadsbarn =
@@ -299,6 +302,8 @@ class VedtakTilBehandlingMapping(
                     underholdskostnad
                 }.toMutableSet()
 
+        val andreBarnTilBidragsmottakerGrunnlag = hentAndreBarnTilBidragsmottakerIdenterUnder13År()
+
         val underholdskostnadAndreBarn =
             filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
                 .filter {
@@ -309,11 +314,18 @@ class VedtakTilBehandlingMapping(
                     val innhold = grunnlag.innholdTilObjekt<FaktiskUtgiftPeriode>()
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!.personObjekt
 
+                    val kilde =
+                        if (andreBarnTilBidragsmottakerGrunnlag.contains(gjelderBarn.ident?.verdi)) {
+                            Kilde.OFFENTLIG
+                        } else {
+                            Kilde.MANUELL
+                        }
                     val underholdskostnad =
                         if (lesemodus) {
                             Underholdskostnad(
                                 id = 1,
                                 behandling = behandling,
+                                kilde = kilde,
                                 person =
                                     Person(
                                         id = 1,
@@ -330,6 +342,7 @@ class VedtakTilBehandlingMapping(
                                     navn = gjelderBarn.navn,
                                     fødselsdato = gjelderBarn.fødselsdato,
                                 ),
+                                kilde = kilde,
                             )
                         }
                     underholdskostnad.faktiskeTilsynsutgifter.addAll(
@@ -349,7 +362,10 @@ class VedtakTilBehandlingMapping(
         val underholdskostnadAndreBarnBMUtenTilsynsutgifer =
             filtrerOgKonverterBasertPåEgenReferanse<no.nav.bidrag.transport.behandling.felles.grunnlag.Person>(
                 Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
-            ).filter { !faktiskPeriodeGjelderReferanser.contains(it.referanse) }
+            ).filter {
+                it.grunnlag.personObjekt.fødselsdato
+                    .erUnder13År(vedtakstidspunkt.toLocalDate())
+            }.filter { !faktiskPeriodeGjelderReferanser.contains(it.referanse) }
                 .map {
                     val gjelderBarn = hentPersonMedReferanse(it.referanse)!!.personObjekt
                     if (lesemodus) {
@@ -378,6 +394,17 @@ class VedtakTilBehandlingMapping(
 
         return (underholdskostnadAndreBarn + underholdskostnadSøknadsbarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
     }
+
+    private fun List<GrunnlagDto>.hentAndreBarnTilBidragsmottakerIdenterUnder13År() =
+        filtrerBasertPåEgenReferanse(
+            Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER,
+        ).firstOrNull()
+            ?.innholdTilObjekt<InnhentetAndreBarnTilBidragsmottaker>()
+            ?.grunnlag
+            ?.filter { it.fødselsdato.erUnder13År() }
+            ?.mapNotNull {
+                hentPersonMedReferanse(it.gjelderPerson)!!.personIdent
+            } ?: emptyList()
 
     private fun List<TilleggsstønadPeriode>.mapTillegsstønad(
         underholdskostnad: Underholdskostnad,
