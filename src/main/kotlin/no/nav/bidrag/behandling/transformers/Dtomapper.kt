@@ -805,7 +805,11 @@ class Dtomapper(
             }?.filter {
                 it.borISammeHusstandDtoListe.any { p ->
                     val periodeBorHosBP =
-                        ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                        if (p.periodeFra!!.withDayOfMonth(1) == p.periodeTil?.withDayOfMonth(1)) {
+                            ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1))
+                        } else {
+                            ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                        }
                     val periodeBPErInnenfor =
                         periodeBorHosBP.fom >= periode.fom &&
                             periodeBorHosBP.til != null &&
