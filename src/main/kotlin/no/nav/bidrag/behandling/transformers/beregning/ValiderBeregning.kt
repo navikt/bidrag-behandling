@@ -237,6 +237,7 @@ class ValiderBeregning(
                         andreVoksneIHusstandenFeil != null ||
                         samværValideringsfeil.isNotEmpty() ||
                         gebyrValideringsfeil.isNotEmpty() ||
+                        underholdValideringsfeil.isNotEmpty() ||
                         måBekrefteOpplysninger.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
