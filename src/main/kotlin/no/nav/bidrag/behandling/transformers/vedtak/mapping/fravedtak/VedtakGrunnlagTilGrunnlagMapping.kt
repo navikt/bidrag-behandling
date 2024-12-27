@@ -113,14 +113,14 @@ fun List<GrunnlagDto>.hentInnhentetAndreBarnTilBidragsmottaker(): List<RelatertP
         ?.let {
             val part = hentPersonMedReferanse(it.gjelderReferanse)!!
             val innhold = it.innholdTilObjekt<InnhentetAndreBarnTilBidragsmottaker>()
-            innhold.grunnlag.map {
-                val gjelderPerson = hentPersonMedReferanse(it.gjelderPerson)!!
+            innhold.grunnlag.map { barn ->
+                val gjelderPerson = hentPersonMedReferanse(barn.gjelderPerson)!!
                 RelatertPersonGrunnlagDto(
                     partPersonId = part.personIdent!!,
                     relatertPersonPersonId = gjelderPerson.personIdent,
-                    navn = it.navn,
-                    fødselsdato = it.fødselsdato,
-                    relasjon = it.relasjon,
+                    navn = barn.navn,
+                    fødselsdato = barn.fødselsdato,
+                    relasjon = barn.relasjon,
                     borISammeHusstandDtoListe = emptyList(),
                 )
             }

@@ -124,7 +124,7 @@ class BehandlingTilGrunnlagMappingV2(
             innhold =
                 POJONode(
                     Person(
-                        ident = ident.takeIf { !it.isNullOrEmpty() }?.let { personService.hentNyesteIdent(it) },
+                        ident = ident.takeIf { !it.isNullOrEmpty() }?.let { personService.hentNyesteIdent(it) ?: Personident(it) },
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
                         fødselsdato =
                             finnFødselsdato(

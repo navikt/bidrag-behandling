@@ -91,7 +91,7 @@ fun List<Grunnlag>.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter: Set<G
             .map { (partPersonId, grunnlagListe) ->
                 val grunnlag = grunnlagListe.first()
                 val andreBarn =
-                    grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
+                    grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()?.filter { it.erBarn } ?: emptyList()
                 val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
 
                 val referanse = opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(gjelder.referanse)
