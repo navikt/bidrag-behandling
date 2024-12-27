@@ -217,7 +217,11 @@ class ValiderBeregning(
                         .map { grunnlagSomMåBekreftes ->
                             MåBekrefteNyeOpplysninger(
                                 grunnlagSomMåBekreftes.type,
-                                rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
+                                rolle =
+                                    (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BARNETILSYN)
+                                        .ifTrue {
+                                            underholdskostnader.find { u -> u.barnetsRolleIBehandlingen != null }?.barnetsRolleIBehandlingen
+                                        }?.tilDto() ?: grunnlagSomMåBekreftes.rolle.tilDto(),
                                 underholdskostnad =
                                     (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BARNETILSYN).ifTrue {
                                         underholdskostnader.find { u -> u.barnetsRolleIBehandlingen != null }
