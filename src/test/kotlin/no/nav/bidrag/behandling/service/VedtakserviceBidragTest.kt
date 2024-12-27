@@ -153,7 +153,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -379,7 +379,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -496,7 +496,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -567,7 +567,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -642,7 +642,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -730,7 +730,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -788,7 +788,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -923,7 +923,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -1005,7 +1005,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling

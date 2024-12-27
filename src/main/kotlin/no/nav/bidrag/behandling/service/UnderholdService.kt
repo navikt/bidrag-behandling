@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbei
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
+import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -96,15 +97,18 @@ class UnderholdService(
         underholdskostnad: Underholdskostnad,
         harTilsynsordning: Boolean,
     ) {
-        if (!harTilsynsordning &&
+        val harOffentligeOpplysninger = underholdskostnad.hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
+
+        if (harOffentligeOpplysninger) {
+            ugyldigForespørsel("Kan ikke endre tilsynsordning når det finnes offentlige opplysninger")
+        } else if (!harTilsynsordning &&
             (
                 underholdskostnad.barnetilsyn.isNotEmpty() ||
                     underholdskostnad.tilleggsstønad.isNotEmpty() ||
                     underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty()
             )
         ) {
-            throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
+            ugyldigForespørsel(
                 "Kan ikke sette harTilsynsordning til usann så lenge barnet er registrert med stønad til barnetilstyn, tilleggsstønad, eller faktiske tilsynsutgift",
             )
         }

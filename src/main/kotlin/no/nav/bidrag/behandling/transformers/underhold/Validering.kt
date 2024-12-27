@@ -84,10 +84,12 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
 
     when (this.type) {
         Underholdselement.BARN -> {
+            if (underhold.kilde == Kilde.OFFENTLIG) {
+                ugyldigForespørsel("Barn med person.id ${this.idElement} er hentet fra offentlige registre og kan derfor ikke slettes.")
+            }
             val rolle = underhold.barnetsRolleIBehandlingen
             if (rolle != null) {
-                throw HttpClientErrorException(
-                    HttpStatus.BAD_REQUEST,
+                ugyldigForespørsel(
                     "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}. Barnet kan derfor ikke slettes.",
                 )
             }
