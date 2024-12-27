@@ -246,6 +246,13 @@ data class MåBekrefteNyeOpplysninger(
                     fødselsdato = it.fødselsdato ?: it.rolle!!.fødselsdato,
                     husstandsmedlemId = it.id ?: -1,
                 )
+            } ?: underholdskostnad?.person?.let {
+                HusstandsmedlemDto(
+                    navn = it.navn,
+                    ident = it.ident,
+                    fødselsdato = it.fødselsdato,
+                    husstandsmedlemId = it.id ?: -1,
+                )
             }
 
     data class HusstandsmedlemDto(
