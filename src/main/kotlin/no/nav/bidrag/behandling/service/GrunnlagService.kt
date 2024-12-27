@@ -47,7 +47,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
-import no.nav.bidrag.behandling.transformers.erUnder13År
+import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder13År
 import no.nav.bidrag.behandling.transformers.grunnlag.grunnlagstyperSomIkkeKreverAktivering
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
@@ -807,8 +807,7 @@ class GrunnlagService(
         val søknadsbarnidenter = behandling.søknadsbarn.map { it.ident }
         val andreBarnIkkeIBehandling =
             husstandsmedlemmerOgEgneBarn
-                .filter { it.erBarn }
-                .filter { it.fødselsdato.erUnder13År() }
+                .filter { it.erBarnTilBMUnder13År }
                 .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
 
         andreBarnIkkeIBehandling.forEach {

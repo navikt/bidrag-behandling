@@ -328,7 +328,7 @@ class Dtomapper(
             null
         }
 
-    private fun tilgangskontrollerePersoninfo(
+    fun tilgangskontrollerePersoninfo(
         personinfo: Personinfo,
         saksnummer: Saksnummer,
         skjuleIdentitietHvisBeskyttet: Boolean = false,

@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.Personinfo
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
@@ -33,6 +34,7 @@ import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.erHistorisk
+import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder13År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -53,6 +55,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.DatoperiodeDto
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
@@ -60,6 +63,7 @@ import no.nav.bidrag.inntekt.util.InntektUtil
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.dokument.JournalpostType
@@ -83,7 +87,8 @@ import no.nav.bidrag.transport.notat.NotatInntektspostDto
 import no.nav.bidrag.transport.notat.NotatMaksGodkjentBeløpDto
 import no.nav.bidrag.transport.notat.NotatMalType
 import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderhold
-import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderhold.NotatBarnetilsynOffentligeOpplysninger
+import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderholdBarn
+import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderholdBarn.NotatBarnetilsynOffentligeOpplysninger
 import no.nav.bidrag.transport.notat.NotatPersonDto
 import no.nav.bidrag.transport.notat.NotatResultatBeregningInntekterDto
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto
@@ -231,6 +236,7 @@ class NotatOpplysningerService(
             underholdskostnader =
                 NotatUnderholdDto(
                     offentligeOpplysninger = behandling.tilUnderholdOpplysning(),
+                    offentligeOpplysningerV2 = behandling.tilUnderholdOpplysningV2(),
                     underholdskostnaderBarn =
                         mapper.run { behandling.underholdskostnader.tilDtos() }.map {
                             NotatUnderholdBarnDto(
@@ -363,6 +369,41 @@ class NotatOpplysningerService(
                         },
                 ),
             vedtak = behandling.hentBeregning(),
+        )
+    }
+
+    private fun Behandling.tilUnderholdOpplysningV2(): NotatOffentligeOpplysningerUnderhold {
+        val opplysningerAndreBarnTilBM =
+            grunnlag
+                .hentSisteAktiv()
+                .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.ANDRE_BARN }
+                ?.konvertereData<List<RelatertPersonGrunnlagDto>>()
+                ?.filter { it.erBarnTilBMUnder13År }
+                ?: emptyList()
+
+        val opplysningerTilleggstønad =
+            grunnlag
+                .hentSisteAktiv()
+                .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.TILLEGGSSTØNAD && !it.erBearbeidet }
+                ?.konvertereData<List<TilleggsstønadGrunnlagDto>>()
+                ?: emptyList()
+        return NotatOffentligeOpplysningerUnderhold(
+            tilUnderholdOpplysning(),
+            opplysningerAndreBarnTilBM.map {
+                val tilgangskontrollertPersoninfo =
+                    mapper.tilgangskontrollerePersoninfo(
+                        Personinfo(Personident(it.gjelderPersonId!!), null, it.fødselsdato),
+                        Saksnummer(saksnummer),
+                        true,
+                    )
+                NotatPersonDto(
+                    navn = tilgangskontrollertPersoninfo.navn,
+                    fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
+                    ident = tilgangskontrollertPersoninfo.ident,
+                    erBeskyttet = tilgangskontrollertPersoninfo.erBeskyttet,
+                )
+            },
+            opplysningerTilleggstønad.find { it.partPersonId == bidragsmottaker!!.ident }?.harInnvilgetVedtak ?: false,
         )
     }
 
@@ -614,7 +655,7 @@ private fun DelberegningBidragsevneDto.tilNotatDto() =
             ),
     )
 
-private fun Behandling.tilUnderholdOpplysning(): List<NotatOffentligeOpplysningerUnderhold> {
+private fun Behandling.tilUnderholdOpplysning(): List<NotatOffentligeOpplysningerUnderholdBarn> {
     val opplysningerBarnetilsyn =
         grunnlag
             .hentSisteAktiv()
@@ -629,7 +670,7 @@ private fun Behandling.tilUnderholdOpplysning(): List<NotatOffentligeOpplysninge
             ?.konvertereData<List<TilleggsstønadGrunnlagDto>>()
             ?: emptyList()
     return søknadsbarn.map { rolle ->
-        NotatOffentligeOpplysningerUnderhold(
+        NotatOffentligeOpplysningerUnderholdBarn(
             gjelder = rolle.behandling.bidragsmottaker!!.tilNotatRolle(),
             gjelderBarn = rolle.tilNotatRolle(),
             barnetilsyn =

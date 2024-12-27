@@ -167,6 +167,14 @@ class GrunnlagMockService {
             listOf(
                 RelatertPersonGrunnlagDto(
                     relatertPersonPersonId = testdataBarnBm.ident,
+                    fødselsdato = LocalDate.now().minusYears(3),
+                    relasjon = Familierelasjon.INGEN,
+                    navn = "Lyrisk Sopp 2323",
+                    partPersonId = testdataBM.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
+                RelatertPersonGrunnlagDto(
+                    relatertPersonPersonId = testdataBarnBm.ident,
                     fødselsdato = LocalDate.now().minusYears(16),
                     relasjon = Familierelasjon.BARN,
                     navn = "Lyrisk Sopp 1",
