@@ -807,18 +807,25 @@ class GrunnlagService(
         val søknadsbarnidenter = behandling.søknadsbarn.map { it.ident }
         val andreBarnIkkeIBehandling =
             husstandsmedlemmerOgEgneBarn
-                .filter { it.erBarnTilBMUnder13År }
+                .filter { it.erBarn }
                 .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
 
-        andreBarnIkkeIBehandling.forEach {
-            secureLogger.info { "$it er annen barn til BM. Oppretter eller oppdaterer underholdskostnad til kilde OFFENTLIG" }
-            behandling.underholdskostnader.find { u -> u.person.ident == it.gjelderPersonId }?.let {
+        andreBarnIkkeIBehandling.forEach { barn ->
+            behandling.underholdskostnader.find { u -> u.person.ident == barn.gjelderPersonId }?.let {
+                secureLogger.info { "$barn er annen barn til BM. Oppdaterer underholdskostnad til kilde OFFENTLIG" }
                 it.kilde = Kilde.OFFENTLIG
-            } ?: underholdService.oppretteUnderholdskostnad(
-                behandling,
-                BarnDto(personident = Personident(it.gjelderPersonId!!), fødselsdato = it.fødselsdato),
-                kilde = Kilde.OFFENTLIG,
-            )
+            }
+        }
+
+        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder13År }.forEach { barn ->
+            if (behandling.underholdskostnader.none { u -> u.person.ident == barn.gjelderPersonId }) {
+                secureLogger.info { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
+                underholdService.oppretteUnderholdskostnad(
+                    behandling,
+                    BarnDto(personident = Personident(barn.gjelderPersonId!!), fødselsdato = barn.fødselsdato),
+                    kilde = Kilde.OFFENTLIG,
+                )
+            }
         }
 
         val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.gjelderPersonId }

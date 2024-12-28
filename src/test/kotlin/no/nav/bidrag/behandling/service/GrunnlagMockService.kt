@@ -303,6 +303,7 @@ class GrunnlagMockService {
 
     @Test
     fun `skal endre underholdskostnad andre barn til bidragsmottaker fra manuell til offentlig hvis finnes i ny grunnlag`() {
+        val barnOver13Ident = "123213123123"
         val behandling =
             oppretteTestbehandling(
                 inkludereInntekter = true,
@@ -331,11 +332,27 @@ class GrunnlagMockService {
                     partPersonId = testdataBM.ident,
                     borISammeHusstandDtoListe = emptyList(),
                 ),
+                RelatertPersonGrunnlagDto(
+                    relatertPersonPersonId = barnOver13Ident,
+                    fødselsdato = LocalDate.now().minusYears(16),
+                    relasjon = Familierelasjon.BARN,
+                    navn = "Lyrisk Sopp 3",
+                    partPersonId = testdataBM.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
             )
 
         mockGrunnlagrespons(
             opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = grunnlagBarnBM),
             opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = emptyList()),
+        )
+        behandling.underholdskostnader.add(
+            Underholdskostnad(
+                id = 3,
+                behandling = behandling,
+                kilde = Kilde.MANUELL,
+                person = Person(id = 1, ident = barnOver13Ident, fødselsdato = LocalDate.now().minusYears(16)),
+            ),
         )
         behandling.underholdskostnader.add(
             Underholdskostnad(
@@ -353,13 +370,18 @@ class GrunnlagMockService {
             it.rolle.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
 
-        behandling.underholdskostnader shouldHaveSize 4
+        behandling.underholdskostnader shouldHaveSize 5
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
             it.barnetsRolleIBehandlingen shouldBe null
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm.ident }) {
+            it.shouldNotBeNull()
+            it.kilde shouldBe Kilde.OFFENTLIG
+            it.barnetsRolleIBehandlingen shouldBe null
+        }
+        assertSoftly(behandling.underholdskostnader.find { it.person.ident == barnOver13Ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
             it.barnetsRolleIBehandlingen shouldBe null
