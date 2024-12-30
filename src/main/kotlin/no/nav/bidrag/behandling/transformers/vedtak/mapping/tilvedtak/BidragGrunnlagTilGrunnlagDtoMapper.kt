@@ -54,13 +54,16 @@ import no.nav.bidrag.transport.felles.toCompactString
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse: Grunnlagsreferanse): GrunnlagDto {
+fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(
+    innhentetReferanse: Grunnlagsreferanse,
+    referanse: Grunnlagsreferanse? = null,
+): GrunnlagDto {
     val personnavn = navn ?: hentPersonVisningsnavn(gjelderPersonId)
 
     return GrunnlagDto(
         referanse =
-            opprettPersonBarnBidragsmottakerReferanse(fødselsdato!!, gjelderPersonId, navn),
-        grunnlagsreferanseListe = listOf(referanse),
+            referanse ?: opprettPersonBarnBidragsmottakerReferanse(fødselsdato!!, gjelderPersonId, navn),
+        grunnlagsreferanseListe = listOf(innhentetReferanse),
         type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
         innhold =
             POJONode(

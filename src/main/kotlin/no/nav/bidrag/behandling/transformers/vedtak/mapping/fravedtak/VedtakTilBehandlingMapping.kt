@@ -45,7 +45,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -302,7 +301,11 @@ class VedtakTilBehandlingMapping(
                     underholdskostnad
                 }.toMutableSet()
 
-        val andreBarnTilBidragsmottakerGrunnlag = hentAndreBarnTilBidragsmottakerIdenterUnder13År()
+        val andreBarnTilBidragsmottakerGrunnlag = hentAndreBarnTilBidragsmottakerGrunnlagUnder13År(vedtakstidspunkt)
+        val andreBarnTilBidragsmottakerIdenter =
+            andreBarnTilBidragsmottakerGrunnlag.mapNotNull {
+                hentPersonMedReferanse(it.gjelderPerson)!!.personIdent
+            }
 
         val underholdskostnadAndreBarn =
             filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
@@ -315,7 +318,7 @@ class VedtakTilBehandlingMapping(
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!.personObjekt
 
                     val kilde =
-                        if (andreBarnTilBidragsmottakerGrunnlag.contains(gjelderBarn.ident?.verdi)) {
+                        if (andreBarnTilBidragsmottakerIdenter.contains(gjelderBarn.ident?.verdi)) {
                             Kilde.OFFENTLIG
                         } else {
                             Kilde.MANUELL
@@ -360,14 +363,11 @@ class VedtakTilBehandlingMapping(
             ).map { it.gjelderBarnReferanse }
 
         val underholdskostnadAndreBarnBMUtenTilsynsutgifer =
-            filtrerOgKonverterBasertPåEgenReferanse<no.nav.bidrag.transport.behandling.felles.grunnlag.Person>(
-                Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
-            ).filter {
-                it.grunnlag.personObjekt.fødselsdato
-                    .erUnder13År(vedtakstidspunkt.toLocalDate())
-            }.filter { !faktiskPeriodeGjelderReferanser.contains(it.referanse) }
+            andreBarnTilBidragsmottakerGrunnlag
+                .filter { !faktiskPeriodeGjelderReferanser.contains(it.gjelderPerson) }
+                .filter { hentPersonMedReferanse(it.gjelderPerson)?.type != Grunnlagstype.PERSON_SØKNADSBARN }
                 .map {
-                    val gjelderBarn = hentPersonMedReferanse(it.referanse)!!.personObjekt
+                    val gjelderBarn = hentPersonMedReferanse(it.gjelderPerson)!!.personObjekt
                     if (lesemodus) {
                         Underholdskostnad(
                             id = 1,
@@ -395,16 +395,14 @@ class VedtakTilBehandlingMapping(
         return (underholdskostnadAndreBarn + underholdskostnadSøknadsbarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
     }
 
-    private fun List<GrunnlagDto>.hentAndreBarnTilBidragsmottakerIdenterUnder13År() =
+    private fun List<GrunnlagDto>.hentAndreBarnTilBidragsmottakerGrunnlagUnder13År(vedtakstidspunkt: LocalDateTime) =
         filtrerBasertPåEgenReferanse(
             Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER,
         ).firstOrNull()
             ?.innholdTilObjekt<InnhentetAndreBarnTilBidragsmottaker>()
             ?.grunnlag
-            ?.filter { it.fødselsdato.erUnder13År() }
-            ?.mapNotNull {
-                hentPersonMedReferanse(it.gjelderPerson)!!.personIdent
-            } ?: emptyList()
+            ?.filter { it.fødselsdato.erUnder13År(vedtakstidspunkt.toLocalDate()) }
+            ?: emptyList()
 
     private fun List<TilleggsstønadPeriode>.mapTillegsstønad(
         underholdskostnad: Underholdskostnad,

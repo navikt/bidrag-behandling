@@ -11,7 +11,6 @@ import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningRes
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
-import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
@@ -33,10 +32,10 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.gebyrBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.gebyrDelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
-import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
@@ -173,6 +172,7 @@ class VedtakGrunnlagMapper(
                     TypeBehandling.BIDRAG -> {
                         grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
+                        grunnlagsliste.addAll(opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()))
                     }
 
                     else -> {}
@@ -186,7 +186,7 @@ class VedtakGrunnlagMapper(
                             beregningTilDato,
                         ),
                     søknadsbarnReferanse = søknadsbarn.referanse,
-                    grunnlagListe = grunnlagsliste.toList(),
+                    grunnlagListe = grunnlagsliste.toSet().toList(),
                 )
             }
         }
