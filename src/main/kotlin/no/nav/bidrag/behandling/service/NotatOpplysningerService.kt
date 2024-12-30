@@ -378,7 +378,7 @@ class NotatOpplysningerService(
                 .hentSisteAktiv()
                 .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.ANDRE_BARN }
                 ?.konvertereData<List<RelatertPersonGrunnlagDto>>()
-                ?.filter { it.erBarnTilBMUnder13År }
+                ?.filter { it.erBarnTilBMUnder13År(virkningstidspunkt!!) }
                 ?: emptyList()
 
         val opplysningerTilleggstønad =

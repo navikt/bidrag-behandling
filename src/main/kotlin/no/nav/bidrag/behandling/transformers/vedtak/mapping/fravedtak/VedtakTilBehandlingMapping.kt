@@ -18,7 +18,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
 import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
-import no.nav.bidrag.behandling.transformers.erUnder13År
+import no.nav.bidrag.behandling.transformers.erUnder12År
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -102,18 +102,17 @@ class VedtakTilBehandlingMapping(
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
             }
         val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
+        val virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
                 søknadstype = søknadstype,
                 vedtakstype = vedtakType ?: type,
                 opprinneligVedtakstype = opprinneligVedtakstype,
-                virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato,
+                virkningstidspunkt = virkningstidspunkt,
                 kategori = grunnlagListe.særbidragskategori?.kategori?.name,
                 kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
-                opprinneligVirkningstidspunkt =
-                    virkningstidspunkt
-                        ?: hentSøknad().søktFraDato,
+                opprinneligVirkningstidspunkt = virkningstidspunkt,
                 opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
                 innkrevingstype =
                     this.stønadsendringListe.firstOrNull()?.innkreving
@@ -153,7 +152,7 @@ class VedtakTilBehandlingMapping(
         behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
         behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
-        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, vedtakstidspunkt)
+        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
         notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
@@ -244,7 +243,7 @@ class VedtakTilBehandlingMapping(
     private fun List<GrunnlagDto>.mapUnderholdskostnad(
         behandling: Behandling,
         lesemodus: Boolean,
-        vedtakstidspunkt: LocalDateTime,
+        virkningstidspunkt: LocalDate,
     ): MutableSet<Underholdskostnad> {
         if (behandling.tilType() != TypeBehandling.BIDRAG) return mutableSetOf()
         val underholdskostnadSøknadsbarn =
@@ -301,7 +300,7 @@ class VedtakTilBehandlingMapping(
                     underholdskostnad
                 }.toMutableSet()
 
-        val andreBarnTilBidragsmottakerGrunnlag = hentAndreBarnTilBidragsmottakerGrunnlagUnder13År(vedtakstidspunkt)
+        val andreBarnTilBidragsmottakerGrunnlag = hentAndreBarnTilBidragsmottakerGrunnlagUnder12År(virkningstidspunkt)
         val andreBarnTilBidragsmottakerIdenter =
             andreBarnTilBidragsmottakerGrunnlag.mapNotNull {
                 hentPersonMedReferanse(it.gjelderPerson)!!.personIdent
@@ -395,13 +394,13 @@ class VedtakTilBehandlingMapping(
         return (underholdskostnadAndreBarn + underholdskostnadSøknadsbarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
     }
 
-    private fun List<GrunnlagDto>.hentAndreBarnTilBidragsmottakerGrunnlagUnder13År(vedtakstidspunkt: LocalDateTime) =
+    private fun List<GrunnlagDto>.hentAndreBarnTilBidragsmottakerGrunnlagUnder12År(virkningstidspunkt: LocalDate) =
         filtrerBasertPåEgenReferanse(
             Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER,
         ).firstOrNull()
             ?.innholdTilObjekt<InnhentetAndreBarnTilBidragsmottaker>()
             ?.grunnlag
-            ?.filter { it.fødselsdato.erUnder13År(vedtakstidspunkt.toLocalDate()) }
+            ?.filter { it.fødselsdato.erUnder12År(virkningstidspunkt) }
             ?: emptyList()
 
     private fun List<TilleggsstønadPeriode>.mapTillegsstønad(

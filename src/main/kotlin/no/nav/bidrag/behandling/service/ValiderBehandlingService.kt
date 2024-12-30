@@ -26,7 +26,7 @@ class ValiderBehandlingService(
     fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? =
         when (request.tilType()) {
             TypeBehandling.SÆRBIDRAG -> kanSærbidragBehandlesINyLøsning(request)
-            TypeBehandling.BIDRAG -> kanBidragBehandlesINyLøsning(request)
+//            TypeBehandling.BIDRAG -> kanBidragBehandlesINyLøsning(request)
             else -> null
         }
 
