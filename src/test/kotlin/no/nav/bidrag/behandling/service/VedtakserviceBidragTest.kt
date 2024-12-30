@@ -340,8 +340,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilBarnetilsyn(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
             generateId = true,
-            tilsynstype = Tilsynstype.IKKE_ANGITT,
-            under_skolealder = null,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
             kilde = Kilde.OFFENTLIG,
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
@@ -457,8 +457,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilBarnetilsyn(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
             generateId = true,
-            tilsynstype = Tilsynstype.IKKE_ANGITT,
-            under_skolealder = null,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
             kilde = Kilde.OFFENTLIG,
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
