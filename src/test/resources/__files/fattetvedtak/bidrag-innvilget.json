@@ -73,8 +73,8 @@
       "gjelderBarnReferanse": null
     },
     {
-      "referanse": "person_PERSON_BARN_BIDRAGSMOTTAKER_20080103_-1239573329",
-      "type": "PERSON_BARN_BIDRAGSMOTTAKER",
+      "referanse": "person_PERSON_HUSTANDSMEDLEM_20080103_-1239573329",
+      "type": "PERSON_HUSSTANDSMEDLEM",
       "innhold": {
         "navn": null,
         "ident": "03410879076",
@@ -101,7 +101,7 @@
             "navn": "UEMOSJONELL SYNSING",
             "relasjon": "BARN",
             "fødselsdato": "2008-01-03",
-            "gjelderPerson": "person_PERSON_BARN_BIDRAGSMOTTAKER_20080103_-1239573329"
+            "gjelderPerson": "person_PERSON_HUSTANDSMEDLEM_20080103_-1239573329"
           },
           {
             "navn": "DOBBEL FUGL",

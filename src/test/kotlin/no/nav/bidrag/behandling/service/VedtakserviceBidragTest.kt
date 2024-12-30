@@ -114,8 +114,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilBarnetilsyn(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
             generateId = true,
-            tilsynstype = Tilsynstype.IKKE_ANGITT,
-            under_skolealder = null,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
             kilde = Kilde.OFFENTLIG,
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
@@ -277,8 +277,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     tilsynstype shouldBe Tilsynstype.HELTID
                 }
                 assertSoftly(this[1].innholdTilObjekt<BarnetilsynMedStønadPeriode>()) {
-                    skolealder shouldBe Skolealder.IKKE_ANGITT
-                    tilsynstype shouldBe Tilsynstype.IKKE_ANGITT
+                    skolealder shouldBe Skolealder.UNDER
+                    tilsynstype shouldBe Tilsynstype.HELTID
                 }
             }
             validerNotater(behandling)
@@ -1075,7 +1075,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.shouldContainPerson(testdataBarn1.ident)
         }
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)) {
-            shouldHaveSize(4)
+            shouldHaveSize(3)
             it.shouldContainPerson(testdataHusstandsmedlem1.ident)
         }
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER)) {
@@ -1087,7 +1087,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.shouldContainPerson(testdataBP.ident)
         }
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER)) {
-            shouldHaveSize(2)
+            shouldHaveSize(3)
             it.shouldContainPerson(testdataBarnBm.ident)
         }
     }
@@ -1140,8 +1140,8 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     assertSoftly(sluttberegningPeriode) {
         val innhold = innholdTilObjekt<SluttberegningBarnebidrag>()
         innhold.resultatVisningsnavn!!.intern shouldBe "Kostnadsberegnet bidrag"
-        innhold.beregnetBeløp shouldBe BigDecimal("5816.77")
-        innhold.resultatBeløp shouldBe BigDecimal("5820")
+        innhold.beregnetBeløp shouldBe BigDecimal("5831.14")
+        innhold.resultatBeløp shouldBe BigDecimal("5830")
         it.grunnlagsreferanseListe shouldHaveSize 8
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe).first().referanse shouldBe søknadsbarn1Grunnlag.referanse
@@ -1161,14 +1161,14 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndel>()
-        innhold.andelBeløp shouldBe BigDecimal("6827.77")
+        innhold.andelBeløp shouldBe BigDecimal("6842.14")
         it.grunnlagsreferanseListe shouldHaveSize 6
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningUnderholdskostnad>()
-        innhold.underholdskostnad shouldBe BigDecimal("8193.32")
-        innhold.nettoTilsynsutgift shouldBe BigDecimal("1377.32")
+        innhold.underholdskostnad shouldBe BigDecimal("8210.57")
+        innhold.nettoTilsynsutgift shouldBe BigDecimal("1394.57")
         innhold.barnetilsynMedStønad shouldBe BigDecimal("630.00")
         it.grunnlagsreferanseListe shouldHaveSize 7
     }
