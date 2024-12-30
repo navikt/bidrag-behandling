@@ -87,7 +87,7 @@ fun finnCutoffDatoFom(
 
 fun LocalDate.erOverEllerLik18År() = plusYears(18).isBefore(LocalDate.now()) || plusYears(18).isEqual(LocalDate.now())
 
-fun LocalDate?.erUnder13År(basertPåDato: LocalDate = LocalDate.now()) =
+fun LocalDate?.erUnder12År(basertPåDato: LocalDate = LocalDate.now()) =
     Period
         .between(
             this,
