@@ -1,0 +1,43 @@
+{
+  "ainntektListe": [],
+  "arbeidsforholdListe": [],
+  "barnetilleggListe": [],
+  "barnetilsynListe": [],
+  "hentetTidspunkt": "2024-01-16T15:10:44.003848261",
+  "husstandsmedlemmerOgEgneBarnListe": [
+    {
+      "partPersonId": "{bmIdent}",
+      "relatertPersonPersonId": "{barn1Ident}",
+      "navn": "Småstein Nilsen",
+      "fødselsdato": "2020-01-24",
+      "erBarnAvBmBp": true,
+      "borISammeHusstandDtoListe": [
+        {
+          "periodeFra": "2020-01-24"
+        }
+      ]
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "relatertPersonPersonId": "{barnBM1Ident}",
+      "navn": "Brostein Nilsen",
+      "fødselsdato": "2022-01-24",
+      "erBarnAvBmBp": true,
+      "borISammeHusstandDtoListe": []
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "relatertPersonPersonId": "{barnBM2Ident}",
+      "navn": "For gammel nilsen",
+      "fødselsdato": "2011-12-12",
+      "erBarnAvBmBp": true,
+      "borISammeHusstandDtoListe": []
+    }
+  ],
+  "kontantstøtteListe": [],
+  "sivilstandListe": [],
+  "skattegrunnlagListe": [],
+  "småbarnstilleggListe": [],
+  "utvidetBarnetrygdListe": [],
+  "feilrapporteringListe": []
+}

@@ -421,6 +421,11 @@ enum class Grunnlagsdatatype(
         ),
     ),
     BARNETILSYN(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    ANDRE_BARN(
+        mapOf(
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
+        ),
+    ),
     BOFORHOLD(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
@@ -516,7 +521,7 @@ enum class Grunnlagsdatatype(
                 true ->
                     entries
                         .filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }
-                        .filter { it.behandlingstypeMotRolletyper.values.any { roller -> roller.contains(rolletype) } }
+                        .filter { it.behandlingstypeMotRolletyper[behandlingstype]?.any { it == rolletype } == true }
                         .toSet()
 
                 false -> entries.filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
@@ -547,9 +552,15 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
         else -> null
     }
 
+fun Grunnlagsdatatype.innhentesForRolle2(behandling: Behandling) = this.behandlingstypeMotRolletyper[behandling.tilType()]
+
 fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
     when (this) {
-        Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
+        Grunnlagsdatatype.BARNETILSYN,
+        Grunnlagsdatatype.BOFORHOLD,
+        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+        Grunnlagsdatatype.ANDRE_BARN,
+        -> {
             val t = this.behandlingstypeMotRolletyper[behandling.tilType()]
             t?.let {
                 when (it.first()) {

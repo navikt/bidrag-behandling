@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
+import no.nav.bidrag.behandling.transformers.underhold.valider
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
@@ -217,6 +218,10 @@ class ValiderBeregning(
                             MåBekrefteNyeOpplysninger(
                                 grunnlagSomMåBekreftes.type,
                                 rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
+                                underholdskostnad =
+                                    (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BARNETILSYN).ifTrue {
+                                        underholdskostnader.find { u -> u.barnetsRolleIBehandlingen != null }
+                                    },
                                 husstandsmedlem =
                                     (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
                                         husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
@@ -224,6 +229,7 @@ class ValiderBeregning(
                             )
                         }.toSet()
                 val samværValideringsfeil = samvær.mapValideringsfeil()
+                val underholdValideringsfeil = underholdskostnader.valider()
                 val harFeil =
                     inntekterFeil != null ||
                         husstandsmedlemsfeil.isNotEmpty() ||
@@ -231,6 +237,7 @@ class ValiderBeregning(
                         andreVoksneIHusstandenFeil != null ||
                         samværValideringsfeil.isNotEmpty() ||
                         gebyrValideringsfeil.isNotEmpty() ||
+                        underholdValideringsfeil.isNotEmpty() ||
                         måBekrefteOpplysninger.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
@@ -241,7 +248,7 @@ class ValiderBeregning(
                         virkningstidspunkt = virkningstidspunktFeil,
                         gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
                         samvær = samværValideringsfeil.takeIf { it.isNotEmpty() },
-                        underholdskostnad = null, // TODO: Legg til validering av underholdskostnad
+                        underholdskostnad = underholdValideringsfeil.takeIf { it.isNotEmpty() },
                     )
                 }
             } else {

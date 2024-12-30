@@ -114,8 +114,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilBarnetilsyn(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
             generateId = true,
-            tilsynstype = Tilsynstype.IKKE_ANGITT,
-            under_skolealder = null,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
             kilde = Kilde.OFFENTLIG,
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
@@ -153,7 +153,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -175,7 +175,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 174
+                request.grunnlagListe shouldHaveSize 176
             }
         }
 
@@ -277,8 +277,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     tilsynstype shouldBe Tilsynstype.HELTID
                 }
                 assertSoftly(this[1].innholdTilObjekt<BarnetilsynMedStønadPeriode>()) {
-                    skolealder shouldBe Skolealder.IKKE_ANGITT
-                    tilsynstype shouldBe Tilsynstype.IKKE_ANGITT
+                    skolealder shouldBe Skolealder.UNDER
+                    tilsynstype shouldBe Tilsynstype.HELTID
                 }
             }
             validerNotater(behandling)
@@ -302,6 +302,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 5
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_TILLEGGSSTØNAD_BEGRENSET) shouldHaveSize 1
@@ -339,8 +340,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilBarnetilsyn(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
             generateId = true,
-            tilsynstype = Tilsynstype.IKKE_ANGITT,
-            under_skolealder = null,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
             kilde = Kilde.OFFENTLIG,
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
@@ -378,7 +379,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -456,8 +457,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilBarnetilsyn(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
             generateId = true,
-            tilsynstype = Tilsynstype.IKKE_ANGITT,
-            under_skolealder = null,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
             kilde = Kilde.OFFENTLIG,
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
@@ -495,7 +496,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -566,7 +567,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -641,7 +642,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -729,7 +730,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -787,7 +788,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -922,7 +923,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -1004,7 +1005,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp"),
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
             )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -1074,7 +1075,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.shouldContainPerson(testdataBarn1.ident)
         }
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_HUSSTANDSMEDLEM)) {
-            shouldHaveSize(4)
+            shouldHaveSize(3)
             it.shouldContainPerson(testdataHusstandsmedlem1.ident)
         }
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER)) {
@@ -1086,7 +1087,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.shouldContainPerson(testdataBP.ident)
         }
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER)) {
-            shouldHaveSize(1)
+            shouldHaveSize(3)
             it.shouldContainPerson(testdataBarnBm.ident)
         }
     }

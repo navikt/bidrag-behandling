@@ -1,0 +1,163 @@
+{
+  "ainntektListe": [],
+  "skattegrunnlagListe": [
+    {
+      "personId": "{bmIdent}",
+      "periodeFra": "2023-01-01",
+      "periodeTil": "2024-01-01",
+      "skattegrunnlagspostListe": [
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "annenArbeidsinntekt",
+          "belop": 6000.0
+        },
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "annenSkattepliktigKapitalinntektFraAnnetFinansprodukt",
+          "belop": 5000.0
+        },
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "annenSkattepliktigKapitalinntektFraVirtuellValuta",
+          "belop": 50000.0
+        },
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "arbeidsavklaringspenger",
+          "belop": 10000.0
+        },
+        {
+          "skattegrunnlagType": "ORDINÆR",
+          "inntektType": "inntektFraGevinstOgTapskonto",
+          "belop": 30000.0
+        }
+      ]
+    }
+  ],
+  "utvidetBarnetrygdListe": [],
+  "tilleggsstønadBarnetilsynListe": [
+    {
+      "partPersonId": "{bmIdent}",
+      "harInnvilgetVedtak": true
+    }
+  ],
+  "småbarnstilleggListe": [],
+  "barnetilleggListe": [],
+  "kontantstøtteListe": [],
+  "husstandsmedlemmerOgEgneBarnListe": [
+    {
+      "partPersonId": "{bmIdent}",
+      "gjelderPersonId": "3223123213",
+      "navn": "FIKTIV PEDAGOG",
+      "fødselsdato": "2022-05-09",
+      "relasjon": "BARN",
+      "borISammeHusstandDtoListe": []
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "gjelderPersonId": "34234324324",
+      "navn": "FIKTIV PEDAGOG",
+      "fødselsdato": "2001-05-09",
+      "relasjon": "INGEN",
+      "borISammeHusstandDtoListe": []
+    }
+  ],
+  "sivilstandListe": [],
+  "barnetilsynListe": [
+    {
+      "partPersonId": "{bmIdent}",
+      "barnPersonId": "{barn1Ident}",
+      "periodeFra": "2024-01-01",
+      "periodeTil": "2025-07-01",
+      "tilsynstype": "HELTID",
+      "skolealder": "OVER"
+    }
+  ],
+  "arbeidsforholdListe": [
+    {
+      "partPersonId": "{bmIdent}",
+      "startdato": "2002-11-03",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2002-11",
+          "periodeTil": null,
+          "arbeidsforholdType": "Forenklet",
+          "arbeidstidsordningBeskrivelse": null,
+          "ansettelsesformBeskrivelse": null,
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": null,
+          "avtaltStillingsprosent": null,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjonListe": [],
+      "permitteringListe": []
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "startdato": "2003-12-08",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SJOKKERENDE ELEKTRIKER",
+      "arbeidsgiverOrgnummer": "947064649",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2024-01",
+          "periodeTil": null,
+          "arbeidsforholdType": "Ordinaer",
+          "arbeidstidsordningBeskrivelse": "Ikke skift",
+          "ansettelsesformBeskrivelse": "Fast ansettelse",
+          "yrkeBeskrivelse": "ALLMENNLÆRER",
+          "antallTimerPrUke": 37.5,
+          "avtaltStillingsprosent": 75.0,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjonListe": [
+        {
+          "startdato": "2023-11-01",
+          "sluttdato": "2024-01-01",
+          "beskrivelse": "Permisjon",
+          "prosent": 100.0
+        }
+      ],
+      "permitteringListe": [
+        {
+          "startdato": "2023-01-01",
+          "sluttdato": "2023-01-31",
+          "beskrivelse": "Permittering",
+          "prosent": 100.0
+        }
+      ]
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "startdato": "2022-12-07",
+      "sluttdato": null,
+      "arbeidsgiverNavn": "SAUEFABRIKK",
+      "arbeidsgiverOrgnummer": "896929119",
+      "ansettelsesdetaljerListe": [
+        {
+          "periodeFra": "2022-12",
+          "periodeTil": null,
+          "arbeidsforholdType": "Forenklet",
+          "arbeidstidsordningBeskrivelse": null,
+          "ansettelsesformBeskrivelse": null,
+          "yrkeBeskrivelse": "BYGNINGSSNEKKER",
+          "antallTimerPrUke": null,
+          "avtaltStillingsprosent": null,
+          "sisteStillingsprosentendringDato": null,
+          "sisteLønnsendringDato": null
+        }
+      ],
+      "permisjonListe": [],
+      "permitteringListe": []
+    }
+  ],
+  "feilrapporteringListe": [],
+  "hentetTidspunkt": "2024-01-29T14:18:03.006031152"
+}

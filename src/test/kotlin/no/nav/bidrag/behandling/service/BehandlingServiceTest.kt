@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.equals.shouldBeEqual
@@ -248,7 +249,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
                     .size shouldBe
                     1
-                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(12)
+                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(13)
             }
         }
 
@@ -793,11 +794,20 @@ class BehandlingServiceTest : TestContainerRunner() {
             val opprettetBehandling = behandlingService.hentBehandlingById(respons.id)
             opprettetBehandling.stonadstype shouldBe Stønadstype.BIDRAG
             opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 1
-            opprettetBehandling.underholdskostnader shouldHaveSize 1
-            opprettetBehandling.underholdskostnader.filter {
-                Rolletype.BARN == it.barnetsRolleIBehandlingen?.rolletype
-            } shouldHaveSize 1
-            opprettetBehandling.underholdskostnader.filter { it.person.ident != null } shouldHaveSize 1
+            opprettetBehandling.underholdskostnader shouldHaveSize 2
+            assertSoftly(opprettetBehandling.underholdskostnader.find { Rolletype.BARN == it.barnetsRolleIBehandlingen?.rolletype }) {
+                it.shouldNotBeNull()
+                it.kilde shouldBe null
+                it.faktiskeTilsynsutgifter.shouldBeEmpty()
+                it.person.ident.shouldBe(testdataBarn1.ident)
+            }
+            assertSoftly(opprettetBehandling.underholdskostnader.find { it.kilde == Kilde.OFFENTLIG }) {
+                it.shouldNotBeNull()
+                it.barnetsRolleIBehandlingen shouldBe null
+                it.faktiskeTilsynsutgifter.shouldBeEmpty()
+                it.person.ident.shouldBe(testdataBarn2.ident)
+            }
+            opprettetBehandling.underholdskostnader.filter { it.person.ident != null } shouldHaveSize 2
         }
 
         @Test

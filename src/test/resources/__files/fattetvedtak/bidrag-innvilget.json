@@ -47,6 +47,95 @@
       "gjelderBarnReferanse": null
     },
     {
+      "referanse": "person_PERSON_BARN_BIDRAGSMOTTAKER_20120101_-658492283",
+      "type": "PERSON_BARN_BIDRAGSMOTTAKER",
+      "innhold": {
+        "navn": "Test barn 1",
+        "ident": null,
+        "fødselsdato": "2012-01-01"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null,
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_BARN_BIDRAGSMOTTAKER_20130411_-1213566827",
+      "type": "PERSON_BARN_BIDRAGSMOTTAKER",
+      "innhold": {
+        "navn": null,
+        "ident": "11441387387",
+        "fødselsdato": "2013-04-11"
+      },
+      "grunnlagsreferanseListe": [
+        "innhentet_andre_barn_til_bidragsmottaker_person_PERSON_BIDRAGSMOTTAKER_19980601_320"
+      ],
+      "gjelderReferanse": null,
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "person_PERSON_HUSTANDSMEDLEM_20080103_-1239573329",
+      "type": "PERSON_HUSSTANDSMEDLEM",
+      "innhold": {
+        "navn": null,
+        "ident": "03410879076",
+        "fødselsdato": "2008-01-03"
+      },
+      "grunnlagsreferanseListe": [
+        "innhentet_andre_barn_til_bidragsmottaker_person_PERSON_BIDRAGSMOTTAKER_19980601_320"
+      ],
+      "gjelderReferanse": null,
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "innhentet_andre_barn_til_bidragsmottaker_person_PERSON_BIDRAGSMOTTAKER_19980601_320",
+      "type": "INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER",
+      "innhold": {
+        "grunnlag": [
+          {
+            "navn": "Overfladisk Kalender",
+            "relasjon": "BARN",
+            "fødselsdato": "2013-04-11",
+            "gjelderPerson": "person_PERSON_SØKNADSBARN_20130615_285"
+          },
+          {
+            "navn": "UEMOSJONELL SYNSING",
+            "relasjon": "BARN",
+            "fødselsdato": "2008-01-03",
+            "gjelderPerson": "person_PERSON_HUSTANDSMEDLEM_20080103_-1239573329"
+          },
+          {
+            "navn": "DOBBEL FUGL",
+            "relasjon": "BARN",
+            "fødselsdato": "2013-04-11",
+            "gjelderPerson": "person_PERSON_BARN_BIDRAGSMOTTAKER_20130411_-1213566827"
+          }
+        ],
+        "datakilde": "PDL",
+        "hentetTidspunkt": "2024-12-25T10:29:28.067804"
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19790718_284",
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "FAKTISK_UTGIFT_PERIODE_person_PERSON_BARN_BIDRAGSMOTTAKER_20130411_-1213566827__20240101",
+      "type": "FAKTISK_UTGIFT_PERIODE",
+      "innhold": {
+        "periode": {
+          "fom": "2024-01",
+          "til": null
+        },
+        "kommentar": "",
+        "fødselsdatoBarn": "2013-04-11",
+        "kostpengerBeløp": 0,
+        "manueltRegistrert": true,
+        "faktiskUtgiftBeløp": 12
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19980601_320",
+      "gjelderBarnReferanse": "person_PERSON_BARN_BIDRAGSMOTTAKER_20130411_-1213566827"
+    },
+    {
       "referanse": "bostatus_person_PERSON_BIDRAGSPLIKTIG_19830916_286_20240201",
       "type": "BOSTATUS_PERIODE",
       "innhold": {

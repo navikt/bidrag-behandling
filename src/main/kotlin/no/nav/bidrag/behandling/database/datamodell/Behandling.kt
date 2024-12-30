@@ -91,7 +91,7 @@ open class Behandling(
     open var utgiftsbegrunnelseKunINotat: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     @Column(name = "grunnlagsinnhenting_feilet", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var grunnlagsinnhentingFeilet: String? = null,

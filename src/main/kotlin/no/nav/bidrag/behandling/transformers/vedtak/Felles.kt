@@ -7,12 +7,16 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.BehandlingsreferanseDto
@@ -20,7 +24,9 @@ import no.nav.bidrag.transport.behandling.vedtak.response.EngangsbeløpDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
+import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.sak.RolleDto
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 val særbidragDirekteAvslagskoderSomKreverBeregning = listOf(Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS)
@@ -45,6 +51,8 @@ data class StønadsendringPeriode(
     val grunnlag: Set<GrunnlagDto>,
 )
 
+fun Collection<BaseGrunnlag>.hentPersonMedIdent(ident: String?) = hentAllePersoner().find { it.personIdent == ident }
+
 fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
     filter { it.erPerson() }.find { it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
 
@@ -60,6 +68,15 @@ fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
 }
 
 fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(this) else null
+
+fun opprettPersonBarnBidragsmottakerReferanse(
+    fødselsdato: LocalDate,
+    ident: String?,
+    navn: String?,
+) = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER.tilPersonreferanse(
+    fødselsdato.toCompactString(),
+    if (ident.isNullOrEmpty()) (fødselsdato.toCompactString() + navn).hashCode() else (ident + fødselsdato.toCompactString()).hashCode(),
+)
 
 fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
     VedtakDto(

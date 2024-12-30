@@ -3271,6 +3271,31 @@
           "periodeTil": null
         }
       ]
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "gjelderPersonId": "98545454545",
+      "navn": "SALIG TORN",
+      "fødselsdato": "2005-06-23",
+      "relasjon": "BARN",
+      "borISammeHusstandDtoListe": []
+    },
+    {
+      "partPersonId": "{bmIdent}",
+      "gjelderPersonId": "3223123213",
+      "navn": "FIKTIV PROFESSOR",
+      "fødselsdato": "2022-05-09",
+      "relasjon": "BARN",
+      "borISammeHusstandDtoListe": []
+    },
+
+    {
+      "partPersonId": "{bmIdent}",
+      "gjelderPersonId": "34234324324",
+      "navn": "FELLES PEDAGOG",
+      "fødselsdato": "2001-05-09",
+      "relasjon": "INGEN",
+      "borISammeHusstandDtoListe": []
     }
   ],
   "sivilstandListe": [

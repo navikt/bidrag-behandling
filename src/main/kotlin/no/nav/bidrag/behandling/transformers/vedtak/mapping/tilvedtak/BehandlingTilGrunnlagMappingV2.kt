@@ -9,13 +9,14 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
-import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
+import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBidragsmottakerReferanse
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -37,6 +38,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
@@ -102,13 +104,14 @@ class BehandlingTilGrunnlagMappingV2(
         val innhentetSivilstand = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetSivilstand(personobjekter)
         val innhentetHusstandsmedlemmer =
             sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter)
+        val innhentetAndreBarnTilBM = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter)
         val beregnetInntekt = sortertGrunnlagsListeBearbeidet.tilBeregnetInntekt(personobjekter)
         val innhentetInntekter = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetGrunnlagInntekt(personobjekter)
         val innhentetUnderholdskostnad = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetGrunnlagUnderholdskostnad(personobjekter)
 
         return innhentetInntekter + innhentetArbeidsforhold + innhentetHusstandsmedlemmer +
             innhentetSivilstand + beregnetInntekt +
-            innhentetUnderholdskostnad
+            innhentetUnderholdskostnad + innhentetAndreBarnTilBM
     }
 
     fun Rolle.tilGrunnlagsreferanse() = rolletype.tilGrunnlagstype().tilPersonreferanse(fødselsdato.toCompactString(), id!!.toInt())
@@ -121,7 +124,7 @@ class BehandlingTilGrunnlagMappingV2(
             innhold =
                 POJONode(
                     Person(
-                        ident = ident.takeIf { !it.isNullOrEmpty() }?.let { personService.hentNyesteIdent(it) },
+                        ident = ident.takeIf { !it.isNullOrEmpty() }?.let { personService.hentNyesteIdent(it) ?: Personident(it) },
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
                         fødselsdato =
                             finnFødselsdato(
@@ -280,16 +283,23 @@ class BehandlingTilGrunnlagMappingV2(
         fun Underholdskostnad.tilPersonGrunnlag(): GrunnlagDto =
             GrunnlagDto(
                 referanse =
-                    Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER.tilPersonreferanse(
-                        person.fødselsdato.toCompactString(),
-                        (person.ident + person.fødselsdato + person.navn).hashCode(),
-                    ),
+                    opprettPersonBarnBidragsmottakerReferanse(person.fødselsdato, person.ident, person.navn),
+                grunnlagsreferanseListe =
+                    if (kilde == Kilde.OFFENTLIG) {
+                        listOf(
+                            opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(
+                                behandling.bidragsmottaker!!.tilGrunnlagsreferanse(),
+                            ),
+                        )
+                    } else {
+                        emptyList()
+                    },
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
                 innhold =
                     POJONode(
                         Person(
                             ident = person.ident?.let { Personident(it) },
-                            navn = person.navn,
+                            navn = if (person.ident.isNullOrEmpty()) person.navn else null,
                             fødselsdato = person.fødselsdato,
                         ).valider(),
                     ),

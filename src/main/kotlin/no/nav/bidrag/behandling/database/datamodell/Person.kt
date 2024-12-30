@@ -35,9 +35,9 @@ open class Person(
     )
     open val rolle: MutableSet<Rolle> = mutableSetOf(),
 ) {
-    val personident get() = ident?.let { Personident(it) } ?: rolle.first().ident?.let { Personident(it) }
+    val personident get() = ident?.let { Personident(it) } ?: rolle.firstOrNull()?.ident?.let { Personident(it) }
 
-    val henteFødselsdato get() = fødselsdato ?: rolle.first().fødselsdato
+    val henteFødselsdato get() = fødselsdato ?: rolle.firstOrNull()?.fødselsdato
 
     override fun toString(): String =
         "Person(id=$id, ident=$ident, navn=$navn, fødselsdato=$fødselsdato, opprettet=$opprettet, roller=$rolle)"

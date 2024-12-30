@@ -2,7 +2,9 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -18,8 +20,43 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+
+// Lager PERSON_BARN_BIDRAGSMOTTAKER objekter for at beregningen skal kunne hente ut riktig antall barn til BM
+// Kan hende barn til BM er husstandsmedlem
+fun Behandling.opprettMidlertidligPersonobjekterBMsbarn(personobjekter: Set<GrunnlagDto>): MutableSet<GrunnlagDto> =
+    grunnlagListe
+        .filter { it.type == Grunnlagsdatatype.ANDRE_BARN }
+        .filter { it.rolle.ident == bidragsmottaker?.ident }
+        .flatMap { grunnlag ->
+            val andreBarn =
+                grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()?.filter { it.erBarn } ?: emptyList()
+            andreBarn.mapNotNull { barn ->
+                val eksisterendeGrunnlag = personobjekter.find { it.personIdent == barn.gjelderPersonId }
+                if (listOf(
+                        Grunnlagstype.PERSON_SØKNADSBARN,
+                        Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
+                    ).contains(eksisterendeGrunnlag?.type)
+                ) {
+                    return@mapNotNull null
+                }
+                val bidragsmottakerReferanse = bidragsmottaker!!.tilGrunnlagsreferanse()
+                val referanse = opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(bidragsmottakerReferanse)
+                barn.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse, eksisterendeGrunnlag?.referanse)
+            }
+        }.toMutableSet()
+
+fun List<GrunnlagDto>.fjernMidlertidligPersonobjekterBMsbarn() =
+    mapNotNull { grunnlag ->
+        if (grunnlag.type != Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) return@mapNotNull grunnlag
+        if (filtrerBasertPåEgenReferanse(referanse = grunnlag.referanse).size > 1) return@mapNotNull null
+        return@mapNotNull grunnlag
+    }
 
 fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List<GrunnlagDto> =
     underholdskostnader

@@ -284,11 +284,12 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     private fun Behandling.validerUnderhold() {
         assertSoftly(underholdskostnader) {
-            size shouldBe 2
+            size shouldBe 3
             val underholdSøknadsbarn = underholdskostnader.find { it.person.rolle.isNotEmpty() }!!
             assertSoftly(underholdSøknadsbarn) {
                 harTilsynsordning shouldBe true
 
+                kilde shouldBe null
                 barnetilsyn shouldHaveSize 1
                 barnetilsyn.first().fom shouldBe LocalDate.parse("2024-02-01")
                 barnetilsyn.first().tom shouldBe LocalDate.parse("2024-09-30")
@@ -308,8 +309,9 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 faktiskeTilsynsutgifter.first().kommentar shouldBe "Dette er test"
             }
 
-            assertSoftly(underholdskostnader.find { it.person.rolle.isEmpty() }!!) {
+            assertSoftly(underholdskostnader.find { it.person.ident == "27461456400" }!!) {
                 harTilsynsordning shouldBe null
+                kilde shouldBe Kilde.MANUELL
                 barnetilsyn shouldHaveSize 0
                 tilleggsstønad shouldHaveSize 0
                 faktiskeTilsynsutgifter shouldHaveSize 1
@@ -318,6 +320,19 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 faktiskeTilsynsutgifter.first().tilsynsutgift shouldBe BigDecimal(2756)
                 faktiskeTilsynsutgifter.first().kostpenger shouldBe BigDecimal(100)
                 faktiskeTilsynsutgifter.first().kommentar shouldBe "Barnehage"
+            }
+
+            assertSoftly(underholdskostnader.find { it.person.ident == "11441387387" }!!) {
+                harTilsynsordning shouldBe null
+                kilde shouldBe Kilde.OFFENTLIG
+                barnetilsyn shouldHaveSize 0
+                tilleggsstønad shouldHaveSize 0
+                faktiskeTilsynsutgifter shouldHaveSize 1
+                faktiskeTilsynsutgifter.first().fom shouldBe LocalDate.parse("2024-01-01")
+                faktiskeTilsynsutgifter.first().tom shouldBe null
+                faktiskeTilsynsutgifter.first().tilsynsutgift shouldBe BigDecimal(12)
+                faktiskeTilsynsutgifter.first().kostpenger shouldBe BigDecimal(0)
+                faktiskeTilsynsutgifter.first().kommentar shouldBe ""
             }
         }
     }
@@ -439,7 +454,11 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 15
+            size shouldBe 16
+            filtrerEtterTypeOgIdent(
+                Grunnlagsdatatype.ANDRE_BARN,
+                testdataBM.ident,
+            ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                 testdataBM.ident,

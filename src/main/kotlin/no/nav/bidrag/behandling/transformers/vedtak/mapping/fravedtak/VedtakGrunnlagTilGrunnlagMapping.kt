@@ -15,6 +15,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAinntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetArbeidsforhold
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetBarnetilsyn
@@ -102,6 +103,25 @@ fun List<GrunnlagDto>.hentInnhentetAndreVoksneIHusstanden(): List<RelatertPerson
                         andreVoksneIHusstand.grunnlag.perioder.map {
                             BorISammeHusstandDto(it.fom, it.til)
                         },
+                )
+            }
+        }
+
+fun List<GrunnlagDto>.hentInnhentetAndreBarnTilBidragsmottaker(): List<RelatertPersonGrunnlagDto>? =
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER)
+        .firstOrNull()
+        ?.let {
+            val part = hentPersonMedReferanse(it.gjelderReferanse)!!
+            val innhold = it.innholdTilObjekt<InnhentetAndreBarnTilBidragsmottaker>()
+            innhold.grunnlag.map { barn ->
+                val gjelderPerson = hentPersonMedReferanse(barn.gjelderPerson)!!
+                RelatertPersonGrunnlagDto(
+                    partPersonId = part.personIdent!!,
+                    relatertPersonPersonId = gjelderPerson.personIdent,
+                    navn = barn.navn,
+                    fødselsdato = barn.fødselsdato,
+                    relasjon = barn.relasjon,
+                    borISammeHusstandDtoListe = emptyList(),
                 )
             }
         }

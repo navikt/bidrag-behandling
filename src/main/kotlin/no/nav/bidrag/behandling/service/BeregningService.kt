@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
@@ -127,7 +128,11 @@ class BeregningService(
                         søknasdbarn.mapTilResultatBarn(),
                         beregnBarnebidragApi.beregn(grunnlagBeregning).let {
                             it.copy(
-                                grunnlagListe = (it.grunnlagListe + grunnlagBeregning.grunnlagListe).toSet().toList(),
+                                grunnlagListe =
+                                    (it.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                        .toSet()
+                                        .toList()
+                                        .fjernMidlertidligPersonobjekterBMsbarn(),
                             )
                         },
                     )

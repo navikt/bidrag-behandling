@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -16,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereFaktiskTilsynsutgiftRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereTilleggsstønadRequest
@@ -23,7 +25,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
-import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag
@@ -33,25 +34,34 @@ import no.nav.bidrag.behandling.transformers.underhold.justerePerioder
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.validere
+import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
+import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Datoperiode
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Period
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
+private val periodeFomJuli get() =
+    LocalDate
+        .now()
+        .withMonth(7)
+        .withDayOfMonth(1)
 
 @Service
 class UnderholdService(
     private val underholdskostnadRepository: UnderholdskostnadRepository,
     private val personRepository: PersonRepository,
     private val notatService: NotatService,
-    private val dtomapper: Dtomapper,
     private val personService: PersonService,
 ) {
     fun oppdatereBegrunnelse(
@@ -87,15 +97,18 @@ class UnderholdService(
         underholdskostnad: Underholdskostnad,
         harTilsynsordning: Boolean,
     ) {
-        if (!harTilsynsordning &&
+        val harOffentligeOpplysninger = underholdskostnad.hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
+
+        if (harOffentligeOpplysninger) {
+            ugyldigForespørsel("Kan ikke endre tilsynsordning når det finnes offentlige opplysninger")
+        } else if (!harTilsynsordning &&
             (
                 underholdskostnad.barnetilsyn.isNotEmpty() ||
                     underholdskostnad.tilleggsstønad.isNotEmpty() ||
                     underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty()
             )
         ) {
-            throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
+            ugyldigForespørsel(
                 "Kan ikke sette harTilsynsordning til usann så lenge barnet er registrert med stønad til barnetilstyn, tilleggsstønad, eller faktiske tilsynsutgift",
             )
         }
@@ -107,15 +120,17 @@ class UnderholdService(
     fun oppretteUnderholdskostnad(
         behandling: Behandling,
         gjelderBarn: BarnDto,
+        kilde: Kilde = Kilde.MANUELL,
     ): Underholdskostnad {
         gjelderBarn.validere(behandling, personService)
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
+            val lagreKilde = if (rolleSøknadsbarn == null) kilde else null
             personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
                 rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
                 rolleSøknadsbarn?.person = eksisterendePerson
-                lagreUnderholdskostnad(behandling, eksisterendePerson)
+                lagreUnderholdskostnad(behandling, eksisterendePerson, lagreKilde)
             } ?: run {
                 val person =
                     Person(
@@ -127,68 +142,15 @@ class UnderholdService(
                     )
                 person.rolle.forEach { it.person = person }
 
-                lagreUnderholdskostnad(behandling, person)
+                lagreUnderholdskostnad(behandling, person, lagreKilde)
             }
         } ?: run {
             lagreUnderholdskostnad(
                 behandling,
                 Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
+                kilde = Kilde.MANUELL,
             )
         }
-    }
-
-    @Transactional
-    fun oppdatereStønadTilBarnetilsynManuelt(
-        underholdskostnad: Underholdskostnad,
-        request: StønadTilBarnetilsynDto,
-    ): Barnetilsyn {
-        request.validere(underholdskostnad)
-
-        val oppdatertBarnetilsyn: Barnetilsyn =
-            request.id?.let { id ->
-                val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
-
-                // dersom periode endres skal kilde alltid være manuell
-                if (barnetilsyn.fom != request.periode.fom || barnetilsyn.tom != request.periode.tom) {
-                    barnetilsyn.kilde = Kilde.MANUELL
-                }
-
-                barnetilsyn.fom = request.periode.fom
-                barnetilsyn.tom = request.periode.tom
-                barnetilsyn.under_skolealder =
-                    when (request.skolealder) {
-                        Skolealder.UNDER -> true
-                        Skolealder.OVER -> false
-                        else -> null
-                    }
-                barnetilsyn.omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT
-
-                barnetilsyn
-            } ?: run {
-                val barnetilsyn =
-                    Barnetilsyn(
-                        fom = request.periode.fom,
-                        tom = request.periode.tom,
-                        under_skolealder =
-                            when (request.skolealder) {
-                                Skolealder.UNDER -> true
-                                Skolealder.OVER -> false
-                                else -> null
-                            },
-                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-                        kilde = Kilde.MANUELL,
-                        underholdskostnad = underholdskostnad,
-                    )
-                underholdskostnad.barnetilsyn.add(barnetilsyn)
-                underholdskostnad.harTilsynsordning = true
-                underholdskostnadRepository
-                    .save(underholdskostnad)
-                    .barnetilsyn
-                    .sortedBy { it.id }
-                    .last()
-            }
-
-        return oppdatertBarnetilsyn
     }
 
     fun oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
@@ -258,76 +220,162 @@ class UnderholdService(
     }
 
     @Transactional
+    fun oppdatereStønadTilBarnetilsynManuelt(
+        underholdskostnad: Underholdskostnad,
+        request: StønadTilBarnetilsynDto,
+    ) {
+        request.validerePerioderStønadTilBarnetilsyn(underholdskostnad)
+        val offentligBarnetilsyn = underholdskostnad.hentSisteBearbeidetBarnetilsyn() ?: emptyList()
+        val overlapperMedOffentligPeriode =
+            offentligBarnetilsyn.any {
+                val periode = Datoperiode(it.periodeFra, it.periodeTil)
+                val forespørselPeriode = Datoperiode(request.periode.fom, request.periode.tom)
+                periode.inneholder(forespørselPeriode)
+            }
+        val kilde = if (overlapperMedOffentligPeriode) Kilde.OFFENTLIG else Kilde.MANUELL
+        request.id?.let { id ->
+            val barnetilsyn = underholdskostnad.barnetilsyn.find { id == it.id }!!
+
+            barnetilsyn.kilde = kilde
+
+            barnetilsyn.fom = request.periode.fom
+            barnetilsyn.tom = request.periode.tom
+            barnetilsyn.under_skolealder =
+                when (request.skolealder) {
+                    Skolealder.UNDER -> true
+                    Skolealder.OVER -> false
+                    else -> null
+                }
+            barnetilsyn.omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT
+
+            barnetilsyn
+        } ?: run {
+            underholdskostnad.barnetilsyn.add(
+                Barnetilsyn(
+                    fom = request.periode.fom,
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
+                    under_skolealder =
+                        when (request.skolealder) {
+                            Skolealder.UNDER -> true
+                            Skolealder.OVER -> false
+                            else -> null
+                        },
+                    omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
+                    kilde = kilde,
+                    underholdskostnad = underholdskostnad,
+                ),
+            )
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+                underholdskostnad.barnetilsyn.none {
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                }
+            ) {
+                underholdskostnad.barnetilsyn.add(
+                    Barnetilsyn(
+                        fom = periodeFomJuli,
+                        tom = request.periode.tom,
+                        under_skolealder =
+                            when (request.skolealder) {
+                                Skolealder.UNDER -> true
+                                Skolealder.OVER -> false
+                                else -> null
+                            },
+                        omfang = request.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
+                        kilde = kilde,
+                        underholdskostnad = underholdskostnad,
+                    ),
+                )
+            }
+            underholdskostnad.harTilsynsordning = true
+        }
+    }
+
+    @Transactional
     fun oppdatereFaktiskeTilsynsutgifter(
         underholdskostnad: Underholdskostnad,
         request: OppdatereFaktiskTilsynsutgiftRequest,
-    ): FaktiskTilsynsutgift {
+    ) {
         request.validere(underholdskostnad)
 
-        val oppdatertFaktiskTilsynsutgift =
-            request.id?.let { id ->
-                underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
-                val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }!!
-                faktiskTilsynsutgift.fom = request.periode.fom
-                faktiskTilsynsutgift.tom = request.periode.tom
-                faktiskTilsynsutgift.kostpenger = request.kostpenger
-                faktiskTilsynsutgift.tilsynsutgift = request.utgift
-                faktiskTilsynsutgift.kommentar = request.kommentar
-                faktiskTilsynsutgift
-            } ?: run {
-                val faktiskTilsynsutgift =
+        request.id?.let { id ->
+            underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
+            val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }!!
+            faktiskTilsynsutgift.fom = request.periode.fom
+            faktiskTilsynsutgift.tom = request.periode.tom
+            faktiskTilsynsutgift.kostpenger = request.kostpenger
+            faktiskTilsynsutgift.tilsynsutgift = request.utgift
+            faktiskTilsynsutgift.kommentar = request.kommentar
+            faktiskTilsynsutgift
+        } ?: run {
+            underholdskostnad.faktiskeTilsynsutgifter.add(
+                FaktiskTilsynsutgift(
+                    fom = request.periode.fom,
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
+                    kostpenger = request.kostpenger,
+                    tilsynsutgift = request.utgift,
+                    kommentar = request.kommentar,
+                    underholdskostnad = underholdskostnad,
+                ),
+            )
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+                underholdskostnad.faktiskeTilsynsutgifter.none {
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                }
+            ) {
+                underholdskostnad.faktiskeTilsynsutgifter.add(
                     FaktiskTilsynsutgift(
-                        fom = request.periode.fom,
+                        fom = periodeFomJuli,
                         tom = request.periode.tom,
                         kostpenger = request.kostpenger,
                         tilsynsutgift = request.utgift,
                         kommentar = request.kommentar,
                         underholdskostnad = underholdskostnad,
-                    )
-                underholdskostnad.faktiskeTilsynsutgifter.add(faktiskTilsynsutgift)
-                underholdskostnad.harTilsynsordning = true
-                underholdskostnadRepository
-                    .save(underholdskostnad)
-                    .faktiskeTilsynsutgifter
-                    .sortedBy { it.id }
-                    .last()
+                    ),
+                )
             }
-        return oppdatertFaktiskTilsynsutgift
+            underholdskostnad.harTilsynsordning = true
+        }
     }
 
     @Transactional
     fun oppdatereTilleggsstønad(
         underholdskostnad: Underholdskostnad,
         request: OppdatereTilleggsstønadRequest,
-    ): Tilleggsstønad {
+    ) {
         request.validere(underholdskostnad)
 
-        val oppdatertTilleggsstønad =
-            request.id?.let { id ->
-                val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
-                tilleggsstønad.fom = request.periode.fom
-                tilleggsstønad.tom = request.periode.tom
-                tilleggsstønad.dagsats = request.dagsats
-                tilleggsstønad.underholdskostnad = underholdskostnad
-                tilleggsstønad
-            } ?: run {
-                val tilleggsstønad =
+        request.id?.let { id ->
+            val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
+            tilleggsstønad.fom = request.periode.fom
+            tilleggsstønad.tom = request.periode.tom
+            tilleggsstønad.dagsats = request.dagsats
+            tilleggsstønad.underholdskostnad = underholdskostnad
+            tilleggsstønad
+        } ?: run {
+            underholdskostnad.tilleggsstønad.add(
+                Tilleggsstønad(
+                    fom = request.periode.fom,
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
+                    dagsats = request.dagsats,
+                    underholdskostnad = underholdskostnad,
+                ),
+            )
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+                underholdskostnad.tilleggsstønad.none {
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                }
+            ) {
+                underholdskostnad.tilleggsstønad.add(
                     Tilleggsstønad(
-                        fom = request.periode.fom,
+                        fom = periodeFomJuli,
                         tom = request.periode.tom,
                         dagsats = request.dagsats,
                         underholdskostnad = underholdskostnad,
-                    )
-                underholdskostnad.tilleggsstønad.add(tilleggsstønad)
-                underholdskostnad.harTilsynsordning = true
-                underholdskostnadRepository
-                    .save(underholdskostnad)
-                    .tilleggsstønad
-                    .sortedBy { it.id }
-                    .last()
+                    ),
+                )
             }
-
-        return oppdatertTilleggsstønad
+            underholdskostnad.harTilsynsordning = true
+        }
     }
 
     @Transactional
@@ -354,6 +402,27 @@ class UnderholdService(
                     request.idElement,
                 )
         }
+    }
+
+    private fun Underholdskostnad.begrensTomDatoForTolvÅr(periode: DatoperiodeDto): LocalDate? =
+        if (erPeriodeFørOgEtterFyltTolvÅr(periode)) {
+            LocalDate
+                .now()
+                .withMonth(7)
+                .withDayOfMonth(1)
+                .minusDays(1)
+        } else {
+            periode.tom
+        }
+
+    private fun Underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(periode: DatoperiodeDto) =
+        !erBarnOverTolvÅrForDato(periode.fom) && erBarnOverTolvÅrForDato(periode.tom ?: LocalDate.now())
+
+    private fun Underholdskostnad.erBarnOverTolvÅrForDato(dato: LocalDate?): Boolean {
+        if (dato == null) return false
+        val fødselsdato = person.fødselsdato
+        val period = Period.between(fødselsdato.withMonth(7).withDayOfMonth(1), dato)
+        return period.years >= 12
     }
 
     private fun sletteStønadTilBarnetilsyn(
@@ -398,8 +467,9 @@ class UnderholdService(
     private fun lagreUnderholdskostnad(
         behandling: Behandling,
         person: Person,
+        kilde: Kilde? = null,
     ): Underholdskostnad {
-        val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person))
+        val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person, kilde = kilde))
         behandling.underholdskostnader.add(u)
         return u
     }

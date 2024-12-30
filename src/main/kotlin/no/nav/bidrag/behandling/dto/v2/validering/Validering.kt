@@ -3,11 +3,12 @@ package no.nav.bidrag.behandling.dto.v2.validering
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
+import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværValideringsfeilDto
-import no.nav.bidrag.behandling.dto.v2.underhold.ValideringsfeilUnderhold
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeil
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.erSøknadsbarn
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -219,7 +220,7 @@ data class BeregningValideringsfeil(
     val sivilstand: SivilstandPeriodeseringsfeil? = null,
     val samvær: Set<SamværValideringsfeilDto>? = null,
     val gebyr: Set<GebyrValideringsfeilDto>? = null,
-    val underholdskostnad: Set<ValideringsfeilUnderhold>? = null,
+    val underholdskostnad: Set<UnderholdskostnadValideringsfeil>? = null,
     val måBekrefteNyeOpplysninger: Set<MåBekrefteNyeOpplysninger> = emptySet(),
 )
 
@@ -228,7 +229,11 @@ data class MåBekrefteNyeOpplysninger(
     val rolle: RolleDto,
     @JsonIgnore
     val husstandsmedlem: Husstandsmedlem? = null,
+    @JsonIgnore
+    val underholdskostnad: Underholdskostnad? = null,
 ) {
+    val underholdskostnadId get() = underholdskostnad?.id
+
     @get:Schema(
         description = "Barn som det må bekreftes nye opplysninger for. Vil bare være satt hvis type = BOFORHOLD",
     )
@@ -239,6 +244,13 @@ data class MåBekrefteNyeOpplysninger(
                     navn = it.navn ?: hentPersonVisningsnavn(it.ident),
                     ident = it.ident,
                     fødselsdato = it.fødselsdato ?: it.rolle!!.fødselsdato,
+                    husstandsmedlemId = it.id ?: -1,
+                )
+            } ?: underholdskostnad?.person?.let {
+                HusstandsmedlemDto(
+                    navn = it.navn,
+                    ident = it.ident,
+                    fødselsdato = it.fødselsdato,
                     husstandsmedlemId = it.id ?: -1,
                 )
             }

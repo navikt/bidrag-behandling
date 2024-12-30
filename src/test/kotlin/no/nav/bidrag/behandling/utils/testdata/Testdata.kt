@@ -161,6 +161,14 @@ val testdataBarnBm =
         fødselsdato = LocalDate.parse("2001-05-09"),
     )
 
+val testdataBarnBm2 =
+    TestDataPerson(
+        navn = "Huststand Dett 2",
+        ident = "123123333333333",
+        rolletype = Rolletype.BARN,
+        fødselsdato = LocalDate.parse("2001-05-09"),
+    )
+
 val voksenPersonIBpsHusstand =
     Testperson(navn = "Gillinger Owa", personident = "01010012345", fødselsdato = LocalDate.of(2000, 1, 1))
 
@@ -838,6 +846,23 @@ fun opprettAlleAktiveGrunnlagFraFil(
                 listOf(
                     opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SIVILSTAND),
                     opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBarn2),
+                ).flatten(),
+            )
+        }
+        TypeBehandling.BIDRAG -> {
+            grunnlagListe.addAll(
+                listOf(
+                    opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.ANDRE_BARN),
+                ).flatten(),
+            )
+            grunnlagListe.addAll(
+                listOf(
+                    opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBP),
+                    opprettGrunnlagFraFil(
+                        behandling,
+                        filJsonString,
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    ),
                 ).flatten(),
             )
         }
@@ -1619,9 +1644,21 @@ fun erstattVariablerITestFil(filnavn: String): String {
     stringValue = stringValue.replace("{barnfDato}", testdataBarn1.fødselsdato.toString())
     stringValue = stringValue.replace("{barn2Ident}", testdataBarn2.ident)
     stringValue = stringValue.replace("{barn2fDato}", testdataBarn2.fødselsdato.toString())
+    stringValue = stringValue.replace("{barnBM1Ident}", testdataBarnBm.ident)
+    stringValue = stringValue.replace("{barnBM2Ident}", testdataBarnBm2.ident)
+    stringValue = stringValue.replace("{barnBM1fDato}", testdataBarnBm.fødselsdato.toString())
+    stringValue = stringValue.replace("{barnBM2fDato}", testdataBarnBm2.fødselsdato.toString())
+    stringValue = stringValue.replace("{hustandsmedlem1}", testdataHusstandsmedlem1.ident)
+    stringValue = stringValue.replace("{hustandsmedlem1fDato}", testdataHusstandsmedlem1.fødselsdato.toString())
     stringValue = stringValue.replace("{saksnummer}", SAKSNUMMER)
     stringValue = stringValue.replace("{dagens_dato}", LocalDateTime.now().toString())
     return stringValue
+}
+
+fun lagGrunnlagsdata(filnavn: String): HentGrunnlagDto {
+    val stringValue = erstattVariablerITestFil(filnavn)
+    val grunnlag: HentGrunnlagDto = commonObjectmapper.readValue(stringValue)
+    return grunnlag
 }
 
 fun lagVedtaksdata(filnavn: String): VedtakDto {
@@ -1869,6 +1906,7 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
             this,
             periodeFraAntallMndTilbake = 13,
         ),
+    leggTilBarnetilsyn: Boolean = true,
 ) {
     this.grunnlag.add(
         Grunnlag(
@@ -1895,12 +1933,14 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
         ),
     )
 
-    this.grunnlag
-        .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
-        .forEach { g ->
-            val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
-            g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
-        }
+    if (leggTilBarnetilsyn) {
+        this.grunnlag
+            .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
+            .forEach { g ->
+                val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
+                g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
+            }
+    }
 }
 
 fun Behandling.leggeTilNyttBarnetilsyn(

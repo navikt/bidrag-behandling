@@ -67,6 +67,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
+import no.nav.bidrag.behandling.transformers.underhold.valider
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -168,35 +169,38 @@ class Dtomapper(
         aktiveGrunnlag: List<Grunnlag>,
     ) = ikkeAktiveGrunnlag.henteEndringerIAndreVoksneIBpsHusstand(aktiveGrunnlag)
 
-    fun Set<Underholdskostnad>.tilDtos() = this.map { it.tilDto() }.sortedByDescending { it.gjelderBarn.fødselsdato }.toSet()
+    fun Set<Underholdskostnad>.tilDtos() =
+        this
+            .map { it.tilDto() }
+            .sortedWith(
+                compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
+                    .thenByDescending { it.gjelderBarn.kilde == Kilde.MANUELL }
+                    .thenBy { it.gjelderBarn.fødselsdato },
+            ).toSet()
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
         val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
+        val beregnetUnderholdskostnad =
+            this.behandling
+                .tilBeregnetUnderholdskostnad()
+                .perioderForBarn(person)
+
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
-            gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn),
-            faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.sortedBy { it.fom }.tilFaktiskeTilsynsutgiftDtos(),
-            stønadTilBarnetilsyn =
-                this.barnetilsyn
-                    .sortedBy { it.fom }
-                    .toSet()
-                    .tilStønadTilBarnetilsynDtos(),
-            tilleggsstønad = this.tilleggsstønad.sortedBy { it.fom }.tilTilleggsstønadDtos(),
-            underholdskostnad =
-                this.behandling
-                    .tilBeregnetUnderholdskostnad()
-                    .perioderForBarn(person),
-            beregnetUnderholdskostnad =
-                this.behandling
-                    .tilBeregnetUnderholdskostnad()
-                    .perioderForBarn(person),
+            gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn, kilde),
+            faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
+            stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
+            tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
+            underholdskostnad = beregnetUnderholdskostnad,
+            beregnetUnderholdskostnad = beregnetUnderholdskostnad,
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
                     this.behandling,
                     rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
                 ),
+            valideringsfeil = this.valider().takeIf { it.harFeil },
         )
     }
 
@@ -230,24 +234,27 @@ class Dtomapper(
         return PersoninfoDto(
             id = this.id,
             ident = ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
-            navn = personinfo?.navn ?: this.navn,
+            navn = personinfo?.visningsnavn ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
-            kilde = ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+            kilde = null,
             medIBehandlingen = ident != null,
         )
     }
 
-    private fun Person.tilPersoninfoDto(rolle: Rolle?): PersoninfoDto {
+    private fun Person.tilPersoninfoDto(
+        rolle: Rolle?,
+        kilde: Kilde?,
+    ): PersoninfoDto {
         val personinfo =
             this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
                 ?: rolle?.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
 
         return PersoninfoDto(
-            id = this.id,
+            id = id,
             ident = rolle?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
-            navn = personinfo?.navn ?: this.navn,
+            navn = hentPersonVisningsnavn(personinfo?.ident?.verdi) ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
-            kilde = rolle?.ident?.let { Kilde.OFFENTLIG } ?: Kilde.MANUELL,
+            kilde = kilde,
             medIBehandlingen = rolle?.ident != null,
         )
     }
@@ -321,7 +328,7 @@ class Dtomapper(
             null
         }
 
-    private fun tilgangskontrollerePersoninfo(
+    fun tilgangskontrollerePersoninfo(
         personinfo: Personinfo,
         saksnummer: Saksnummer,
         skjuleIdentitietHvisBeskyttet: Boolean = false,
@@ -355,7 +362,7 @@ class Dtomapper(
             total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats),
         )
 
-    fun List<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()
+    fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()
 
     fun FaktiskTilsynsutgift.tilDto() =
         FaktiskTilsynsutgiftDto(
@@ -371,7 +378,7 @@ class Dtomapper(
                 ) ?: BigDecimal.ZERO,
         )
 
-    fun List<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = this.map { it.tilDto() }.toSet()
+    fun Set<FaktiskTilsynsutgift>.tilFaktiskeTilsynsutgiftDtos() = sortedBy { it.fom }.map { it.tilDto() }.toSet()
 
     private fun Husstandsmedlem.boforholdBarn(opplysningerBoforhold: List<BoforholdResponseV2>): BoforholdBarn {
         val tilgangskontrollertPersoninfo =
@@ -798,7 +805,11 @@ class Dtomapper(
             }?.filter {
                 it.borISammeHusstandDtoListe.any { p ->
                     val periodeBorHosBP =
-                        ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                        if (p.periodeFra!!.withDayOfMonth(1) == p.periodeTil?.withDayOfMonth(1)) {
+                            ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1))
+                        } else {
+                            ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                        }
                     val periodeBPErInnenfor =
                         periodeBorHosBP.fom >= periode.fom &&
                             periodeBorHosBP.til != null &&

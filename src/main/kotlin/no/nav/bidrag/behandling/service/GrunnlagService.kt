@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
+import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -26,6 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
+import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
@@ -45,6 +47,8 @@ import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder13År
+import no.nav.bidrag.behandling.transformers.grunnlag.grunnlagstyperSomIkkeKreverAktivering
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
@@ -57,6 +61,7 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
@@ -609,7 +614,7 @@ class GrunnlagService(
                     .grunnlagsdatatypeobjekter(behandling.tilType())
                     .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g) }
                     .filterNot { it.value == null }
-            } ?: Grunnlagsdatatype.gjeldende().map { it to null }.toMap()
+            } ?: Grunnlagsdatatype.gjeldende().associateWith { null }
 
         val rolleInnhentetFor = behandling.roller.find { it.ident == grunnlagsrequest.key.verdi }!!
         innhentetGrunnlag.hentGrunnlagDto?.let {
@@ -676,6 +681,9 @@ class GrunnlagService(
                     )
                 }
             }
+            if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi) {
+                lagreAndreBarnTilBMGrunnlag(behandling, it.husstandsmedlemmerOgEgneBarnListe.toSet())
+            }
         }
 
         val innhentingAvSivilstandFeilet =
@@ -688,6 +696,17 @@ class GrunnlagService(
             }
         }
 
+        lagreGrunnlagForUnderholdskostnad(behandling, rolleInnhentetFor, innhentetGrunnlag, feilrapporteringer)
+
+        return feilrapporteringer
+    }
+
+    private fun lagreGrunnlagForUnderholdskostnad(
+        behandling: Behandling,
+        rolleInnhentetFor: Rolle,
+        innhentetGrunnlag: HentetGrunnlag,
+        feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+    ) {
         val innhentingAvBarnetilsynFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BARNETILSYN == it.key }.isNotEmpty()
 
@@ -739,8 +758,6 @@ class GrunnlagService(
                 behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
             }
         }
-
-        return feilrapporteringer
     }
 
     private fun periodisereOgLagreSivilstand(
@@ -781,6 +798,44 @@ class GrunnlagService(
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertSivilstand(behandling, sivilstandPeriodisert)
         }
         aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+    }
+
+    private fun lagreAndreBarnTilBMGrunnlag(
+        behandling: Behandling,
+        husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
+    ) {
+        val søknadsbarnidenter = behandling.søknadsbarn.map { it.ident }
+        val andreBarnIkkeIBehandling =
+            husstandsmedlemmerOgEgneBarn
+                .filter { it.erBarn }
+                .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
+
+        andreBarnIkkeIBehandling.forEach { barn ->
+            behandling.underholdskostnader.find { u -> u.person.ident == barn.gjelderPersonId }?.let {
+                secureLogger.info { "$barn er annen barn til BM. Oppdaterer underholdskostnad til kilde OFFENTLIG" }
+                it.kilde = Kilde.OFFENTLIG
+            }
+        }
+
+        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder13År }.forEach { barn ->
+            if (behandling.underholdskostnader.none { u -> u.person.ident == barn.gjelderPersonId }) {
+                secureLogger.info { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
+                underholdService.oppretteUnderholdskostnad(
+                    behandling,
+                    BarnDto(personident = Personident(barn.gjelderPersonId!!), fødselsdato = barn.fødselsdato),
+                    kilde = Kilde.OFFENTLIG,
+                )
+            }
+        }
+
+        val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.gjelderPersonId }
+        behandling.underholdskostnader
+            .filter { it.barnetsRolleIBehandlingen == null }
+            .filter { !andreBarnIdenter.contains(it.person.ident) }
+            .forEach {
+                secureLogger.info { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }
+                it.kilde = Kilde.MANUELL
+            }
     }
 
     private fun periodisereOgLagreBpsBoforholdAndreVoksne(
@@ -1220,7 +1275,7 @@ class GrunnlagService(
                 idTilRolleInnhentetFor = innhentetForRolle.id!!,
                 gjelder = gjelderPerson,
             )
-            if (grunnlagstype.erBearbeidet && aktivert != null) {
+            if (grunnlagstype.erBearbeidet && aktivert != null || grunnlagstyperSomIkkeKreverAktivering.contains(grunnlagstype.type)) {
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, innhentetForRolle, behandling)
             }
         } else if (erGrunnlagEndret) {
@@ -1622,6 +1677,7 @@ class GrunnlagService(
             }
 
             Grunnlagsdatatype.BOFORHOLD -> {
+                if (behandling.tilType() == TypeBehandling.BIDRAG && rolleInhentetFor.rolletype == Rolletype.BIDRAGSMOTTAKER) return
                 lagreGrunnlagHvisEndret(
                     behandling,
                     rolleInhentetFor,
@@ -1672,6 +1728,14 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
+                )
+            }
+            Grunnlagsdatatype.ANDRE_BARN -> {
+                lagreGrunnlagHvisEndret(
+                    behandling,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.toSet(),
                 )
             }
 

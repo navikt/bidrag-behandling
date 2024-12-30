@@ -56,6 +56,14 @@ fun OpprettVedtakRequestDto.validerGrunnlagsreferanser() {
         )
     }
 
+//    val allePersoner = grunnlagListe.hentAllePersoner()
+//    allePersoner.forEach { person ->
+//        val personer = allePersoner.filter { it.personIdent == person.personIdent }
+//        if (personer.size > 1) {
+//            feilListe.add("Det finnes flere grunnlag for person ${person.type} med referanser ${personer.map { it.referanse }}")
+//        }
+//    }
+
     if (feilListe.isNotEmpty()) {
         vedtakmappingFeilet(
             "Feil i grunnlagsreferanser: ${

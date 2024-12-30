@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.transformers.erUnder13År
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -14,9 +15,12 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 
+val RelatertPersonGrunnlagDto.erBarnTilBMUnder13År get() = erBarn && fødselsdato.erUnder13År()
+val grunnlagstyperSomIkkeKreverAktivering = listOf(Grunnlagsdatatype.ANDRE_BARN, Grunnlagsdatatype.TILLEGGSSTØNAD)
 val summertAinntektstyper =
     setOf(
         Inntektsrapportering.AINNTEKT,
