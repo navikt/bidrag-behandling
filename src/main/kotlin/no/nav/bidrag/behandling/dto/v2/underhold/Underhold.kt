@@ -124,6 +124,7 @@ data class UnderholdskostnadValideringsfeilTabell(
     val fremtidigePerioder: List<DatoperiodeDto> = listOf(),
     @Schema(description = """Er sann hvis antall perioder er 0."""")
     val harIngenPerioder: Boolean = false,
+    val ugyldigPerioder: List<DatoperiodeDto> = listOf(),
     @Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
     val manglerPerioderForTilsynsutgifter: Boolean = false,
 ) {
@@ -132,6 +133,7 @@ data class UnderholdskostnadValideringsfeilTabell(
         get() =
             overlappendePerioder.isNotEmpty() ||
                 fremtidigePerioder.isNotEmpty() ||
+                ugyldigPerioder.isNotEmpty() ||
                 manglerPerioderForTilsynsutgifter ||
                 harIngenPerioder
 }

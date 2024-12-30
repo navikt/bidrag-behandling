@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
@@ -166,6 +167,13 @@ fun Set<Barnetilsyn>.validerePerioderBarnetilsyn() =
     UnderholdskostnadValideringsfeilTabell(
         overlappendePerioder = barnetilsynTilDatoperioder().finneOverlappendePerioder(),
         fremtidigePerioder = barnetilsynTilDatoperioder().finneFremtidigePerioder(),
+        ugyldigPerioder =
+            filter { it.omfang == Tilsynstype.IKKE_ANGITT || it.under_skolealder == null }.map {
+                DatoperiodeDto(
+                    it.fom,
+                    it.tom,
+                )
+            },
     )
 
 fun Set<FaktiskTilsynsutgift>.validerePerioderFaktiskTilsynsutgift(): UnderholdskostnadValideringsfeilTabell =
