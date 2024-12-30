@@ -34,7 +34,7 @@ import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.erHistorisk
-import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder13År
+import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -378,7 +378,7 @@ class NotatOpplysningerService(
                 .hentSisteAktiv()
                 .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.ANDRE_BARN }
                 ?.konvertereData<List<RelatertPersonGrunnlagDto>>()
-                ?.filter { it.erBarnTilBMUnder13År(virkningstidspunkt!!) }
+                ?.filter { it.erBarnTilBMUnder12År(virkningstidspunkt!!) }
                 ?: emptyList()
 
         val opplysningerTilleggstønad =
