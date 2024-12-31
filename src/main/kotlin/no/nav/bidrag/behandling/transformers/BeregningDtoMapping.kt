@@ -528,6 +528,7 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
         skattefradrag = nettoTilsyn.innhold.skattefradrag,
         skattesatsFaktor = skattesatsFaktor,
         antallBarnBMUnderTolvÅr = nettoTilsyn.innhold.antallBarnBMUnderTolvÅr,
+        antallBarnBMBeregnet = nettoTilsyn.innhold.antallBarnBMBeregnet,
         bruttoTilsynsutgift = nettoTilsyn.innhold.bruttoTilsynsutgift,
         justertBruttoTilsynsutgift = nettoTilsyn.innhold.justertBruttoTilsynsutgift,
         nettoTilsynsutgift = nettoTilsyn.innhold.nettoTilsynsutgift,

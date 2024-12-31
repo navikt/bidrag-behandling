@@ -296,6 +296,7 @@ class NotatOpplysningerService(
                                                         sumTilsynsutgifter = it.sumTilsynsutgifter,
                                                         totalTilsynsutgift = it.totalTilsynsutgift,
                                                         antallBarnBMUnderTolvÅr = it.antallBarnBMUnderTolvÅr,
+                                                        antallBarnBMBeregnet = it.antallBarnBMBeregnet,
                                                         nettoTilsynsutgift = it.nettoTilsynsutgift,
                                                         sjablonMaksFradrag = it.sjablonMaksFradrag,
                                                         sjablonMaksTilsynsutgift = it.sjablonMaksTilsynsutgift,
