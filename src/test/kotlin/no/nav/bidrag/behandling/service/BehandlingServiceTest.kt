@@ -1716,7 +1716,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 alleBarnetilsynsgrunnlag.filter { it.erBearbeidet && it.aktiv != null },
             ) { aktive ->
                 aktive.shouldHaveSize(2)
-                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(aktive.first().data).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual nyVirkningsdato
+                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(aktive.maxBy { it.aktiv!! }.data).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual nyVirkningsdato
                 aktive.forEach { it.aktiv!!.toLocalDate() shouldBe LocalDate.now() }
             }
 
