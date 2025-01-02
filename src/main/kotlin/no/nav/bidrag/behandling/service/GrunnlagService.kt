@@ -1614,6 +1614,16 @@ class GrunnlagService(
                     innhentetFor,
                 )
 
+            Grunnlagsdatatype.BARNETILSYN ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.BARNETILSYN,
+                    innhentetFor,
+                )
+            Grunnlagsdatatype.TILLEGGSSTØNAD ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.TILLEGGSSTØNAD,
+                    innhentetFor,
+                )
             else -> null
         }
 
