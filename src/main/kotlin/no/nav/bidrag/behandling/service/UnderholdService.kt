@@ -271,7 +271,7 @@ class UnderholdService(
             ) {
                 underholdskostnad.barnetilsyn.add(
                     Barnetilsyn(
-                        fom = periodeFomJuli(request.periode.fom.year),
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
                         tom = request.periode.tom,
                         under_skolealder =
                             when (request.skolealder) {
@@ -323,7 +323,7 @@ class UnderholdService(
             ) {
                 underholdskostnad.faktiskeTilsynsutgifter.add(
                     FaktiskTilsynsutgift(
-                        fom = periodeFomJuli(request.periode.fom.year),
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
                         tom = request.periode.tom,
                         kostpenger = request.kostpenger,
                         tilsynsutgift = request.utgift,
@@ -366,7 +366,7 @@ class UnderholdService(
             ) {
                 underholdskostnad.tilleggsstønad.add(
                     Tilleggsstønad(
-                        fom = periodeFomJuli(request.periode.fom.year),
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
                         tom = request.periode.tom,
                         dagsats = request.dagsats,
                         underholdskostnad = underholdskostnad,
@@ -405,13 +405,15 @@ class UnderholdService(
 
     private fun Underholdskostnad.begrensTomDatoForTolvÅr(periode: DatoperiodeDto): LocalDate? =
         if (erPeriodeFørOgEtterFyltTolvÅr(periode)) {
-            periodeFomJuli(periode.fom.year).minusDays(1)
+            periodeFomJuli(årstallNårBarnFyllerTolvÅr(person.fødselsdato)).minusDays(1)
         } else {
             periode.tom
         }
 
     private fun Underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(periode: DatoperiodeDto) =
         !erBarnOverTolvÅrForDato(periode.fom) && erBarnOverTolvÅrForDato(periode.tom ?: LocalDate.now())
+
+    private fun årstallNårBarnFyllerTolvÅr(fødselsdato: LocalDate) = fødselsdato.plusYears(12).year
 
     private fun Underholdskostnad.erBarnOverTolvÅrForDato(dato: LocalDate?): Boolean {
         if (dato == null) return false
