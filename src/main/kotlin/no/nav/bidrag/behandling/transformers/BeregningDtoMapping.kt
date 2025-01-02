@@ -468,14 +468,12 @@ fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostna
                 beregningsdetaljer =
                     underholdBeregning.tilUnderholdskostnadDetaljer(
                         delberegning.grunnlag.grunnlagsreferanseListe,
-                        delberegning.gjelderBarnReferanse,
                     ),
             )
         }.toSet()
 
 fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
-    gjelderBarnReferanse: String?,
 ): UnderholdskostnadPeriodeBeregningsdetaljer? {
     val nettoTilsyn =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningNettoTilsynsutgift>(
@@ -528,6 +526,7 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
         skattefradrag = nettoTilsyn.innhold.skattefradrag,
         skattesatsFaktor = skattesatsFaktor,
         antallBarnBMUnderTolvÅr = nettoTilsyn.innhold.antallBarnBMUnderTolvÅr,
+        antallBarnBMBeregnet = nettoTilsyn.innhold.antallBarnBMBeregnet,
         bruttoTilsynsutgift = nettoTilsyn.innhold.bruttoTilsynsutgift,
         justertBruttoTilsynsutgift = nettoTilsyn.innhold.justertBruttoTilsynsutgift,
         nettoTilsynsutgift = nettoTilsyn.innhold.nettoTilsynsutgift,

@@ -291,6 +291,7 @@ class InntektServiceTest : TestContainerRunner() {
         open fun `skal lagre innnhentede inntekter for BARNETILLEGG`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling()
+            behandling.virkningstidspunkt = LocalDate.now().withMonth(1).withDayOfMonth(1)
 
             val summerteInntekter =
                 SummerteInntekter(
@@ -332,7 +333,7 @@ class InntektServiceTest : TestContainerRunner() {
                 barnetillegg.belop shouldBe (500).toBigDecimal()
                 barnetillegg.taMed shouldBe true
                 barnetillegg.datoFom shouldBe behandling.virkningstidspunkt
-                barnetillegg.datoTom shouldBe barnetillegg.opprinneligTom
+                barnetillegg.datoTom shouldBe null
                 barnetillegg.inntektsposter.size shouldBe 1
                 barnetillegg.inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
                 barnetillegg.inntektsposter.first().beløp shouldBe (500).toBigDecimal()
@@ -518,10 +519,10 @@ class InntektServiceTest : TestContainerRunner() {
 
             entityManager.refresh(behandling)
 
-            behandling.inntekter.size shouldBe 2
+            behandling.inntekter.size shouldBe 3
             behandling.inntekter
                 .filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }
-                .filter { it.belop == BigDecimal(70000) }
+                .filter { it.belop == BigDecimal(0) }
                 .size shouldBe 1
 
             val oppdatertAinntekt =
@@ -560,11 +561,11 @@ class InntektServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             assertSoftly {
-                behandling.inntekter.size shouldBe 2
+                behandling.inntekter.size shouldBe 3
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe
                     BigDecimal(
-                        71000,
+                        0,
                     )
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.type }.belop shouldBe BigDecimal.ZERO

@@ -163,6 +163,8 @@ data class UnderholdskostnadDto(
         val sjablonMaksTilsynsutgift: BigDecimal,
         val sjablonMaksFradrag: BigDecimal,
         val antallBarnBMUnderTolvÅr: Int,
+        val antallBarnBMBeregnet: Int,
+        val antallBarnBMOver12ÅrMedTilsynsutgifter: Int = antallBarnBMBeregnet - antallBarnBMUnderTolvÅr,
         val skattesatsFaktor: BigDecimal,
         val totalTilsynsutgift: BigDecimal,
         val sumTilsynsutgifter: BigDecimal,

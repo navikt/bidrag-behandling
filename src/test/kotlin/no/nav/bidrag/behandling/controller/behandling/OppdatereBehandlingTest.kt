@@ -600,18 +600,18 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             assertSoftly(find { it.type == Inntektsrapportering.LIGNINGSINNTEKT }!!) {
                 type shouldBe Inntektsrapportering.LIGNINGSINNTEKT
                 belop shouldBe 0.toBigDecimal()
-                opprinneligFom shouldBe LocalDate.parse("2023-01-01")
-                opprinneligTom shouldBe LocalDate.parse("2023-12-31")
-                taMed shouldBe true
-                datoFom shouldBe LocalDate.parse("2023-01-01")
-                datoTom shouldBe LocalDate.parse("2023-12-31")
+                opprinneligFom shouldBe LocalDate.parse("2024-01-01")
+                opprinneligTom shouldBe LocalDate.parse("2024-12-31")
+                taMed shouldBe false
+                datoFom shouldBe null
+                datoTom shouldBe null
                 inntektsposter shouldHaveSize 0
             }
             assertSoftly(find { it.type == Inntektsrapportering.KAPITALINNTEKT }!!) {
                 type shouldBe Inntektsrapportering.KAPITALINNTEKT
                 belop shouldBe 550000.toBigDecimal()
-                opprinneligFom shouldBe LocalDate.parse("2023-01-01")
-                opprinneligTom shouldBe LocalDate.parse("2023-12-31")
+                opprinneligFom shouldBe LocalDate.parse("2024-01-01")
+                opprinneligTom shouldBe LocalDate.parse("2024-12-31")
                 taMed shouldBe false
                 datoTom shouldBe null
                 datoFom shouldBe null

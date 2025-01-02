@@ -51,11 +51,10 @@ import java.time.Period
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
-private val periodeFomJuli get() =
+
+private fun periodeFomJuli(year: Int) =
     LocalDate
-        .now()
-        .withMonth(7)
-        .withDayOfMonth(1)
+        .of(year, 7, 1)
 
 @Service
 class UnderholdService(
@@ -267,12 +266,12 @@ class UnderholdService(
             )
             if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
                 underholdskostnad.barnetilsyn.none {
-                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(request.periode.fom.year), request.periode.tom)
                 }
             ) {
                 underholdskostnad.barnetilsyn.add(
                     Barnetilsyn(
-                        fom = periodeFomJuli,
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
                         tom = request.periode.tom,
                         under_skolealder =
                             when (request.skolealder) {
@@ -319,12 +318,12 @@ class UnderholdService(
             )
             if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
                 underholdskostnad.faktiskeTilsynsutgifter.none {
-                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(request.periode.fom.year), request.periode.tom)
                 }
             ) {
                 underholdskostnad.faktiskeTilsynsutgifter.add(
                     FaktiskTilsynsutgift(
-                        fom = periodeFomJuli,
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
                         tom = request.periode.tom,
                         kostpenger = request.kostpenger,
                         tilsynsutgift = request.utgift,
@@ -362,12 +361,12 @@ class UnderholdService(
             )
             if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
                 underholdskostnad.tilleggsstønad.none {
-                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli, request.periode.tom)
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(request.periode.fom.year), request.periode.tom)
                 }
             ) {
                 underholdskostnad.tilleggsstønad.add(
                     Tilleggsstønad(
-                        fom = periodeFomJuli,
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
                         tom = request.periode.tom,
                         dagsats = request.dagsats,
                         underholdskostnad = underholdskostnad,
@@ -406,17 +405,15 @@ class UnderholdService(
 
     private fun Underholdskostnad.begrensTomDatoForTolvÅr(periode: DatoperiodeDto): LocalDate? =
         if (erPeriodeFørOgEtterFyltTolvÅr(periode)) {
-            LocalDate
-                .now()
-                .withMonth(7)
-                .withDayOfMonth(1)
-                .minusDays(1)
+            periodeFomJuli(årstallNårBarnFyllerTolvÅr(person.fødselsdato)).minusDays(1)
         } else {
             periode.tom
         }
 
     private fun Underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(periode: DatoperiodeDto) =
         !erBarnOverTolvÅrForDato(periode.fom) && erBarnOverTolvÅrForDato(periode.tom ?: LocalDate.now())
+
+    private fun årstallNårBarnFyllerTolvÅr(fødselsdato: LocalDate) = fødselsdato.plusYears(12).year
 
     private fun Underholdskostnad.erBarnOverTolvÅrForDato(dato: LocalDate?): Boolean {
         if (dato == null) return false

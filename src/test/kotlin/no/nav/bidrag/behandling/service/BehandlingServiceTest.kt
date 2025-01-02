@@ -1707,7 +1707,8 @@ class BehandlingServiceTest : TestContainerRunner() {
             ) { g ->
                 g.shouldHaveSize(2)
                 g.filter { it.aktiv != null } shouldHaveSize 1
-                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(g.find { it.aktiv != null }!!.data).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual fraDatoAktivtIkkebearbeidaGrunnlag
+                val barnetilsyn = jsonListeTilObjekt<BarnetilsynGrunnlagDto>(g.find { it.aktiv != null }!!.data)
+                barnetilsyn.minOf { it.periodeFra } shouldBeEqual fraDatoAktivtIkkebearbeidaGrunnlag
                 g.find { it.aktiv != null }!!.aktiv!!.toLocalDate() shouldBe aktivtIkkebearbeidaGrunnlag!!.aktiv!!.toLocalDate()
             }
 
@@ -1716,7 +1717,8 @@ class BehandlingServiceTest : TestContainerRunner() {
                 alleBarnetilsynsgrunnlag.filter { it.erBearbeidet && it.aktiv != null },
             ) { aktive ->
                 aktive.shouldHaveSize(2)
-                jsonListeTilObjekt<BarnetilsynGrunnlagDto>(aktive.maxBy { it.aktiv!! }.data).minByOrNull { it.periodeFra }!!.periodeFra shouldBeEqual nyVirkningsdato
+                val barnetilsyn = jsonListeTilObjekt<BarnetilsynGrunnlagDto>(aktive.maxBy { it.aktiv!! }.data)
+                barnetilsyn.minOf { it.periodeFra } shouldBeEqual nyVirkningsdato
                 aktive.forEach { it.aktiv!!.toLocalDate() shouldBe LocalDate.now() }
             }
 
