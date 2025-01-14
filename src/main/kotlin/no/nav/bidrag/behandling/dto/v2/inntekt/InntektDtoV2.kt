@@ -107,6 +107,7 @@ data class OppdatereInntektRequest(
 data class OppdatereInntektResponse(
     @Schema(description = "Inntekt som ble oppdatert")
     val inntekt: InntektDtoV2?,
+    val inntekter: InntekterDtoV2,
     val gebyr: GebyrDto? = null,
     val beregnetGebyrErEndret: Boolean = false,
     @Schema(description = "Periodiserte inntekter")

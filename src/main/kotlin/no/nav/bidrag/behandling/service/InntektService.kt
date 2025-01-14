@@ -7,20 +7,14 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
-import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
-import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
-import no.nav.bidrag.behandling.transformers.Dtomapper
-import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
-import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
@@ -55,8 +49,6 @@ class InntektService(
     private val behandlingRepository: BehandlingRepository,
     private val inntektRepository: InntektRepository,
     private val notatService: NotatService,
-    private val gebyrService: GebyrService,
-    private val dtomapper: Dtomapper,
 ) {
     @Transactional
     fun rekalkulerPerioderInntekter(behandlingsid: Long) {
@@ -169,7 +161,7 @@ class InntektService(
     fun oppdatereInntektManuelt(
         behandlingsid: Long,
         oppdatereInntektRequest: OppdatereInntektRequest,
-    ): OppdatereInntektResponse {
+    ): InntektDtoV2? {
         oppdatereInntektRequest.valider()
         secureLogger.info { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
         val behandling =
@@ -179,32 +171,7 @@ class InntektService(
 
         behandling.validerKanOppdatere()
 
-        val oppdatertInntekt = oppdatereInntekt(oppdatereInntektRequest, behandling)
-        val beregnetGebyrErEndret = gebyrService.rekalkulerGebyr(behandling)
-        return OppdatereInntektResponse(
-            inntekt = oppdatertInntekt,
-            gebyr = dtomapper.run { behandling.mapGebyr() },
-            beregnetGebyrErEndret = beregnetGebyrErEndret,
-            beregnetInntekter =
-                behandling.roller
-                    .filter { it.ident == oppdatertInntekt?.ident?.verdi }
-                    .map {
-                        BeregnetInntekterDto(
-                            it.tilPersonident()!!,
-                            it.rolletype,
-                            behandling.hentBeregnetInntekterForRolle(it),
-                        )
-                    },
-            valideringsfeil = behandling.hentInntekterValideringsfeil(),
-            begrunnelse =
-                oppdatereInntektRequest.henteOppdatereBegrunnelse?.let {
-                    NotatService.henteInntektsnotat(
-                        // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
-                        behandling,
-                        it.rolleid ?: behandling.bidragsmottaker!!.id!!,
-                    )
-                },
-        )
+        return oppdatereInntekt(oppdatereInntektRequest, behandling)
     }
 
     private fun oppdatereInntekt(
@@ -241,7 +208,19 @@ class InntektService(
             val oppdatertInntekt =
                 inntekt?.let {
                     manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
-                } ?: inntektRepository.save(manuellInntekt.lagreSomNyInntekt(behandling))
+                } ?: run {
+                    val forrigeInntektMedSammeType =
+                        behandling.inntekter
+                            .filter { it.type == manuellInntekt.type }
+                            .sortedByDescending { it.datoFom }
+                            .lastOrNull()
+
+                    val nyInntekt = manuellInntekt.lagreSomNyInntekt(behandling)
+                    forrigeInntektMedSammeType?.let {
+                        it.datoTom = nyInntekt.datoFom!!.minusDays(1)
+                    }
+                    nyInntekt
+                }
 
             return oppdatertInntekt.tilInntektDtoV2()
         }

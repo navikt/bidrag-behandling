@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import no.nav.bidrag.behandling.controller.v2.BehandlingControllerV2
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -24,6 +25,7 @@ import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -48,13 +50,25 @@ class InntektServiceMockTest {
     @MockK
     lateinit var notatService: NotatService
 
+    @MockK
+    lateinit var behandlingService: BehandlingService
+
     lateinit var inntektRepository: InntektRepository
 
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
     @MockK
+    lateinit var vedtakService: VedtakService
+
+    @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockK
+    lateinit var boforholdService: BoforholdService
+
+    @MockK
+    lateinit var utgiftService: UtgiftService
 
     @MockK
     lateinit var validerBeregning: ValiderBeregning
@@ -62,10 +76,14 @@ class InntektServiceMockTest {
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
+    lateinit var controller: BehandlingControllerV2
+
     lateinit var inntektService: InntektService
 
     @BeforeEach
     fun initMock() {
+        stubSjablonService()
+        stubSjablonProvider()
         inntektRepository = stubInntektRepository()
         val personService = PersonService(stubPersonConsumer())
 
@@ -85,7 +103,18 @@ class InntektServiceMockTest {
                 vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
-        inntektService = InntektService(behandlingRepository, inntektRepository, notatService, GebyrService(vedtakGrunnlagMapper), dtomapper)
+        inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
+        controller =
+            BehandlingControllerV2(
+                vedtakService = vedtakService,
+                behandlingService = behandlingService,
+                gebyrService = GebyrService(vedtakGrunnlagMapper),
+                boforholdService = boforholdService,
+                inntektService = inntektService,
+                utgiftService = utgiftService,
+                validerBehandlingService = validerBehandlingService,
+                dtomapper = dtomapper,
+            )
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }
 
@@ -442,6 +471,7 @@ class InntektServiceMockTest {
                 beregnetIlagtGebyr = false,
             )
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
         val forespørselOmOppdateringAvInntekter =
             OppdatereInntektRequest(
                 oppdatereManuellInntekt =
@@ -462,7 +492,7 @@ class InntektServiceMockTest {
 
         // hvis
         val response =
-            inntektService.oppdatereInntektManuelt(
+            controller.oppdatereInntekt(
                 behandling.id!!,
                 forespørselOmOppdateringAvInntekter,
             )
@@ -486,6 +516,8 @@ class InntektServiceMockTest {
                 beregnetIlagtGebyr = true,
             )
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
         val forespørselOmOppdateringAvInntekter =
             OppdatereInntektRequest(
                 oppdatereManuellInntekt =
@@ -506,7 +538,7 @@ class InntektServiceMockTest {
 
         // hvis
         val response =
-            inntektService.oppdatereInntektManuelt(
+            controller.oppdatereInntekt(
                 behandling.id!!,
                 forespørselOmOppdateringAvInntekter,
             )
