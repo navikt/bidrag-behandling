@@ -211,9 +211,13 @@ class InntektService(
                 } ?: run {
                     val forrigeInntektMedSammeType =
                         behandling.inntekter
-                            .filter { it.type == manuellInntekt.type }
-                            .filter { manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi == it.gjelderBarn }
-                            .sortedBy { it.datoFom }
+                            .filter { it.type == manuellInntekt.type && it.kilde == Kilde.MANUELL }
+                            .filter {
+                                manuellInntekt.inntektstype == null ||
+                                    it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
+                            }.filter {
+                                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi == it.gjelderBarn
+                            }.sortedBy { it.datoFom }
                             .lastOrNull()
 
                     val nyInntekt = manuellInntekt.lagreSomNyInntekt(behandling)
