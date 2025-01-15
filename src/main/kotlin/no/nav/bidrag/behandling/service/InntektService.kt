@@ -217,11 +217,11 @@ class InntektService(
                             .lastOrNull()
 
                     val nyInntekt = manuellInntekt.lagreSomNyInntekt(behandling)
-//                    forrigeInntektMedSammeType?.let {
-//                        if (nyInntekt.datoFom!! > it.datoFom) {
-//                            it.datoTom = nyInntekt.datoFom!!.minusDays(1)
-//                        }
-//                    }
+                    forrigeInntektMedSammeType?.let {
+                        if (nyInntekt.datoFom!! > it.datoFom) {
+                            it.datoTom = nyInntekt.datoFom!!.minusDays(1)
+                        }
+                    }
                     nyInntekt
                 }
 
