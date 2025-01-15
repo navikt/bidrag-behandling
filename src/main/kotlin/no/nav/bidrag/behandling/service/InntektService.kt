@@ -212,12 +212,14 @@ class InntektService(
                     val forrigeInntektMedSammeType =
                         behandling.inntekter
                             .filter { it.type == manuellInntekt.type }
-                            .sortedByDescending { it.datoFom }
+                            .sortedBy { it.datoFom }
                             .lastOrNull()
 
                     val nyInntekt = manuellInntekt.lagreSomNyInntekt(behandling)
                     forrigeInntektMedSammeType?.let {
-                        it.datoTom = nyInntekt.datoFom!!.minusDays(1)
+                        if (nyInntekt.datoFom!! > it.datoFom) {
+                            it.datoTom = nyInntekt.datoFom!!.minusDays(1)
+                        }
                     }
                     nyInntekt
                 }
