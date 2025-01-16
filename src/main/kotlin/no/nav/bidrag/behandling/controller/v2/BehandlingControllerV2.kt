@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
+import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
@@ -21,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
+import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
@@ -28,11 +31,16 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
+import no.nav.bidrag.behandling.service.GebyrService
 import no.nav.bidrag.behandling.service.InntektService
+import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
+import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -52,6 +60,7 @@ private val log = KotlinLogging.logger {}
 class BehandlingControllerV2(
     private val vedtakService: VedtakService,
     private val behandlingService: BehandlingService,
+    private val gebyrService: GebyrService,
     private val boforholdService: BoforholdService,
     private val inntektService: InntektService,
     private val utgiftService: UtgiftService,
@@ -112,7 +121,39 @@ class BehandlingControllerV2(
         @Valid @RequestBody(required = true) request: OppdatereInntektRequest,
     ): OppdatereInntektResponse {
         log.info { "Oppdatere inntekter for behandling $behandlingsid" }
-        return inntektService.oppdatereInntektManuelt(behandlingsid, request)
+        val behandling =
+            behandlingService.hentBehandlingById(behandlingsid)
+        val oppdatertInntekt = inntektService.oppdatereInntektManuelt(behandlingsid, request)
+        val beregnetGebyrErEndret = gebyrService.rekalkulerGebyr(behandling)
+        return OppdatereInntektResponse(
+            inntekt = oppdatertInntekt,
+            inntekter =
+                behandling.tilInntektDtoV2(
+                    behandling.grunnlag.hentSisteAktiv(),
+                    inkluderHistoriskeInntekter = true,
+                ),
+            gebyr = dtomapper.run { behandling.mapGebyr() },
+            beregnetGebyrErEndret = beregnetGebyrErEndret,
+            beregnetInntekter =
+                behandling.roller
+                    .filter { it.ident == oppdatertInntekt?.ident?.verdi }
+                    .map {
+                        BeregnetInntekterDto(
+                            it.tilPersonident()!!,
+                            it.rolletype,
+                            behandling.hentBeregnetInntekterForRolle(it),
+                        )
+                    },
+            valideringsfeil = behandling.hentInntekterValideringsfeil(),
+            begrunnelse =
+                request.henteOppdatereBegrunnelse?.let {
+                    NotatService.henteInntektsnotat(
+                        // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
+                        behandling,
+                        it.rolleid ?: behandling.bidragsmottaker!!.id!!,
+                    )
+                },
+        )
     }
 
     @PutMapping("/behandling/{behandlingsid}/utgift")

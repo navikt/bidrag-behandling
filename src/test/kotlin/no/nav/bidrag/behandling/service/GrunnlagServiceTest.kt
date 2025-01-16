@@ -2249,11 +2249,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag.isNotEmpty()
                     behandling.grunnlag.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 5
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
-                    behandling.inntekter.size shouldBe 4
+                    behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
                         .filter { it.ident == behandling.bidragspliktig!!.ident }
-                        .size shouldBe 4
+                        .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
                         .filter { BigDecimal.ZERO == it.belop }
@@ -2499,11 +2499,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag.isNotEmpty()
                     behandling.grunnlag.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 5
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
-                    behandling.inntekter.size shouldBe 4
+                    behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
                         .filter { it.ident == behandling.bidragspliktig!!.ident }
-                        .size shouldBe 4
+                        .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
                         .filter { BigDecimal.ZERO == it.belop }
@@ -3502,11 +3502,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag.isNotEmpty()
                     behandling.grunnlag.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 5
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
-                    behandling.inntekter.size shouldBe 4
+                    behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
                         .filter { it.ident == behandling.bidragsmottaker!!.ident }
-                        .size shouldBe 4
+                        .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
                         .filter { BigDecimal.ZERO == it.belop }

@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import no.nav.bidrag.behandling.controller.v2.BehandlingControllerV2
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -18,15 +19,20 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -48,13 +54,25 @@ class InntektServiceMockTest {
     @MockK
     lateinit var notatService: NotatService
 
+    @MockK
+    lateinit var behandlingService: BehandlingService
+
     lateinit var inntektRepository: InntektRepository
 
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
     @MockK
+    lateinit var vedtakService: VedtakService
+
+    @MockK
     lateinit var tilgangskontrollService: TilgangskontrollService
+
+    @MockK
+    lateinit var boforholdService: BoforholdService
+
+    @MockK
+    lateinit var utgiftService: UtgiftService
 
     @MockK
     lateinit var validerBeregning: ValiderBeregning
@@ -62,10 +80,15 @@ class InntektServiceMockTest {
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
+    lateinit var controller: BehandlingControllerV2
+
     lateinit var inntektService: InntektService
 
     @BeforeEach
     fun initMock() {
+        stubSjablonService()
+        stubSjablonProvider()
+        stubKodeverkProvider()
         inntektRepository = stubInntektRepository()
         val personService = PersonService(stubPersonConsumer())
 
@@ -85,7 +108,18 @@ class InntektServiceMockTest {
                 vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
-        inntektService = InntektService(behandlingRepository, inntektRepository, notatService, GebyrService(vedtakGrunnlagMapper), dtomapper)
+        inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
+        controller =
+            BehandlingControllerV2(
+                vedtakService = vedtakService,
+                behandlingService = behandlingService,
+                gebyrService = GebyrService(vedtakGrunnlagMapper),
+                boforholdService = boforholdService,
+                inntektService = inntektService,
+                utgiftService = utgiftService,
+                validerBehandlingService = validerBehandlingService,
+                dtomapper = dtomapper,
+            )
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }
 
@@ -442,6 +476,7 @@ class InntektServiceMockTest {
                 beregnetIlagtGebyr = false,
             )
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
         val forespørselOmOppdateringAvInntekter =
             OppdatereInntektRequest(
                 oppdatereManuellInntekt =
@@ -462,7 +497,7 @@ class InntektServiceMockTest {
 
         // hvis
         val response =
-            inntektService.oppdatereInntektManuelt(
+            controller.oppdatereInntekt(
                 behandling.id!!,
                 forespørselOmOppdateringAvInntekter,
             )
@@ -486,6 +521,8 @@ class InntektServiceMockTest {
                 beregnetIlagtGebyr = true,
             )
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
         val forespørselOmOppdateringAvInntekter =
             OppdatereInntektRequest(
                 oppdatereManuellInntekt =
@@ -506,7 +543,7 @@ class InntektServiceMockTest {
 
         // hvis
         val response =
-            inntektService.oppdatereInntektManuelt(
+            controller.oppdatereInntekt(
                 behandling.id!!,
                 forespørselOmOppdateringAvInntekter,
             )
@@ -515,4 +552,344 @@ class InntektServiceMockTest {
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
     }
+
+    @Test
+    fun `skal endre inntekter og legge til til og med dato på forrige periode`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val virkningstidspunkt = LocalDate.now().plusMonths(4)
+        behandling.virkningstidspunkt = virkningstidspunkt
+
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        behandling.inntekter =
+            mutableSetOf(
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-01"),
+                    datoTom = YearMonth.parse("2024-02"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-03"),
+                    datoTom = YearMonth.parse("2024-04"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-05"),
+                    datoTom = YearMonth.parse("2024-06"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-07"),
+                    datoTom = null,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragspliktig!!.ident!!,
+                    datoFom = YearMonth.parse("2024-05"),
+                    datoTom = YearMonth.parse("2024-07"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragspliktig!!.ident!!,
+                    datoFom = YearMonth.parse("2024-08"),
+                    datoTom = YearMonth.parse("2024-09"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+            )
+
+        assertSoftly("Endring BM") {
+            val forespørselOmOppdateringAvInntekter =
+                OppdatereInntektRequest(
+                    oppdatereManuellInntekt =
+                        OppdatereManuellInntekt(
+                            type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                            beløp = BigDecimal(3052003),
+                            datoFom = LocalDate.parse("2024-12-01"),
+                            datoTom = null,
+                            ident = Personident(behandling.bidragsmottaker!!.ident!!),
+                            gjelderBarn = null,
+                        ),
+                )
+
+            // hvis
+            val response =
+                controller.oppdatereInntekt(
+                    behandling.id!!,
+                    forespørselOmOppdateringAvInntekter,
+                )
+            response.inntekter.årsinntekter.shouldHaveSize(7)
+            val inntekterBM = response.inntekter.årsinntekter.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }
+            inntekterBM.shouldHaveSize(5)
+
+            val siste = inntekterBM.sortedBy { it.datoFom }.last()
+            siste.datoFom shouldBe LocalDate.parse("2024-12-01")
+            siste.datoTom shouldBe null
+
+            val nestSiste = findBeforeLast(inntekterBM.sortedBy { it.datoFom })!!
+            nestSiste.datoFom shouldBe LocalDate.parse("2024-07-01")
+            nestSiste.datoTom shouldBe LocalDate.parse("2024-11-30")
+        }
+
+        behandling.inntekter.forEach {
+            it.id = it.id ?: 1
+        }
+        assertSoftly("Endring BP") {
+            val forespørselOmOppdateringAvInntekter =
+                OppdatereInntektRequest(
+                    oppdatereManuellInntekt =
+                        OppdatereManuellInntekt(
+                            type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                            beløp = BigDecimal(3052003),
+                            datoFom = LocalDate.parse("2025-01-01"),
+                            datoTom = LocalDate.parse("2025-02-01"),
+                            ident = Personident(behandling.bidragspliktig!!.ident!!),
+                            gjelderBarn = null,
+                        ),
+                )
+
+            // hvis
+            val response =
+                controller.oppdatereInntekt(
+                    behandling.id!!,
+                    forespørselOmOppdateringAvInntekter,
+                )
+            response.inntekter.årsinntekter.shouldHaveSize(8)
+            val inntekterBP = response.inntekter.årsinntekter.filter { it.ident.verdi == behandling.bidragspliktig!!.ident!! }
+            inntekterBP.shouldHaveSize(3)
+
+            val siste = inntekterBP.sortedBy { it.datoFom }.last()
+            siste.datoFom shouldBe LocalDate.parse("2025-01-01")
+            siste.datoTom shouldBe LocalDate.parse("2025-02-01")
+
+            val nestSiste = findBeforeLast(inntekterBP.sortedBy { it.datoFom })!!
+            nestSiste.datoFom shouldBe LocalDate.parse("2024-08-01")
+            nestSiste.datoTom shouldBe LocalDate.parse("2024-12-31")
+        }
+    }
+
+    @Test
+    fun `skal endre inntekter og ikke legge til til og med dato på forrige periode for barnetillegg`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val virkningstidspunkt = LocalDate.now().plusMonths(4)
+        behandling.virkningstidspunkt = virkningstidspunkt
+
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        behandling.inntekter =
+            mutableSetOf(
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-01"),
+                    datoTom = YearMonth.parse("2024-02"),
+                    gjelderBarn = behandling.søknadsbarn.first().ident!!,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Pair(Inntektstype.BARNETILLEGG_AAP, BigDecimal(100))),
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-03"),
+                    datoTom = YearMonth.parse("2024-04"),
+                    gjelderBarn = behandling.søknadsbarn.first().ident!!,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    inntektstyper = listOf(Pair(Inntektstype.BARNETILLEGG_AAP, BigDecimal(100))),
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-05"),
+                    datoTom = YearMonth.parse("2024-06"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    gjelderBarn = behandling.søknadsbarn.first().ident!!,
+                    inntektstyper = listOf(Pair(Inntektstype.BARNETILLEGG_DNB, BigDecimal(100))),
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-07"),
+                    datoTom = null,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    gjelderBarn = behandling.søknadsbarn.first().ident!!,
+                    inntektstyper = listOf(Pair(Inntektstype.BARNETILLEGG_DNB, BigDecimal(100))),
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-05"),
+                    datoTom = YearMonth.parse("2024-07"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    gjelderBarn = behandling.søknadsbarn.first().ident!!,
+                    inntektstyper = listOf(Pair(Inntektstype.BARNETILLEGG_DNB, BigDecimal(100))),
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-08"),
+                    datoTom = YearMonth.parse("2024-09"),
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    gjelderBarn = behandling.søknadsbarn.first().ident!!,
+                    inntektstyper = listOf(Pair(Inntektstype.BARNETILLEGG_DNB, BigDecimal(100))),
+                    kilde = Kilde.MANUELL,
+                ),
+            )
+
+        assertSoftly("Endring BM") {
+            val forespørselOmOppdateringAvInntekter =
+                OppdatereInntektRequest(
+                    oppdatereManuellInntekt =
+                        OppdatereManuellInntekt(
+                            type = Inntektsrapportering.BARNETILLEGG,
+                            beløp = BigDecimal(3052003),
+                            datoFom = LocalDate.parse("2024-12-01"),
+                            datoTom = null,
+                            inntektstype = Inntektstype.BARNETILLEGG_AAP,
+                            ident = Personident(behandling.bidragsmottaker!!.ident!!),
+                            gjelderBarn = Personident(behandling.søknadsbarn.first().ident!!),
+                        ),
+                )
+
+            // hvis
+            val response =
+                controller.oppdatereInntekt(
+                    behandling.id!!,
+                    forespørselOmOppdateringAvInntekter,
+                )
+            response.inntekter.barnetillegg.shouldHaveSize(7)
+            val inntekterBM = response.inntekter.barnetillegg.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }
+            inntekterBM.shouldHaveSize(7)
+
+            val siste = inntekterBM.sortedBy { it.datoFom }.filter { it.inntektstyper.contains(Inntektstype.BARNETILLEGG_AAP) }.last()
+            siste.datoFom shouldBe LocalDate.parse("2024-12-01")
+            siste.datoTom shouldBe null
+
+            val nestSiste = findBeforeLast(inntekterBM.sortedBy { it.datoFom }.filter { it.inntektstyper.contains(Inntektstype.BARNETILLEGG_AAP) })!!
+            nestSiste.datoFom shouldBe LocalDate.parse("2024-03-01")
+            nestSiste.datoTom shouldBe LocalDate.parse("2024-04-30")
+        }
+
+        behandling.inntekter.forEach {
+            it.id = it.id ?: 1
+        }
+    }
+
+    @Test
+    fun `skal ikke endre forrige periode hvis ny inntekt legges til mellom`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val virkningstidspunkt = LocalDate.now().plusMonths(4)
+        behandling.virkningstidspunkt = virkningstidspunkt
+
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        behandling.inntekter =
+            mutableSetOf(
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-01"),
+                    datoTom = YearMonth.parse("2024-02"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-03"),
+                    datoTom = YearMonth.parse("2024-04"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-05"),
+                    datoTom = YearMonth.parse("2024-06"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    datoFom = YearMonth.parse("2024-07"),
+                    datoTom = null,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragspliktig!!.ident!!,
+                    datoFom = YearMonth.parse("2024-05"),
+                    datoTom = YearMonth.parse("2024-07"),
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+                opprettInntekt(
+                    behandling = behandling,
+                    ident = behandling.bidragspliktig!!.ident!!,
+                    datoFom = YearMonth.parse("2024-08"),
+                    datoTom = null,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                    kilde = Kilde.MANUELL,
+                ),
+            )
+        val forespørselOmOppdateringAvInntekter =
+            OppdatereInntektRequest(
+                oppdatereManuellInntekt =
+                    OppdatereManuellInntekt(
+                        type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                        beløp = BigDecimal(3052003),
+                        datoFom = LocalDate.parse("2023-12-01"),
+                        datoTom = LocalDate.parse("2023-12-31"),
+                        ident = Personident(behandling.bidragsmottaker!!.ident!!),
+                        gjelderBarn = null,
+                    ),
+            )
+
+        // hvis
+        val response =
+            controller.oppdatereInntekt(
+                behandling.id!!,
+                forespørselOmOppdateringAvInntekter,
+            )
+
+        assertSoftly {
+            response.inntekter.årsinntekter.shouldHaveSize(7)
+            val inntekterBM = response.inntekter.årsinntekter.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }
+            inntekterBM.shouldHaveSize(5)
+
+            val siste = inntekterBM.sortedBy { it.datoFom }.last()
+            siste.datoFom shouldBe LocalDate.parse("2024-07-01")
+            siste.datoTom shouldBe null
+
+            val første = inntekterBM.sortedBy { it.datoFom }.first()
+            første.datoFom shouldBe LocalDate.parse("2023-12-01")
+            første.datoTom shouldBe LocalDate.parse("2023-12-31")
+        }
+    }
 }
+
+fun <T> findBeforeLast(list: List<T>): T? = if (list.size >= 2) list[list.size - 2] else null
