@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.grunnlag.summertYtelsetyper
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
@@ -211,7 +212,8 @@ class InntektService(
                 } ?: run {
                     val forrigeInntektMedSammeType =
                         behandling.inntekter
-                            .filter { it.type == manuellInntekt.type && it.kilde == Kilde.MANUELL }
+                            .filter { !summertYtelsetyper.contains(it.type) }
+                            .filter { it.type == manuellInntekt.type && it.kilde == Kilde.MANUELL && it.taMed }
                             .filter {
                                 manuellInntekt.inntektstype == null ||
                                     it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
