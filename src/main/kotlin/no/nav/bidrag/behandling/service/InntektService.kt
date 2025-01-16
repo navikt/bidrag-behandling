@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
@@ -205,32 +206,22 @@ class InntektService(
         oppdatereInntektRequest.oppdatereManuellInntekt?.let { manuellInntekt ->
             val inntekt =
                 behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.firstOrNull { manuellInntekt.id == it.id }
+            val forrigeInntektMedSammeType = behandling.hentSisteInntektMedSammeType(manuellInntekt)
 
             val oppdatertInntekt =
                 inntekt?.let {
                     manuellInntekt.oppdatereEksisterendeInntekt(inntekt)
                 } ?: run {
-                    val forrigeInntektMedSammeType =
-                        behandling.inntekter
-                            .filter { !summertYtelsetyper.contains(it.type) }
-                            .filter { it.type == manuellInntekt.type && it.kilde == Kilde.MANUELL && it.taMed }
-                            .filter {
-                                manuellInntekt.inntektstype == null ||
-                                    it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
-                            }.filter {
-                                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi == it.gjelderBarn
-                            }.sortedBy { it.datoFom }
-                            .lastOrNull()
-
                     val nyInntekt = manuellInntekt.lagreSomNyInntekt(behandling)
-                    forrigeInntektMedSammeType?.let {
-                        if (nyInntekt.datoFom!! > it.datoFom) {
-                            it.datoTom = nyInntekt.datoFom!!.minusDays(1)
-                        }
-                    }
+
                     nyInntekt
                 }
 
+            forrigeInntektMedSammeType?.let {
+                if (oppdatertInntekt.datoFom!! > it.datoFom) {
+                    it.datoTom = oppdatertInntekt.datoFom!!.minusDays(1)
+                }
+            }
             return oppdatertInntekt.tilInntektDtoV2()
         }
 
@@ -266,6 +257,22 @@ class InntektService(
 
         return null
     }
+
+    private fun Behandling.hentSisteInntektMedSammeType(manuellInntekt: OppdatereManuellInntekt) =
+        inntekter
+            .filter { !summertYtelsetyper.contains(it.type) }
+            .filter {
+                it.type == manuellInntekt.type &&
+                    it.kilde == Kilde.MANUELL &&
+                    it.taMed &&
+                    manuellInntekt.id != it.id
+            }.filter {
+                manuellInntekt.inntektstype == null ||
+                    it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
+            }.filter {
+                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi == it.gjelderBarn
+            }.sortedBy { it.datoFom }
+            .lastOrNull()
 
     private fun <T> behandleInntektsoppdatering(
         behandling: Behandling,
