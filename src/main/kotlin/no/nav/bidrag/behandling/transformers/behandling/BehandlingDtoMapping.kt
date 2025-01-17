@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
@@ -48,10 +49,12 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
@@ -443,7 +446,8 @@ fun Behandling.notatTittel(): String {
             Stønadstype.MOTREGNING -> "Motregning"
             else ->
                 when (engangsbeloptype) {
-                    Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRBIDRAG -> "Særbidrag"
+                    Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRTILSKUDD, Engangsbeløptype.SAERTILSKUDD ->
+                        "Særbidrag ${kategoriTilTittel()}".trim()
                     Engangsbeløptype.DIREKTE_OPPGJØR, Engangsbeløptype.DIREKTE_OPPGJØR -> "Direkte oppgjør"
                     Engangsbeløptype.ETTERGIVELSE -> "Ettergivelse"
                     Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> "Ettergivelse tilbakekreving"
@@ -455,6 +459,17 @@ fun Behandling.notatTittel(): String {
         }
     return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
 }
+
+fun Behandling.kategoriTilTittel() =
+    if (engangsbeloptype == Engangsbeløptype.SÆRBIDRAG) {
+        if (særbidragKategori == Særbidragskategori.ANNET) {
+            kategoriBeskrivelse
+        } else {
+            særbidragKategori.visningsnavn.intern.lowercase()
+        }
+    } else {
+        ""
+    }
 
 fun Set<BarnetilsynGrunnlagDto>.filtrerePerioderEtterVirkningstidspunkt(virkningstidspunkt: LocalDate): Set<BarnetilsynGrunnlagDto> =
     groupBy { it.barnPersonId }
