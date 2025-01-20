@@ -89,7 +89,7 @@ class UtgiftserviceMockTest {
     fun opprettBehandlingSærbidrag(): Behandling {
         val behandling = oppretteBehandling(1)
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
-        behandling.roller.addAll(oppretteBehandlingRoller(behandling, typeBehandling = TypeBehandling.SÆRBIDRAG))
+        behandling.roller.addAll(oppretteBehandlingRoller(behandling, typeBehandling = TypeBehandling.SÆRBIDRAG, generateId = true))
         return behandling
     }
 
