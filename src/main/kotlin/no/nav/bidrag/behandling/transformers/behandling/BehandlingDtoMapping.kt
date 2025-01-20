@@ -251,6 +251,17 @@ fun Behandling.tilInntektDtoV2(
                     )
                 }
             }.toSet(),
+    begrunnelserFraOpprinneligVedtak =
+        this.roller
+            .mapNotNull { r ->
+                val inntektsnotat = NotatService.henteInntektsnotat(this, r.id!!, false)
+                inntektsnotat?.let {
+                    BegrunnelseDto(
+                        innhold = it,
+                        gjelder = r.tilDto(),
+                    )
+                }
+            }.toSet(),
     valideringsfeil = hentInntekterValideringsfeil(),
 )
 
@@ -403,37 +414,39 @@ fun Behandling.tilNotat(
     notattype: Notattype,
     tekst: String,
     rolleVedInntekt: Rolle? = null,
+    delAvBehandling: Boolean = true,
 ): Notat {
     val gjelder = this.henteRolleForNotat(notattype, rolleVedInntekt)
-    return Notat(behandling = this, rolle = gjelder, type = notattype, innhold = tekst)
+    return Notat(behandling = this, rolle = gjelder, type = notattype, innhold = tekst, erDelAvBehandlingen = delAvBehandling)
 }
 
 fun Behandling.henteRolleForNotat(
     notattype: Notattype,
     forRolle: Rolle?,
-) = when (notattype) {
-    Notattype.BOFORHOLD -> Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
-    Notattype.UTGIFTER -> this.bidragsmottaker!!
-    Notattype.VIRKNINGSTIDSPUNKT -> this.bidragsmottaker!!
-    Notattype.INNTEKT -> {
-        if (forRolle == null) {
-            log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
-            this.bidragsmottaker!!
-        } else {
-            forRolle
+): Rolle =
+    when (notattype) {
+        Notattype.BOFORHOLD -> Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
+        Notattype.UTGIFTER -> this.bidragsmottaker!!
+        Notattype.VIRKNINGSTIDSPUNKT -> this.bidragsmottaker!!
+        Notattype.INNTEKT -> {
+            if (forRolle == null) {
+                log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
+                this.bidragsmottaker!!
+            } else {
+                forRolle
+            }
         }
+
+        Notattype.UNDERHOLDSKOSTNAD ->
+            if (forRolle == null) {
+                log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
+                this.bidragsmottaker!!
+            } else {
+                forRolle
+            }
+
+        Notattype.SAMVÆR -> forRolle!!
     }
-
-    Notattype.UNDERHOLDSKOSTNAD ->
-        if (forRolle == null) {
-            log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
-            this.bidragsmottaker!!
-        } else {
-            forRolle
-        }
-
-    Notattype.SAMVÆR -> forRolle!!
-}
 
 fun Behandling.notatTittel(): String {
     val prefiks =

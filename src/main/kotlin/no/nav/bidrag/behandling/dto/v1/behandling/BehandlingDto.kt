@@ -22,6 +22,7 @@ data class VirkningstidspunktDto(
     val avslag: Resultatkode? = null,
     @Schema(description = "Saksbehandlers begrunnelse")
     val begrunnelse: BegrunnelseDto,
+    val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)

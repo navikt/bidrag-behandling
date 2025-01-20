@@ -200,6 +200,16 @@ class Dtomapper(
                     this.behandling,
                     rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
                 ),
+            begrunnelseFraOpprinneligVedtak =
+                if (behandling.erKlageEllerOmgjøring) {
+                    NotatService.henteUnderholdsnotat(
+                        this.behandling,
+                        rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
+                        false,
+                    )
+                } else {
+                    null
+                },
             valideringsfeil = this.valider().takeIf { it.harFeil },
         )
     }
@@ -293,7 +303,8 @@ class Dtomapper(
                 SærbidragUtgifterDto(
                     avslag = avslag,
                     kategori = tilSærbidragKategoriDto(),
-                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.UTGIFTER) ?: ""),
+                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.UTGIFTER)),
+                    begrunnelseFraOpprinneligVedtak = utgiftBegrunnelseFraOpprinneligVedtak(),
                     valideringsfeil = valideringsfeil,
                     totalBeregning = utgift.tilTotalBeregningDto(),
                 )
@@ -303,11 +314,8 @@ class Dtomapper(
                     beregning = utgift.tilBeregningDto(),
                     kategori = tilSærbidragKategoriDto(),
                     maksGodkjentBeløp = utgift.tilMaksGodkjentBeløpDto(),
-                    begrunnelse =
-                        BegrunnelseDto(
-                            innhold = henteNotatinnhold(this, NotatType.UTGIFTER),
-                            gjelder = this.henteRolleForNotat(NotatType.UTGIFTER, null).tilDto(),
-                        ),
+                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.UTGIFTER)),
+                    begrunnelseFraOpprinneligVedtak = utgiftBegrunnelseFraOpprinneligVedtak(),
                     utgifter = utgift.utgiftsposter.sorter().map { it.tilDto() },
                     valideringsfeil = valideringsfeil,
                     totalBeregning = utgift.tilTotalBeregningDto(),
@@ -317,13 +325,17 @@ class Dtomapper(
             SærbidragUtgifterDto(
                 avslag = avslag,
                 kategori = tilSærbidragKategoriDto(),
-                begrunnelse =
-                    BegrunnelseDto(
-                        innhold = henteNotatinnhold(this, NotatType.UTGIFTER),
-                        gjelder = this.henteRolleForNotat(NotatType.UTGIFTER, null).tilDto(),
-                    ),
+                begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.UTGIFTER)),
+                begrunnelseFraOpprinneligVedtak = utgiftBegrunnelseFraOpprinneligVedtak(),
                 valideringsfeil = utgift.hentValideringsfeil(),
             )
+        } else {
+            null
+        }
+
+    fun Behandling.utgiftBegrunnelseFraOpprinneligVedtak() =
+        if (erKlageEllerOmgjøring) {
+            BegrunnelseDto(henteNotatinnhold(this, NotatType.UTGIFTER, null, false))
         } else {
             null
         }
@@ -628,6 +640,12 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    begrunnelseFraOpprinneligVedtak =
+                        if (erKlageEllerOmgjøring) {
+                            BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false))
+                        } else {
+                            null
+                        },
                 ),
             boforhold = tilBoforholdV2(),
             inntekter =
@@ -722,6 +740,15 @@ class Dtomapper(
                     innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
                     gjelder = this.henteRolleForNotat(NotatType.BOFORHOLD, null).tilDto(),
                 ),
+            begrunnelseFraOpprinneligVedtak =
+                if (erKlageEllerOmgjøring) {
+                    BegrunnelseDto(
+                        innhold = henteNotatinnhold(this, NotatType.BOFORHOLD, null, false),
+                        gjelder = this.henteRolleForNotat(NotatType.BOFORHOLD, null).tilDto(),
+                    )
+                } else {
+                    null
+                },
             egetBarnErEnesteVoksenIHusstanden = egetBarnErEnesteVoksenIHusstanden,
             beregnetBoforhold = tilBeregnetBoforhold(),
             valideringsfeil =

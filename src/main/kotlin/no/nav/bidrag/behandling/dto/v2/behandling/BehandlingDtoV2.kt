@@ -169,6 +169,7 @@ data class SærbidragUtgifterDto(
     val maksGodkjentBeløp: MaksGodkjentBeløpDto? = null,
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
     val begrunnelse: BegrunnelseDto,
+    val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val utgifter: List<UtgiftspostDto> = emptyList(),
     val valideringsfeil: UtgiftValideringsfeilDto?,
     val totalBeregning: List<TotalBeregningUtgifterDto> = emptyList(),
