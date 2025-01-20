@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldBeEmpty
 import io.mockk.every
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -76,6 +77,38 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             validerSivilstand()
             validerInntekter()
             validerGrunnlag()
+        }
+    }
+
+    @Test
+    fun `Skal konvertere vedtak til behandling for FORSKUDD`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_response")
+        every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
+        every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
+
+        val behandling =
+            vedtakService.konverterVedtakTilBehandling(
+                OpprettBehandlingFraVedtakRequest(
+                    vedtakstype = Vedtakstype.KLAGE,
+                    søknadsid = 100,
+                    søknadsreferanseid = 222,
+                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                    saksnummer = "123213213",
+                    mottattdato = LocalDate.parse("2024-01-01"),
+                    søktFomDato = LocalDate.parse("2021-01-01"),
+                    behandlerenhet = "9999",
+                ),
+                12333,
+            )!!
+        behandlingRepository.save(behandling)
+
+        assertSoftly(behandling) {
+            henteNotatinnhold(behandling, Notattype.VIRKNINGSTIDSPUNKT, begrunnelseDelAvBehandlingen = false) shouldBe "Notat virkningstidspunkt"
+            henteNotatinnhold(behandling, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = false) shouldBe "Notat boforhold"
+            henteNotatinnhold(behandling, Notattype.INNTEKT, begrunnelseDelAvBehandlingen = false) shouldBe "Notat inntekt"
+            henteNotatinnhold(behandling, Notattype.INNTEKT, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.VIRKNINGSTIDSPUNKT, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
         }
     }
 

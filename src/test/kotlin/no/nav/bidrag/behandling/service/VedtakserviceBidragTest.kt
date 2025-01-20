@@ -76,6 +76,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholds
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
@@ -123,30 +124,30 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
             behandling.bidragsmottaker,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.leggTilNotat(
             "Boforhold",
-            NotatGrunnlag.NotatType.BOFORHOLD,
+            NotatType.BOFORHOLD,
         )
         behandling.leggTilNotat(
             "Samvær",
-            NotatGrunnlag.NotatType.SAMVÆR,
+            NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold andre barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
         behandling.refVedtaksid = 553
@@ -323,6 +324,124 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
+    fun `Skal fatte vedtak og lagre notat som er med i behandlingen`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), testdataHusstandsmedlem1, medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
+            testdataBarnBm,
+            medId = true,
+        )
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), medId = true)
+        behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), generateId = true)
+        behandling.leggTilBarnetilsyn(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
+            generateId = true,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
+            kilde = Kilde.OFFENTLIG,
+        )
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
+
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+
+        // Ikke med i behandlingen
+        behandling.leggTilNotat(
+            "Skal ikke lagres i vedtaket - Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Skal ikke lagres i vedtaket - Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Skal ikke lagres i vedtaket - Boforhold",
+            NotatType.BOFORHOLD,
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Skal ikke lagres i vedtaket - Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Skal ikke lagres i vedtaket - Underhold barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Skal ikke lagres i vedtaket - Underhold andre barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+            erDelAvBehandlingen = false,
+        )
+        behandling.refVedtaksid = 553
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+            validerNotater(behandling)
+        }
+    }
+
+    @Test
     fun `Skal fatte vedtak med manuelt overstyrt gebyr`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
@@ -349,30 +468,30 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
             behandling.bidragsmottaker,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.leggTilNotat(
             "Boforhold",
-            NotatGrunnlag.NotatType.BOFORHOLD,
+            NotatType.BOFORHOLD,
         )
         behandling.leggTilNotat(
             "Samvær",
-            NotatGrunnlag.NotatType.SAMVÆR,
+            NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold andre barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
         behandling.refVedtaksid = 553
@@ -466,30 +585,30 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
             behandling.bidragsmottaker,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.leggTilNotat(
             "Boforhold",
-            NotatGrunnlag.NotatType.BOFORHOLD,
+            NotatType.BOFORHOLD,
         )
         behandling.leggTilNotat(
             "Samvær",
-            NotatGrunnlag.NotatType.SAMVÆR,
+            NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold andre barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
         behandling.refVedtaksid = 553
@@ -537,30 +656,30 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
             behandling.bidragsmottaker,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.leggTilNotat(
             "Boforhold",
-            NotatGrunnlag.NotatType.BOFORHOLD,
+            NotatType.BOFORHOLD,
         )
         behandling.leggTilNotat(
             "Samvær",
-            NotatGrunnlag.NotatType.SAMVÆR,
+            NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold andre barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
         behandling.refVedtaksid = 553
@@ -611,30 +730,30 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
             behandling.bidragsmottaker,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.leggTilNotat(
             "Boforhold",
-            NotatGrunnlag.NotatType.BOFORHOLD,
+            NotatType.BOFORHOLD,
         )
         behandling.leggTilNotat(
             "Samvær",
-            NotatGrunnlag.NotatType.SAMVÆR,
+            NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold andre barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
         behandling.refVedtaksid = 553
@@ -698,30 +817,30 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
             behandling.bidragsmottaker,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.leggTilNotat(
             "Boforhold",
-            NotatGrunnlag.NotatType.BOFORHOLD,
+            NotatType.BOFORHOLD,
         )
         behandling.leggTilNotat(
             "Samvær",
-            NotatGrunnlag.NotatType.SAMVÆR,
+            NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Underhold andre barn",
-            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+            NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
         behandling.refVedtaksid = 553
@@ -781,7 +900,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.refVedtaksid = 553
@@ -916,7 +1035,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.refVedtaksid = 553
@@ -998,7 +1117,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.refVedtaksid = 553
@@ -1099,30 +1218,30 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
         shouldHaveSize(6)
         assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-            innhold shouldBe henteNotatinnhold(behandling, NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT)
+            innhold shouldBe henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
             erMedIVedtaksdokumentet shouldBe false
-            type shouldBe NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
+            type shouldBe NotatType.VIRKNINGSTIDSPUNKT
         }
 
-        assertSoftly(hentNotat(NotatGrunnlag.NotatType.SAMVÆR, gjelderReferanse = søknadsbarnGrunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderReferanse = søknadsbarnGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Samvær"
         }
 
-        assertSoftly(hentNotat(NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = søknadsbarnGrunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = søknadsbarnGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold barn"
         }
 
-        assertSoftly(hentNotat(NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold andre barn"
         }
 
-        assertSoftly(hentNotat(NotatGrunnlag.NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Inntektsbegrunnelse kun i notat"

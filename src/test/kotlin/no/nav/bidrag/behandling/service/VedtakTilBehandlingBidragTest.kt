@@ -7,6 +7,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldBeEmpty
 import io.mockk.every
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.barn
@@ -15,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -71,18 +73,48 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
             notater shouldHaveSize 4
-            val samværNotat = notater.find { it.type == Notattype.SAMVÆR }!!
-            samværNotat.innhold shouldBe "Begrunnelse samvær"
-            samværNotat.rolle.rolletype shouldBe Rolletype.BARN
-            val underholdNotat = notater.find { it.type == Notattype.UNDERHOLDSKOSTNAD }!!
-            underholdNotat.innhold shouldBe "Begrunnelse underholdskostnad"
-            underholdNotat.rolle.rolletype shouldBe Rolletype.BARN
+            henteNotatinnhold(behandling, Notattype.SAMVÆR, behandling.søknadsbarn.first()) shouldBe "Begrunnelse samvær"
+            henteNotatinnhold(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.søknadsbarn.first()) shouldBe "Begrunnelse underholdskostnad"
             validerRoller()
             validerHusstandsmedlem()
             validerInntekter()
             validerGrunnlag()
             validerUnderhold()
             validerSamvær()
+        }
+    }
+
+    @Test
+    fun `Skal konvertere vedtak til behandling for BIDRAG med notat for vedtak`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("fattetvedtak/bidrag-innvilget")
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
+        val behandling =
+            vedtakService.konverterVedtakTilBehandling(
+                OpprettBehandlingFraVedtakRequest(
+                    vedtakstype = Vedtakstype.KLAGE,
+                    søknadsid = 100,
+                    søknadsreferanseid = 222,
+                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                    saksnummer = "123213213",
+                    mottattdato = LocalDate.parse("2024-01-01"),
+                    søktFomDato = LocalDate.parse("2021-01-01"),
+                    behandlerenhet = "9999",
+                ),
+                12333,
+            )!!
+
+        behandlingRepository.save(behandling)
+        assertSoftly(behandling) {
+            henteNotatinnhold(behandling, Notattype.VIRKNINGSTIDSPUNKT, begrunnelseDelAvBehandlingen = false) shouldBe "Begrunnelse virkning"
+            henteNotatinnhold(behandling, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = false) shouldBe "Begrunnelse boforhold BP"
+            henteNotatinnhold(behandling, Notattype.INNTEKT, begrunnelseDelAvBehandlingen = false) shouldBe "Begrunnelse inntekter BM"
+            henteNotatinnhold(behandling, Notattype.UNDERHOLDSKOSTNAD, søknadsbarn.first(), begrunnelseDelAvBehandlingen = false) shouldBe "Begrunnelse underholdskostnad"
+            henteNotatinnhold(behandling, Notattype.SAMVÆR, behandling.søknadsbarn.first(), begrunnelseDelAvBehandlingen = false) shouldBe "Begrunnelse samvær"
+            henteNotatinnhold(behandling, Notattype.INNTEKT, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.VIRKNINGSTIDSPUNKT, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.UNDERHOLDSKOSTNAD, søknadsbarn.first(), begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.SAMVÆR, behandling.søknadsbarn.first(), begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
         }
     }
 

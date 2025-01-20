@@ -4591,6 +4591,18 @@
       "gjelderBarnReferanse": null
     },
     {
+      "referanse": "notat_VIRKNING_kun_i_notat",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "VIRKNINGSTIDSPUNKT",
+        "innhold": "Begrunnelse virkning",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null,
+      "gjelderBarnReferanse": null
+    },
+    {
       "referanse": "notat_BOFORHOLD_kun_i_notat",
       "type": "NOTAT",
       "innhold": {
@@ -4775,6 +4787,7 @@
       "eksternReferanse": null,
       "grunnlagReferanseListe": [
         "notat_BOFORHOLD_kun_i_notat",
+        "notat_VIRKNING_kun_i_notat",
         "notat_INNTEKT_kun_i_notat_person_PERSON_BIDRAGSMOTTAKER_19790718_284",
         "notat_SAMVÆR_kun_i_notat_person_PERSON_SØKNADSBARN_20130615_285",
         "notat_UNDERHOLDSKOSTNAD_kun_i_notat_person_PERSON_SØKNADSBARN_20130615_285",

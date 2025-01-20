@@ -7,6 +7,7 @@ import io.mockk.impl.annotations.MockK
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -25,6 +26,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseD
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import stubBehandlingrepository
 import stubPersonConsumer
 import stubPersonRepository
 import stubSaksbehandlernavnProvider
@@ -57,6 +59,8 @@ abstract class CommonVedtakTilBehandlingTest {
     @MockK
     lateinit var underholdskostnadRepository: UnderholdskostnadRepository
 
+    @MockK
+    lateinit var behandlingRepository: BehandlingRepository
     lateinit var personRepository: PersonRepository
 
     @MockkBean
@@ -72,6 +76,7 @@ abstract class CommonVedtakTilBehandlingTest {
     @BeforeEach
     fun initMocks() {
         stubUnderholdskostnadRepository(underholdskostnadRepository)
+        stubBehandlingrepository(behandlingRepository)
         val validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()

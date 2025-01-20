@@ -1621,6 +1621,7 @@ fun Behandling.leggTilNotat(
     innhold: String,
     type: NotatGrunnlag.NotatType,
     rolleForInntekt: Rolle? = null,
+    erDelAvBehandlingen: Boolean = true,
 ) {
     notater.add(
         Notat(
@@ -1628,6 +1629,7 @@ fun Behandling.leggTilNotat(
             rolle = henteRolleForNotat(type, rolleForInntekt),
             innhold = innhold,
             type = type,
+            erDelAvBehandlingen = erDelAvBehandlingen,
         ),
     )
 }

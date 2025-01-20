@@ -1022,6 +1022,29 @@
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19720829_39"
     },
     {
+      "referanse": "notat_BOFORHOLD_kun_i_notat",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "BOFORHOLD",
+        "innhold": "Begrunnelse boforhold BP",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": null,
+      "gjelderBarnReferanse": null
+    },
+    {
+      "referanse": "notat_INNTEKT_kun_i_notat",
+      "type": "NOTAT",
+      "innhold": {
+        "type": "INNTEKT",
+        "innhold": "Notat inntekt",
+        "erMedIVedtaksdokumentet": false
+      },
+      "grunnlagsreferanseListe": [],
+      "gjelderReferanse": "person_PERSON_BIDRAGSMOTTAKER_19790718_284"
+    },
+    {
       "referanse": "notat_UTGIFTER_kun_i_notat",
       "type": "NOTAT",
       "innhold": {
@@ -1532,7 +1555,9 @@
         "person_PERSON_HUSSTANDSMEDLEM_19790227_innhentet_-2096642170",
         "person_PERSON_HUSSTANDSMEDLEM_19780331_innhentet_1825089093",
         "innhentet_husstandsmedlem_person_PERSON_BIDRAGSPLIKTIG_19720829_39_person_PERSON_BIDRAGSPLIKTIG_19720829_39",
+        "notat_INNTEKT_kun_i_notat",
         "notat_UTGIFTER_kun_i_notat",
+        "notat_BOFORHOLD_kun_i_notat",
         "notat_INNTEKTER_kun_i_notat_person_PERSON_SØKNADSBARN_20220726_40",
         "notat_INNTEKTER_kun_i_notat_person_PERSON_BIDRAGSMOTTAKER_19781115_41",
         "notat_INNTEKTER_kun_i_notat_person_PERSON_BIDRAGSPLIKTIG_19720829_39",

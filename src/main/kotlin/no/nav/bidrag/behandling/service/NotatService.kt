@@ -62,10 +62,10 @@ class NotatService {
             begrunnelseDelAvBehandlingen: Boolean = true,
         ): String {
             val rolleid = behandling.henteRolleForNotat(notattype, rolle).id!!
-            return henteNotatinnhold(behandling, notattype, rolleid, begrunnelseDelAvBehandlingen)
+            return henteNotatinnholdRolleId(behandling, notattype, rolleid, begrunnelseDelAvBehandlingen)
         }
 
-        fun henteNotatinnhold(
+        fun henteNotatinnholdRolleId(
             behandling: Behandling,
             notattype: Notattype,
             rolleid: Long,
@@ -95,7 +95,7 @@ class NotatService {
             behandling: Behandling,
             rolleid: Long,
             begrunnelseDelAvBehandlingen: Boolean = true,
-        ): String? = henteNotatinnhold(behandling, Notattype.INNTEKT, rolleid, begrunnelseDelAvBehandlingen)
+        ): String? = henteNotatinnholdRolleId(behandling, Notattype.INNTEKT, rolleid, begrunnelseDelAvBehandlingen)
 
         // TODO: (202408707) Metoden slettes når alle notater har blitt mirgrert til ny datastruktur
         @Deprecated("Brukes kun i en overgangsperiode frem til notater i behandlingstabellen er migrert til notattabellen")
