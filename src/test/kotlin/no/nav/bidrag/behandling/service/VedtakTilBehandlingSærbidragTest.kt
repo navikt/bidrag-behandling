@@ -72,7 +72,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
-            notater shouldHaveSize 4
+            notater shouldHaveSize 5
             val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
             notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
             notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"
@@ -153,7 +153,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
                 "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
-            notater shouldHaveSize 4
+            notater shouldHaveSize 5
             val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
             notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
             notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"

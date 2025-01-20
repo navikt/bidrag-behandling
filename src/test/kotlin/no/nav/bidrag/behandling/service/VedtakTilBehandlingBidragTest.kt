@@ -72,7 +72,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
-            notater shouldHaveSize 4
+            notater shouldHaveSize 5
             henteNotatinnhold(behandling, Notattype.SAMVÆR, behandling.søknadsbarn.first()) shouldBe "Begrunnelse samvær"
             henteNotatinnhold(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.søknadsbarn.first()) shouldBe "Begrunnelse underholdskostnad"
             validerRoller()
