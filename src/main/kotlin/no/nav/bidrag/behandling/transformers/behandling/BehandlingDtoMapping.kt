@@ -42,6 +42,7 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
+import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -255,7 +256,7 @@ fun Behandling.tilInntektDtoV2(
         this.roller
             .mapNotNull { r ->
                 val inntektsnotat = NotatService.henteInntektsnotat(this, r.id!!, false)
-                inntektsnotat?.let {
+                inntektsnotat.takeIfNotNullOrEmpty {
                     BegrunnelseDto(
                         innhold = it,
                         gjelder = r.tilDto(),

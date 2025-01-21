@@ -75,6 +75,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -202,11 +203,12 @@ class Dtomapper(
                 ),
             begrunnelseFraOpprinneligVedtak =
                 if (behandling.erKlageEllerOmgjøring) {
-                    NotatService.henteUnderholdsnotat(
-                        this.behandling,
-                        rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
-                        false,
-                    )
+                    NotatService
+                        .henteUnderholdsnotat(
+                            this.behandling,
+                            rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
+                            false,
+                        ).takeIfNotNullOrEmpty { it }
                 } else {
                     null
                 },
@@ -335,7 +337,8 @@ class Dtomapper(
 
     fun Behandling.utgiftBegrunnelseFraOpprinneligVedtak() =
         if (erKlageEllerOmgjøring) {
-            BegrunnelseDto(henteNotatinnhold(this, NotatType.UTGIFTER, null, false))
+            henteNotatinnhold(this, NotatType.UTGIFTER, null, false)
+                .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
         } else {
             null
         }
@@ -642,7 +645,8 @@ class Dtomapper(
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
-                            BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false))
+                            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
+                                .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
                         } else {
                             null
                         },
@@ -742,10 +746,12 @@ class Dtomapper(
                 ),
             begrunnelseFraOpprinneligVedtak =
                 if (erKlageEllerOmgjøring) {
-                    BegrunnelseDto(
-                        innhold = henteNotatinnhold(this, NotatType.BOFORHOLD, null, false),
-                        gjelder = this.henteRolleForNotat(NotatType.BOFORHOLD, null).tilDto(),
-                    )
+                    henteNotatinnhold(this, NotatType.BOFORHOLD, null, false).takeIfNotNullOrEmpty {
+                        BegrunnelseDto(
+                            innhold = it,
+                            gjelder = this.henteRolleForNotat(NotatType.BOFORHOLD, null).tilDto(),
+                        )
+                    }
                 } else {
                     null
                 },
