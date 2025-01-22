@@ -25,6 +25,7 @@ data class KanBehandlesINyLøsningRequest(
     var engangsbeløpstype: Engangsbeløptype? = null,
     var søknadstype: BisysSøknadstype? = null,
     val harReferanseTilAnnenBehandling: Boolean = false,
+    val skruddAvManuelt: String? = null,
 ) {
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }

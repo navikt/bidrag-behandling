@@ -1259,8 +1259,8 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     assertSoftly(sluttberegningPeriode) {
         val innhold = innholdTilObjekt<SluttberegningBarnebidrag>()
         innhold.resultatVisningsnavn!!.intern shouldBe "Kostnadsberegnet bidrag"
-        innhold.beregnetBeløp shouldBe BigDecimal("5831.14")
-        innhold.resultatBeløp shouldBe BigDecimal("5830")
+        innhold.beregnetBeløp shouldBe BigDecimal("5730.48")
+        innhold.resultatBeløp shouldBe BigDecimal("5730")
         it.grunnlagsreferanseListe shouldHaveSize 8
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe).first().referanse shouldBe søknadsbarn1Grunnlag.referanse

@@ -43,6 +43,7 @@ class ValiderBehandlingService(
     private fun kanBidragBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? = kanBidragV1BehandlesINyLøsning(request)
 
     private fun kanBidragV1BehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
+        if (!request.skruddAvManuelt.isNullOrEmpty()) return request.skruddAvManuelt
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
