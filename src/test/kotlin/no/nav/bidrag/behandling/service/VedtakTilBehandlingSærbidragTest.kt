@@ -6,6 +6,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldBeEmpty
 import io.mockk.every
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.barn
@@ -14,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -70,7 +72,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
-            notater shouldHaveSize 4
+            notater shouldHaveSize 5
             val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
             notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
             notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"
@@ -151,7 +153,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
                 "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
-            notater shouldHaveSize 4
+            notater shouldHaveSize 5
             val notatInntekter = notater.filter { it.type == Notattype.INNTEKT }
             notatInntekter.find { it.rolle == it.behandling.bidragsmottaker }?.innhold shouldBe "Notat inntekter BM"
             notatInntekter.find { it.rolle == it.behandling.bidragspliktig }?.innhold shouldBe "Notat inntekter BP"
@@ -161,6 +163,35 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             validerHusstandsmedlem()
             validerInntekter()
             validerGrunnlag()
+        }
+    }
+
+    @Test
+    fun `Skal opprette behandling og lagre begrunnelser`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
+        val behandling =
+            vedtakService.konverterVedtakTilBehandling(
+                OpprettBehandlingFraVedtakRequest(
+                    vedtakstype = Vedtakstype.KLAGE,
+                    søknadsid = 100,
+                    søknadsreferanseid = 222,
+                    søknadFra = SøktAvType.BIDRAGSPLIKTIG,
+                    saksnummer = "123213213",
+                    mottattdato = LocalDate.parse("2024-01-01"),
+                    søktFomDato = LocalDate.parse("2021-01-01"),
+                    behandlerenhet = "9999",
+                ),
+                12333,
+            )!!
+        behandlingRepository.save(behandling)
+
+        assertSoftly(behandling) {
+            henteNotatinnhold(behandling, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = false) shouldBe "Begrunnelse boforhold BP"
+            henteNotatinnhold(behandling, Notattype.INNTEKT, begrunnelseDelAvBehandlingen = false) shouldBe "Notat inntekter BM"
+            henteNotatinnhold(behandling, Notattype.UTGIFTER, begrunnelseDelAvBehandlingen = false) shouldBe "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
+            henteNotatinnhold(behandling, Notattype.INNTEKT, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
+            henteNotatinnhold(behandling, Notattype.UTGIFTER, behandling.søknadsbarn.first(), begrunnelseDelAvBehandlingen = true).shouldBeEmpty()
         }
     }
 

@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyperForReferanser
+import no.nav.bidrag.behandling.utils.hentNotat
 import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
@@ -45,6 +46,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusst
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningForskudd
@@ -73,15 +75,15 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.leggTilNotat(
             "Boforhold",
-            NotatGrunnlag.NotatType.BOFORHOLD,
+            NotatType.BOFORHOLD,
         )
         behandling.refVedtaksid = 553
         behandling.grunnlag =
@@ -115,7 +117,6 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
                 request.grunnlagListe shouldHaveSize 83
             }
         }
-
         opprettVedtakRequest.validerVedtaksdetaljer(behandling)
         opprettVedtakRequest.validerPersongrunnlag()
         opprettVedtakRequest.validerSluttberegning()
@@ -124,6 +125,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
 
         assertSoftly(opprettVedtakRequest) {
             val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+            validerNotater()
 
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.SIVILSTAND_PERIODE)) {
                 shouldHaveSize(1)
@@ -142,12 +144,12 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
                 shouldHaveSize(3)
                 assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-                    innhold shouldBe henteNotatinnhold(behandling, NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT)
+                    innhold shouldBe henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
                     erMedIVedtaksdokumentet shouldBe false
-                    type shouldBe NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
+                    type shouldBe NotatType.VIRKNINGSTIDSPUNKT
                 }
 
-                val notatInntekter = this.find { it.innholdTilObjekt<NotatGrunnlag>().type == NotatGrunnlag.NotatType.INNTEKT }
+                val notatInntekter = this.find { it.innholdTilObjekt<NotatGrunnlag>().type == NotatType.INNTEKT }
                 notatInntekter!!.innholdTilObjekt<NotatGrunnlag>().innhold shouldBe "Inntektsbegrunnelse kun i notat"
             }
 
@@ -377,12 +379,12 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
         behandling.avslag = Resultatkode.AVSLAG
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
-            NotatGrunnlag.NotatType.INNTEKT,
+            NotatType.INNTEKT,
             behandling.bidragsmottaker!!,
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
-            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            NotatType.VIRKNINGSTIDSPUNKT,
         )
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
@@ -699,7 +701,7 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     assertSoftly(sluttberegningForskudd[4]) {
         val innhold = innholdTilObjekt<SluttberegningForskudd>()
         innhold.beløp.toBigInteger() shouldBe 1880.toBigInteger()
-        innhold.resultatKode shouldBe no.nav.bidrag.domene.enums.beregning.Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
+        innhold.resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
         innhold.aldersgruppe shouldBe AldersgruppeForskudd.ALDER_0_10_ÅR
     }
     val delberegningInntekt =
@@ -769,6 +771,30 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
             innhentetHusstandsmedlem.type shouldBe Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM
             innhentetHusstandsmedlem.grunnlagsreferanseListe shouldHaveSize 0
             innhentetHusstandsmedlem.gjelderReferanse shouldBe bmGrunnlag.referanse
+        }
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerNotater() {
+    val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
+        shouldHaveSize(3)
+        assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Virkningstidspunkt kun i notat"
+        }
+
+        assertSoftly(hentNotat(NotatType.BOFORHOLD)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Boforhold"
+        }
+        assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Inntektsbegrunnelse kun i notat"
         }
     }
 }

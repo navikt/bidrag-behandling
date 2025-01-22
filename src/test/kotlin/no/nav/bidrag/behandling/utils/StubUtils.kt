@@ -123,6 +123,12 @@ fun stubBehandlingrepository(behandlingRepository: BehandlingRepository = mockkC
     every { behandlingRepository.save(any()) }.answers {
         val behandling = firstArg<Behandling>()
         behandling.id = behandling.id ?: 1
+        behandling.roller.forEachIndexed { index, rolle ->
+            rolle.id = rolle.id ?: index.toLong()
+        }
+        behandling.notater.forEachIndexed { index, notat ->
+            notat.id = notat.id ?: index.toLong()
+        }
         behandling
     }
     return behandlingRepository

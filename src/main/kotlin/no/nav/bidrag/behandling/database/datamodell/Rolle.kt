@@ -49,7 +49,7 @@ open class Rolle(
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open val id: Long? = null,
+    open var id: Long? = null,
     // TODO: Migere persondata til Person-tabellen
     @Deprecated("Migrere til Person.navn")
     open val navn: String? = null,

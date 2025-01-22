@@ -41,7 +41,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadP
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
@@ -155,33 +155,33 @@ class VedtakTilBehandlingMapping(
         behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
-        notatMedType(NotatGrunnlag.NotatType.BOFORHOLD, false)?.let {
-            behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.BOFORHOLD, it))
+        notatMedType(NotatType.BOFORHOLD, false)?.let {
+            behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))
         }
         notatMedType(Notattype.UTGIFTER, false)?.let {
-            behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UTGIFTER, it))
+            behandling.notater.add(behandling.tilNotat(NotatType.UTGIFTER, it, delAvBehandling = lesemodus))
         }
-        notatMedType(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, false)?.let {
-            behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, it))
+        notatMedType(NotatType.VIRKNINGSTIDSPUNKT, false)?.let {
+            behandling.notater.add(behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, delAvBehandling = lesemodus))
         }
         behandling.roller.forEach { r ->
-            notatMedType(NotatGrunnlag.NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-                behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.INNTEKT, it, r))
+            notatMedType(NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = lesemodus))
             }
         }
         behandling.roller.forEach { r ->
-            notatMedType(NotatGrunnlag.NotatType.SAMVÆR, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-                behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.SAMVÆR, it, r))
+            notatMedType(NotatType.SAMVÆR, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = lesemodus))
             }
         }
 
         behandling.roller.forEach { r ->
             notatMedType(
-                NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+                NotatType.UNDERHOLDSKOSTNAD,
                 false,
                 grunnlagListe.hentPerson(r.ident)?.referanse,
             )?.let {
-                behandling.notater.add(behandling.tilNotat(NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD, it, r))
+                behandling.notater.add(behandling.tilNotat(NotatType.UNDERHOLDSKOSTNAD, it, r, delAvBehandling = lesemodus))
             }
         }
 

@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
-import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatForTypeOgRolle
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
@@ -180,7 +179,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
     val notatUnderhold =
         roller
             .mapNotNull { rolle ->
-                henteNotatForTypeOgRolle(this, Notattype.UNDERHOLDSKOSTNAD, rolle)?.takeIfNotNullOrEmpty { innhold ->
+                henteNotatinnhold(this, Notattype.UNDERHOLDSKOSTNAD, rolle).takeIfNotNullOrEmpty { innhold ->
                     opprettGrunnlagNotat(Notattype.UNDERHOLDSKOSTNAD, false, innhold, rolle.tilGrunnlagsreferanse())
                 }
             }

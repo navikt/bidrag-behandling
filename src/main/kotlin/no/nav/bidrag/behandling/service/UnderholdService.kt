@@ -466,9 +466,10 @@ class UnderholdService(
         person: Person,
         kilde: Kilde? = null,
     ): Underholdskostnad {
-        val u = underholdskostnadRepository.save(Underholdskostnad(behandling = behandling, person = person, kilde = kilde))
-        behandling.underholdskostnader.add(u)
-        return u
+        val underholdskostnad = Underholdskostnad(behandling = behandling, person = person, kilde = kilde)
+        val lagreUnderholdskostnad = if (behandling.id != null) underholdskostnadRepository.save(underholdskostnad) else underholdskostnad
+        behandling.underholdskostnader.add(lagreUnderholdskostnad)
+        return lagreUnderholdskostnad
     }
 
     private fun oppdatereUnderholdsperioderEtterEndretVirkningsdato(b: Behandling) {

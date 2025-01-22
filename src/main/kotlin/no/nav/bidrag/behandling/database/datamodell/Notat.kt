@@ -28,7 +28,11 @@ open class Notat(
     @Enumerated(EnumType.STRING)
     open val type: Notattype,
     open val sistOppdatert: LocalDateTime = LocalDateTime.now(),
+    // Om begrunnelsen er en del av behandlingen eller ikke. Hvis den er false så er det begrunnelse hentet fra påklaget vedtak.
+    // Brukes da bare for å vise begrunnelse fra opprinnelig vedtak men er ikke med videre i vedtak
+    open val erDelAvBehandlingen: Boolean = true,
     open var innhold: String,
 ) {
-    override fun toString(): String = "Notat(id=$id, behandlingsid=${behandling.id}, rolleid=${rolle.id}, notatttype=$type"
+    override fun toString(): String =
+        "Notat(id=$id, behandlingsid=${behandling.id}, rolleid=${rolle.id}, notatttype=$type, erDelAvBehandlingen=$erDelAvBehandlingen)"
 }

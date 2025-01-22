@@ -9,6 +9,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldBeEmpty
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -90,7 +91,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 shouldNotBeNull()
                 id shouldBeGreaterThan 0L
                 harTilsynsordning.shouldBeNull()
-                begrunnelse.shouldBeNull()
+                begrunnelse.shouldBeEmpty()
                 faktiskTilsynsutgift.shouldBeEmpty()
                 stønadTilBarnetilsyn.shouldBeEmpty()
                 tilleggsstønad.shouldBeEmpty()

@@ -86,6 +86,8 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             avslag shouldBe null
             soknadRefId shouldBe 111
             soknadsid shouldBe 12323
+            notater shouldHaveSize 5
+            notater.filter { it.erDelAvBehandlingen == false }.shouldHaveSize(5)
         }
 
         stubUtils.Verify().hentGrunnlagKalt(1, testdataBM.tilRolle(behandling))

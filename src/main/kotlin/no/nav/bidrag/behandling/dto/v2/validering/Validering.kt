@@ -21,12 +21,14 @@ import java.time.LocalDate
 data class VirkningstidspunktFeilDto(
     val manglerVirkningstidspunkt: Boolean,
     val manglerÅrsakEllerAvslag: Boolean,
+    val manglerBegrunnelse: Boolean = false,
     val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean,
 ) {
     @get:JsonIgnore
     val harFeil
         get() =
-            manglerVirkningstidspunkt ||
+            manglerBegrunnelse ||
+                manglerVirkningstidspunkt ||
                 manglerÅrsakEllerAvslag ||
                 virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
 }

@@ -6,9 +6,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import java.math.BigDecimal
 
 fun Samvær.tilOppdaterSamværResponseDto() =
@@ -16,16 +18,23 @@ fun Samvær.tilOppdaterSamværResponseDto() =
         oppdatertSamvær = tilDto(),
     )
 
-fun Samvær.tilBegrunnelse() =
-    behandling.notater.find { it.rolle.id == rolle.id && it.type == NotatGrunnlag.NotatType.SAMVÆR }?.let {
-        BegrunnelseDto(it.innhold, it.rolle.tilDto())
-    } ?: BegrunnelseDto("", rolle.tilDto())
+fun Samvær.tilBegrunnelse() = BegrunnelseDto(henteNotatinnhold(behandling, NotatType.SAMVÆR, rolle), rolle.tilDto())
+
+fun Samvær.tilBegrunnelseFraOpprinneligVedtak() =
+    henteNotatinnhold(behandling, NotatType.SAMVÆR, rolle, false)
+        .takeIfNotNullOrEmpty { BegrunnelseDto(it, rolle.tilDto()) }
 
 fun Samvær.tilDto() =
     SamværDto(
         id = id!!,
         gjelderBarn = rolle.ident!!,
         begrunnelse = tilBegrunnelse(),
+        begrunnelseFraOpprinneligVedtak =
+            if (behandling.erKlageEllerOmgjøring) {
+                tilBegrunnelseFraOpprinneligVedtak()
+            } else {
+                null
+            },
         valideringsfeil = mapValideringsfeil().takeIf { it.harFeil },
         perioder =
             perioder

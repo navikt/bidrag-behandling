@@ -28,6 +28,7 @@ data class BoforholdDtoV2(
     val sivilstand: Set<SivilstandDto>,
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
     val begrunnelse: BegrunnelseDto,
+    val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val valideringsfeil: BoforholdValideringsfeil,
     @Schema(
         description =

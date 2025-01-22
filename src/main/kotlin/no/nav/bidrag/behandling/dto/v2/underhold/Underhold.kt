@@ -55,6 +55,7 @@ data class UnderholdDto(
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val underholdskostnad: Set<UnderholdskostnadDto>,
     val begrunnelse: String? = null,
+    val begrunnelseFraOpprinneligVedtak: String? = null,
     val beregnetUnderholdskostnad: Set<UnderholdskostnadDto>,
     val valideringsfeil: UnderholdskostnadValideringsfeil?,
 )
@@ -164,6 +165,7 @@ data class UnderholdskostnadDto(
         val sjablonMaksFradrag: BigDecimal,
         val antallBarnBMUnderTolvÅr: Int,
         val antallBarnBMBeregnet: Int,
+        val antallBarnMedTilsynsutgifter: Int,
         val antallBarnBMOver12ÅrMedTilsynsutgifter: Int = antallBarnBMBeregnet - antallBarnBMUnderTolvÅr,
         val skattesatsFaktor: BigDecimal,
         val totalTilsynsutgift: BigDecimal,

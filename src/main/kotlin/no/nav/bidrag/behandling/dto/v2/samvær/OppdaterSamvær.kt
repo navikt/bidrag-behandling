@@ -46,6 +46,7 @@ data class SamværDto(
     val id: Long,
     val gjelderBarn: String,
     val begrunnelse: BegrunnelseDto?,
+    val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val valideringsfeil: SamværValideringsfeilDto?,
     val perioder: List<SamværsperiodeDto> = emptyList(),
 ) {

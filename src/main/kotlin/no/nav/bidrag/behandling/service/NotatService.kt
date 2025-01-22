@@ -20,7 +20,7 @@ class NotatService {
         notattekst: String,
         rolle: Rolle,
     ) {
-        val eksisterendeNotat = behandling.notater.find { it.rolle == rolle && it.type == notattype }
+        val eksisterendeNotat = hentNotat(behandling, notattype, rolle)
 
         eksisterendeNotat?.let {
             log.info { "Oppdaterer eksisterende notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
@@ -59,34 +59,65 @@ class NotatService {
             behandling: Behandling,
             notattype: Notattype,
             rolle: Rolle? = null,
+            begrunnelseDelAvBehandlingen: Boolean = true,
         ): String {
-            val rolleid: Long? = behandling.henteRolleForNotat(notattype, rolle).id
-            return behandling.notater.find { it.rolle.id == rolleid && it.type == notattype }?.innhold
-                ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
+            val rolleid = behandling.henteRolleForNotat(notattype, rolle).id!!
+            return henteNotatinnholdRolleId(behandling, notattype, rolleid, begrunnelseDelAvBehandlingen)
         }
+
+        fun henteNotatinnholdRolleId(
+            behandling: Behandling,
+            notattype: Notattype,
+            rolleid: Long,
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ): String =
+            hentNotatRolleId(behandling, notattype, rolleid, begrunnelseDelAvBehandlingen)?.innhold
+                ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
+
+        fun hentNotat(
+            behandling: Behandling,
+            notattype: Notattype,
+            rolle: Rolle? = null,
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ): Notat? {
+            val rolleid = behandling.henteRolleForNotat(notattype, rolle).id!!
+            return behandling.notater
+                .find {
+                    it.rolle.id == rolleid &&
+                        it.type == notattype &&
+                        it.erDelAvBehandlingen == begrunnelseDelAvBehandlingen
+                }
+        }
+
+        fun hentNotatRolleId(
+            behandling: Behandling,
+            notattype: Notattype,
+            rolleid: Long,
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ) = behandling.notater
+            .find {
+                it.rolle.id == rolleid &&
+                    it.type == notattype &&
+                    it.erDelAvBehandlingen == begrunnelseDelAvBehandlingen
+            }
 
         fun henteSamværsnotat(
             behandling: Behandling,
             rolle: Rolle,
-        ): String? = behandling.notater.find { it.rolle.id == rolle!!.id && Notattype.SAMVÆR == it.type }?.innhold
-
-        fun henteNotatForTypeOgRolle(
-            behandling: Behandling,
-            type: Notattype,
-            rolle: Rolle,
-        ): String? = behandling.notater.find { it.rolle.id == rolle.id && type == it.type }?.innhold
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ): String? = henteNotatinnhold(behandling, Notattype.SAMVÆR, rolle, begrunnelseDelAvBehandlingen)
 
         fun henteUnderholdsnotat(
             behandling: Behandling,
             rolle: Rolle,
-        ): String? = behandling.notater.find { it.rolle.id == rolle.id!! && Notattype.UNDERHOLDSKOSTNAD == it.type }?.innhold
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ): String? = henteNotatinnhold(behandling, Notattype.UNDERHOLDSKOSTNAD, rolle, begrunnelseDelAvBehandlingen)
 
         fun henteInntektsnotat(
             behandling: Behandling,
             rolleid: Long,
-        ): String? =
-            behandling.notater.find { it.rolle.id == rolleid && Notattype.INNTEKT == it.type }?.innhold
-                ?: henteNotatFraGammelStruktur(behandling, Notattype.INNTEKT)
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ): String? = henteNotatinnholdRolleId(behandling, Notattype.INNTEKT, rolleid, begrunnelseDelAvBehandlingen)
 
         // TODO: (202408707) Metoden slettes når alle notater har blitt mirgrert til ny datastruktur
         @Deprecated("Brukes kun i en overgangsperiode frem til notater i behandlingstabellen er migrert til notattabellen")
