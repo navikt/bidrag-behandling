@@ -10,8 +10,8 @@ import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
-import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.erDatoForUtgiftForeldet
 import no.nav.bidrag.behandling.transformers.underhold.valider
@@ -43,16 +43,7 @@ class ValiderBeregning(
     val særbidragValidering: ValiderSærbidragForBeregningService = ValiderSærbidragForBeregningService(),
 ) {
     fun Behandling.validerForBeregningForskudd() {
-        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-            erKlageEllerOmgjøring &&
-                opprinneligVirkningstidspunkt != null &&
-                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
-        val virkningstidspunktFeil =
-            VirkningstidspunktFeilDto(
-                manglerÅrsakEllerAvslag = avslag == null && årsak == null,
-                manglerVirkningstidspunkt = virkningstidspunkt == null,
-                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
-            ).takeIf { it.harFeil }
+        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
         val feil =
             if (avslag == null) {
                 val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
@@ -168,16 +159,7 @@ class ValiderBeregning(
 
     fun Behandling.validerForBeregningBidrag() {
         val gebyrValideringsfeil = validerGebyr()
-        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-            erKlageEllerOmgjøring &&
-                opprinneligVirkningstidspunkt != null &&
-                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
-        val virkningstidspunktFeil =
-            VirkningstidspunktFeilDto(
-                manglerÅrsakEllerAvslag = avslag == null && årsak == null,
-                manglerVirkningstidspunkt = virkningstidspunkt == null,
-                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
-            ).takeIf { it.harFeil }
+        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
         val feil =
             if (avslag == null) {
                 val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }

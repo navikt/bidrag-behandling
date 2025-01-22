@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
@@ -59,6 +60,7 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -266,6 +268,28 @@ fun Behandling.tilInntektDtoV2(
     valideringsfeil = hentInntekterValideringsfeil(),
 )
 
+fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDto {
+    val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+        erKlageEllerOmgjøring &&
+            opprinneligVirkningstidspunkt != null &&
+            virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
+    val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
+
+    return VirkningstidspunktFeilDto(
+        manglerÅrsakEllerAvslag = avslag == null && årsak == null,
+        manglerVirkningstidspunkt = virkningstidspunkt == null,
+        manglerBegrunnelse = false,
+//            if (avslag ==
+//                Resultatkode.PARTEN_BER_OM_OPPHØR
+//            ) {
+//                begrunnelseVirkningstidspunkt.isEmpty()
+//            } else {
+//                false
+//            },
+        virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
+    )
+}
+
 fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
     InntektValideringsfeilDto(
         årsinntekter =
@@ -336,7 +360,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
 //                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
-                            .ifTrue { this.isEmpty() } ?: false,
+                            .ifTrue { this.isEmpty() } == true,
                     rolle = rolle.tilDto(),
                 )
             }
@@ -487,7 +511,7 @@ fun Behandling.kategoriTilTittel() =
 
 fun Set<BarnetilsynGrunnlagDto>.filtrerePerioderEtterVirkningstidspunkt(virkningstidspunkt: LocalDate): Set<BarnetilsynGrunnlagDto> =
     groupBy { it.barnPersonId }
-        .flatMap { (personident, perioder) ->
+        .flatMap { (_, perioder) ->
             val perioderFiltrert =
                 perioder.sortedBy { it.periodeFra }.slice(
                     perioder

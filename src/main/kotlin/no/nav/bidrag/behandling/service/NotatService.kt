@@ -20,7 +20,7 @@ class NotatService {
         notattekst: String,
         rolle: Rolle,
     ) {
-        val eksisterendeNotat = behandling.notater.find { it.rolle == rolle && it.type == notattype }
+        val eksisterendeNotat = hentNotat(behandling, notattype, rolle)
 
         eksisterendeNotat?.let {
             log.info { "Oppdaterer eksisterende notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
@@ -71,13 +71,35 @@ class NotatService {
             rolleid: Long,
             begrunnelseDelAvBehandlingen: Boolean = true,
         ): String =
-            behandling.notater
+            hentNotatRolleId(behandling, notattype, rolleid, begrunnelseDelAvBehandlingen)?.innhold
+                ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
+
+        fun hentNotat(
+            behandling: Behandling,
+            notattype: Notattype,
+            rolle: Rolle? = null,
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ): Notat? {
+            val rolleid = behandling.henteRolleForNotat(notattype, rolle).id!!
+            return behandling.notater
                 .find {
                     it.rolle.id == rolleid &&
                         it.type == notattype &&
                         it.erDelAvBehandlingen == begrunnelseDelAvBehandlingen
-                }?.innhold
-                ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
+                }
+        }
+
+        fun hentNotatRolleId(
+            behandling: Behandling,
+            notattype: Notattype,
+            rolleid: Long,
+            begrunnelseDelAvBehandlingen: Boolean = true,
+        ) = behandling.notater
+            .find {
+                it.rolle.id == rolleid &&
+                    it.type == notattype &&
+                    it.erDelAvBehandlingen == begrunnelseDelAvBehandlingen
+            }
 
         fun henteSamværsnotat(
             behandling: Behandling,
