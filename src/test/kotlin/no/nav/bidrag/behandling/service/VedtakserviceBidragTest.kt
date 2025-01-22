@@ -1280,14 +1280,14 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningBidragspliktigesAndel>()
-        innhold.andelBeløp shouldBe BigDecimal("6842.14")
+        innhold.andelBeløp shouldBe BigDecimal("6741.48")
         it.grunnlagsreferanseListe shouldHaveSize 6
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningUnderholdskostnad>()
-        innhold.underholdskostnad shouldBe BigDecimal("8210.57")
-        innhold.nettoTilsynsutgift shouldBe BigDecimal("1394.57")
+        innhold.underholdskostnad shouldBe BigDecimal("8089.78")
+        innhold.nettoTilsynsutgift shouldBe BigDecimal("1273.78")
         innhold.barnetilsynMedStønad shouldBe BigDecimal("630.00")
         it.grunnlagsreferanseListe shouldHaveSize 7
     }
