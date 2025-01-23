@@ -26,6 +26,7 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -162,6 +163,8 @@ open class Behandling(
     open var deleted: Boolean = false,
     @Enumerated(EnumType.STRING)
     open var søknadstype: BisysSøknadstype? = null,
+    @Transient
+    var grunnlagFraVedtak: List<GrunnlagDto>? = emptyList(),
 ) {
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
