@@ -154,6 +154,9 @@ class VedtakTilBehandlingMapping(
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
         behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
+        if (lesemodus) {
+            behandling.grunnlagFraVedtak = grunnlagListe
+        }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {
             behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))

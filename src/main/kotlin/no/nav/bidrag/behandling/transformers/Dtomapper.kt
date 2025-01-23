@@ -224,13 +224,19 @@ class Dtomapper(
     fun Behandling.tilBeregnetUnderholdskostnad(): Set<BeregnetUnderholdskostnad> =
         this.søknadsbarn
             .map {
-                val grunnlag =
-                    vedtakGrunnlagMapper.byggGrunnlagForBeregning(
-                        this,
-                        it,
-                    )
+                val underholdBeregning =
+                    if (grunnlagFraVedtak.isNullOrEmpty()) {
+                        val grunnlag =
+                            vedtakGrunnlagMapper.byggGrunnlagForBeregning(
+                                this,
+                                it,
+                            )
 
-                val underholdBeregning = beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+                        beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+                    } else {
+                        grunnlagFraVedtak!!
+                    }
+
                 BeregnetUnderholdskostnad(
                     it.tilPersoninfoDto(),
                     underholdBeregning

@@ -38,6 +38,7 @@ import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.resultatkoderSomKreverBegrunnelseVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
@@ -278,14 +279,12 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     return VirkningstidspunktFeilDto(
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
-        manglerBegrunnelse = false,
-//            if (avslag ==
-//                Resultatkode.PARTEN_BER_OM_OPPHØR
-//            ) {
-//                begrunnelseVirkningstidspunkt.isEmpty()
-//            } else {
-//                false
-//            },
+        manglerBegrunnelse =
+            if (resultatkoderSomKreverBegrunnelseVirkningstidspunkt.contains(avslag)) {
+                begrunnelseVirkningstidspunkt.isEmpty()
+            } else {
+                false
+            },
         virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
     )
 }
