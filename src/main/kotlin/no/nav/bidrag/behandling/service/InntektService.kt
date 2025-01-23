@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
-import no.nav.bidrag.behandling.transformers.grunnlag.summertYtelsetyper
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
@@ -260,7 +259,7 @@ class InntektService(
 
     private fun Behandling.hentSisteInntektMedSammeType(manuellInntekt: OppdatereManuellInntekt) =
         inntekter
-            .filter { !summertYtelsetyper.contains(it.type) }
+//            .filter { !summertYtelsetyper.contains(it.type) }
             .filter {
                 it.type == manuellInntekt.type &&
                     it.kilde == Kilde.MANUELL &&
