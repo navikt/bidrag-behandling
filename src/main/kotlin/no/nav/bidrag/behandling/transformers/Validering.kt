@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -53,6 +54,8 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
+
+val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PARTEN_BER_OM_OPPHØR)
 
 fun MutableSet<String>.validerSann(
     betingelse: Boolean,
