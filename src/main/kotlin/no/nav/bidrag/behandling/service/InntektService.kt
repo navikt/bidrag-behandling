@@ -262,7 +262,7 @@ class InntektService(
 //            .filter { !summertYtelsetyper.contains(it.type) }
             .filter {
                 it.type == manuellInntekt.type &&
-                    it.kilde == Kilde.MANUELL &&
+//                    it.kilde == Kilde.MANUELL &&
                     it.taMed &&
                     manuellInntekt.id != it.id
             }.filter {
