@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
+import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -269,7 +270,7 @@ class InntektService(
                 manuellInntekt.inntektstype == null ||
                     it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
             }.filter {
-                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi == it.gjelderBarn
+                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi.nullIfEmpty() == it.gjelderBarn.nullIfEmpty()
             }.sortedBy { it.datoFom }
             .lastOrNull()
 

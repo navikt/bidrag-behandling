@@ -61,6 +61,8 @@ fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =
     rolle.reellMottager?.verdi?.let { Personident(it) }
         ?: find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }!!.let { hentNyesteIdent(it.ident)!! }
 
+fun String?.nullIfEmpty() = if (this.isNullOrEmpty()) null else this
+
 fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? = if (this == null || this is String && this.trim().isEmpty()) null else block(this)
 
 fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
