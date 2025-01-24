@@ -38,7 +38,6 @@ import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
-import no.nav.bidrag.behandling.transformers.resultatkoderSomKreverBegrunnelseVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
@@ -55,6 +54,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.util.visningsnavn
@@ -280,7 +280,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerBegrunnelse =
-            if (resultatkoderSomKreverBegrunnelseVirkningstidspunkt.contains(avslag)) {
+            if (vedtakstype == Vedtakstype.OPPHØR) {
                 begrunnelseVirkningstidspunkt.isEmpty()
             } else {
                 false
