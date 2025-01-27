@@ -10,6 +10,7 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import java.time.LocalDate
 
 data class KanBehandlesINyLøsningRequest(
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
@@ -26,6 +27,8 @@ data class KanBehandlesINyLøsningRequest(
     var søknadstype: BisysSøknadstype? = null,
     val harReferanseTilAnnenBehandling: Boolean = false,
     val skruddAvManuelt: String? = null,
+    val søktFomDato: LocalDate? = null,
+    val mottattdato: LocalDate? = null,
 ) {
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }

@@ -43,7 +43,7 @@ open class Behandling(
     @Enumerated(EnumType.STRING)
     open var opprinneligVedtakstype: Vedtakstype? = null,
     @Column(name = "dato_fom")
-    open val søktFomDato: LocalDate,
+    open var søktFomDato: LocalDate,
     open val datoTom: LocalDate? = null,
     open var mottattdato: LocalDate,
     open var klageMottattdato: LocalDate? = null,

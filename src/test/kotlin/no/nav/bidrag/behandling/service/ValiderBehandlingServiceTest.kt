@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
+import java.time.LocalDate
 
 class ValiderBehandlingServiceTest {
     val bidragStønadConsumer: BidragStønadConsumer = mockkClass(BidragStønadConsumer::class)
@@ -89,6 +90,39 @@ class ValiderBehandlingServiceTest {
             shouldNotThrow<HttpClientErrorException> {
                 validerBehandlingService.validerKanBehandlesINyLøsning(
                     opprettBidragKanBehandlesINyLøsningRequest(),
+                )
+            }
+        }
+
+        @Test
+        fun `skal ikke validere gyldig BIDRAG behandling hvis søkt fra dato er før mars 2023`() {
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader = emptyList(),
+                )
+            val expection =
+                shouldThrow<HttpClientErrorException> {
+                    validerBehandlingService.validerKanBehandlesINyLøsning(
+                        opprettBidragKanBehandlesINyLøsningRequest().copy(
+                            søktFomDato = LocalDate.parse("2023-02-01"),
+                        ),
+                    )
+                }
+            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
+            expection.validerInneholderMelding("Behandlingen er registrert med søkt fra dato før mars 2023")
+        }
+
+        @Test
+        fun `skal validere gyldig BIDRAG behandling hvis søkt fra dato er mars 2023`() {
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader = emptyList(),
+                )
+            shouldNotThrow<HttpClientErrorException> {
+                validerBehandlingService.validerKanBehandlesINyLøsning(
+                    opprettBidragKanBehandlesINyLøsningRequest().copy(
+                        søktFomDato = LocalDate.parse("2023-03-01"),
+                    ),
                 )
             }
         }

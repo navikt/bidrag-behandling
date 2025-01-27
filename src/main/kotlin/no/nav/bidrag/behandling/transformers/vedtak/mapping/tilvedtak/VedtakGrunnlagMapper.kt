@@ -47,8 +47,15 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
+fun Behandling.finnBeregnTilDatoBehandling() =
+    if (tilType() == TypeBehandling.SÆRBIDRAG) {
+        virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+    } else {
+        finnBeregnTilDato(virkningstidspunkt!!)
+    }
+
 fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
-    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1))
+    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
 
 @Component
 class VedtakGrunnlagMapper(
@@ -178,7 +185,7 @@ class VedtakGrunnlagMapper(
                     else -> {}
                 }
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
-                val beregningTilDato = finnBeregnTilDato(virkningstidspunkt!!)
+                val beregningTilDato = finnBeregnTilDatoBehandling()
                 return BeregnGrunnlag(
                     periode =
                         ÅrMånedsperiode(

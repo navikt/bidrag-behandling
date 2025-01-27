@@ -16,6 +16,7 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
@@ -58,11 +59,12 @@ class ValiderBehandlingService(
                 .hentAlleStønaderForBidragspliktig(bp.ident)
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
-        return if (harBPMinstEnBidragsstønad) {
-            "Bidragspliktig har en eller flere historiske eller løpende bidrag"
-        } else {
-            null
+        if (harBPMinstEnBidragsstønad) return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+
+        if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {
+            return "Behandlingen er registrert med søkt fra dato før mars 2023"
         }
+        return null
     }
 
     fun validerKanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest) {
