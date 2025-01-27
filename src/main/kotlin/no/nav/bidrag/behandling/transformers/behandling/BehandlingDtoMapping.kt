@@ -633,6 +633,8 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
         søknadstype = søknadstype,
         harReferanseTilAnnenBehandling = soknadRefId != null,
         skruddAvManuelt = virkningstidspunktbegrunnelseKunINotat,
+        søktFomDato = søktFomDato,
+        mottattdato = mottattdato,
         roller =
             roller.map {
                 SjekkRolleDto(
