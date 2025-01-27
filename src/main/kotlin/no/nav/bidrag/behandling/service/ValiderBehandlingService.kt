@@ -59,7 +59,7 @@ class ValiderBehandlingService(
                 .hentAlleStønaderForBidragspliktig(bp.ident)
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
-        if (harBPMinstEnBidragsstønad) "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+        if (harBPMinstEnBidragsstønad) return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
