@@ -297,6 +297,7 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
+        behandling.søktFomDato = LocalDate.parse("2023-03-01")
         behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.søknadsbarn.first().innbetaltBeløp = BigDecimal(500)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1)
