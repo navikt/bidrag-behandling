@@ -788,7 +788,7 @@ class InntektServiceMockTest {
 
             val nestSiste = findBeforeLast(inntekterBM.sortedBy { it.datoFom }.filter { it.inntektstyper.contains(Inntektstype.BARNETILLEGG_AAP) })!!
             nestSiste.datoFom shouldBe LocalDate.parse("2024-03-01")
-            nestSiste.datoTom shouldBe LocalDate.parse("2024-04-30")
+            nestSiste.datoTom shouldBe LocalDate.parse("2024-11-30")
         }
 
         behandling.inntekter.forEach {

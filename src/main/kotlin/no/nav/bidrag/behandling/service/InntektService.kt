@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
-import no.nav.bidrag.behandling.transformers.grunnlag.summertYtelsetyper
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
@@ -28,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
+import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -183,6 +183,8 @@ class InntektService(
         oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
             val inntekt = henteInntektMedId(behandling, periode.id)
             periode.taMedIBeregning.ifTrue {
+                val forrigeInntektMedSammeType = behandling.hentSisteInntektMedSammeType2(inntekt)
+
                 inntekt.datoFom =
                     if (inntekt.skalAutomatiskSettePeriode()) {
                         inntekt.bestemDatoFomForOffentligInntekt()
@@ -194,6 +196,12 @@ class InntektService(
                     }
                 inntekt.datoTom =
                     if (inntekt.skalAutomatiskSettePeriode()) inntekt.bestemDatoTomForOffentligInntekt() else periode.angittPeriode?.til
+                forrigeInntektMedSammeType?.let {
+                    if (inntekt.datoFom!! > it.datoFom) {
+                        it.datoTom = inntekt.datoFom!!.minusDays(1)
+                    }
+                }
+                inntekt
             } ?: run {
                 inntekt.datoFom = null
                 inntekt.datoTom = null
@@ -258,19 +266,31 @@ class InntektService(
         return null
     }
 
+    private fun Behandling.hentSisteInntektMedSammeType2(offentligInntekt: Inntekt) =
+        inntekter
+            .filter {
+                it.type == offentligInntekt.type &&
+                    it.taMed &&
+                    offentligInntekt.id != it.id
+            }.filter {
+                offentligInntekt.inntektsposter.isEmpty() ||
+                    it.inntektsposter.any { offentligInntekt.inntektsposter.any { oit -> oit.inntektstype == it.inntektstype } }
+            }.filter {
+                offentligInntekt.ident == it.ident && offentligInntekt.gjelderBarn.nullIfEmpty() == it.gjelderBarn.nullIfEmpty()
+            }.sortedBy { it.datoFom }
+            .lastOrNull()
+
     private fun Behandling.hentSisteInntektMedSammeType(manuellInntekt: OppdatereManuellInntekt) =
         inntekter
-            .filter { !summertYtelsetyper.contains(it.type) }
             .filter {
                 it.type == manuellInntekt.type &&
-                    it.kilde == Kilde.MANUELL &&
                     it.taMed &&
                     manuellInntekt.id != it.id
             }.filter {
                 manuellInntekt.inntektstype == null ||
                     it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
             }.filter {
-                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi == it.gjelderBarn
+                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi.nullIfEmpty() == it.gjelderBarn.nullIfEmpty()
             }.sortedBy { it.datoFom }
             .lastOrNull()
 

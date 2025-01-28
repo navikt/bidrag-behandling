@@ -68,6 +68,19 @@ fun SummerteInntekter<SummertÅrsinntekt>.filtrerUtHistoriskeInntekter() =
     )
 
 fun Inntekt.erHistorisk(inntekter: Collection<Inntekt>): Boolean {
+    if (ligningsinntekter.contains(type)) return erLigningsinntektHistorisk(inntekter)
+    if (årsinntekterYtelser.contains(type)) return erYtelseHistorisk()
+    return false
+}
+
+fun Inntekt.erYtelseHistorisk(): Boolean {
+    if (!årsinntekterYtelser.contains(type) || opprinneligFom == null) return false
+    val virkningstidspunkt = behandling?.virkningstidspunkt ?: return false
+    if (opprinneligTom != null && opprinneligTom!! < virkningstidspunkt) return true
+    return false
+}
+
+fun Inntekt.erLigningsinntektHistorisk(inntekter: Collection<Inntekt>): Boolean {
     if (!ligningsinntekter.contains(type) || opprinneligFom == null) return false
     val gjelderIdent = ident
     val sisteLigningsår =
