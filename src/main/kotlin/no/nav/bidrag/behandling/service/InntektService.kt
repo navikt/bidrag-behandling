@@ -282,10 +282,8 @@ class InntektService(
 
     private fun Behandling.hentSisteInntektMedSammeType(manuellInntekt: OppdatereManuellInntekt) =
         inntekter
-//            .filter { !summertYtelsetyper.contains(it.type) }
             .filter {
                 it.type == manuellInntekt.type &&
-//                    it.kilde == Kilde.MANUELL &&
                     it.taMed &&
                     manuellInntekt.id != it.id
             }.filter {
