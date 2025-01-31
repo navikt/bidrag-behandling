@@ -32,6 +32,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -120,15 +121,19 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
         gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =
-            inntekter.filter { it.ident == rolle.ident }.filter { it.taMed }.map {
-                InntektsgrunnlagPeriode(
-                    periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
-                    beløp = it.belop,
-                    inntektsrapportering = it.type,
-                    inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },
-                    inntektEiesAvIdent = Personident(it.ident),
-                )
-            },
+            inntekter
+                .filter { it.ident == rolle.ident }
+                .filter { it.taMed }
+                .filter { !it.inntektsposter.mapNotNull { it.inntektstype }.contains(Inntektstype.BARNETILLEGG_TILTAKSPENGER) }
+                .map {
+                    InntektsgrunnlagPeriode(
+                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
+                        beløp = it.belop,
+                        inntektsrapportering = it.type,
+                        inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },
+                        inntektEiesAvIdent = Personident(it.ident),
+                    )
+                },
     )
 
 fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
