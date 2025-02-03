@@ -236,7 +236,7 @@ class InntektServiceMockTest {
         assertSoftly(inntekter[0]) {
             taMed shouldBe true
             datoFom shouldBe LocalDate.parse("2024-01-01")
-            datoTom shouldBe null
+            datoTom shouldBe LocalDate.parse("2025-01-31")
         }
         assertSoftly(inntekter[1]) {
             taMed shouldBe true
