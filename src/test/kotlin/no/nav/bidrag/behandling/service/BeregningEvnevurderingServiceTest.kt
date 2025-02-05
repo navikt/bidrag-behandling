@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.grunnlagsreferanse_løpende_bidrag
@@ -79,6 +80,9 @@ class BeregningEvnevurderingServiceTest {
     lateinit var bidragStønadConsumer: BidragStønadConsumer
 
     @MockkBean
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
+    @MockkBean
     lateinit var bidragVedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -103,7 +107,7 @@ class BeregningEvnevurderingServiceTest {
 
         evnevurderingService =
             BeregningEvnevurderingService(bidragStønadConsumer, bidragVedtakConsumer, bidragBBMConsumer, beregingVedtaksfiltrering)
-        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregning, evnevurderingService, personService, BeregnGebyrApi(sjablonService))
+        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregning, evnevurderingService, barnebidragGrunnlagInnhenting, personService, BeregnGebyrApi(sjablonService))
         stubSjablonProvider()
         initMockTestdata()
     }

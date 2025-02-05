@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -55,6 +56,9 @@ class DtoMapperMockTest {
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
+    @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     @BeforeEach
     fun init() {
         val personService = PersonService(stubPersonConsumer())
@@ -65,6 +69,7 @@ class DtoMapperMockTest {
                 behandlingTilGrunnlagMappingV2,
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

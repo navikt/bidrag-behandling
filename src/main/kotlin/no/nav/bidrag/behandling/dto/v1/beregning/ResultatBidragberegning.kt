@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
+import no.nav.bidrag.behandling.transformers.finnSluttberegningIReferanser
+import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -9,12 +11,62 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+
+val YearMonth.formatterDatoFom get() = this.atDay(1).format(DateTimeFormatter.ofPattern("MM.YYYY"))
+val YearMonth.formatterDatoTom get() = this.atEndOfMonth().format(DateTimeFormatter.ofPattern("MM.YYYY"))
+val ÅrMånedsperiode.periodeString get() = "${fom.formatterDatoFom} - ${til?.formatterDatoTom ?: ""}"
+
+fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunnelse(): UgyldigBeregningDto {
+    val allePerioder = data.beregnetBarnebidragPeriodeListe.sortedBy { it.periode.fom }
+    val perioderUtenForskudd =
+        allePerioder.filter {
+            val sluttberegning =
+                data.grunnlagListe
+                    .finnSluttberegningIReferanser(
+                        it.grunnlagsreferanseListe,
+                    )?.innholdTilObjekt<SluttberegningBarnebidrag>()
+            sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertTilForskuddssats.name &&
+                it.resultat.beløp == BigDecimal.ZERO
+        }
+    if (perioderUtenForskudd.isNotEmpty()) {
+        return UgyldigBeregningDto(
+            tittel = "Begrenset revurdering",
+            begrunnelse =
+                if (perioderUtenForskudd.size > 1) {
+                    "Perioder ${perioderUtenForskudd.joinToString {it.periode.periodeString}} er uten løpende forskudd"
+                } else {
+                    "Periode ${perioderUtenForskudd.first().periode.periodeString} er uten løpende forskudd"
+                },
+            perioder = perioderUtenForskudd.map { it.periode },
+        )
+    }
+    return UgyldigBeregningDto(
+        tittel = "Begrenset revurdering",
+        perioder = this.periodeListe,
+        begrunnelse =
+            if (this.periodeListe.size > 1) {
+                "Flere perioder er lik eller lavere enn løpende bidrag"
+            } else {
+                "Periode ${this.periodeListe.first().periodeString} er lik eller lavere enn løpende bidrag"
+            },
+    )
+}
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val resultat: BeregnetBarnebidragResultat,
     val avslaskode: Resultatkode? = null,
+    val ugyldigBeregning: UgyldigBeregningDto? = null,
+)
+
+data class UgyldigBeregningDto(
+    val tittel: String,
+    val begrunnelse: String,
+    val perioder: List<ÅrMånedsperiode> = emptyList(),
 )
 
 data class ResultatBidragberegningDto(
@@ -23,6 +75,7 @@ data class ResultatBidragberegningDto(
 
 data class ResultatBidragsberegningBarnDto(
     val barn: ResultatRolle,
+    val ugyldigBeregning: UgyldigBeregningDto? = null,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
 )
 

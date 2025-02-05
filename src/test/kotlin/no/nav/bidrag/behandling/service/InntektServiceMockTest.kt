@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainAnyOf
 import io.kotest.matchers.collections.shouldHaveSize
@@ -17,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -80,6 +82,9 @@ class InntektServiceMockTest {
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
+    @MockkBean
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var controller: BehandlingControllerV2
 
     lateinit var inntektService: InntektService
@@ -97,6 +102,7 @@ class InntektServiceMockTest {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

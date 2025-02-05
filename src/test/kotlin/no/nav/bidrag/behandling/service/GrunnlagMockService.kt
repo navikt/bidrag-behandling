@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
@@ -97,6 +98,9 @@ class GrunnlagMockService {
     @MockkBean
     lateinit var sivilstandRepository: SivilstandRepository
 
+    @MockkBean
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var personRepository: PersonRepository
     lateinit var personConsumer: BidragPersonConsumer
     lateinit var dtomapper: Dtomapper
@@ -113,6 +117,7 @@ class GrunnlagMockService {
                 behandlingTilGrunnlagMappingV2,
                 validerBeregning,
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

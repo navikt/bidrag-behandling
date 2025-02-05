@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
@@ -34,6 +35,9 @@ import java.math.BigDecimal
 class VedtakGrunnlagMapperTest {
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
+    @MockkBean
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
@@ -47,6 +51,7 @@ class VedtakGrunnlagMapperTest {
                 behandlingTilGrunnlagMappingV2,
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

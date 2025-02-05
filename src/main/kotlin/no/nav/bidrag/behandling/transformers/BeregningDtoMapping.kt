@@ -143,6 +143,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                 val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
+                    ugyldigBeregning = resultat.ugyldigBeregning,
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
                             grunnlagsListe.byggResultatBidragsberegning(

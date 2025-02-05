@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -10,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -33,6 +35,9 @@ import java.math.BigDecimal
 class GebyrServiceTest {
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
+
+    @MockkBean
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
     lateinit var gebyrService: GebyrService
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
@@ -45,6 +50,7 @@ class GebyrServiceTest {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

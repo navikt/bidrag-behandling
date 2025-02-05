@@ -14,6 +14,7 @@ import io.mockk.mockkConstructor
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
@@ -66,6 +67,9 @@ class BeregningServiceTest {
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    @MockkBean
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
     @BeforeEach
@@ -89,6 +93,7 @@ class BeregningServiceTest {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(sjablonService)),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
