@@ -52,7 +52,7 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
-        if (!kanBehandleBegrensetRevuridering(request)) {
+        if (!kanBehandleBegrensetRevurdering(request)) {
             return "Kan ikke behandle begrenset revurdering. Minst en løpende forskudd eller bidrag periode har utenlandsk valuta"
         }
         val bp = request.bidragspliktig
@@ -62,7 +62,11 @@ class ValiderBehandlingService(
                 .hentAlleStønaderForBidragspliktig(bp.ident)
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
-        if (harBPMinstEnBidragsstønad) return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+        if (harBPMinstEnBidragsstønad &&
+            !request.erBegrensetRevurdering()
+        ) {
+            return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+        }
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
@@ -86,16 +90,17 @@ class ValiderBehandlingService(
         }
     }
 
-    fun kanBehandleBegrensetRevuridering(request: KanBehandlesINyLøsningRequest): Boolean =
-        if (request.søknadstype ==
-            BisysSøknadstype.BEGRENSET_REVURDERING ||
-            request.søknadstype == BisysSøknadstype.REVURDERING
-        ) {
+    fun kanBehandleBegrensetRevurdering(request: KanBehandlesINyLøsningRequest): Boolean =
+        if (request.erBegrensetRevurdering()) {
             harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.BIDRAG) &&
                 harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.FORSKUDD)
         } else {
             true
         }
+
+    private fun KanBehandlesINyLøsningRequest.erBegrensetRevurdering() =
+        this.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING ||
+            this.søknadstype == BisysSøknadstype.REVURDERING
 
     private fun harIngenHistoriskePerioderMedUtenlandskValuta(
         request: KanBehandlesINyLøsningRequest,

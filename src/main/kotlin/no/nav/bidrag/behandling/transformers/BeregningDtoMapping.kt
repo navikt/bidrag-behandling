@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -151,6 +152,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 it.resultat.beløp,
                                 resultat.avslaskode,
                                 it.grunnlagsreferanseListe,
+                                resultat.ugyldigBeregning,
                             )
                         },
                 )
@@ -196,6 +198,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     resultat: BigDecimal?,
     resultatkode: Resultatkode?,
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+    ugyldigBeregning: UgyldigBeregningDto?,
 ): ResultatBarnebidragsberegningPeriodeDto {
     val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
     val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
@@ -203,6 +206,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         finnSluttberegningIReferanser(grunnlagsreferanseListe)?.innholdTilObjekt<SluttberegningBarnebidrag>()
     return ResultatBarnebidragsberegningPeriodeDto(
         periode = periode,
+        ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
         underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
         faktiskBidrag = resultat ?: BigDecimal.ZERO,
         resultatKode = resultatkode,

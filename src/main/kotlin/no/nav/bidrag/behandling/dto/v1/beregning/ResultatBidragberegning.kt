@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
+import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.transformers.finnSluttberegningIReferanser
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -32,14 +33,29 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
             sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertTilForskuddssats.name &&
                 it.resultat.beløp == BigDecimal.ZERO
         }
+    val resultatPerioderUtenForskudd =
+        perioderUtenForskudd.map { periode ->
+            UgyldigBeregningDto.UgyldigResultatPeriode(
+                periode = periode.periode,
+                type = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
+            )
+        }
+    val resultatPerioderUnderLøpendeBidrag =
+        (periodeListe - perioderUtenForskudd.map { it.periode }).map { periode ->
+            UgyldigBeregningDto.UgyldigResultatPeriode(
+                periode = periode,
+                type = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
+            )
+        }
     if (perioderUtenForskudd.isNotEmpty()) {
         return UgyldigBeregningDto(
             tittel = "Begrenset revurdering",
+            resultatPeriode = resultatPerioderUtenForskudd + resultatPerioderUnderLøpendeBidrag,
             begrunnelse =
                 if (perioderUtenForskudd.size > 1) {
-                    "Perioder ${perioderUtenForskudd.joinToString {it.periode.periodeString}} er uten løpende forskudd"
+                    "Perioder ${perioderUtenForskudd.joinToString {it.periode.periodeString}} har ingen løpende forskudd"
                 } else {
-                    "Periode ${perioderUtenForskudd.first().periode.periodeString} er uten løpende forskudd"
+                    "Periode ${perioderUtenForskudd.first().periode.periodeString} har ingen løpende forskudd"
                 },
             perioder = perioderUtenForskudd.map { it.periode },
         )
@@ -47,6 +63,7 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
     return UgyldigBeregningDto(
         tittel = "Begrenset revurdering",
         perioder = this.periodeListe,
+        resultatPeriode = resultatPerioderUtenForskudd + resultatPerioderUnderLøpendeBidrag,
         begrunnelse =
             if (this.periodeListe.size > 1) {
                 "Flere perioder er lik eller lavere enn løpende bidrag"
@@ -66,8 +83,19 @@ data class ResultatBidragsberegningBarn(
 data class UgyldigBeregningDto(
     val tittel: String,
     val begrunnelse: String,
+    val resultatPeriode: List<UgyldigResultatPeriode>,
     val perioder: List<ÅrMånedsperiode> = emptyList(),
-)
+) {
+    data class UgyldigResultatPeriode(
+        val periode: ÅrMånedsperiode,
+        val type: UgyldigBeregningType,
+    )
+
+    enum class UgyldigBeregningType {
+        BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
+        BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
+    }
+}
 
 data class ResultatBidragberegningDto(
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
@@ -81,6 +109,7 @@ data class ResultatBidragsberegningBarnDto(
 
 data class ResultatBarnebidragsberegningPeriodeDto(
     val periode: ÅrMånedsperiode,
+    val ugyldigBeregning: UgyldigResultatPeriode? = null,
     val underholdskostnad: BigDecimal,
     val bpsAndelU: BigDecimal,
     val bpsAndelBeløp: BigDecimal,
@@ -95,6 +124,13 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val resultatkodeVisningsnavn get() =
         if (resultatKode?.erDirekteAvslag() == true) {
             resultatKode.visningsnavnIntern()
+        } else if (ugyldigBeregning != null) {
+            when (ugyldigBeregning.type) {
+                UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
+                -> "Lavere enn løpende bidrag"
+                UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
+                -> "Ingen løpende forskudd"
+            }
         } else {
             beregningsdetaljer
                 ?.sluttberegning
