@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -17,6 +18,7 @@ import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskReq
 import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.collections.contains
 
@@ -45,7 +47,7 @@ class BarnebidragGrunnlagInnhenting(
             val grunnlag =
                 bidragStønadConsumer
                     .hentHistoriskeStønader(request)
-                    .tilGrunnlag(request)
+                    .tilGrunnlag(request, behandling, søknadsbarn)
             grunnlagsliste.add(grunnlag)
         }
 
@@ -56,13 +58,17 @@ class BarnebidragGrunnlagInnhenting(
                     søknadsbarn = søknadsbarn,
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
                 )
-            val grunnlag = bidragStønadConsumer.hentHistoriskeStønader(request).tilGrunnlag(request)
+            val grunnlag = bidragStønadConsumer.hentHistoriskeStønader(request).tilGrunnlag(request, behandling, søknadsbarn)
             grunnlagsliste.add(grunnlag)
         }
         return grunnlagsliste
     }
 
-    fun StønadDto?.tilGrunnlag(request: HentStønadHistoriskRequest): GrunnlagDto {
+    fun StønadDto?.tilGrunnlag(
+        request: HentStønadHistoriskRequest,
+        behandling: Behandling,
+        søknadsbarn: Rolle,
+    ): GrunnlagDto {
         val grunnlagstype =
             when (request.type) {
                 Stønadstype.BIDRAG -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG
@@ -73,8 +79,18 @@ class BarnebidragGrunnlagInnhenting(
         return GrunnlagDto(
             referanse =
                 "${grunnlagstype}_${request.sak.verdi}_${request.kravhaver.verdi}_${request.skyldner.verdi}" +
-                    "_${LocalDateTime.now().toCompactString()}",
+                    "_${LocalDate.now().toCompactString()}",
             type = grunnlagstype,
+            gjelderReferanse =
+                when {
+                    request.type == Stønadstype.BIDRAG -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                    this != null && this.mottaker.verdi != behandling.bidragsmottaker!!.ident -> {
+                        // TODO: What to do here?
+                        behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
+                    }
+                    else -> behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
+                },
+            gjelderBarnReferanse = søknadsbarn.tilGrunnlagsreferanse(),
             innhold =
                 POJONode(
                     BeløpshistorikkGrunnlag(

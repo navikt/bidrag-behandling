@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -40,6 +41,9 @@ abstract class CommonVedtakTilBehandlingTest {
     lateinit var behandlingService: BehandlingService
 
     @MockkBean
+    lateinit var bidragStønadConsumer: BidragStønadConsumer
+
+    @MockkBean
     lateinit var grunnlagService: GrunnlagService
 
     @MockkBean
@@ -64,7 +68,6 @@ abstract class CommonVedtakTilBehandlingTest {
     lateinit var behandlingRepository: BehandlingRepository
     lateinit var personRepository: PersonRepository
 
-    @MockkBean
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
 
     @MockkBean
@@ -84,7 +87,8 @@ abstract class CommonVedtakTilBehandlingTest {
         val validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
-        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
+        barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         val personService = PersonService(personConsumer)
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val vedtakGrunnlagMapper =
