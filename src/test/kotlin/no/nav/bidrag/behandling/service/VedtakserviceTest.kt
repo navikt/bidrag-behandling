@@ -144,7 +144,7 @@ class VedtakserviceTest : TestContainerRunner() {
         stubTokenUtils()
         unleash.enableAll()
         bidragPersonConsumer = stubPersonConsumer()
-
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)
         val validerBeregning = ValiderBeregning()
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))

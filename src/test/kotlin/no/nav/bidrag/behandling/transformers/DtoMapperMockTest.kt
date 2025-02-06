@@ -33,6 +33,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.error.ShouldNotBeNull
@@ -62,6 +63,7 @@ class DtoMapperMockTest {
     @BeforeEach
     fun init() {
         val personService = PersonService(stubPersonConsumer())
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet<GrunnlagDto>()
         val validerBeregning = ValiderBeregning()
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val vedtakGrunnlagMapper =

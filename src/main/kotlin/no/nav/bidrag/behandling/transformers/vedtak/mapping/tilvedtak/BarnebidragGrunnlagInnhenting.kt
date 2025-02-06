@@ -35,14 +35,6 @@ class BarnebidragGrunnlagInnhenting(
         if (behandling.stonadstype != Stønadstype.BIDRAG || behandling.stonadstype == null) {
             return emptySet()
         }
-        val requestTemp =
-            HentStønadHistoriskRequest(
-                type = Stønadstype.FORSKUDD,
-                sak = Saksnummer(behandling.saksnummer),
-                skyldner = Personident(behandling.bidragspliktig!!.ident!!),
-                kravhaver = Personident(søknadsbarn.ident!!),
-                gyldigTidspunkt = LocalDateTime.now(),
-            )
         if (søknadstyperSomKreverBeløpshistorikkForskudd.contains(behandling.søknadstype)) {
             val request =
                 behandling.createStønadHistoriskRequest(
@@ -58,7 +50,12 @@ class BarnebidragGrunnlagInnhenting(
         }
 
         if (søknadstyperSomKreverBeløpshistorikkBidrag.contains(behandling.søknadstype)) {
-            val request = requestTemp.copy(type = Stønadstype.BIDRAG)
+            val request =
+                behandling.createStønadHistoriskRequest(
+                    stønadstype = Stønadstype.BIDRAG,
+                    søknadsbarn = søknadsbarn,
+                    skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+                )
             val grunnlag = bidragStønadConsumer.hentHistoriskeStønader(request).tilGrunnlag(request)
             grunnlagsliste.add(grunnlag)
         }
@@ -89,6 +86,7 @@ class BarnebidragGrunnlagInnhenting(
                                     periode = it.periode,
                                     beløp = it.beløp,
                                     valutakode = it.valutakode,
+                                    vedtaksid = it.vedtaksid,
                                 )
                             } ?: emptyList(),
                     ),

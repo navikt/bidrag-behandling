@@ -80,7 +80,7 @@ class DtoMapperTest : TestContainerRunner() {
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
-    @MockkBean
+    @MockkBean(relaxed = true)
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
 
     lateinit var grunnlagsmapper: BehandlingTilGrunnlagMappingV2

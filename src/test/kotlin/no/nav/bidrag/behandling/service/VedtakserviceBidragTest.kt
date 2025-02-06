@@ -1261,7 +1261,7 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
         innhold.resultatVisningsnavn!!.intern shouldBe "Kostnadsberegnet bidrag"
         innhold.beregnetBeløp shouldBe BigDecimal("5730.48")
         innhold.resultatBeløp shouldBe BigDecimal("5730")
-        it.grunnlagsreferanseListe shouldHaveSize 8
+        it.grunnlagsreferanseListe shouldHaveSize 9
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe).first().referanse shouldBe søknadsbarn1Grunnlag.referanse
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE, it.grunnlagsreferanseListe) shouldHaveSize 1
