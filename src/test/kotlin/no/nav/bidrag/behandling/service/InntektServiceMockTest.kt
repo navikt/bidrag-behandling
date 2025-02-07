@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainAnyOf
 import io.kotest.matchers.collections.shouldHaveSize
@@ -82,7 +81,7 @@ class InntektServiceMockTest {
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
-    @MockkBean
+    @MockK
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
 
     lateinit var controller: BehandlingControllerV2
@@ -97,6 +96,7 @@ class InntektServiceMockTest {
         inntektRepository = stubInntektRepository()
         val personService = PersonService(stubPersonConsumer())
 
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
