@@ -421,7 +421,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn1!!)
 
                 assertSoftly(grunnlagForBeregning) {
-                    it.grunnlagListe shouldHaveSize 15
+                    it.grunnlagListe shouldHaveSize 16
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -445,7 +445,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn2!!)
 
                 assertSoftly(grunnlagForBeregning2) {
-                    it.grunnlagListe shouldHaveSize 15
+                    it.grunnlagListe shouldHaveSize 16
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
