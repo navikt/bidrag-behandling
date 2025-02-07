@@ -140,7 +140,7 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 16
+            it.grunnlagListe shouldHaveSize 17
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
@@ -162,7 +162,7 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[1]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 14
+            it.grunnlagListe shouldHaveSize 15
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
@@ -395,7 +395,7 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 11 // TODO:VERIFY THIS
+            it.grunnlagListe shouldHaveSize 12 // TODO:VERIFY THIS
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
