@@ -79,7 +79,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), roller).toList()
+            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), null, roller).toList()
             resultat shouldHaveSize 0
         }
 
@@ -112,7 +112,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), roller).toList()
+            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), null, roller).toList()
             resultat shouldHaveSize 1
             assertSoftly(resultat[0]) {
                 hullIPerioder shouldHaveSize 0
@@ -148,7 +148,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.now().plusMonths(1), roller).toList()
+            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.now().plusMonths(1), null, roller).toList()
             resultat shouldHaveSize 1
             assertSoftly(resultat[0]) {
                 hullIPerioder shouldHaveSize 1
@@ -191,7 +191,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.now().plusYears(1), roller).toList()
+            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.now().plusYears(1), null, roller).toList()
             resultat shouldHaveSize 0
         }
 
@@ -228,7 +228,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), roller).toList()
+            val resultat = inntekter.mapValideringsfeilForÅrsinntekter(LocalDate.parse("2022-01-01"), null, roller).toList()
             resultat shouldHaveSize 1
 
             assertSoftly(resultat[0]) {
@@ -284,6 +284,7 @@ class ValiderInntektPerioderTest {
                 inntekter
                     .mapValideringsfeilForÅrsinntekter(
                         virkningstidspunkt.atDay(1),
+                        null,
                         roller,
                         TypeBehandling.SÆRBIDRAG,
                     ).toList()
@@ -337,6 +338,7 @@ class ValiderInntektPerioderTest {
                 inntekter
                     .mapValideringsfeilForÅrsinntekter(
                         virkningstidspunkt.atDay(1),
+                        null,
                         roller,
                         TypeBehandling.SÆRBIDRAG,
                     ).toList()
@@ -390,6 +392,7 @@ class ValiderInntektPerioderTest {
                 inntekter
                     .mapValideringsfeilForÅrsinntekter(
                         LocalDate.parse("2022-01-01"),
+                        null,
                         roller,
                         TypeBehandling.FORSKUDD,
                     ).toList()

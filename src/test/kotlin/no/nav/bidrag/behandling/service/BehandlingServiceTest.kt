@@ -107,6 +107,9 @@ class BehandlingServiceTest : TestContainerRunner() {
     lateinit var behandlingService: BehandlingService
 
     @Autowired
+    lateinit var virkningstidspunktService: VirkningstidspunktService
+
+    @Autowired
     lateinit var grunnlagService: GrunnlagService
 
     @Autowired
@@ -1613,7 +1616,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(5)
 
             // hvis
-            behandlingService.oppdatereVirkningstidspunkt(
+            virkningstidspunktService.oppdatereVirkningstidspunkt(
                 behandling.id!!,
                 OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
             )
@@ -1684,7 +1687,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     .plusMonths(6)
 
             // hvis
-            behandlingService.oppdatereVirkningstidspunkt(
+            virkningstidspunktService.oppdatereVirkningstidspunkt(
                 b.id!!,
                 OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
             )
@@ -1762,7 +1765,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(1)
 
             // hvis
-            behandlingService.oppdatereVirkningstidspunkt(
+            virkningstidspunktService.oppdatereVirkningstidspunkt(
                 behandling.id!!,
                 OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
             )
@@ -1850,7 +1853,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(1)
 
             // hvis
-            behandlingService.oppdatereVirkningstidspunkt(
+            virkningstidspunktService.oppdatereVirkningstidspunkt(
                 behandling.id!!,
                 OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
             )
@@ -1942,7 +1945,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val nyVirkningsdato = behandling.virkningstidspunkt!!.plusMonths(1)
 
             // hvis
-            behandlingService.oppdatereVirkningstidspunkt(
+            virkningstidspunktService.oppdatereVirkningstidspunkt(
                 behandling.id!!,
                 OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
             )
@@ -2022,7 +2025,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val nyVirkningsdato = behandling.virkningstidspunkt!!.minusMonths(5)
 
             // hvis
-            behandlingService.oppdatereVirkningstidspunkt(
+            virkningstidspunktService.oppdatereVirkningstidspunkt(
                 behandling.id!!,
                 OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningsdato),
             )
@@ -2061,7 +2064,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
 
             // hvis
-            behandlingService.oppdatereVirkningstidspunkt(behandling.id!!, request)
+            virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, request)
 
             // så
             entityManager.flush()
@@ -2121,7 +2124,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Vedtakstype.FASTSETTELSE,
                     null,
                     YearMonth.now().atDay(1),
-                    YearMonth.now().atEndOfMonth(),
+                    null,
                     YearMonth.now().atEndOfMonth(),
                     LocalDate.now(),
                     "1900000",

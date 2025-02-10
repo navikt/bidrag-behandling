@@ -117,7 +117,6 @@ class VedtakHendelseTest : TestContainerRunner() {
     private fun opprettBehandling() =
         Behandling(
             søktFomDato = LocalDate.now(),
-            datoTom = LocalDate.now(),
             saksnummer = SAKSNUMMER,
             soknadsid = 123123L,
             behandlerEnhet = "4806",

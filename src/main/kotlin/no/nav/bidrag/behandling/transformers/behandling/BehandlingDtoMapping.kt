@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynAktiveGru
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
@@ -63,7 +64,6 @@ import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
@@ -145,7 +145,7 @@ fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
     return null
 }
 
-fun Map<Grunnlagsdatatype, FeilrapporteringDto?>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
+fun Map<Grunnlagsdatatype, GrunnlagFeilDto?>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this
         .map { feil ->
             Grunnlagsinnhentingsfeil(
@@ -279,6 +279,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     return VirkningstidspunktFeilDto(
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
+        manglerOpphørsdato = stonadstype == Stønadstype.BIDRAG18AAR && opphørsdato == null,
         manglerBegrunnelse =
             if (vedtakstype == Vedtakstype.OPPHØR) {
                 begrunnelseVirkningstidspunkt.isEmpty()
@@ -295,6 +296,7 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
             inntekter
                 .mapValideringsfeilForÅrsinntekter(
                     virkningstidspunktEllerSøktFomDato,
+                    opphørsdato,
                     roller,
                     tilType(),
                 ).takeIf { it.isNotEmpty() },
@@ -331,6 +333,7 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
 
 fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,
+    opphørsdato: LocalDate?,
     roller: Set<Rolle>,
     behandlingType: TypeBehandling = TypeBehandling.FORSKUDD,
 ): Set<InntektValideringsfeil> {
@@ -350,8 +353,9 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     rolle = rolle.tilDto(),
                 )
             } else {
+                val hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt)
                 InntektValideringsfeil(
-                    hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
+                    hullIPerioder = hullIPerioder,
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
 //                    perioderFørVirkningstidspunkt =
@@ -361,6 +365,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } == true,
                     rolle = rolle.tilDto(),
+                    ingenLøpendePeriode = if (opphørsdato == null) hullIPerioder.any { it.til == null } else false,
                 )
             }
         }.filter { it.harFeil }

@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -1777,7 +1778,7 @@ class GrunnlagMappingTest {
                 Vedtakstype.FASTSETTELSE,
                 null,
                 søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
-                datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
+                null,
                 mottattdato = LocalDate.parse("2023-03-15"),
                 klageMottattdato = null,
                 SAKSNUMMER,

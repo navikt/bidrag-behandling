@@ -44,7 +44,7 @@ open class Behandling(
     open var opprinneligVedtakstype: Vedtakstype? = null,
     @Column(name = "dato_fom")
     open var søktFomDato: LocalDate,
-    open val datoTom: LocalDate? = null,
+    open var opphørsdato: LocalDate? = null,
     open var mottattdato: LocalDate,
     open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
@@ -206,6 +206,8 @@ fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.na
 val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG }
 
 val Set<Husstandsmedlem>.voksneIHusstanden get() = find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
+
+fun Behandling.hentMaksTilOgMedDato() = if (opphørsdato != null) opphørsdato!!.plusMonths(1).withDayOfMonth(1).minusDays(1) else null
 
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {

@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -76,6 +75,9 @@ class InntektServiceMockTest {
     lateinit var utgiftService: UtgiftService
 
     @MockK
+    lateinit var virkningstidspunktService: VirkningstidspunktService
+
+    @MockK
     lateinit var validerBeregning: ValiderBeregning
 
     @MockK
@@ -124,6 +126,7 @@ class InntektServiceMockTest {
                 inntektService = inntektService,
                 utgiftService = utgiftService,
                 validerBehandlingService = validerBehandlingService,
+                virkningstidspunktService = virkningstidspunktService,
                 dtomapper = dtomapper,
             )
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }

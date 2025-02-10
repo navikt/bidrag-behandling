@@ -1121,7 +1121,7 @@ class BoforholdService(
                         sletteHusstandsmedlemsperiode,
                     ),
             )
-        } catch (illegalArgumentException: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             log.warn {
                 "Mottok mangelfulle opplysninger ved oppdatering av boforhold i behandling ${this.behandling.id}. " +
                     "Mottatt input: nyEllerOppdatertHusstandsmedlemsperiode=$nyEllerOppdatertBostatusperiode, " +

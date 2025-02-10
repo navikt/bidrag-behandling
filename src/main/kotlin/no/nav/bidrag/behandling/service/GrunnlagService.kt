@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
@@ -24,10 +25,13 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype.Companion.grunnlagsdatatypeobjekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.tilGrunnlagFeilDto
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
@@ -83,6 +87,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
@@ -104,6 +109,7 @@ class GrunnlagService(
     private val inntektService: InntektService,
     private val mapper: Dtomapper,
     private val underholdService: UnderholdService,
+    private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
@@ -112,7 +118,7 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
-            val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
+            val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
             val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
                 tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
             behandling.grunnlagsinnhentingFeilet = null
@@ -126,10 +132,13 @@ class GrunnlagService(
                     )
             }
 
+            feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
+
             behandling.grunnlagSistInnhentet = LocalDateTime.now()
 
             if (feilrapporteringer.isNotEmpty()) {
-                behandling.grunnlagsinnhentingFeilet = objectmapper.writeValueAsString(feilrapporteringer)
+                behandling.grunnlagsinnhentingFeilet =
+                    objectmapper.writeValueAsString(feilrapporteringer)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
@@ -149,6 +158,49 @@ class GrunnlagService(
                     "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
+    }
+
+    fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        if (behandling.tilType() != TypeBehandling.BIDRAG) return emptyMap()
+
+        val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+
+        behandling.søknadsbarn.map {
+            try {
+                val eksisterendeGrunnlag =
+                    behandling.grunnlag.hentSisteBeløpshistorikkGrunnlag(it.personident!!.verdi)
+                val respons = barnebidragGrunnlagInnhenting.hentBeløpshistorikkBidrag(behandling, it)
+                if (eksisterendeGrunnlag == null &&
+                    respons != null ||
+                    respons != null &&
+                    eksisterendeGrunnlag != null &&
+                    eksisterendeGrunnlag.konvertereData<StønadDto>() != respons
+                ) {
+                    val nyGrunnlag =
+                        Grunnlag(
+                            behandling = behandling,
+                            type = Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                            data = commonObjectmapper.writeValueAsString(respons),
+                            gjelder = it.personident!!.verdi,
+                            innhentet = LocalDateTime.now(),
+                            aktiv = LocalDateTime.now(),
+                            rolle = behandling.bidragspliktig!!,
+                            erBearbeidet = false,
+                        )
+                    behandling.grunnlag.add(nyGrunnlag)
+                }
+            } catch (e: HttpClientErrorException) {
+                feilrapporteringer.put(
+                    Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                    GrunnlagFeilDto(
+                        personId = it.personident!!.verdi,
+                        feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                        feilmelding = e.message,
+                    ),
+                )
+            }
+        }
+        return feilrapporteringer
     }
 
     @Transactional
@@ -605,14 +657,14 @@ class GrunnlagService(
         behandling: Behandling,
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
         tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter: Boolean,
-    ): Map<Grunnlagsdatatype, FeilrapporteringDto?> {
+    ): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
 
-        val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
+        val feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?> =
             innhentetGrunnlag.hentGrunnlagDto?.let { g ->
                 Grunnlagsdatatype
                     .grunnlagsdatatypeobjekter(behandling.tilType())
-                    .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g) }
+                    .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g)?.tilGrunnlagFeilDto() }
                     .filterNot { it.value == null }
             } ?: Grunnlagsdatatype.gjeldende().associateWith { null }
 
@@ -621,7 +673,7 @@ class GrunnlagService(
             lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, it, feilrapporteringer)
         }
 
-        val feilVedHentingAvInntekter: FeilrapporteringDto? =
+        val feilVedHentingAvInntekter: GrunnlagFeilDto? =
             feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
         val tekniskFeilVedHentingAvInntekter = feilVedHentingAvInntekter?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL
         innhentetGrunnlag.hentGrunnlagDto?.let {
@@ -705,7 +757,7 @@ class GrunnlagService(
         behandling: Behandling,
         rolleInnhentetFor: Rolle,
         innhentetGrunnlag: HentetGrunnlag,
-        feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+        feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?>,
     ) {
         val innhentingAvBarnetilsynFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BARNETILSYN == it.key }.isNotEmpty()
@@ -1017,7 +1069,7 @@ class GrunnlagService(
         behandling: Behandling,
         innhentetGrunnlag: HentGrunnlagDto,
         rolleInhentetFor: Rolle,
-        feilliste: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+        feilliste: Map<Grunnlagsdatatype, GrunnlagFeilDto?>,
         tekniskFeilsjekk: Boolean,
     ) {
         val transformereInntekter = opprettTransformerInntekterRequest(behandling, innhentetGrunnlag, rolleInhentetFor)
@@ -1526,7 +1578,7 @@ class GrunnlagService(
         behandling: Behandling,
         rolleInhentetFor: Rolle,
         innhentetGrunnlag: HentGrunnlagDto,
-        feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+        feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?>,
     ) {
         val behandlingstype = behandling.tilType()
         val grunnlagsdatatypeobjekter =

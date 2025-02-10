@@ -53,16 +53,22 @@ fun Inntekt.bestemOpprinneligTomVisningsverdi() =
 fun Inntekt.bestemDatoTomForOffentligInntekt() =
     skalAutomatiskSettePeriode().ifTrue {
         opprinneligTom?.let { tom ->
-            val maxDate = maxOf(YearMonth.now().atEndOfMonth(), behandling!!.virkningstidspunktEllerSøktFomDato)
+            val maxDate =
+                maxOf(
+                    YearMonth.now().atEndOfMonth(),
+                    behandling!!.virkningstidspunktEllerSøktFomDato,
+                    behandling!!.opphørsdato ?: LocalDate.MIN,
+                )
             if (tom.plusMonths(1).isAfter(maxDate)) null else tom
         }
     }
 
 fun Inntekt.skalAutomatiskSettePeriode(): Boolean =
-    kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunkt()
+    kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør()
 
-fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
+fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør(): Boolean =
     opprinneligFom?.let { fom ->
+        if (behandling?.opphørsdato != null && fom < behandling?.opphørsdato) return@let false
         (opprinneligTom ?: LocalDate.MAX).let { tom ->
             behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->
                 val virkningstidspunktEllerStartenAvNesteMåned =

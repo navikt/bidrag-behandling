@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
@@ -56,6 +57,24 @@ import java.time.LocalDate
 private val log = KotlinLogging.logger {}
 
 val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PARTEN_BER_OM_OPPHØR)
+
+fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
+    if (opphørsdato == null) return
+    val feilliste = mutableListOf<String>()
+    if (opphørsdato == behandling.virkningstidspunkt) {
+        feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
+    }
+    if (opphørsdato.isBefore(behandling.virkningstidspunkt)) {
+        feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
+    }
+
+    if (feilliste.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig data ved oppdatering av opphørsdato: ${feilliste.joinToString(", ")}",
+        )
+    }
+}
 
 fun MutableSet<String>.validerSann(
     betingelse: Boolean,

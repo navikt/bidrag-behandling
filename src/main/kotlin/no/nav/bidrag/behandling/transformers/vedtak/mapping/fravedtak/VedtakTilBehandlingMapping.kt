@@ -138,7 +138,6 @@ class VedtakTilBehandlingMapping(
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
-                datoTom = null,
                 saksnummer = saksnummer!!,
                 soknadsid = søknadId ?: this.søknadId!!,
             )

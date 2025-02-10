@@ -23,6 +23,8 @@ import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
 
+val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)
+
 @Service
 class ValiderBehandlingService(
     private val bidragStonadConsumer: BidragStønadConsumer,
@@ -48,6 +50,9 @@ class ValiderBehandlingService(
 
     private fun kanBidragV1BehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         if (!request.skruddAvManuelt.isNullOrEmpty()) return request.skruddAvManuelt
+        if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
+            return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
+        }
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
@@ -123,3 +128,13 @@ class ValiderBehandlingService(
                 } != false
         }
 }
+
+private fun Stønadstype.tilVisningsnavn() =
+    when (this) {
+        Stønadstype.BIDRAG -> "Barnebidrag"
+        Stønadstype.BIDRAG18AAR -> "18 års bidrag"
+        Stønadstype.EKTEFELLEBIDRAG -> "Ektefellebidrag"
+        Stønadstype.MOTREGNING -> "Motregning"
+        Stønadstype.OPPFOSTRINGSBIDRAG -> "Oppfostringbidrag"
+        Stønadstype.FORSKUDD -> "Forskudd"
+    }

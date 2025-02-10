@@ -36,7 +36,7 @@ data class OpphørsdetaljerDto(
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
 ) {
     data class EksisterendeOpphørsvedtakDto(
-        val vedtaksid: Long,
+        val vedtaksid: Int,
         val opphørsdato: LocalDate,
         val vedtaksdato: LocalDate,
     )

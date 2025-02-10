@@ -13,11 +13,14 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -43,6 +46,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
@@ -93,8 +97,8 @@ import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
@@ -649,6 +653,11 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    opphør =
+                        OpphørsdetaljerDto(
+                            opphørsdato = opphørsdato,
+                            eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(),
+                        ),
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
@@ -670,8 +679,8 @@ class Dtomapper(
             ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
             feilOppståttVedSisteGrunnlagsinnhenting =
                 grunnlagsinnhentingFeilet?.let {
-                    val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
-                        object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+                    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
+                        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
 
                     objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
                 },
@@ -711,6 +720,17 @@ class Dtomapper(
                     )
                 }
             }
+
+    private fun Behandling.finnEksisterendeVedtakMedOpphør(): EksisterendeOpphørsvedtakDto? {
+        val eksisterendeVedtak = grunnlag.hentSisteBeløpshistorikkGrunnlag(søknadsbarn.first().ident!!) ?: return null
+        val stønad = eksisterendeVedtak.konvertereData<StønadDto>()
+        val opphørPeriode = stønad!!.periodeListe.filter { it.beløp == null }.maxByOrNull { it.periode.til == null } ?: return null
+        return EksisterendeOpphørsvedtakDto(
+            vedtaksid = opphørPeriode.vedtaksid,
+            opphørsdato = opphørPeriode.periode.fom.atDay(1),
+            vedtaksdato = opphørPeriode.gyldigFra.toLocalDate(),
+        )
+    }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(

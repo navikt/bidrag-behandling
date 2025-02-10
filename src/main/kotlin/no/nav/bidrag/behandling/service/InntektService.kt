@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentMaksTilOgMedDato
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -65,8 +66,9 @@ class InntektService(
     fun rekalkulerPerioderInntekter(behandling: Behandling) {
         if (behandling.virkningstidspunkt == null) return
 
-        behandling.inntekter
-            .filter { it.taMed && it.datoFom != null && it.datoFom!! < behandling.virkningstidspunkt }
+        val inntekterTattMed = behandling.inntekter.filter { it.taMed && it.datoFom != null }
+        inntekterTattMed
+            .filter { it.datoFom!! < behandling.virkningstidspunkt }
             .forEach {
                 if (it.datoTom != null && behandling.virkningstidspunkt!! >= it.datoTom) {
                     it.taMed = false
@@ -76,6 +78,23 @@ class InntektService(
                     it.datoFom = behandling.virkningstidspunkt
                 }
             }
+
+        if (behandling.opphørsdato != null) {
+            inntekterTattMed
+                .filter { it.datoFom!! > behandling.opphørsdato }
+                .forEach {
+                    it.taMed = false
+                    it.datoFom = null
+                    it.datoTom = null
+                }
+            behandling.inntekter
+                .filter { it.taMed }
+                .sortedBy { it.datoFom }
+                .lastOrNull()
+                ?.let {
+                    it.datoTom = behandling.hentMaksTilOgMedDato()
+                }
+        }
 
         behandling.inntekter
             .filter { it.taMed }

@@ -9,6 +9,7 @@ import io.mockk.every
 import io.mockk.mockkClass
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER

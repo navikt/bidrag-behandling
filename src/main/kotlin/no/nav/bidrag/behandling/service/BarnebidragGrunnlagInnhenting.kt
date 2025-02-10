@@ -1,4 +1,4 @@
-package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
+package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
@@ -62,6 +62,19 @@ class BarnebidragGrunnlagInnhenting(
             grunnlagsliste.add(grunnlag)
         }
         return grunnlagsliste
+    }
+
+    fun hentBeløpshistorikkBidrag(
+        behandling: Behandling,
+        søknadsbarn: Rolle,
+    ): StønadDto? {
+        val request =
+            behandling.createStønadHistoriskRequest(
+                stønadstype = Stønadstype.BIDRAG,
+                søknadsbarn = søknadsbarn,
+                skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+            )
+        return bidragStønadConsumer.hentHistoriskeStønader(request)
     }
 
     fun StønadDto?.tilGrunnlag(
