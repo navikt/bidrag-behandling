@@ -207,7 +207,7 @@ val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.
 
 val Set<Husstandsmedlem>.voksneIHusstanden get() = find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
-fun Behandling.hentMaksTilOgMedDato() = if (opphørsdato != null) opphørsdato!!.plusMonths(1).withDayOfMonth(1).minusDays(1) else null
+fun Behandling.hentMaksTilOgMedDato() = if (opphørsdato != null) opphørsdato!!.withDayOfMonth(1).minusDays(1) else null
 
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {

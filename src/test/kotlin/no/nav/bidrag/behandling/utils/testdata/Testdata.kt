@@ -1449,6 +1449,7 @@ private fun oppretteBoforhold(
     val boforholdPeriodisert =
         BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
+            behandling.opphørsdato,
             behandling.tilType(),
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )

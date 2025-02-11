@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIn
 import no.nav.bidrag.behandling.transformers.underhold.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag
 import no.nav.bidrag.behandling.transformers.underhold.harAndreBarnIUnderhold
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
+import no.nav.bidrag.behandling.transformers.underhold.justerPerioderForOpphørsdato
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioder
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
@@ -211,7 +212,10 @@ class UnderholdService(
     }
 
     @Transactional
-    fun tilpasseUnderholdEtterVirkningsdato(behandling: Behandling) {
+    fun tilpasseUnderholdEtterVirkningsdato(
+        behandling: Behandling,
+        opphørSlettet: Boolean = false,
+    ) {
         tilpasseAktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
         tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
         oppdatereUnderholdsperioderEtterEndretVirkningsdato(behandling)
@@ -476,6 +480,17 @@ class UnderholdService(
         b.underholdskostnader.forEach {
             it.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag()
             it.justerePerioder()
+        }
+    }
+
+    @Transactional
+    fun oppdatereUnderholdsperioderEtterEndretOpphørsdato(
+        b: Behandling,
+        opphørSlettet: Boolean = false,
+        forrigeOpphørsdato: LocalDate? = null,
+    ) {
+        b.underholdskostnader.forEach {
+            it.justerPerioderForOpphørsdato(opphørSlettet, forrigeOpphørsdato)
         }
     }
 

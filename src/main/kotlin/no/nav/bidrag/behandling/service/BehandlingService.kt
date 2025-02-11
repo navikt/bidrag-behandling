@@ -273,7 +273,7 @@ class BehandlingService(
 
         fun oppdaterSamvær() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
-            samværService.rekalkulerPerioderSamvær(behandling.id!!)
+            samværService.rekalkulerPerioderSamvær(behandling.id!!, false)
         }
 
         fun oppdaterInntekter() {

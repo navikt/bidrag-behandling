@@ -1172,6 +1172,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 val boforholdPeriodisert =
                     BoforholdApi.beregnBoforholdBarnV3(
                         b.virkningstidspunktEllerSøktFomDato,
+                        b.opphørsdato,
                         b.tilType(),
                         grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(b),
                     )

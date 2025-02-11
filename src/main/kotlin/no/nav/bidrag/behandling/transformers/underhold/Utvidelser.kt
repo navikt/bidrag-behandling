@@ -162,6 +162,55 @@ fun Underholdskostnad.justerePerioder() {
     }
 }
 
+fun Underholdskostnad.justerPerioderForOpphørsdato(
+    opphørSlettet: Boolean = false,
+    forrigeOpphørsdato: LocalDate? = null,
+) {
+    if (behandling.opphørsdato != null || opphørSlettet) {
+        val justerOpphørsdato = behandling.opphørsdato?.withDayOfMonth(1)?.minusDays(1)
+        val justertForrigeOpphørsdato = forrigeOpphørsdato?.withDayOfMonth(1)?.minusDays(1)
+
+        barnetilsyn
+            .filter { it.fom > justerOpphørsdato }
+            .forEach { periode ->
+                barnetilsyn.remove(periode)
+            }
+        barnetilsyn
+            .filter { periode ->
+                periode.tom == null || periode.tom!!.isAfter(justerOpphørsdato) || periode.tom == justertForrigeOpphørsdato
+            }.maxByOrNull { it.fom }
+            ?.let {
+                it.tom = justerOpphørsdato
+            }
+
+        faktiskeTilsynsutgifter
+            .filter { it.fom > justerOpphørsdato }
+            .forEach { periode ->
+                faktiskeTilsynsutgifter.remove(periode)
+            }
+        faktiskeTilsynsutgifter
+            .filter { periode ->
+                periode.tom == null || periode.tom!!.isAfter(justerOpphørsdato) || periode.tom == justertForrigeOpphørsdato
+            }.maxByOrNull { it.fom }
+            ?.let {
+                it.tom = justerOpphørsdato
+            }
+
+        tilleggsstønad
+            .filter { it.fom > justerOpphørsdato }
+            .forEach { periode ->
+                tilleggsstønad.remove(periode)
+            }
+        tilleggsstønad
+            .filter { periode ->
+                periode.tom == null || periode.tom!!.isAfter(justerOpphørsdato) || periode.tom == justertForrigeOpphørsdato
+            }.maxByOrNull { it.fom }
+            ?.let {
+                it.tom = justerOpphørsdato
+            }
+    }
+}
+
 private fun Behandling.overskriveBearbeidaBarnetilsynsgrunnlag(
     gjelder: String?,
     perioder: Set<BarnetilsynGrunnlagDto>,

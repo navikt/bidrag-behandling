@@ -120,10 +120,15 @@ class SamværService(
         perioder.find { it.id == id }
             ?: ugyldigForespørsel("Fant ikke samværsperiode med id $id i samvær $id")
 
-    fun rekalkulerPerioderSamvær(behandlingsid: Long) {
+    fun rekalkulerPerioderSamvær(
+        behandlingsid: Long,
+        opphørSlettet: Boolean = false,
+    ) {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         val virkningstidspunkt = behandling.virkningstidspunkt ?: return
 
+        // Antar at opphørsdato er måneden perioden skal opphøre
+        val justerOpphørsdato = behandling.opphørsdato?.withDayOfMonth(1)?.minusDays(1)
         behandling.samvær.forEach {
             it.perioder
                 .filter { it.fom < virkningstidspunkt }
@@ -134,6 +139,26 @@ class SamværService(
                         periode.fom = virkningstidspunkt
                     }
                 }
+            if (justerOpphørsdato != null) {
+                it.perioder
+                    .filter { it.fom > justerOpphørsdato }
+                    .forEach { periode ->
+                        it.perioder.remove(periode)
+                    }
+                it.perioder
+                    .maxByOrNull { it.fom }
+                    ?.let {
+                        it.tom = justerOpphørsdato
+                    }
+            }
+
+            if (opphørSlettet || justerOpphørsdato != null) {
+                it.perioder
+                    .maxByOrNull { it.fom }
+                    ?.let {
+                        it.tom = justerOpphørsdato
+                    }
+            }
         }
     }
 }

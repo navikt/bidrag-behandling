@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.hentMaksTilOgMedDato
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -26,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.inntektstypeListe
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
@@ -42,6 +42,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -54,16 +55,22 @@ class InntektService(
     private val notatService: NotatService,
 ) {
     @Transactional
-    fun rekalkulerPerioderInntekter(behandlingsid: Long) {
+    fun rekalkulerPerioderInntekter(
+        behandlingsid: Long,
+        opphørSlettet: Boolean = false,
+    ) {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
-        rekalkulerPerioderInntekter(behandling)
+        rekalkulerPerioderInntekter(behandling, opphørSlettet)
     }
 
     @Transactional
-    fun rekalkulerPerioderInntekter(behandling: Behandling) {
+    fun rekalkulerPerioderInntekter(
+        behandling: Behandling,
+        opphørSlettet: Boolean = false,
+    ) {
         if (behandling.virkningstidspunkt == null) return
 
         val inntekterTattMed = behandling.inntekter.filter { it.taMed && it.datoFom != null }
@@ -79,23 +86,6 @@ class InntektService(
                 }
             }
 
-        if (behandling.opphørsdato != null) {
-            inntekterTattMed
-                .filter { it.datoFom!! > behandling.opphørsdato }
-                .forEach {
-                    it.taMed = false
-                    it.datoFom = null
-                    it.datoTom = null
-                }
-            behandling.inntekter
-                .filter { it.taMed }
-                .sortedBy { it.datoFom }
-                .lastOrNull()
-                ?.let {
-                    it.datoTom = behandling.hentMaksTilOgMedDato()
-                }
-        }
-
         behandling.inntekter
             .filter { it.taMed }
             .filter { eksplisitteYtelser.contains(it.type) && it.kilde == Kilde.OFFENTLIG && it.opprinneligFom != null }
@@ -105,8 +95,54 @@ class InntektService(
                 it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }
 
+        if (behandling.opphørsdato != null) {
+            inntekterTattMed
+                .filter { it.datoFom!! >= behandling.opphørsdato }
+                .forEach {
+                    it.taMed = false
+                    it.datoFom = null
+                    it.datoTom = null
+                }
+
+            behandling.inntekter
+                .filter { eksplisitteYtelser.contains(it.type) }
+                .filter { it.taMed }
+                .groupBy { Triple(it.type, it.ident, it.gjelderBarn) }
+                .forEach { (pair, inntekter) ->
+                    if (pair.first == Inntektsrapportering.BARNETILLEGG) {
+                        inntekter
+                            .groupBy { it.inntektstypeListe.firstOrNull() }
+                            .forEach { (_, inntekter) ->
+                                inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørsdato)
+                            }
+                    } else {
+                        inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørsdato)
+                    }
+                }
+        }
+
+        if (opphørSlettet || behandling.opphørsdato != null) {
+            behandling.inntekter
+                .filter { !eksplisitteYtelser.contains(it.type) }
+                .groupBy { Pair(it.type, it.ident) }
+                .forEach { (_, inntekter) ->
+                    inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørsdato)
+                }
+        }
+
         val manuelleInntekterSomErFjernet = behandling.inntekter.filter { !it.taMed && it.kilde == Kilde.MANUELL }
         behandling.inntekter.removeAll(manuelleInntekterSomErFjernet)
+    }
+
+    private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(periodeTomDato: LocalDate?) {
+        filter { it.taMed }
+            .filter {
+                periodeTomDato == null || it.datoTom == null || it.datoTom!!.isAfter(periodeTomDato)
+            }.sortedBy { it.datoFom }
+            .lastOrNull()
+            ?.let {
+                it.datoTom = periodeTomDato
+            }
     }
 
     @Transactional

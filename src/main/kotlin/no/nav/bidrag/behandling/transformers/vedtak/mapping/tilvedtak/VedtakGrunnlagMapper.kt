@@ -52,11 +52,13 @@ fun Behandling.finnBeregnTilDatoBehandling() =
     if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
     } else {
-        finnBeregnTilDato(virkningstidspunkt!!)
+        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato)
     }
 
-fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
-    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+fun finnBeregnTilDato(
+    virkningstidspunkt: LocalDate,
+    opphørsdato: LocalDate? = null,
+) = opphørsdato ?: maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
 
 @Component
 class VedtakGrunnlagMapper(
@@ -193,6 +195,7 @@ class VedtakGrunnlagMapper(
                             beregnFraDato,
                             beregningTilDato,
                         ),
+                    opphørSistePeriode = opphørsdato != null,
                     søknadsbarnReferanse = søknadsbarn.referanse,
                     grunnlagListe = grunnlagsliste.toSet().toList(),
                 )

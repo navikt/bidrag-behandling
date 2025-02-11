@@ -170,70 +170,47 @@ class VirkningstidspunktService(
         behandling: Behandling,
     ) {
         val erOpphørsdatoEndret = opphørsdato != behandling.opphørsdato
+        val forrigeOpphørsdato = behandling.opphørsdato
+        val erOpphørSlettet = opphørsdato == null && behandling.opphørsdato != null
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny opphørsdato i behandling ${behandling.id}" }
-            underholdService.tilpasseUnderholdEtterVirkningsdato(behandling)
+            underholdService.oppdatereUnderholdsperioderEtterEndretOpphørsdato(behandling, erOpphørSlettet, forrigeOpphørsdato)
         }
 
         fun oppdaterBoforhold() {
             log.info { "Opphørsdato er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
-            grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
-            grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
-            grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
-        }
-
-        fun oppdaterSivilstand() {
-            log.info { "Opphørsdato er endret. Bygger sivilstandshistorikk på ny for behandling ${behandling.id}" }
-            grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
-            grunnlagService.oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling)
-            boforholdService.oppdatereSivilstandshistorikk(behandling)
-            grunnlagService.aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
         }
 
         fun oppdaterSamvær() {
             log.info { "Opphørsdato er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
-            samværService.rekalkulerPerioderSamvær(behandling.id!!)
+            samværService.rekalkulerPerioderSamvær(behandling.id!!, erOpphørSlettet)
         }
 
         fun oppdaterInntekter() {
             log.info { "Opphørsdato er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
-            inntektService.rekalkulerPerioderInntekter(behandling.id!!)
+            inntektService.rekalkulerPerioderInntekter(behandling.id!!, erOpphørSlettet)
         }
 
         fun oppdaterAndreVoksneIHusstanden() {
             log.info { "Opphørsdato er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
-            grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
-            grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
-            grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
         }
 
+        oppdaterBoforhold()
+        oppdaterAndreVoksneIHusstanden()
+        oppdaterInntekter()
+        oppdatereUnderhold()
+        oppdaterSamvær()
         if (erOpphørsdatoEndret) {
-            behandling.opphørsdato = opphørsdato ?: behandling.opphørsdato
+            behandling.opphørsdato = opphørsdato
 
-            when (behandling.tilType()) {
-                TypeBehandling.FORSKUDD -> {
-                    oppdaterBoforhold()
-                    oppdaterSivilstand()
-                    oppdaterInntekter()
-                }
-
-                TypeBehandling.SÆRBIDRAG -> {
-                    oppdaterBoforhold()
-                    oppdaterAndreVoksneIHusstanden()
-                    oppdaterInntekter()
-                }
-
-                TypeBehandling.BIDRAG -> {
-                    oppdaterBoforhold()
-                    oppdaterAndreVoksneIHusstanden()
-                    oppdaterInntekter()
-                    oppdatereUnderhold()
-                    oppdaterSamvær()
-                }
-            }
+            oppdaterBoforhold()
+            oppdaterAndreVoksneIHusstanden()
+            oppdaterInntekter()
+            oppdatereUnderhold()
+            oppdaterSamvær()
         }
     }
 
