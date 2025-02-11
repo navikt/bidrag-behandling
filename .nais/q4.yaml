@@ -51,6 +51,7 @@ database:
   dbname: bidrag-behandling-q4
   autoResize: true
   tier: db-f1-micro
+  auditlog: "off"
 outbound-access-apps:
   - bidrag-grunnlag
   - bidrag-stonad-q4
