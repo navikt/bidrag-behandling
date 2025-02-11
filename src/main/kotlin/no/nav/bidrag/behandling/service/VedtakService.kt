@@ -248,7 +248,7 @@ class VedtakService(
 
     fun fatteVedtakBidrag(
         behandling: Behandling,
-        vedtakRequest: FatteVedtakRequestDto?,
+        request: FatteVedtakRequestDto?,
     ): Int {
         val isEnabled = unleashInstance.isEnabled(toggleFatteVedtakName, false)
         if (isEnabled.not()) {
@@ -259,28 +259,28 @@ class VedtakService(
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
-        val request =
+        val vedtakRequest =
             behandlingTilVedtakMapping
                 .run {
                     if (behandling.avslag != null) {
-                        behandling.byggOpprettVedtakRequestAvslagForBidrag(vedtakRequest?.enhet)
+                        behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
                     } else {
-                        behandling.byggOpprettVedtakRequestBidrag(vedtakRequest?.enhet)
+                        behandling.byggOpprettVedtakRequestBidrag(request?.enhet)
                     }
                 }.copy(
                     innkrevingUtsattTilDato =
-                        vedtakRequest?.innkrevingUtsattAntallDager?.let {
+                        request?.innkrevingUtsattAntallDager?.let {
                             LocalDate.now().plusDays(it)
                         },
                 )
 
-        request.validerGrunnlagsreferanser()
-        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $request" }
-        val response = vedtakConsumer.fatteVedtak(request)
+        vedtakRequest.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
+        val response = vedtakConsumer.fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = response.vedtaksid.toLong(),
-            vedtakRequest?.enhet ?: behandling.behandlerEnhet,
+            request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
         LOGGER.info {

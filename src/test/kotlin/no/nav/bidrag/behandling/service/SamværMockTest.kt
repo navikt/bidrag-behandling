@@ -6,7 +6,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
-import io.mockk.every
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
@@ -44,7 +43,6 @@ class SamværMockTest : TestContainerRunner() {
     @BeforeEach
     fun initMock() {
         stubSjablonService()
-        every { sjablonService.hentSjablonSamværsfradrag() } returns stubSjablonService().hentSjablonSamværsfradrag()
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPersonISak()
     }
