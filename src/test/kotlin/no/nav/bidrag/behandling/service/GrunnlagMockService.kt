@@ -489,6 +489,107 @@ class GrunnlagMockService {
         }
     }
 
+    @Test
+    fun `skal lagre med nyeste ident hvis endret`() {
+        val nyIdentBarn = "33113311"
+        val behandling =
+            oppretteTestbehandling(
+                inkludereInntekter = true,
+                inkludereBp = true,
+                inkludereSivilstand = false,
+                behandlingstype = TypeBehandling.BIDRAG,
+                inkludereVoksneIBpsHusstand = true,
+                setteDatabaseider = true,
+            )
+        behandling.virkningstidspunkt = LocalDate.now().minusYears(2).withMonth(2)
+        behandling.grunnlag = mutableSetOf()
+        val identBarnBM3 = "123123123123"
+        val grunnlagBarnBM =
+            listOf(
+                RelatertPersonGrunnlagDto(
+                    relatertPersonPersonId = testdataBarnBm.ident,
+                    fødselsdato = LocalDate.now().minusYears(13),
+                    relasjon = Familierelasjon.INGEN,
+                    navn = "Lyrisk Sopp 13 år",
+                    partPersonId = testdataBM.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
+                RelatertPersonGrunnlagDto(
+                    relatertPersonPersonId = identBarnBM3,
+                    fødselsdato = LocalDate.now().minusYears(15),
+                    relasjon = Familierelasjon.BARN,
+                    navn = "Lyrisk Sopp 15 år",
+                    partPersonId = testdataBM.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
+                RelatertPersonGrunnlagDto(
+                    relatertPersonPersonId = testdataBarnBm.ident,
+                    fødselsdato = LocalDate.now().minusYears(14),
+                    relasjon = Familierelasjon.BARN,
+                    navn = "Lyrisk Sopp 14 år",
+                    partPersonId = testdataBM.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
+                RelatertPersonGrunnlagDto(
+                    relatertPersonPersonId = testdataBarnBm2.ident,
+                    fødselsdato = LocalDate.now().minusYears(4),
+                    relasjon = Familierelasjon.BARN,
+                    navn = "Lyrisk Sopp 4 år",
+                    partPersonId = testdataBM.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
+            )
+        val grunnlagBarnBP =
+            listOf(
+                RelatertPersonGrunnlagDto(
+                    gjelderPersonId = testdataBarn1.ident,
+                    fødselsdato = testdataBarn1.fødselsdato,
+                    relasjon = Familierelasjon.BARN,
+                    navn = "Lyrisk Sopp 3",
+                    partPersonId = testdataBP.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
+                RelatertPersonGrunnlagDto(
+                    gjelderPersonId = testdataBarn2.ident,
+                    fødselsdato = testdataBarn2.fødselsdato,
+                    relasjon = Familierelasjon.BARN,
+                    navn = "Lyrisk Sopp 4",
+                    partPersonId = testdataBP.ident,
+                    borISammeHusstandDtoListe = emptyList(),
+                ),
+            )
+        mockGrunnlagrespons(
+            opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = grunnlagBarnBM),
+            opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = grunnlagBarnBP),
+        )
+
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        val grunnlag = behandling.grunnlag
+        grunnlag shouldHaveSize 6
+
+        behandling.underholdskostnader shouldHaveSize 4
+        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm.ident }) {
+            it.shouldNotBeNull()
+            it.kilde shouldBe Kilde.OFFENTLIG
+            it.barnetsRolleIBehandlingen.shouldBeNull()
+        }
+        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn1.ident }) {
+            it.shouldNotBeNull()
+            it.kilde shouldBe null
+            it.barnetsRolleIBehandlingen.shouldNotBeNull()
+        }
+        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn2.ident }) {
+            it.shouldNotBeNull()
+            it.kilde shouldBe null
+            it.barnetsRolleIBehandlingen.shouldNotBeNull()
+        }
+        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm2.ident }) {
+            it.shouldNotBeNull()
+            it.kilde shouldBe Kilde.OFFENTLIG
+            it.barnetsRolleIBehandlingen shouldBe null
+        }
+    }
+
     private fun mockGrunnlagrespons(
         grunnlagBM: HentGrunnlagDto,
         grunnlagBP: HentGrunnlagDto,

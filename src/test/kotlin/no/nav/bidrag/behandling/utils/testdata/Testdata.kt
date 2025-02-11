@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.tilSummerteInntekter
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
@@ -1741,7 +1742,7 @@ fun Behandling.taMedInntekt(
     rolle: Rolle,
     type: Inntektsrapportering,
 ) {
-    val inntekt = inntekter.find { it.ident == rolle.ident && type == it.type }!!
+    val inntekt = inntekter.find { hentNyesteIdent(it.ident)?.verdi == hentNyesteIdent(rolle.ident)?.verdi && type == it.type }!!
     inntekt.taMed = true
     inntekt.datoFom = virkningstidspunkt
 }

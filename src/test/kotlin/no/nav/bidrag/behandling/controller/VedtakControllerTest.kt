@@ -149,7 +149,6 @@ class VedtakControllerTest : KontrollerTestRunner() {
     }
 
     @Test
-    @Disabled
     fun `Skal fatte vedtak for bidrag`() {
         stubUtils.stubOpprettJournalpost("12333")
 
@@ -162,12 +161,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
         )
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = false)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = false)
-        behandling.grunnlag =
-            opprettAlleAktiveGrunnlagFraFil(
-                behandling,
-                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
-            )
-        save(behandling)
+
+        save(behandling, "grunnlagresponse_bp_bm")
 
         stubUtils.stubHentSak(opprettSakForBehandling(behandling))
         stubUtils.stubAlleBidragVedtakForStønad()
@@ -361,13 +356,16 @@ class VedtakControllerTest : KontrollerTestRunner() {
         response.body!!.måBekrefteNyeOpplysninger.map { it.type } shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
-    private fun save(behandling: Behandling) {
+    private fun save(
+        behandling: Behandling,
+        fil: String = "grunnlagresponse",
+    ) {
         try {
             behandlingRepository.save(behandling)
             val grunnlag =
                 opprettAlleAktiveGrunnlagFraFil(
                     behandling,
-                    "grunnlagresponse.json",
+                    erstattVariablerITestFil(fil),
                 )
             grunnlagRepository.saveAll(grunnlag)
         } catch (e: Exception) {

@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
@@ -715,7 +716,7 @@ class StubUtils {
                 WireMock
                     .post(
                         WireMock.urlEqualTo("/hentgrunnlag"),
-                    ).withRequestBody(WireMock.containing(rolle.ident))
+                    ).withRequestBody(WireMock.containing(hentNyesteIdent(rolle.ident)?.verdi))
             }
 
         val hentGrunnlagDto =
