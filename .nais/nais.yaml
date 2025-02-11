@@ -82,3 +82,10 @@ spec:
         databases:
           - name: bidrag-behandling
             envVarPrefix: DB
+        flags:
+          - name: "cloudsql.enable_pgaudit"
+            value: "{{ database.auditlog }}"
+          - name: "pgaudit.log"
+            value: "write"
+          - name: "pgaudit.log_parameter"
+            value: "on"
