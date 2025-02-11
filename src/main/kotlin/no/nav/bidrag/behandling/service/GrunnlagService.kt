@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
@@ -104,6 +105,7 @@ class GrunnlagService(
     private val inntektService: InntektService,
     private val mapper: Dtomapper,
     private val underholdService: UnderholdService,
+    private val unleashInstance: Unleash,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
@@ -153,6 +155,8 @@ class GrunnlagService(
     }
 
     fun sjekkOgOppdaterIdenter(behandling: Behandling) {
+        if (!unleashInstance.isEnabled("behandling.opppdater_identer", false)) return
+        log.info { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
         }

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
+import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -134,7 +135,7 @@ class GrunnlagMockService {
                 personService,
             )
         grunnlagService =
-            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService)
+            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, FakeUnleash())
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         stubHusstandrepository(husstandsmedlemRepository)
