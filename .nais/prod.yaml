@@ -50,6 +50,7 @@ database:
   dbname: bidrag-behandling
   autoResize: true
   tier: db-custom-1-3840
+  auditlog: "on"
 outbound-access-apps:
   - bidrag-grunnlag
   - bidrag-stonad
