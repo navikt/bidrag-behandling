@@ -161,6 +161,7 @@ open class Behandling(
     )
     open var underholdskostnader: MutableSet<Underholdskostnad> = mutableSetOf(),
     open var deleted: Boolean = false,
+    open var vedtakFattetAvEnhet: String? = null,
     @Enumerated(EnumType.STRING)
     open var søknadstype: BisysSøknadstype? = null,
     @Transient
