@@ -44,7 +44,6 @@ open class Behandling(
     open var opprinneligVedtakstype: Vedtakstype? = null,
     @Column(name = "dato_fom")
     open var søktFomDato: LocalDate,
-    open var opphørsdato: LocalDate? = null,
     open var mottattdato: LocalDate,
     open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
@@ -175,6 +174,7 @@ open class Behandling(
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = refVedtaksid != null
+    val opphørsdato get() = roller.filter { it.opphørsdato != null }.maxByOrNull { it.opphørsdato!! }?.opphørsdato
 }
 
 val Behandling.særbidragKategori

@@ -244,7 +244,6 @@ fun oppretteBehandling(
         vedtakstype,
         null,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
-        null,
         mottattdato = LocalDate.parse("2023-03-15"),
         klageMottattdato = null,
         SAKSNUMMER,

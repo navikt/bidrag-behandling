@@ -654,10 +654,13 @@ class Dtomapper(
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                     opphør =
-                        OpphørsdetaljerDto(
-                            opphørsdato = opphørsdato,
-                            eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(),
-                        ),
+                        roller.map {
+                            OpphørsdetaljerDto(
+                                rolle = it.tilDto(),
+                                opphørsdato = opphørsdato,
+                                eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
+                            )
+                        },
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
@@ -721,8 +724,8 @@ class Dtomapper(
                 }
             }
 
-    private fun Behandling.finnEksisterendeVedtakMedOpphør(): EksisterendeOpphørsvedtakDto? {
-        val eksisterendeVedtak = grunnlag.hentSisteBeløpshistorikkGrunnlag(søknadsbarn.first().ident!!) ?: return null
+    private fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
+        val eksisterendeVedtak = grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!) ?: return null
         val stønad = eksisterendeVedtak.konvertereData<StønadDto>()
         val opphørPeriode = stønad!!.periodeListe.filter { it.beløp == null }.maxByOrNull { it.periode.til == null } ?: return null
         return EksisterendeOpphørsvedtakDto(

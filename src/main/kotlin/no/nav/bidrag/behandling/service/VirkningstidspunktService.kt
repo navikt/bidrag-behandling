@@ -38,7 +38,7 @@ class VirkningstidspunktService(
             .orElseThrow { behandlingNotFoundException(behandlingsid) }
             .let { behandling ->
                 request.valider(behandling)
-                oppdaterOpphørsdato(request.opphørsdato, behandling)
+                oppdaterOpphørsdato(request, behandling)
                 behandling
             }
 
@@ -166,12 +166,13 @@ class VirkningstidspunktService(
 
     @Transactional
     fun oppdaterOpphørsdato(
-        opphørsdato: LocalDate?,
+        request: OppdaterOpphørsdatoRequestDto,
         behandling: Behandling,
     ) {
-        val erOpphørsdatoEndret = opphørsdato != behandling.opphørsdato
+        val rolle = behandling.roller.find { it.id == request.idRolle }!!
+        val erOpphørsdatoEndret = request.opphørsdato != rolle.opphørsdato
         val forrigeOpphørsdato = behandling.opphørsdato
-        val erOpphørSlettet = opphørsdato == null && behandling.opphørsdato != null
+        val erOpphørSlettet = request.opphørsdato == null && rolle.opphørsdato != null
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny opphørsdato i behandling ${behandling.id}" }
@@ -204,8 +205,7 @@ class VirkningstidspunktService(
         oppdatereUnderhold()
         oppdaterSamvær()
         if (erOpphørsdatoEndret) {
-            behandling.opphørsdato = opphørsdato
-
+            rolle.opphørsdato = request.opphørsdato
             oppdaterBoforhold()
             oppdaterAndreVoksneIHusstanden()
             oppdaterInntekter()

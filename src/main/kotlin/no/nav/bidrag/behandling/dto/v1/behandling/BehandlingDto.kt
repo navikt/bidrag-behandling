@@ -23,7 +23,7 @@ data class VirkningstidspunktDto(
     @Schema(description = "Saksbehandlers begrunnelse")
     val begrunnelse: BegrunnelseDto,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
-    val opphør: OpphørsdetaljerDto? = null,
+    val opphør: List<OpphørsdetaljerDto>? = null,
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)
@@ -31,6 +31,7 @@ data class VirkningstidspunktDto(
 }
 
 data class OpphørsdetaljerDto(
+    val rolle: RolleDto,
     val opphørsdato: LocalDate? = null,
     @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,

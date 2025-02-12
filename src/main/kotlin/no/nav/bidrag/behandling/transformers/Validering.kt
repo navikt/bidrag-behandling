@@ -67,6 +67,13 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (opphørsdato.isBefore(behandling.virkningstidspunkt)) {
         feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
     }
+    val rolle = behandling.roller.find { it.id == idRolle }
+    if (rolle == null) {
+        feilliste.add("Rolle med id $idRolle finnes ikke i behandling ${behandling.id}")
+    }
+    if (rolle != null && rolle.rolletype != Rolletype.BARN) {
+        feilliste.add("Opphørsdato kan kun settes for barn")
+    }
 
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(

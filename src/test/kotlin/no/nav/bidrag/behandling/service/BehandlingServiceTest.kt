@@ -2125,7 +2125,6 @@ class BehandlingServiceTest : TestContainerRunner() {
                     Vedtakstype.FASTSETTELSE,
                     null,
                     YearMonth.now().atDay(1),
-                    null,
                     YearMonth.now().atEndOfMonth(),
                     LocalDate.now(),
                     "1900000",

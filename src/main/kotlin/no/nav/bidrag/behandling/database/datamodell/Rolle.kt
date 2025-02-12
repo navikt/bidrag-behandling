@@ -89,6 +89,7 @@ open class Rolle(
         nullable = true,
     )
     open var person: Person? = null,
+    open var opphørsdato: LocalDate? = null,
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
