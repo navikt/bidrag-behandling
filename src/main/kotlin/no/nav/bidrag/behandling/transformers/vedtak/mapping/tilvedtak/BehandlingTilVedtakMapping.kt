@@ -49,7 +49,7 @@ class BehandlingTilVedtakMapping(
     private val mapper: VedtakGrunnlagMapper,
     private val beregningService: BeregningService,
 ) {
-    fun Behandling.byggOpprettVedtakRequestBidrag(): OpprettVedtakRequestDto {
+    fun Behandling.byggOpprettVedtakRequestBidrag(enhet: String? = null): OpprettVedtakRequestDto {
         val behandling = this
         val sak = sakConsumer.hentSak(saksnummer)
         val beregning = beregningService.beregneBidrag(id!!)
@@ -75,7 +75,7 @@ class BehandlingTilVedtakMapping(
                 (grunnlagListeVedtak + stønadsendringGrunnlag + stønadsendringGrunnlagListe).toSet()
             val engangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
 
-            return byggOpprettVedtakRequestObjekt().copy(
+            return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
                         OpprettStønadsendringRequestDto(
@@ -188,14 +188,14 @@ class BehandlingTilVedtakMapping(
                 }
             }
 
-    fun Behandling.byggOpprettVedtakRequestAvslagForBidrag(): OpprettVedtakRequestDto =
+    fun Behandling.byggOpprettVedtakRequestAvslagForBidrag(enhet: String? = null): OpprettVedtakRequestDto =
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val grunnlagListe = byggGrunnlagGenereltAvslag()
             val grunnlagslisteGebyr = byggGrunnlagForGebyr()
             val resultatEngangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList() + grunnlagslisteGebyr)
 
-            return byggOpprettVedtakRequestObjekt()
+            return byggOpprettVedtakRequestObjekt(enhet)
                 .copy(
                     engangsbeløpListe = resultatEngangsbeløpGebyr.engangsbeløp,
                     stønadsendringListe =
@@ -235,13 +235,13 @@ class BehandlingTilVedtakMapping(
                 )
         }
 
-    fun Behandling.byggOpprettVedtakRequestAvslagForSærbidrag(): OpprettVedtakRequestDto {
+    fun Behandling.byggOpprettVedtakRequestAvslagForSærbidrag(enhet: String? = null): OpprettVedtakRequestDto {
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val grunnlagListe = byggGrunnlagGenereltAvslag()
             val barn = søknadsbarn.first()
 
-            return byggOpprettVedtakRequestObjekt()
+            return byggOpprettVedtakRequestObjekt(enhet)
                 .copy(
                     engangsbeløpListe =
                         listOf(
@@ -272,7 +272,7 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    fun Behandling.byggOpprettVedtakRequestSærbidrag(): OpprettVedtakRequestDto {
+    fun Behandling.byggOpprettVedtakRequestSærbidrag(enhet: String?? = null): OpprettVedtakRequestDto {
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val beregning = beregningService.beregneSærbidrag(id!!)
@@ -293,7 +293,7 @@ class BehandlingTilVedtakMapping(
 
             val barn = søknadsbarn.first()
 
-            return byggOpprettVedtakRequestObjekt().copy(
+            return byggOpprettVedtakRequestObjekt(enhet).copy(
                 engangsbeløpListe =
                     listOf(
                         OpprettEngangsbeløpRequestDto(
@@ -323,7 +323,7 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    fun Behandling.byggOpprettVedtakRequestForskudd(): OpprettVedtakRequestDto {
+    fun Behandling.byggOpprettVedtakRequestForskudd(enhet: String? = null): OpprettVedtakRequestDto {
         val behandling = this
         val sak = sakConsumer.hentSak(saksnummer)
         val beregning = beregningService.beregneForskudd(id!!)
@@ -343,7 +343,7 @@ class BehandlingTilVedtakMapping(
                         ) + stønadsendringGrunnlagListe
                 ).toSet()
 
-            return byggOpprettVedtakRequestObjekt().copy(
+            return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
                         OpprettStønadsendringRequestDto(
@@ -372,12 +372,12 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    fun Behandling.byggOpprettVedtakRequestAvslagForForskudd(): OpprettVedtakRequestDto =
+    fun Behandling.byggOpprettVedtakRequestAvslagForForskudd(enhet: String?? = null): OpprettVedtakRequestDto =
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val grunnlagListe = byggGrunnlagGenereltAvslag()
 
-            return byggOpprettVedtakRequestObjekt()
+            return byggOpprettVedtakRequestObjekt(enhet)
                 .copy(
                     stønadsendringListe =
                         søknadsbarn.map {
@@ -446,9 +446,9 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    private fun Behandling.byggOpprettVedtakRequestObjekt(): OpprettVedtakRequestDto =
+    private fun Behandling.byggOpprettVedtakRequestObjekt(enhet: String?): OpprettVedtakRequestDto =
         OpprettVedtakRequestDto(
-            enhetsnummer = Enhetsnummer(behandlerEnhet),
+            enhetsnummer = Enhetsnummer(enhet ?: behandlerEnhet),
             vedtakstidspunkt = LocalDateTime.now(),
             type = vedtakstype,
             stønadsendringListe = emptyList(),

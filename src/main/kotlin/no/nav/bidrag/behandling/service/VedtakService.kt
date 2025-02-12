@@ -167,8 +167,8 @@ class VedtakService(
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         behandling.validerKanFatteVedtak()
         return when (behandling.tilType()) {
-            TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling)
-            TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling)
+            TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling, request)
+            TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling, request)
             TypeBehandling.BIDRAG -> fatteVedtakBidrag(behandling, request)
             else -> throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -177,7 +177,10 @@ class VedtakService(
         }
     }
 
-    fun fatteVedtakSærbidrag(behandling: Behandling): Int {
+    fun fatteVedtakSærbidrag(
+        behandling: Behandling,
+        request: FatteVedtakRequestDto?,
+    ): Int {
         val behandlingId = behandling.id!!
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run {
@@ -185,22 +188,23 @@ class VedtakService(
             behandling.validerForBeregningSærbidrag()
         }
 
-        val request =
+        val vedtakRequest =
             validering.run {
                 behandlingTilVedtakMapping.run {
                     if (behandling.erDirekteAvslagUtenBeregning()) {
-                        behandling.byggOpprettVedtakRequestAvslagForSærbidrag()
+                        behandling.byggOpprettVedtakRequestAvslagForSærbidrag(request?.enhet)
                     } else {
-                        behandling.byggOpprettVedtakRequestSærbidrag()
+                        behandling.byggOpprettVedtakRequestSærbidrag(request?.enhet)
                     }
                 }
             }
-        request.validerGrunnlagsreferanser()
-        secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $request" }
-        val response = vedtakConsumer.fatteVedtak(request)
+        vedtakRequest.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $vedtakRequest" }
+        val response = vedtakConsumer.fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandlingId,
             vedtaksid = response.vedtaksid.toLong(),
+            request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
         LOGGER.info {
@@ -209,24 +213,28 @@ class VedtakService(
         return response.vedtaksid
     }
 
-    fun fatteVedtakForskudd(behandling: Behandling): Int {
+    fun fatteVedtakForskudd(
+        behandling: Behandling,
+        request: FatteVedtakRequestDto?,
+    ): Int {
         validering.run { behandling.validerForBeregningForskudd() }
 
-        val request =
+        val fatteVedtakRequest =
             behandlingTilVedtakMapping.run {
                 if (behandling.avslag != null) {
-                    behandling.byggOpprettVedtakRequestAvslagForForskudd()
+                    behandling.byggOpprettVedtakRequestAvslagForForskudd(request?.enhet)
                 } else {
-                    behandling.byggOpprettVedtakRequestForskudd()
+                    behandling.byggOpprettVedtakRequestForskudd(request?.enhet)
                 }
             }
 
-        request.validerGrunnlagsreferanser()
-        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $request" }
-        val response = vedtakConsumer.fatteVedtak(request)
+        fatteVedtakRequest.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $fatteVedtakRequest" }
+        val response = vedtakConsumer.fatteVedtak(fatteVedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = response.vedtaksid.toLong(),
+            request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
         LOGGER.info {
@@ -251,13 +259,13 @@ class VedtakService(
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
-        val request =
+        val vedtakRequest =
             behandlingTilVedtakMapping
                 .run {
                     if (behandling.avslag != null) {
-                        behandling.byggOpprettVedtakRequestAvslagForBidrag()
+                        behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
                     } else {
-                        behandling.byggOpprettVedtakRequestBidrag()
+                        behandling.byggOpprettVedtakRequestBidrag(request?.enhet)
                     }
                 }.copy(
                     innkrevingUtsattTilDato =
@@ -266,12 +274,13 @@ class VedtakService(
                         },
                 )
 
-        request.validerGrunnlagsreferanser()
-        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $request" }
-        val response = vedtakConsumer.fatteVedtak(request)
+        vedtakRequest.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
+        val response = vedtakConsumer.fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = response.vedtaksid.toLong(),
+            request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
         LOGGER.info {
