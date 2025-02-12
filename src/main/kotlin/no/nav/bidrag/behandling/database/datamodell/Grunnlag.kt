@@ -43,7 +43,7 @@ open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
     open val rolle: Rolle,
-    open val gjelder: String? = null,
+    open var gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,

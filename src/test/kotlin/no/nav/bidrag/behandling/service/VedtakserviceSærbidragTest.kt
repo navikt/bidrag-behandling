@@ -1558,7 +1558,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal bruke nyeste identer for særbidrag`() {
         val nyIdentBm = "ny_ident_bm"
         val nyIdentBp = "ny_ident_bp"
-        val nyIdentBarn1 = "ny_ident_barn_1"
+        val nyIdentBarn1 = "ny_i_barn_1"
         stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1, bidragPersonConsumer)
         stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, bidragPersonConsumer)
         stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, bidragPersonConsumer)
@@ -1599,7 +1599,12 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
-        behandling.initGrunnlagRespons(stubUtils)
+        behandling.initGrunnlagRespons(
+            stubUtils,
+            bmIdent = nyIdentBm,
+            bpIdent = nyIdentBp,
+            baIdent = nyIdentBarn1,
+        )
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()
@@ -1626,7 +1631,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             it.skyldner shouldBe Personident(nyIdentBp)
             it.kravhaver shouldBe Personident(nyIdentBarn1)
             it.mottaker shouldBe Personident(nyIdentBm)
-            it.beløp shouldBe BigDecimal(9836)
+            it.beløp shouldBe BigDecimal(9839)
             it.valutakode shouldBe "NOK"
             it.resultatkode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET.name
             it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -1670,7 +1675,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal bruke nyeste identer for avslag`() {
         val nyIdentBm = "ny_ident_bm"
         val nyIdentBp = "ny_ident_bp"
-        val nyIdentBarn1 = "ny_ident_barn_1"
+        val nyIdentBarn1 = "ny_i_barn_1"
         val mock = stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1)
         stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, mock)
         stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, mock)
@@ -1686,7 +1691,12 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         testdataManager.lagreBehandling(behandling)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.utgift = null
-        behandling.initGrunnlagRespons(stubUtils)
+        behandling.initGrunnlagRespons(
+            stubUtils,
+            bmIdent = nyIdentBm,
+            bpIdent = nyIdentBp,
+            baIdent = nyIdentBarn1,
+        )
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()

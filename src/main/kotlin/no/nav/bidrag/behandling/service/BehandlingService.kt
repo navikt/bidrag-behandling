@@ -320,6 +320,7 @@ class BehandlingService(
     fun oppdaterVedtakFattetStatus(
         behandlingsid: Long,
         vedtaksid: Long,
+        fattetAvEnhet: String,
     ) {
         behandlingRepository
             .findBehandlingById(behandlingsid)
@@ -327,6 +328,7 @@ class BehandlingService(
             .let {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
                 it.vedtaksid = vedtaksid
+                it.vedtakFattetAvEnhet = fattetAvEnhet
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
                 it.vedtakFattetAv = it.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
                     ?: TokenUtils.hentApplikasjonsnavn()

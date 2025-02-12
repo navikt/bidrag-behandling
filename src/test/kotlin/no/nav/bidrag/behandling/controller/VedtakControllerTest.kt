@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.date.shouldHaveSameDayAs
@@ -13,19 +14,29 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
+import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
+import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
+import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.commons.service.sjablon.SjablonService
+import no.nav.bidrag.commons.web.mock.sjablonSamværsfradragResponse
+import no.nav.bidrag.commons.web.mock.sjablonTallResponse
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -35,6 +46,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import stubPersonConsumer
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class VedtakControllerTest : KontrollerTestRunner() {
@@ -50,10 +62,19 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Autowired
     lateinit var entityManager: EntityManager
 
+    @MockkBean
+    lateinit var sjablonService: SjablonService
+
     @BeforeEach
     fun oppsett() {
         behandlingRepository.deleteAll()
         grunnlagRepository.deleteAll()
+        every {
+            sjablonService.hentSjablonSamværsfradrag()
+        } returns sjablonSamværsfradragResponse()
+        every {
+            sjablonService.hentSjablontall()
+        } returns sjablonTallResponse()
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
@@ -108,7 +129,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                null,
+                HttpEntity(FatteVedtakRequestDto(enhet = "4999")),
                 Int::class.java,
             )
 
@@ -119,6 +140,51 @@ class VedtakControllerTest : KontrollerTestRunner() {
         behandlingEtter.vedtaksid shouldBe 1
         behandlingEtter.vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
         behandlingEtter.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        behandlingEtter.vedtakFattetAvEnhet shouldBe "4999"
+        behandlingEtter.notatJournalpostId shouldBe "12333"
+        stubUtils.Verify().fatteVedtakKalt()
+        stubUtils.Verify().hentSakKalt(behandling.saksnummer)
+        stubUtils.Verify().opprettNotatKalt()
+        stubUtils.Verify().opprettJournalpostKaltMed()
+    }
+
+    @Test
+    @Disabled
+    fun `Skal fatte vedtak for bidrag`() {
+        stubUtils.stubOpprettJournalpost("12333")
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.søktFomDato = LocalDate.parse("2024-01-01")
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = false)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = false)
+
+        save(behandling, "grunnlagresponse_bp_bm")
+
+        stubUtils.stubHentSak(opprettSakForBehandling(behandling))
+        stubUtils.stubAlleBidragVedtakForStønad()
+        stubUtils.stubBidragStønaderForSkyldner()
+        stubUtils.stubFatteVedtak()
+        val response =
+            httpHeaderTestRestTemplate.exchange(
+                "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
+                HttpMethod.POST,
+                HttpEntity(FatteVedtakRequestDto(enhet = "4999")),
+                Int::class.java,
+            )
+
+        response.statusCode shouldBe HttpStatus.OK
+        response.body shouldBe 1
+
+        val behandlingEtter = behandlingRepository.findBehandlingById(behandling.id!!).get()
+        behandlingEtter.vedtaksid shouldBe 1
+        behandlingEtter.vedtakstidspunkt!! shouldHaveSameDayAs LocalDateTime.now()
+        behandlingEtter.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
+        behandlingEtter.vedtakFattetAvEnhet shouldBe "4999"
         behandlingEtter.notatJournalpostId shouldBe "12333"
         stubUtils.Verify().fatteVedtakKalt()
         stubUtils.Verify().hentSakKalt(behandling.saksnummer)
@@ -291,13 +357,16 @@ class VedtakControllerTest : KontrollerTestRunner() {
         response.body!!.måBekrefteNyeOpplysninger.map { it.type } shouldContainAll listOf(Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER)
     }
 
-    private fun save(behandling: Behandling) {
+    private fun save(
+        behandling: Behandling,
+        fil: String = "grunnlagresponse",
+    ) {
         try {
             behandlingRepository.save(behandling)
             val grunnlag =
                 opprettAlleAktiveGrunnlagFraFil(
                     behandling,
-                    "grunnlagresponse.json",
+                    erstattVariablerITestFil(fil),
                 )
             grunnlagRepository.saveAll(grunnlag)
         } catch (e: Exception) {

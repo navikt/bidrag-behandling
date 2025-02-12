@@ -178,10 +178,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         // TODO: Lage egen mock-respons for bidrag for BM og BP
                         // Bruker for enkelhetsskyld  forskudd mock-respons for BM og BP - dette gjør at returnert grunnlag ikke blir riktig i forhold til grunnlagsrequesten
-                        Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -262,11 +262,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 responsobjekt = lagGrunnlagsdata("hente-grunnlagrespons-bidrag-andre-barn-bm"),
                             )
 
-                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                        else -> stubUtils.stubHenteGrunnlag(rolleIdent = it.ident, tomRespons = true)
                     }
                 }
 
@@ -340,11 +340,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 responsobjekt = lagGrunnlagsdata("hente-grunnlagrespons-bidrag-andre-barn-bm"),
                             )
 
-                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                        else -> stubUtils.stubHenteGrunnlag(rolleIdent = it.ident, tomRespons = true)
                     }
                 }
 
@@ -393,11 +393,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-bidrag-barnetilsyn-bm.json",
                             )
 
-                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                        else -> stubUtils.stubHenteGrunnlag(rolleIdent = it.ident, tomRespons = true)
                     }
                 }
 
@@ -538,10 +538,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         // TODO: Lage egen mock-respons for bidrag for BM og BP
                         // Bruker for enkelhetsskyld  forskudd mock-respons for BM og BP - dette gjør at returnert grunnlag ikke blir riktig i forhold til grunnlagsrequesten
-                        Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -604,19 +604,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
                             )
 
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bp-uten-andre-voksne.json",
                             )
 
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -692,11 +692,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-bidrag-tilleggsstønad-bm.json",
                             )
 
-                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                        else -> stubUtils.stubHenteGrunnlag(rolleIdent = it.ident, tomRespons = true)
                     }
                 }
 
@@ -727,10 +727,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -808,10 +808,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -873,10 +873,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     "{\"BARNETILLEGG\":{\"grunnlagstype\":\"BARNETILLEGG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -960,7 +960,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 responsobjekt =
                                     tilHentGrunnlagDto(
                                         skattegrunnlag =
@@ -970,7 +970,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                     ),
                             )
 
-                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                        else -> stubUtils.stubHenteGrunnlag(rolleIdent = it.ident, tomRespons = true)
                     }
                 }
 
@@ -1081,7 +1081,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 responsobjekt =
                                     tilHentGrunnlagDto(
                                         skattegrunnlag =
@@ -1091,7 +1091,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                     ),
                             )
 
-                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                        else -> stubUtils.stubHenteGrunnlag(rolleIdent = it.ident, tomRespons = true)
                     }
                 }
 
@@ -1187,7 +1187,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 responsobjekt =
                                     tilHentGrunnlagDto(
                                         skattegrunnlag =
@@ -1197,7 +1197,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                     ),
                             )
 
-                        else -> stubUtils.stubHenteGrunnlag(rolle = it, tomRespons = true)
+                        else -> stubUtils.stubHenteGrunnlag(rolleIdent = it.ident, tomRespons = true)
                     }
                 }
 
@@ -1246,7 +1246,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                it,
+                                it.ident,
                                 responsobjekt =
                                     tilHentGrunnlagDto(
                                         småbarnstillegg =
@@ -1256,7 +1256,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                                     ),
                             )
 
-                        Rolletype.BARN -> stubUtils.stubHenteGrunnlag(it, tomRespons = true)
+                        Rolletype.BARN -> stubUtils.stubHenteGrunnlag(it.ident, tomRespons = true)
 
                         else -> throw Exception()
                     }
@@ -1376,10 +1376,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling(false)
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -1987,19 +1987,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
                             )
 
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bp-feil-for-skattegrunnlag.json",
                             )
 
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -2044,19 +2044,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
                             )
 
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                             )
 
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -2125,19 +2125,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
                             )
 
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bp-uten-andre-voksne.json",
                             )
 
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -2727,16 +2727,16 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                             )
 
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -2854,19 +2854,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
                             )
 
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                             )
 
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -2985,19 +2985,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     when (it.rolletype) {
                         Rolletype.BIDRAGSMOTTAKER ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bm.json",
                             )
 
                         Rolletype.BIDRAGSPLIKTIG ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                             )
 
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -3960,10 +3960,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling(false, false, false)
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 
@@ -4069,10 +4069,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling(false, false, false)
                 behandling.roller.forEach {
                     when (it.rolletype) {
-                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it)
+                        Rolletype.BIDRAGSMOTTAKER -> stubUtils.stubHenteGrunnlag(it.ident)
                         Rolletype.BARN ->
                             stubUtils.stubHenteGrunnlag(
-                                rolle = it,
+                                rolleIdent = it.ident,
                                 navnResponsfil = "hente-grunnlagrespons-barn1.json",
                             )
 

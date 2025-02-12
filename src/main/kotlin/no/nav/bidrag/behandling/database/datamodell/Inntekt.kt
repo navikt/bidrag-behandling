@@ -26,7 +26,7 @@ open class Inntekt(
     open var belop: BigDecimal,
     open var datoFom: LocalDate?,
     open var datoTom: LocalDate?,
-    open val ident: String,
+    open var ident: String,
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde,
     open var taMed: Boolean,

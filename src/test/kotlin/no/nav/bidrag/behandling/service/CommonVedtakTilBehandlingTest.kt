@@ -147,7 +147,7 @@ abstract class CommonVedtakTilBehandlingTest {
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
-        every { behandlingService.oppdaterVedtakFattetStatus(any(), any()) } returns Unit
+        every { behandlingService.oppdaterVedtakFattetStatus(any(), any(), any()) } returns Unit
         every { validerBehandlingService.validerKanBehandlesINyLøsning(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         stubSjablonProvider()

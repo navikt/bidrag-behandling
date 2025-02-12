@@ -57,6 +57,7 @@ class VedtakHendelseListener(
         behandlingService.oppdaterVedtakFattetStatus(
             vedtak.behandlingId!!,
             vedtaksid = vedtak.id.toLong(),
+            vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
         )
     }
 
