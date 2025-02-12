@@ -344,9 +344,9 @@ fun List<Grunnlag>.filtrerEtterTypeOgIdent(
 
 fun Behandling.initGrunnlagRespons(
     stubUtils: StubUtils,
-    bmIdent: String = bidragsmottaker!!.ident!!,
-    bpIdent: String? = bidragspliktig!!.ident,
-    baIdent: String = søknadsbarn.first().ident!!,
+    bmIdent: String? = bidragsmottaker!!.ident,
+    bpIdent: String? = bidragspliktig?.ident,
+    baIdent: String? = søknadsbarn.first().ident,
 ) {
     roller.forEach {
         when (it.rolletype) {
@@ -364,8 +364,8 @@ fun Behandling.initGrunnlagRespons(
                                 "vedtak/vedtak-grunnlagrespons-sb-bm.json"
                             },
                             YearMonth.from(virkningstidspunkt),
-                            bmIdent,
-                            baIdent,
+                            bmIdent!!,
+                            baIdent!!,
                         ),
                 )
 
@@ -377,7 +377,7 @@ fun Behandling.initGrunnlagRespons(
                             "vedtak/vedtak-grunnlagrespons-sb-bp.json",
                             YearMonth.from(virkningstidspunkt),
                             bpIdent!!,
-                            baIdent,
+                            baIdent!!,
                         ),
                 )
 
@@ -388,7 +388,7 @@ fun Behandling.initGrunnlagRespons(
                         lagGrunnlagsdata(
                             "vedtak/vedtak-grunnlagrespons-barn1.json",
                             YearMonth.from(virkningstidspunkt),
-                            baIdent,
+                            baIdent!!,
                         ),
                 )
 
