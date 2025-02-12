@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
@@ -104,6 +105,7 @@ class GrunnlagService(
     private val inntektService: InntektService,
     private val mapper: Dtomapper,
     private val underholdService: UnderholdService,
+    private val unleashInstance: Unleash,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
@@ -111,6 +113,7 @@ class GrunnlagService(
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
+            sjekkOgOppdaterIdenter(behandling)
             val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
             val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
@@ -149,6 +152,39 @@ class GrunnlagService(
                     "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
+    }
+
+    fun sjekkOgOppdaterIdenter(behandling: Behandling) {
+        if (!unleashInstance.isEnabled("behandling.opppdater_identer", false)) return
+        log.info { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
+        behandling.roller.forEach {
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
+        }
+        behandling.grunnlag.forEach {
+            it.gjelder = oppdaterTilNyesteIdent(it.gjelder, behandling.id!!) ?: it.gjelder
+        }
+        behandling.husstandsmedlem.forEach {
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
+        }
+        behandling.underholdskostnader.forEach {
+            it.person.ident = oppdaterTilNyesteIdent(it.person.ident, behandling.id!!) ?: it.person.ident
+        }
+        behandling.inntekter.forEach {
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
+            it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarn, behandling.id!!) ?: it.gjelderBarn
+        }
+    }
+
+    private fun oppdaterTilNyesteIdent(
+        ident: String?,
+        behandlingId: Long,
+    ): String? {
+        if (ident == null) return null
+        val nyIdent = hentNyesteIdent(ident)?.verdi
+        if (nyIdent != ident) {
+            secureLogger.info { "Oppdaterer ident fra $ident til $nyIdent i behandling $behandlingId " }
+        }
+        return nyIdent
     }
 
     @Transactional

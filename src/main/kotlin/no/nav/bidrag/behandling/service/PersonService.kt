@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.person.PersonDto
 import org.springframework.stereotype.Service
 
@@ -21,7 +22,7 @@ fun hentPersonFødselsdato(ident: String?) = hentPerson(ident)?.fødselsdato
 
 fun hentPersonVisningsnavn(ident: String?) = hentPerson(ident)?.visningsnavn
 
-fun hentNyesteIdent(ident: String?) = hentPerson(ident)?.ident
+fun hentNyesteIdent(ident: String?) = ident?.let { hentPerson(ident)?.ident ?: Personident(ident) }
 
 @Service
 data class PersonService(

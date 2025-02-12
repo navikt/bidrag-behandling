@@ -60,15 +60,15 @@ class VerdikjedeTest : KontrollerTestRunner() {
     fun `skal opprette behandling og fatte vedtak`() {
         stubUtils.stubHenteGrunnlag(
             navnResponsfil = "grunnlagresponse.json",
-            rolle = testdataBM.tilRolle(),
+            rolleIdent = testdataBM.tilRolle().ident,
         )
         stubUtils.stubHenteGrunnlag(
             tomRespons = true,
-            rolle = testdataBarn1.tilRolle(),
+            rolleIdent = testdataBarn1.ident,
         )
         stubUtils.stubHenteGrunnlag(
             tomRespons = true,
-            rolle = testdataBarn2.tilRolle(),
+            rolleIdent = testdataBarn2.ident,
         )
         stubUtils.stubHentePersoninfo(personident = testdataBarn1.ident)
 

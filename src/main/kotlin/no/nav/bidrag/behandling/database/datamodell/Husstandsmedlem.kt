@@ -29,7 +29,7 @@ open class Husstandsmedlem(
     open var id: Long? = null,
     // TODO: Migere persondata til Person-tabellen
     @Deprecated("Migrere til Person.ident")
-    open val ident: String? = null,
+    open var ident: String? = null,
     // TODO: Migere persondata til Person-tabellen
     @Deprecated("Migrere til Person.navn")
     open val navn: String? = null,
