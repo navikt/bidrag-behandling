@@ -69,5 +69,5 @@ outbound-access-hosts:
   - kodeverk-api.nav.no
   - bidrag-bbm.prod-fss-pub.nais.io
 unleash:
-  env: development
+  env: production
   secret_name: bidrag-behandling-unleash-api-token
