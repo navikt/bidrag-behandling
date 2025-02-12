@@ -1599,7 +1599,12 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     kommentar = "Inneholder utgifter til mat og drikke",
                 ),
             )
-        behandling.initGrunnlagRespons(stubUtils)
+        behandling.initGrunnlagRespons(
+            stubUtils,
+            bmIdent = nyIdentBm,
+            bpIdent = nyIdentBp,
+            baIdent = nyIdentBarn1,
+        )
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()
@@ -1686,7 +1691,12 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         testdataManager.lagreBehandling(behandling)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.utgift = null
-        behandling.initGrunnlagRespons(stubUtils)
+        behandling.initGrunnlagRespons(
+            stubUtils,
+            bmIdent = nyIdentBm,
+            bpIdent = nyIdentBp,
+            baIdent = nyIdentBarn1,
+        )
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()

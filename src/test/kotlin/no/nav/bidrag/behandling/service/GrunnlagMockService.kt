@@ -11,6 +11,7 @@ import io.mockk.every
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -47,12 +48,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubBehandlingrepository
+import stubHentPersonNyIdent
 import stubHusstandrepository
 import stubPersonConsumer
 import stubPersonRepository
 import stubSivilstandrepository
 import stubUnderholdskostnadRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @ExtendWith(SpringExtension::class)
 class GrunnlagMockService {
@@ -134,8 +137,10 @@ class GrunnlagMockService {
                 notatService,
                 personService,
             )
+        val unleash = FakeUnleash()
+        unleash.enableAll()
         grunnlagService =
-            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, FakeUnleash())
+            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, unleash)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         stubHusstandrepository(husstandsmedlemRepository)
@@ -492,7 +497,12 @@ class GrunnlagMockService {
 
     @Test
     fun `skal lagre med nyeste ident hvis endret`() {
-        val nyIdentBarn = "33113311"
+        val nyIdentBm = "ny_ident_bm"
+        val nyIdentBp = "ny_ident_bp"
+        val nyIdentBarn1 = "ny_i_barn_1"
+        stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1, personConsumer)
+        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, personConsumer)
+        stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, personConsumer)
         val behandling =
             oppretteTestbehandling(
                 inkludereInntekter = true,
@@ -504,90 +514,33 @@ class GrunnlagMockService {
             )
         behandling.virkningstidspunkt = LocalDate.now().minusYears(2).withMonth(2)
         behandling.grunnlag = mutableSetOf()
-        val identBarnBM3 = "123123123123"
-        val grunnlagBarnBM =
-            listOf(
-                RelatertPersonGrunnlagDto(
-                    relatertPersonPersonId = testdataBarnBm.ident,
-                    fødselsdato = LocalDate.now().minusYears(13),
-                    relasjon = Familierelasjon.INGEN,
-                    navn = "Lyrisk Sopp 13 år",
-                    partPersonId = testdataBM.ident,
-                    borISammeHusstandDtoListe = emptyList(),
-                ),
-                RelatertPersonGrunnlagDto(
-                    relatertPersonPersonId = identBarnBM3,
-                    fødselsdato = LocalDate.now().minusYears(15),
-                    relasjon = Familierelasjon.BARN,
-                    navn = "Lyrisk Sopp 15 år",
-                    partPersonId = testdataBM.ident,
-                    borISammeHusstandDtoListe = emptyList(),
-                ),
-                RelatertPersonGrunnlagDto(
-                    relatertPersonPersonId = testdataBarnBm.ident,
-                    fødselsdato = LocalDate.now().minusYears(14),
-                    relasjon = Familierelasjon.BARN,
-                    navn = "Lyrisk Sopp 14 år",
-                    partPersonId = testdataBM.ident,
-                    borISammeHusstandDtoListe = emptyList(),
-                ),
-                RelatertPersonGrunnlagDto(
-                    relatertPersonPersonId = testdataBarnBm2.ident,
-                    fødselsdato = LocalDate.now().minusYears(4),
-                    relasjon = Familierelasjon.BARN,
-                    navn = "Lyrisk Sopp 4 år",
-                    partPersonId = testdataBM.ident,
-                    borISammeHusstandDtoListe = emptyList(),
-                ),
-            )
-        val grunnlagBarnBP =
-            listOf(
-                RelatertPersonGrunnlagDto(
-                    gjelderPersonId = testdataBarn1.ident,
-                    fødselsdato = testdataBarn1.fødselsdato,
-                    relasjon = Familierelasjon.BARN,
-                    navn = "Lyrisk Sopp 3",
-                    partPersonId = testdataBP.ident,
-                    borISammeHusstandDtoListe = emptyList(),
-                ),
-                RelatertPersonGrunnlagDto(
-                    gjelderPersonId = testdataBarn2.ident,
-                    fødselsdato = testdataBarn2.fødselsdato,
-                    relasjon = Familierelasjon.BARN,
-                    navn = "Lyrisk Sopp 4",
-                    partPersonId = testdataBP.ident,
-                    borISammeHusstandDtoListe = emptyList(),
-                ),
-            )
-        mockGrunnlagrespons(
-            opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = grunnlagBarnBM),
-            opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = grunnlagBarnBP),
+        behandling.grunnlag.add(
+            Grunnlag(
+                id = 1,
+                behandling = behandling,
+                type = Grunnlagsdatatype.BOFORHOLD,
+                rolle = behandling.bidragsmottaker!!,
+                gjelder = testdataBarn1.ident,
+                innhentet = LocalDateTime.now(),
+                data = "",
+            ),
         )
-
+        mockGrunnlagrespons(
+            opprettHentGrunnlagDto(),
+            opprettHentGrunnlagDto(),
+        )
+        val søknadsbarnId = behandling.søknadsbarn.find { it.ident == testdataBarn1.ident }
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
-        val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 6
 
-        behandling.underholdskostnader shouldHaveSize 4
-        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm.ident }) {
-            it.shouldNotBeNull()
-            it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen.shouldBeNull()
-        }
-        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn1.ident }) {
-            it.shouldNotBeNull()
-            it.kilde shouldBe null
-            it.barnetsRolleIBehandlingen.shouldNotBeNull()
-        }
-        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn2.ident }) {
-            it.shouldNotBeNull()
-            it.kilde shouldBe null
-            it.barnetsRolleIBehandlingen.shouldNotBeNull()
-        }
-        assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm2.ident }) {
-            it.shouldNotBeNull()
-            it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen shouldBe null
+        assertSoftly {
+            behandling.bidragsmottaker!!.ident shouldBe nyIdentBm
+            behandling.bidragspliktig!!.ident shouldBe nyIdentBp
+            behandling.søknadsbarn.find { it.id == søknadsbarnId!!.id }?.ident shouldBe nyIdentBarn1
+
+            behandling.inntekter.filter { it.ident == nyIdentBm } shouldHaveSize 3
+            behandling.underholdskostnader.find { it.person.ident == nyIdentBarn1 }.shouldNotBeNull()
+            behandling.grunnlag.find { it.gjelder == nyIdentBarn1 }.shouldNotBeNull()
+            behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }.shouldNotBeNull()
         }
     }
 

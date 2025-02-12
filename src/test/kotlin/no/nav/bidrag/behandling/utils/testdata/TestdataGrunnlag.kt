@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -343,13 +342,18 @@ fun List<Grunnlag>.filtrerEtterTypeOgIdent(
     erBearbeidet: Boolean = false,
 ) = filter { it.type == type && it.rolle.ident == ident && it.erBearbeidet == erBearbeidet }
 
-fun Behandling.initGrunnlagRespons(stubUtils: StubUtils) {
+fun Behandling.initGrunnlagRespons(
+    stubUtils: StubUtils,
+    bmIdent: String = bidragsmottaker!!.ident!!,
+    bpIdent: String? = bidragspliktig!!.ident,
+    baIdent: String = søknadsbarn.first().ident!!,
+) {
     roller.forEach {
         when (it.rolletype) {
             Rolletype.BIDRAGSMOTTAKER ->
 
                 stubUtils.stubHenteGrunnlag(
-                    rolle = it,
+                    rolleIdent = bmIdent,
                     responsobjekt =
                         lagGrunnlagsdata(
                             if (tilType() ==
@@ -360,31 +364,31 @@ fun Behandling.initGrunnlagRespons(stubUtils: StubUtils) {
                                 "vedtak/vedtak-grunnlagrespons-sb-bm.json"
                             },
                             YearMonth.from(virkningstidspunkt),
-                            hentNyesteIdent(bidragsmottaker!!.ident!!)?.verdi!!,
-                            hentNyesteIdent(søknadsbarn.first().ident!!)?.verdi!!,
+                            bmIdent,
+                            baIdent,
                         ),
                 )
 
             Rolletype.BIDRAGSPLIKTIG ->
                 stubUtils.stubHenteGrunnlag(
-                    rolle = it,
+                    rolleIdent = bpIdent,
                     responsobjekt =
                         lagGrunnlagsdata(
                             "vedtak/vedtak-grunnlagrespons-sb-bp.json",
                             YearMonth.from(virkningstidspunkt),
-                            hentNyesteIdent(bidragspliktig!!.ident!!)?.verdi!!,
-                            hentNyesteIdent(søknadsbarn.first().ident!!)?.verdi!!,
+                            bpIdent!!,
+                            baIdent,
                         ),
                 )
 
             Rolletype.BARN ->
                 stubUtils.stubHenteGrunnlag(
-                    rolle = it,
+                    rolleIdent = baIdent,
                     responsobjekt =
                         lagGrunnlagsdata(
                             "vedtak/vedtak-grunnlagrespons-barn1.json",
                             YearMonth.from(virkningstidspunkt),
-                            hentNyesteIdent(søknadsbarn.first().ident!!)?.verdi!!,
+                            baIdent,
                         ),
                 )
 

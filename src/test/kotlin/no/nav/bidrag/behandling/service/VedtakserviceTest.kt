@@ -131,7 +131,9 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockK
     lateinit var personRepository: PersonRepository
 
-    val unleash = FakeUnleash()
+    @Autowired
+    lateinit var unleash: FakeUnleash
+
     val notatService = NotatService()
 
     @BeforeEach

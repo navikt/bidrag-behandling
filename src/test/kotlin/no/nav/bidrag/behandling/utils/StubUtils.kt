@@ -35,7 +35,6 @@ import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
@@ -703,20 +702,20 @@ class StubUtils {
     }
 
     fun stubHenteGrunnlag(
-        rolle: Rolle? = null,
+        rolleIdent: String? = null,
         tomRespons: Boolean = false,
         navnResponsfil: String = "hente-grunnlagrespons.json",
         responsobjekt: HentGrunnlagDto? = null,
         grunnlagNede: Boolean = false,
     ): StubMapping {
         val wiremock =
-            if (rolle == null) {
+            if (rolleIdent == null) {
                 WireMock.post(WireMock.urlEqualTo("/hentgrunnlag"))
             } else {
                 WireMock
                     .post(
                         WireMock.urlEqualTo("/hentgrunnlag"),
-                    ).withRequestBody(WireMock.containing(hentNyesteIdent(rolle.ident)?.verdi))
+                    ).withRequestBody(WireMock.containing(rolleIdent))
             }
 
         val hentGrunnlagDto =
@@ -769,17 +768,17 @@ class StubUtils {
         var barnNummer = 1
         behandling.roller.forEach {
             when (it.rolletype) {
-                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlag(it, grunnlagNede)
+                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlag(it.ident, grunnlagNede)
                 Rolletype.BIDRAGSPLIKTIG ->
                     stubHenteGrunnlag(
-                        rolle = it,
+                        rolleIdent = it.ident,
                         navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                         grunnlagNede = grunnlagNede,
                     )
 
                 Rolletype.BARN -> {
                     stubHenteGrunnlag(
-                        rolle = it,
+                        rolleIdent = it.ident,
                         navnResponsfil = "hente-grunnlagrespons-barn${barnNummer++}.json",
                         grunnlagNede = grunnlagNede,
                     )
