@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -10,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -33,6 +35,9 @@ import java.math.BigDecimal
 class GebyrServiceTest {
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
+
+    @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
     lateinit var gebyrService: GebyrService
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
@@ -40,11 +45,13 @@ class GebyrServiceTest {
     fun initMocks() {
         val personService = PersonService(stubPersonConsumer())
         stubSjablonProvider()
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

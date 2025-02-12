@@ -42,6 +42,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
@@ -101,6 +102,9 @@ class UnderholdServiceTest {
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper
 
     val notatService = NotatService()
@@ -117,6 +121,7 @@ class UnderholdServiceTest {
         personConsumer = stubPersonConsumer()
         val personService = PersonService(personConsumer)
 
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         behandlingTilGrunnlagMappingV2 =
             BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val beregnBarnebidragApi = BeregnBarnebidragApi()
@@ -125,6 +130,7 @@ class UnderholdServiceTest {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

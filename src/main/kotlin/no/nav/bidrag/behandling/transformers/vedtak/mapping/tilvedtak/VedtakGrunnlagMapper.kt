@@ -62,6 +62,7 @@ class VedtakGrunnlagMapper(
     val mapper: BehandlingTilGrunnlagMappingV2,
     val validering: ValiderBeregning,
     private val beregningEvnevurderingService: BeregningEvnevurderingService,
+    private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
     private val personService: PersonService,
     private val beregnGebyrApi: BeregnGebyrApi,
 ) {
@@ -158,7 +159,7 @@ class VedtakGrunnlagMapper(
                 val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
                 val bostatusBarn = tilGrunnlagBostatus(personobjekter)
                 val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
-                val grunnlagsliste = (personobjekter + bostatusBarn + inntekter).toMutableSet()
+                val grunnlagsliste = (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad()).toMutableSet()
 
                 when (tilType()) {
                     TypeBehandling.FORSKUDD ->
@@ -180,9 +181,8 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
                         grunnlagsliste.addAll(opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()))
+                        grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
                     }
-
-                    else -> {}
                 }
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling()

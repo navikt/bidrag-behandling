@@ -2,10 +2,12 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
 import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.stonad.request.SkyldnerStønaderRequest
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssakerResponse
 import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.annotation.Backoff
@@ -44,5 +46,16 @@ class BidragStønadConsumer(
         postForNonNullEntity(
             bidragsStønadUri.pathSegment("hent-alle-stonader-for-skyldner").build().toUri(),
             SkyldnerStønaderRequest(personidentBidragspliktig),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun hentHistoriskeStønader(request: HentStønadHistoriskRequest): StønadDto? =
+        postForEntity(
+            bidragsStønadUri.pathSegment("hent-stonad-historisk/").build().toUri(),
+            request,
         )
 }

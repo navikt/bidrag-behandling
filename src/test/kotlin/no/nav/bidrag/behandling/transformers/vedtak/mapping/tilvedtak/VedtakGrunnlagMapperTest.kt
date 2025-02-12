@@ -35,6 +35,9 @@ class VedtakGrunnlagMapperTest {
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
     @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
+    @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
     @BeforeEach
@@ -47,6 +50,7 @@ class VedtakGrunnlagMapperTest {
                 behandlingTilGrunnlagMappingV2,
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

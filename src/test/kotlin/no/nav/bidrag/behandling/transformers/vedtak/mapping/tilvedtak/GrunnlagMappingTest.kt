@@ -150,6 +150,7 @@ class GrunnlagMappingTest {
     val personobjekter = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
 
     lateinit var personStub: BidragPersonConsumer
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
     lateinit var mapper: VedtakGrunnlagMapper
     lateinit var behandlingTilGrunnlagMapping: BehandlingTilGrunnlagMappingV2
     val evnevurderingService: BeregningEvnevurderingService = mockkClass(BeregningEvnevurderingService::class)
@@ -159,6 +160,7 @@ class GrunnlagMappingTest {
         clearAllMocks()
         stubKodeverkProvider()
         personStub = stubPersonConsumer()
+        barnebidragGrunnlagInnhenting = mockkClass(BarnebidragGrunnlagInnhenting::class)
         val personService = PersonService(personStub)
         behandlingTilGrunnlagMapping = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val validering = ValiderBeregning()
@@ -170,7 +172,7 @@ class GrunnlagMappingTest {
                     testdataHusstandsmedlem1 to Stønadstype.BIDRAG,
                 ),
             )
-        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, personService, BeregnGebyrApi(stubSjablonService()))
+        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, barnebidragGrunnlagInnhenting, personService, BeregnGebyrApi(stubSjablonService()))
     }
 
     @Nested
@@ -419,7 +421,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn1!!)
 
                 assertSoftly(grunnlagForBeregning) {
-                    it.grunnlagListe shouldHaveSize 15
+                    it.grunnlagListe shouldHaveSize 16
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -443,7 +445,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn2!!)
 
                 assertSoftly(grunnlagForBeregning2) {
-                    it.grunnlagListe shouldHaveSize 15
+                    it.grunnlagListe shouldHaveSize 16
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2

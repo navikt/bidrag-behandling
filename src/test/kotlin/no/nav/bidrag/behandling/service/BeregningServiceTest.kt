@@ -12,17 +12,25 @@ import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
+import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigBeregningType
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
+import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettEvnevurderingResultat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
+import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
@@ -30,16 +38,20 @@ import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
@@ -66,13 +78,20 @@ class BeregningServiceTest {
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
+
+    @MockkBean
+    lateinit var bidragStønadConsumer: BidragStønadConsumer
 
     @BeforeEach
     fun initMocks() {
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
+        barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         every { evnevurderingService.hentLøpendeBidragForBehandling(any()) } returns
             opprettEvnevurderingResultat(
                 listOf(
@@ -89,6 +108,7 @@ class BeregningServiceTest {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(sjablonService)),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
@@ -120,7 +140,7 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 16
+            it.grunnlagListe shouldHaveSize 17
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
@@ -142,7 +162,7 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[1]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 14
+            it.grunnlagListe shouldHaveSize 15
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>
@@ -160,6 +180,175 @@ class BeregningServiceTest {
             val inntekter =
                 it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
             inntekter shouldHaveSize 3
+        }
+    }
+
+    @Test
+    fun `skal bygge grunnlag for bidrag beregning`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.vedtakstype = Vedtakstype.FASTSETTELSE
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.virkningstidspunkt = LocalDate.now().minusMonths(1)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        mockkConstructor(BeregnBarnebidragApi::class)
+        every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+
+        verify(exactly = 1) {
+            BeregnBarnebidragApi().beregn(any())
+        }
+        resultat shouldHaveSize 1
+        assertSoftly(resultat[0]) {
+            it.ugyldigBeregning shouldBe null
+            it.resultat.grunnlagListe shouldHaveSize 50
+            it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
+            it.resultat.beregnetBarnebidragPeriodeListe[0]
+                .resultat.beløp shouldBe BigDecimal(4410)
+        }
+    }
+
+    @Test
+    fun `skal feile beregning av bidrag begrenset revurdering hvis lavere enn løpende bidrag`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.vedtakstype = Vedtakstype.FASTSETTELSE
+        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.virkningstidspunkt = LocalDate.now().minusMonths(4)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            )
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("2600"),
+                        ),
+                    ),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        mockkConstructor(BeregnBarnebidragApi::class)
+        every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+
+        verify(exactly = 1) {
+            BeregnBarnebidragApi().beregn(any())
+        }
+        resultat shouldHaveSize 1
+        assertSoftly(resultat[0]) {
+            it.ugyldigBeregning shouldNotBe null
+            it.ugyldigBeregning!!.begrunnelse shouldContain "er lik eller lavere enn løpende bidrag"
+            it.ugyldigBeregning.perioder shouldHaveSize 1
+            it.ugyldigBeregning.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG
+            it.resultat.grunnlagListe shouldHaveSize 52
+            it.resultat.grunnlagListe
+                .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
+                .size shouldBe 1
+            it.resultat.grunnlagListe
+                .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }
+                .size shouldBe 1
+
+            it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
+            it.resultat.beregnetBarnebidragPeriodeListe[0]
+                .resultat.beløp shouldBe BigDecimal(2600)
+        }
+    }
+
+    @Test
+    fun `skal feile beregning av bidrag begrenset revurdering hvis ingen forskudd`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.vedtakstype = Vedtakstype.FASTSETTELSE
+        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.virkningstidspunkt = LocalDate.now().minusMonths(4)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(2), null),
+                            beløp = BigDecimal("2600"),
+                        ),
+                    ),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        mockkConstructor(BeregnBarnebidragApi::class)
+        every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+
+        verify(exactly = 1) {
+            BeregnBarnebidragApi().beregn(any())
+        }
+        resultat shouldHaveSize 1
+        assertSoftly(resultat[0]) {
+            it.ugyldigBeregning shouldNotBe null
+            it.ugyldigBeregning!!.begrunnelse shouldContain "har ingen løpende forskudd"
+            it.ugyldigBeregning.perioder shouldHaveSize 1
+            it.ugyldigBeregning.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD
+            it.resultat.grunnlagListe shouldHaveSize 53
+            it.resultat.grunnlagListe
+                .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
+                .size shouldBe 1
+            it.resultat.grunnlagListe
+                .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }
+                .size shouldBe 1
+
+            it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
+            it.resultat.beregnetBarnebidragPeriodeListe[0]
+                .resultat.beløp shouldBe BigDecimal(0)
         }
     }
 
@@ -206,7 +395,7 @@ class BeregningServiceTest {
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
             it.periode.til shouldBe YearMonth.now().plusMonths(1)
-            it.grunnlagListe shouldHaveSize 11 // TODO:VERIFY THIS
+            it.grunnlagListe shouldHaveSize 12 // TODO:VERIFY THIS
 
             val personer =
                 it.grunnlagListe.hentAllePersoner() as Collection<GrunnlagDto>

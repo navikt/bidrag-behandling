@@ -45,6 +45,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -96,6 +97,8 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
@@ -2057,3 +2060,39 @@ fun Behandling.leggeTilNyttBarnetilsyn(
         ),
     )
 }
+
+fun opprettStønadDto(
+    periodeListe: List<StønadPeriodeDto>,
+    stønadstype: Stønadstype = Stønadstype.BIDRAG,
+) = StønadDto(
+    sak = Saksnummer(SAKSNUMMER),
+    skyldner = if (stønadstype == Stønadstype.BIDRAG) Personident(testdataBP.ident) else skyldnerNav,
+    kravhaver = Personident(testdataBarn1.ident),
+    mottaker = Personident(testdataBM.ident),
+    førsteIndeksreguleringsår = 2025,
+    innkreving = Innkrevingstype.MED_INNKREVING,
+    opprettetAv = "",
+    opprettetTidspunkt = LocalDateTime.now(),
+    endretAv = null,
+    endretTidspunkt = null,
+    stønadsid = 1,
+    type = stønadstype,
+    periodeListe = periodeListe,
+)
+
+fun opprettStønadPeriodeDto(
+    periode: ÅrMånedsperiode = ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null),
+    beløp: BigDecimal? = BigDecimal.ONE,
+    valutakode: String = "NOK",
+) = StønadPeriodeDto(
+    stønadsid = 1,
+    periodeid = 1,
+    periodeGjortUgyldigAvVedtaksid = null,
+    vedtaksid = 1,
+    gyldigFra = LocalDateTime.parse("2024-01-01T00:00:00"),
+    gyldigTil = null,
+    periode = periode,
+    beløp = beløp,
+    valutakode = valutakode,
+    resultatkode = "OK",
+)

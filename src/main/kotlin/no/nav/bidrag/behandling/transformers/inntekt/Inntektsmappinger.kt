@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.util.InntektUtil
@@ -300,7 +301,8 @@ fun opprettTransformerInntekterRequest(
                     it.barnPersonId,
                     behandling,
                 )
-            }.tilBarnetillegg(
+            }.filter { it.barnetilleggType !== Inntektstype.BARNETILLEGG_TILTAKSPENGER.name }
+            .tilBarnetillegg(
                 rolleInhentetFor,
             ),
     kontantstøtteliste =

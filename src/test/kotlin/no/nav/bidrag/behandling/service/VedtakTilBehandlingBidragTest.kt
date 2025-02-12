@@ -85,6 +85,25 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
+    fun `Skal konvertere vedtak til beregning resultat for lesemodus begrenset revurdering`() {
+        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("fattetvedtak/bidrag-vedtak-begrenset-revurdering")
+        every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
+        val beregning = vedtakService.konverterVedtakTilBeregningResultatBidrag(1)!!
+
+        assertSoftly(beregning) {
+            beregning.resultatBarn shouldHaveSize 1
+            val resultatBarn = beregning.resultatBarn.first()
+            resultatBarn.ugyldigBeregning shouldBe null
+
+            assertSoftly(resultatBarn.perioder.first()) {
+                beregningsdetaljer.shouldNotBeNull()
+                beregningsdetaljer.sluttberegning!!.begrensetRevurderingUtført shouldBe true
+                beregningsdetaljer.sluttberegning.løpendeBidrag shouldBe BigDecimal("3820.0")
+            }
+        }
+    }
+
+    @Test
     fun `Skal konvertere vedtak til behandling for BIDRAG med notat for vedtak`() {
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("fattetvedtak/bidrag-innvilget")
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())

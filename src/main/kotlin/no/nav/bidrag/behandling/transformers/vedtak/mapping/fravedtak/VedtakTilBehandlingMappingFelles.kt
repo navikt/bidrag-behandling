@@ -129,6 +129,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                             it.beløp,
                             Resultatkode.fraKode(it.resultatkode)!!,
                             it.grunnlagReferanseListe,
+                            null,
                         )
                     },
             )

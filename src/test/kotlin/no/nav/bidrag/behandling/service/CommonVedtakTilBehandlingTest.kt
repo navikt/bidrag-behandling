@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -13,6 +14,7 @@ import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
@@ -39,6 +41,9 @@ abstract class CommonVedtakTilBehandlingTest {
     lateinit var behandlingService: BehandlingService
 
     @MockkBean
+    lateinit var bidragStønadConsumer: BidragStønadConsumer
+
+    @MockkBean
     lateinit var grunnlagService: GrunnlagService
 
     @MockkBean
@@ -63,6 +68,8 @@ abstract class CommonVedtakTilBehandlingTest {
     lateinit var behandlingRepository: BehandlingRepository
     lateinit var personRepository: PersonRepository
 
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     @MockkBean
     lateinit var sakConsumer: BidragSakConsumer
     lateinit var personConsumer: BidragPersonConsumer
@@ -80,6 +87,8 @@ abstract class CommonVedtakTilBehandlingTest {
         val validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
+        barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         val personService = PersonService(personConsumer)
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val vedtakGrunnlagMapper =
@@ -87,6 +96,7 @@ abstract class CommonVedtakTilBehandlingTest {
                 behandlingTilGrunnlagMappingV2,
                 validerBeregning,
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
