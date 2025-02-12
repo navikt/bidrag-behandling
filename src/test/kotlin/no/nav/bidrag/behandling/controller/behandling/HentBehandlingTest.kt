@@ -45,15 +45,15 @@ class HentBehandlingTest : BehandlingControllerTest() {
         // gitt
         stubUtils.stubHenteGrunnlag(
             navnResponsfil = "grunnlagresponse.json",
-            rolle = testdataBM.tilRolle(),
+            rolleIdent = testdataBM.ident,
         )
         stubUtils.stubHenteGrunnlag(
             tomRespons = true,
-            rolle = testdataBarn1.tilRolle(),
+            rolleIdent = testdataBarn1.ident,
         )
         stubUtils.stubHenteGrunnlag(
             tomRespons = true,
-            rolle = testdataBarn2.tilRolle(),
+            rolleIdent = testdataBarn2.ident,
         )
 
         val behandling = testdataManager.lagreBehandling(opprettBehandling())
@@ -240,15 +240,15 @@ class HentBehandlingTest : BehandlingControllerTest() {
 
         stubUtils.stubHenteGrunnlag(
             navnResponsfil = "hente-grunnlagrespons-med-feil.json",
-            rolle = testdataBM.tilRolle(),
+            rolleIdent = testdataBM.ident,
         )
         stubUtils.stubHenteGrunnlag(
             tomRespons = true,
-            rolle = testdataBarn1.tilRolle(),
+            rolleIdent = testdataBarn1.ident,
         )
         stubUtils.stubHenteGrunnlag(
             tomRespons = true,
-            rolle = testdataBarn2.tilRolle(),
+            rolleIdent = testdataBarn2.ident,
         )
 
         val behandling = testdataManager.lagreBehandling(opprettBehandling())

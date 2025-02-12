@@ -16,7 +16,7 @@ open class Person(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
-    open val ident: String? = null,
+    open var ident: String? = null,
     open val navn: String? = null,
     open val fødselsdato: LocalDate,
     open val opprettet: LocalDateTime = LocalDateTime.now(),

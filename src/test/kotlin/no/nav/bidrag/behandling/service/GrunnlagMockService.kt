@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
+import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -10,6 +11,7 @@ import io.mockk.every
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -47,12 +49,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubBehandlingrepository
+import stubHentPersonNyIdent
 import stubHusstandrepository
 import stubPersonConsumer
 import stubPersonRepository
 import stubSivilstandrepository
 import stubUnderholdskostnadRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @ExtendWith(SpringExtension::class)
 class GrunnlagMockService {
@@ -138,8 +142,10 @@ class GrunnlagMockService {
                 notatService,
                 personService,
             )
+        val unleash = FakeUnleash()
+        unleash.enableAll()
         grunnlagService =
-            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService)
+            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, unleash)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         stubHusstandrepository(husstandsmedlemRepository)
@@ -491,6 +497,55 @@ class GrunnlagMockService {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
             it.barnetsRolleIBehandlingen shouldBe null
+        }
+    }
+
+    @Test
+    fun `skal lagre med nyeste ident hvis endret`() {
+        val nyIdentBm = "ny_ident_bm"
+        val nyIdentBp = "ny_ident_bp"
+        val nyIdentBarn1 = "ny_i_barn_1"
+        stubHentPersonNyIdent(testdataBarn1.ident, nyIdentBarn1, personConsumer)
+        stubHentPersonNyIdent(testdataBM.ident, nyIdentBm, personConsumer)
+        stubHentPersonNyIdent(testdataBP.ident, nyIdentBp, personConsumer)
+        val behandling =
+            oppretteTestbehandling(
+                inkludereInntekter = true,
+                inkludereBp = true,
+                inkludereSivilstand = false,
+                behandlingstype = TypeBehandling.BIDRAG,
+                inkludereVoksneIBpsHusstand = true,
+                setteDatabaseider = true,
+            )
+        behandling.virkningstidspunkt = LocalDate.now().minusYears(2).withMonth(2)
+        behandling.grunnlag = mutableSetOf()
+        behandling.grunnlag.add(
+            Grunnlag(
+                id = 1,
+                behandling = behandling,
+                type = Grunnlagsdatatype.BOFORHOLD,
+                rolle = behandling.bidragsmottaker!!,
+                gjelder = testdataBarn1.ident,
+                innhentet = LocalDateTime.now(),
+                data = "",
+            ),
+        )
+        mockGrunnlagrespons(
+            opprettHentGrunnlagDto(),
+            opprettHentGrunnlagDto(),
+        )
+        val søknadsbarnId = behandling.søknadsbarn.find { it.ident == testdataBarn1.ident }
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+
+        assertSoftly {
+            behandling.bidragsmottaker!!.ident shouldBe nyIdentBm
+            behandling.bidragspliktig!!.ident shouldBe nyIdentBp
+            behandling.søknadsbarn.find { it.id == søknadsbarnId!!.id }?.ident shouldBe nyIdentBarn1
+
+            behandling.inntekter.filter { it.ident == nyIdentBm } shouldHaveSize 3
+            behandling.underholdskostnader.find { it.person.ident == nyIdentBarn1 }.shouldNotBeNull()
+            behandling.grunnlag.find { it.gjelder == nyIdentBarn1 }.shouldNotBeNull()
+            behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }.shouldNotBeNull()
         }
     }
 
