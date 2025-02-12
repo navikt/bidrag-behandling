@@ -36,6 +36,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.ifTrue
@@ -456,11 +457,17 @@ class BehandlingService(
         log.info { "Oppdater roller i behandling $behandlingId" }
         secureLogger.info { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
         val eksisterendeRoller = behandling.roller
+        val oppdaterRollerNyesteIdent =
+            oppdaterRollerListe.map { rolle ->
+                rolle.copy(
+                    ident = oppdaterTilNyesteIdent(rolle.ident?.verdi, behandlingId)?.let { Personident(it) } ?: rolle.ident,
+                )
+            }
 
-        behandling.oppdaterEksisterendeRoller(oppdaterRollerListe)
+        behandling.oppdaterEksisterendeRoller(oppdaterRollerNyesteIdent)
 
         val rollerSomLeggesTil =
-            oppdaterRollerListe
+            oppdaterRollerNyesteIdent
                 .filter { !it.erSlettet }
                 .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
 
@@ -501,6 +508,18 @@ class BehandlingService(
         }
 
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
+    }
+
+    private fun oppdaterTilNyesteIdent(
+        ident: String?,
+        behandlingId: Long,
+    ): String? {
+        if (ident == null) return null
+        val nyIdent = hentNyesteIdent(ident)?.verdi
+        if (nyIdent != ident) {
+            secureLogger.info { "Oppdaterer ident fra $ident til $nyIdent i behandling $behandlingId " }
+        }
+        return nyIdent
     }
 
     private fun Behandling.oppdaterEksisterendeRoller(oppdaterRollerListe: List<OpprettRolleDto>) {
