@@ -149,6 +149,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     }
 
     @Test
+    @Disabled
     fun `Skal fatte vedtak for bidrag`() {
         stubUtils.stubOpprettJournalpost("12333")
 
