@@ -282,7 +282,7 @@ fun Husstandsmedlem.validereAndreVoksneIHusstanden(virkniningstidspunkt: LocalDa
         this.perioder
             .map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(virkniningstidspunkt)
+            }.finnHullIPerioder(virkniningstidspunkt, behandling.globalOpphørsdato)
     return AndreVoksneIHusstandenPeriodeseringsfeil(
         hullIPerioder,
         overlappendePerioder = this.perioder.finneOverlappendeBostatusperioder(),
@@ -401,7 +401,7 @@ fun List<Datoperiode>.ugyldigSluttperiode(opphørsdato: LocalDate? = null): Bool
     val sistePeriode = maxByOrNull { it.fom } ?: return false
     val sisteGyldigTilDato = opphørsdato.opphørSisteTilDato()
     val sisteTilDato = sistePeriode.til
-    return sisteTilDato == null || sisteTilDato > sisteGyldigTilDato || sisteTilDato.isAfter(sisteGyldigTilDato)
+    return sisteTilDato != sisteGyldigTilDato
 }
 
 fun List<Datoperiode>.finnHullIPerioder(

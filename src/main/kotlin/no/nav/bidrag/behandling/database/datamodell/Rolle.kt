@@ -93,6 +93,7 @@ open class Rolle(
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
+    val opphørTilDato get() = opphørsdato?.withDayOfMonth(1)?.minusDays(1)
     val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato
 
     override fun toString(): String =

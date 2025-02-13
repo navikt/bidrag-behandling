@@ -18,6 +18,8 @@ import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
 import no.nav.bidrag.boforhold.dto.Husstandsmedlemmer
+import no.nav.bidrag.boforhold.utils.justerBoforholdPerioderForOpphørsdato
+import no.nav.bidrag.boforhold.utils.justerBostatusPerioderForOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -275,7 +277,7 @@ fun List<BoforholdResponseV2>.tilHusstandsmedlem(behandling: Behandling): Set<Hu
 
 fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponseV2>) {
     perioder.clear()
-    perioder.addAll(nyePerioder.tilPerioder(this))
+    perioder.addAll(nyePerioder.justerBoforholdPerioderForOpphørsdato(rolle?.opphørsdato ?: behandling.globalOpphørsdato).tilPerioder(this))
     if (perioder.isEmpty()) {
         perioder.add(opprettDefaultPeriodeForOffentligHusstandsmedlem())
     }
@@ -283,7 +285,7 @@ fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdRe
 
 fun Husstandsmedlem.overskriveAndreVoksneIHusstandMedBearbeidaPerioder(nyePerioder: List<Bostatus>) {
     perioder.clear()
-    perioder.addAll(nyePerioder.tilPerioder(this))
+    perioder.addAll(nyePerioder.justerBostatusPerioderForOpphørsdato(behandling.globalOpphørsdato).tilPerioder(this))
     if (perioder.isEmpty()) {
         perioder.add(opprettDefaultPeriodeForAndreVoksneIHusstand())
     }
@@ -301,7 +303,7 @@ fun Husstandsmedlem.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
     Bostatusperiode(
         husstandsmedlem = this,
         datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato),
-        datoTom = null,
+        datoTom = rolle?.opphørTilDato ?: behandling.opphørTilDato,
         bostatus = Bostatuskode.IKKE_MED_FORELDER,
         kilde = Kilde.OFFENTLIG,
     )

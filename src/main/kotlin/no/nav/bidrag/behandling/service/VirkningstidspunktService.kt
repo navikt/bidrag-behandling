@@ -199,11 +199,6 @@ class VirkningstidspunktService(
             boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
         }
 
-        oppdaterBoforhold()
-        oppdaterAndreVoksneIHusstanden()
-        oppdaterInntekter()
-        oppdatereUnderhold()
-        oppdaterSamvær()
         if (erOpphørsdatoEndret) {
             rolle.opphørsdato = request.opphørsdato
             oppdaterBoforhold()
