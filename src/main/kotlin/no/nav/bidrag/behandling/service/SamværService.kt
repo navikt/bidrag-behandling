@@ -128,7 +128,7 @@ class SamværService(
         val virkningstidspunkt = behandling.virkningstidspunkt ?: return
 
         // Antar at opphørsdato er måneden perioden skal opphøre
-        val justerOpphørsdato = behandling.opphørsdato?.withDayOfMonth(1)?.minusDays(1)
+        val justertOpphørsdato = behandling.opphørTilDato
         behandling.samvær.forEach {
             it.perioder
                 .filter { it.fom < virkningstidspunkt }
@@ -139,24 +139,24 @@ class SamværService(
                         periode.fom = virkningstidspunkt
                     }
                 }
-            if (justerOpphørsdato != null) {
+            if (justertOpphørsdato != null) {
                 it.perioder
-                    .filter { it.fom > justerOpphørsdato }
+                    .filter { it.fom > justertOpphørsdato }
                     .forEach { periode ->
                         it.perioder.remove(periode)
                     }
                 it.perioder
                     .maxByOrNull { it.fom }
                     ?.let {
-                        it.tom = justerOpphørsdato
+                        it.tom = justertOpphørsdato
                     }
             }
 
-            if (opphørSlettet || justerOpphørsdato != null) {
+            if (opphørSlettet || justertOpphørsdato != null) {
                 it.perioder
                     .maxByOrNull { it.fom }
                     ?.let {
-                        it.tom = justerOpphørsdato
+                        it.tom = justertOpphørsdato
                     }
             }
         }

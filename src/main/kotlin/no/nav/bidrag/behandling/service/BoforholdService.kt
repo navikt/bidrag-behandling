@@ -307,7 +307,7 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.opphørsdato,
+                            behandling.globalOpphørsdato,
                             behandling.tilType(),
                             behandling
                                 .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
@@ -686,7 +686,7 @@ class BoforholdService(
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.opphørsdato,
+                            behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(
                                 eksisterendeHusstandsmedlem
@@ -748,14 +748,14 @@ class BoforholdService(
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.opphørsdato,
+                            behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.opphørsdato,
+                            behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(
                                 request.copy(
@@ -1084,7 +1084,7 @@ class BoforholdService(
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.opphørsdato,
+                behandling.globalOpphørsdato,
                 behandling.tilType(),
                 listOf(periodiseringsrequest),
             ),
@@ -1103,7 +1103,7 @@ class BoforholdService(
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 periodiseringsrequest,
-                behandling.opphørsdato,
+                behandling.globalOpphørsdato,
             )
 
         this.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)

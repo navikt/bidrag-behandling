@@ -20,7 +20,8 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto.EksisterendeOpphørsvedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -654,13 +655,17 @@ class Dtomapper(
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                     opphør =
-                        roller.map {
-                            OpphørsdetaljerDto(
-                                rolle = it.tilDto(),
-                                opphørsdato = opphørsdato,
-                                eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
-                            )
-                        },
+                        OpphørsdetaljerDto(
+                            opphørsdato = globalOpphørsdato,
+                            opphørRoller =
+                                roller.map {
+                                    OpphørsdetaljerRolleDto(
+                                        rolle = it.tilDto(),
+                                        opphørsdato = globalOpphørsdato,
+                                        eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
+                                    )
+                                },
+                        ),
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
@@ -812,9 +817,9 @@ class Dtomapper(
                                 .run {
                                     tilGrunnlagBostatus() + tilPersonobjekter()
                                 }.toList(),
-                        periode = ÅrMånedsperiode(virkningstidspunkt!!, if (opphørsdato != null) opphørsdato else null),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, if (globalOpphørsdato != null) globalOpphørsdato else null),
                         søknadsbarnReferanse = "",
-                        opphørSistePeriode = opphørsdato != null,
+                        opphørSistePeriode = globalOpphørsdato != null,
                     ),
                 )
             } catch (e: Exception) {

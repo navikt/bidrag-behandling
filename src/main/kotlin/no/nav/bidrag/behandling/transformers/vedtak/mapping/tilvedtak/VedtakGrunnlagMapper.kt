@@ -52,7 +52,7 @@ fun Behandling.finnBeregnTilDatoBehandling() =
     if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
     } else {
-        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato)
+        finnBeregnTilDato(virkningstidspunkt!!, globalOpphørsdato)
     }
 
 fun finnBeregnTilDato(
@@ -195,7 +195,7 @@ class VedtakGrunnlagMapper(
                             beregnFraDato,
                             beregningTilDato,
                         ),
-                    opphørSistePeriode = opphørsdato != null,
+                    opphørSistePeriode = globalOpphørsdato != null,
                     søknadsbarnReferanse = søknadsbarn.referanse,
                     grunnlagListe = grunnlagsliste.toSet().toList(),
                 )

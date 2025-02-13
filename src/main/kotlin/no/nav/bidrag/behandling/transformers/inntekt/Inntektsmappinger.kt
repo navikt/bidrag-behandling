@@ -57,7 +57,7 @@ fun Inntekt.bestemDatoTomForOffentligInntekt() =
                 maxOf(
                     YearMonth.now().atEndOfMonth(),
                     behandling!!.virkningstidspunktEllerSøktFomDato,
-                    behandling!!.opphørsdato ?: LocalDate.MIN,
+                    behandling!!.globalOpphørsdato ?: LocalDate.MIN,
                 )
             if (tom.plusMonths(1).isAfter(maxDate)) null else tom
         }
@@ -68,7 +68,7 @@ fun Inntekt.skalAutomatiskSettePeriode(): Boolean =
 
 fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør(): Boolean =
     opprinneligFom?.let { fom ->
-        if (behandling?.opphørsdato != null && fom < behandling?.opphørsdato) return@let false
+        if (behandling?.globalOpphørsdato != null && fom < behandling?.globalOpphørsdato) return@let false
         (opprinneligTom ?: LocalDate.MAX).let { tom ->
             behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->
                 val virkningstidspunktEllerStartenAvNesteMåned =

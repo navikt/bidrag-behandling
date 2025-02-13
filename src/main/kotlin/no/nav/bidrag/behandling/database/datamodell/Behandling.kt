@@ -174,7 +174,8 @@ open class Behandling(
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = refVedtaksid != null
-    val opphørsdato get() = roller.filter { it.opphørsdato != null }.maxByOrNull { it.opphørsdato!! }?.opphørsdato
+    val globalOpphørsdato get() = roller.filter { it.opphørsdato != null }.maxByOrNull { it.opphørsdato!! }?.opphørsdato
+    val opphørTilDato get() = globalOpphørsdato?.withDayOfMonth(1)?.minusDays(1)
 }
 
 val Behandling.særbidragKategori
@@ -208,7 +209,7 @@ val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.
 
 val Set<Husstandsmedlem>.voksneIHusstanden get() = find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
-fun Behandling.hentMaksTilOgMedDato() = if (opphørsdato != null) opphørsdato!!.withDayOfMonth(1).minusDays(1) else null
+fun Behandling.hentMaksTilOgMedDato() = if (globalOpphørsdato != null) globalOpphørsdato!!.withDayOfMonth(1).minusDays(1) else null
 
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {

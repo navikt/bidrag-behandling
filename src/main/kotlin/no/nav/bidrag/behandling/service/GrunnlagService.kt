@@ -26,7 +26,6 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype.Companion.grunnlagsdatatypeobjekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
@@ -456,7 +455,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.opphørsdato,
+                behandling.globalOpphørsdato,
                 behandling.tilType(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -974,7 +973,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.opphørsdato,
+                behandling.globalOpphørsdato,
                 behandling.tilType(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )

@@ -296,17 +296,23 @@ fun Husstandsmedlem.validereBoforhold(
     valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
     validerePerioder: Boolean = true,
 ): Set<BoforholdPeriodeseringsfeil> {
+    val opphørsdato = rolle?.opphørsdato ?: behandling.globalOpphørsdato
+
     val hullIPerioder =
         this.perioder
             .map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato ?: this.rolle!!.fødselsdato))
+            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato ?: this.rolle!!.fødselsdato), opphørsdato)
     if (validerePerioder) {
         valideringsfeil.add(
             BoforholdPeriodeseringsfeil(
                 this,
                 hullIPerioder,
                 overlappendePerioder = this.perioder.finneOverlappendeBostatusperioder(),
+                ugyldigSluttperiode =
+                    this.perioder
+                        .map { it.tilDatoperiode() }
+                        .ugyldigSluttperiode(opphørsdato),
                 manglerPerioder = this.perioder.isEmpty(),
                 fremtidigPeriode = this.inneholderFremtidigeBoforholdsperioder(),
             ),
@@ -390,7 +396,18 @@ private fun Set<Bostatusperiode>.finneOverlappendeBostatusperioder() =
             }
     }
 
-fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
+fun List<Datoperiode>.ugyldigSluttperiode(opphørsdato: LocalDate? = null): Boolean {
+    if (opphørsdato == null) return false
+    val sistePeriode = maxByOrNull { it.fom } ?: return false
+    val sisteGyldigTilDato = opphørsdato.opphørSisteTilDato()
+    val sisteTilDato = sistePeriode.til
+    return sisteTilDato == null || sisteTilDato > sisteGyldigTilDato || sisteTilDato.isAfter(sisteGyldigTilDato)
+}
+
+fun List<Datoperiode>.finnHullIPerioder(
+    virkniningstidspunkt: LocalDate,
+    opphørsdato: LocalDate? = null,
+): List<Datoperiode> {
     val hullPerioder = mutableListOf<Datoperiode>()
     val perioderSomSkalSjekkes = sortedBy { it.fom }
     val førstePeriode = perioderSomSkalSjekkes.firstOrNull()
@@ -412,7 +429,7 @@ fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<D
         }
         senesteTilPeriode = maxOf(senesteTilPeriode, periode.til ?: LocalDate.MAX)
     }
-    if (perioderSomSkalSjekkes.none { it.til == null }) {
+    if (opphørsdato == null && perioderSomSkalSjekkes.none { it.til == null }) {
         val sistePeriode = perioderSomSkalSjekkes.lastOrNull()
         if (sistePeriode?.til != null) {
             hullPerioder.add(Datoperiode(sistePeriode.til!!, null as LocalDate?))
@@ -434,12 +451,24 @@ fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
 }
 
 @JvmName("finnHullIPerioderInntekt")
-fun List<Inntekt>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
+fun List<Inntekt>.finnHullIPerioder(
+    virkniningstidspunkt: LocalDate,
+    opphørsdato: LocalDate? = null,
+): List<Datoperiode> {
     val perioderSomSkalSjekkes =
         filter { it.taMed && !it.kanHaHullIPerioder() }
             .sortedBy { it.datoFom }
             .map { Datoperiode(it.datoFom!!, it.datoTom) }
-    return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt)
+    return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt, opphørsdato)
+}
+
+@JvmName("harUgyldigSluttperiode")
+fun List<Inntekt>.harUgyldigSluttperiode(opphørsdato: LocalDate?): Boolean {
+    val perioderSomSkalSjekkes =
+        filter { it.taMed && !it.kanHaHullIPerioder() }
+            .sortedBy { it.datoFom }
+            .map { Datoperiode(it.datoFom!!, it.datoTom) }
+    return perioderSomSkalSjekkes.ugyldigSluttperiode(opphørsdato)
 }
 
 val Inntekt.inntektstypeListe

@@ -2790,7 +2790,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.opphørsdato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
@@ -2920,7 +2920,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.opphørsdato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling, true),
                     )
@@ -4017,7 +4017,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.opphørsdato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
@@ -4101,7 +4101,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        behandling.opphørsdato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                             rådataBoforhold.data,

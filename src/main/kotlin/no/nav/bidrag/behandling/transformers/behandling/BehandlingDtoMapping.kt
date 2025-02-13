@@ -36,6 +36,7 @@ import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
+import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
@@ -279,7 +280,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     return VirkningstidspunktFeilDto(
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
-        manglerOpphørsdato = stonadstype == Stønadstype.BIDRAG18AAR && opphørsdato == null,
+        manglerOpphørsdato = stonadstype == Stønadstype.BIDRAG18AAR && globalOpphørsdato == null,
         manglerBegrunnelse =
             if (vedtakstype == Vedtakstype.OPPHØR) {
                 begrunnelseVirkningstidspunkt.isEmpty()
@@ -296,7 +297,7 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
             inntekter
                 .mapValideringsfeilForÅrsinntekter(
                     virkningstidspunktEllerSøktFomDato,
-                    opphørsdato,
+                    globalOpphørsdato,
                     roller,
                     tilType(),
                 ).takeIf { it.isNotEmpty() },
@@ -353,11 +354,12 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     rolle = rolle.tilDto(),
                 )
             } else {
-                val hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt)
+                val hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt, opphørsdato)
                 InntektValideringsfeil(
                     hullIPerioder = hullIPerioder,
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+                    ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(rolle.behandling.globalOpphørsdato),
 //                    perioderFørVirkningstidspunkt =
 //                        inntekterTaMed
 //                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
@@ -387,6 +389,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
             overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
             fremtidigPeriode =
                 inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+            ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(gjelderRolle?.behandling?.globalOpphørsdato),
             ident = gjelderIdent,
             rolle = gjelderRolle?.tilDto(),
             gjelderBarn = gjelderBarn,

@@ -117,9 +117,9 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
         periode =
             ÅrMånedsperiode(
                 virkningstidspunktEllerSøktFomDato,
-                finnBeregnTilDato(virkningstidspunktEllerSøktFomDato, opphørsdato),
+                finnBeregnTilDato(virkningstidspunktEllerSøktFomDato, globalOpphørsdato),
             ),
-        opphørSistePeriode = opphørsdato != null,
+        opphørSistePeriode = globalOpphørsdato != null,
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
         gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =

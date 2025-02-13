@@ -81,6 +81,7 @@ data class InntektValideringsfeil(
     val manglerPerioder: Boolean = false,
     @Schema(description = "Hvis det er inntekter som har periode som starter før virkningstidspunkt")
     val perioderFørVirkningstidspunkt: Boolean = false,
+    val ugyldigSluttPeriode: Boolean = false,
     @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = null,
     @JsonIgnore
@@ -99,6 +100,7 @@ data class InntektValideringsfeil(
         get() =
             overlappendePerioder.isNotEmpty() ||
                 hullIPerioder.isNotEmpty() ||
+                ugyldigSluttPeriode ||
                 fremtidigPeriode ||
                 manglerPerioder ||
                 perioderFørVirkningstidspunkt ||
@@ -122,6 +124,7 @@ data class BoforholdPeriodeseringsfeil(
     val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
     @Schema(description = "Er sann hvis husstandsmedlem har en periode som starter senere enn starten av dagens måned.")
     val fremtidigPeriode: Boolean = false,
+    val ugyldigSluttperiode: Boolean = false,
     @Schema(
         description = """Er sann hvis husstandsmedlem mangler perioder. 
         Dette vil si at husstandsmedlem ikke har noen perioder i det hele tatt."""",

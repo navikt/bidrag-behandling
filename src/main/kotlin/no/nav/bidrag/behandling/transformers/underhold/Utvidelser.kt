@@ -166,12 +166,12 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
     opphørSlettet: Boolean = false,
     forrigeOpphørsdato: LocalDate? = null,
 ) {
-    if (behandling.opphørsdato != null || opphørSlettet) {
-        val justerOpphørsdato = behandling.opphørsdato?.withDayOfMonth(1)?.minusDays(1)
+    if (behandling.globalOpphørsdato != null || opphørSlettet) {
+        val justerOpphørsdato = behandling.globalOpphørsdato?.withDayOfMonth(1)?.minusDays(1)
         val justertForrigeOpphørsdato = forrigeOpphørsdato?.withDayOfMonth(1)?.minusDays(1)
 
         barnetilsyn
-            .filter { it.fom > justerOpphørsdato }
+            .filter { justerOpphørsdato == null || it.fom > justerOpphørsdato }
             .forEach { periode ->
                 barnetilsyn.remove(periode)
             }
@@ -184,7 +184,7 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
             }
 
         faktiskeTilsynsutgifter
-            .filter { it.fom > justerOpphørsdato }
+            .filter { justerOpphørsdato == null || it.fom > justerOpphørsdato }
             .forEach { periode ->
                 faktiskeTilsynsutgifter.remove(periode)
             }
@@ -197,7 +197,7 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
             }
 
         tilleggsstønad
-            .filter { it.fom > justerOpphørsdato }
+            .filter { justerOpphørsdato == null || it.fom > justerOpphørsdato }
             .forEach { periode ->
                 tilleggsstønad.remove(periode)
             }

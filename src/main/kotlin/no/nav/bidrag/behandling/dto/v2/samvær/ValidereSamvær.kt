@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.minOfNullable
+import no.nav.bidrag.behandling.transformers.ugyldigSluttperiode
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
@@ -23,11 +24,17 @@ data class SamværValideringsfeilDto(
     val manglerBegrunnelse: Boolean,
     val ingenLøpendeSamvær: Boolean,
     val manglerSamvær: Boolean,
+    val ugyldigSluttperiode: Boolean,
     val overlappendePerioder: Set<OverlappendeSamværPeriode>,
     @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
 ) {
-    val harPeriodiseringsfeil get() = ingenLøpendeSamvær || manglerSamvær || overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty()
+    val harPeriodiseringsfeil get() =
+        ingenLøpendeSamvær ||
+            manglerSamvær ||
+            overlappendePerioder.isNotEmpty() ||
+            hullIPerioder.isNotEmpty() ||
+            ugyldigSluttperiode
     val gjelderBarn get() = gjelderRolle.ident
     val gjelderBarnNavn get() = gjelderRolle.navn
 
@@ -54,14 +61,23 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
         samværId = id!!,
         gjelderRolle = rolle,
         manglerBegrunnelse = notatSæmvær?.innhold.isNullOrBlank(),
-        ingenLøpendeSamvær = perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null,
+        ingenLøpendeSamvær = rolle.opphørsdato == null && (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
         overlappendePerioder = perioder.finnOverlappendePerioder(),
         manglerSamvær = perioder.isEmpty(),
+        ugyldigSluttperiode =
+            perioder
+                .map { it.tilDatoperiode() }
+                .ugyldigSluttperiode(rolle.opphørsdato),
         hullIPerioder =
-            perioder.map { it.tilDatoperiode() }.finnHullIPerioder(behandling.virkningstidspunktEllerSøktFomDato).filter {
-                it.til !=
-                    null
-            },
+            perioder
+                .map { it.tilDatoperiode() }
+                .finnHullIPerioder(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    rolle.opphørsdato,
+                ).filter {
+                    it.til !=
+                        null
+                },
     )
 }
 

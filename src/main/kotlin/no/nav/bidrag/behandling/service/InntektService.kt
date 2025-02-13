@@ -95,9 +95,9 @@ class InntektService(
                 it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }
 
-        if (behandling.opphørsdato != null) {
+        if (behandling.globalOpphørsdato != null) {
             inntekterTattMed
-                .filter { it.datoFom!! >= behandling.opphørsdato }
+                .filter { it.datoFom!! >= behandling.globalOpphørsdato }
                 .forEach {
                     it.taMed = false
                     it.datoFom = null
@@ -113,20 +113,20 @@ class InntektService(
                         inntekter
                             .groupBy { it.inntektstypeListe.firstOrNull() }
                             .forEach { (_, inntekter) ->
-                                inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørsdato)
+                                inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato)
                             }
                     } else {
-                        inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørsdato)
+                        inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato)
                     }
                 }
         }
 
-        if (opphørSlettet || behandling.opphørsdato != null) {
+        if (opphørSlettet || behandling.globalOpphørsdato != null) {
             behandling.inntekter
                 .filter { !eksplisitteYtelser.contains(it.type) }
                 .groupBy { Pair(it.type, it.ident) }
                 .forEach { (_, inntekter) ->
-                    inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørsdato)
+                    inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato)
                 }
         }
 

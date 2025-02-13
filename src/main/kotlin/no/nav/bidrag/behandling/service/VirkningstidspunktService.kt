@@ -171,7 +171,7 @@ class VirkningstidspunktService(
     ) {
         val rolle = behandling.roller.find { it.id == request.idRolle }!!
         val erOpphørsdatoEndret = request.opphørsdato != rolle.opphørsdato
-        val forrigeOpphørsdato = behandling.opphørsdato
+        val forrigeOpphørsdato = behandling.globalOpphørsdato
         val erOpphørSlettet = request.opphørsdato == null && rolle.opphørsdato != null
 
         fun oppdatereUnderhold() {
