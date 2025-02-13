@@ -191,7 +191,7 @@ class VirkningstidspunktService(
 
         fun oppdaterInntekter() {
             log.info { "Opphørsdato er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
-            inntektService.rekalkulerPerioderInntekter(behandling.id!!, erOpphørSlettet)
+            inntektService.rekalkulerPerioderInntekter(behandling.id!!, erOpphørSlettet, forrigeOpphørsdato)
         }
 
         fun oppdaterAndreVoksneIHusstanden() {

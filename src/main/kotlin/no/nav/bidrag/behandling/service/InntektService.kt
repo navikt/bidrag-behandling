@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntek
 import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.inntektstypeListe
+import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
@@ -58,18 +59,20 @@ class InntektService(
     fun rekalkulerPerioderInntekter(
         behandlingsid: Long,
         opphørSlettet: Boolean = false,
+        forrigeOpphørsdato: LocalDate? = null,
     ) {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
-        rekalkulerPerioderInntekter(behandling, opphørSlettet)
+        rekalkulerPerioderInntekter(behandling, opphørSlettet, forrigeOpphørsdato)
     }
 
     @Transactional
     fun rekalkulerPerioderInntekter(
         behandling: Behandling,
         opphørSlettet: Boolean = false,
+        forrigeOpphørsdato: LocalDate? = null,
     ) {
         if (behandling.virkningstidspunkt == null) return
 
@@ -96,7 +99,8 @@ class InntektService(
             }
 
         if (behandling.globalOpphørsdato != null) {
-            inntekterTattMed
+            behandling.inntekter
+                .filter { it.taMed && it.datoFom != null }
                 .filter { it.datoFom!! >= behandling.globalOpphørsdato }
                 .forEach {
                     it.taMed = false
@@ -106,17 +110,17 @@ class InntektService(
 
             behandling.inntekter
                 .filter { eksplisitteYtelser.contains(it.type) }
-                .filter { it.taMed }
+                .filter { it.taMed && it.kilde == Kilde.MANUELL }
                 .groupBy { Triple(it.type, it.ident, it.gjelderBarn) }
                 .forEach { (pair, inntekter) ->
                     if (pair.first == Inntektsrapportering.BARNETILLEGG) {
                         inntekter
                             .groupBy { it.inntektstypeListe.firstOrNull() }
                             .forEach { (_, inntekter) ->
-                                inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato)
+                                inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato, forrigeOpphørsdato)
                             }
                     } else {
-                        inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato)
+                        inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato, forrigeOpphørsdato)
                     }
                 }
         }
@@ -126,7 +130,7 @@ class InntektService(
                 .filter { !eksplisitteYtelser.contains(it.type) }
                 .groupBy { Pair(it.type, it.ident) }
                 .forEach { (_, inntekter) ->
-                    inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato)
+                    inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato, forrigeOpphørsdato)
                 }
         }
 
@@ -134,10 +138,16 @@ class InntektService(
         behandling.inntekter.removeAll(manuelleInntekterSomErFjernet)
     }
 
-    private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(periodeTomDato: LocalDate?) {
+    private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(
+        periodeTomDato: LocalDate?,
+        forrigeOpphørsdato: LocalDate?,
+    ) {
         filter { it.taMed }
             .filter {
-                periodeTomDato == null || it.datoTom == null || it.datoTom!!.isAfter(periodeTomDato)
+                periodeTomDato == null ||
+                    it.datoTom == null ||
+                    it.datoTom!!.isAfter(periodeTomDato) ||
+                    it.datoTom == forrigeOpphørsdato?.opphørSisteTilDato()
             }.sortedBy { it.datoFom }
             .lastOrNull()
             ?.let {

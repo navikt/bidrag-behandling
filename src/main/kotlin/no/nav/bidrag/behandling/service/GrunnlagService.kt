@@ -209,31 +209,32 @@ class GrunnlagService(
         if (!unleashInstance.isEnabled("behandling.opppdater_identer", false)) return
         log.info { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
-            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
         }
         behandling.grunnlag.forEach {
-            it.gjelder = oppdaterTilNyesteIdent(it.gjelder, behandling.id!!) ?: it.gjelder
+            it.gjelder = oppdaterTilNyesteIdent(it.gjelder, behandling.id!!, it.toString()) ?: it.gjelder
         }
         behandling.husstandsmedlem.forEach {
-            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
         }
         behandling.underholdskostnader.forEach {
-            it.person.ident = oppdaterTilNyesteIdent(it.person.ident, behandling.id!!) ?: it.person.ident
+            it.person.ident = oppdaterTilNyesteIdent(it.person.ident, behandling.id!!, it.toString()) ?: it.person.ident
         }
         behandling.inntekter.forEach {
-            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
-            it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarn, behandling.id!!) ?: it.gjelderBarn
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
+            it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarn, behandling.id!!, "gjelderBarn i $it") ?: it.gjelderBarn
         }
     }
 
     private fun oppdaterTilNyesteIdent(
         ident: String?,
         behandlingId: Long,
+        objekt: String? = null,
     ): String? {
         if (ident == null) return null
         val nyIdent = hentNyesteIdent(ident)?.verdi
         if (nyIdent != ident) {
-            secureLogger.info { "Oppdaterer ident fra $ident til $nyIdent i behandling $behandlingId " }
+            secureLogger.info { "Oppdaterer ident fra $ident til $nyIdent i behandling $behandlingId - $objekt" }
         }
         return nyIdent
     }
