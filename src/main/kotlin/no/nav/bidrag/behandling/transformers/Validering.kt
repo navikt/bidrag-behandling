@@ -466,6 +466,7 @@ fun List<Inntekt>.finnHullIPerioder(
 fun List<Inntekt>.harUgyldigSluttperiode(opphørsdato: LocalDate?): Boolean {
     val perioderSomSkalSjekkes =
         filter { it.taMed && !it.kanHaHullIPerioder() }
+            .filter { !årsinntekterYtelser.contains(it.type) }
             .sortedBy { it.datoFom }
             .map { Datoperiode(it.datoFom!!, it.datoTom) }
     return perioderSomSkalSjekkes.ugyldigSluttperiode(opphørsdato)
