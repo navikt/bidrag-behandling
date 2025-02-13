@@ -51,6 +51,7 @@ open class Underholdskostnad(
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde? = null,
 ) {
+    val opphørsdato get() = barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
     val barnetsRolleIBehandlingen get() = person.rolle.find { behandling.id == it.behandling.id }
 
     override fun toString(): String =

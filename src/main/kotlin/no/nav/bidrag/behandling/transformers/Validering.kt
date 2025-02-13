@@ -896,8 +896,12 @@ private fun Husstandsmedlem.validereNyPeriode(
 private fun Husstandsmedlem.senestePeriodeFomDato(): LocalDate {
     val virkningsdato = this.behandling.virkningstidspunktEllerSøktFomDato
     return if (virkningsdato.isAfter(LocalDate.now())) {
-        maxOf(this.fødselsdato ?: this.rolle!!.fødselsdato, virkningsdato.withDayOfMonth(1))
+        maxOf(
+            this.fødselsdato ?: this.rolle!!.fødselsdato,
+            virkningsdato.withDayOfMonth(1),
+            this.rolle?.opphørTilDato ?: behandling.opphørTilDato ?: LocalDate.MIN,
+        )
     } else {
-        LocalDate.now().withDayOfMonth(1)
+        maxOf(LocalDate.now().withDayOfMonth(1), this.rolle?.opphørTilDato ?: behandling.opphørTilDato ?: LocalDate.MIN)
     }
 }
