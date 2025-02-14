@@ -1,1 +1,0 @@
-alter table inntektspost drop column visningsnavn;

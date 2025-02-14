@@ -8,17 +8,13 @@ logging.level:
   secureLogger: DEBUG
 
 springdoc:
-  packages-to-scan: no.nav.bidrag.behandling.controller
+  packages-to-scan: no.nav.bidrag.kalkulator.controller
   paths-to-match: "/api/**"
   swagger-ui:
     path: /
     showCommonExtensions: true
 
 spring.main.banner-mode: off
-
-egenskaper:
-  grunnlag:
-    min-antall-minutter-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING}
 
 ---
 spring.config.activate.on-profile: nais,lokal-nais
@@ -35,155 +31,8 @@ no.nav.security.jwt:
           client-id: ${AZURE_APP_CLIENT_ID}
           client-secret: ${AZURE_APP_CLIENT_SECRET}
           client-auth-method: client_secret_post
-      bidrag-grunnlag:
-        resource-url: ${BIDRAG_GRUNNLAG_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_GRUNNLAG_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-dokument-forsendelse:
-        resource-url: ${BIDRAG_FORSENDELSE_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_FORSENDELSE_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-tilgangskontroll:
-        resource-url: ${BIDRAG_TILGANGSKONTROLL_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_TILGANGGSKONTROLL_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-organisasjon:
-        resource-url: ${BIDRAG_ORGANISASJON_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_ORGANISASJON_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-vedtak:
-        resource-url: ${BIDRAG_VEDTAK_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_VEDTAK_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-sak:
-        resource-url: ${BIDRAG_SAK_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_SAK_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-dokument:
-        resource-url: ${BIDRAG_DOKUMENT_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_DOKUMENT_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-dokument-produksjon:
-        resource-url: ${BIDRAG_DOKUMENT_PRODUKSJON_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_DOKUMENT_PRODUKSJON_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-stønad:
-        resource-url: ${BIDRAG_STONAD_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_STONAD_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
-      bidrag-bbm:
-        resource-url: ${BIDRAG_BBM_URL}
-        token-endpoint-url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/oauth2/v2.0/token
-        grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
-        scope: api://${BIDRAG_BBM_SCOPE}/.default
-        authentication:
-          client-id: ${AZURE_APP_CLIENT_ID}
-          client-secret: ${AZURE_APP_CLIENT_SECRET}
-          client-auth-method: client_secret_post
+
+
   issuer.aad:
     discovery_url: https://login.microsoftonline.com/${AZURE_APP_TENANT_ID}/v2.0/.well-known/openid-configuration
     accepted_audience: ${AZURE_APP_CLIENT_ID}, api://${AZURE_APP_CLIENT_ID}
-spring.kafka:
-  bootstrap-servers: ${KAFKA_BROKERS}
-  properties:
-    security.protocol: SSL
-    ssl:
-      keystore:
-        type: PKCS12
-        location: ${KAFKA_KEYSTORE_PATH}
-        password: ${KAFKA_CREDSTORE_PASSWORD}
-      truststore:
-        location: ${KAFKA_TRUSTSTORE_PATH}
-        password: ${KAFKA_CREDSTORE_PASSWORD}
-  consumer:
-    enableAutoCommit: false
-  listener:
-    ackMode: RECORD
-
-
----
-spring:
-  config.activate.on-profile: database-legacy
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}?user=${DB_USERNAME}&password=${DB_PASSWORD}
-    hikari:
-      idle-timeout: 10001
-      max-lifetime: 30001
-      connectionTimeout: 1000
-      maximum-pool-size: 10
-      minimum-idle: 1
-  flyway:
-    enabled: true
-    locations: classpath:/db/migration
-  jpa:
-    database: postgresql
-
----
-spring:
-  config.activate.on-profile: database-new
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    url: ${DB_JDBC_URL}
-    hikari:
-      idle-timeout: 10001
-      max-lifetime: 30001
-      connectionTimeout: 1000
-      maximum-pool-size: 10
-      minimum-idle: 1
-      data-source-properties:
-        ssl: true
-        sslmode: ${DB_SSLMODE}
-        sslcert: ${DB_SSLCERT}
-        sslkey: ${DB_SSLKEY_PK8}
-        sslrootcert: ${DB_SSLROOTCERT}
-  flyway:
-    enabled: true
-    locations: classpath:/db/migration
-  jpa:
-    database: postgresql

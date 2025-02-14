@@ -36,7 +36,7 @@ formattere
 
 Profil: local (angis i program arguments)
 
-Start opp applikasjonen ved å kjøre [BidragTemplateLocal.kt](src/test/kotlin/no/nav/bidrag/behandling/BidragSpringAppLocal.kt).
+Start opp applikasjonen ved å kjøre [BidragTemplateLocal.kt](src/test/kotlin/no/nav/bidrag/kalkulator/BidragSpringAppLocal.kt).
 
 Dette starter applikasjonen med profil `local` og henter miljøvariabler for Q1 miljøet fra filen [application-local.yaml](src/test/resources/application-local.yaml).
 
