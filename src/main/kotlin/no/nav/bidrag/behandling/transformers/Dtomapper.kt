@@ -232,10 +232,13 @@ class Dtomapper(
                 val underholdBeregning =
                     if (grunnlagFraVedtak.isNullOrEmpty()) {
                         val grunnlag =
-                            vedtakGrunnlagMapper.byggGrunnlagForBeregning(
-                                this,
-                                it,
-                            )
+                            vedtakGrunnlagMapper
+                                .byggGrunnlagForBeregning(
+                                    this,
+                                    it,
+                                ).copy(
+                                    opphørSistePeriode = opphørSistePeriode,
+                                )
 
                         beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
                     } else {
@@ -817,9 +820,9 @@ class Dtomapper(
                                 .run {
                                     tilGrunnlagBostatus() + tilPersonobjekter()
                                 }.toList(),
-                        periode = ÅrMånedsperiode(virkningstidspunkt!!, if (globalOpphørsdato != null) globalOpphørsdato else null),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, if (opphørSistePeriode) globalOpphørsdato else null),
                         søknadsbarnReferanse = "",
-                        opphørSistePeriode = globalOpphørsdato != null,
+                        opphørSistePeriode = opphørSistePeriode,
                     ),
                 )
             } catch (e: Exception) {

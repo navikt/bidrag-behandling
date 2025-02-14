@@ -177,6 +177,7 @@ open class Behandling(
     val erKlageEllerOmgjøring get() = refVedtaksid != null
     val globalOpphørsdato get() = roller.filter { it.opphørsdato != null }.maxByOrNull { it.opphørsdato!! }?.opphørsdato
     val opphørTilDato get() = justerPeriodeTilOpphørsdato(globalOpphørsdato)
+    val opphørSistePeriode get() = opphørTilDato != null
 }
 
 val Behandling.særbidragKategori
