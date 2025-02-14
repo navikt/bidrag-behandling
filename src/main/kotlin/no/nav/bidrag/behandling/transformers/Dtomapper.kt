@@ -820,7 +820,7 @@ class Dtomapper(
                                 .run {
                                     tilGrunnlagBostatus() + tilPersonobjekter()
                                 }.toList(),
-                        periode = ÅrMånedsperiode(virkningstidspunkt!!, if (opphørSistePeriode) globalOpphørsdato else null),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, opphørTilDato),
                         søknadsbarnReferanse = "",
                         opphørSistePeriode = opphørSistePeriode,
                     ),

@@ -974,7 +974,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.globalOpphørsdato,
+                null,
                 behandling.tilType(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )

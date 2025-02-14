@@ -430,7 +430,7 @@ fun List<Datoperiode>.finnHullIPerioder(
         }
         senesteTilPeriode = maxOf(senesteTilPeriode, periode.til ?: LocalDate.MAX)
     }
-    if ((opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
+    if ((opphørsdato == null || opphørsdato.sluttenAvForrigeMåned!!.isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
         perioderSomSkalSjekkes.none { it.til == null }
     ) {
         val sistePeriode = perioderSomSkalSjekkes.lastOrNull()
