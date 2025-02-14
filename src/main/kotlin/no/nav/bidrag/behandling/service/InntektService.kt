@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -117,10 +118,10 @@ class InntektService(
                         inntekter
                             .groupBy { it.inntektstypeListe.firstOrNull() }
                             .forEach { (_, inntekter) ->
-                                inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato, forrigeOpphørsdato)
+                                inntekter.justerSistePeriodeForOpphørsdato(behandling.globalOpphørsdato, forrigeOpphørsdato)
                             }
                     } else {
-                        inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato, forrigeOpphørsdato)
+                        inntekter.justerSistePeriodeForOpphørsdato(behandling.globalOpphørsdato, forrigeOpphørsdato)
                     }
                 }
         }
@@ -130,7 +131,7 @@ class InntektService(
                 .filter { !eksplisitteYtelser.contains(it.type) }
                 .groupBy { Pair(it.type, it.ident) }
                 .forEach { (_, inntekter) ->
-                    inntekter.justerSistePeriodeForOpphørsdato(behandling.opphørTilDato, forrigeOpphørsdato)
+                    inntekter.justerSistePeriodeForOpphørsdato(behandling.globalOpphørsdato, forrigeOpphørsdato)
                 }
         }
 
@@ -139,19 +140,19 @@ class InntektService(
     }
 
     private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(
-        periodeTomDato: LocalDate?,
+        opphørsdato: LocalDate?,
         forrigeOpphørsdato: LocalDate?,
     ) {
         filter { it.taMed }
             .filter {
-                periodeTomDato == null ||
+                opphørsdato == null ||
                     it.datoTom == null ||
-                    it.datoTom!!.isAfter(periodeTomDato) ||
+                    it.datoTom!!.isAfter(opphørsdato) ||
                     it.datoTom == forrigeOpphørsdato?.opphørSisteTilDato()
             }.sortedBy { it.datoFom }
             .lastOrNull()
             ?.let {
-                it.datoTom = periodeTomDato
+                it.datoTom = justerPeriodeTilOpphørsdato(opphørsdato)
             }
     }
 

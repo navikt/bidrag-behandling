@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
+import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -367,7 +368,14 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } == true,
                     rolle = rolle.tilDto(),
-                    ingenLøpendePeriode = if (opphørsdato == null) hullIPerioder.any { it.til == null } else false,
+                    ingenLøpendePeriode =
+                        if (opphørsdato == null ||
+                            opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)
+                        ) {
+                            hullIPerioder.any { it.til == null }
+                        } else {
+                            false
+                        },
                 )
             }
         }.filter { it.harFeil }

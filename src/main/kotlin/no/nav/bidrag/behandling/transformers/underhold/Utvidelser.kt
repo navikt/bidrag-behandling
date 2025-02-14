@@ -23,6 +23,8 @@ import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -167,46 +169,45 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
     forrigeOpphørsdato: LocalDate? = null,
 ) {
     if (behandling.globalOpphørsdato != null || opphørSlettet) {
-        val justerOpphørsdato = behandling.globalOpphørsdato?.withDayOfMonth(1)?.minusDays(1)
-        val justertForrigeOpphørsdato = forrigeOpphørsdato?.withDayOfMonth(1)?.minusDays(1)
+        val opphørsdato = behandling.globalOpphørsdato
 
         barnetilsyn
-            .filter { justerOpphørsdato == null || it.fom > justerOpphørsdato }
+            .filter { opphørsdato == null || it.fom > opphørsdato }
             .forEach { periode ->
                 barnetilsyn.remove(periode)
             }
         barnetilsyn
             .filter { periode ->
-                periode.tom == null || periode.tom!!.isAfter(justerOpphørsdato) || periode.tom == justertForrigeOpphørsdato
+                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato?.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
-                it.tom = justerOpphørsdato
+                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
             }
 
         faktiskeTilsynsutgifter
-            .filter { justerOpphørsdato == null || it.fom > justerOpphørsdato }
+            .filter { opphørsdato == null || it.fom > opphørsdato }
             .forEach { periode ->
                 faktiskeTilsynsutgifter.remove(periode)
             }
         faktiskeTilsynsutgifter
             .filter { periode ->
-                periode.tom == null || periode.tom!!.isAfter(justerOpphørsdato) || periode.tom == justertForrigeOpphørsdato
+                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
-                it.tom = justerOpphørsdato
+                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
             }
 
         tilleggsstønad
-            .filter { justerOpphørsdato == null || it.fom > justerOpphørsdato }
+            .filter { opphørsdato == null || it.fom > opphørsdato }
             .forEach { periode ->
                 tilleggsstønad.remove(periode)
             }
         tilleggsstønad
             .filter { periode ->
-                periode.tom == null || periode.tom!!.isAfter(justerOpphørsdato) || periode.tom == justertForrigeOpphørsdato
+                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
-                it.tom = justerOpphørsdato
+                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
             }
     }
 }

@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
+import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -397,7 +398,7 @@ private fun Set<Bostatusperiode>.finneOverlappendeBostatusperioder() =
     }
 
 fun List<Datoperiode>.ugyldigSluttperiode(opphørsdato: LocalDate? = null): Boolean {
-    if (opphørsdato == null) return false
+    if (opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) return false
     val sistePeriode = maxByOrNull { it.fom } ?: return false
     val sisteGyldigTilDato = opphørsdato.opphørSisteTilDato()
     val sisteTilDato = sistePeriode.til
@@ -429,7 +430,9 @@ fun List<Datoperiode>.finnHullIPerioder(
         }
         senesteTilPeriode = maxOf(senesteTilPeriode, periode.til ?: LocalDate.MAX)
     }
-    if (opphørsdato == null && perioderSomSkalSjekkes.none { it.til == null }) {
+    if ((opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
+        perioderSomSkalSjekkes.none { it.til == null }
+    ) {
         val sistePeriode = perioderSomSkalSjekkes.lastOrNull()
         if (sistePeriode?.til != null) {
             hullPerioder.add(Datoperiode(sistePeriode.til!!, null as LocalDate?))
@@ -899,9 +902,8 @@ private fun Husstandsmedlem.senestePeriodeFomDato(): LocalDate {
         maxOf(
             this.fødselsdato ?: this.rolle!!.fødselsdato,
             virkningsdato.withDayOfMonth(1),
-            this.rolle?.opphørTilDato ?: behandling.opphørTilDato ?: LocalDate.MIN,
         )
     } else {
-        maxOf(LocalDate.now().withDayOfMonth(1), this.rolle?.opphørTilDato ?: behandling.opphørTilDato ?: LocalDate.MIN)
+        minOf(LocalDate.now().withDayOfMonth(1), this.rolle?.opphørTilDato ?: behandling.opphørTilDato ?: LocalDate.MAX)
     }
 }

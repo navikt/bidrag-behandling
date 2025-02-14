@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -93,7 +94,7 @@ open class Rolle(
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
-    val opphørTilDato get() = opphørsdato?.withDayOfMonth(1)?.minusDays(1)
+    val opphørTilDato get() = justerPeriodeTilOpphørsdato(opphørsdato)
     val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato
 
     override fun toString(): String =

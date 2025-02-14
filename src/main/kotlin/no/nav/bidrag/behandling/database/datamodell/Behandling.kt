@@ -15,6 +15,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -175,7 +176,7 @@ open class Behandling(
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = refVedtaksid != null
     val globalOpphørsdato get() = roller.filter { it.opphørsdato != null }.maxByOrNull { it.opphørsdato!! }?.opphørsdato
-    val opphørTilDato get() = globalOpphørsdato?.withDayOfMonth(1)?.minusDays(1)
+    val opphørTilDato get() = justerPeriodeTilOpphørsdato(globalOpphørsdato)
 }
 
 val Behandling.særbidragKategori

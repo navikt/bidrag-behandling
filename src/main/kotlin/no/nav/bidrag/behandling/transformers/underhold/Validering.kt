@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfei
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -135,12 +134,12 @@ fun Underholdskostnad.finnTilleggsstønadsperioderSomIkkeOverlapperMedFaktiskTil
     return datoperioderTillegsstønadSomIkkeOverlapperMedTilsynsutgift.toSet()
 }
 
-fun List<DatoperiodeDto>.finneFremtidigePerioder(opphørsdato: LocalDate?) =
+fun List<DatoperiodeDto>.finneFremtidigePerioder() =
     this
         .filter {
             it.fom.isAfter(LocalDate.now().withDayOfMonth(1)) ||
                 it.tom?.isAfter(
-                    maxOf(LocalDate.now().withDayOfMonth(1).minusDays(1), opphørsdato?.opphørSisteTilDato() ?: LocalDate.MIN),
+                    LocalDate.now().withDayOfMonth(1).minusDays(1),
                 ) ?: false
         }.map { it }
 
@@ -167,7 +166,7 @@ fun Set<Barnetilsyn>.validerePerioderBarnetilsyn() =
 
     UnderholdskostnadValideringsfeilTabell(
         overlappendePerioder = barnetilsynTilDatoperioder().finneOverlappendePerioder(),
-        fremtidigePerioder = barnetilsynTilDatoperioder().finneFremtidigePerioder(firstOrNull()?.underholdskostnad?.opphørsdato),
+        fremtidigePerioder = barnetilsynTilDatoperioder().finneFremtidigePerioder(),
         ugyldigPerioder =
             filter { it.omfang == Tilsynstype.IKKE_ANGITT || it.under_skolealder == null }.map {
                 DatoperiodeDto(
@@ -179,7 +178,7 @@ fun Set<Barnetilsyn>.validerePerioderBarnetilsyn() =
 
 fun Set<FaktiskTilsynsutgift>.validerePerioderFaktiskTilsynsutgift(): UnderholdskostnadValideringsfeilTabell =
     UnderholdskostnadValideringsfeilTabell(
-        fremtidigePerioder = tilsynsutgiftTilDatoperioder().finneFremtidigePerioder(this.firstOrNull()?.underholdskostnad?.opphørsdato),
+        fremtidigePerioder = tilsynsutgiftTilDatoperioder().finneFremtidigePerioder(),
     )
 
 fun Set<Underholdskostnad>.valider() = this.map { it.valider() }.filter { it.harFeil }.toSet()
@@ -221,7 +220,7 @@ fun Underholdskostnad.manglerPerioderForTilsynsordning(): Boolean {
 
 fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad() =
     UnderholdskostnadValideringsfeilTabell(
-        fremtidigePerioder = tilleggsstønadTilDatoperioder().finneFremtidigePerioder(firstOrNull()?.underholdskostnad?.opphørsdato),
+        fremtidigePerioder = tilleggsstønadTilDatoperioder().finneFremtidigePerioder(),
         overlappendePerioder = tilleggsstønadTilUnderholdsperioder().finneOverlappendePerioder(),
     )
 

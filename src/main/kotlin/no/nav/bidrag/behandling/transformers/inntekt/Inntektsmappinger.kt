@@ -53,12 +53,10 @@ fun Inntekt.bestemOpprinneligTomVisningsverdi() =
 fun Inntekt.bestemDatoTomForOffentligInntekt() =
     skalAutomatiskSettePeriode().ifTrue {
         opprinneligTom?.let { tom ->
-            val gjelderRolle = behandling?.roller?.find { r -> r.ident == gjelderBarn }
             val maxDate =
                 maxOf(
                     YearMonth.now().atEndOfMonth(),
                     behandling!!.virkningstidspunktEllerSøktFomDato,
-                    gjelderRolle?.opphørTilDato ?: behandling!!.globalOpphørsdato ?: LocalDate.MIN,
                 )
             if (tom.plusMonths(1).isAfter(maxDate)) null else tom
         }
