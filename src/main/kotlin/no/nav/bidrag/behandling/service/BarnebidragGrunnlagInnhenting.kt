@@ -24,6 +24,7 @@ import kotlin.collections.contains
 
 val søknadstyperSomKreverBeløpshistorikkForskudd = setOf(BisysSøknadstype.BEGRENSET_REVURDERING)
 val søknadstyperSomKreverBeløpshistorikkBidrag = setOf(BisysSøknadstype.BEGRENSET_REVURDERING)
+val stønadstyperSomKreverBeløpshistorikkBidrag = setOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)
 
 @Service
 class BarnebidragGrunnlagInnhenting(
@@ -34,7 +35,7 @@ class BarnebidragGrunnlagInnhenting(
         søknadsbarn: Rolle,
     ): Set<GrunnlagDto> {
         val grunnlagsliste = mutableSetOf<GrunnlagDto>()
-        if (behandling.stonadstype != Stønadstype.BIDRAG || behandling.stonadstype == null) {
+        if (behandling.stonadstype == null || !stønadstyperSomKreverBeløpshistorikkBidrag.contains(behandling.stonadstype)) {
             return emptySet()
         }
         if (søknadstyperSomKreverBeløpshistorikkForskudd.contains(behandling.søknadstype)) {
@@ -51,16 +52,14 @@ class BarnebidragGrunnlagInnhenting(
             grunnlagsliste.add(grunnlag)
         }
 
-        if (søknadstyperSomKreverBeløpshistorikkBidrag.contains(behandling.søknadstype)) {
-            val request =
-                behandling.createStønadHistoriskRequest(
-                    stønadstype = Stønadstype.BIDRAG,
-                    søknadsbarn = søknadsbarn,
-                    skyldner = Personident(behandling.bidragspliktig!!.ident!!),
-                )
-            val grunnlag = bidragStønadConsumer.hentHistoriskeStønader(request).tilGrunnlag(request, behandling, søknadsbarn)
-            grunnlagsliste.add(grunnlag)
-        }
+        val request =
+            behandling.createStønadHistoriskRequest(
+                stønadstype = Stønadstype.BIDRAG,
+                søknadsbarn = søknadsbarn,
+                skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+            )
+        val grunnlag = bidragStønadConsumer.hentHistoriskeStønader(request).tilGrunnlag(request, behandling, søknadsbarn)
+        grunnlagsliste.add(grunnlag)
         return grunnlagsliste
     }
 

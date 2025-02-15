@@ -149,9 +149,21 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
             )
         }
 
+    val opphørPeriode =
+        listOfNotNull(
+            søknadsbarn.opphørsdato?.let {
+                OpprettPeriodeRequestDto(
+                    periode = ÅrMånedsperiode(it, null),
+                    resultatkode = Resultatkode.OPPHØR.name,
+                    beløp = null,
+                    grunnlagReferanseListe = emptyList(),
+                )
+            },
+        )
+
     return StønadsendringPeriode(
         søknadsbarn,
-        periodeliste,
+        periodeliste + opphørPeriode,
         grunnlagListe,
     )
 }

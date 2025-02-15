@@ -169,10 +169,11 @@ class VirkningstidspunktService(
         request: OppdaterOpphørsdatoRequestDto,
         behandling: Behandling,
     ) {
+        val requestOpphørsmåned = request.opphørsdato?.withDayOfMonth(1)
         val rolle = behandling.roller.find { it.id == request.idRolle }!!
-        val erOpphørsdatoEndret = request.opphørsdato != rolle.opphørsdato
+        val erOpphørsdatoEndret = requestOpphørsmåned != rolle.opphørsdato
         val forrigeOpphørsdato = behandling.globalOpphørsdato
-        val erOpphørSlettet = request.opphørsdato == null && rolle.opphørsdato != null
+        val erOpphørSlettet = requestOpphørsmåned == null && rolle.opphørsdato != null
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny opphørsdato i behandling ${behandling.id}" }
@@ -200,7 +201,7 @@ class VirkningstidspunktService(
         }
 
         if (erOpphørsdatoEndret) {
-            rolle.opphørsdato = request.opphørsdato
+            rolle.opphørsdato = requestOpphørsmåned
             oppdaterBoforhold()
             oppdaterAndreVoksneIHusstanden()
             oppdaterInntekter()
