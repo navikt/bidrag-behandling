@@ -185,7 +185,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 176
+                request.grunnlagListe shouldHaveSize 192
             }
         }
 
@@ -202,7 +202,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.beslutning shouldBe Beslutningstype.ENDRING
                 it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
 
-                it.periodeListe shouldHaveSize 8
+                it.periodeListe shouldHaveSize 9
                 it.grunnlagReferanseListe shouldHaveSize 8
                 opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                     Grunnlagstype.NOTAT,
@@ -249,7 +249,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             opprettVedtakRequest.grunnlagListe.validerHarReferanseTilSjablonIReferanser(SjablonTallNavn.FASTSETTELSESGEBYR_BELØP, sluttberegningGebyrBM.grunnlagsreferanseListe)
             val gebyrSkyldner = it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!
 
-            gebyrSkyldner.beløp shouldBe BigDecimal(1277)
+            gebyrSkyldner.beløp shouldBe BigDecimal(1314)
             gebyrSkyldner.valutakode shouldBe "NOK"
             gebyrSkyldner.kravhaver shouldBe Personident("NAV")
             gebyrSkyldner.mottaker shouldBe Personident("NAV")
@@ -295,7 +295,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 6
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 28
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 29
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 4
@@ -702,7 +702,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 178
+                request.grunnlagListe shouldHaveSize 182
             }
         }
 
@@ -1020,7 +1020,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             opprettVedtakRequest.grunnlagListe.validerHarReferanseTilSjablonIReferanser(SjablonTallNavn.FASTSETTELSESGEBYR_BELØP, sluttberegningGebyrBM.grunnlagsreferanseListe)
             val gebyrSkyldner = it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!
 
-            gebyrSkyldner.beløp shouldBe BigDecimal(1277)
+            gebyrSkyldner.beløp shouldBe BigDecimal(1314)
             gebyrSkyldner.kravhaver shouldBe Personident("NAV")
             gebyrSkyldner.mottaker shouldBe Personident("NAV")
             gebyrSkyldner.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -1462,7 +1462,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe)
             }
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!) {
-                beløp shouldBe BigDecimal(1277)
+                beløp shouldBe BigDecimal(1314)
                 valutakode shouldBe "NOK"
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
@@ -1548,7 +1548,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.any { it.type == Engangsbeløptype.GEBYR_MOTTAKER }.shouldBeTrue()
             it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
             assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!) {
-                beløp shouldBe BigDecimal(1277)
+                beløp shouldBe BigDecimal(1314)
                 valutakode shouldBe "NOK"
                 kravhaver shouldBe Personident("NAV")
                 mottaker shouldBe Personident("NAV")
@@ -1734,7 +1734,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
 private fun OpprettVedtakRequestDto.validerSluttberegning() {
     val sluttberegning =
         hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG)
-    sluttberegning shouldHaveSize (8)
+    sluttberegning shouldHaveSize (9)
     val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
 
     val sluttberegningPeriode = sluttberegning[6]

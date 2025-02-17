@@ -156,7 +156,10 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
                     periode = ÅrMånedsperiode(it, null),
                     resultatkode = Resultatkode.OPPHØR.name,
                     beløp = null,
-                    grunnlagReferanseListe = emptyList(),
+                    grunnlagReferanseListe =
+                        listOf(
+                            opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn),
+                        ),
                 )
             },
         )

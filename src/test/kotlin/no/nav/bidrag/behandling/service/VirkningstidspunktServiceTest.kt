@@ -700,10 +700,11 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     behandling = behandling,
                     fødselsdato = testdataBarn2.fødselsdato,
                     id = 5,
+                    opphørsdato = LocalDate.now().minusMonths(10),
                 )
             val søknadsbarn = behandling.søknadsbarn.first()
             behandling.roller.add(søknadsbarn2)
-            behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+            behandling.virkningstidspunkt = YearMonth.now().minusMonths(8).atDay(1)
 
             val underholdskostnadBarn1 =
                 Underholdskostnad(
@@ -724,14 +725,14 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                         id = 1,
                         underholdskostnad = underholdskostnadBarn1,
                         fom = behandling.virkningstidspunkt!!,
-                        tom = YearMonth.parse("2024-04").atEndOfMonth(),
+                        tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
                         tilsynsutgift = BigDecimal(1000),
                     ),
                     FaktiskTilsynsutgift(
                         id = 2,
                         underholdskostnad = underholdskostnadBarn1,
-                        fom = YearMonth.parse("2024-05").atDay(1),
-                        tom = YearMonth.parse("2024-08").atEndOfMonth(),
+                        fom = YearMonth.now().minusMonths(6).atDay(1),
+                        tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
                         tilsynsutgift = BigDecimal(1000),
                     ),
                 )
@@ -741,7 +742,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                         id = 1,
                         underholdskostnad = underholdskostnadBarn1,
                         fom = behandling.virkningstidspunkt!!,
-                        tom = YearMonth.parse("2024-04").atEndOfMonth(),
+                        tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
                         under_skolealder = true,
                         omfang = Tilsynstype.DELTID,
                         kilde = Kilde.MANUELL,
@@ -749,8 +750,8 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     Barnetilsyn(
                         id = 2,
                         underholdskostnad = underholdskostnadBarn1,
-                        fom = YearMonth.parse("2024-05").atDay(1),
-                        tom = YearMonth.parse("2024-08").atEndOfMonth(),
+                        fom = YearMonth.now().minusMonths(6).atDay(1),
+                        tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
                         under_skolealder = true,
                         omfang = Tilsynstype.DELTID,
                         kilde = Kilde.MANUELL,
@@ -762,18 +763,18 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                         id = 1,
                         underholdskostnad = underholdskostnadBarn1,
                         fom = behandling.virkningstidspunkt!!,
-                        tom = YearMonth.parse("2024-04").atEndOfMonth(),
+                        tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
                         dagsats = BigDecimal(1000),
                     ),
                     Tilleggsstønad(
                         id = 2,
                         underholdskostnad = underholdskostnadBarn1,
-                        fom = YearMonth.parse("2024-05").atDay(1),
-                        tom = YearMonth.parse("2024-08").atEndOfMonth(),
+                        fom = YearMonth.now().minusMonths(6).atDay(1),
+                        tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
                         dagsats = BigDecimal(1000),
                     ),
                 )
-            val opphørsdato = LocalDate.parse("2024-07-01")
+            val opphørsdato = LocalDate.now().minusMonths(3)
 
             behandling.underholdskostnader = mutableSetOf(underholdskostnadBarn1)
             every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
@@ -793,6 +794,113 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 shouldHaveSize(2)
                 val sistePeriode = maxByOrNull { it.fom }
                 sistePeriode!!.tom shouldBe opphørsdato.opphørSisteTilDato()
+            }
+        }
+
+        @Test
+        fun `skal oppdatere opphørsdato underholdskostnad framover i tid`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+            val søknadsbarn2 =
+                Rolle(
+                    ident = testdataBarn2.ident,
+                    rolletype = Rolletype.BARN,
+                    behandling = behandling,
+                    fødselsdato = testdataBarn2.fødselsdato,
+                    id = 5,
+                    opphørsdato = LocalDate.now().minusMonths(10),
+                )
+            val søknadsbarn = behandling.søknadsbarn.first()
+            behandling.roller.add(søknadsbarn2)
+            behandling.virkningstidspunkt = YearMonth.now().minusMonths(8).atDay(1)
+
+            val underholdskostnadBarn1 =
+                Underholdskostnad(
+                    behandling = behandling,
+                    id = 1,
+                    person =
+                        Person(
+                            id = 1,
+                            rolle = mutableSetOf(søknadsbarn),
+                            ident = testdataBarn1.ident,
+                            navn = testdataBarn1.navn,
+                            fødselsdato = testdataBarn1.fødselsdato,
+                        ),
+                )
+            underholdskostnadBarn1.faktiskeTilsynsutgifter =
+                mutableSetOf(
+                    FaktiskTilsynsutgift(
+                        id = 1,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = behandling.virkningstidspunkt!!,
+                        tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
+                        tilsynsutgift = BigDecimal(1000),
+                    ),
+                    FaktiskTilsynsutgift(
+                        id = 2,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = YearMonth.now().minusMonths(6).atDay(1),
+                        tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
+                        tilsynsutgift = BigDecimal(1000),
+                    ),
+                )
+            underholdskostnadBarn1.barnetilsyn =
+                mutableSetOf(
+                    Barnetilsyn(
+                        id = 1,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = behandling.virkningstidspunkt!!,
+                        tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
+                        under_skolealder = true,
+                        omfang = Tilsynstype.DELTID,
+                        kilde = Kilde.MANUELL,
+                    ),
+                    Barnetilsyn(
+                        id = 2,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = YearMonth.now().minusMonths(6).atDay(1),
+                        tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
+                        under_skolealder = true,
+                        omfang = Tilsynstype.DELTID,
+                        kilde = Kilde.MANUELL,
+                    ),
+                )
+            underholdskostnadBarn1.tilleggsstønad =
+                mutableSetOf(
+                    Tilleggsstønad(
+                        id = 1,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = behandling.virkningstidspunkt!!,
+                        tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
+                        dagsats = BigDecimal(1000),
+                    ),
+                    Tilleggsstønad(
+                        id = 2,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = YearMonth.now().minusMonths(6).atDay(1),
+                        tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
+                        dagsats = BigDecimal(1000),
+                    ),
+                )
+            val opphørsdato = LocalDate.now().plusMonths(3)
+
+            behandling.underholdskostnader = mutableSetOf(underholdskostnadBarn1)
+            every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(søknadsbarn.id!!, opphørsdato = opphørsdato))
+
+            assertSoftly(underholdskostnadBarn1.tilleggsstønad) {
+                shouldHaveSize(2)
+                val sistePeriode = maxByOrNull { it.fom }
+                sistePeriode!!.tom shouldBe null
+            }
+            assertSoftly(underholdskostnadBarn1.faktiskeTilsynsutgifter) {
+                shouldHaveSize(2)
+                val sistePeriode = maxByOrNull { it.fom }
+                sistePeriode!!.tom shouldBe null
+            }
+            assertSoftly(underholdskostnadBarn1.barnetilsyn) {
+                shouldHaveSize(2)
+                val sistePeriode = maxByOrNull { it.fom }
+                sistePeriode!!.tom shouldBe null
             }
         }
     }

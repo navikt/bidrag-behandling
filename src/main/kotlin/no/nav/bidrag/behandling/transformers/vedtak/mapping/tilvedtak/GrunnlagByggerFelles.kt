@@ -57,6 +57,8 @@ val grunnlagsreferanse_utgift_direkte_betalt = "utgift_direkte_betalt"
 val grunnlagsreferanse_utgift_maks_godkjent_beløp = "utgift_maks_godkjent_beløp"
 val grunnlagsreferanse_løpende_bidrag = "løpende_bidrag_bidragspliktig"
 
+fun opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn: Rolle) = "virkningstidspunkt_${søknadsbarn.tilGrunnlagsreferanse()}"
+
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
 fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
@@ -141,20 +143,23 @@ fun Behandling.byggGrunnlagSøknad() =
     )
 
 fun Behandling.byggGrunnlagVirkningsttidspunkt() =
-    setOf(
-        GrunnlagDto(
-            referanse = "virkningstidspunkt",
-            type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
-            innhold =
-                POJONode(
-                    VirkningstidspunktGrunnlag(
-                        virkningstidspunkt = virkningstidspunkt!!,
-                        årsak = årsak,
-                        avslag = (årsak == null).ifTrue { avslag },
+    søknadsbarn
+        .map {
+            GrunnlagDto(
+                referanse = opprettGrunnlagsreferanseVirkningstidspunkt(it),
+                type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
+                innhold =
+                    POJONode(
+                        VirkningstidspunktGrunnlag(
+                            virkningstidspunkt = virkningstidspunkt!!,
+                            opphørsdato = it.opphørsdato,
+                            årsak = årsak,
+                            avslag = (årsak == null).ifTrue { avslag },
+                        ),
                     ),
-                ),
-        ),
-    )
+            )
+        }.toSet()
 
 fun Behandling.byggGrunnlagNotaterDirekteAvslag(): Set<GrunnlagDto> =
     setOf(
