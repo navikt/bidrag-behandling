@@ -1,16 +1,12 @@
 package no.nav.bidrag.behandling.service
 
-import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.FakeUnleash
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.PersonRepository
-import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
@@ -26,7 +22,6 @@ import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.test.context.junit.jupiter.SpringExtension
 import stubBehandlingrepository
 import stubPersonConsumer
 import stubPersonRepository
@@ -34,50 +29,23 @@ import stubSaksbehandlernavnProvider
 import stubTokenUtils
 import stubUnderholdskostnadRepository
 
-@ExtendWith(SpringExtension::class)
-abstract class CommonVedtakTilBehandlingTest {
-    @MockkBean
-    lateinit var behandlingService: BehandlingService
-
-    @MockkBean
+@ExtendWith(MockKExtension::class)
+abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
+    @MockK
     lateinit var bidragStønadConsumer: BidragStønadConsumer
 
-    @MockkBean
-    lateinit var grunnlagService: GrunnlagService
-
-    @MockkBean
+    @MockK
     lateinit var notatOpplysningerService: NotatOpplysningerService
 
-    @MockkBean
-    lateinit var tilgangskontrollService: TilgangskontrollService
-
-    @MockkBean
+    @MockK
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
-    @MockkBean
-    lateinit var evnevurderingService: BeregningEvnevurderingService
-
-    @MockkBean
-    lateinit var validerBehandlingService: ValiderBehandlingService
-
     @MockK
-    lateinit var underholdskostnadRepository: UnderholdskostnadRepository
-
-    @MockK
-    lateinit var behandlingRepository: BehandlingRepository
-    lateinit var personRepository: PersonRepository
-
-    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
-
-    @MockkBean
     lateinit var sakConsumer: BidragSakConsumer
-    lateinit var personConsumer: BidragPersonConsumer
     lateinit var vedtakService: VedtakService
 
     lateinit var beregningService: BeregningService
-    lateinit var dtomapper: Dtomapper
     val unleash = FakeUnleash()
-    val notatService = NotatService()
 
     @BeforeEach
     fun initMocks() {
@@ -142,7 +110,7 @@ abstract class CommonVedtakTilBehandlingTest {
             )
 
         unleash.enableAll()
-        every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
+//        every { grunnlagService.oppdatereGrunnlagForBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit

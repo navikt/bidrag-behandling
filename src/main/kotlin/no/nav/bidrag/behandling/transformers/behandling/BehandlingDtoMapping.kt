@@ -298,7 +298,6 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
             inntekter
                 .mapValideringsfeilForÅrsinntekter(
                     virkningstidspunktEllerSøktFomDato,
-                    globalOpphørsdato,
                     roller,
                     tilType(),
                 ).takeIf { it.isNotEmpty() },
@@ -335,7 +334,6 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
 
 fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,
-    opphørsdato: LocalDate?,
     roller: Set<Rolle>,
     behandlingType: TypeBehandling = TypeBehandling.FORSKUDD,
 ): Set<InntektValideringsfeil> {
@@ -344,6 +342,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     return roller
         .filter { bestemRollerSomKanHaInntekter(behandlingType).contains(it.rolletype) }
         .map { rolle ->
+            val opphørsdato = rolle.behandling.globalOpphørsdato
             val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
 
             if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
@@ -360,10 +359,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     hullIPerioder = hullIPerioder,
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
-                    ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(rolle.behandling.globalOpphørsdato),
-//                    perioderFørVirkningstidspunkt =
-//                        inntekterTaMed
-//                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
+                    ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(opphørsdato),
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } == true,
@@ -397,7 +393,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
             overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
             fremtidigPeriode =
                 inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
-            ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(gjelderRolle?.behandling?.globalOpphørsdato),
+            ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(inntekterTaMed.firstOrNull()?.opphørsdato),
             ident = gjelderIdent,
             rolle = gjelderRolle?.tilDto(),
             gjelderBarn = gjelderBarn,

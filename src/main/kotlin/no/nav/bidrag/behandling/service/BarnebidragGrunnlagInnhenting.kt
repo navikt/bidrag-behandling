@@ -52,6 +52,20 @@ class BarnebidragGrunnlagInnhenting(
             grunnlagsliste.add(grunnlag)
         }
 
+        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
+            val request =
+                behandling.createStønadHistoriskRequest(
+                    stønadstype = Stønadstype.BIDRAG18AAR,
+                    søknadsbarn = søknadsbarn,
+                    skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+                )
+            val grunnlag =
+                bidragStønadConsumer
+                    .hentHistoriskeStønader(request)
+                    .tilGrunnlag(request, behandling, søknadsbarn)
+            grunnlagsliste.add(grunnlag)
+        }
+
         val request =
             behandling.createStønadHistoriskRequest(
                 stønadstype = Stønadstype.BIDRAG,
@@ -84,6 +98,7 @@ class BarnebidragGrunnlagInnhenting(
         val grunnlagstype =
             when (request.type) {
                 Stønadstype.BIDRAG -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG
+                Stønadstype.BIDRAG18AAR -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR
                 Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
                 else -> throw IllegalArgumentException("Ukjent stønadstype")
             }
@@ -96,6 +111,7 @@ class BarnebidragGrunnlagInnhenting(
             gjelderReferanse =
                 when {
                     request.type == Stønadstype.BIDRAG -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                    request.type == Stønadstype.BIDRAG18AAR -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
                     this != null && this.mottaker.verdi != behandling.bidragsmottaker!!.ident -> {
                         // TODO: What to do here?
                         behandling.bidragsmottaker!!.tilGrunnlagsreferanse()

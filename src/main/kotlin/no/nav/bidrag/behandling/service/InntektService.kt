@@ -99,10 +99,10 @@ class InntektService(
                 it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }
 
-        if (behandling.globalOpphørsdato != null) {
+        if (behandling.minstEnRolleHarOpphørsdato) {
             behandling.inntekter
                 .filter { it.taMed && it.datoFom != null }
-                .filter { it.datoFom!! >= behandling.globalOpphørsdato }
+                .filter { it.opphørsdato != null && it.datoFom!! >= it.opphørsdato }
                 .forEach {
                     it.taMed = false
                     it.datoFom = null
@@ -113,25 +113,27 @@ class InntektService(
                 .filter { eksplisitteYtelser.contains(it.type) }
                 .filter { it.taMed && it.kilde == Kilde.MANUELL }
                 .groupBy { Triple(it.type, it.ident, it.gjelderBarn) }
-                .forEach { (pair, inntekter) ->
-                    if (pair.first == Inntektsrapportering.BARNETILLEGG) {
+                .forEach { (triple, inntekter) ->
+                    if (triple.first == Inntektsrapportering.BARNETILLEGG) {
                         inntekter
                             .groupBy { it.inntektstypeListe.firstOrNull() }
                             .forEach { (_, inntekter) ->
-                                inntekter.justerSistePeriodeForOpphørsdato(behandling.globalOpphørsdato, forrigeOpphørsdato)
+                                inntekter.justerSistePeriodeForOpphørsdato(
+                                    forrigeOpphørsdato,
+                                )
                             }
                     } else {
-                        inntekter.justerSistePeriodeForOpphørsdato(behandling.globalOpphørsdato, forrigeOpphørsdato)
+                        inntekter.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato)
                     }
                 }
         }
 
-        if (opphørSlettet || behandling.globalOpphørsdato != null) {
+        if (opphørSlettet || behandling.minstEnRolleHarOpphørsdato) {
             behandling.inntekter
                 .filter { !eksplisitteYtelser.contains(it.type) }
                 .groupBy { Pair(it.type, it.ident) }
                 .forEach { (_, inntekter) ->
-                    inntekter.justerSistePeriodeForOpphørsdato(behandling.globalOpphørsdato, forrigeOpphørsdato)
+                    inntekter.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato)
                 }
         }
 
@@ -139,20 +141,17 @@ class InntektService(
         behandling.inntekter.removeAll(manuelleInntekterSomErFjernet)
     }
 
-    private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(
-        opphørsdato: LocalDate?,
-        forrigeOpphørsdato: LocalDate?,
-    ) {
+    private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato: LocalDate?) {
         filter { it.taMed }
             .filter {
-                opphørsdato == null ||
+                it.opphørsdato == null ||
                     it.datoTom == null ||
-                    it.datoTom!!.isAfter(opphørsdato) ||
+                    it.datoTom!!.isAfter(it.opphørsdato) ||
                     it.datoTom == forrigeOpphørsdato?.opphørSisteTilDato()
             }.sortedBy { it.datoFom }
             .lastOrNull()
-            ?.let {
-                it.datoTom = justerPeriodeTilOpphørsdato(opphørsdato)
+            ?.let { inntekt ->
+                inntekt.datoTom = justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
             }
     }
 

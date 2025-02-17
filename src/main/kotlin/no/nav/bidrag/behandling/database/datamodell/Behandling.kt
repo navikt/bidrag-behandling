@@ -175,7 +175,13 @@ open class Behandling(
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = refVedtaksid != null
-    val globalOpphørsdato get() = roller.filter { it.opphørsdato != null }.maxByOrNull { it.opphørsdato!! }?.opphørsdato
+    val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
+    val globalOpphørsdato get() =
+        if (søknadsbarn.any { it.opphørsdato == null }) {
+            null
+        } else {
+            søknadsbarn.maxByOrNull { it.opphørsdato!! }?.opphørsdato
+        }
     val opphørTilDato get() = justerPeriodeTilOpphørsdato(globalOpphørsdato)
     val opphørSistePeriode get() = opphørTilDato != null
 }

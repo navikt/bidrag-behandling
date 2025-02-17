@@ -237,7 +237,7 @@ class Dtomapper(
                                     this,
                                     it,
                                 ).copy(
-                                    opphørSistePeriode = opphørSistePeriode,
+                                    opphørSistePeriode = it.opphørSistePeriode,
                                 )
 
                         beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)

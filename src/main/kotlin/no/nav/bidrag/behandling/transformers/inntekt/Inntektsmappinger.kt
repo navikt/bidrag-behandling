@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndrin
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -56,9 +57,15 @@ fun Inntekt.bestemDatoTomForOffentligInntekt() =
             val maxDate =
                 maxOf(
                     YearMonth.now().atEndOfMonth(),
+                    minOf(YearMonth.now().atEndOfMonth(), opphørsdato?.plusMonths(1)?.minusDays(1) ?: LocalDate.MAX),
                     behandling!!.virkningstidspunktEllerSøktFomDato,
                 )
-            if (tom.plusMonths(1).isAfter(maxDate)) null else tom
+            if (tom.plusMonths(1).isAfter(maxDate)) {
+                justerPeriodeTilOpphørsdato(opphørsdato)
+            } else {
+                justerPeriodeTilOpphørsdato(opphørsdato)
+                    ?: tom
+            }
         }
     }
 
@@ -67,7 +74,7 @@ fun Inntekt.skalAutomatiskSettePeriode(): Boolean =
 
 fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør(): Boolean =
     opprinneligFom?.let { fom ->
-        if (behandling?.globalOpphørsdato != null && fom < behandling?.globalOpphørsdato) return@let false
+        if (opphørsdato != null && fom > opphørsdato) return@let false
         (opprinneligTom ?: LocalDate.MAX).let { tom ->
             behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->
                 val virkningstidspunktEllerStartenAvNesteMåned =

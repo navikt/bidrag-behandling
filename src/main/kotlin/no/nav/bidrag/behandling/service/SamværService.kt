@@ -127,9 +127,9 @@ class SamværService(
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         val virkningstidspunkt = behandling.virkningstidspunkt ?: return
 
-        // Antar at opphørsdato er måneden perioden skal opphøre
-        val opphørsdato = behandling.globalOpphørsdato
         behandling.samvær.forEach {
+            // Antar at opphørsdato er måneden perioden skal opphøre
+            val opphørsdato = it.rolle.opphørsdato
             it.perioder
                 .filter { it.fom < virkningstidspunkt }
                 .forEach { periode ->
@@ -148,7 +148,7 @@ class SamværService(
                 it.perioder
                     .maxByOrNull { it.fom }
                     ?.let {
-                        it.tom = behandling.opphørTilDato
+                        it.tom = it.samvær.rolle.opphørTilDato
                     }
             }
 
@@ -156,7 +156,7 @@ class SamværService(
                 it.perioder
                     .maxByOrNull { it.fom }
                     ?.let {
-                        it.tom = behandling.opphørTilDato
+                        it.tom = it.samvær.rolle.opphørTilDato
                     }
             }
         }

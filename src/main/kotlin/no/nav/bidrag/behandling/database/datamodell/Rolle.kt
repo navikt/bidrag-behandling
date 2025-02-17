@@ -96,6 +96,7 @@ open class Rolle(
 
     val opphørTilDato get() = justerPeriodeTilOpphørsdato(opphørsdato)
     val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato
+    val opphørSistePeriode get() = opphørTilDato != null
 
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"

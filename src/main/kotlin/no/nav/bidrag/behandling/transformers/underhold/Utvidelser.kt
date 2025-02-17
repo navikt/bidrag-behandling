@@ -168,8 +168,8 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
     opphørSlettet: Boolean = false,
     forrigeOpphørsdato: LocalDate? = null,
 ) {
-    if (behandling.globalOpphørsdato != null || opphørSlettet) {
-        val opphørsdato = behandling.globalOpphørsdato
+    if (opphørsdato != null || opphørSlettet) {
+        val opphørsdato = this.barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
 
         barnetilsyn
             .filter { opphørsdato == null || it.fom > opphørsdato }

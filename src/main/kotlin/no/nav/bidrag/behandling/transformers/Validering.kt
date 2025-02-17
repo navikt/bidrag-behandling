@@ -75,6 +75,9 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (rolle != null && rolle.rolletype != Rolletype.BARN) {
         feilliste.add("Opphørsdato kan kun settes for barn")
     }
+    if (rolle != null && rolle.rolletype == Rolletype.BARN && opphørsdato.isAfter(rolle.fødselsdato.plusYears(18))) {
+        feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
+    }
 
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
@@ -397,12 +400,15 @@ private fun Set<Bostatusperiode>.finneOverlappendeBostatusperioder() =
             }
     }
 
-fun List<Datoperiode>.ugyldigSluttperiode(opphørsdato: LocalDate? = null): Boolean {
+fun List<Datoperiode>.ugyldigSluttperiode(
+    opphørsdato: LocalDate? = null,
+    kanHaHullIPerioder: Boolean = false,
+): Boolean {
     if (opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) return false
     val sistePeriode = maxByOrNull { it.fom } ?: return false
     val sisteGyldigTilDato = opphørsdato.opphørSisteTilDato()
-    val sisteTilDato = sistePeriode.til
-    return sisteTilDato != sisteGyldigTilDato
+    val sisteTilDato = sistePeriode.til ?: LocalDate.MAX
+    return if (!kanHaHullIPerioder) sisteTilDato != sisteGyldigTilDato else sisteTilDato.isAfter(sisteGyldigTilDato) == true
 }
 
 fun List<Datoperiode>.finnHullIPerioder(
@@ -468,11 +474,11 @@ fun List<Inntekt>.finnHullIPerioder(
 @JvmName("harUgyldigSluttperiode")
 fun List<Inntekt>.harUgyldigSluttperiode(opphørsdato: LocalDate?): Boolean {
     val perioderSomSkalSjekkes =
-        filter { it.taMed && !it.kanHaHullIPerioder() }
+        filter { it.taMed }
             .filter { !årsinntekterYtelser.contains(it.type) }
             .sortedBy { it.datoFom }
             .map { Datoperiode(it.datoFom!!, it.datoTom) }
-    return perioderSomSkalSjekkes.ugyldigSluttperiode(opphørsdato)
+    return perioderSomSkalSjekkes.ugyldigSluttperiode(opphørsdato, all { it.kanHaHullIPerioder() })
 }
 
 val Inntekt.inntektstypeListe

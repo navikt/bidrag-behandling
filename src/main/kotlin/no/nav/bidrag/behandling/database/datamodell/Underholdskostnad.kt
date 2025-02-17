@@ -33,21 +33,21 @@ open class Underholdskostnad(
         mappedBy = "underholdskostnad",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
-    ) open val barnetilsyn: MutableSet<Barnetilsyn> = mutableSetOf(),
+    ) open var barnetilsyn: MutableSet<Barnetilsyn> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "underholdskostnad",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
-    open val tilleggsstønad: MutableSet<Tilleggsstønad> = mutableSetOf(),
+    open var tilleggsstønad: MutableSet<Tilleggsstønad> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "underholdskostnad",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
         orphanRemoval = true,
     )
-    open val faktiskeTilsynsutgifter: MutableSet<FaktiskTilsynsutgift> = mutableSetOf(),
+    open var faktiskeTilsynsutgifter: MutableSet<FaktiskTilsynsutgift> = mutableSetOf(),
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde? = null,
 ) {

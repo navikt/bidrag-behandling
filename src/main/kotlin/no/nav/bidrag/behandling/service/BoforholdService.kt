@@ -1084,7 +1084,7 @@ class BoforholdService(
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.globalOpphørsdato,
+                rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.tilType(),
                 listOf(periodiseringsrequest),
             ),

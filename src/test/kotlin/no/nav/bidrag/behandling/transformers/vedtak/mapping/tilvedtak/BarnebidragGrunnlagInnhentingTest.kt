@@ -39,12 +39,79 @@ class BarnebidragGrunnlagInnhentingTest {
     var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
 
     @Test
-    fun `skal ikke hente grunnlag hvis søknadstype er SØKNAD`() {
+    fun `skal hente grunnlag hvis søknadstype er SØKNAD`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns null
         behandling.søknadstype = BisysSøknadstype.SØKNAD
         val grunnlagsliste = barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(behandling, behandling.søknadsbarn.first())
-        grunnlagsliste shouldHaveSize 0
+        grunnlagsliste shouldHaveSize 1
+    }
+
+    @Test
+    fun `skal hente grunnlag hvis stønadstype er BIDRAG18AAR`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.stonadstype = Stønadstype.BIDRAG18AAR
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns null
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG18AAR }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG18AAR,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
+                    ),
+            )
+        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        val grunnlagsliste = barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(behandling, behandling.søknadsbarn.first())
+        grunnlagsliste shouldHaveSize 2
+        assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }) {
+            shouldNotBeNull()
+            val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
+            referanse shouldBe "BELØPSHISTORIKK_BIDRAG_${SAKSNUMMER}_" +
+                "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
+            gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+            gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
+            innhold.førsteIndeksreguleringsår shouldBe null
+            grunnlagsreferanseListe shouldHaveSize 0
+            innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
+            innhold.beløpshistorikk shouldHaveSize 0
+        }
+        assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR }) {
+            shouldNotBeNull()
+            val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
+            referanse shouldBe "BELØPSHISTORIKK_BIDRAG_18_ÅR_${SAKSNUMMER}_" +
+                "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
+            gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+            gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
+            innhold.førsteIndeksreguleringsår shouldBe 2025
+            grunnlagsreferanseListe shouldHaveSize 0
+            innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
+            innhold.beløpshistorikk shouldHaveSize 2
+        }
+
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.BIDRAG
+                    it.skyldner.verdi shouldBe behandling.bidragspliktig!!.ident
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.BIDRAG18AAR
+                    it.skyldner.verdi shouldBe behandling.bidragspliktig!!.ident
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
     }
 
     @Test
