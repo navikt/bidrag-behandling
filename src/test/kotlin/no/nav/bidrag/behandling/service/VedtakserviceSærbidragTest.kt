@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -22,6 +23,7 @@ import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
+import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -76,6 +78,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
@@ -452,7 +455,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     @Transactional
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag og personobjekter`() {
         stubPersonConsumer()
-        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_annen_barn")
+        every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns commonObjectmapper.readValue(erstattVariablerITestFil("stonad/løpende-bidragssaker-bp_annen_barn"))
+
         stubUtils.stubBidraBBMHentBeregning("bbm-beregning_annen_barn")
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.refVedtaksid = 553
@@ -548,6 +552,8 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         stubUtils.stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1_2")
         stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_2")
         stubUtils.stubBidraBBMHentBeregning("bbm-beregning_2")
+        every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns commonObjectmapper.readValue(erstattVariablerITestFil("stonad/løpende-bidragssaker-bp_2"))
+
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.refVedtaksid = 553
         behandling.klageMottattdato = LocalDate.now()

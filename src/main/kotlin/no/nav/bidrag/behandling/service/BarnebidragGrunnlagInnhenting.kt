@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
@@ -39,64 +42,81 @@ class BarnebidragGrunnlagInnhenting(
             return emptySet()
         }
         if (søknadstyperSomKreverBeløpshistorikkForskudd.contains(behandling.søknadstype)) {
-            val request =
+            val grunnlag =
+                behandling.grunnlag
+                    .hentSisteBeløpshistorikkGrunnlag(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
+                    .konvertereData<StønadDto>()
+                    .tilGrunnlag(
+                        kravhaver = søknadsbarn.ident!!,
+                        skyldner = skyldnerNav.verdi,
+                        type = Stønadstype.FORSKUDD,
+                        behandling,
+                        søknadsbarn,
+                    )
+            grunnlagsliste.add(grunnlag)
+        }
+
+        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
+            val grunnlag =
+                behandling.grunnlag
+                    .hentSisteBeløpshistorikkGrunnlag(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+                    .konvertereData<StønadDto>()
+                    .tilGrunnlag(
+                        kravhaver = søknadsbarn.ident!!,
+                        skyldner = behandling.bidragspliktig!!.ident!!,
+                        type = Stønadstype.BIDRAG18AAR,
+                        behandling,
+                        søknadsbarn,
+                    )
+            grunnlagsliste.add(grunnlag)
+        }
+
+        val grunnlag =
+            behandling.grunnlag
+                .hentSisteBeløpshistorikkGrunnlag(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+                .konvertereData<StønadDto>()
+                .tilGrunnlag(
+                    kravhaver = søknadsbarn.ident!!,
+                    skyldner = behandling.bidragspliktig!!.ident!!,
+                    type = Stønadstype.BIDRAG,
+                    behandling,
+                    søknadsbarn,
+                )
+        grunnlagsliste.add(grunnlag)
+        return grunnlagsliste
+    }
+
+    fun hentBeløpshistorikk(
+        behandling: Behandling,
+        søknadsbarn: Rolle,
+        stønadstype: Stønadstype,
+    ): StønadDto? {
+        val request =
+            if (stønadstype == Stønadstype.FORSKUDD) {
                 behandling.createStønadHistoriskRequest(
                     stønadstype = Stønadstype.FORSKUDD,
                     skyldner = skyldnerNav,
                     søknadsbarn = søknadsbarn,
                 )
-            val grunnlag =
-                bidragStønadConsumer
-                    .hentHistoriskeStønader(request)
-                    .tilGrunnlag(request, behandling, søknadsbarn)
-            grunnlagsliste.add(grunnlag)
-        }
-
-        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
-            val request =
+            } else {
                 behandling.createStønadHistoriskRequest(
-                    stønadstype = Stønadstype.BIDRAG18AAR,
+                    stønadstype = stønadstype,
                     søknadsbarn = søknadsbarn,
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
                 )
-            val grunnlag =
-                bidragStønadConsumer
-                    .hentHistoriskeStønader(request)
-                    .tilGrunnlag(request, behandling, søknadsbarn)
-            grunnlagsliste.add(grunnlag)
-        }
-
-        val request =
-            behandling.createStønadHistoriskRequest(
-                stønadstype = Stønadstype.BIDRAG,
-                søknadsbarn = søknadsbarn,
-                skyldner = Personident(behandling.bidragspliktig!!.ident!!),
-            )
-        val grunnlag = bidragStønadConsumer.hentHistoriskeStønader(request).tilGrunnlag(request, behandling, søknadsbarn)
-        grunnlagsliste.add(grunnlag)
-        return grunnlagsliste
-    }
-
-    fun hentBeløpshistorikkBidrag(
-        behandling: Behandling,
-        søknadsbarn: Rolle,
-    ): StønadDto? {
-        val request =
-            behandling.createStønadHistoriskRequest(
-                stønadstype = Stønadstype.BIDRAG,
-                søknadsbarn = søknadsbarn,
-                skyldner = Personident(behandling.bidragspliktig!!.ident!!),
-            )
+            }
         return bidragStønadConsumer.hentHistoriskeStønader(request)
     }
 
     fun StønadDto?.tilGrunnlag(
-        request: HentStønadHistoriskRequest,
+        kravhaver: String,
+        skyldner: String,
+        type: Stønadstype,
         behandling: Behandling,
         søknadsbarn: Rolle,
     ): GrunnlagDto {
         val grunnlagstype =
-            when (request.type) {
+            when (type) {
                 Stønadstype.BIDRAG -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG
                 Stønadstype.BIDRAG18AAR -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR
                 Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
@@ -105,13 +125,13 @@ class BarnebidragGrunnlagInnhenting(
 
         return GrunnlagDto(
             referanse =
-                "${grunnlagstype}_${request.sak.verdi}_${request.kravhaver.verdi}_${request.skyldner.verdi}" +
+                "${grunnlagstype}_${behandling.saksnummer}_${kravhaver}_$skyldner" +
                     "_${LocalDate.now().toCompactString()}",
             type = grunnlagstype,
             gjelderReferanse =
                 when {
-                    request.type == Stønadstype.BIDRAG -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
-                    request.type == Stønadstype.BIDRAG18AAR -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                    type == Stønadstype.BIDRAG -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                    type == Stønadstype.BIDRAG18AAR -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
                     this != null && this.mottaker.verdi != behandling.bidragsmottaker!!.ident -> {
                         // TODO: What to do here?
                         behandling.bidragsmottaker!!.tilGrunnlagsreferanse()

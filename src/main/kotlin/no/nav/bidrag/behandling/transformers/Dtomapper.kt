@@ -733,7 +733,10 @@ class Dtomapper(
             }
 
     private fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
-        val eksisterendeVedtak = grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!) ?: return null
+        val eksisterendeVedtak =
+            grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+                ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+                ?: return null
         val stønad = eksisterendeVedtak.konvertereData<StønadDto>()
         val opphørPeriode = stønad!!.periodeListe.filter { it.beløp == null }.maxByOrNull { it.periode.til == null } ?: return null
         return EksisterendeOpphørsvedtakDto(

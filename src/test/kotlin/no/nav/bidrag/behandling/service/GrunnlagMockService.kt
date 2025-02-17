@@ -8,12 +8,15 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
@@ -25,6 +28,10 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -36,13 +43,17 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubSjablonService
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -102,6 +113,8 @@ class GrunnlagMockService {
     lateinit var sivilstandRepository: SivilstandRepository
 
     @MockkBean
+    lateinit var bidragStønadConsumer: BidragStønadConsumer
+
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
 
     lateinit var personRepository: PersonRepository
@@ -114,6 +127,9 @@ class GrunnlagMockService {
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
         val personService = PersonService(personConsumer)
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
+        barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
+
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
@@ -544,7 +560,233 @@ class GrunnlagMockService {
             behandling.inntekter.filter { it.ident == nyIdentBm } shouldHaveSize 3
             behandling.underholdskostnader.find { it.person.ident == nyIdentBarn1 }.shouldNotBeNull()
             behandling.grunnlag.find { it.gjelder == nyIdentBarn1 }.shouldNotBeNull()
-            behandling.husstandsmedlem.find { it.ident == testdataBarn1.ident }.shouldNotBeNull()
+            behandling.husstandsmedlem.find { it.ident == nyIdentBarn1 }.shouldNotBeNull()
+        }
+    }
+
+    @Test
+    fun `skal lagre beløpshistorikk grunnlag hvis bidrag`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        mockGrunnlagrespons(
+            opprettHentGrunnlagDto(),
+            opprettHentGrunnlagDto(),
+        )
+        behandling.stonadstype = Stønadstype.BIDRAG
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), null)).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                    ),
+            )
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG18AAR }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG18AAR,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
+                    ),
+            )
+        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
+        grunnlagsliste shouldHaveSize 1
+        assertSoftly(grunnlagsliste.find { it.type == Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG }) {
+            shouldNotBeNull()
+            konvertereData<StønadDto>().shouldNotBeNull()
+            gjelder shouldBe søknadsbarn.ident
+            rolle shouldBe behandling.bidragspliktig!!
+            erBearbeidet shouldBe false
+            aktiv.shouldNotBeNull()
+        }
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.BIDRAG
+                    it.skyldner.verdi shouldBe behandling.bidragspliktig!!.ident
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
+        verify(exactly = 0) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.FORSKUDD
+                    it.skyldner.verdi shouldBe skyldnerNav.verdi
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
+        verify(exactly = 0) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.BIDRAG18AAR
+                    it.skyldner.verdi shouldBe behandling.bidragspliktig!!.ident
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `skal lagre beløpshistorikk grunnlag hvis bidrag 18 år`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        mockGrunnlagrespons(
+            opprettHentGrunnlagDto(),
+            opprettHentGrunnlagDto(),
+        )
+        behandling.stonadstype = Stønadstype.BIDRAG18AAR
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), null)).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                    ),
+            )
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG18AAR }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG18AAR,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
+                    ),
+            )
+        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
+        grunnlagsliste shouldHaveSize 2
+        assertSoftly(grunnlagsliste.find { it.type == Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG }) {
+            shouldNotBeNull()
+            konvertereData<StønadDto>().shouldNotBeNull()
+            gjelder shouldBe søknadsbarn.ident
+            rolle shouldBe behandling.bidragspliktig!!
+            erBearbeidet shouldBe false
+            aktiv.shouldNotBeNull()
+        }
+        assertSoftly(grunnlagsliste.find { it.type == Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR }) {
+            shouldNotBeNull()
+            konvertereData<StønadDto>().shouldNotBeNull()
+            gjelder shouldBe søknadsbarn.ident
+            rolle shouldBe behandling.bidragspliktig!!
+            erBearbeidet shouldBe false
+            aktiv.shouldNotBeNull()
+        }
+
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.BIDRAG
+                    it.skyldner.verdi shouldBe behandling.bidragspliktig!!.ident
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.BIDRAG18AAR
+                    it.skyldner.verdi shouldBe behandling.bidragspliktig!!.ident
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `skal lagre beløpshistorikk grunnlag hvis begrenset revurdering`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        mockGrunnlagrespons(
+            opprettHentGrunnlagDto(),
+            opprettHentGrunnlagDto(),
+        )
+        behandling.stonadstype = Stønadstype.BIDRAG
+        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), null)).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                    ),
+            )
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), null)).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                    ),
+            )
+        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG18AAR }) } returns null
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
+        grunnlagsliste shouldHaveSize 2
+        assertSoftly(grunnlagsliste.find { it.type == Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG }) {
+            shouldNotBeNull()
+            konvertereData<StønadDto>().shouldNotBeNull()
+            gjelder shouldBe søknadsbarn.ident
+            rolle shouldBe behandling.bidragspliktig!!
+            erBearbeidet shouldBe false
+            aktiv.shouldNotBeNull()
+        }
+        assertSoftly(grunnlagsliste.find { it.type == Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD }) {
+            shouldNotBeNull()
+            konvertereData<StønadDto>().shouldNotBeNull()
+            gjelder shouldBe søknadsbarn.ident
+            rolle shouldBe behandling.bidragsmottaker!!
+            erBearbeidet shouldBe false
+            aktiv.shouldNotBeNull()
+        }
+
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.BIDRAG
+                    it.skyldner.verdi shouldBe behandling.bidragspliktig!!.ident
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
+        }
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.type shouldBe Stønadstype.FORSKUDD
+                    it.skyldner.verdi shouldBe skyldnerNav.verdi
+                    it.sak.verdi shouldBe behandling.saksnummer
+                    it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
+                },
+            )
         }
     }
 

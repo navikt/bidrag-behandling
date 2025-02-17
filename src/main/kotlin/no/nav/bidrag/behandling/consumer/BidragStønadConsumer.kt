@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_CACHE
+import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
@@ -53,6 +55,7 @@ class BidragStønadConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
+    @BrukerCacheable(STØNAD_HISTORIKK_CACHE)
     fun hentHistoriskeStønader(request: HentStønadHistoriskRequest): StønadDto? =
         postForEntity(
             bidragsStønadUri.pathSegment("hent-stonad-historisk/").build().toUri(),

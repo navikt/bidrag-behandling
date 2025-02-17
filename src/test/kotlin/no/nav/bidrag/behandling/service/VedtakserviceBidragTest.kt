@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -31,6 +32,7 @@ import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetillegg
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
+import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
@@ -528,35 +530,34 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
-        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
-            opprettStønadDto(
-                stønadstype = Stønadstype.FORSKUDD,
-                periodeListe =
-                    listOf(
-                        opprettStønadPeriodeDto(
-                            ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
-                            beløp = BigDecimal("2600"),
-                        ),
-                        opprettStønadPeriodeDto(
-                            ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
-                            beløp = BigDecimal("2800"),
-                        ),
-                    ),
-            )
-        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
-            opprettStønadDto(
-                listOf(
-                    opprettStønadPeriodeDto(
-                        ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
-                        beløp = BigDecimal("2000"),
-                    ),
-                    opprettStønadPeriodeDto(
-                        ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
-                        beløp = BigDecimal("3500"),
-                    ),
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
+                    beløp = BigDecimal("2600"),
                 ),
-            )
-
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
+                    beløp = BigDecimal("2800"),
+                ),
+            ),
+        )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
+                    beløp = BigDecimal("2000"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
+                    beløp = BigDecimal("3500"),
+                ),
+            ),
+        )
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
             OpprettVedtakResponseDto(

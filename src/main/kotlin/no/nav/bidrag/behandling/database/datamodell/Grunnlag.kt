@@ -96,9 +96,11 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
         ?.map { Personident(it.key) }
         ?.toSet()
 
-fun Set<Grunnlag>.hentSisteBeløpshistorikkGrunnlag(gjelderBarnIdent: String) =
-    hentSisteAktiv()
-        .find { it.gjelder == gjelderBarnIdent && Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG == it.type }
+fun Set<Grunnlag>.hentSisteBeløpshistorikkGrunnlag(
+    gjelderBarnIdent: String,
+    type: Grunnlagsdatatype,
+) = hentSisteAktiv()
+    .find { it.gjelder == gjelderBarnIdent && type == it.type }
 
 fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
     hentSisteAktiv()

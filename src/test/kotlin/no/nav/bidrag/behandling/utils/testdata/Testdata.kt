@@ -1815,6 +1815,46 @@ fun Behandling.leggTilTillegsstønad(
     )
 }
 
+fun Behandling.leggTilGrunnlagBeløpshistorikk(
+    type: Grunnlagsdatatype,
+    søknadsbarn: Rolle = this.søknadsbarn.first(),
+    periodeListe: List<StønadPeriodeDto> =
+        listOf(
+            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                vedtaksid = 200,
+                valutakode = "NOK",
+            ),
+            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
+        ),
+) {
+    grunnlag.add(
+        Grunnlag(
+            type = type,
+            rolle =
+                when (type) {
+                    Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD -> bidragsmottaker!!
+                    else -> bidragspliktig!!
+                },
+            behandling = this,
+            innhentet = LocalDateTime.now(),
+            aktiv = LocalDateTime.now(),
+            gjelder = søknadsbarn.ident,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    opprettStønadDto(
+                        stønadstype =
+                            when (type) {
+                                Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD -> Stønadstype.FORSKUDD
+                                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR -> Stønadstype.BIDRAG18AAR
+                                else -> Stønadstype.BIDRAG
+                            },
+                        periodeListe = periodeListe,
+                    ),
+                ),
+        ),
+    )
+}
+
 fun Behandling.leggTilSamvær(
     periode: ÅrMånedsperiode,
     barn: TestDataPerson = testdataBarn1,

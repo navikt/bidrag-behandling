@@ -1101,22 +1101,22 @@ class ValiderInntektPerioderTest {
         val inntekter =
             setOf(
                 opprettInntekt(
+                    YearMonth.now().minusMonths(6),
                     YearMonth.now().minusMonths(5),
-                    YearMonth.now().minusMonths(4),
                     ident = bmIdent,
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
                 opprettInntekt(
+                    YearMonth.now().minusMonths(4),
                     YearMonth.now().minusMonths(3),
-                    YearMonth.now().minusMonths(2),
                     ident = bmIdent,
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
             )
 
-        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(YearMonth.now().minusMonths(5).atDay(1), roller).toList()
+        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(YearMonth.now().minusMonths(6).atDay(1), roller).toList()
         resultat shouldHaveSize 0
     }
 

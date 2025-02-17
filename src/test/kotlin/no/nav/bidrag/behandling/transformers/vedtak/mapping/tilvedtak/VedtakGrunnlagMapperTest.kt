@@ -93,7 +93,7 @@ class VedtakGrunnlagMapperTest {
             ilagtGebyr shouldBe true
             skattepliktigInntekt shouldBe BigDecimal(900000)
             maksBarnetillegg shouldBe BigDecimal(2000)
-            beløpGebyrsats shouldBe BigDecimal(1277)
+            beløpGebyrsats shouldBe BigDecimal(1314)
             resultatkode shouldBe Resultatkode.GEBYR_ILAGT
             grunnlagsreferanseListeEngangsbeløp shouldHaveSize 1
             grunnlagsreferanseListeEngangsbeløp shouldContain grunnlagsliste.find { it.type == Grunnlagstype.SLUTTBEREGNING_GEBYR }!!.referanse
@@ -144,7 +144,7 @@ class VedtakGrunnlagMapperTest {
             ilagtGebyr shouldBe false
             skattepliktigInntekt shouldBe BigDecimal(900000)
             maksBarnetillegg shouldBe null
-            beløpGebyrsats shouldBe BigDecimal(1277)
+            beløpGebyrsats shouldBe BigDecimal(1314)
             resultatkode shouldBe Resultatkode.GEBYR_FRITATT
             grunnlagsreferanseListeEngangsbeløp shouldHaveSize 2
             grunnlagsreferanseListeEngangsbeløp shouldContain grunnlagsliste.find { it.type == Grunnlagstype.SLUTTBEREGNING_GEBYR }!!.referanse
@@ -195,7 +195,7 @@ class VedtakGrunnlagMapperTest {
             ilagtGebyr shouldBe false
             skattepliktigInntekt shouldBe BigDecimal(900000)
             maksBarnetillegg shouldBe null
-            beløpGebyrsats shouldBe BigDecimal(1277)
+            beløpGebyrsats shouldBe BigDecimal(1314)
             resultatkode shouldBe Resultatkode.GEBYR_FRITATT
             grunnlagsreferanseListeEngangsbeløp shouldHaveSize 2
             grunnlagsreferanseListeEngangsbeløp shouldContain grunnlagsliste.find { it.type == Grunnlagstype.SLUTTBEREGNING_GEBYR }!!.referanse

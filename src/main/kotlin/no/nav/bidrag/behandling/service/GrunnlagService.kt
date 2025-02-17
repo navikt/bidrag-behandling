@@ -65,6 +65,7 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
@@ -74,6 +75,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -167,33 +169,59 @@ class GrunnlagService(
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
 
+        feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling))
+
+        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling))
+        }
+        if (behandling.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling))
+        }
+        return feilrapporteringer
+    }
+
+    fun hentOgLagreBeløpshistorikk(
+        stønadstype: Stønadstype,
+        behandling: Behandling,
+    ): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+        val type =
+            when (stønadstype) {
+                Stønadstype.BIDRAG -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG
+                Stønadstype.FORSKUDD -> Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD
+                Stønadstype.BIDRAG18AAR -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR
+                else -> return emptyMap()
+            }
         behandling.søknadsbarn.map {
             try {
                 val eksisterendeGrunnlag =
-                    behandling.grunnlag.hentSisteBeløpshistorikkGrunnlag(it.personident!!.verdi)
-                val respons = barnebidragGrunnlagInnhenting.hentBeløpshistorikkBidrag(behandling, it)
+                    behandling.grunnlag.hentSisteBeløpshistorikkGrunnlag(it.personident!!.verdi, type)
+                val respons = barnebidragGrunnlagInnhenting.hentBeløpshistorikk(behandling, it, stønadstype)
                 if (eksisterendeGrunnlag == null &&
                     respons != null ||
                     respons != null &&
-                    eksisterendeGrunnlag != null &&
                     eksisterendeGrunnlag.konvertereData<StønadDto>() != respons
                 ) {
                     val nyGrunnlag =
                         Grunnlag(
                             behandling = behandling,
-                            type = Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                            type = type,
                             data = commonObjectmapper.writeValueAsString(respons),
                             gjelder = it.personident!!.verdi,
                             innhentet = LocalDateTime.now(),
                             aktiv = LocalDateTime.now(),
-                            rolle = behandling.bidragspliktig!!,
+                            rolle =
+                                when (type) {
+                                    Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD -> behandling.bidragsmottaker!!
+                                    else -> behandling.bidragspliktig!!
+                                },
                             erBearbeidet = false,
                         )
                     behandling.grunnlag.add(nyGrunnlag)
                 }
             } catch (e: HttpClientErrorException) {
                 feilrapporteringer.put(
-                    Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                    type,
                     GrunnlagFeilDto(
                         personId = it.personident!!.verdi,
                         feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,

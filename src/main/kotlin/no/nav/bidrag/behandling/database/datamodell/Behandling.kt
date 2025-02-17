@@ -28,6 +28,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -166,6 +167,8 @@ open class Behandling(
     open var søknadstype: BisysSøknadstype? = null,
     @Transient
     var grunnlagFraVedtak: List<GrunnlagDto>? = emptyList(),
+    @Transient
+    var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
@@ -218,6 +221,11 @@ val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.
 val Set<Husstandsmedlem>.voksneIHusstanden get() = find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
 fun Behandling.hentMaksTilOgMedDato() = if (globalOpphørsdato != null) globalOpphørsdato!!.withDayOfMonth(1).minusDays(1) else null
+
+fun Behandling.hentBeløpshistorikkForStønadstype(
+    stønadstype: Stønadstype,
+    søknadsbarn: Rolle,
+) = historiskeStønader.find { it.type == stønadstype && it.kravhaver.verdi == søknadsbarn.ident }
 
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {

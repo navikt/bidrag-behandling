@@ -42,7 +42,6 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
-import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.taMedInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
@@ -60,7 +59,6 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
-import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.BeforeEach
@@ -120,7 +118,7 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
-    @MockkBean
+    @Autowired
     lateinit var bidragStønadConsumer: BidragStønadConsumer
 
     @Autowired
@@ -150,7 +148,7 @@ class VedtakserviceTest : TestContainerRunner() {
         stubTokenUtils()
         unleash.enableAll()
         bidragPersonConsumer = stubPersonConsumer()
-        every { barnebidragGrunnlagInnhenting.hentBeløpshistorikkBidrag(any(), any()) } returns null
+        every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)
         val validerBeregning = ValiderBeregning()
@@ -209,8 +207,9 @@ class VedtakserviceTest : TestContainerRunner() {
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
-        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns opprettStønadDto(emptyList())
-        every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns SkyldnerStønaderResponse(emptyList())
+//        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns opprettStønadDto(emptyList())
+//        every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns SkyldnerStønaderResponse(emptyList())
+//        every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns commonObjectmapper.readValue(erstattVariablerITestFil("stonad/løpende-bidragssaker-bp"))
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
