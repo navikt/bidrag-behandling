@@ -41,6 +41,8 @@ import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -53,7 +55,9 @@ import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
@@ -69,6 +73,7 @@ import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Arrays
@@ -273,6 +278,31 @@ class StubUtils {
         stubBidragVedtakForStønad(testdataHusstandsmedlem1.ident, "vedtak-for-stønad-barn3")
         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT, "vedtak-for-stønad-barn_annen")
         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")
+    }
+
+    fun stubBidragStonadHistoriskeSaker(
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/stonad/hent-stonad-historisk/")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(
+                        commonObjectmapper.writeValueAsString(
+                            opprettStønadDto(
+                                stønadstype = Stønadstype.BIDRAG,
+                                periodeListe =
+                                    listOf(
+                                        opprettStønadPeriodeDto(
+                                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                                            beløp = BigDecimal("5600"),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
+            ),
+        )
     }
 
     fun stubBidragStonadLøpendeSaker(

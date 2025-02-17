@@ -63,7 +63,9 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
         samværId = id!!,
         gjelderRolle = rolle,
         manglerBegrunnelse = notatSæmvær?.innhold.isNullOrBlank(),
-        ingenLøpendeSamvær = (opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) && (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
+        ingenLøpendeSamvær =
+            (opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
+                (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
         overlappendePerioder = perioder.finnOverlappendePerioder(),
         manglerSamvær = perioder.isEmpty(),
         ugyldigSluttperiode =

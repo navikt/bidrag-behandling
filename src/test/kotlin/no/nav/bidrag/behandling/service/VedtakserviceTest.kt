@@ -17,6 +17,7 @@ import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
@@ -41,6 +42,7 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.taMedInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
@@ -58,6 +60,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.BeforeEach
@@ -117,6 +120,9 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
+    @MockkBean
+    lateinit var bidragStønadConsumer: BidragStønadConsumer
+
     @Autowired
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
@@ -144,6 +150,7 @@ class VedtakserviceTest : TestContainerRunner() {
         stubTokenUtils()
         unleash.enableAll()
         bidragPersonConsumer = stubPersonConsumer()
+        every { barnebidragGrunnlagInnhenting.hentBeløpshistorikkBidrag(any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)
         val validerBeregning = ValiderBeregning()
@@ -202,6 +209,8 @@ class VedtakserviceTest : TestContainerRunner() {
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns opprettStønadDto(emptyList())
+        every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns SkyldnerStønaderResponse(emptyList())
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
@@ -318,6 +327,7 @@ class VedtakserviceTest : TestContainerRunner() {
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
         behandling.initGrunnlagRespons(stubUtils)
+        stubUtils.stubBidragStonadHistoriskeSaker()
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()
         entityManager.refresh(behandling)
@@ -351,7 +361,7 @@ class VedtakserviceTest : TestContainerRunner() {
             request.stønadsendringListe.shouldHaveSize(1)
             request.engangsbeløpListe shouldHaveSize 3
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 188
+                request.grunnlagListe shouldHaveSize 201
             }
         }
 
@@ -369,13 +379,13 @@ class VedtakserviceTest : TestContainerRunner() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 20
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 22
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 7
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 2
