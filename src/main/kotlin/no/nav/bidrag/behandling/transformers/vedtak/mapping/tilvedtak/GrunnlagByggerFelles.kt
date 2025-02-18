@@ -290,6 +290,7 @@ internal fun opprettGrunnlagForBostatusperioder(
                 referanse = "bostatus_${gjelderReferanse}_${it.datoFom?.toCompactString()}",
                 type = Grunnlagstype.BOSTATUS_PERIODE,
                 gjelderReferanse = gjelderReferanse,
+                gjelderBarnReferanse = gjelderReferanse,
                 grunnlagsreferanseListe =
                     if (it.kilde == Kilde.OFFENTLIG) {
                         listOf(

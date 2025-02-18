@@ -21,6 +21,7 @@ import no.nav.bidrag.beregn.core.bo.SjablonNøkkel
 import no.nav.bidrag.beregn.core.bo.SjablonPeriode
 import no.nav.bidrag.beregn.core.dto.SjablonPeriodeCore
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
+import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
 import no.nav.bidrag.beregn.core.service.mapper.CoreMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
@@ -142,6 +143,19 @@ class BeregningService(
                             },
                     )
                 } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
+                    ResultatBidragsberegningBarn(
+                        ugyldigBeregning = e.opprettBegrunnelse(),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        resultat =
+                            e.data.copy(
+                                grunnlagListe =
+                                    (e.data.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                        .toSet()
+                                        .toList()
+                                        .fjernMidlertidligPersonobjekterBMsbarn(),
+                            ),
+                    )
+                } catch (e: BegrensetRevurderingLøpendeForskuddManglerException) {
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),

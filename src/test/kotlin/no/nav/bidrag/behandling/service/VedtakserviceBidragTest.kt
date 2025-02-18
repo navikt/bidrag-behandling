@@ -453,6 +453,157 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
+    fun `Skal fatte vedtak for bidrag 18 år`() {
+        stubPersonConsumer()
+
+        val opphørsdato = LocalDate.now().plusMonths(2).withDayOfMonth(1)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.stonadstype = Stønadstype.BIDRAG18AAR
+        behandling.søknadsbarn.first().fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
+        behandling.søknadsbarn.first().opphørsdato = opphørsdato
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), testdataHusstandsmedlem1, medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
+            testdataBarnBm,
+            medId = true,
+        )
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), medId = true)
+        behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), generateId = true)
+        behandling.leggTilBarnetilsyn(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
+            generateId = true,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
+            kilde = Kilde.OFFENTLIG,
+        )
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
+                    beløp = BigDecimal("2000"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
+                    beløp = BigDecimal("3500"),
+                ),
+            ),
+        )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
+                    beløp = BigDecimal("2000"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
+                    beløp = BigDecimal("3500"),
+                ),
+            ),
+        )
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+        behandling.refVedtaksid = 553
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
+                testdataBarn1.copy(
+                    fødselsdato = behandling.søknadsbarn.first().fødselsdato,
+                ),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(behandling.søknadsbarn.first().id!!, opphørsdato = opphørsdato))
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 194
+            }
+            val virkningstidspunktGrunnlag =
+                grunnlagListe.find { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT && it.gjelderBarnReferanse == behandling.søknadsbarn.first().tilGrunnlagsreferanse() }?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
+            virkningstidspunktGrunnlag!!.opphørsdato!! shouldHaveSameDayAs opphørsdato
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR) shouldHaveSize 1
+        }
+
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            val sistePeriode = stønadsendring.periodeListe.last()
+            assertSoftly(sistePeriode) {
+                it.periode.fom shouldBe YearMonth.from(opphørsdato)
+                it.periode.til shouldBe null
+                it.resultatkode shouldBe Resultatkode.OPPHØR.name
+                it.beløp shouldBe null
+                it.grunnlagReferanseListe shouldContain opprettGrunnlagsreferanseVirkningstidspunkt(behandling.søknadsbarn.first())
+            }
+            val nestSistePeriode = stønadsendring.periodeListe[stønadsendring.periodeListe.size - 2]
+            assertSoftly(nestSistePeriode) {
+                it.periode.fom shouldBe YearMonth.parse("2025-01")
+                it.periode.til shouldBe YearMonth.from(LocalDate.now().withDayOfMonth(1))
+                it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
+                it.beløp shouldBe BigDecimal(6480)
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
     fun `Skal ikke fatte vedtak hvis begrenset revurdering beregning feiler`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
@@ -771,7 +922,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 innhold.bruttoBidragEtterBegrensetRevurdering shouldBe BigDecimal("3811.00")
                 innhold.løpendeForskudd shouldBe BigDecimal("2800")
                 innhold.løpendeBidrag shouldBe BigDecimal("1500")
-                it.grunnlagsreferanseListe shouldHaveSize 11
+                it.grunnlagsreferanseListe shouldHaveSize 12
                 hentGrunnlagstyperForReferanser(Grunnlagstype.SØKNAD, it.grunnlagsreferanseListe) shouldHaveSize 1
             }
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
@@ -1754,7 +1905,7 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
         innhold.resultatVisningsnavn!!.intern shouldBe "Kostnadsberegnet bidrag"
         innhold.beregnetBeløp shouldBe BigDecimal("5730.48")
         innhold.resultatBeløp shouldBe BigDecimal("5730")
-        it.grunnlagsreferanseListe shouldHaveSize 9
+        it.grunnlagsreferanseListe shouldHaveSize 10
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe) shouldHaveSize 1
         hentGrunnlagstyperForReferanser(Grunnlagstype.PERSON_SØKNADSBARN, it.grunnlagsreferanseListe).first().referanse shouldBe søknadsbarn1Grunnlag.referanse
         hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE, it.grunnlagsreferanseListe) shouldHaveSize 1

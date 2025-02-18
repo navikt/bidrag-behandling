@@ -46,7 +46,7 @@ open class Rolle(
     open var ident: String?,
     // TODO: Migere persondata til Person-tabellen
     @Deprecated("Migrere til Person.fødselsdato")
-    open val fødselsdato: LocalDate,
+    open var fødselsdato: LocalDate,
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

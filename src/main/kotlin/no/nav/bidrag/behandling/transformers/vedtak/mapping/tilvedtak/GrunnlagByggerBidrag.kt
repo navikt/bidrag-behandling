@@ -152,6 +152,12 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
     val opphørPeriode =
         listOfNotNull(
             søknadsbarn.opphørsdato?.let {
+//                val sistePeriode = periodeliste.maxBy { it.periode.fom }
+//                if (sistePeriode.periode.fom.plusMonths(1) !=
+//                    YearMonth.from(it)
+//                ) {
+//                    ugyldigForespørsel("Siste periode i beregningen $sistePeriode er ikke lik opphørsdato $it")
+//                }
                 OpprettPeriodeRequestDto(
                     periode = ÅrMånedsperiode(it, null),
                     resultatkode = Resultatkode.OPPHØR.name,

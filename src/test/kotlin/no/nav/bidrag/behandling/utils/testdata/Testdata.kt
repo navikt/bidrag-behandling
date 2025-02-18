@@ -821,6 +821,7 @@ fun Behandling.oppretteHusstandsmedlem(
 fun opprettAlleAktiveGrunnlagFraFil(
     behandling: Behandling,
     filnavn: String,
+    testdataBarn: TestDataPerson = testdataBarn1,
 ): MutableSet<Grunnlag> {
     val filJsonString =
         try {
@@ -840,7 +841,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
             opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBM),
-            opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBarn1),
+            opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBarn),
         ).flatten().toMutableSet()
     when (behandling.tilType()) {
         TypeBehandling.FORSKUDD -> {

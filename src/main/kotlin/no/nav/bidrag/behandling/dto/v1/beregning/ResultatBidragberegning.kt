@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResu
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.finnSluttberegningIReferanser
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
+import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
@@ -62,7 +63,7 @@ fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
     return null
 }
 
-fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunnelse(): UgyldigBeregningDto {
+fun BegrensetRevurderingLøpendeForskuddManglerException.opprettBegrunnelse(): UgyldigBeregningDto {
     val allePerioder = data.beregnetBarnebidragPeriodeListe.sortedBy { it.periode.fom }
     val perioderUtenForskudd =
         allePerioder.filter {
@@ -81,6 +82,31 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
                 type = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
             )
         }
+    return UgyldigBeregningDto(
+        tittel = "Begrenset revurdering",
+        resultatPeriode = resultatPerioderUtenForskudd,
+        begrunnelse =
+            if (perioderUtenForskudd.size > 1) {
+                "Perioder ${perioderUtenForskudd.joinToString {it.periode.periodeString}} har ingen løpende forskudd"
+            } else {
+                "Periode ${perioderUtenForskudd.first().periode.periodeString} har ingen løpende forskudd"
+            },
+        perioder = perioderUtenForskudd.map { it.periode },
+    )
+}
+
+fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunnelse(): UgyldigBeregningDto {
+    val allePerioder = data.beregnetBarnebidragPeriodeListe.sortedBy { it.periode.fom }
+    val perioderUtenForskudd =
+        allePerioder.filter {
+            val sluttberegning =
+                data.grunnlagListe
+                    .finnSluttberegningIReferanser(
+                        it.grunnlagsreferanseListe,
+                    )?.innholdTilObjekt<SluttberegningBarnebidrag>()
+            sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertTilForskuddssats.name &&
+                it.resultat.beløp == BigDecimal.ZERO
+        }
     val resultatPerioderUnderLøpendeBidrag =
         (periodeListe - perioderUtenForskudd.map { it.periode }).map { periode ->
             UgyldigResultatPeriode(
@@ -88,23 +114,10 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
                 type = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
             )
         }
-    if (perioderUtenForskudd.isNotEmpty()) {
-        return UgyldigBeregningDto(
-            tittel = "Begrenset revurdering",
-            resultatPeriode = resultatPerioderUtenForskudd + resultatPerioderUnderLøpendeBidrag,
-            begrunnelse =
-                if (perioderUtenForskudd.size > 1) {
-                    "Perioder ${perioderUtenForskudd.joinToString {it.periode.periodeString}} har ingen løpende forskudd"
-                } else {
-                    "Periode ${perioderUtenForskudd.first().periode.periodeString} har ingen løpende forskudd"
-                },
-            perioder = perioderUtenForskudd.map { it.periode },
-        )
-    }
     return UgyldigBeregningDto(
         tittel = "Begrenset revurdering",
         perioder = this.periodeListe,
-        resultatPeriode = resultatPerioderUtenForskudd + resultatPerioderUnderLøpendeBidrag,
+        resultatPeriode = resultatPerioderUnderLøpendeBidrag,
         begrunnelse =
             if (this.periodeListe.size > 1) {
                 "Flere perioder er lik eller lavere enn løpende bidrag"

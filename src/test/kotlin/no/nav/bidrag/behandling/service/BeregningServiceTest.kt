@@ -63,7 +63,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -283,7 +282,6 @@ class BeregningServiceTest {
     }
 
     @Test
-    @Disabled
     fun `skal feile beregning av bidrag begrenset revurdering hvis lavere enn løpende bidrag`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
@@ -334,9 +332,9 @@ class BeregningServiceTest {
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldNotBe null
             it.ugyldigBeregning!!.begrunnelse shouldContain "er lik eller lavere enn løpende bidrag"
-            it.ugyldigBeregning!!.perioder shouldHaveSize 1
+            it.ugyldigBeregning!!.perioder shouldHaveSize 2
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG
-            it.resultat.grunnlagListe shouldHaveSize 52
+            it.resultat.grunnlagListe shouldHaveSize 56
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1
@@ -345,14 +343,13 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(2600)
         }
     }
 
     @Test
-    @Disabled
     fun `skal feile beregning av bidrag begrenset revurdering hvis ingen forskudd`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
@@ -396,7 +393,7 @@ class BeregningServiceTest {
             it.ugyldigBeregning!!.begrunnelse shouldContain "har ingen løpende forskudd"
             it.ugyldigBeregning!!.perioder shouldHaveSize 1
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD
-            it.resultat.grunnlagListe shouldHaveSize 53
+            it.resultat.grunnlagListe shouldHaveSize 57
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1
@@ -405,7 +402,7 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 3
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(0)
         }
@@ -471,7 +468,7 @@ class BeregningServiceTest {
             val bostatuser =
                 it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
             bostatuser shouldHaveSize 3
-            val barnStatus = bostatuser.find { it.gjelderReferanse == grunnlagListe.søknadsbarn.first().referanse }
+            val barnStatus = bostatuser.find { it.gjelderBarnReferanse == grunnlagListe.søknadsbarn.first().referanse }
             barnStatus!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.MED_FORELDER
 
             val andreVoksneIHusstanden = bostatuser.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse }
