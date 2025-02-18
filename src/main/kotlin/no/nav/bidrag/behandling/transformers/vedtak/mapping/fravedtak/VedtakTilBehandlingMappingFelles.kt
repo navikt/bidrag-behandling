@@ -59,6 +59,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 fun manglerPersonGrunnlag(referanse: Grunnlagsreferanse?): Nothing =
@@ -154,8 +155,9 @@ internal fun List<GrunnlagDto>.mapRoller(
     lesemodus: Boolean,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
-        .mapIndexed { i, it ->
-            it.tilRolle(behandling, if (lesemodus) i.toLong() else null)
+        .mapIndexed { i, rolle ->
+            val virkningstidspunkt = hentVirkningstidspunkt(rolle.referanse)
+            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, opphørsdato = virkningstidspunkt?.opphørsdato)
         }.toMutableSet()
 
 internal fun VedtakDto.oppdaterDirekteOppgjørBeløp(
@@ -556,10 +558,12 @@ internal fun VedtakDto.avslagskode(): Resultatkode? {
     }
 }
 
-internal fun VedtakDto.hentVirkningstidspunkt(): VirkningstidspunktGrunnlag? =
-    grunnlagListe
-        .filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
-        .firstOrNull()
+internal fun VedtakDto.hentVirkningstidspunkt(gjelderBarnReferanse: String? = null): VirkningstidspunktGrunnlag? =
+    grunnlagListe.hentVirkningstidspunkt(gjelderBarnReferanse)
+
+internal fun List<GrunnlagDto>.hentVirkningstidspunkt(gjelderBarnReferanse: String? = null): VirkningstidspunktGrunnlag? =
+    filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
+        .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
         ?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
 
 internal fun VedtakDto.hentSøknad(): SøknadGrunnlag =
@@ -716,6 +720,7 @@ private fun BaseGrunnlag.tilInntekt(
 private fun GrunnlagDto.tilRolle(
     behandling: Behandling,
     id: Long? = null,
+    opphørsdato: LocalDate? = null,
 ) = Rolle(
     behandling,
     id = id,
@@ -731,6 +736,7 @@ private fun GrunnlagDto.tilRolle(
                 )
         },
     ident = personIdent,
+    opphørsdato = opphørsdato,
     fødselsdato = personObjekt.fødselsdato,
 )
 
