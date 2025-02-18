@@ -111,7 +111,6 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
             every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             val opphørsdato = LocalDate.parse("2024-07-01")
-            behandling.søknadsbarn.first().opphørsdato = opphørsdato
 
             val husstandsmedlem =
                 Husstandsmedlem(
@@ -143,7 +142,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     ),
                 )
             behandling.husstandsmedlem = mutableSetOf(husstandsmedlem)
-            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(1)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(behandling.søknadsbarn.first().id!!, opphørsdato = opphørsdato))
 
             assertSoftly(
                 behandling.husstandsmedlem.first(),
@@ -159,7 +158,6 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
             every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             val opphørsdato = LocalDate.now().withDayOfMonth(1)
-            behandling.søknadsbarn.first().opphørsdato = opphørsdato
 
             val husstandsmedlem =
                 Husstandsmedlem(
@@ -191,7 +189,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     ),
                 )
             behandling.husstandsmedlem = mutableSetOf(husstandsmedlem)
-            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(1)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(behandling.søknadsbarn.first().id!!, opphørsdato = opphørsdato))
 
             assertSoftly(
                 behandling.husstandsmedlem.first(),
@@ -208,7 +206,6 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
             every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
             behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
             val opphørsdato = LocalDate.now().plusMonths(3).withDayOfMonth(1)
-            behandling.søknadsbarn.first().opphørsdato = opphørsdato
 
             val husstandsmedlem =
                 Husstandsmedlem(
@@ -240,7 +237,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     ),
                 )
             behandling.husstandsmedlem = mutableSetOf(husstandsmedlem)
-            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(1)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(behandling.søknadsbarn.first().id!!, opphørsdato = opphørsdato))
 
             assertSoftly(
                 behandling.husstandsmedlem.first(),

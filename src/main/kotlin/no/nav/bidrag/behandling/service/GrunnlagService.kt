@@ -485,10 +485,11 @@ class GrunnlagService(
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
         val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
+        val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                behandling.globalOpphørsdato,
+                gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.tilType(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )

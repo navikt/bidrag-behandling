@@ -686,7 +686,7 @@ class BoforholdService(
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.globalOpphørsdato,
+                            eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(
                                 eksisterendeHusstandsmedlem
@@ -748,14 +748,14 @@ class BoforholdService(
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.globalOpphørsdato,
+                            offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
-                            behandling.globalOpphørsdato,
+                            offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(
                                 request.copy(

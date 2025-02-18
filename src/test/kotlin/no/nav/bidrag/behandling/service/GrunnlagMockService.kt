@@ -856,7 +856,7 @@ class GrunnlagMockService {
     }
 
     @Test
-    fun `skal lagre beløpshistorikk grunnlag hvis begrenset revurdering`() {
+    fun `skal lagre beløpshistorikk grunnlag ved begrenset revurdering`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         val søknadsbarn = behandling.søknadsbarn.first()
         mockGrunnlagrespons(
