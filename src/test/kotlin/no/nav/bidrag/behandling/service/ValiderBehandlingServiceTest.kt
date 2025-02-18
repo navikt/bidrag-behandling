@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.getunleash.FakeUnleash
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -38,10 +39,12 @@ import java.time.LocalDate
 class ValiderBehandlingServiceTest {
     val bidragStønadConsumer: BidragStønadConsumer = mockkClass(BidragStønadConsumer::class)
 
-    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer)
+    val unleash = FakeUnleash()
+    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, unleash)
 
     @BeforeEach
     fun initMock() {
+        unleash.disableAll()
         every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns
             LøpendeBidragssakerResponse(
                 bidragssakerListe = oppretLøpendeBidragListeMedBareNorskValuta(),

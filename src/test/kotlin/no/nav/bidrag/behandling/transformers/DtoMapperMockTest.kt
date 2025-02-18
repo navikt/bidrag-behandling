@@ -269,7 +269,7 @@ class DtoMapperMockTest {
         gebyr.shouldNotBeNull()
         gebyr.gebyrRoller.shouldHaveSize(2)
         gebyr.valideringsfeil!!.shouldHaveSize(1)
-        assertSoftly(gebyr.valideringsfeil.first()) {
+        assertSoftly(gebyr.valideringsfeil!!.first()) {
             it.gjelder.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
             it.manglerBegrunnelse shouldBe true
             it.harFeil shouldBe true

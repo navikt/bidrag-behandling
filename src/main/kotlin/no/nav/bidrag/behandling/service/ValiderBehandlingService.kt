@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
@@ -28,6 +29,7 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 @Service
 class ValiderBehandlingService(
     private val bidragStonadConsumer: BidragStønadConsumer,
+    private val unleash: Unleash,
 ) {
     fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? =
         when (request.tilType()) {
@@ -62,15 +64,17 @@ class ValiderBehandlingService(
         }
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
-        val harBPMinstEnBidragsstønad =
-            bidragStonadConsumer
-                .hentAlleStønaderForBidragspliktig(bp.ident)
-                .stønader
-                .any { it.type != Stønadstype.FORSKUDD }
-        if (harBPMinstEnBidragsstønad &&
-            !request.erBegrensetRevurdering()
-        ) {
-            return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+        if (!unleash.isEnabled("behandling.v2_endring", false)) {
+            val harBPMinstEnBidragsstønad =
+                bidragStonadConsumer
+                    .hentAlleStønaderForBidragspliktig(bp.ident)
+                    .stønader
+                    .any { it.type != Stønadstype.FORSKUDD }
+            if (harBPMinstEnBidragsstønad &&
+                !request.erBegrensetRevurdering()
+            ) {
+                return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+            }
         }
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {
