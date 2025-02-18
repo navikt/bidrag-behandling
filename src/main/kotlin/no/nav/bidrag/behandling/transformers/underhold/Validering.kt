@@ -139,13 +139,13 @@ fun List<DatoperiodeDto>.finneFremtidigePerioder(virkningstidspunkt: LocalDate?)
         .filter {
             val sjekkPeriode =
                 if (virkningstidspunkt != null && virkningstidspunkt >= LocalDate.now().withDayOfMonth(1)) {
-                    virkningstidspunkt
+                    virkningstidspunkt.withDayOfMonth(1)
                 } else {
                     LocalDate.now().withDayOfMonth(1)
                 }
             it.fom.isAfter(sjekkPeriode) ||
                 it.tom?.isAfter(
-                    sjekkPeriode,
+                    sjekkPeriode.minusDays(1),
                 ) ?: false
         }.map { it }
 

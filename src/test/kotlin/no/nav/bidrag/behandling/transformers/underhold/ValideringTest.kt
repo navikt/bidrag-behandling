@@ -137,11 +137,13 @@ class ValideringTest {
 
             // så
             valideringsfeil.stønadTilBarnetilsyn.shouldNotBeNull()
-            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder shouldHaveSize 1
-            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
+            valideringsfeil.stønadTilBarnetilsyn!!.fremtidigePerioder shouldHaveSize 1
+            valideringsfeil.stønadTilBarnetilsyn!!
+                .fremtidigePerioder
                 .first()
                 .fom shouldBe fom
-            valideringsfeil.stønadTilBarnetilsyn.fremtidigePerioder
+            valideringsfeil.stønadTilBarnetilsyn!!
+                .fremtidigePerioder
                 .first()
                 .tom shouldBe ugyldigTom
         }
@@ -652,8 +654,9 @@ class ValideringTest {
 
             // så
             valideringsfeil.tilleggsstønad.shouldNotBeNull()
-            valideringsfeil.tilleggsstønad.fremtidigePerioder.shouldHaveSize(1)
-            valideringsfeil.tilleggsstønad.fremtidigePerioder
+            valideringsfeil.tilleggsstønad!!.fremtidigePerioder.shouldHaveSize(1)
+            valideringsfeil.tilleggsstønad!!
+                .fremtidigePerioder
                 .first()
                 .tom shouldBe LocalDate.now().withDayOfMonth(1)
         }
