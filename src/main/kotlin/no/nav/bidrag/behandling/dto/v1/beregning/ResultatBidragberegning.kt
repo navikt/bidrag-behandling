@@ -1,11 +1,16 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
+import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.finnSluttberegningIReferanser
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
@@ -20,6 +25,42 @@ import java.time.format.DateTimeFormatter
 val YearMonth.formatterDatoFom get() = this.atDay(1).format(DateTimeFormatter.ofPattern("MM.YYYY"))
 val YearMonth.formatterDatoTom get() = this.atEndOfMonth().format(DateTimeFormatter.ofPattern("MM.YYYY"))
 val ÅrMånedsperiode.periodeString get() = "${fom.formatterDatoFom} - ${til?.formatterDatoTom ?: ""}"
+
+fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
+    val grunnlagsfeil = grunnlagsinnhentingFeiletMap()
+    if (søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
+        if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG) ||
+            grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
+        ) {
+            return UgyldigBeregningDto(
+                tittel = "Innhenting av beløpshistorikk feilet",
+                begrunnelse =
+                    "Det skjedde en feil ved innhenting av beløpshistorikk for forskudd og bidrag. ",
+                resultatPeriode = emptyList(),
+            )
+        }
+    }
+    if (stonadstype == Stønadstype.BIDRAG18AAR) {
+        if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)) {
+            return UgyldigBeregningDto(
+                tittel = "Innhenting av beløpshistorikk feilet",
+                begrunnelse =
+                    "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
+                resultatPeriode = emptyList(),
+            )
+        }
+    }
+    if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)) {
+        return UgyldigBeregningDto(
+            tittel = "Innhenting av beløpshistorikk feilet",
+            begrunnelse =
+                "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
+            resultatPeriode = emptyList(),
+        )
+    }
+
+    return null
+}
 
 fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunnelse(): UgyldigBeregningDto {
     val allePerioder = data.beregnetBarnebidragPeriodeListe.sortedBy { it.periode.fom }

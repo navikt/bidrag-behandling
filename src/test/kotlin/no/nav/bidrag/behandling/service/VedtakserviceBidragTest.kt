@@ -310,6 +310,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SAMVÆRSPERIODE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_FORSKUDD) shouldHaveSize 0
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE_NETTER) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SAMVÆRSKALKULATOR) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
@@ -419,6 +421,9 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
                 request.grunnlagListe shouldHaveSize 170
             }
+            val virkningstidspunktGrunnlag =
+                grunnlagListe.find { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT && it.gjelderBarnReferanse == behandling.søknadsbarn.first().tilGrunnlagsreferanse() }?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
+            virkningstidspunktGrunnlag!!.opphørsdato!! shouldHaveSameDayAs opphørsdato
         }
 
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
@@ -781,6 +786,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_FORSKUDD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SAMVÆRSPERIODE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_SAMVÆRSKLASSE) shouldHaveSize 1

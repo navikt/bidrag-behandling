@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigBeregningType
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
@@ -42,6 +43,7 @@ import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -59,6 +61,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -219,6 +222,63 @@ class BeregningServiceTest {
             it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(4410)
+        }
+    }
+
+    @Test
+    fun `skal feile beregning av bidrag begrenset revurdering hvis innhenting av beløpshistorikk feiler`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.vedtakstype = Vedtakstype.FASTSETTELSE
+        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.virkningstidspunkt = LocalDate.now().minusMonths(4)
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+            ).toMutableSet()
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                    beløp = BigDecimal("50"),
+                ),
+            ),
+        )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                    beløp = BigDecimal("2600"),
+                ),
+            ),
+        )
+        behandling.grunnlagsinnhentingFeilet = commonObjectmapper.writeValueAsString(mapOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG to GrunnlagFeilDto(grunnlagstype = null, feilmelding = "", personId = "", feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL)))
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        val beregnCapture = mutableListOf<BeregnGrunnlag>()
+        mockkConstructor(BeregnBarnebidragApi::class)
+        every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+
+        verify(exactly = 1) {
+            BeregnBarnebidragApi().beregn(any())
+        }
+        resultat shouldHaveSize 1
+        assertSoftly(resultat[0]) {
+            it.ugyldigBeregning shouldNotBe null
+            it.ugyldigBeregning!!.tittel shouldBe "Innhenting av beløpshistorikk feilet"
+            it.ugyldigBeregning!!.begrunnelse shouldContain "Det skjedde en feil ved innhenting av beløpshistorikk for forskudd og bidrag. "
+            it.ugyldigBeregning!!.perioder shouldHaveSize 0
         }
     }
 

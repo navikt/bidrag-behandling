@@ -202,6 +202,10 @@ class GrunnlagService(
                     respons != null &&
                     eksisterendeGrunnlag.konvertereData<StønadDto>() != respons
                 ) {
+                    log.info { "Lagrer ny grunnlag beløpshistorikk for type $type" }
+                    secureLogger.info {
+                        "Lagrer ny grunnlag beløpshistorikk for type $type med respons $respons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+                    }
                     val nyGrunnlag =
                         Grunnlag(
                             behandling = behandling,
@@ -459,7 +463,7 @@ class GrunnlagService(
         behandling.grunnlagsinnhentingFeilet?.let {
             val t =
                 commonObjectmapper
-                    .readValue<Map<Grunnlagsdatatype, FeilrapporteringDto?>>(it)
+                    .readValue<Map<Grunnlagsdatatype, GrunnlagFeilDto?>>(it)
                     .any { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.key }
             t
         } ?: false

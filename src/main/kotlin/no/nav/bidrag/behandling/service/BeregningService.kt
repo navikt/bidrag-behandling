@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
+import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
@@ -127,16 +128,18 @@ class BeregningService(
                     mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
                 try {
                     ResultatBidragsberegningBarn(
-                        søknasdbarn.mapTilResultatBarn(),
-                        beregnBarnebidragApi.beregn(grunnlagBeregning).let {
-                            it.copy(
-                                grunnlagListe =
-                                    (it.grunnlagListe + grunnlagBeregning.grunnlagListe)
-                                        .toSet()
-                                        .toList()
-                                        .fjernMidlertidligPersonobjekterBMsbarn(),
-                            )
-                        },
+                        ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        resultat =
+                            beregnBarnebidragApi.beregn(grunnlagBeregning).let {
+                                it.copy(
+                                    grunnlagListe =
+                                        (it.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                            .toSet()
+                                            .toList()
+                                            .fjernMidlertidligPersonobjekterBMsbarn(),
+                                )
+                            },
                     )
                 } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
                     ResultatBidragsberegningBarn(

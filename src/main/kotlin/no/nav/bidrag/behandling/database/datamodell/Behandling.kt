@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import com.fasterxml.jackson.core.type.TypeReference
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -14,6 +15,9 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
+import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
 import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
@@ -208,6 +212,13 @@ private fun Behandling.leggeTilBPSomHusstandsmedlem(): Husstandsmedlem {
     val bpSomHusstandsmedlem = Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = this.bidragspliktig!!)
     this.husstandsmedlem.add(bpSomHusstandsmedlem)
     return bpSomHusstandsmedlem
+}
+
+fun Behandling.grunnlagsinnhentingFeiletMap(): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
+        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
+
+    return grunnlagsinnhentingFeilet?.let { objectmapper.readValue(grunnlagsinnhentingFeilet, typeRef) } ?: emptyMap()
 }
 
 fun Behandling.henteAlleBostatusperioder() = husstandsmedlem.flatMap { it.perioder }
