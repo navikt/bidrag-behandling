@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrun
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.inntekt.InntektApi
 import org.junit.jupiter.api.BeforeEach
@@ -91,6 +92,8 @@ abstract class CommonMockServiceTest {
         personConsumer = stubPersonConsumer()
         personRepository = stubPersonRepository()
         husstandsmedlemRepository = stubHusstandrepository()
+        stubSjablonService()
+        stubSjablonProvider()
         samværService = SamværService(samværRepository, behandlingRepository, notatService, BeregnSamværsklasseApi(stubSjablonService()))
         val validerBeregning = ValiderBeregning()
         val personService = PersonService(personConsumer)

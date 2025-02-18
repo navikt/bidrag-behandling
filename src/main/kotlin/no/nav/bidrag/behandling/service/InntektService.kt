@@ -61,12 +61,13 @@ class InntektService(
         behandlingsid: Long,
         opphørSlettet: Boolean = false,
         forrigeOpphørsdato: LocalDate? = null,
+        forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
-        rekalkulerPerioderInntekter(behandling, opphørSlettet, forrigeOpphørsdato)
+        rekalkulerPerioderInntekter(behandling, opphørSlettet, forrigeOpphørsdato, forrigeVirkningstidspunkt)
     }
 
     @Transactional
@@ -74,6 +75,7 @@ class InntektService(
         behandling: Behandling,
         opphørSlettet: Boolean = false,
         forrigeOpphørsdato: LocalDate? = null,
+        forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         if (behandling.virkningstidspunkt == null) return
 
@@ -89,7 +91,12 @@ class InntektService(
                     it.datoFom = behandling.virkningstidspunkt
                 }
             }
-
+        behandling.inntekter
+            .filter { it.taMed && it.datoFom != null }
+            .filter { it.datoFom!! == forrigeVirkningstidspunkt }
+            .forEach { periode ->
+                periode.datoFom = behandling.virkningstidspunkt
+            }
         behandling.inntekter
             .filter { it.taMed }
             .filter { eksplisitteYtelser.contains(it.type) && it.kilde == Kilde.OFFENTLIG && it.opprinneligFom != null }

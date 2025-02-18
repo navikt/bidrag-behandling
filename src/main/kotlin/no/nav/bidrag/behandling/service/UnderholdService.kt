@@ -215,10 +215,11 @@ class UnderholdService(
     fun tilpasseUnderholdEtterVirkningsdato(
         behandling: Behandling,
         opphørSlettet: Boolean = false,
+        forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         tilpasseAktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
         tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling)
-        oppdatereUnderholdsperioderEtterEndretVirkningsdato(behandling)
+        oppdatereUnderholdsperioderEtterEndretVirkningsdato(behandling, forrigeVirkningstidspunkt)
         behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
     }
 
@@ -476,10 +477,13 @@ class UnderholdService(
         return lagreUnderholdskostnad
     }
 
-    private fun oppdatereUnderholdsperioderEtterEndretVirkningsdato(b: Behandling) {
+    private fun oppdatereUnderholdsperioderEtterEndretVirkningsdato(
+        b: Behandling,
+        forrigeVirkningstidspunkt: LocalDate? = null,
+    ) {
         b.underholdskostnader.forEach {
             it.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag()
-            it.justerePerioder()
+            it.justerePerioder(forrigeVirkningstidspunkt)
         }
     }
 

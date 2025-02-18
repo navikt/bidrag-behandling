@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
@@ -604,10 +605,242 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 datoTom shouldBe null
             }
         }
+
+        @Test
+        fun `skal oppdatere opphørsdato og virkningstidspunkt når begge er fram i tid`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+            val søknadsbarn2 =
+                Rolle(
+                    ident = testdataBarn2.ident,
+                    rolletype = Rolletype.BARN,
+                    behandling = behandling,
+                    fødselsdato = testdataBarn2.fødselsdato,
+                    id = 5,
+                    opphørsdato = LocalDate.parse("2024-01-01"),
+                )
+            val søknadsbarn = behandling.søknadsbarn.first()
+            behandling.roller.add(søknadsbarn2)
+            behandling.virkningstidspunkt = LocalDate.now().plusMonths(6).withDayOfMonth(1)
+            søknadsbarn.opphørsdato = LocalDate.now().plusMonths(9).withDayOfMonth(1)
+            val opphørsdato = LocalDate.now().plusMonths(8).withDayOfMonth(1)
+
+            val inntektBM =
+                opprettInntekt(
+                    datoFom = YearMonth.from(behandling.virkningstidspunkt),
+                    datoTom = null,
+                    ident = behandling.bidragsmottaker!!.ident!!,
+                    taMed = true,
+                    kilde = Kilde.MANUELL,
+                    behandling = behandling,
+                    type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                    medId = true,
+                )
+            val inntektBP1 =
+                opprettInntekt(
+                    datoFom = YearMonth.from(behandling.virkningstidspunkt),
+                    datoTom = null,
+                    ident = behandling.bidragspliktig!!.ident!!,
+                    taMed = true,
+                    kilde = Kilde.MANUELL,
+                    behandling = behandling,
+                    type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                    medId = true,
+                )
+            behandling.inntekter = mutableSetOf(inntektBM, inntektBP1)
+            every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(søknadsbarn.id!!, opphørsdato = opphørsdato))
+            assertSoftly(inntektBP1) {
+                taMed shouldBe true
+                datoFom shouldBe behandling.virkningstidspunkt
+                datoTom shouldBe null
+            }
+
+            assertSoftly(inntektBM) {
+                taMed shouldBe true
+                datoFom shouldBe behandling.virkningstidspunkt
+                datoTom shouldBe null
+            }
+            val nyVirkningstidspunkt = LocalDate.now().plusMonths(2)
+
+            virkningstidspunktService.oppdatereVirkningstidspunkt(1, OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt))
+            assertSoftly(inntektBP1) {
+                taMed shouldBe true
+                datoFom shouldBe nyVirkningstidspunkt
+                datoTom shouldBe null
+            }
+
+            assertSoftly(inntektBM) {
+                taMed shouldBe true
+                datoFom shouldBe nyVirkningstidspunkt
+                datoTom shouldBe null
+            }
+        }
     }
 
     @Nested
     inner class SamværTest {
+        @Test
+        fun `skal oppdatere virkningstidspunkt og opphørsdato når begge er fram i tid`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+            val søknadsbarn2 =
+                Rolle(
+                    ident = testdataBarn2.ident,
+                    rolletype = Rolletype.BARN,
+                    behandling = behandling,
+                    fødselsdato = testdataBarn2.fødselsdato,
+                    id = 5,
+                )
+            val søknadsbarn = behandling.søknadsbarn.first()
+            behandling.roller.add(søknadsbarn2)
+            behandling.virkningstidspunkt = LocalDate.now().plusMonths(4).withDayOfMonth(1)
+
+            val samværBarn1 =
+                Samvær(
+                    behandling = behandling,
+                    id = 1,
+                    rolle = søknadsbarn,
+                )
+            samværBarn1.perioder.add(
+                Samværsperiode(
+                    id = 1,
+                    samvær = samværBarn1,
+                    fom = behandling.virkningstidspunkt!!,
+                    tom = null,
+                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                ),
+            )
+
+            val samværBarn2 =
+                Samvær(
+                    behandling = behandling,
+                    id = 1,
+                    rolle = søknadsbarn2,
+                )
+            samværBarn2.perioder.add(
+                Samværsperiode(
+                    id = 1,
+                    samvær = samværBarn1,
+                    fom = behandling.virkningstidspunkt!!,
+                    tom = null,
+                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                ),
+            )
+
+            val opphørsdato = LocalDate.now().plusMonths(5)
+            behandling.samvær = mutableSetOf(samværBarn1, samværBarn2)
+
+            every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(søknadsbarn.id!!, opphørsdato = opphørsdato))
+            assertSoftly {
+                val sistePeriode = samværBarn2.perioder.maxBy { it.fom }
+                sistePeriode.tom shouldBe null
+            }
+            assertSoftly {
+                val sistePeriode = samværBarn1.perioder.maxBy { it.fom }
+                samværBarn1.perioder.shouldHaveSize(1)
+                sistePeriode.tom shouldBe null
+            }
+            val nyVirkningstidspunkt = LocalDate.now().plusMonths(2)
+            virkningstidspunktService.oppdatereVirkningstidspunkt(1, OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt))
+            assertSoftly {
+                val førstePeriode = samværBarn2.perioder.minBy { it.fom }
+                førstePeriode.fom shouldBe LocalDate.now().plusMonths(2)
+            }
+            assertSoftly {
+                val førstePeriode = samværBarn1.perioder.minBy { it.fom }
+                førstePeriode.fom shouldBe LocalDate.now().plusMonths(2)
+            }
+        }
+
+        @Test
+        fun `skal oppdatere opphør og virkningstidspunkt samvær bakover i tid`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+            val søknadsbarn2 =
+                Rolle(
+                    ident = testdataBarn2.ident,
+                    rolletype = Rolletype.BARN,
+                    behandling = behandling,
+                    fødselsdato = testdataBarn2.fødselsdato,
+                    id = 5,
+                )
+            val søknadsbarn = behandling.søknadsbarn.first()
+            behandling.roller.add(søknadsbarn2)
+            behandling.virkningstidspunkt = LocalDate.now().minusMonths(7).withDayOfMonth(1)
+
+            val samværBarn1 =
+                Samvær(
+                    behandling = behandling,
+                    id = 1,
+                    rolle = søknadsbarn,
+                )
+            samværBarn1.perioder.add(
+                Samværsperiode(
+                    id = 1,
+                    samvær = samværBarn1,
+                    fom = behandling.virkningstidspunkt!!,
+                    tom = YearMonth.now().minusMonths(5).atEndOfMonth(),
+                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                ),
+            )
+            samværBarn1.perioder.add(
+                Samværsperiode(
+                    id = 1,
+                    samvær = samværBarn1,
+                    fom = YearMonth.now().minusMonths(4).atEndOfMonth(),
+                    tom = YearMonth.now().minusMonths(3).atEndOfMonth(),
+                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                ),
+            )
+            samværBarn1.perioder.add(
+                Samværsperiode(
+                    id = 1,
+                    samvær = samværBarn1,
+                    fom = YearMonth.now().minusMonths(2).atEndOfMonth(),
+                    tom = null,
+                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                ),
+            )
+
+            val samværBarn2 =
+                Samvær(
+                    behandling = behandling,
+                    id = 1,
+                    rolle = søknadsbarn2,
+                )
+            samværBarn2.perioder.add(
+                Samværsperiode(
+                    id = 1,
+                    samvær = samværBarn2,
+                    fom = behandling.virkningstidspunkt!!,
+                    tom = YearMonth.now().minusMonths(3).atEndOfMonth(),
+                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                ),
+            )
+            samværBarn2.perioder.add(
+                Samværsperiode(
+                    id = 1,
+                    samvær = samværBarn2,
+                    fom = YearMonth.now().minusMonths(2).atEndOfMonth(),
+                    tom = null,
+                    samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                ),
+            )
+            val opphørsdato = LocalDate.now().minusMonths(3).withDayOfMonth(1)
+            behandling.samvær = mutableSetOf(samværBarn1, samværBarn2)
+
+            every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(søknadsbarn2.id!!, opphørsdato = opphørsdato))
+            assertSoftly {
+                samværBarn2.perioder shouldHaveSize 1
+                val sistePeriode = samværBarn2.perioder.maxBy { it.fom }
+                sistePeriode.tom shouldBe opphørsdato.opphørSisteTilDato()
+            }
+            assertSoftly {
+                val sistePeriode = samværBarn1.perioder.maxBy { it.fom }
+                sistePeriode.tom shouldBe null
+            }
+        }
+
         @Test
         fun `skal oppdatere opphørsdato samvær bakover i tid`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
@@ -890,17 +1123,119 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
             assertSoftly(underholdskostnadBarn1.tilleggsstønad) {
                 shouldHaveSize(2)
                 val sistePeriode = maxByOrNull { it.fom }
-                sistePeriode!!.tom shouldBe null
+                sistePeriode!!.tom shouldBe YearMonth.now().minusMonths(2).atEndOfMonth()
             }
             assertSoftly(underholdskostnadBarn1.faktiskeTilsynsutgifter) {
                 shouldHaveSize(2)
                 val sistePeriode = maxByOrNull { it.fom }
-                sistePeriode!!.tom shouldBe null
+                sistePeriode!!.tom shouldBe YearMonth.now().minusMonths(2).atEndOfMonth()
             }
             assertSoftly(underholdskostnadBarn1.barnetilsyn) {
                 shouldHaveSize(2)
                 val sistePeriode = maxByOrNull { it.fom }
+                sistePeriode!!.tom shouldBe YearMonth.now().minusMonths(2).atEndOfMonth()
+            }
+        }
+
+        @Test
+        fun `skal oppdatere opphørsdato og virkningstidspunkt underholdskostnad framover i tid`() {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+            val søknadsbarn2 =
+                Rolle(
+                    ident = testdataBarn2.ident,
+                    rolletype = Rolletype.BARN,
+                    behandling = behandling,
+                    fødselsdato = testdataBarn2.fødselsdato,
+                    id = 5,
+                    opphørsdato = LocalDate.now().plusMonths(10),
+                )
+            val søknadsbarn = behandling.søknadsbarn.first()
+            behandling.roller.add(søknadsbarn2)
+            behandling.virkningstidspunkt = YearMonth.now().plusMonths(8).atDay(1)
+
+            val underholdskostnadBarn1 =
+                Underholdskostnad(
+                    behandling = behandling,
+                    id = 1,
+                    person =
+                        Person(
+                            id = 1,
+                            rolle = mutableSetOf(søknadsbarn),
+                            ident = testdataBarn1.ident,
+                            navn = testdataBarn1.navn,
+                            fødselsdato = testdataBarn1.fødselsdato,
+                        ),
+                )
+            underholdskostnadBarn1.faktiskeTilsynsutgifter =
+                mutableSetOf(
+                    FaktiskTilsynsutgift(
+                        id = 1,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = behandling.virkningstidspunkt!!,
+                        tom = null,
+                        tilsynsutgift = BigDecimal(1000),
+                    ),
+                )
+            underholdskostnadBarn1.barnetilsyn =
+                mutableSetOf(
+                    Barnetilsyn(
+                        id = 1,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = behandling.virkningstidspunkt!!,
+                        tom = null,
+                        under_skolealder = true,
+                        omfang = Tilsynstype.DELTID,
+                        kilde = Kilde.MANUELL,
+                    ),
+                )
+            underholdskostnadBarn1.tilleggsstønad =
+                mutableSetOf(
+                    Tilleggsstønad(
+                        id = 1,
+                        underholdskostnad = underholdskostnadBarn1,
+                        fom = behandling.virkningstidspunkt!!,
+                        tom = null,
+                        dagsats = BigDecimal(1000),
+                    ),
+                )
+            val opphørsdato = LocalDate.now().plusMonths(10)
+
+            behandling.underholdskostnader = mutableSetOf(underholdskostnadBarn1)
+            every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+            virkningstidspunktService.oppdaterOpphørsdato(1, OppdaterOpphørsdatoRequestDto(søknadsbarn.id!!, opphørsdato = opphørsdato))
+
+            assertSoftly(underholdskostnadBarn1.tilleggsstønad) {
+                shouldHaveSize(1)
+                val sistePeriode = maxByOrNull { it.fom }
                 sistePeriode!!.tom shouldBe null
+            }
+            assertSoftly(underholdskostnadBarn1.faktiskeTilsynsutgifter) {
+                shouldHaveSize(1)
+                val sistePeriode = maxByOrNull { it.fom }
+                sistePeriode!!.tom shouldBe null
+            }
+            assertSoftly(underholdskostnadBarn1.barnetilsyn) {
+                shouldHaveSize(1)
+                val sistePeriode = maxByOrNull { it.fom }
+                sistePeriode!!.tom shouldBe null
+            }
+            val nyVirkningstidspunkt = LocalDate.now().plusMonths(2).withDayOfMonth(1)
+
+            virkningstidspunktService.oppdatereVirkningstidspunkt(1, OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt))
+            assertSoftly(underholdskostnadBarn1.tilleggsstønad) {
+                shouldHaveSize(1)
+                val periode = maxByOrNull { it.fom }
+                periode!!.fom shouldBe nyVirkningstidspunkt
+            }
+            assertSoftly(underholdskostnadBarn1.faktiskeTilsynsutgifter) {
+                shouldHaveSize(1)
+                val periode = maxByOrNull { it.fom }
+                periode!!.fom shouldBe nyVirkningstidspunkt
+            }
+            assertSoftly(underholdskostnadBarn1.barnetilsyn) {
+                shouldHaveSize(1)
+                val periode = maxByOrNull { it.fom }
+                periode!!.fom shouldBe nyVirkningstidspunkt
             }
         }
     }

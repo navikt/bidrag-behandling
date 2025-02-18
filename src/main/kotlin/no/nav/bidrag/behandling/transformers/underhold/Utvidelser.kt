@@ -136,7 +136,7 @@ fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertG
     }
 }
 
-fun Underholdskostnad.justerePerioder() {
+fun Underholdskostnad.justerePerioder(forrigeVirkningstidspunkt: LocalDate? = null) {
     val virkningsdato = behandling.virkningstidspunktEllerSøktFomDato
 
     barnetilsyn.filter { it.fom < virkningsdato }.forEach { periode ->
@@ -147,6 +147,10 @@ fun Underholdskostnad.justerePerioder() {
         }
     }
 
+    barnetilsyn.filter { it.fom == forrigeVirkningstidspunkt && it.fom > virkningsdato }.forEach { periode ->
+        periode.fom = virkningsdato
+    }
+
     faktiskeTilsynsutgifter.filter { it.fom < virkningsdato }.forEach { periode ->
         if (periode.tom != null && virkningsdato >= periode.tom) {
             faktiskeTilsynsutgifter.remove(periode)
@@ -154,13 +158,18 @@ fun Underholdskostnad.justerePerioder() {
             periode.fom = virkningsdato
         }
     }
-
+    faktiskeTilsynsutgifter.filter { it.fom == forrigeVirkningstidspunkt && it.fom > virkningsdato }.forEach { periode ->
+        periode.fom = virkningsdato
+    }
     tilleggsstønad.filter { it.fom < virkningsdato }.forEach { periode ->
         if (periode.tom != null && virkningsdato >= periode.tom) {
             tilleggsstønad.remove(periode)
         } else {
             periode.fom = virkningsdato
         }
+    }
+    tilleggsstønad.filter { it.fom == forrigeVirkningstidspunkt && it.fom > virkningsdato }.forEach { periode ->
+        periode.fom = virkningsdato
     }
 }
 

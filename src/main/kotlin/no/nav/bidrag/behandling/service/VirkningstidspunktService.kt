@@ -96,11 +96,12 @@ class VirkningstidspunktService(
         nyVirkningstidspunkt: LocalDate?,
         behandling: Behandling,
     ) {
+        val forrigeVirkningstidspunkt = behandling.virkningstidspunkt
         val erVirkningstidspunktEndret = nyVirkningstidspunkt != behandling.virkningstidspunkt
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny virkningsdato i behandling ${behandling.id}" }
-            underholdService.tilpasseUnderholdEtterVirkningsdato(behandling)
+            underholdService.tilpasseUnderholdEtterVirkningsdato(behandling, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt!!)
         }
 
         fun oppdaterBoforhold() {
@@ -121,12 +122,12 @@ class VirkningstidspunktService(
 
         fun oppdaterSamvær() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
-            samværService.rekalkulerPerioderSamvær(behandling.id!!)
+            samværService.rekalkulerPerioderSamvær(behandling.id!!, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
         }
 
         fun oppdaterInntekter() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
-            inntektService.rekalkulerPerioderInntekter(behandling.id!!)
+            inntektService.rekalkulerPerioderInntekter(behandling.id!!, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
         }
 
         fun oppdaterAndreVoksneIHusstanden() {

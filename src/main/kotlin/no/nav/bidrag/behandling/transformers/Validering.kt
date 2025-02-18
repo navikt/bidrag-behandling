@@ -48,6 +48,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.http.HttpStatus
@@ -75,7 +76,11 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (rolle != null && rolle.rolletype != Rolletype.BARN) {
         feilliste.add("Opphørsdato kan kun settes for barn")
     }
-    if (rolle != null && rolle.rolletype == Rolletype.BARN && opphørsdato.isAfter(rolle.fødselsdato.plusYears(18))) {
+    if (rolle != null &&
+        behandling.stonadstype == Stønadstype.BIDRAG &&
+        rolle.rolletype == Rolletype.BARN &&
+        opphørsdato.isAfter(rolle.fødselsdato.plusYears(18))
+    ) {
         feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
     }
 
@@ -271,6 +276,10 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
         virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
     ) {
         feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+    }
+
+    if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
+        feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
     }
 
     if (feilliste.isNotEmpty()) {

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
@@ -19,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.opprettGrunnlagsreferanseVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
@@ -41,7 +43,6 @@ import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregni
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandlingMedReelMottaker
-import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -429,6 +430,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.periode.til shouldBe null
                 it.resultatkode shouldBe Resultatkode.OPPHØR.name
                 it.beløp shouldBe null
+                it.grunnlagReferanseListe shouldContain opprettGrunnlagsreferanseVirkningstidspunkt(behandling.søknadsbarn.first())
             }
             val nestSistePeriode = stønadsendring.periodeListe[stønadsendring.periodeListe.size - 2]
             assertSoftly(nestSistePeriode) {
@@ -659,34 +661,35 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         every { behandlingService.hentBehandlingById(any()) } returns behandling
 
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
-        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
-            opprettStønadDto(
-                stønadstype = Stønadstype.FORSKUDD,
-                periodeListe =
-                    listOf(
-                        opprettStønadPeriodeDto(
-                            ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
-                            beløp = BigDecimal("2600"),
-                        ),
-                        opprettStønadPeriodeDto(
-                            ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
-                            beløp = BigDecimal("2800"),
-                        ),
-                    ),
-            )
-        every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
-            opprettStønadDto(
-                listOf(
-                    opprettStønadPeriodeDto(
-                        ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
-                        beløp = BigDecimal("2000"),
-                    ),
-                    opprettStønadPeriodeDto(
-                        ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
-                        beløp = BigDecimal("1500"),
-                    ),
+
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
+                    beløp = BigDecimal("2600"),
                 ),
-            )
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
+                    beløp = BigDecimal("2800"),
+                ),
+            ),
+        )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2024-01-01")),
+                    beløp = BigDecimal("2000"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null),
+                    beløp = BigDecimal("1500"),
+                ),
+            ),
+        )
 
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns

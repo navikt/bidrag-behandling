@@ -123,6 +123,7 @@ class SamværService(
     fun rekalkulerPerioderSamvær(
         behandlingsid: Long,
         opphørSlettet: Boolean = false,
+        forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         val virkningstidspunkt = behandling.virkningstidspunkt ?: return
@@ -139,6 +140,9 @@ class SamværService(
                         periode.fom = virkningstidspunkt
                     }
                 }
+            it.perioder.filter { it.fom == forrigeVirkningstidspunkt }.forEach { periode ->
+                periode.fom = virkningstidspunkt
+            }
             if (opphørsdato != null) {
                 it.perioder
                     .filter { it.fom > opphørsdato }

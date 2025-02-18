@@ -135,7 +135,8 @@ fun Husstandsmedlem.tilBoforholdBarnRequest(endreBostatus: EndreBostatus? = null
         relasjon = Familierelasjon.BARN,
         innhentedeOffentligeOpplysninger =
             henteOffentligePerioder().map { it.tilBostatus() }.sortedBy { it.periodeFom },
-        behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
+        behandledeBostatusopplysninger =
+            perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
     )
 

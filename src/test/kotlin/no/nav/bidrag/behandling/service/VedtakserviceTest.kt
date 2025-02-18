@@ -207,9 +207,6 @@ class VedtakserviceTest : TestContainerRunner() {
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
-//        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns opprettStønadDto(emptyList())
-//        every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns SkyldnerStønaderResponse(emptyList())
-//        every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns commonObjectmapper.readValue(erstattVariablerITestFil("stonad/løpende-bidragssaker-bp"))
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
