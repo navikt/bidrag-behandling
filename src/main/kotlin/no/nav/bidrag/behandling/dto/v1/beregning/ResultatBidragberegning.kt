@@ -35,14 +35,14 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
         }
     val resultatPerioderUtenForskudd =
         perioderUtenForskudd.map { periode ->
-            UgyldigBeregningDto.UgyldigResultatPeriode(
+            UgyldigResultatPeriode(
                 periode = periode.periode,
                 type = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
             )
         }
     val resultatPerioderUnderLøpendeBidrag =
         (periodeListe - perioderUtenForskudd.map { it.periode }).map { periode ->
-            UgyldigBeregningDto.UgyldigResultatPeriode(
+            UgyldigResultatPeriode(
                 periode = periode,
                 type = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
             )
