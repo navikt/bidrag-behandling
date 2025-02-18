@@ -20,7 +20,7 @@ import java.time.LocalDate
 
 data class VirkningstidspunktFeilDto(
     val manglerVirkningstidspunkt: Boolean,
-    val manglerOpphørsdato: Boolean = false,
+    val manglerOpphørsdato: List<RolleDto> = emptyList(),
     val manglerÅrsakEllerAvslag: Boolean,
     val manglerBegrunnelse: Boolean = false,
     val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean,
@@ -29,7 +29,7 @@ data class VirkningstidspunktFeilDto(
     val harFeil
         get() =
             manglerBegrunnelse ||
-                manglerOpphørsdato ||
+                manglerOpphørsdato.isNotEmpty() ||
                 manglerVirkningstidspunkt ||
                 manglerÅrsakEllerAvslag ||
                 virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
