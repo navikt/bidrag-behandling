@@ -123,7 +123,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
                     ),
                 perioder =
-                    stønadsendring.periodeListe.map {
+                    stønadsendring.periodeListe.filter { it.resultatkode != Resultatkode.OPPHØR.name }.map {
                         grunnlagListe.byggResultatBidragsberegning(
                             it.periode,
                             it.beløp,
