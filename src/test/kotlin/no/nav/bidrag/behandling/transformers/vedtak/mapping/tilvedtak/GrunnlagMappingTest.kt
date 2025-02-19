@@ -1548,7 +1548,7 @@ class GrunnlagMappingTest {
                     }
 
                     it.filter { it.type != Grunnlagstype.PERSON_HUSSTANDSMEDLEM }.forEach { grunnlag ->
-                        grunnlag.gjelderReferanse shouldBe husstandsmedlemmer[0].referanse
+                        grunnlag.gjelderBarnReferanse shouldBe husstandsmedlemmer[0].referanse
                         grunnlag.innholdTilObjekt<BostatusPeriode>().relatertTilPart shouldBe grunnlagBm.referanse
                     }
                 }
@@ -1594,7 +1594,7 @@ class GrunnlagMappingTest {
                         this shouldHaveSize 4
                         assertSoftly(this[0]) {
                             type shouldBe Grunnlagstype.BOSTATUS_PERIODE
-                            gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
+                            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag1.referanse
                             grunnlagsreferanseListe shouldHaveSize 1
                             grunnlagsreferanseListe shouldContainAll
                                 listOf(
@@ -1612,7 +1612,7 @@ class GrunnlagMappingTest {
                         }
                         assertSoftly(this[3]) {
                             type shouldBe Grunnlagstype.BOSTATUS_PERIODE
-                            gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
+                            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag1.referanse
                             grunnlagsreferanseListe shouldHaveSize 0
                             val innhold = innholdTilObjekt<BostatusPeriode>()
                             innhold.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
@@ -1623,9 +1623,9 @@ class GrunnlagMappingTest {
                         }
                     }
 
-                    it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag2.referanse) shouldHaveSize 4
+                    it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarnGrunnlag2.referanse) shouldHaveSize 4
                     it.filter {
-                        it.gjelderReferanse?.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}") == true
+                        it.gjelderBarnReferanse?.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}") == true
                     } shouldHaveSize 8
 
                     it.filter { it.type != Grunnlagstype.PERSON_HUSSTANDSMEDLEM }.forEach {
