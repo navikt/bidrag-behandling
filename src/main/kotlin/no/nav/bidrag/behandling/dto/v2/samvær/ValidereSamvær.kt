@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.minOfNullable
+import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.ugyldigSluttperiode
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
@@ -64,7 +65,7 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
         gjelderRolle = rolle,
         manglerBegrunnelse = notatSæmvær?.innhold.isNullOrBlank(),
         ingenLøpendeSamvær =
-            (opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
+            (opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
                 (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
         overlappendePerioder = perioder.finnOverlappendePerioder(),
         manglerSamvær = perioder.isEmpty(),

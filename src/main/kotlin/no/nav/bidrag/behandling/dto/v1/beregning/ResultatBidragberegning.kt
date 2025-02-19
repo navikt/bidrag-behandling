@@ -66,19 +66,21 @@ fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
 fun BegrensetRevurderingLøpendeForskuddManglerException.opprettBegrunnelse(): UgyldigBeregningDto {
     val allePerioder = data.beregnetBarnebidragPeriodeListe.sortedBy { it.periode.fom }
     val perioderUtenForskudd =
-        allePerioder.filter {
-            val sluttberegning =
-                data.grunnlagListe
-                    .finnSluttberegningIReferanser(
-                        it.grunnlagsreferanseListe,
-                    )?.innholdTilObjekt<SluttberegningBarnebidrag>()
-            sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertTilForskuddssats.name &&
-                it.resultat.beløp == BigDecimal.ZERO
-        }
+        allePerioder
+            .filter {
+                val sluttberegning =
+                    data.grunnlagListe
+                        .finnSluttberegningIReferanser(
+                            it.grunnlagsreferanseListe,
+                        )?.innholdTilObjekt<SluttberegningBarnebidrag>()
+                sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertTilForskuddssats.name &&
+                    it.resultat.beløp == BigDecimal.ZERO
+            }.map { it.periode }
+            .takeIf { it.isNotEmpty() } ?: periodeListe
     val resultatPerioderUtenForskudd =
         perioderUtenForskudd.map { periode ->
             UgyldigResultatPeriode(
-                periode = periode.periode,
+                periode = periode,
                 type = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
             )
         }
@@ -87,11 +89,11 @@ fun BegrensetRevurderingLøpendeForskuddManglerException.opprettBegrunnelse(): U
         resultatPeriode = resultatPerioderUtenForskudd,
         begrunnelse =
             if (perioderUtenForskudd.size > 1) {
-                "Perioder ${perioderUtenForskudd.joinToString {it.periode.periodeString}} har ingen løpende forskudd"
+                "Perioder ${perioderUtenForskudd.joinToString {it.periodeString}} har ingen løpende forskudd"
             } else {
-                "Periode ${perioderUtenForskudd.first().periode.periodeString} har ingen løpende forskudd"
+                "Periode ${perioderUtenForskudd.first().periodeString} har ingen løpende forskudd"
             },
-        perioder = perioderUtenForskudd.map { it.periode },
+        perioder = perioderUtenForskudd,
     )
 }
 

@@ -413,7 +413,7 @@ fun List<Datoperiode>.ugyldigSluttperiode(
     opphørsdato: LocalDate? = null,
     kanHaHullIPerioder: Boolean = false,
 ): Boolean {
-    if (opphørsdato == null || opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)) return false
+    if (opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) return false
     val sistePeriode = maxByOrNull { it.fom } ?: return false
     val sisteGyldigTilDato = opphørsdato.opphørSisteTilDato()
     val sisteTilDato = sistePeriode.til ?: LocalDate.MAX
@@ -445,7 +445,7 @@ fun List<Datoperiode>.finnHullIPerioder(
         }
         senesteTilPeriode = maxOf(senesteTilPeriode, periode.til ?: LocalDate.MAX)
     }
-    if ((opphørsdato == null || opphørsdato.sluttenAvForrigeMåned!!.isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
+    if ((opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
         perioderSomSkalSjekkes.none { it.til == null }
     ) {
         val sistePeriode = perioderSomSkalSjekkes.lastOrNull()

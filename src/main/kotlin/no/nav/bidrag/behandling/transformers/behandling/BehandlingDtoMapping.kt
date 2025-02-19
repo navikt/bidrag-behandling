@@ -40,6 +40,7 @@ import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
@@ -373,7 +374,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     rolle = rolle.tilDto(),
                     ingenLøpendePeriode =
                         if (opphørsdato == null ||
-                            opphørsdato.isAfter(LocalDate.now().sluttenAvForrigeMåned)
+                            opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)
                         ) {
                             hullIPerioder.any { it.til == null }
                         } else {
