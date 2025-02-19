@@ -119,12 +119,15 @@ class BidragGrunnlagConsumer(
     }
 
     @Retryable(maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 500, multiplier = 2.0))
-    fun henteGrunnlag(grunnlag: List<GrunnlagRequestDto>): HentetGrunnlag {
+    fun henteGrunnlag(
+        grunnlag: List<GrunnlagRequestDto>,
+        formål: Formål = Formål.FORSKUDD,
+    ): HentetGrunnlag {
         return try {
             HentetGrunnlag(
                 postForNonNullEntity(
                     bidragGrunnlagUri.pathSegment("hentgrunnlag").build().toUri(),
-                    HentGrunnlagRequestDto(formaal = Formål.FORSKUDD, grunnlagRequestDtoListe = grunnlag),
+                    HentGrunnlagRequestDto(formaal = formål, grunnlagRequestDtoListe = grunnlag),
                 ),
             )
         } catch (e: Exception) {
