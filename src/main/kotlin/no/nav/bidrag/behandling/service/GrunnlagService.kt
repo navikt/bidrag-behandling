@@ -71,6 +71,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -642,7 +643,13 @@ class GrunnlagService(
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
         tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter: Boolean,
     ): Map<Grunnlagsdatatype, FeilrapporteringDto?> {
-        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value)
+        val formål =
+            when (behandling.tilType()) {
+                TypeBehandling.BIDRAG -> Formål.BIDRAG
+                TypeBehandling.FORSKUDD -> Formål.FORSKUDD
+                TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
+            }
+        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
 
         val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
             innhentetGrunnlag.hentGrunnlagDto?.let { g ->
