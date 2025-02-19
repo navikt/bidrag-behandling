@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
+import no.nav.bidrag.behandling.transformers.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -19,8 +20,10 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -140,11 +143,18 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
     val grunnlagListe = resultat.grunnlagListe.toSet()
     val periodeliste =
         resultat.beregnetBarnebidragPeriodeListe.map {
+            val sluttberegning =
+                grunnlagListe
+                    .toList()
+                    .finnSluttberegningIReferanser(
+                        it.grunnlagsreferanseListe,
+                    )?.innholdTilObjekt<SluttberegningBarnebidrag>()
+            val ikkeOmsorgForBarnet = sluttberegning?.ikkeOmsorgForBarnet == true
             OpprettPeriodeRequestDto(
                 periode = it.periode,
                 beløp = it.resultat.beløp,
-                valutakode = "NOK",
-                resultatkode = Resultatkode.BEREGNET_BIDRAG.name,
+                valutakode = if (ikkeOmsorgForBarnet) null else "NOK",
+                resultatkode = if (ikkeOmsorgForBarnet) Resultatkode.IKKE_OMSORG_FOR_BARNET.name else Resultatkode.BEREGNET_BIDRAG.name,
                 grunnlagReferanseListe = it.grunnlagsreferanseListe,
             )
         }
