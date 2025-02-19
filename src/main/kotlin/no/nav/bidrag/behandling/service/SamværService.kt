@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
@@ -38,10 +39,10 @@ class SamværService(
         request: OppdaterSamværDto,
     ): OppdaterSamværResponsDto {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        request.valider()
         log.info { "Oppdaterer samvær for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
         val oppdaterSamvær = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+        request.valider(oppdaterSamvær.rolle.opphørsdato)
 
         request.run {
             periode?.let { oppdaterPeriode(it, oppdaterSamvær) }
@@ -69,7 +70,7 @@ class SamværService(
                 Samværsperiode(
                     oppdaterSamvær,
                     request.periode.fom,
-                    request.periode.tom,
+                    request.periode.tom ?: justerPeriodeTilOpphørsdato(oppdaterSamvær.rolle.opphørsdato),
                     oppdatertSamværsklasse!!,
                     beregningJson = request.beregning.tilJsonString(),
                 )

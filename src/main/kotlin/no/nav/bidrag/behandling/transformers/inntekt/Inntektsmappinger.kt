@@ -163,7 +163,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
     inntekt.type = this.type
     inntekt.belop = this.beløp.nærmesteHeltall
     inntekt.datoFom = this.datoFom
-    inntekt.datoTom = this.datoTom
+    inntekt.datoTom = this.datoTom ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
     inntekt.gjelderBarn = this.gjelderBarn?.verdi
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
@@ -274,6 +274,8 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
             taMed = this.taMed,
             behandling = behandling,
         )
+
+    inntekt.datoTom = this.datoTom ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
 
     if (this.inntektstype != null) {
         inntekt.inntektsposter =

@@ -106,10 +106,10 @@ fun Set<Samværsperiode>.finnOverlappendePerioder(): Set<OverlappendeSamværPeri
                 }
         }.toSet()
 
-fun OppdaterSamværDto.valider() {
+fun OppdaterSamværDto.valider(opphørsdato: LocalDate?) {
     val feilliste = mutableListOf<String>()
 
-    periode?.valider()?.also { feilliste.addAll(it) }
+    periode?.valider(opphørsdato)?.also { feilliste.addAll(it) }
 
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
@@ -119,7 +119,7 @@ fun OppdaterSamværDto.valider() {
     }
 }
 
-fun OppdaterSamværsperiodeDto.valider(): MutableList<String> {
+fun OppdaterSamværsperiodeDto.valider(opphørsdato: LocalDate?): MutableList<String> {
     val feilliste = mutableListOf<String>()
 
     if (samværsklasse != null && beregning != null) {
@@ -127,6 +127,12 @@ fun OppdaterSamværsperiodeDto.valider(): MutableList<String> {
     }
     if (samværsklasse == null && beregning == null) {
         feilliste.add("Samværsklasse eller beregning må settes")
+    }
+    if (periode.fom >= opphørsdato) {
+        feilliste.add("Fom-dato kan ikke være etter opphørsdato")
+    }
+    if (periode.tom != null && periode.tom!! > opphørsdato) {
+        feilliste.add("Tom-dato kan ikke være etter opphørsdato")
     }
     if (periode.tom != null && periode.tom!! > LocalDate.now().withDayOfMonth(1)) {
         feilliste.add("Periode tom-dato kan ikke være i frem i tid")

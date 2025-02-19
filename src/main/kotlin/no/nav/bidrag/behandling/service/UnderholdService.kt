@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -243,7 +244,7 @@ class UnderholdService(
             barnetilsyn.kilde = kilde
 
             barnetilsyn.fom = request.periode.fom
-            barnetilsyn.tom = request.periode.tom
+            barnetilsyn.tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato)
             barnetilsyn.under_skolealder =
                 when (request.skolealder) {
                     Skolealder.UNDER -> true
@@ -254,10 +255,15 @@ class UnderholdService(
 
             barnetilsyn
         } ?: run {
+            val periodeJustert =
+                request.periode.copy(
+                    tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato),
+                )
             underholdskostnad.barnetilsyn.add(
                 Barnetilsyn(
-                    fom = request.periode.fom,
-                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
+                    fom = periodeJustert.fom,
+                    tom =
+                        underholdskostnad.begrensTomDatoForTolvÅr(periodeJustert),
                     under_skolealder =
                         when (request.skolealder) {
                             Skolealder.UNDER -> true
@@ -269,15 +275,15 @@ class UnderholdService(
                     underholdskostnad = underholdskostnad,
                 ),
             )
-            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(periodeJustert) &&
                 underholdskostnad.barnetilsyn.none {
-                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(request.periode.fom.year), request.periode.tom)
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(periodeJustert.fom.year), periodeJustert.tom)
                 }
             ) {
                 underholdskostnad.barnetilsyn.add(
                     Barnetilsyn(
                         fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
-                        tom = request.periode.tom,
+                        tom = periodeJustert.tom,
                         under_skolealder =
                             when (request.skolealder) {
                                 Skolealder.UNDER -> true
@@ -305,31 +311,35 @@ class UnderholdService(
             underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
             val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }!!
             faktiskTilsynsutgift.fom = request.periode.fom
-            faktiskTilsynsutgift.tom = request.periode.tom
+            faktiskTilsynsutgift.tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato)
             faktiskTilsynsutgift.kostpenger = request.kostpenger
             faktiskTilsynsutgift.tilsynsutgift = request.utgift
             faktiskTilsynsutgift.kommentar = request.kommentar
             faktiskTilsynsutgift
         } ?: run {
+            val periodeJustert =
+                request.periode.copy(
+                    tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato),
+                )
             underholdskostnad.faktiskeTilsynsutgifter.add(
                 FaktiskTilsynsutgift(
                     fom = request.periode.fom,
-                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(periodeJustert),
                     kostpenger = request.kostpenger,
                     tilsynsutgift = request.utgift,
                     kommentar = request.kommentar,
                     underholdskostnad = underholdskostnad,
                 ),
             )
-            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(periodeJustert) &&
                 underholdskostnad.faktiskeTilsynsutgifter.none {
-                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(request.periode.fom.year), request.periode.tom)
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(periodeJustert.fom.year), periodeJustert.tom)
                 }
             ) {
                 underholdskostnad.faktiskeTilsynsutgifter.add(
                     FaktiskTilsynsutgift(
                         fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
-                        tom = request.periode.tom,
+                        tom = periodeJustert.tom,
                         kostpenger = request.kostpenger,
                         tilsynsutgift = request.utgift,
                         kommentar = request.kommentar,
@@ -351,28 +361,32 @@ class UnderholdService(
         request.id?.let { id ->
             val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
             tilleggsstønad.fom = request.periode.fom
-            tilleggsstønad.tom = request.periode.tom
+            tilleggsstønad.tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato)
             tilleggsstønad.dagsats = request.dagsats
             tilleggsstønad.underholdskostnad = underholdskostnad
             tilleggsstønad
         } ?: run {
+            val periodeJustert =
+                request.periode.copy(
+                    tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato),
+                )
             underholdskostnad.tilleggsstønad.add(
                 Tilleggsstønad(
                     fom = request.periode.fom,
-                    tom = underholdskostnad.begrensTomDatoForTolvÅr(request.periode),
+                    tom = underholdskostnad.begrensTomDatoForTolvÅr(periodeJustert),
                     dagsats = request.dagsats,
                     underholdskostnad = underholdskostnad,
                 ),
             )
-            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(request.periode) &&
+            if (underholdskostnad.erPeriodeFørOgEtterFyltTolvÅr(periodeJustert) &&
                 underholdskostnad.tilleggsstønad.none {
-                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(request.periode.fom.year), request.periode.tom)
+                    Datoperiode(it.fom, it.tom) == Datoperiode(periodeFomJuli(periodeJustert.fom.year), periodeJustert.tom)
                 }
             ) {
                 underholdskostnad.tilleggsstønad.add(
                     Tilleggsstønad(
                         fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
-                        tom = request.periode.tom,
+                        tom = periodeJustert.tom,
                         dagsats = request.dagsats,
                         underholdskostnad = underholdskostnad,
                     ),
