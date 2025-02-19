@@ -128,10 +128,10 @@ fun OppdaterSamværsperiodeDto.valider(opphørsdato: LocalDate?): MutableList<St
     if (samværsklasse == null && beregning == null) {
         feilliste.add("Samværsklasse eller beregning må settes")
     }
-    if (periode.fom >= opphørsdato) {
+    if (opphørsdato != null && periode.fom >= opphørsdato) {
         feilliste.add("Fom-dato kan ikke være etter opphørsdato")
     }
-    if (periode.tom != null && periode.tom!! > opphørsdato) {
+    if (periode.tom != null && opphørsdato != null && periode.tom!! > opphørsdato) {
         feilliste.add("Tom-dato kan ikke være etter opphørsdato")
     }
     if (periode.tom != null && periode.tom!! > LocalDate.now().withDayOfMonth(1)) {
