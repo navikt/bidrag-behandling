@@ -1590,7 +1590,7 @@ class GrunnlagMappingTest {
                 assertSoftly(behandling.tilGrunnlagBostatus(personobjekter).toList()) {
                     it shouldHaveSize 18
                     it.filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM } shouldHaveSize 2
-                    assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse)) {
+                    assertSoftly(it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarnGrunnlag1.referanse)) {
                         this shouldHaveSize 4
                         assertSoftly(this[0]) {
                             type shouldBe Grunnlagstype.BOSTATUS_PERIODE
@@ -1639,7 +1639,7 @@ class GrunnlagMappingTest {
                                 listOf(
                                     opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
                                         grunnlagBm.referanse,
-                                        it.gjelderReferanse!!,
+                                        it.gjelderBarnReferanse!!,
                                     ),
                                 ),
                             )
