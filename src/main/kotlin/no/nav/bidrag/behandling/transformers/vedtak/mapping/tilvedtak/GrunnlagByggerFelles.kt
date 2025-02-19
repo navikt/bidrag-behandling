@@ -289,8 +289,8 @@ internal fun opprettGrunnlagForBostatusperioder(
             GrunnlagDto(
                 referanse = "bostatus_${gjelderReferanse}_${it.datoFom?.toCompactString()}",
                 type = Grunnlagstype.BOSTATUS_PERIODE,
-                gjelderReferanse = gjelderReferanse,
-//                gjelderBarnReferanse = if (gjelderReferanse == relatertTilPartReferanse) null else gjelderReferanse,
+                gjelderReferanse = relatertTilPartReferanse,
+                gjelderBarnReferanse = if (gjelderReferanse == relatertTilPartReferanse) null else gjelderReferanse,
                 grunnlagsreferanseListe =
                     if (it.kilde == Kilde.OFFENTLIG) {
                         listOf(

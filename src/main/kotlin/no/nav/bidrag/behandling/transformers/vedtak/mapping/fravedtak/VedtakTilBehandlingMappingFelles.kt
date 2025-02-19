@@ -207,7 +207,7 @@ internal fun List<GrunnlagDto>.mapHusstandsmedlem(
     lesemodus: Boolean,
 ): MutableSet<Husstandsmedlem> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE)
-        .groupBy { it.gjelderReferanse }
+        .groupBy { if (it.gjelderBarnReferanse.isNullOrEmpty()) it.gjelderReferanse else it.gjelderBarnReferanse }
         .map {
             it.value.tilHusstandsmedlem(it.key!!, behandling, this, lesemodus)
         }.toMutableSet()

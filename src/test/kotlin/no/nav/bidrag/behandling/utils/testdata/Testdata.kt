@@ -2105,6 +2105,7 @@ fun Behandling.leggeTilNyttBarnetilsyn(
 fun opprettStønadDto(
     periodeListe: List<StønadPeriodeDto>,
     stønadstype: Stønadstype = Stønadstype.BIDRAG,
+    opprettetTidspunkt: LocalDateTime = LocalDateTime.parse("2025-01-01T00:00:00"),
 ) = StønadDto(
     sak = Saksnummer(SAKSNUMMER),
     skyldner = if (stønadstype == Stønadstype.BIDRAG) Personident(testdataBP.ident) else skyldnerNav,
@@ -2113,7 +2114,7 @@ fun opprettStønadDto(
     førsteIndeksreguleringsår = 2025,
     innkreving = Innkrevingstype.MED_INNKREVING,
     opprettetAv = "",
-    opprettetTidspunkt = LocalDateTime.now(),
+    opprettetTidspunkt = opprettetTidspunkt,
     endretAv = null,
     endretTidspunkt = null,
     stønadsid = 1,

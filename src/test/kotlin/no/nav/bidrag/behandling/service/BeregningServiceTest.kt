@@ -471,7 +471,7 @@ class BeregningServiceTest {
             val barnStatus = bostatuser.find { it.gjelderBarnReferanse == grunnlagListe.søknadsbarn.first().referanse }
             barnStatus!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.MED_FORELDER
 
-            val andreVoksneIHusstanden = bostatuser.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse }
+            val andreVoksneIHusstanden = bostatuser.find { it.gjelderReferanse == grunnlagListe.bidragspliktig!!.referanse && it.gjelderBarnReferanse == null }
             andreVoksneIHusstanden!!.innholdTilObjekt<BostatusPeriode>().bostatus shouldBe Bostatuskode.BOR_MED_ANDRE_VOKSNE
 
             val sivilstand =
