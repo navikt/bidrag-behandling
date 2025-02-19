@@ -1860,7 +1860,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.BOSTATUS_PERIODE)) {
             shouldHaveSize(5)
             val bostatusSøknadsbarn1 =
-                it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag.referanse)
+                it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarn1Grunnlag.referanse)
             bostatusSøknadsbarn1.shouldHaveSize(1)
 
             assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
@@ -1870,7 +1870,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 relatertTilPart shouldBe bpGrunnlag.referanse
             }
             val bostatusBp =
-                it.filtrerBasertPåFremmedReferanse(referanse = bpGrunnlag.referanse)
+                it.filtrerBasertPåFremmedReferanse(referanse = bpGrunnlag.referanse).filter { it.gjelderBarnReferanse == null }
             bostatusBp.shouldHaveSize(1)
             assertSoftly(bostatusBp[0].innholdTilObjekt<BostatusPeriode>()) {
                 bostatus shouldBe Bostatuskode.BOR_MED_ANDRE_VOKSNE
@@ -1879,7 +1879,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 relatertTilPart shouldBe bpGrunnlag.referanse
             }
             it
-                .filtrerBasertPåFremmedReferanse(referanse = husstandsmedlemGrunnlag.referanse)
+                .filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = husstandsmedlemGrunnlag.referanse)
                 .shouldHaveSize(1)
         }
     }
