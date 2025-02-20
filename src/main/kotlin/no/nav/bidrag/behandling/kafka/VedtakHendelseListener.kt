@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.service.OppgaveService
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
@@ -35,7 +36,9 @@ class VedtakHendelseListener(
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
-        opprettRevurderForskuddOppgaveVedBehov(vedtak)
+        if (vedtak.kilde != Vedtakskilde.AUTOMATISK) {
+            opprettRevurderForskuddOppgaveVedBehov(vedtak)
+        }
         if (!vedtak.erFattetGjennomBidragBehandling()) {
             log.info {
                 "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. " +

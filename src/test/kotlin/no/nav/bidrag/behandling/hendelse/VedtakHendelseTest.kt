@@ -8,8 +8,12 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.kafka.VedtakHendelseListener
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
+import no.nav.bidrag.behandling.utils.testdata.opprettVedtakhendelse
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -20,18 +24,17 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.vedtak.Behandlingsreferanse
-import no.nav.bidrag.transport.behandling.vedtak.Sporingsdata
 import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 class VedtakHendelseTest : TestContainerRunner() {
     @Autowired
@@ -105,6 +108,161 @@ class VedtakHendelseTest : TestContainerRunner() {
             .opprettForsendelseKaltMed("\"gjelderIdent\":\"${testdataBM.ident}\"")
     }
 
+    @Test
+    fun `skal opprett revurder forskudd oppgave`() {
+        stubUtils.stubOpprettOppgave()
+        stubUtils.stubSøkOppgave()
+        stubUtils.stubHentSaksbehandler()
+        stubUtils.stubBidragStonadHistoriskeSaker(
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            ),
+        )
+        stubUtils.stubOpprettForsendelse()
+        val vedtakId = 123123
+        val behandlingRequest = opprettBehandling()
+        behandlingRequest.roller = oppretteBehandlingRoller(behandlingRequest)
+        val behandling = behandlingRepository.save(behandlingRequest)
+        val vedtakHendelse =
+            opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = Stønadstype.BIDRAG)
+                .copy(
+                    stønadsendringListe =
+                        listOf(
+                            Stønadsendring(
+                                type = Stønadstype.BIDRAG,
+                                eksternReferanse = "",
+                                beslutning = Beslutningstype.ENDRING,
+                                førsteIndeksreguleringsår = 2024,
+                                innkreving = Innkrevingstype.MED_INNKREVING,
+                                kravhaver = Personident(testdataBarn1.ident),
+                                mottaker = Personident(testdataBM.ident),
+                                omgjørVedtakId = 1,
+                                periodeListe = emptyList(),
+                                sak = Saksnummer(SAKSNUMMER),
+                                skyldner = Personident(testdataBP.ident),
+                            ),
+                        ),
+                )
+        vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
+        stubUtils.Verify().opprettOppgaveKalt(1)
+    }
+
+    @Test
+    fun `skal opprette revurder forskudd oppgave hvis fattet gjennom bisys`() {
+        stubUtils.stubOpprettOppgave()
+        stubUtils.stubSøkOppgave()
+        stubUtils.stubHentSaksbehandler()
+        stubUtils.stubBidragStonadHistoriskeSaker(
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            ),
+        )
+        stubUtils.stubOpprettForsendelse()
+        val vedtakId = 123123
+        val behandlingRequest = opprettBehandling()
+        behandlingRequest.roller = oppretteBehandlingRoller(behandlingRequest)
+        val behandling = behandlingRepository.save(behandlingRequest)
+        val vedtakHendelse =
+            opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = Stønadstype.BIDRAG)
+                .copy(
+                    behandlingsreferanseListe =
+                        listOf(
+                            Behandlingsreferanse(
+                                BehandlingsrefKilde.BISYS_SØKNAD.name,
+                                SOKNAD_ID.toString(),
+                            ),
+                        ),
+                    stønadsendringListe =
+                        listOf(
+                            Stønadsendring(
+                                type = Stønadstype.BIDRAG,
+                                eksternReferanse = "",
+                                beslutning = Beslutningstype.ENDRING,
+                                førsteIndeksreguleringsår = 2024,
+                                innkreving = Innkrevingstype.MED_INNKREVING,
+                                kravhaver = Personident(testdataBarn1.ident),
+                                mottaker = Personident(testdataBM.ident),
+                                omgjørVedtakId = 1,
+                                periodeListe = emptyList(),
+                                sak = Saksnummer(SAKSNUMMER),
+                                skyldner = Personident(testdataBP.ident),
+                            ),
+                        ),
+                )
+        vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
+        stubUtils.Verify().opprettOppgaveKalt(1)
+        stubUtils.Verify().hentBidragStonadHistoriskeSakerKalt(1)
+    }
+
+    @Test
+    fun `skal ikke opprette revurder forskudd oppgave hvis opprettet av batch`() {
+        stubUtils.stubOpprettOppgave()
+        stubUtils.stubSøkOppgave()
+        stubUtils.stubHentSaksbehandler()
+        stubUtils.stubBidragStonadHistoriskeSaker(
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            ),
+        )
+        stubUtils.stubOpprettForsendelse()
+        val vedtakId = 123123
+        val behandlingRequest = opprettBehandling()
+        behandlingRequest.roller = oppretteBehandlingRoller(behandlingRequest)
+        val behandling = behandlingRepository.save(behandlingRequest)
+        val vedtakHendelse =
+            opprettVedtakhendelse(vedtakId, behandling.id!!, stonadType = Stønadstype.BIDRAG)
+                .copy(
+                    kilde = Vedtakskilde.AUTOMATISK,
+                    behandlingsreferanseListe =
+                        listOf(
+                            Behandlingsreferanse(
+                                BehandlingsrefKilde.BISYS_SØKNAD.name,
+                                SOKNAD_ID.toString(),
+                            ),
+                        ),
+                    stønadsendringListe =
+                        listOf(
+                            Stønadsendring(
+                                type = Stønadstype.BIDRAG,
+                                eksternReferanse = "",
+                                beslutning = Beslutningstype.ENDRING,
+                                førsteIndeksreguleringsår = 2024,
+                                innkreving = Innkrevingstype.MED_INNKREVING,
+                                kravhaver = Personident(testdataBarn1.ident),
+                                mottaker = Personident(testdataBM.ident),
+                                omgjørVedtakId = 1,
+                                periodeListe = emptyList(),
+                                sak = Saksnummer(SAKSNUMMER),
+                                skyldner = Personident(testdataBP.ident),
+                            ),
+                        ),
+                )
+        vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
+        stubUtils.Verify().opprettOppgaveKalt(0)
+        stubUtils.Verify().hentBidragStonadHistoriskeSakerKalt(0)
+    }
+
     private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) =
         ConsumerRecord(
             "",
@@ -128,53 +286,5 @@ class VedtakHendelseTest : TestContainerRunner() {
             soknadFra = SøktAvType.BIDRAGSMOTTAKER,
             vedtakstype = Vedtakstype.FASTSETTELSE,
             stonadstype = Stønadstype.BIDRAG18AAR,
-        )
-
-    private fun opprettVedtakhendelse(
-        vedtakId: Int,
-        behandlingId: Long,
-        stonadType: Stønadstype = Stønadstype.BIDRAG18AAR,
-    ): VedtakHendelse =
-        VedtakHendelse(
-            type = Vedtakstype.FASTSETTELSE,
-            stønadsendringListe =
-                listOf(
-                    Stønadsendring(
-                        type = stonadType,
-                        eksternReferanse = "",
-                        beslutning = Beslutningstype.ENDRING,
-                        førsteIndeksreguleringsår = 2024,
-                        innkreving = Innkrevingstype.MED_INNKREVING,
-                        kravhaver = Personident(""),
-                        mottaker = Personident(""),
-                        omgjørVedtakId = 1,
-                        periodeListe = emptyList(),
-                        sak = Saksnummer(SAKSNUMMER),
-                        skyldner = Personident(""),
-                    ),
-                ),
-            engangsbeløpListe = emptyList(),
-            enhetsnummer = Enhetsnummer("4806"),
-            id = vedtakId,
-            kilde = Vedtakskilde.MANUELT,
-            kildeapplikasjon = "bidrag-behandling",
-            opprettetTidspunkt = LocalDateTime.now(),
-            opprettetAvNavn = "",
-            opprettetAv = "",
-            sporingsdata = Sporingsdata("sporing"),
-            innkrevingUtsattTilDato = null,
-            vedtakstidspunkt = LocalDateTime.now(),
-            fastsattILand = null,
-            behandlingsreferanseListe =
-                listOf(
-                    Behandlingsreferanse(
-                        BehandlingsrefKilde.BEHANDLING_ID.name,
-                        behandlingId.toString(),
-                    ),
-                    Behandlingsreferanse(
-                        BehandlingsrefKilde.BISYS_SØKNAD.name,
-                        SOKNAD_ID.toString(),
-                    ),
-                ),
         )
 }

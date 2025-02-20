@@ -29,6 +29,7 @@ data class OppdaterePrivatAvtaleResponsDto(
 data class OppdaterePrivatAvtalePeriodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
+    val beløp: BigDecimal,
 )
 
 data class PrivatAvtaleDto(
@@ -45,6 +46,7 @@ data class PrivatAvtaleDto(
 data class PrivatAvtalePeriodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
+    val beløp: BigDecimal,
 )
 
 data class PrivatAvtaleValideringsfeilDto(

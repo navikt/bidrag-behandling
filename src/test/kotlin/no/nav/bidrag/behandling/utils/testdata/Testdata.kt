@@ -69,9 +69,12 @@ import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFrekvens
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
+import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -99,6 +102,10 @@ import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterR
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.behandling.stonad.response.StønadPeriodeDto
+import no.nav.bidrag.transport.behandling.vedtak.Behandlingsreferanse
+import no.nav.bidrag.transport.behandling.vedtak.Sporingsdata
+import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
+import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
@@ -216,6 +223,7 @@ data class TestDataPerson(
         PersonDto(
             ident = Personident(ident),
             navn = navn,
+            aktørId = ident,
             fødselsdato = fødselsdato,
         )
 
@@ -2138,3 +2146,51 @@ fun opprettStønadPeriodeDto(
     valutakode = valutakode,
     resultatkode = "OK",
 )
+
+fun opprettVedtakhendelse(
+    vedtakId: Int,
+    behandlingId: Long,
+    stonadType: Stønadstype = Stønadstype.BIDRAG18AAR,
+): VedtakHendelse =
+    VedtakHendelse(
+        type = Vedtakstype.FASTSETTELSE,
+        stønadsendringListe =
+            listOf(
+                Stønadsendring(
+                    type = stonadType,
+                    eksternReferanse = "",
+                    beslutning = Beslutningstype.ENDRING,
+                    førsteIndeksreguleringsår = 2024,
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    kravhaver = Personident(""),
+                    mottaker = Personident(""),
+                    omgjørVedtakId = 1,
+                    periodeListe = emptyList(),
+                    sak = Saksnummer(SAKSNUMMER),
+                    skyldner = Personident(""),
+                ),
+            ),
+        engangsbeløpListe = emptyList(),
+        enhetsnummer = Enhetsnummer("4806"),
+        id = vedtakId,
+        kilde = Vedtakskilde.MANUELT,
+        kildeapplikasjon = "bidrag-behandling",
+        opprettetTidspunkt = LocalDateTime.now(),
+        opprettetAvNavn = "",
+        opprettetAv = "",
+        sporingsdata = Sporingsdata("sporing"),
+        innkrevingUtsattTilDato = null,
+        vedtakstidspunkt = LocalDateTime.now(),
+        fastsattILand = null,
+        behandlingsreferanseListe =
+            listOf(
+                Behandlingsreferanse(
+                    BehandlingsrefKilde.BEHANDLING_ID.name,
+                    behandlingId.toString(),
+                ),
+                Behandlingsreferanse(
+                    BehandlingsrefKilde.BISYS_SØKNAD.name,
+                    SOKNAD_ID.toString(),
+                ),
+            ),
+    )

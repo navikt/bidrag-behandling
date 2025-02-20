@@ -89,8 +89,7 @@ class OppgaveService(
             oppgaveConsumer.hentOppgave(
                 OppgaveSokRequest()
                     .søkForGenerellOppgave()
-                    .leggTilSaksreferanse(saksnummer)
-                    .leggTilAktoerId(mottaker),
+                    .leggTilSaksreferanse(saksnummer),
             )
         val revurderForskuddOppgave = oppgaver.oppgaver.find { it.beskrivelse!!.contains(revurderForskuddBeskrivelse) }
         if (revurderForskuddOppgave != null) {
