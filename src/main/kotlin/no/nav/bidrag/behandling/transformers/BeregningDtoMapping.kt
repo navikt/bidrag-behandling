@@ -245,7 +245,13 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     bpHarEvne = delberegningBPsEvne?.let { it.bidragsevne > BigDecimal.ZERO } ?: false,
                 )
             } else {
-                null
+                BidragPeriodeBeregningsdetaljer(
+                    forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
+                    barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),
+                    barnetilleggBP = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSPLIKTIG),
+                    sluttberegning = sluttberegning,
+                    bpHarEvne = false,
+                )
             },
     )
 }

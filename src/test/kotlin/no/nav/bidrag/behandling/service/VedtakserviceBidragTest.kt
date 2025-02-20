@@ -13,6 +13,8 @@ import io.mockk.every
 import io.mockk.slot
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
@@ -329,6 +331,156 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 5
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 0
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    fun `Skal fatte vedtak med hvor noen perioder har resultat ikke omsorg for barnet`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), testdataHusstandsmedlem1, medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
+            testdataBarnBm,
+            medId = true,
+        )
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), medId = true)
+        behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), generateId = true)
+        behandling.leggTilBarnetilsyn(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
+            generateId = true,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
+            kilde = Kilde.OFFENTLIG,
+        )
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
+        val husstandsmedlemBarn1 =
+            Husstandsmedlem(
+                behandling = behandling,
+                kilde = Kilde.OFFENTLIG,
+                ident = testdataBarn1.ident,
+                navn = testdataBarn1.navn,
+                fødselsdato = testdataBarn1.fødselsdato,
+                id = 1,
+                rolle = behandling.søknadsbarn.first(),
+            )
+        husstandsmedlemBarn1.perioder.add(
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlemBarn1,
+                datoFom = behandling.virkningstidspunkt!!.withDayOfMonth(1),
+                datoTom = YearMonth.from(behandling.virkningstidspunkt!!.plusMonths(3)).atEndOfMonth(),
+                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                kilde = Kilde.OFFENTLIG,
+            ),
+        )
+
+        husstandsmedlemBarn1.perioder.add(
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlemBarn1,
+                datoFom = behandling.virkningstidspunkt!!.plusMonths(4).withDayOfMonth(1),
+                datoTom = YearMonth.from(behandling.virkningstidspunkt!!.plusMonths(5)).atEndOfMonth(),
+                bostatus = Bostatuskode.MED_FORELDER,
+                kilde = Kilde.OFFENTLIG,
+            ),
+        )
+        husstandsmedlemBarn1.perioder.add(
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlemBarn1,
+                datoFom = behandling.virkningstidspunkt!!.plusMonths(6).withDayOfMonth(1),
+                datoTom = null,
+                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                kilde = Kilde.OFFENTLIG,
+            ),
+        )
+        val andreVoksna =
+            Husstandsmedlem(
+                behandling = behandling,
+                kilde = Kilde.OFFENTLIG,
+                ident = testdataBarn1.ident,
+                navn = testdataBarn1.navn,
+                fødselsdato = testdataBarn1.fødselsdato,
+                id = 1,
+                rolle = behandling.bidragspliktig!!,
+            )
+        andreVoksna.perioder.add(
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlemBarn1,
+                datoFom = behandling.virkningstidspunkt!!.withDayOfMonth(1),
+                datoTom = null,
+                bostatus = Bostatuskode.BOR_MED_ANDRE_VOKSNE,
+                kilde = Kilde.OFFENTLIG,
+            ),
+        )
+        behandling.husstandsmedlem = mutableSetOf(husstandsmedlemBarn1, andreVoksna)
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+        behandling.refVedtaksid = 553
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            val resultatIkkeOmsorgPerioder = stønadsendring.periodeListe.filter { it.resultatkode == Resultatkode.IKKE_OMSORG_FOR_BARNET.name }
+            resultatIkkeOmsorgPerioder.shouldHaveSize(2)
+            assertSoftly(resultatIkkeOmsorgPerioder[0]) {
+                it.beløp shouldBe null
+                it.valutakode shouldBe null
+            }
         }
 
         verify(exactly = 1) {
