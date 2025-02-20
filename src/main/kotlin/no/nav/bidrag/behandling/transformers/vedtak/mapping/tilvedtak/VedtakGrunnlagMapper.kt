@@ -24,6 +24,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
@@ -195,6 +196,7 @@ class VedtakGrunnlagMapper(
                             beregnFraDato,
                             beregningTilDato,
                         ),
+                    stønadstype = stonadstype ?: Stønadstype.BIDRAG,
                     opphørSistePeriode = globalOpphørsdato != null,
                     søknadsbarnReferanse = søknadsbarn.referanse,
                     grunnlagListe = grunnlagsliste.toSet().toList(),
