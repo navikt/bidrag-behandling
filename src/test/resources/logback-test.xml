@@ -8,7 +8,9 @@
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
-  <logger name="secureLog" level="WARN"  />
+  <logger name="secureLogger" level="INFO" >
+    <appender-ref ref="STDOUT" />
+  </logger>
   <logger name="com.github.tomakehurst.wiremock" level="WARN" />
   <logger name="org.testcontainers" level="WARN" />
   <logger name="org.flywaydb" level="WARN" />

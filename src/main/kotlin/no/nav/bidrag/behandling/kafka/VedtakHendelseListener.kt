@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
+import no.nav.bidrag.behandling.service.OppgaveService
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
@@ -29,6 +30,7 @@ class VedtakHendelseListener(
     val forsendelseService: ForsendelseService,
     val behandlingService: BehandlingService,
     val notatOpplysningerService: NotatOpplysningerService,
+    val oppgaveService: OppgaveService,
 ) {
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
@@ -53,12 +55,20 @@ class VedtakHendelseListener(
         // Dette gjøres synkront etter fatte vedtak
 //        opprettNotat(behandling)
         opprettForsendelse(vedtak, behandling)
-
+        opprettRevurderForskuddOppgaveVedBehov(vedtak)
         behandlingService.oppdaterVedtakFattetStatus(
             vedtak.behandlingId!!,
             vedtaksid = vedtak.id.toLong(),
             vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
         )
+    }
+
+    private fun opprettRevurderForskuddOppgaveVedBehov(vedtak: VedtakHendelse) {
+        try {
+            oppgaveService.opprettRevurderForskuddOppgave(vedtak)
+        } catch (e: Exception) {
+            log.error(e) { "Det skjedde en feil ved opprettelse av revurder forskudd oppgave for vedtak ${vedtak.id}" }
+        }
     }
 
     private fun opprettNotat(behandling: Behandling) {
