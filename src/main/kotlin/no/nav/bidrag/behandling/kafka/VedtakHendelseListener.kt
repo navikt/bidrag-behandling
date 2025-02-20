@@ -35,6 +35,7 @@ class VedtakHendelseListener(
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
+        opprettRevurderForskuddOppgaveVedBehov(vedtak)
         if (!vedtak.erFattetGjennomBidragBehandling()) {
             log.info {
                 "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. " +
@@ -55,7 +56,6 @@ class VedtakHendelseListener(
         // Dette gjøres synkront etter fatte vedtak
 //        opprettNotat(behandling)
         opprettForsendelse(vedtak, behandling)
-        opprettRevurderForskuddOppgaveVedBehov(vedtak)
         behandlingService.oppdaterVedtakFattetStatus(
             vedtak.behandlingId!!,
             vedtaksid = vedtak.id.toLong(),
