@@ -216,7 +216,7 @@ class BeregningServiceTest {
         resultat shouldHaveSize 1
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldBe null
-            it.resultat.grunnlagListe shouldHaveSize 54
+            it.resultat.grunnlagListe shouldHaveSize 51
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
             it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
             it.resultat.beregnetBarnebidragPeriodeListe[0]
@@ -334,7 +334,7 @@ class BeregningServiceTest {
             it.ugyldigBeregning!!.begrunnelse shouldContain "er lik eller lavere enn løpende bidrag"
             it.ugyldigBeregning!!.perioder shouldHaveSize 2
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG
-            it.resultat.grunnlagListe shouldHaveSize 56
+            it.resultat.grunnlagListe shouldHaveSize 53
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1
@@ -393,7 +393,7 @@ class BeregningServiceTest {
             it.ugyldigBeregning!!.begrunnelse shouldContain "har ingen løpende forskudd"
             it.ugyldigBeregning!!.perioder shouldHaveSize 1
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD
-            it.resultat.grunnlagListe shouldHaveSize 57
+            it.resultat.grunnlagListe shouldHaveSize 54
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1

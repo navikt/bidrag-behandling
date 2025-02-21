@@ -800,6 +800,19 @@ fun Behandling.oppretteHusstandsmedlem(
                 )
         }
 
+        TypeBehandling.BIDRAG -> {
+            husstandsmedlem.perioder =
+                mutableSetOf(
+                    Bostatusperiode(
+                        husstandsmedlem = husstandsmedlem,
+                        datoFom = førstePeriodeFra ?: søktFomDato,
+                        datoTom = null,
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        id = if (index != null) (index + 1).toLong() else null,
+                    ),
+                )
+        }
         else -> {
             husstandsmedlem.perioder =
                 mutableSetOf(

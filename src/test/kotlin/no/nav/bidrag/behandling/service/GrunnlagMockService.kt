@@ -8,6 +8,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
@@ -80,7 +81,7 @@ class GrunnlagMockService {
     lateinit var underholdService: UnderholdService
     val notatService = NotatService()
 
-    @MockkBean
+    @MockK
     lateinit var grunnlagConsumer: BidragGrunnlagConsumer
 
     lateinit var boforholdService: BoforholdService
@@ -173,11 +174,13 @@ class GrunnlagMockService {
         stubSivilstandrepository(sivilstandRepository)
         every {
             grunnlagConsumer.henteGrunnlag(
-                match {
-                    it.any { request ->
-                        request.personId != testdataBM.ident && request.personId != testdataBP.ident
-                    }
-                },
+                grunnlag =
+                    match {
+                        it.any { request ->
+                            request.personId != testdataBM.ident && request.personId != testdataBP.ident
+                        }
+                    },
+                formål = any(),
             )
         } returns (
             HentetGrunnlag(opprettHentGrunnlagDto())
@@ -1039,6 +1042,7 @@ class GrunnlagMockService {
                         request.personId == testdataBM?.ident!!
                     }
                 },
+                any(),
             )
         } returns (
             HentetGrunnlag(
@@ -1052,6 +1056,7 @@ class GrunnlagMockService {
                         request.personId == testdataBP.ident!!
                     }
                 },
+                any(),
             )
         } returns (
             HentetGrunnlag(

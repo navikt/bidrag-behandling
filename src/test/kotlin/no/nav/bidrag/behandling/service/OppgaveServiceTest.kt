@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.commons.util.VirkedagerProvider
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -117,7 +118,7 @@ class OppgaveServiceTest {
                     it.saksreferanse shouldBe SAKSNUMMER
                     it.tema shouldBe "BID"
                     it.aktivDato shouldBe formatterDatoForOppgave(LocalDate.now())
-                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(LocalDate.now().plusDays(1))
+                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(VirkedagerProvider.nesteVirkedag())
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4806"
@@ -170,7 +171,7 @@ class OppgaveServiceTest {
                     it.saksreferanse shouldBe SAKSNUMMER
                     it.tema shouldBe "BID"
                     it.aktivDato shouldBe formatterDatoForOppgave(LocalDate.now())
-                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(LocalDate.now().plusDays(1))
+                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(VirkedagerProvider.nesteVirkedag())
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4865"
@@ -223,7 +224,7 @@ class OppgaveServiceTest {
                     it.saksreferanse shouldBe SAKSNUMMER
                     it.tema shouldBe "FAR"
                     it.aktivDato shouldBe formatterDatoForOppgave(LocalDate.now())
-                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(LocalDate.now().plusDays(1))
+                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(VirkedagerProvider.nesteVirkedag())
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4860"
@@ -431,7 +432,7 @@ class OppgaveServiceTest {
                     it.saksreferanse shouldBe SAKSNUMMER
                     it.tema shouldBe "BID"
                     it.aktivDato shouldBe formatterDatoForOppgave(LocalDate.now())
-                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(LocalDate.now().plusDays(1))
+                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(VirkedagerProvider.nesteVirkedag())
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4806"
