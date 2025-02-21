@@ -239,6 +239,7 @@ class VedtakGrunnlagMapper(
     fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
         val grunnlagListe = (byggGrunnlagNotaterDirekteAvslag() + byggGrunnlagSøknad()).toMutableSet()
         when (tilType()) {
+            TypeBehandling.BIDRAG -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
             TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
             TypeBehandling.SÆRBIDRAG -> {
                 grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
