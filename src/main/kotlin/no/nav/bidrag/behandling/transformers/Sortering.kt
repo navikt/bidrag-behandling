@@ -6,7 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
-import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -111,7 +111,7 @@ fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirk
 //            val virkningstidspunkt =
 //                it.behandling?.virkningstidspunktEllerSøktFomDato?.let { YearMonth.from(it) } ?: return@filter true
 //            periode.fom >= virkningstidspunkt || periode.til != null && periode.til!! >= virkningstidspunkt
-            it.kilde == Kilde.MANUELL || it.erOpprinneligPeriodeInnenforVirkningstidspunkt()
+            it.kilde == Kilde.MANUELL || it.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør()
         } else {
             true
         }

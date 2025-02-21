@@ -768,6 +768,7 @@ private fun Rolle.tilNotatRolle() =
         rolle = rolletype,
         navn = hentPersonVisningsnavn(ident),
         fødselsdato = fødselsdato,
+        opphørsdato = opphørsdato,
         ident = ident?.let { Personident(it) },
         innbetaltBeløp = innbetaltBeløp,
     )

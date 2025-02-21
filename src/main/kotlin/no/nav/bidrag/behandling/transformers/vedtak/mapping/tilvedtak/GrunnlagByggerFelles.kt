@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -56,13 +57,15 @@ val grunnlagsreferanse_utgift_direkte_betalt = "utgift_direkte_betalt"
 val grunnlagsreferanse_utgift_maks_godkjent_beløp = "utgift_maks_godkjent_beløp"
 val grunnlagsreferanse_løpende_bidrag = "løpende_bidrag_bidragspliktig"
 
+fun opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn: Rolle? = null) =
+    "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" }}"
+
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
 fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater() + byggGrunnlagSøknad()).toMutableSet()
     when (tilType()) {
         TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
-        TypeBehandling.BIDRAG -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
         TypeBehandling.SÆRBIDRAG ->
             grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
 
@@ -131,6 +134,8 @@ fun Behandling.byggGrunnlagSøknad() =
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
+                        begrensetRevurdering = søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING,
+                        egetTiltak = listOf(BisysSøknadstype.BEGRENSET_REVURDERING, BisysSøknadstype.EGET_TILTAK).contains(søknadstype),
                         opprinneligVedtakstype = opprinneligVedtakstype,
                     ),
                 ),
@@ -138,20 +143,40 @@ fun Behandling.byggGrunnlagSøknad() =
     )
 
 fun Behandling.byggGrunnlagVirkningsttidspunkt() =
-    setOf(
-        GrunnlagDto(
-            referanse = "virkningstidspunkt",
-            type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
-            innhold =
-                POJONode(
-                    VirkningstidspunktGrunnlag(
-                        virkningstidspunkt = virkningstidspunkt!!,
-                        årsak = årsak,
-                        avslag = (årsak == null).ifTrue { avslag },
+    if (tilType() == TypeBehandling.BIDRAG) {
+        søknadsbarn
+            .map {
+                GrunnlagDto(
+                    referanse = opprettGrunnlagsreferanseVirkningstidspunkt(it),
+                    type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                    gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
+                    innhold =
+                        POJONode(
+                            VirkningstidspunktGrunnlag(
+                                virkningstidspunkt = virkningstidspunkt!!,
+                                opphørsdato = it.opphørsdato,
+                                årsak = årsak,
+                                avslag = (årsak == null).ifTrue { avslag },
+                            ),
+                        ),
+                )
+            }.toSet()
+    } else {
+        setOf(
+            GrunnlagDto(
+                referanse = opprettGrunnlagsreferanseVirkningstidspunkt(),
+                type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                innhold =
+                    POJONode(
+                        VirkningstidspunktGrunnlag(
+                            virkningstidspunkt = virkningstidspunkt!!,
+                            årsak = årsak,
+                            avslag = (årsak == null).ifTrue { avslag },
+                        ),
                     ),
-                ),
-        ),
-    )
+            ),
+        )
+    }
 
 fun Behandling.byggGrunnlagNotaterDirekteAvslag(): Set<GrunnlagDto> =
     setOf(
@@ -263,7 +288,8 @@ internal fun opprettGrunnlagForBostatusperioder(
             GrunnlagDto(
                 referanse = "bostatus_${gjelderReferanse}_${it.datoFom?.toCompactString()}",
                 type = Grunnlagstype.BOSTATUS_PERIODE,
-                gjelderReferanse = gjelderReferanse,
+                gjelderReferanse = relatertTilPartReferanse,
+                gjelderBarnReferanse = if (gjelderReferanse == relatertTilPartReferanse) null else gjelderReferanse,
                 grunnlagsreferanseListe =
                     if (it.kilde == Kilde.OFFENTLIG) {
                         listOf(

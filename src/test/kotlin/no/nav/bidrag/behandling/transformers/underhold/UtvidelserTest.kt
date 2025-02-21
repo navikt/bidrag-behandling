@@ -53,7 +53,7 @@ class UtvidelserTest {
         val fødselsdato = LocalDate.now().withDayOfYear(365).minusYears(6)
         val rolleBarnSomNårSkolealderIInneværendeÅr = Rolle(b, ident = null, rolletype = Rolletype.BARN, fødselsdato = fødselsdato)
 
-        val personSøknadsbarn = Person(ident = "123", fødselsdato = LocalDate.now(), rolle = mutableSetOf(rolleBarnSomNårSkolealderIInneværendeÅr))
+        val personSøknadsbarn = Person(ident = "123", fødselsdato = fødselsdato, rolle = mutableSetOf(rolleBarnSomNårSkolealderIInneværendeÅr))
         b.underholdskostnader.add(
             Underholdskostnad(
                 id = idUnderhold,

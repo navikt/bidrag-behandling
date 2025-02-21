@@ -14,9 +14,11 @@ import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndrin
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.util.InntektUtil
@@ -52,16 +54,27 @@ fun Inntekt.bestemOpprinneligTomVisningsverdi() =
 fun Inntekt.bestemDatoTomForOffentligInntekt() =
     skalAutomatiskSettePeriode().ifTrue {
         opprinneligTom?.let { tom ->
-            val maxDate = maxOf(YearMonth.now().atEndOfMonth(), behandling!!.virkningstidspunktEllerSøktFomDato)
-            if (tom.plusMonths(1).isAfter(maxDate)) null else tom
+            val maxDate =
+                maxOf(
+                    YearMonth.now().atEndOfMonth(),
+                    minOf(YearMonth.now().atEndOfMonth(), opphørsdato?.plusMonths(1)?.minusDays(1) ?: LocalDate.MAX),
+                    behandling!!.virkningstidspunktEllerSøktFomDato,
+                )
+            if (tom.plusMonths(1).isAfter(maxDate)) {
+                justerPeriodeTilOpphørsdato(opphørsdato)
+            } else {
+                justerPeriodeTilOpphørsdato(opphørsdato)
+                    ?: tom
+            }
         }
     }
 
 fun Inntekt.skalAutomatiskSettePeriode(): Boolean =
-    kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunkt()
+    kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type) && erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør()
 
-fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunkt(): Boolean =
+fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør(): Boolean =
     opprinneligFom?.let { fom ->
+        if (opphørsdato != null && fom > opphørsdato) return@let false
         (opprinneligTom ?: LocalDate.MAX).let { tom ->
             behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->
                 val virkningstidspunktEllerStartenAvNesteMåned =
@@ -150,7 +163,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
     inntekt.type = this.type
     inntekt.belop = this.beløp.nærmesteHeltall
     inntekt.datoFom = this.datoFom
-    inntekt.datoTom = this.datoTom
+    inntekt.datoTom = this.datoTom ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
     inntekt.gjelderBarn = this.gjelderBarn?.verdi
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
@@ -262,6 +275,8 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
             behandling = behandling,
         )
 
+    inntekt.datoTom = this.datoTom ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
+
     if (this.inntektstype != null) {
         inntekt.inntektsposter =
             mutableSetOf(
@@ -300,7 +315,8 @@ fun opprettTransformerInntekterRequest(
                     it.barnPersonId,
                     behandling,
                 )
-            }.tilBarnetillegg(
+            }.filter { it.barnetilleggType !== Inntektstype.BARNETILLEGG_TILTAKSPENGER.name }
+            .tilBarnetillegg(
                 rolleInhentetFor,
             ),
     kontantstøtteliste =

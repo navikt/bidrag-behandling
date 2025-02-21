@@ -175,7 +175,7 @@ class BehandlingBeregnController(
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
-        if (behandling.stonadstype != Stønadstype.BIDRAG) {
+        if (!listOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR).contains(behandling.stonadstype)) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Behandling $behandlingsid er ikke en bidrag behandling",

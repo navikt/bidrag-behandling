@@ -75,10 +75,16 @@ class InntektServiceMockTest {
     lateinit var utgiftService: UtgiftService
 
     @MockK
+    lateinit var virkningstidspunktService: VirkningstidspunktService
+
+    @MockK
     lateinit var validerBeregning: ValiderBeregning
 
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
+
+    @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
 
     lateinit var controller: BehandlingControllerV2
 
@@ -92,11 +98,13 @@ class InntektServiceMockTest {
         inntektRepository = stubInntektRepository()
         val personService = PersonService(stubPersonConsumer())
 
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
@@ -118,6 +126,7 @@ class InntektServiceMockTest {
                 inntektService = inntektService,
                 utgiftService = utgiftService,
                 validerBehandlingService = validerBehandlingService,
+                virkningstidspunktService = virkningstidspunktService,
                 dtomapper = dtomapper,
             )
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }

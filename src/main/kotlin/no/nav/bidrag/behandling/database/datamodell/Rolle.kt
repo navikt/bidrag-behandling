@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -45,7 +46,7 @@ open class Rolle(
     open var ident: String?,
     // TODO: Migere persondata til Person-tabellen
     @Deprecated("Migrere til Person.fødselsdato")
-    open val fødselsdato: LocalDate,
+    open var fødselsdato: LocalDate,
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -89,10 +90,13 @@ open class Rolle(
         nullable = true,
     )
     open var person: Person? = null,
+    open var opphørsdato: LocalDate? = null,
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
+    val opphørTilDato get() = justerPeriodeTilOpphørsdato(opphørsdato)
     val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato
+    val opphørSistePeriode get() = opphørTilDato != null
 
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"

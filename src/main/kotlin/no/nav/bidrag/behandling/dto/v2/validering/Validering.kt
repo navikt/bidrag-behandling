@@ -20,6 +20,7 @@ import java.time.LocalDate
 
 data class VirkningstidspunktFeilDto(
     val manglerVirkningstidspunkt: Boolean,
+    val manglerOpphørsdato: List<RolleDto> = emptyList(),
     val manglerÅrsakEllerAvslag: Boolean,
     val manglerBegrunnelse: Boolean = false,
     val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean,
@@ -28,6 +29,7 @@ data class VirkningstidspunktFeilDto(
     val harFeil
         get() =
             manglerBegrunnelse ||
+                manglerOpphørsdato.isNotEmpty() ||
                 manglerVirkningstidspunkt ||
                 manglerÅrsakEllerAvslag ||
                 virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
@@ -79,25 +81,26 @@ data class InntektValideringsfeil(
     val manglerPerioder: Boolean = false,
     @Schema(description = "Hvis det er inntekter som har periode som starter før virkningstidspunkt")
     val perioderFørVirkningstidspunkt: Boolean = false,
+    val ugyldigSluttPeriode: Boolean = false,
     @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = null,
     @JsonIgnore
     val erYtelse: Boolean = false,
     val rolle: RolleDto? = null,
     val ident: String? = rolle?.ident,
-) {
     @Schema(
         description =
             "Er sann hvis det ikke finnes noe løpende periode. " +
                 "Det vil si en periode hvor datoTom er null. Er bare relevant for årsinntekter",
     )
-    val ingenLøpendePeriode: Boolean = if (erYtelse) false else hullIPerioder.any { it.til == null }
-
+    val ingenLøpendePeriode: Boolean = if (erYtelse) false else hullIPerioder.any { it.til == null },
+) {
     @get:JsonIgnore
     val harFeil
         get() =
             overlappendePerioder.isNotEmpty() ||
                 hullIPerioder.isNotEmpty() ||
+                ugyldigSluttPeriode ||
                 fremtidigPeriode ||
                 manglerPerioder ||
                 perioderFørVirkningstidspunkt ||
@@ -121,6 +124,7 @@ data class BoforholdPeriodeseringsfeil(
     val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
     @Schema(description = "Er sann hvis husstandsmedlem har en periode som starter senere enn starten av dagens måned.")
     val fremtidigPeriode: Boolean = false,
+    val ugyldigSluttperiode: Boolean = false,
     @Schema(
         description = """Er sann hvis husstandsmedlem mangler perioder. 
         Dette vil si at husstandsmedlem ikke har noen perioder i det hele tatt."""",

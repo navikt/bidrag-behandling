@@ -25,9 +25,12 @@ import no.nav.bidrag.behandling.transformers.inntekt.lagreSomNyInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.oppdatereEksisterendeInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.inntektstypeListe
+import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -41,6 +44,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -53,20 +57,31 @@ class InntektService(
     private val notatService: NotatService,
 ) {
     @Transactional
-    fun rekalkulerPerioderInntekter(behandlingsid: Long) {
+    fun rekalkulerPerioderInntekter(
+        behandlingsid: Long,
+        opphørSlettet: Boolean = false,
+        forrigeOpphørsdato: LocalDate? = null,
+        forrigeVirkningstidspunkt: LocalDate? = null,
+    ) {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
-        rekalkulerPerioderInntekter(behandling)
+        rekalkulerPerioderInntekter(behandling, opphørSlettet, forrigeOpphørsdato, forrigeVirkningstidspunkt)
     }
 
     @Transactional
-    fun rekalkulerPerioderInntekter(behandling: Behandling) {
+    fun rekalkulerPerioderInntekter(
+        behandling: Behandling,
+        opphørSlettet: Boolean = false,
+        forrigeOpphørsdato: LocalDate? = null,
+        forrigeVirkningstidspunkt: LocalDate? = null,
+    ) {
         if (behandling.virkningstidspunkt == null) return
 
-        behandling.inntekter
-            .filter { it.taMed && it.datoFom != null && it.datoFom!! < behandling.virkningstidspunkt }
+        val inntekterTattMed = behandling.inntekter.filter { it.taMed && it.datoFom != null }
+        inntekterTattMed
+            .filter { it.datoFom!! < behandling.virkningstidspunkt }
             .forEach {
                 if (it.datoTom != null && behandling.virkningstidspunkt!! >= it.datoTom) {
                     it.taMed = false
@@ -76,7 +91,12 @@ class InntektService(
                     it.datoFom = behandling.virkningstidspunkt
                 }
             }
-
+        behandling.inntekter
+            .filter { it.taMed && it.datoFom != null }
+            .filter { it.datoFom!! == forrigeVirkningstidspunkt }
+            .forEach { periode ->
+                periode.datoFom = behandling.virkningstidspunkt
+            }
         behandling.inntekter
             .filter { it.taMed }
             .filter { eksplisitteYtelser.contains(it.type) && it.kilde == Kilde.OFFENTLIG && it.opprinneligFom != null }
@@ -86,8 +106,60 @@ class InntektService(
                 it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }
 
+        if (behandling.minstEnRolleHarOpphørsdato) {
+            behandling.inntekter
+                .filter { it.taMed && it.datoFom != null }
+                .filter { it.opphørsdato != null && it.datoFom!! >= it.opphørsdato }
+                .forEach {
+                    it.taMed = false
+                    it.datoFom = null
+                    it.datoTom = null
+                }
+
+            behandling.inntekter
+                .filter { eksplisitteYtelser.contains(it.type) }
+                .filter { it.taMed && it.kilde == Kilde.MANUELL }
+                .groupBy { Triple(it.type, it.ident, it.gjelderBarn) }
+                .forEach { (triple, inntekter) ->
+                    if (triple.first == Inntektsrapportering.BARNETILLEGG) {
+                        inntekter
+                            .groupBy { it.inntektstypeListe.firstOrNull() }
+                            .forEach { (_, inntekter) ->
+                                inntekter.justerSistePeriodeForOpphørsdato(
+                                    forrigeOpphørsdato,
+                                )
+                            }
+                    } else {
+                        inntekter.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato)
+                    }
+                }
+        }
+
+        if (opphørSlettet || behandling.minstEnRolleHarOpphørsdato) {
+            behandling.inntekter
+                .filter { !eksplisitteYtelser.contains(it.type) }
+                .groupBy { Pair(it.type, it.ident) }
+                .forEach { (_, inntekter) ->
+                    inntekter.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato)
+                }
+        }
+
         val manuelleInntekterSomErFjernet = behandling.inntekter.filter { !it.taMed && it.kilde == Kilde.MANUELL }
         behandling.inntekter.removeAll(manuelleInntekterSomErFjernet)
+    }
+
+    private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato: LocalDate?) {
+        filter { it.taMed }
+            .filter {
+                it.opphørsdato == null ||
+                    it.datoTom == null ||
+                    it.datoTom!!.isAfter(it.opphørsdato) ||
+                    it.datoTom == forrigeOpphørsdato?.opphørSisteTilDato()
+            }.sortedBy { it.datoFom }
+            .lastOrNull()
+            ?.let { inntekt ->
+                inntekt.datoTom = justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
+            }
     }
 
     @Transactional

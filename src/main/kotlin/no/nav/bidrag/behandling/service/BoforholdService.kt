@@ -307,6 +307,7 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.globalOpphørsdato,
                             behandling.tilType(),
                             behandling
                                 .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
@@ -671,7 +672,7 @@ class BoforholdService(
                 .toSet()
 
         val eksisterendeHusstandsmedlem =
-            husstandsmedlemSomSkalOppdateres.find { it.ident == nyttHusstandsmedlem.ident }
+            husstandsmedlemSomSkalOppdateres.find { hentNyesteIdent(it.ident)?.verdi == nyttHusstandsmedlem.ident }
 
         // Oppdaterer eksisterende husstandsmedlem. Sletter manuelle perioder. Kjører ny periodisering av offentlige perioder.
         if (eksisterendeHusstandsmedlem != null) {
@@ -685,6 +686,7 @@ class BoforholdService(
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(
                                 eksisterendeHusstandsmedlem
@@ -746,12 +748,14 @@ class BoforholdService(
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
+                            offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.tilType(),
                             listOf(
                                 request.copy(
@@ -1080,6 +1084,7 @@ class BoforholdService(
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
+                rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.tilType(),
                 listOf(periodiseringsrequest),
             ),
@@ -1098,6 +1103,7 @@ class BoforholdService(
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 periodiseringsrequest,
+                behandling.globalOpphørsdato,
             )
 
         this.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)
@@ -1121,7 +1127,7 @@ class BoforholdService(
                         sletteHusstandsmedlemsperiode,
                     ),
             )
-        } catch (illegalArgumentException: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             log.warn {
                 "Mottok mangelfulle opplysninger ved oppdatering av boforhold i behandling ${this.behandling.id}. " +
                     "Mottatt input: nyEllerOppdatertHusstandsmedlemsperiode=$nyEllerOppdatertBostatusperiode, " +

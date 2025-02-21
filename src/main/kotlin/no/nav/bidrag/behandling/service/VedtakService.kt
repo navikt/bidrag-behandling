@@ -259,6 +259,7 @@ class VedtakService(
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
+
         val vedtakRequest =
             behandlingTilVedtakMapping
                 .run {

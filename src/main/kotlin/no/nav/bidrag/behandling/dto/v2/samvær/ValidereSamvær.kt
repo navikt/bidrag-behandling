@@ -7,6 +7,9 @@ import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.minOfNullable
+import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
+import no.nav.bidrag.behandling.transformers.ugyldigSluttperiode
+import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
@@ -23,11 +26,17 @@ data class SamværValideringsfeilDto(
     val manglerBegrunnelse: Boolean,
     val ingenLøpendeSamvær: Boolean,
     val manglerSamvær: Boolean,
+    val ugyldigSluttperiode: Boolean,
     val overlappendePerioder: Set<OverlappendeSamværPeriode>,
     @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
 ) {
-    val harPeriodiseringsfeil get() = ingenLøpendeSamvær || manglerSamvær || overlappendePerioder.isNotEmpty() || hullIPerioder.isNotEmpty()
+    val harPeriodiseringsfeil get() =
+        ingenLøpendeSamvær ||
+            manglerSamvær ||
+            overlappendePerioder.isNotEmpty() ||
+            hullIPerioder.isNotEmpty() ||
+            ugyldigSluttperiode
     val gjelderBarn get() = gjelderRolle.ident
     val gjelderBarnNavn get() = gjelderRolle.navn
 
@@ -50,18 +59,30 @@ fun Set<Samvær>.mapValideringsfeil(): Set<SamværValideringsfeilDto> =
 fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
     val notatSæmvær = behandling.notater.find { it.type == NotatGrunnlag.NotatType.SAMVÆR && it.rolle.id == rolle.id }
     val perioder = perioder
+    val opphørsdato = rolle.opphørsdato
     return SamværValideringsfeilDto(
         samværId = id!!,
         gjelderRolle = rolle,
         manglerBegrunnelse = notatSæmvær?.innhold.isNullOrBlank(),
-        ingenLøpendeSamvær = perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null,
+        ingenLøpendeSamvær =
+            (opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
+                (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
         overlappendePerioder = perioder.finnOverlappendePerioder(),
         manglerSamvær = perioder.isEmpty(),
+        ugyldigSluttperiode =
+            perioder
+                .map { it.tilDatoperiode() }
+                .ugyldigSluttperiode(rolle.opphørsdato),
         hullIPerioder =
-            perioder.map { it.tilDatoperiode() }.finnHullIPerioder(behandling.virkningstidspunktEllerSøktFomDato).filter {
-                it.til !=
-                    null
-            },
+            perioder
+                .map { it.tilDatoperiode() }
+                .finnHullIPerioder(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    rolle.opphørsdato,
+                ).filter {
+                    it.til !=
+                        null
+                },
     )
 }
 
@@ -85,10 +106,10 @@ fun Set<Samværsperiode>.finnOverlappendePerioder(): Set<OverlappendeSamværPeri
                 }
         }.toSet()
 
-fun OppdaterSamværDto.valider() {
+fun OppdaterSamværDto.valider(opphørsdato: LocalDate?) {
     val feilliste = mutableListOf<String>()
 
-    periode?.valider()?.also { feilliste.addAll(it) }
+    periode?.valider(opphørsdato)?.also { feilliste.addAll(it) }
 
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
@@ -98,7 +119,7 @@ fun OppdaterSamværDto.valider() {
     }
 }
 
-fun OppdaterSamværsperiodeDto.valider(): MutableList<String> {
+fun OppdaterSamværsperiodeDto.valider(opphørsdato: LocalDate?): MutableList<String> {
     val feilliste = mutableListOf<String>()
 
     if (samværsklasse != null && beregning != null) {
@@ -106,6 +127,12 @@ fun OppdaterSamværsperiodeDto.valider(): MutableList<String> {
     }
     if (samværsklasse == null && beregning == null) {
         feilliste.add("Samværsklasse eller beregning må settes")
+    }
+    if (opphørsdato != null && periode.fom >= opphørsdato) {
+        feilliste.add("Fom-dato kan ikke være etter opphørsdato")
+    }
+    if (periode.tom != null && opphørsdato != null && periode.tom!! > opphørsdato) {
+        feilliste.add("Tom-dato kan ikke være etter opphørsdato")
     }
     if (periode.tom != null && periode.tom!! > LocalDate.now().withDayOfMonth(1)) {
         feilliste.add("Periode tom-dato kan ikke være i frem i tid")

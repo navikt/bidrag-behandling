@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.findAll
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
 import com.github.tomakehurst.wiremock.matching.MatchResult
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
@@ -21,6 +22,8 @@ import io.mockk.mockkStatic
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
+import no.nav.bidrag.behandling.consumer.dto.OppgaveDto
+import no.nav.bidrag.behandling.consumer.dto.OppgaveSokResponse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -41,6 +44,8 @@ import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpprettelse
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
@@ -53,9 +58,12 @@ import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
@@ -69,6 +77,7 @@ import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Arrays
@@ -174,6 +183,7 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
         personer.find { it.ident == personId }?.tilPersonDto() ?: PersonDto(
             Personident(firstArg<String>()),
             fødselsdato = LocalDate.parse("2015-05-01"),
+            aktørId = firstArg<String>(),
         )
     }
     mockkObject(AppContext)
@@ -275,6 +285,32 @@ class StubUtils {
         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")
     }
 
+    fun stubBidragStonadHistoriskeSaker(
+        stønadDto: StønadDto? =
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            ),
+    ) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/stonad/hent-stonad-historisk/")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withBody(
+                        commonObjectmapper.writeValueAsString(
+                            stønadDto,
+                        ),
+                    ),
+            ),
+        )
+    }
+
     fun stubBidragStonadLøpendeSaker(
         filnavn: String = "løpende-bidragssaker-bp",
         status: HttpStatus = HttpStatus.OK,
@@ -358,6 +394,30 @@ class StubUtils {
                 .withBody(result.toString()),
         )
         WireMock.stubFor(stub)
+    }
+
+    fun stubSøkOppgave(
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.get(urlPathMatching("/oppgave/api/v1/oppgaver")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(OppgaveSokResponse(0))),
+            ),
+        )
+    }
+
+    fun stubOpprettOppgave(
+        status: HttpStatus = HttpStatus.OK,
+    ) {
+        WireMock.stubFor(
+            WireMock.post(urlMatching("/oppgave/api/v1/oppgaver")).willReturn(
+                aClosedJsonResponse()
+                    .withStatus(status.value())
+                    .withBody(toJsonString(OppgaveDto(1))),
+            ),
+        )
     }
 
     fun stubOpprettForsendelse(
@@ -846,6 +906,24 @@ class StubUtils {
             val verify =
                 postRequestedFor(
                     urlMatching("/forsendelse/api/forsendelse"),
+                )
+            WireMock.verify(antall, verify)
+        }
+
+        fun opprettOppgaveKalt(
+            antall: Int,
+        ) {
+            val verify =
+                postRequestedFor(
+                    urlMatching("/oppgave/api/v1/oppgaver"),
+                )
+            WireMock.verify(antall, verify)
+        }
+
+        fun hentBidragStonadHistoriskeSakerKalt(antall: Int) {
+            val verify =
+                postRequestedFor(
+                    urlMatching("/stonad/hent-stonad-historisk/"),
                 )
             WireMock.verify(antall, verify)
         }

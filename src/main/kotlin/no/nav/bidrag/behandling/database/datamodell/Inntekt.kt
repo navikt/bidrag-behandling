@@ -47,6 +47,9 @@ open class Inntekt(
     open var opprinneligFom: LocalDate? = null,
     open var opprinneligTom: LocalDate? = null,
 ) {
+    val gjelderSøknadsbarn get() = behandling?.søknadsbarn?.find { it.ident == gjelderBarn }
+    val opphørsdato get() = if (gjelderSøknadsbarn != null) gjelderSøknadsbarn!!.opphørsdato else behandling?.globalOpphørsdato
+    val opphørTilDato get() = if (gjelderSøknadsbarn != null) gjelderSøknadsbarn!!.opphørTilDato else behandling?.opphørTilDato
     val datoFomEllerOpprinneligFom get() = datoFom ?: opprinneligFom
     val datoTomEllerOpprinneligFom get() = datoTom ?: opprinneligTom
 

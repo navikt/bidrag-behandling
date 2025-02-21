@@ -101,6 +101,9 @@ class UnderholdServiceTest {
     @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper
 
     val notatService = NotatService()
@@ -117,6 +120,7 @@ class UnderholdServiceTest {
         personConsumer = stubPersonConsumer()
         val personService = PersonService(personConsumer)
 
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         behandlingTilGrunnlagMappingV2 =
             BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val beregnBarnebidragApi = BeregnBarnebidragApi()
@@ -125,6 +129,7 @@ class UnderholdServiceTest {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

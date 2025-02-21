@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
@@ -32,6 +33,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.error.ShouldNotBeNull
@@ -55,9 +57,13 @@ class DtoMapperMockTest {
     @MockK
     lateinit var validerBehandlingService: ValiderBehandlingService
 
+    @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     @BeforeEach
     fun init() {
         val personService = PersonService(stubPersonConsumer())
+        every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet<GrunnlagDto>()
         val validerBeregning = ValiderBeregning()
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val vedtakGrunnlagMapper =
@@ -65,6 +71,7 @@ class DtoMapperMockTest {
                 behandlingTilGrunnlagMappingV2,
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
@@ -262,7 +269,7 @@ class DtoMapperMockTest {
         gebyr.shouldNotBeNull()
         gebyr.gebyrRoller.shouldHaveSize(2)
         gebyr.valideringsfeil!!.shouldHaveSize(1)
-        assertSoftly(gebyr.valideringsfeil.first()) {
+        assertSoftly(gebyr.valideringsfeil!!.first()) {
             it.gjelder.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
             it.manglerBegrunnelse shouldBe true
             it.harFeil shouldBe true

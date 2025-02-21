@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
@@ -38,10 +39,10 @@ class SamværService(
         request: OppdaterSamværDto,
     ): OppdaterSamværResponsDto {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        request.valider()
         log.info { "Oppdaterer samvær for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
         val oppdaterSamvær = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+        request.valider(oppdaterSamvær.rolle.opphørsdato)
 
         request.run {
             periode?.let { oppdaterPeriode(it, oppdaterSamvær) }
@@ -69,7 +70,7 @@ class SamværService(
                 Samværsperiode(
                     oppdaterSamvær,
                     request.periode.fom,
-                    request.periode.tom,
+                    request.periode.tom ?: justerPeriodeTilOpphørsdato(oppdaterSamvær.rolle.opphørsdato),
                     oppdatertSamværsklasse!!,
                     beregningJson = request.beregning.tilJsonString(),
                 )
@@ -120,11 +121,17 @@ class SamværService(
         perioder.find { it.id == id }
             ?: ugyldigForespørsel("Fant ikke samværsperiode med id $id i samvær $id")
 
-    fun rekalkulerPerioderSamvær(behandlingsid: Long) {
+    fun rekalkulerPerioderSamvær(
+        behandlingsid: Long,
+        opphørSlettet: Boolean = false,
+        forrigeVirkningstidspunkt: LocalDate? = null,
+    ) {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         val virkningstidspunkt = behandling.virkningstidspunkt ?: return
 
         behandling.samvær.forEach {
+            // Antar at opphørsdato er måneden perioden skal opphøre
+            val opphørsdato = it.rolle.opphørsdato
             it.perioder
                 .filter { it.fom < virkningstidspunkt }
                 .forEach { periode ->
@@ -134,6 +141,29 @@ class SamværService(
                         periode.fom = virkningstidspunkt
                     }
                 }
+            it.perioder.filter { it.fom == forrigeVirkningstidspunkt }.forEach { periode ->
+                periode.fom = virkningstidspunkt
+            }
+            if (opphørsdato != null) {
+                it.perioder
+                    .filter { it.fom > opphørsdato }
+                    .forEach { periode ->
+                        it.perioder.remove(periode)
+                    }
+                it.perioder
+                    .maxByOrNull { it.fom }
+                    ?.let {
+                        it.tom = it.samvær.rolle.opphørTilDato
+                    }
+            }
+
+            if (opphørSlettet || opphørsdato != null) {
+                it.perioder
+                    .maxByOrNull { it.fom }
+                    ?.let {
+                        it.tom = it.samvær.rolle.opphørTilDato
+                    }
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.utils
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldNotBe
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -14,6 +15,11 @@ fun OpprettVedtakRequestDto.hentGrunnlagstyperForReferanser(
     grunnlagstype: Grunnlagstype,
     referanseListe: List<Grunnlagsreferanse>,
 ) = grunnlagListe.filter { it.type == grunnlagstype && referanseListe.contains(it.referanse) }
+
+fun List<BaseGrunnlag>.grunnlagstyperForReferanser(
+    grunnlagstype: Grunnlagstype,
+    referanseListe: List<Grunnlagsreferanse>,
+) = filter { it.type == grunnlagstype && referanseListe.contains(it.referanse) }
 
 fun OpprettVedtakRequestDto.hentGrunnlagstyper(grunnlagstype: Grunnlagstype) = grunnlagListe.filter { it.type == grunnlagstype }
 

@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
@@ -29,6 +30,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.tilGrunnlagFeilDto
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
@@ -62,6 +65,7 @@ import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
@@ -72,6 +76,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Formål
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -85,6 +90,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
@@ -106,6 +112,7 @@ class GrunnlagService(
     private val inntektService: InntektService,
     private val mapper: Dtomapper,
     private val underholdService: UnderholdService,
+    private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
     private val unleashInstance: Unleash,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
@@ -116,7 +123,7 @@ class GrunnlagService(
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             sjekkOgOppdaterIdenter(behandling)
             val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
-            val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, FeilrapporteringDto?>()
+            val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
             val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
                 tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
             behandling.grunnlagsinnhentingFeilet = null
@@ -130,10 +137,13 @@ class GrunnlagService(
                     )
             }
 
+            feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
+
             behandling.grunnlagSistInnhentet = LocalDateTime.now()
 
             if (feilrapporteringer.isNotEmpty()) {
-                behandling.grunnlagsinnhentingFeilet = objectmapper.writeValueAsString(feilrapporteringer)
+                behandling.grunnlagsinnhentingFeilet =
+                    objectmapper.writeValueAsString(feilrapporteringer)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
@@ -155,35 +165,109 @@ class GrunnlagService(
         }
     }
 
+    fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        if (behandling.tilType() != TypeBehandling.BIDRAG) return emptyMap()
+
+        val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+
+        feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling))
+
+        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling))
+        }
+        if (behandling.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling))
+        }
+        return feilrapporteringer
+    }
+
+    fun hentOgLagreBeløpshistorikk(
+        stønadstype: Stønadstype,
+        behandling: Behandling,
+    ): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+        val type =
+            when (stønadstype) {
+                Stønadstype.BIDRAG -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG
+                Stønadstype.FORSKUDD -> Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD
+                Stønadstype.BIDRAG18AAR -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR
+                else -> return emptyMap()
+            }
+        behandling.søknadsbarn.map {
+            try {
+                val eksisterendeGrunnlag =
+                    behandling.grunnlag.hentSisteBeløpshistorikkGrunnlag(it.personident!!.verdi, type)
+                val respons = barnebidragGrunnlagInnhenting.hentBeløpshistorikk(behandling, it, stønadstype)
+                if (eksisterendeGrunnlag == null &&
+                    respons != null ||
+                    respons != null &&
+                    eksisterendeGrunnlag.konvertereData<StønadDto>() != respons
+                ) {
+                    log.info { "Lagrer ny grunnlag beløpshistorikk for type $type" }
+                    secureLogger.info {
+                        "Lagrer ny grunnlag beløpshistorikk for type $type med respons $respons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+                    }
+                    val nyGrunnlag =
+                        Grunnlag(
+                            behandling = behandling,
+                            type = type,
+                            data = commonObjectmapper.writeValueAsString(respons),
+                            gjelder = it.personident!!.verdi,
+                            innhentet = LocalDateTime.now(),
+                            aktiv = LocalDateTime.now(),
+                            rolle =
+                                when (type) {
+                                    Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD -> behandling.bidragsmottaker!!
+                                    else -> behandling.bidragspliktig!!
+                                },
+                            erBearbeidet = false,
+                        )
+                    behandling.grunnlag.add(nyGrunnlag)
+                }
+            } catch (e: HttpClientErrorException) {
+                feilrapporteringer.put(
+                    type,
+                    GrunnlagFeilDto(
+                        personId = it.personident!!.verdi,
+                        feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                        feilmelding = e.message,
+                    ),
+                )
+            }
+        }
+        return feilrapporteringer
+    }
+
     fun sjekkOgOppdaterIdenter(behandling: Behandling) {
         if (!unleashInstance.isEnabled("behandling.opppdater_identer", false)) return
         log.info { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
-            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
         }
         behandling.grunnlag.forEach {
-            it.gjelder = oppdaterTilNyesteIdent(it.gjelder, behandling.id!!) ?: it.gjelder
+            it.gjelder = oppdaterTilNyesteIdent(it.gjelder, behandling.id!!, it.toString()) ?: it.gjelder
         }
         behandling.husstandsmedlem.forEach {
-            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
         }
         behandling.underholdskostnader.forEach {
-            it.person.ident = oppdaterTilNyesteIdent(it.person.ident, behandling.id!!) ?: it.person.ident
+            it.person.ident = oppdaterTilNyesteIdent(it.person.ident, behandling.id!!, it.toString()) ?: it.person.ident
         }
         behandling.inntekter.forEach {
-            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!) ?: it.ident
-            it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarn, behandling.id!!) ?: it.gjelderBarn
+            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
+            it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarn, behandling.id!!, "gjelderBarn i $it") ?: it.gjelderBarn
         }
     }
 
     private fun oppdaterTilNyesteIdent(
         ident: String?,
         behandlingId: Long,
+        objekt: String? = null,
     ): String? {
         if (ident == null) return null
         val nyIdent = hentNyesteIdent(ident)?.verdi
         if (nyIdent != ident) {
-            secureLogger.info { "Oppdaterer ident fra $ident til $nyIdent i behandling $behandlingId " }
+            secureLogger.info { "Oppdaterer ident fra $ident til $nyIdent i behandling $behandlingId - $objekt" }
         }
         return nyIdent
     }
@@ -380,7 +464,7 @@ class GrunnlagService(
         behandling.grunnlagsinnhentingFeilet?.let {
             val t =
                 commonObjectmapper
-                    .readValue<Map<Grunnlagsdatatype, FeilrapporteringDto?>>(it)
+                    .readValue<Map<Grunnlagsdatatype, GrunnlagFeilDto?>>(it)
                     .any { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.key }
             t
         } ?: false
@@ -402,9 +486,11 @@ class GrunnlagService(
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
         val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
+        val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
+                gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.tilType(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -642,7 +728,7 @@ class GrunnlagService(
         behandling: Behandling,
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
         tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter: Boolean,
-    ): Map<Grunnlagsdatatype, FeilrapporteringDto?> {
+    ): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
         val formål =
             when (behandling.tilType()) {
                 TypeBehandling.BIDRAG -> Formål.BIDRAG
@@ -651,11 +737,11 @@ class GrunnlagService(
             }
         val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
 
-        val feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?> =
+        val feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?> =
             innhentetGrunnlag.hentGrunnlagDto?.let { g ->
                 Grunnlagsdatatype
                     .grunnlagsdatatypeobjekter(behandling.tilType())
-                    .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g) }
+                    .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g)?.tilGrunnlagFeilDto() }
                     .filterNot { it.value == null }
             } ?: Grunnlagsdatatype.gjeldende().associateWith { null }
 
@@ -664,7 +750,7 @@ class GrunnlagService(
             lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, it, feilrapporteringer)
         }
 
-        val feilVedHentingAvInntekter: FeilrapporteringDto? =
+        val feilVedHentingAvInntekter: GrunnlagFeilDto? =
             feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
         val tekniskFeilVedHentingAvInntekter = feilVedHentingAvInntekter?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL
         innhentetGrunnlag.hentGrunnlagDto?.let {
@@ -748,7 +834,7 @@ class GrunnlagService(
         behandling: Behandling,
         rolleInnhentetFor: Rolle,
         innhentetGrunnlag: HentetGrunnlag,
-        feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+        feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?>,
     ) {
         val innhentingAvBarnetilsynFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BARNETILSYN == it.key }.isNotEmpty()
@@ -928,6 +1014,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
+                null,
                 behandling.tilType(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )
@@ -1060,7 +1147,7 @@ class GrunnlagService(
         behandling: Behandling,
         innhentetGrunnlag: HentGrunnlagDto,
         rolleInhentetFor: Rolle,
-        feilliste: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+        feilliste: Map<Grunnlagsdatatype, GrunnlagFeilDto?>,
         tekniskFeilsjekk: Boolean,
     ) {
         val transformereInntekter = opprettTransformerInntekterRequest(behandling, innhentetGrunnlag, rolleInhentetFor)
@@ -1569,7 +1656,7 @@ class GrunnlagService(
         behandling: Behandling,
         rolleInhentetFor: Rolle,
         innhentetGrunnlag: HentGrunnlagDto,
-        feilrapporteringer: Map<Grunnlagsdatatype, FeilrapporteringDto?>,
+        feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?>,
     ) {
         val behandlingstype = behandling.tilType()
         val grunnlagsdatatypeobjekter =

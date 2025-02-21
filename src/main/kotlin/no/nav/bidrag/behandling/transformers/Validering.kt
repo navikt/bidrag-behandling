@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
@@ -38,6 +39,7 @@ import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
+import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -46,6 +48,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.http.HttpStatus
@@ -56,6 +59,38 @@ import java.time.LocalDate
 private val log = KotlinLogging.logger {}
 
 val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PARTEN_BER_OM_OPPHØR)
+
+fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
+    if (opphørsdato == null) return
+    val feilliste = mutableListOf<String>()
+    if (opphørsdato == behandling.virkningstidspunkt) {
+        feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
+    }
+    if (opphørsdato.isBefore(behandling.virkningstidspunkt)) {
+        feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
+    }
+    val rolle = behandling.roller.find { it.id == idRolle }
+    if (rolle == null) {
+        feilliste.add("Rolle med id $idRolle finnes ikke i behandling ${behandling.id}")
+    }
+    if (rolle != null && rolle.rolletype != Rolletype.BARN) {
+        feilliste.add("Opphørsdato kan kun settes for barn")
+    }
+    if (rolle != null &&
+        behandling.stonadstype == Stønadstype.BIDRAG &&
+        rolle.rolletype == Rolletype.BARN &&
+        opphørsdato.isAfter(rolle.fødselsdato.plusYears(18))
+    ) {
+        feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
+    }
+
+    if (feilliste.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig data ved oppdatering av opphørsdato: ${feilliste.joinToString(", ")}",
+        )
+    }
+}
 
 fun MutableSet<String>.validerSann(
     betingelse: Boolean,
@@ -243,6 +278,10 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
         feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
     }
 
+    if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
+        feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
+    }
+
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
@@ -256,7 +295,7 @@ fun Husstandsmedlem.validereAndreVoksneIHusstanden(virkniningstidspunkt: LocalDa
         this.perioder
             .map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(virkniningstidspunkt)
+            }.finnHullIPerioder(virkniningstidspunkt, behandling.globalOpphørsdato)
     return AndreVoksneIHusstandenPeriodeseringsfeil(
         hullIPerioder,
         overlappendePerioder = this.perioder.finneOverlappendeBostatusperioder(),
@@ -270,17 +309,23 @@ fun Husstandsmedlem.validereBoforhold(
     valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
     validerePerioder: Boolean = true,
 ): Set<BoforholdPeriodeseringsfeil> {
+    val opphørsdato = rolle?.opphørsdato ?: behandling.globalOpphørsdato
+
     val hullIPerioder =
         this.perioder
             .map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato ?: this.rolle!!.fødselsdato))
+            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato ?: this.rolle!!.fødselsdato), opphørsdato)
     if (validerePerioder) {
         valideringsfeil.add(
             BoforholdPeriodeseringsfeil(
                 this,
                 hullIPerioder,
                 overlappendePerioder = this.perioder.finneOverlappendeBostatusperioder(),
+                ugyldigSluttperiode =
+                    this.perioder
+                        .map { it.tilDatoperiode() }
+                        .ugyldigSluttperiode(opphørsdato),
                 manglerPerioder = this.perioder.isEmpty(),
                 fremtidigPeriode = this.inneholderFremtidigeBoforholdsperioder(),
             ),
@@ -364,7 +409,21 @@ private fun Set<Bostatusperiode>.finneOverlappendeBostatusperioder() =
             }
     }
 
-fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
+fun List<Datoperiode>.ugyldigSluttperiode(
+    opphørsdato: LocalDate? = null,
+    kanHaHullIPerioder: Boolean = false,
+): Boolean {
+    if (opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) return false
+    val sistePeriode = maxByOrNull { it.fom } ?: return false
+    val sisteGyldigTilDato = opphørsdato.opphørSisteTilDato()
+    val sisteTilDato = sistePeriode.til ?: LocalDate.MAX
+    return if (!kanHaHullIPerioder) sisteTilDato != sisteGyldigTilDato else sisteTilDato.isAfter(sisteGyldigTilDato) == true
+}
+
+fun List<Datoperiode>.finnHullIPerioder(
+    virkniningstidspunkt: LocalDate,
+    opphørsdato: LocalDate? = null,
+): List<Datoperiode> {
     val hullPerioder = mutableListOf<Datoperiode>()
     val perioderSomSkalSjekkes = sortedBy { it.fom }
     val førstePeriode = perioderSomSkalSjekkes.firstOrNull()
@@ -386,7 +445,9 @@ fun List<Datoperiode>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<D
         }
         senesteTilPeriode = maxOf(senesteTilPeriode, periode.til ?: LocalDate.MAX)
     }
-    if (perioderSomSkalSjekkes.none { it.til == null }) {
+    if ((opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
+        perioderSomSkalSjekkes.none { it.til == null }
+    ) {
         val sistePeriode = perioderSomSkalSjekkes.lastOrNull()
         if (sistePeriode?.til != null) {
             hullPerioder.add(Datoperiode(sistePeriode.til!!, null as LocalDate?))
@@ -408,12 +469,25 @@ fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
 }
 
 @JvmName("finnHullIPerioderInntekt")
-fun List<Inntekt>.finnHullIPerioder(virkniningstidspunkt: LocalDate): List<Datoperiode> {
+fun List<Inntekt>.finnHullIPerioder(
+    virkniningstidspunkt: LocalDate,
+    opphørsdato: LocalDate? = null,
+): List<Datoperiode> {
     val perioderSomSkalSjekkes =
         filter { it.taMed && !it.kanHaHullIPerioder() }
             .sortedBy { it.datoFom }
             .map { Datoperiode(it.datoFom!!, it.datoTom) }
-    return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt)
+    return perioderSomSkalSjekkes.finnHullIPerioder(virkniningstidspunkt, opphørsdato)
+}
+
+@JvmName("harUgyldigSluttperiode")
+fun List<Inntekt>.harUgyldigSluttperiode(opphørsdato: LocalDate?): Boolean {
+    val perioderSomSkalSjekkes =
+        filter { it.taMed }
+            .filter { !årsinntekterYtelser.contains(it.type) }
+            .sortedBy { it.datoFom }
+            .map { Datoperiode(it.datoFom!!, it.datoTom) }
+    return perioderSomSkalSjekkes.ugyldigSluttperiode(opphørsdato, all { it.kanHaHullIPerioder() })
 }
 
 val Inntekt.inntektstypeListe
@@ -840,8 +914,11 @@ private fun Husstandsmedlem.validereNyPeriode(
 private fun Husstandsmedlem.senestePeriodeFomDato(): LocalDate {
     val virkningsdato = this.behandling.virkningstidspunktEllerSøktFomDato
     return if (virkningsdato.isAfter(LocalDate.now())) {
-        maxOf(this.fødselsdato ?: this.rolle!!.fødselsdato, virkningsdato.withDayOfMonth(1))
+        maxOf(
+            this.fødselsdato ?: this.rolle!!.fødselsdato,
+            virkningsdato.withDayOfMonth(1),
+        )
     } else {
-        LocalDate.now().withDayOfMonth(1)
+        minOf(LocalDate.now().withDayOfMonth(1), this.rolle?.opphørTilDato ?: behandling.opphørTilDato ?: LocalDate.MAX)
     }
 }

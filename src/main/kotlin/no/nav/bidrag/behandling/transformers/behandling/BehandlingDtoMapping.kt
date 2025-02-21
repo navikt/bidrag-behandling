@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynAktiveGru
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
@@ -35,9 +36,11 @@ import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
+import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
@@ -46,6 +49,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
+import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -63,7 +67,6 @@ import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
@@ -145,7 +148,7 @@ fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
     return null
 }
 
-fun Map<Grunnlagsdatatype, FeilrapporteringDto?>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
+fun Map<Grunnlagsdatatype, GrunnlagFeilDto?>.tilGrunnlagsinnhentingsfeil(behandling: Behandling) =
     this
         .map { feil ->
             Grunnlagsinnhentingsfeil(
@@ -279,6 +282,14 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     return VirkningstidspunktFeilDto(
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
+        manglerOpphørsdato =
+            if (stonadstype ==
+                Stønadstype.BIDRAG18AAR
+            ) {
+                søknadsbarn.filter { it.opphørsdato == null }.map { it.tilDto() }
+            } else {
+                emptyList()
+            },
         manglerBegrunnelse =
             if (vedtakstype == Vedtakstype.OPPHØR) {
                 begrunnelseVirkningstidspunkt.isEmpty()
@@ -339,6 +350,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
     return roller
         .filter { bestemRollerSomKanHaInntekter(behandlingType).contains(it.rolletype) }
         .map { rolle ->
+            val opphørsdato = rolle.behandling.globalOpphørsdato
             val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
 
             if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
@@ -350,17 +362,24 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     rolle = rolle.tilDto(),
                 )
             } else {
+                val hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt, opphørsdato)
                 InntektValideringsfeil(
-                    hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt),
+                    hullIPerioder = hullIPerioder,
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
-//                    perioderFørVirkningstidspunkt =
-//                        inntekterTaMed
-//                            .any { it.periode?.fom?.isBefore(YearMonth.from(virkningstidspunkt)) == true },
+                    ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(opphørsdato),
                     manglerPerioder =
                         (rolle.rolletype != Rolletype.BARN)
                             .ifTrue { this.isEmpty() } == true,
                     rolle = rolle.tilDto(),
+                    ingenLøpendePeriode =
+                        if (opphørsdato == null ||
+                            opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)
+                        ) {
+                            hullIPerioder.any { it.til == null }
+                        } else {
+                            false
+                        },
                 )
             }
         }.filter { it.harFeil }
@@ -382,6 +401,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
             overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
             fremtidigPeriode =
                 inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+            ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(inntekterTaMed.firstOrNull()?.opphørsdato),
             ident = gjelderIdent,
             rolle = gjelderRolle?.tilDto(),
             gjelderBarn = gjelderBarn,
