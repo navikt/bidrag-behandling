@@ -1699,6 +1699,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
+        behandling.årsak = null
         behandling.refVedtaksid = 553
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1725,7 +1726,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
 
-            request.grunnlagListe shouldHaveSize 10
+            request.grunnlagListe shouldHaveSize 11
             hentGrunnlagstyper(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 1
@@ -1733,6 +1734,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSPLIKTIG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.SØKNAD)) {
                 shouldHaveSize(1)
                 val innhold = it[0].innholdTilObjekt<SøknadGrunnlag>()
@@ -1748,7 +1750,13 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.skyldner shouldBe Personident(testdataBP.ident)
                 it.kravhaver shouldBe Personident(testdataBarn1.ident)
                 it.mottaker shouldBe Personident(testdataBM.ident)
-                it.grunnlagReferanseListe shouldHaveSize 2
+                it.grunnlagReferanseListe shouldHaveSize 3
+                val vtGrunnlag = request.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.VIRKNINGSTIDSPUNKT, it.grunnlagReferanseListe)
+                vtGrunnlag.size shouldBe 1
+                val virkningstidspunkt = vtGrunnlag.first().innholdTilObjekt<VirkningstidspunktGrunnlag>()
+                virkningstidspunkt.avslag shouldBe Resultatkode.BIDRAGSPLIKTIG_ER_DØD
+                virkningstidspunkt.årsak shouldBe null
+                virkningstidspunkt.virkningstidspunkt shouldBe behandling.virkningstidspunkt
                 it.periodeListe shouldHaveSize 1
                 assertSoftly(it.periodeListe[0]) {
                     it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
