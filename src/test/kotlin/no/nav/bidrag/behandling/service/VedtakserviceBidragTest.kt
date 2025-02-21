@@ -300,12 +300,12 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 6
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 23
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 1
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 6
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 30
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 4
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 8
             hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 3
@@ -2082,15 +2082,15 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningUnderholdskostnad>()
-        innhold.underholdskostnad shouldBe BigDecimal("8089.78")
+        innhold.underholdskostnad shouldBe BigDecimal("8441.78")
         innhold.nettoTilsynsutgift shouldBe BigDecimal("1273.78")
-        innhold.barnetilsynMedStønad shouldBe BigDecimal("630.00")
+        innhold.barnetilsynMedStønad shouldBe BigDecimal("621.00")
         it.grunnlagsreferanseListe shouldHaveSize 7
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG, sluttberegningPeriode.grunnlagsreferanseListe).first()) {
         val innhold = innholdTilObjekt<DelberegningSamværsfradrag>()
-        innhold.beløp shouldBe BigDecimal("1011.00")
+        innhold.beløp shouldBe BigDecimal("1048.00")
         it.grunnlagsreferanseListe shouldHaveSize 3
     }
 }
@@ -2100,28 +2100,21 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
     val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
     val husstandsmedlemGrunnlag = grunnlagListe.hentPerson(testdataHusstandsmedlem1.ident)!!
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.BOSTATUS_PERIODE)) {
-        shouldHaveSize(6)
+        shouldHaveSize(3)
         val bostatusSøknadsbarn1 =
             it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarn1Grunnlag.referanse)
-        bostatusSøknadsbarn1.shouldHaveSize(2)
+        bostatusSøknadsbarn1.shouldHaveSize(1)
         it[0].gjelderBarnReferanse shouldBe søknadsbarn1Grunnlag.referanse
-        it[1].gjelderBarnReferanse shouldBe søknadsbarn1Grunnlag.referanse
-        it[2].gjelderBarnReferanse shouldBe husstandsmedlemGrunnlag.referanse
-        it[3].gjelderBarnReferanse shouldBe husstandsmedlemGrunnlag.referanse
+        it[1].gjelderBarnReferanse shouldBe husstandsmedlemGrunnlag.referanse
+        it[2].gjelderBarnReferanse shouldBe null
+        it[2].gjelderReferanse shouldBe bpGrunnlag.referanse
         assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
-            bostatus shouldBe Bostatuskode.MED_FORELDER
-            periode.fom shouldBe YearMonth.parse("2023-02")
-            periode.til shouldBe YearMonth.parse("2023-08")
-            relatertTilPart shouldBe bpGrunnlag.referanse
-        }
-        assertSoftly(bostatusSøknadsbarn1[1].innholdTilObjekt<BostatusPeriode>()) {
             bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
-            periode.fom shouldBe YearMonth.parse("2023-08")
+            periode.fom shouldBe YearMonth.parse("2023-02")
             periode.til shouldBe null
             relatertTilPart shouldBe bpGrunnlag.referanse
         }
-
-        it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = husstandsmedlemGrunnlag.referanse).shouldHaveSize(2)
+        it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = husstandsmedlemGrunnlag.referanse).shouldHaveSize(1)
     }
 }
 
