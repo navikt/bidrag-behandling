@@ -1228,7 +1228,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                                 ),
                                 Bostatusperiode(
                                     datoFom = LocalDate.parse("2023-06-01"),
-                                    datoTom = null,
+                                    datoTom = LocalDate.parse("2023-12-31"),
                                     bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                     kilde = Kilde.OFFENTLIG,
                                     husstandsmedlem = it,

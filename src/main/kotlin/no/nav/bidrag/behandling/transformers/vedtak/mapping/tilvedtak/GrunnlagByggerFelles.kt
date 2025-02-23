@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -131,6 +132,8 @@ fun Behandling.byggGrunnlagSøknad() =
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
+                        begrensetRevurdering = søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING,
+                        egetTiltak = listOf(BisysSøknadstype.BEGRENSET_REVURDERING, BisysSøknadstype.EGET_TILTAK).contains(søknadstype),
                         opprinneligVedtakstype = opprinneligVedtakstype,
                     ),
                 ),

@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
@@ -18,6 +19,7 @@ import no.nav.bidrag.beregn.core.bo.SjablonInnhold
 import no.nav.bidrag.beregn.core.bo.SjablonNøkkel
 import no.nav.bidrag.beregn.core.bo.SjablonPeriode
 import no.nav.bidrag.beregn.core.dto.SjablonPeriodeCore
+import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.service.mapper.CoreMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
@@ -120,10 +122,10 @@ class BeregningService(
         return if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
-            try {
-                behandling.søknadsbarn.map { søknasdbarn ->
-                    val grunnlagBeregning =
-                        mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
+            behandling.søknadsbarn.map { søknasdbarn ->
+                val grunnlagBeregning =
+                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
+                try {
                     ResultatBidragsberegningBarn(
                         søknasdbarn.mapTilResultatBarn(),
                         beregnBarnebidragApi.beregn(grunnlagBeregning).let {
@@ -136,10 +138,23 @@ class BeregningService(
                             )
                         },
                     )
+                } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
+                    ResultatBidragsberegningBarn(
+                        ugyldigBeregning = e.opprettBegrunnelse(),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        resultat =
+                            e.data.copy(
+                                grunnlagListe =
+                                    (e.data.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                        .toSet()
+                                        .toList()
+                                        .fjernMidlertidligPersonobjekterBMsbarn(),
+                            ),
+                    )
+                } catch (e: Exception) {
+                    LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }
+                    throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
                 }
-            } catch (e: Exception) {
-                LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }
-                throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
             }
         }
     }

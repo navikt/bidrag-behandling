@@ -54,6 +54,14 @@ class BehandlingTilVedtakMapping(
         val sak = sakConsumer.hentSak(saksnummer)
         val beregning = beregningService.beregneBidrag(id!!)
 
+        if (beregning.any { it.ugyldigBeregning != null }) {
+            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke fatte vedtak: $begrunnelse",
+            )
+        }
+
         mapper.run {
             val stønadsendringPerioder =
                 beregning.map { it.byggStønadsendringerForVedtak(behandling) }

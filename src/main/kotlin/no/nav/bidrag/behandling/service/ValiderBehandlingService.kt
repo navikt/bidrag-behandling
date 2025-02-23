@@ -11,12 +11,15 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
 import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
 
@@ -49,8 +52,8 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
-        if (request.vedtakstype == Vedtakstype.REVURDERING || request.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
-            return "Kan ikke behandle begrenset revurdering"
+        if (!kanBehandleBegrensetRevurdering(request)) {
+            return "Kan ikke behandle begrenset revurdering. Minst en løpende forskudd eller bidrag periode har utenlandsk valuta"
         }
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
@@ -59,7 +62,11 @@ class ValiderBehandlingService(
                 .hentAlleStønaderForBidragspliktig(bp.ident)
                 .stønader
                 .any { it.type != Stønadstype.FORSKUDD }
-        if (harBPMinstEnBidragsstønad) return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+        if (harBPMinstEnBidragsstønad &&
+            !request.erBegrensetRevurdering()
+        ) {
+            return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
+        }
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
@@ -82,4 +89,37 @@ class ValiderBehandlingService(
             )
         }
     }
+
+    fun kanBehandleBegrensetRevurdering(request: KanBehandlesINyLøsningRequest): Boolean =
+        if (request.erBegrensetRevurdering()) {
+            harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.BIDRAG) &&
+                harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.FORSKUDD)
+        } else {
+            true
+        }
+
+    private fun KanBehandlesINyLøsningRequest.erBegrensetRevurdering() =
+        this.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING ||
+            this.søknadstype == BisysSøknadstype.REVURDERING
+
+    private fun harIngenHistoriskePerioderMedUtenlandskValuta(
+        request: KanBehandlesINyLøsningRequest,
+        stønadstype: Stønadstype,
+    ): Boolean =
+        request.søknadsbarn.filter { it.ident != null }.all {
+            bidragStonadConsumer
+                .hentHistoriskeStønader(
+                    HentStønadHistoriskRequest(
+                        type = stønadstype,
+                        sak = Saksnummer(request.saksnummer),
+                        skyldner = request.bidragspliktig!!.ident!!,
+                        kravhaver = it.ident!!,
+                        gyldigTidspunkt = LocalDateTime.now(),
+                    ),
+                )?.let {
+                    it.periodeListe.all {
+                        it.valutakode == "NOK" || it.valutakode.isNullOrEmpty()
+                    }
+                } != false
+        }
 }

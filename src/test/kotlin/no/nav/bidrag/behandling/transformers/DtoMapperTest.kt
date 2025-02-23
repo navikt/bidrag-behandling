@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
@@ -79,6 +80,9 @@ class DtoMapperTest : TestContainerRunner() {
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    @MockkBean(relaxed = true)
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var grunnlagsmapper: BehandlingTilGrunnlagMappingV2
 
     lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper
@@ -95,6 +99,7 @@ class DtoMapperTest : TestContainerRunner() {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
