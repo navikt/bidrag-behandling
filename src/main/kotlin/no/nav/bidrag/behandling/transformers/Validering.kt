@@ -406,7 +406,7 @@ fun List<Pair<Long, Datoperiode>>.finnOverlappendePerioder(): Set<no.nav.bidrag.
                             maxOf(periode.second.fom, nesteBostatusperiode.second.fom),
                             minOfNullable(periode.second.til, nesteBostatusperiode.second.til),
                         ),
-                        mutableSetOf(periode.first!!, nesteBostatusperiode.first!!),
+                        mutableSetOf(periode.first, nesteBostatusperiode.first),
                     )
                 }
         }.toSet()

@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
-import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBidragsmottakerReferanse
+import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -62,7 +62,8 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(
 
     return GrunnlagDto(
         referanse =
-            referanse ?: opprettPersonBarnBidragsmottakerReferanse(fødselsdato!!, gjelderPersonId, navn),
+            referanse
+                ?: opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER, fødselsdato!!, gjelderPersonId, navn),
         grunnlagsreferanseListe = listOf(innhentetReferanse),
         type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
         innhold =

@@ -85,6 +85,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
@@ -104,6 +105,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
@@ -251,9 +253,10 @@ class Dtomapper(
             }
 
         val rolle = roller.find { it.ident == gjelderBarn.ident }
+        val gjelderBarnReferanse = gjelderBarn.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
         return BeregnetPrivatAvtaleDto(
             gjelderBarn = gjelderBarn.tilPersoninfoDto(rolle, null),
-            privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode().map {
+            privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
                 BeregnetPrivatAvtalePeriodeDto(
                     periode = Datoperiode(it.innhold.periode.fom, it.innhold.periode.til),
                     beløp = it.innhold.beløp,

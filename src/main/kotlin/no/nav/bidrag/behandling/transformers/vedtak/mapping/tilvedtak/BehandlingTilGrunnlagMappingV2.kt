@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagUnderh
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
-import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBidragsmottakerReferanse
+import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -176,7 +176,7 @@ class BehandlingTilGrunnlagMappingV2(
         fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto =
             GrunnlagDto(
                 referanse =
-                    opprettPersonBarnBidragsmottakerReferanse(person.fødselsdato, person.ident, person.navn),
+                    person.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG),
                 grunnlagsreferanseListe = emptyList(),
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
                 innhold =
@@ -350,7 +350,12 @@ class BehandlingTilGrunnlagMappingV2(
         fun Underholdskostnad.tilPersonGrunnlag(): GrunnlagDto =
             GrunnlagDto(
                 referanse =
-                    opprettPersonBarnBidragsmottakerReferanse(person.fødselsdato, person.ident, person.navn),
+                    opprettPersonBarnBPBMReferanse(
+                        type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
+                        person.fødselsdato,
+                        person.ident,
+                        person.navn,
+                    ),
                 grunnlagsreferanseListe =
                     if (kilde == Kilde.OFFENTLIG) {
                         listOf(

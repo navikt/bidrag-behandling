@@ -82,7 +82,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 notatService,
                 personService,
             )
-        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService)
+        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService, personRepository, behandlingRepository)
         beregningService =
             BeregningService(
                 behandlingService,

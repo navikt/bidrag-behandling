@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.vedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -71,11 +72,15 @@ fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
 
 fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(this) else null
 
-fun opprettPersonBarnBidragsmottakerReferanse(
+fun Person.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
+    opprettPersonBarnBPBMReferanse(type, fødselsdato, ident, navn)
+
+fun opprettPersonBarnBPBMReferanse(
+    type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
     fødselsdato: LocalDate,
     ident: String?,
     navn: String?,
-) = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER.tilPersonreferanse(
+) = type.tilPersonreferanse(
     fødselsdato.toCompactString(),
     if (ident.isNullOrEmpty()) (fødselsdato.toCompactString() + navn).hashCode() else (ident + fødselsdato.toCompactString()).hashCode(),
 )
