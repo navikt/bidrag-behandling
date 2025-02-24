@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename")
+
 package no.nav.bidrag.behandling.dto.v2.felles
 
 import io.swagger.v3.oas.annotations.media.Schema
