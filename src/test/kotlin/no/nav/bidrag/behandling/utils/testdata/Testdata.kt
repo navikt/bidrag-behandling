@@ -1651,13 +1651,13 @@ fun lagGrunnlagsdata(
 fun Behandling.leggTilNotat(
     innhold: String,
     type: NotatGrunnlag.NotatType,
-    rolleForInntekt: Rolle? = null,
+    rolle: Rolle? = null,
     erDelAvBehandlingen: Boolean = true,
 ) {
     notater.add(
         Notat(
             behandling = this,
-            rolle = henteRolleForNotat(type, rolleForInntekt),
+            rolle = henteRolleForNotat(type, rolle),
             innhold = innhold,
             type = type,
             erDelAvBehandlingen = erDelAvBehandlingen,

@@ -294,7 +294,7 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
 }
 
 fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
-    val notatPrivatAvtale = behandling.notater.find { it.type == NotatGrunnlag.NotatType.SAMVÆR && person?.ident == it.rolle?.ident }
+    val notatPrivatAvtale = behandling.notater.find { it.type == NotatGrunnlag.NotatType.PRIVAT_AVTALE && person?.ident == it.rolle?.ident }
     return PrivatAvtaleValideringsfeilDto(
         privatAvtaleId = id!!,
         gjelderPerson = person,
