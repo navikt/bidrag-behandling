@@ -6,14 +6,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleAvtaleDatoRequest
-import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
-import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleResponsDto
-import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleSkalIndeksreguleresRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.PrivatAvtaleService
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -24,7 +22,9 @@ private val log = KotlinLogging.logger {}
 
 @BehandlingRestControllerV2
 class PrivatAvtaleController(
-    private val behandlingRepository: BehandlingRepository,
+    private val behandlingService: BehandlingService,
+    private val privatAvtaleService: PrivatAvtaleService,
+    private val dtomapper: Dtomapper,
 ) {
     @DeleteMapping("/behandling/{behandlingsid}/privatavtale/{privatavtaleid}")
     @Operation(
@@ -45,12 +45,13 @@ class PrivatAvtaleController(
         @PathVariable privatavtaleid: Long,
     ) {
         log.info { "Sletter fra privat avtale $privatavtaleid i behandling $behandlingsid" }
+        privatAvtaleService.slettPrivatAvtale(behandlingsid, privatavtaleid)
     }
 
-    @PutMapping("/behandling/{behandlingsid}/privatavtale/{privatavtaleid}/avtaledato")
+    @PutMapping("/behandling/{behandlingsid}/privatavtale/{privatavtaleid}")
     @Operation(
         description =
-            "Oppdatere privat avtale avtaledato. Returnerer oppdatert element.",
+            "Oppdatere privat avtale. Returnerer oppdatert element.",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @ApiResponses(
@@ -61,79 +62,14 @@ class PrivatAvtaleController(
             ),
         ],
     )
-    fun oppdaterePrivatAvtaleAvtaleDato(
+    fun oppdaterPrivatAvtale(
         @PathVariable behandlingsid: Long,
         @PathVariable privatavtaleid: Long,
-        @Valid @RequestBody(required = true) request: OppdaterePrivatAvtaleAvtaleDatoRequest,
+        @Valid @RequestBody(required = true) request: OppdaterePrivatAvtaleRequest,
     ): OppdaterePrivatAvtaleResponsDto {
-        log.info { "Oppdaterer privatavtale $privatavtaleid avtaledato i behandling $behandlingsid" }
-        return OppdaterePrivatAvtaleResponsDto()
+        privatAvtaleService.oppdaterPrivatAvtale(behandlingsid, privatavtaleid, request)
+        return tilPrivatAvtaleResponsDto(behandlingsid, privatavtaleid)
     }
-
-    @PutMapping("/behandling/{behandlingsid}/privatavtale/{privatavtaleid}/skalIndeksreguleres")
-    @Operation(
-        description =
-            "Oppdatere privat avtale om det skal indeksreguleres eller ikke Returnerer oppdatert element.",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
-    fun oppdaterePrivatAvtaleSkalIndeksreguleres(
-        @PathVariable behandlingsid: Long,
-        @PathVariable privatavtaleid: Long,
-        @Valid @RequestBody(required = true) request: OppdaterePrivatAvtaleSkalIndeksreguleresRequest,
-    ): OppdaterePrivatAvtaleResponsDto {
-        log.info { "Oppdaterer privatavtale $privatavtaleid skal indeksreguleres i behandling $behandlingsid" }
-        return OppdaterePrivatAvtaleResponsDto()
-    }
-
-    @PutMapping("/behandling/{behandlingsid}/privatavtale/{privatavtaleid}/periode")
-    @Operation(
-        description =
-            "Oppdatere privat avtale periode. Returnerer oppdatert element.",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
-    fun oppdaterePrivatAvtalePeriode(
-        @PathVariable behandlingsid: Long,
-        @PathVariable privatavtaleid: Long,
-        @Valid @RequestBody(required = true) request: OppdaterePrivatAvtalePeriodeDto,
-    ): OppdaterePrivatAvtaleResponsDto {
-        log.info { "Oppdaterer faktisk tilsynsutgift for behandling $behandlingsid" }
-        return OppdaterePrivatAvtaleResponsDto()
-    }
-
-    @PutMapping("/behandling/{behandlingsid}/privatavtale/{privatavtaleid}/begrunnelse")
-    @Operation(
-        description = "Oppdatere begrunnelse for underhold relatert til søknadsbarn eller andre barn.",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
-    fun oppdatereBegrunnelse(
-        @PathVariable behandlingsid: Long,
-        @PathVariable privatavtaleid: Long,
-        @RequestBody(required = true) request: OppdaterePrivatAvtaleBegrunnelseRequest,
-    ): OppdaterePrivatAvtaleResponsDto = OppdaterePrivatAvtaleResponsDto()
 
     @PostMapping("/behandling/{behandlingsid}/privatavtale/opprette")
     @Operation(
@@ -152,11 +88,22 @@ class PrivatAvtaleController(
         @PathVariable behandlingsid: Long,
         @RequestBody(required = true) gjelderBarn: BarnDto,
     ): OppdaterePrivatAvtaleResponsDto {
-        val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+        log.info { "Oppretter privat avtale for barn ${gjelderBarn.id} i behandling $behandlingsid" }
+        val privatAvtale = privatAvtaleService.opprettPrivatAvtale(behandlingsid, gjelderBarn)
+        return tilPrivatAvtaleResponsDto(behandlingsid, privatAvtale.id!!)
+    }
 
-        return OppdaterePrivatAvtaleResponsDto()
+    private fun tilPrivatAvtaleResponsDto(
+        behandlingsid: Long,
+        privatavtaleid: Long,
+    ): OppdaterePrivatAvtaleResponsDto {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val privatAvtale = behandling.privatAvtale.find { it.id == privatavtaleid }!!
+        return OppdaterePrivatAvtaleResponsDto(
+            oppdatertPrivatAvtale =
+                dtomapper.run {
+                    privatAvtale.tilDto()
+                },
+        )
     }
 }

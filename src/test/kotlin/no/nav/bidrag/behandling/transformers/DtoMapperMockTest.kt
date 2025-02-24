@@ -22,10 +22,15 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtale
+import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtalePeriode
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -42,7 +47,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import stubPersonConsumer
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 @ExtendWith(MockKExtension::class)
 class DtoMapperMockTest {
@@ -86,6 +93,7 @@ class DtoMapperMockTest {
 
         stubPersonConsumer()
         stubSjablonProvider()
+        stubKodeverkProvider()
         every { validerBehandlingService.kanBehandlesINyLøsning(any()) } returns null
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
         every { tilgangskontrollService.harTilgang(any(), any()) } returns true
@@ -408,6 +416,66 @@ class DtoMapperMockTest {
                     BigDecimal(144) -> it.månedsbeløp shouldBe BigDecimal(12)
                     BigDecimal(2000) -> it.månedsbeløp shouldBe BigDecimal(167)
                 }
+            }
+        }
+    }
+
+    @Test
+    fun `skal hente privat avtale`() {
+        val behandling = oppretteTestbehandling(setteDatabaseider = true, behandlingstype = TypeBehandling.BIDRAG, inkludereBoforhold = true, inkludereBp = true, inkludereInntekter = false)
+        val privatAvtale = opprettPrivatAvtale(behandling, testdataBarn1)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 = behandling.søknadsbarn.last()
+        privatAvtale.perioder.addAll(
+            listOf(
+                opprettPrivatAvtalePeriode(
+                    privatAvtale,
+                    fom = YearMonth.from(behandling.virkningstidspunkt),
+                    tom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(7),
+                ),
+                opprettPrivatAvtalePeriode(
+                    privatAvtale,
+                    fom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(8),
+                    tom = null,
+                ),
+            ),
+        )
+        val privatAvtale2 = opprettPrivatAvtale(behandling, testdataBarn2)
+        privatAvtale2.skalIndeksreguleres = false
+        privatAvtale2.perioder.addAll(
+            listOf(
+                opprettPrivatAvtalePeriode(
+                    privatAvtale2,
+                    fom = YearMonth.from(behandling.virkningstidspunkt),
+                    tom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(7),
+                ),
+                opprettPrivatAvtalePeriode(
+                    privatAvtale2,
+                    fom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(8),
+                    tom = null,
+                ),
+            ),
+        )
+        behandling.privatAvtale.add(privatAvtale)
+        behandling.privatAvtale.add(privatAvtale2)
+
+        val dto = dtomapper.tilDto(behandling)
+
+        assertSoftly(dto) {
+            it.privatAvtale.shouldNotBeNull()
+            it.privatAvtale!!.shouldHaveSize(2)
+            val pa1 = it.privatAvtale!!.find { it.gjelderBarn.ident?.verdi == barn1.ident }!!
+            val pa2 = it.privatAvtale!!.find { it.gjelderBarn.ident?.verdi == barn2.ident }!!
+
+            assertSoftly(pa1) {
+                it.beregnetPrivatAvtale.shouldNotBeNull()
+                it.beregnetPrivatAvtale!!.perioder.shouldHaveSize(2)
+                it.avtaleDato shouldBe LocalDate.parse("2024-01-01")
+                it.skalIndeksreguleres shouldBe true
+                it.perioder shouldHaveSize 2
+                it.perioder[0].periode.fom shouldBe behandling.virkningstidspunkt
+                it.perioder[0].periode.tom shouldBe YearMonth.from(behandling.virkningstidspunkt!!).plusMonths(7).atEndOfMonth()
+                it.perioder[0].beløp shouldBe BigDecimal(1000)
             }
         }
     }

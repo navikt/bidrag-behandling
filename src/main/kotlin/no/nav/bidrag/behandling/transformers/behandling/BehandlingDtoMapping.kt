@@ -35,7 +35,7 @@ import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspu
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
-import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
+import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
 import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
@@ -365,7 +365,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                 val hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt, opphørsdato)
                 InntektValideringsfeil(
                     hullIPerioder = hullIPerioder,
-                    overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
+                    overlappendePerioder = inntekterTaMed.finnOverlappendePerioderInntekt(),
                     fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
                     ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(opphørsdato),
                     manglerPerioder =
@@ -398,7 +398,7 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
         val gjelderRolle = roller.find { it.ident == inntektGjelderIdent }
         val gjelderIdent = gjelderRolle?.ident ?: inntektGjelderIdent
         InntektValideringsfeil(
-            overlappendePerioder = inntekterTaMed.finnOverlappendePerioder(),
+            overlappendePerioder = inntekterTaMed.finnOverlappendePerioderInntekt(),
             fremtidigPeriode =
                 inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
             ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(inntekterTaMed.firstOrNull()?.opphørsdato),
@@ -490,6 +490,13 @@ fun Behandling.henteRolleForNotat(
             }
 
         Notattype.SAMVÆR -> forRolle!!
+        Notattype.PRIVAT_AVTALE ->
+            if (forRolle == null) {
+                log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
+                this.bidragspliktig!!
+            } else {
+                forRolle
+            }
     }
 
 fun Behandling.notatTittel(): String {

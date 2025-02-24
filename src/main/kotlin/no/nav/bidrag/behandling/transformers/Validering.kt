@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
@@ -22,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereSivilstand
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntekterRequestV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgift
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
 import no.nav.bidrag.behandling.dto.v2.utgift.tilUtgiftstype
@@ -50,6 +52,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
@@ -290,6 +293,20 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     }
 }
 
+fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
+    val notatPrivatAvtale = behandling.notater.find { it.type == NotatGrunnlag.NotatType.SAMVÆR && person?.ident == it.rolle?.ident }
+    return PrivatAvtaleValideringsfeilDto(
+        privatAvtaleId = id!!,
+        gjelderPerson = person,
+        manglerAvtaledato = avtaleDato == null,
+        manglerBegrunnelse = notatPrivatAvtale?.innhold.isNullOrEmpty(),
+        overlappendePerioder =
+            perioder
+                .map { Pair(it.id!!, it.tilDatoperiode()) }
+                .finnOverlappendePerioder(),
+    )
+}
+
 fun Husstandsmedlem.validereAndreVoksneIHusstanden(virkniningstidspunkt: LocalDate): AndreVoksneIHusstandenPeriodeseringsfeil {
     val hullIPerioder =
         this.perioder
@@ -375,6 +392,24 @@ fun Set<Sivilstand>.validereSivilstand(virkningstidspunkt: LocalDate): Sivilstan
     )
 }
 
+fun List<Pair<Long, Datoperiode>>.finnOverlappendePerioder(): Set<no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode> =
+    sortedBy { it.second.til }
+        .flatMapIndexed { index, periode ->
+            sortedBy { it.second.fom }
+                .drop(index + 1)
+                .filter { nestePeriode ->
+                    nestePeriode.second.overlapper(periode.second)
+                }.map { nesteBostatusperiode ->
+                    no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode(
+                        Datoperiode(
+                            maxOf(periode.second.fom, nesteBostatusperiode.second.fom),
+                            minOfNullable(periode.second.til, nesteBostatusperiode.second.til),
+                        ),
+                        mutableSetOf(periode.first!!, nesteBostatusperiode.first!!),
+                    )
+                }
+        }.toSet()
+
 private fun Set<Sivilstand>.finnSivilstandOverlappendePerioder() =
     sortedBy { it.datoFom }.flatMapIndexed { index, sivilstand ->
         sortedBy { it.datoFom }.drop(index + 1).mapNotNull { nesteSivilstand ->
@@ -456,7 +491,7 @@ fun List<Datoperiode>.finnHullIPerioder(
     return hullPerioder
 }
 
-fun List<Inntekt>.finnOverlappendePerioder(): Set<OverlappendePeriode> {
+fun List<Inntekt>.finnOverlappendePerioderInntekt(): Set<OverlappendePeriode> {
     val inntekterSomSkalSjekkes = filter { it.taMed }.sortedBy { it.datoFom }
     val overlappendePerioder =
         inntekterSomSkalSjekkes.flatMapIndexed { index, inntekt ->

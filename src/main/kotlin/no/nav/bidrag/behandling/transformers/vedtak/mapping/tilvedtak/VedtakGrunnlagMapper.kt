@@ -49,11 +49,11 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
-fun Behandling.finnBeregnTilDatoBehandling() =
+fun Behandling.finnBeregnTilDatoBehandling(opphørsdato: LocalDate? = null) =
     if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
     } else {
-        finnBeregnTilDato(virkningstidspunkt!!, globalOpphørsdato)
+        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdato)
     }
 
 fun finnBeregnTilDato(
@@ -153,6 +153,34 @@ class VedtakGrunnlagMapper(
                 }
             }
 
+    fun byggGrunnlagForBeregningPrivatAvtale(
+        behandling: Behandling,
+        person: no.nav.bidrag.behandling.database.datamodell.Person,
+    ): BeregnGrunnlag {
+        mapper.run {
+            behandling.run {
+                val personobjekter = tilPersonobjekter()
+                val privatavtaleGrunnlag = tilPrivatAvtaleGrunnlag(personobjekter)
+
+                val personObjekt = personobjekter.hentPerson(person.ident)!!
+                val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+                val opphørsdato = person.opphørsdatoForRolle(behandling)
+                val beregningTilDato = finnBeregnTilDatoBehandling(opphørsdato)
+                return BeregnGrunnlag(
+                    periode =
+                        ÅrMånedsperiode(
+                            beregnFraDato,
+                            beregningTilDato,
+                        ),
+                    stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                    opphørSistePeriode = opphørsdato != null,
+                    søknadsbarnReferanse = personObjekt.referanse,
+                    grunnlagListe = (personobjekter + privatavtaleGrunnlag).toSet().toList(),
+                )
+            }
+        }
+    }
+
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
         søknadsbarnRolle: Rolle,
@@ -182,6 +210,7 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
                     TypeBehandling.BIDRAG -> {
+                        grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
                         grunnlagsliste.addAll(opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()))

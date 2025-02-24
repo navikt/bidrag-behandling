@@ -53,6 +53,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoTilsynsutgift
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningPrivatAvtalePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsfradrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
@@ -592,6 +593,14 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
         tilleggsstønad = delberegningTilleggsstønad?.innhold?.beregnetBeløp,
     )
 }
+
+fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(): List<InnholdMedReferanse<DelberegningPrivatAvtalePeriode>> =
+    this
+        .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtalePeriode>(
+            Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE_PERIODE,
+        ).sortedBy {
+            it.innhold.periode.fom
+        }
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
     this

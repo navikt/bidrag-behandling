@@ -161,6 +161,13 @@ open class Behandling(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
+    open var privatAvtale: MutableSet<PrivatAvtale> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE],
         orphanRemoval = true,
     )

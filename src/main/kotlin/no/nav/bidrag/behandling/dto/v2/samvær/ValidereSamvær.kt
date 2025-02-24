@@ -5,8 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
+import no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
-import no.nav.bidrag.behandling.transformers.minOfNullable
+import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.ugyldigSluttperiode
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
@@ -27,7 +28,7 @@ data class SamværValideringsfeilDto(
     val ingenLøpendeSamvær: Boolean,
     val manglerSamvær: Boolean,
     val ugyldigSluttperiode: Boolean,
-    val overlappendePerioder: Set<OverlappendeSamværPeriode>,
+    val overlappendePerioder: Set<OverlappendePeriode>,
     @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
 ) {
@@ -45,12 +46,6 @@ data class SamværValideringsfeilDto(
         get() = manglerBegrunnelse || harPeriodiseringsfeil
 }
 
-data class OverlappendeSamværPeriode(
-    val periode: Datoperiode,
-    @Schema(description = "Teknisk id på inntekter som overlapper")
-    val idListe: MutableSet<Long>,
-)
-
 fun Set<Samvær>.mapValideringsfeil(): Set<SamværValideringsfeilDto> =
     map { samvær -> samvær.mapValideringsfeil() }
         .filter { it.harFeil }
@@ -67,7 +62,10 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
         ingenLøpendeSamvær =
             (opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
                 (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
-        overlappendePerioder = perioder.finnOverlappendePerioder(),
+        overlappendePerioder =
+            perioder
+                .map { Pair(it.id!!, it.tilDatoperiode()) }
+                .finnOverlappendePerioder(),
         manglerSamvær = perioder.isEmpty(),
         ugyldigSluttperiode =
             perioder
@@ -87,24 +85,6 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
 }
 
 fun Samværsperiode.tilDatoperiode() = Datoperiode(fom, tom)
-
-fun Set<Samværsperiode>.finnOverlappendePerioder(): Set<OverlappendeSamværPeriode> =
-    sortedBy { it.fom }
-        .flatMapIndexed { index, periode ->
-            sortedBy { it.fom }
-                .drop(index + 1)
-                .filter { nestePeriode ->
-                    nestePeriode.tilDatoperiode().overlapper(periode.tilDatoperiode())
-                }.map { nesteBostatusperiode ->
-                    OverlappendeSamværPeriode(
-                        Datoperiode(
-                            maxOf(periode.fom, nesteBostatusperiode.fom),
-                            minOfNullable(periode.tom, nesteBostatusperiode.tom),
-                        ),
-                        mutableSetOf(periode.id!!, nesteBostatusperiode.id!!),
-                    )
-                }
-        }.toSet()
 
 fun OppdaterSamværDto.valider(opphørsdato: LocalDate?) {
     val feilliste = mutableListOf<String>()

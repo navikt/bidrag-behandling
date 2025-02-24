@@ -16,6 +16,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
@@ -216,7 +218,7 @@ data class TestDataPerson(
         ident = ident,
         navn = navn,
         fødselsdato = fødselsdato,
-        rolle = mutableSetOf(tilRolle(behandling, id)),
+        rolle = mutableSetOf(behandling.roller.find { it.ident == ident } ?: tilRolle(behandling, id)),
     )
 
     fun tilPersonDto() =
@@ -272,6 +274,7 @@ fun oppretteBehandling(
 fun opprettInntekter(
     behandling: Behandling,
     data: TestDataPerson,
+    medId: Boolean = false,
 ) = mutableSetOf(
     Inntekt(
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
@@ -282,6 +285,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        id = if (medId) 1 else null,
     ),
     Inntekt(
         Inntektsrapportering.LIGNINGSINNTEKT,
@@ -292,6 +296,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        id = if (medId) 2 else null,
     ),
     Inntekt(
         Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -302,6 +307,7 @@ fun opprettInntekter(
         Kilde.MANUELL,
         true,
         behandling = behandling,
+        id = if (medId) 3 else null,
     ),
 )
 
@@ -1297,7 +1303,7 @@ fun oppretteTestbehandling(
                 )
             behandling.inntekter.addAll(inntekt.filter { !ytelser.contains(it.type) })
         } else {
-            behandling.inntekter = opprettInntekter(behandling, testdataBM)
+            behandling.inntekter = opprettInntekter(behandling, testdataBM, medId = setteDatabaseider)
             behandling.inntekter.forEach {
                 it.inntektsposter = opprettInntektsposter(it)
             }
@@ -2206,4 +2212,30 @@ fun opprettVedtakhendelse(
                     SOKNAD_ID.toString(),
                 ),
             ),
+    )
+
+fun opprettPrivatAvtale(
+    behandling: Behandling,
+    person: TestDataPerson,
+    privatAvtaleDato: LocalDate = LocalDate.parse("2024-01-01"),
+): PrivatAvtale =
+    PrivatAvtale(
+        id = 1,
+        behandling = behandling,
+        avtaleDato = privatAvtaleDato,
+        person = person.tilPerson(behandling),
+    )
+
+fun opprettPrivatAvtalePeriode(
+    privatAvtale: PrivatAvtale,
+    fom: YearMonth,
+    tom: YearMonth?,
+    beløp: BigDecimal = BigDecimal(1000),
+): PrivatAvtalePeriode =
+    PrivatAvtalePeriode(
+        id = 1,
+        privatAvtale = privatAvtale,
+        fom = fom.atDay(1),
+        tom = tom?.atEndOfMonth(),
+        beløp = beløp,
     )

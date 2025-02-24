@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForYtelseSomGjelderBarn
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForÅrsinntekter
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
-import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
+import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -686,7 +686,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {
@@ -739,7 +739,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 2
             assertSoftly(overlappendePerioder[0]) {
@@ -784,7 +784,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 0
         }
@@ -813,7 +813,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {
@@ -857,7 +857,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 0
         }
@@ -893,7 +893,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 2
             assertSoftly(overlappendePerioder[0]) {
@@ -941,7 +941,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {
@@ -982,7 +982,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {

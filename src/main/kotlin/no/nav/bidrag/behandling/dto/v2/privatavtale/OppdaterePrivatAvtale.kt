@@ -2,23 +2,29 @@ package no.nav.bidrag.behandling.dto.v2.privatavtale
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
+import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
+import no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
-data class OppdaterePrivatAvtaleSkalIndeksreguleresRequest(
-    val skalIndeksreguleres: Boolean,
-)
-
-data class OppdaterePrivatAvtaleBegrunnelseRequest(
-    val begrunnelse: String,
-)
-
-data class OppdaterePrivatAvtaleAvtaleDatoRequest(
+data class OppdaterePrivatAvtaleRequest(
+    @Schema(description = "Setter avtaledato på privat avtalen. Dersom avtaleDato er null, vil avtaledato fjernes.")
     val avtaleDato: LocalDate? = null,
+    @Schema(
+        description =
+            "Setter om privat avtale periodene skal indeksreguleres eller ikke. " +
+                "Dersom skalIndeksreguleres er null, vil ikke indeksregulering endres.",
+    )
+    val skalIndeksreguleres: Boolean? = null,
+    @Schema(
+        description = "Oppdater begrunnelse",
+    )
+    val begrunnelse: String? = null,
+    val oppdaterPeriode: OppdaterePrivatAvtalePeriodeDto? = null,
+    val slettePeriodeId: Long? = null,
 )
 
 data class OppdaterePrivatAvtaleResponsDto(
@@ -34,10 +40,11 @@ data class OppdaterePrivatAvtalePeriodeDto(
 
 data class PrivatAvtaleDto(
     val id: Long,
-    val gjelderBarn: String,
+    val gjelderBarn: PersoninfoDto,
+    val avtaleDato: LocalDate?,
     val skalIndeksreguleres: Boolean,
-    val begrunnelse: BegrunnelseDto?,
-    val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
+    val begrunnelse: String?,
+    val begrunnelseFraOpprinneligVedtak: String? = null,
     val valideringsfeil: PrivatAvtaleValideringsfeilDto?,
     val perioder: List<PrivatAvtalePeriodeDto> = emptyList(),
     val beregnetPrivatAvtale: BeregnetPrivatAvtaleDto? = null,
@@ -52,32 +59,24 @@ data class PrivatAvtalePeriodeDto(
 data class PrivatAvtaleValideringsfeilDto(
     val privatAvtaleId: Long,
     @JsonIgnore
-    val gjelderRolle: Rolle,
+    val gjelderPerson: Person,
     val manglerBegrunnelse: Boolean,
-    val ugyldigSluttperiode: Boolean,
-    val overlappendePerioder: Set<OverlappendePrivatAvtalePeriode>,
-    val hullIPerioder: List<Datoperiode> = emptyList(),
+    val manglerAvtaledato: Boolean,
+    val overlappendePerioder: Set<OverlappendePeriode>,
 ) {
     val harPeriodiseringsfeil
         get() =
-            overlappendePerioder.isNotEmpty() ||
-                hullIPerioder.isNotEmpty() ||
-                ugyldigSluttperiode
-    val gjelderBarn get() = gjelderRolle.ident
-    val gjelderBarnNavn get() = gjelderRolle.navn
+            overlappendePerioder.isNotEmpty() || manglerBegrunnelse || manglerAvtaledato
+    val gjelderBarn get() = gjelderPerson.ident
+    val gjelderBarnNavn get() = gjelderPerson.navn
 
     @get:JsonIgnore
     val harFeil
         get() = manglerBegrunnelse || harPeriodiseringsfeil
 }
 
-data class OverlappendePrivatAvtalePeriode(
-    val periode: Datoperiode,
-    @Schema(description = "Teknisk id på inntekter som overlapper")
-    val idListe: MutableSet<Long>,
-)
-
 data class BeregnetPrivatAvtaleDto(
+    val gjelderBarn: PersoninfoDto,
     val perioder: List<BeregnetPrivatAvtalePeriodeDto> = emptyList(),
 )
 
