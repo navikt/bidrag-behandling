@@ -25,12 +25,14 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.commons.util.VirkedagerProvider
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.vedtak.Engangsbeløp
 import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -440,6 +442,148 @@ class OppgaveServiceTest {
                     it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
                 },
             )
+        }
+    }
+
+    @Test
+    fun `skal opprette revurder forskudd oppgave for særbidrag`() {
+        every { oppgaveConsumer.opprettOppgave(any()) } returns OppgaveDto(1)
+        every { oppgaveConsumer.hentOppgave(any()) } returns OppgaveSokResponse()
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            )
+        oppgaveService.opprettRevurderForskuddOppgave(
+            opprettVedtakhendelse(1, 1).copy(
+                enhetsnummer = Enhetsnummer("4806"),
+                stønadsendringListe = emptyList(),
+                engangsbeløpListe =
+                    listOf(
+                        Engangsbeløp(
+                            type = Engangsbeløptype.SÆRBIDRAG,
+                            eksternReferanse = "",
+                            beslutning = Beslutningstype.ENDRING,
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            kravhaver = Personident(testdataBarn1.ident),
+                            mottaker = Personident(testdataBM.ident),
+                            omgjørVedtakId = 1,
+                            beløp = BigDecimal(100),
+                            sak = Saksnummer(SAKSNUMMER),
+                            valutakode = "NOK",
+                            resultatkode = "",
+                            referanse = "",
+                            delytelseId = "",
+                            skyldner = Personident(testdataBP.ident),
+                        ),
+                    ),
+            ),
+        )
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.sak shouldBe Saksnummer(SAKSNUMMER)
+                    it.type shouldBe Stønadstype.FORSKUDD
+                    it.skyldner shouldBe skyldnerNav
+                    it.kravhaver shouldBe Personident(testdataBarn1.ident)
+                },
+            )
+        }
+        verify(exactly = 1) {
+            oppgaveConsumer.hentOppgave(
+                withArg {
+                    it.hentParametre() shouldContain "oppgavetype=GEN"
+                    it.hentParametre() shouldContain "saksreferanse=$SAKSNUMMER"
+                    it.hentParametre() shouldContain "tema=BID"
+                },
+            )
+        }
+        verify(exactly = 1) {
+            oppgaveConsumer.opprettOppgave(
+                withArg {
+                    it.saksreferanse shouldBe SAKSNUMMER
+                    it.tema shouldBe "BID"
+                    it.aktivDato shouldBe formatterDatoForOppgave(LocalDate.now())
+                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(VirkedagerProvider.nesteVirkedag())
+                    it.personident shouldBe testdataBM.ident
+                    it.oppgavetype shouldBe OppgaveType.GEN
+                    it.tildeltEnhetsnr shouldBe "4806"
+                    it.behandlingstype.shouldBe(behandlingstypeNasjonal)
+                    it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `skal ikke opprette revurder forskudd oppgave hvis forskudd`() {
+        every { oppgaveConsumer.opprettOppgave(any()) } returns OppgaveDto(1)
+        every { oppgaveConsumer.hentOppgave(any()) } returns OppgaveSokResponse()
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            )
+        oppgaveService.opprettRevurderForskuddOppgave(
+            opprettVedtakhendelse(1, 1).copy(
+                enhetsnummer = Enhetsnummer("4806"),
+                stønadsendringListe =
+                    listOf(
+                        Stønadsendring(
+                            type = Stønadstype.FORSKUDD,
+                            eksternReferanse = "",
+                            beslutning = Beslutningstype.ENDRING,
+                            førsteIndeksreguleringsår = 2024,
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            kravhaver = Personident(testdataBarn1.ident),
+                            mottaker = Personident(testdataBM.ident),
+                            omgjørVedtakId = 1,
+                            periodeListe = emptyList(),
+                            sak = Saksnummer(SAKSNUMMER),
+                            skyldner = Personident(testdataBP.ident),
+                        ),
+                    ),
+                engangsbeløpListe =
+                    listOf(
+                        Engangsbeløp(
+                            type = Engangsbeløptype.GEBYR_MOTTAKER,
+                            eksternReferanse = "",
+                            beslutning = Beslutningstype.ENDRING,
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            kravhaver = Personident(testdataBarn1.ident),
+                            mottaker = Personident(testdataBM.ident),
+                            omgjørVedtakId = 1,
+                            beløp = BigDecimal(100),
+                            sak = Saksnummer(SAKSNUMMER),
+                            valutakode = "NOK",
+                            resultatkode = "",
+                            referanse = "",
+                            delytelseId = "",
+                            skyldner = Personident(testdataBP.ident),
+                        ),
+                    ),
+            ),
+        )
+        verify(exactly = 0) {
+            bidragStønadConsumer.hentHistoriskeStønader(any())
+        }
+        verify(exactly = 0) {
+            oppgaveConsumer.hentOppgave(any())
+        }
+        verify(exactly = 0) {
+            oppgaveConsumer.opprettOppgave(any())
         }
     }
 }

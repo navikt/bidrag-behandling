@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.consumer.dto.OpprettOppgaveRequest
 import no.nav.bidrag.behandling.consumer.dto.lagBeskrivelseHeader
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -28,6 +29,42 @@ class OppgaveService(
     private val bidragStønadConsumer: BidragStønadConsumer,
 ) {
     fun opprettRevurderForskuddOppgave(vedtakHendelse: VedtakHendelse) {
+        opprettRevurderForskuddOppgaveBidrag(vedtakHendelse)
+        opprettRevurderForskuddOppgaveSærbidrag(vedtakHendelse)
+    }
+
+    fun opprettRevurderForskuddOppgaveSærbidrag(vedtakHendelse: VedtakHendelse) {
+        val bidragSærbidragListe = vedtakHendelse.engangsbeløpListe!!.filter { it.type == Engangsbeløptype.SÆRBIDRAG }
+        if (bidragSærbidragListe.isEmpty()) return
+
+        bidragSærbidragListe
+            .forEach { stønad ->
+                hentLøpendeForskuddForSak(stønad.sak.verdi, stønad.kravhaver.verdi)?.let {
+                    val sistePeriode = it.periodeListe.maxBy { it.periode.fom }
+                    if (sistePeriode.periode.til == null) {
+                        log.info {
+                            "Sak ${stønad.sak.verdi} har løpende forskudd. Opprett revurder forskudd oppgave"
+                        }
+                        secureLogger.info {
+                            "Sak ${stønad.sak.verdi} har løpende forskudd for mottaker ${stønad.mottaker.verdi}. Opprett revurder forskudd oppgave"
+                        }
+                        vedtakHendelse.opprettRevurderForskuddOppgave(stønad.sak.verdi, stønad.mottaker.verdi)
+                        return // Opprett kun en oppgave per sak
+                    } else {
+                        secureLogger.info {
+                            "Sak ${stønad.sak.verdi} har ingen løpende forskudd for mottaker ${stønad.mottaker.verdi} og kravhaver ${stønad.kravhaver.verdi}. Oppretter ikke revurder forskudd oppgave"
+                        }
+                    }
+                } ?: kotlin.run {
+                    log.info { "Fant ikke løpende forskudd for sak ${stønad.sak.verdi}. Oppretter ikke revurder forskudd oppgave" }
+                    secureLogger.info {
+                        "Fant ikke løpende forskudd for sak ${stønad.sak.verdi} og søknadsbarn ${stønad.kravhaver.verdi}. Oppretter ikke revurder forskudd oppgave"
+                    }
+                }
+            }
+    }
+
+    fun opprettRevurderForskuddOppgaveBidrag(vedtakHendelse: VedtakHendelse) {
         val bidragStønadsendringer = vedtakHendelse.stønadsendringListe!!.filter { it.type == Stønadstype.BIDRAG }
         if (bidragStønadsendringer.isEmpty()) return
 
