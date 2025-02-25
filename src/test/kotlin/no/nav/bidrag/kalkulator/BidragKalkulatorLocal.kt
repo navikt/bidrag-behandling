@@ -6,7 +6,9 @@ import org.springframework.boot.actuate.autoconfigure.security.servlet.Managemen
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.test.context.ActiveProfiles
 
+@ActiveProfiles("local")
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
 @EnableAspectJAutoProxy
 @EnableJwtTokenValidation(ignore = ["org.springframework", "org.springdoc"])
@@ -14,6 +16,7 @@ class BidragKalkulatorLocal
 
 fun main(args: Array<String>) {
     val app = SpringApplication(BidragKalkulatorLocal::class.java)
-    app.setAdditionalProfiles("localdev", "local", "nais")
+    app.setAdditionalProfiles("local")
     app.run(*args)
+
 }
