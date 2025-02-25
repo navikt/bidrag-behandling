@@ -190,7 +190,11 @@ class VedtakTilBehandlingMapping(
                 behandling.notater.add(behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = lesemodus))
             }
         }
-
+        behandling.roller.forEach { r ->
+            notatMedType(NotatType.PRIVAT_AVTALE, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
+            }
+        }
         behandling.roller.forEach { r ->
             notatMedType(
                 NotatType.UNDERHOLDSKOSTNAD,

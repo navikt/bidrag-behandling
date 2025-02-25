@@ -97,8 +97,8 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
             assertSoftly(resultatBarn.perioder.first()) {
                 beregningsdetaljer.shouldNotBeNull()
-                beregningsdetaljer.sluttberegning!!.begrensetRevurderingUtført shouldBe true
-                beregningsdetaljer.sluttberegning.løpendeBidrag shouldBe BigDecimal("3820.0")
+                beregningsdetaljer!!.sluttberegning!!.begrensetRevurderingUtført shouldBe true
+                beregningsdetaljer!!.sluttberegning!!.løpendeBidrag shouldBe BigDecimal("3820.0")
             }
         }
     }
