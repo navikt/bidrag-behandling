@@ -394,7 +394,7 @@ fun Set<Sivilstand>.validereSivilstand(virkningstidspunkt: LocalDate): Sivilstan
 }
 
 fun List<Pair<Long, Datoperiode>>.finnOverlappendePerioder(): Set<no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode> =
-    sortedBy { it.second.til }
+    sortedBy { it.second.fom }
         .flatMapIndexed { index, periode ->
             sortedBy { it.second.fom }
                 .drop(index + 1)
