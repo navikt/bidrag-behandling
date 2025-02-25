@@ -102,7 +102,8 @@ class ValiderBehandlingService(
     fun kanBehandleBegrensetRevurdering(request: KanBehandlesINyLøsningRequest): Boolean =
         if (request.erBegrensetRevurdering()) {
             harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.BIDRAG) &&
-                harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.FORSKUDD)
+                harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.FORSKUDD) &&
+                unleash.isEnabled("behandling.begrenset_revurdering", false)
         } else {
             true
         }
