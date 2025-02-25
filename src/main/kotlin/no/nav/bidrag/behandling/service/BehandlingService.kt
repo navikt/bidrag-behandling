@@ -33,6 +33,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -138,10 +139,12 @@ class BehandlingService(
                 avslag =
                     when (opprettBehandling.tilType()) {
                         TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
-                            if (opprettBehandling.vedtakstype ==
-                                Vedtakstype.OPPHØR
-                            ) {
-                                Resultatkode.IKKE_OMSORG
+                            if (opprettBehandling.vedtakstype == Vedtakstype.OPPHØR) {
+                                if (opprettBehandling.stønadstype == Stønadstype.BIDRAG18AAR) {
+                                    Resultatkode.AVSLUTTET_SKOLEGANG
+                                } else {
+                                    Resultatkode.IKKE_OMSORG
+                                }
                             } else {
                                 null
                             }
