@@ -600,7 +600,8 @@ fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(
     this
         .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtalePeriode>(
             Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE_PERIODE,
-        ).sortedBy {
+        ).filter { it.gjelderBarnReferanse == gjelderBarnReferanse }
+        .sortedBy {
             it.innhold.periode.fom
         }
 

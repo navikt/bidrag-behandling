@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -233,7 +233,8 @@ class DtoMapperMockTest {
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
-        behandlingDto.gebyr.shouldBeNull()
+        behandlingDto.gebyr!!.gebyrRoller.shouldBeEmpty()
+        behandlingDto.gebyr!!.valideringsfeil shouldBe null
     }
 
     @Test

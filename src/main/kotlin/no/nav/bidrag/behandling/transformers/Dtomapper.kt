@@ -85,7 +85,6 @@ import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
-import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
@@ -105,7 +104,9 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
@@ -247,13 +248,17 @@ class Dtomapper(
                             opphørSistePeriode = globalOpphørsdato != null,
                         )
 
-                BeregnIndeksreguleringPrivatAvtaleApi().beregnIndeksreguleringPrivatAvtale(grunnlag)
+                (
+                    BeregnIndeksreguleringPrivatAvtaleApi().beregnIndeksreguleringPrivatAvtale(
+                        grunnlag,
+                    ) + grunnlag.grunnlagListe
+                ).toSet().toList()
             } else {
                 grunnlagFraVedtak!!
             }
 
         val rolle = roller.find { it.ident == gjelderBarn.ident }
-        val gjelderBarnReferanse = gjelderBarn.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
+        val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
         return BeregnetPrivatAvtaleDto(
             gjelderBarn = gjelderBarn.tilPersoninfoDto(rolle, null),
             privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
