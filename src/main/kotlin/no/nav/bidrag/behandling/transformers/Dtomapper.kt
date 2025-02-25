@@ -753,7 +753,10 @@ class Dtomapper(
                 valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
             )
         } else {
-            null
+            GebyrDto(
+                gebyrRoller = emptyList(),
+                valideringsfeil = null,
+            )
         }
 
     fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
