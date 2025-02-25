@@ -15,7 +15,6 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
 
@@ -132,12 +131,6 @@ class PrivatAvtaleService(
                     fom = request.periode.fom,
                     tom = request.periode.tom,
                 )
-            privatAvtale.perioder
-                .maxByOrNull { it.fom }
-                ?.takeIf { it.fom.isBefore(nyPeriode.fom) && it.fom.isBefore(LocalDate.now().withDayOfMonth(1)) }
-                ?.let {
-                    it.tom = it.tom ?: nyPeriode.fom.minusDays(1)
-                }
             privatAvtale.perioder.add(nyPeriode)
         } else {
             val eksisterendePeriode =

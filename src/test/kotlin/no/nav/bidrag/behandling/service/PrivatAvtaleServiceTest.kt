@@ -296,7 +296,7 @@ class PrivatAvtaleServiceTest {
                 .periode.fom shouldBe LocalDate.parse("2024-05-01")
             it.overlappendePerioder
                 .first()
-                .periode.til shouldBe null
+                .periode.til shouldBe LocalDate.parse("2024-07-31")
             it.manglerAvtaledato shouldBe false
             it.manglerBegrunnelse shouldBe false
         }
