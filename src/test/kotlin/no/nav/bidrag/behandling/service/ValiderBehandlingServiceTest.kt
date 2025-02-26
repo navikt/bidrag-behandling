@@ -162,6 +162,8 @@ class ValiderBehandlingServiceTest {
 
         @Test
         fun `skal ikke validere gyldig BIDRAG hvis begrenset revurdering men har historisk bidrag med utenlandsk valuta`() {
+            unleash.enable("behandling.begrenset_revurdering")
+
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
                     stønader = listOf(opprettSkyldnerStønad()),

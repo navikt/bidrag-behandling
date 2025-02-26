@@ -59,6 +59,9 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
+        if (request.erBegrensetRevurdering() && !unleash.isEnabled("behandling.begrenset_revurdering", false)) {
+            return "Kan ikke behandle begrenset revurdering."
+        }
         if (!kanBehandleBegrensetRevurdering(request)) {
             return "Kan ikke behandle begrenset revurdering. Minst en løpende forskudd eller bidrag periode har utenlandsk valuta"
         }
@@ -102,8 +105,7 @@ class ValiderBehandlingService(
     fun kanBehandleBegrensetRevurdering(request: KanBehandlesINyLøsningRequest): Boolean =
         if (request.erBegrensetRevurdering()) {
             harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.BIDRAG) &&
-                harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.FORSKUDD) &&
-                unleash.isEnabled("behandling.begrenset_revurdering", false)
+                harIngenHistoriskePerioderMedUtenlandskValuta(request, Stønadstype.FORSKUDD)
         } else {
             true
         }
