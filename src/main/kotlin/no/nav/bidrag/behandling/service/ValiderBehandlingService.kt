@@ -60,7 +60,7 @@ class ValiderBehandlingService(
             return "Kan ikke behandle klage eller omgjøring"
         }
         if (request.erBegrensetRevurdering() && !unleash.isEnabled("behandling.begrenset_revurdering", false)) {
-            return "Kan ikke behandle begrenset revurdering."
+            return "Kan ikke behandle begrenset revurdering"
         }
         if (!kanBehandleBegrensetRevurdering(request)) {
             return "Kan ikke behandle begrenset revurdering. Minst en løpende forskudd eller bidrag periode har utenlandsk valuta"
