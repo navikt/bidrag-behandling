@@ -16,6 +16,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
@@ -45,6 +47,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -68,9 +71,12 @@ import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFrekvens
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
+import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -96,6 +102,12 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadPeriodeDto
+import no.nav.bidrag.transport.behandling.vedtak.Behandlingsreferanse
+import no.nav.bidrag.transport.behandling.vedtak.Sporingsdata
+import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
+import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
@@ -206,13 +218,14 @@ data class TestDataPerson(
         ident = ident,
         navn = navn,
         fødselsdato = fødselsdato,
-        rolle = mutableSetOf(tilRolle(behandling, id)),
+        rolle = mutableSetOf(behandling.roller.find { it.ident == ident } ?: tilRolle(behandling, id)),
     )
 
     fun tilPersonDto() =
         PersonDto(
             ident = Personident(ident),
             navn = navn,
+            aktørId = ident,
             fødselsdato = fødselsdato,
         )
 
@@ -241,7 +254,6 @@ fun oppretteBehandling(
         vedtakstype,
         null,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
-        datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
         klageMottattdato = null,
         SAKSNUMMER,
@@ -262,6 +274,7 @@ fun oppretteBehandling(
 fun opprettInntekter(
     behandling: Behandling,
     data: TestDataPerson,
+    medId: Boolean = false,
 ) = mutableSetOf(
     Inntekt(
         Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
@@ -272,6 +285,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        id = if (medId) 1 else null,
     ),
     Inntekt(
         Inntektsrapportering.LIGNINGSINNTEKT,
@@ -282,6 +296,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        id = if (medId) 2 else null,
     ),
     Inntekt(
         Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -292,6 +307,7 @@ fun opprettInntekter(
         Kilde.MANUELL,
         true,
         behandling = behandling,
+        id = if (medId) 3 else null,
     ),
 )
 
@@ -790,6 +806,19 @@ fun Behandling.oppretteHusstandsmedlem(
                 )
         }
 
+        TypeBehandling.BIDRAG -> {
+            husstandsmedlem.perioder =
+                mutableSetOf(
+                    Bostatusperiode(
+                        husstandsmedlem = husstandsmedlem,
+                        datoFom = førstePeriodeFra ?: søktFomDato,
+                        datoTom = null,
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        kilde = Kilde.OFFENTLIG,
+                        id = if (index != null) (index + 1).toLong() else null,
+                    ),
+                )
+        }
         else -> {
             husstandsmedlem.perioder =
                 mutableSetOf(
@@ -819,6 +848,7 @@ fun Behandling.oppretteHusstandsmedlem(
 fun opprettAlleAktiveGrunnlagFraFil(
     behandling: Behandling,
     filnavn: String,
+    testdataBarn: TestDataPerson = testdataBarn1,
 ): MutableSet<Grunnlag> {
     val filJsonString =
         try {
@@ -838,7 +868,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.UTVIDET_BARNETRYGD),
             opprettGrunnlagFraFil(behandling, filJsonString, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER),
             opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBM),
-            opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBarn1),
+            opprettBeregnetInntektFraGrunnlag(behandling, filJsonString, testdataBarn),
         ).flatten().toMutableSet()
     when (behandling.tilType()) {
         TypeBehandling.FORSKUDD -> {
@@ -1273,7 +1303,7 @@ fun oppretteTestbehandling(
                 )
             behandling.inntekter.addAll(inntekt.filter { !ytelser.contains(it.type) })
         } else {
-            behandling.inntekter = opprettInntekter(behandling, testdataBM)
+            behandling.inntekter = opprettInntekter(behandling, testdataBM, medId = setteDatabaseider)
             behandling.inntekter.forEach {
                 it.inntektsposter = opprettInntektsposter(it)
             }
@@ -1446,6 +1476,7 @@ private fun oppretteBoforhold(
     val boforholdPeriodisert =
         BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
+            behandling.globalOpphørsdato,
             behandling.tilType(),
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )
@@ -1620,13 +1651,13 @@ fun lagGrunnlagsdata(
 fun Behandling.leggTilNotat(
     innhold: String,
     type: NotatGrunnlag.NotatType,
-    rolleForInntekt: Rolle? = null,
+    rolle: Rolle? = null,
     erDelAvBehandlingen: Boolean = true,
 ) {
     notater.add(
         Notat(
             behandling = this,
-            rolle = henteRolleForNotat(type, rolleForInntekt),
+            rolle = henteRolleForNotat(type, rolle),
             innhold = innhold,
             type = type,
             erDelAvBehandlingen = erDelAvBehandlingen,
@@ -1808,6 +1839,46 @@ fun Behandling.leggTilTillegsstønad(
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
             dagsats = BigDecimal(50),
+        ),
+    )
+}
+
+fun Behandling.leggTilGrunnlagBeløpshistorikk(
+    type: Grunnlagsdatatype,
+    søknadsbarn: Rolle = this.søknadsbarn.first(),
+    periodeListe: List<StønadPeriodeDto> =
+        listOf(
+            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                vedtaksid = 200,
+                valutakode = "NOK",
+            ),
+            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
+        ),
+) {
+    grunnlag.add(
+        Grunnlag(
+            type = type,
+            rolle =
+                when (type) {
+                    Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD -> bidragsmottaker!!
+                    else -> bidragspliktig!!
+                },
+            behandling = this,
+            innhentet = LocalDateTime.now(),
+            aktiv = LocalDateTime.now(),
+            gjelder = søknadsbarn.ident,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    opprettStønadDto(
+                        stønadstype =
+                            when (type) {
+                                Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD -> Stønadstype.FORSKUDD
+                                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR -> Stønadstype.BIDRAG18AAR
+                                else -> Stønadstype.BIDRAG
+                            },
+                        periodeListe = periodeListe,
+                    ),
+                ),
         ),
     )
 }
@@ -2057,3 +2128,114 @@ fun Behandling.leggeTilNyttBarnetilsyn(
         ),
     )
 }
+
+fun opprettStønadDto(
+    periodeListe: List<StønadPeriodeDto>,
+    stønadstype: Stønadstype = Stønadstype.BIDRAG,
+    opprettetTidspunkt: LocalDateTime = LocalDateTime.parse("2025-01-01T00:00:00"),
+) = StønadDto(
+    sak = Saksnummer(SAKSNUMMER),
+    skyldner = if (stønadstype == Stønadstype.BIDRAG) Personident(testdataBP.ident) else skyldnerNav,
+    kravhaver = Personident(testdataBarn1.ident),
+    mottaker = Personident(testdataBM.ident),
+    førsteIndeksreguleringsår = 2025,
+    innkreving = Innkrevingstype.MED_INNKREVING,
+    opprettetAv = "",
+    opprettetTidspunkt = opprettetTidspunkt,
+    endretAv = null,
+    endretTidspunkt = null,
+    stønadsid = 1,
+    type = stønadstype,
+    periodeListe = periodeListe,
+)
+
+fun opprettStønadPeriodeDto(
+    periode: ÅrMånedsperiode = ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null),
+    beløp: BigDecimal? = BigDecimal.ONE,
+    valutakode: String = "NOK",
+) = StønadPeriodeDto(
+    stønadsid = 1,
+    periodeid = 1,
+    periodeGjortUgyldigAvVedtaksid = null,
+    vedtaksid = 1,
+    gyldigFra = LocalDateTime.parse("2024-01-01T00:00:00"),
+    gyldigTil = null,
+    periode = periode,
+    beløp = beløp,
+    valutakode = valutakode,
+    resultatkode = "OK",
+)
+
+fun opprettVedtakhendelse(
+    vedtakId: Int,
+    behandlingId: Long,
+    stonadType: Stønadstype = Stønadstype.BIDRAG18AAR,
+): VedtakHendelse =
+    VedtakHendelse(
+        type = Vedtakstype.FASTSETTELSE,
+        stønadsendringListe =
+            listOf(
+                Stønadsendring(
+                    type = stonadType,
+                    eksternReferanse = "",
+                    beslutning = Beslutningstype.ENDRING,
+                    førsteIndeksreguleringsår = 2024,
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    kravhaver = Personident(""),
+                    mottaker = Personident(""),
+                    omgjørVedtakId = 1,
+                    periodeListe = emptyList(),
+                    sak = Saksnummer(SAKSNUMMER),
+                    skyldner = Personident(""),
+                ),
+            ),
+        engangsbeløpListe = emptyList(),
+        enhetsnummer = Enhetsnummer("4806"),
+        id = vedtakId,
+        kilde = Vedtakskilde.MANUELT,
+        kildeapplikasjon = "bidrag-behandling",
+        opprettetTidspunkt = LocalDateTime.now(),
+        opprettetAvNavn = "",
+        opprettetAv = "",
+        sporingsdata = Sporingsdata("sporing"),
+        innkrevingUtsattTilDato = null,
+        vedtakstidspunkt = LocalDateTime.now(),
+        fastsattILand = null,
+        behandlingsreferanseListe =
+            listOf(
+                Behandlingsreferanse(
+                    BehandlingsrefKilde.BEHANDLING_ID.name,
+                    behandlingId.toString(),
+                ),
+                Behandlingsreferanse(
+                    BehandlingsrefKilde.BISYS_SØKNAD.name,
+                    SOKNAD_ID.toString(),
+                ),
+            ),
+    )
+
+fun opprettPrivatAvtale(
+    behandling: Behandling,
+    person: TestDataPerson,
+    privatAvtaleDato: LocalDate = LocalDate.parse("2024-01-01"),
+): PrivatAvtale =
+    PrivatAvtale(
+        id = 1,
+        behandling = behandling,
+        avtaleDato = privatAvtaleDato,
+        person = person.tilPerson(behandling),
+    )
+
+fun opprettPrivatAvtalePeriode(
+    privatAvtale: PrivatAvtale,
+    fom: YearMonth,
+    tom: YearMonth?,
+    beløp: BigDecimal = BigDecimal(1000),
+): PrivatAvtalePeriode =
+    PrivatAvtalePeriode(
+        id = 1,
+        privatAvtale = privatAvtale,
+        fom = fom.atDay(1),
+        tom = tom?.atEndOfMonth(),
+        beløp = beløp,
+    )

@@ -79,6 +79,9 @@ class BeregningEvnevurderingServiceTest {
     lateinit var bidragStønadConsumer: BidragStønadConsumer
 
     @MockkBean
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
+    @MockkBean
     lateinit var bidragVedtakConsumer: BidragVedtakConsumer
 
     @MockkBean
@@ -103,7 +106,7 @@ class BeregningEvnevurderingServiceTest {
 
         evnevurderingService =
             BeregningEvnevurderingService(bidragStønadConsumer, bidragVedtakConsumer, bidragBBMConsumer, beregingVedtaksfiltrering)
-        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregning, evnevurderingService, personService, BeregnGebyrApi(sjablonService))
+        vedtakGrunnlagMapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validerBeregning, evnevurderingService, barnebidragGrunnlagInnhenting, personService, BeregnGebyrApi(sjablonService))
         stubSjablonProvider()
         initMockTestdata()
     }

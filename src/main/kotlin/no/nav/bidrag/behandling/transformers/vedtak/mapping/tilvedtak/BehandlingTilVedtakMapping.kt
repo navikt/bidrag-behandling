@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.BeregningService
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -54,6 +55,14 @@ class BehandlingTilVedtakMapping(
         val sak = sakConsumer.hentSak(saksnummer)
         val beregning = beregningService.beregneBidrag(id!!)
 
+        if (beregning.any { it.ugyldigBeregning != null }) {
+            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke fatte vedtak: $begrunnelse",
+            )
+        }
+
         mapper.run {
             val stønadsendringPerioder =
                 beregning.map { it.byggStønadsendringerForVedtak(behandling) }
@@ -66,6 +75,7 @@ class BehandlingTilVedtakMapping(
             val grunnlagListe =
                 (grunnlagListeVedtak + stønadsendringGrunnlag + stønadsendringGrunnlagListe).toSet()
             val engangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
+            val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt()
 
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
@@ -85,14 +95,23 @@ class BehandlingTilVedtakMapping(
                             sak = Saksnummer(saksnummer),
                             type = stonadstype!!,
                             beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
+                            grunnlagReferanseListe =
+                                stønadsendringGrunnlagListe.map(GrunnlagDto::referanse) +
+                                    grunnlagVirkningstidspunkt
+                                        .find { vt ->
+                                            vt.gjelderBarnReferanse == it.barn.tilGrunnlagsreferanse()
+                                        }!!
+                                        .referanse,
                             periodeListe = it.perioder,
                             førsteIndeksreguleringsår = YearMonth.now().plusYears(1).year,
                         )
                     },
                 engangsbeløpListe =
                     engangsbeløpGebyr.engangsbeløp + mapEngangsbeløpDirekteOppgjør(sak),
-                grunnlagListe = (grunnlagListe + engangsbeløpGebyr.grunnlagsliste).toSet().map(BaseGrunnlag::tilOpprettRequestDto),
+                grunnlagListe =
+                    (grunnlagListe + engangsbeløpGebyr.grunnlagsliste + grunnlagVirkningstidspunkt).toSet().map(
+                        BaseGrunnlag::tilOpprettRequestDto,
+                    ),
             )
         }
     }
@@ -186,6 +205,7 @@ class BehandlingTilVedtakMapping(
             val grunnlagListe = byggGrunnlagGenereltAvslag()
             val grunnlagslisteGebyr = byggGrunnlagForGebyr()
             val resultatEngangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList() + grunnlagslisteGebyr)
+            val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt()
 
             return byggOpprettVedtakRequestObjekt(enhet)
                 .copy(
@@ -207,7 +227,13 @@ class BehandlingTilVedtakMapping(
                                 sak = Saksnummer(saksnummer),
                                 type = stonadstype!!,
                                 beslutning = Beslutningstype.ENDRING,
-                                grunnlagReferanseListe = grunnlagListe.map { it.referanse },
+                                grunnlagReferanseListe =
+                                    grunnlagListe.map { it.referanse } +
+                                        grunnlagVirkningstidspunkt
+                                            .find { vt ->
+                                                vt.gjelderBarnReferanse == it.tilGrunnlagsreferanse()
+                                            }!!
+                                            .referanse,
                                 periodeListe =
                                     listOf(
                                         OpprettPeriodeRequestDto(
@@ -221,7 +247,7 @@ class BehandlingTilVedtakMapping(
                             )
                         },
                     grunnlagListe =
-                        (grunnlagListe + tilPersonobjekter() + resultatEngangsbeløpGebyr.grunnlagsliste).map(
+                        (grunnlagListe + tilPersonobjekter() + resultatEngangsbeløpGebyr.grunnlagsliste + grunnlagVirkningstidspunkt).map(
                             BaseGrunnlag::tilOpprettRequestDto,
                         ),
                 )

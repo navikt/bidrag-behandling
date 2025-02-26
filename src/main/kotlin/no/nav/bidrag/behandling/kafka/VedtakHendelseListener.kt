@@ -9,9 +9,11 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
+import no.nav.bidrag.behandling.service.OppgaveService
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
@@ -29,10 +31,14 @@ class VedtakHendelseListener(
     val forsendelseService: ForsendelseService,
     val behandlingService: BehandlingService,
     val notatOpplysningerService: NotatOpplysningerService,
+    val oppgaveService: OppgaveService,
 ) {
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
+        if (vedtak.kilde != Vedtakskilde.AUTOMATISK) {
+            opprettRevurderForskuddOppgaveVedBehov(vedtak)
+        }
         if (!vedtak.erFattetGjennomBidragBehandling()) {
             log.info {
                 "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. " +
@@ -53,12 +59,19 @@ class VedtakHendelseListener(
         // Dette gjøres synkront etter fatte vedtak
 //        opprettNotat(behandling)
         opprettForsendelse(vedtak, behandling)
-
         behandlingService.oppdaterVedtakFattetStatus(
             vedtak.behandlingId!!,
             vedtaksid = vedtak.id.toLong(),
             vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
         )
+    }
+
+    private fun opprettRevurderForskuddOppgaveVedBehov(vedtak: VedtakHendelse) {
+        try {
+            oppgaveService.opprettRevurderForskuddOppgave(vedtak)
+        } catch (e: Exception) {
+            log.error(e) { "Det skjedde en feil ved opprettelse av revurder forskudd oppgave for vedtak ${vedtak.id}" }
+        }
     }
 
     private fun opprettNotat(behandling: Behandling) {

@@ -15,9 +15,9 @@
     <name>bidrag-behandling</name>
     <properties>
         <java.version>21</java.version>
-        <kotlin.version>2.1.0</kotlin.version>
-        <bidrag-felles.version>2025.02.03.142844</bidrag-felles.version>
-        <bidrag-beregn-felles.version>2025.02.03.104338</bidrag-beregn-felles.version>
+        <kotlin.version>2.1.10</kotlin.version>
+        <bidrag-felles.version>2025.02.25.075650</bidrag-felles.version>
+        <bidrag-beregn-felles.version>2025.02.25.153116</bidrag-beregn-felles.version>
         <h2.version>2.3.232</h2.version>
         <logback-encoder.version>8.0</logback-encoder.version>
         <token-support.version>3.2.0</token-support.version>
@@ -503,6 +503,13 @@
             <version>${mockk.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk</artifactId>
+            <version>1.13.16</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-contract-stub-runner</artifactId>

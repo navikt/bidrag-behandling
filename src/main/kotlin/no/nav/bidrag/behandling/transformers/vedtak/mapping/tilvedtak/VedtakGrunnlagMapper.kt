@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.fantIkkeRolleISak
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
@@ -23,6 +24,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
@@ -47,21 +49,24 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
-fun Behandling.finnBeregnTilDatoBehandling() =
+fun Behandling.finnBeregnTilDatoBehandling(opphørsdato: LocalDate? = null) =
     if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
     } else {
-        finnBeregnTilDato(virkningstidspunkt!!)
+        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdato)
     }
 
-fun finnBeregnTilDato(virkningstidspunkt: LocalDate) =
-    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+fun finnBeregnTilDato(
+    virkningstidspunkt: LocalDate,
+    opphørsdato: LocalDate? = null,
+) = opphørsdato ?: maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
 
 @Component
 class VedtakGrunnlagMapper(
     val mapper: BehandlingTilGrunnlagMappingV2,
     val validering: ValiderBeregning,
     private val beregningEvnevurderingService: BeregningEvnevurderingService,
+    private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
     private val personService: PersonService,
     private val beregnGebyrApi: BeregnGebyrApi,
 ) {
@@ -148,6 +153,34 @@ class VedtakGrunnlagMapper(
                 }
             }
 
+    fun byggGrunnlagForBeregningPrivatAvtale(
+        behandling: Behandling,
+        person: no.nav.bidrag.behandling.database.datamodell.Person,
+    ): BeregnGrunnlag {
+        mapper.run {
+            behandling.run {
+                val personobjekter = tilPersonobjekter()
+                val privatavtaleGrunnlag = tilPrivatAvtaleGrunnlag(personobjekter)
+
+                val personObjekt = personobjekter.hentPerson(person.ident)!!
+                val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+                val opphørsdato = person.opphørsdatoForRolle(behandling)
+                val beregningTilDato = finnBeregnTilDatoBehandling(opphørsdato)
+                return BeregnGrunnlag(
+                    periode =
+                        ÅrMånedsperiode(
+                            beregnFraDato,
+                            beregningTilDato,
+                        ),
+                    stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                    opphørSistePeriode = opphørsdato != null,
+                    søknadsbarnReferanse = personObjekt.referanse,
+                    grunnlagListe = (personobjekter + privatavtaleGrunnlag).toSet().toList(),
+                )
+            }
+        }
+    }
+
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
         søknadsbarnRolle: Rolle,
@@ -158,7 +191,7 @@ class VedtakGrunnlagMapper(
                 val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
                 val bostatusBarn = tilGrunnlagBostatus(personobjekter)
                 val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
-                val grunnlagsliste = (personobjekter + bostatusBarn + inntekter).toMutableSet()
+                val grunnlagsliste = (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad()).toMutableSet()
 
                 when (tilType()) {
                     TypeBehandling.FORSKUDD ->
@@ -177,12 +210,12 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
                     TypeBehandling.BIDRAG -> {
+                        grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
                         grunnlagsliste.addAll(opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()))
+                        grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
                     }
-
-                    else -> {}
                 }
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling()
@@ -192,6 +225,8 @@ class VedtakGrunnlagMapper(
                             beregnFraDato,
                             beregningTilDato,
                         ),
+                    stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                    opphørSistePeriode = globalOpphørsdato != null,
                     søknadsbarnReferanse = søknadsbarn.referanse,
                     grunnlagListe = grunnlagsliste.toSet().toList(),
                 )

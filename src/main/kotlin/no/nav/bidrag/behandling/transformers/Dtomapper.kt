@@ -7,17 +7,22 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -37,12 +42,17 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
+import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BeregnetUnderholdskostnad
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
 import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
@@ -77,6 +87,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -88,13 +99,17 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
@@ -221,16 +236,54 @@ class Dtomapper(
             bu.gjelderBarn.ident?.verdi == person.ident
         }?.perioder ?: emptySet()
 
+    fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Person): BeregnetPrivatAvtaleDto {
+        val privatAvtaleBeregning =
+            if (grunnlagFraVedtak.isNullOrEmpty()) {
+                val grunnlag =
+                    vedtakGrunnlagMapper
+                        .byggGrunnlagForBeregningPrivatAvtale(
+                            this,
+                            gjelderBarn,
+                        ).copy(
+                            opphørSistePeriode = globalOpphørsdato != null,
+                        )
+
+                (
+                    BeregnIndeksreguleringPrivatAvtaleApi().beregnIndeksreguleringPrivatAvtale(
+                        grunnlag,
+                    ) + grunnlag.grunnlagListe
+                ).toSet().toList()
+            } else {
+                grunnlagFraVedtak!!
+            }
+
+        val rolle = roller.find { it.ident == gjelderBarn.ident }
+        val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
+        return BeregnetPrivatAvtaleDto(
+            gjelderBarn = gjelderBarn.tilPersoninfoDto(rolle, null),
+            privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
+                BeregnetPrivatAvtalePeriodeDto(
+                    periode = Datoperiode(it.innhold.periode.fom, it.innhold.periode.til),
+                    beløp = it.innhold.beløp,
+                    indeksprosent = it.innhold.indeksreguleringFaktor ?: BigDecimal.ZERO,
+                )
+            },
+        )
+    }
+
     fun Behandling.tilBeregnetUnderholdskostnad(): Set<BeregnetUnderholdskostnad> =
         this.søknadsbarn
             .map {
                 val underholdBeregning =
                     if (grunnlagFraVedtak.isNullOrEmpty()) {
                         val grunnlag =
-                            vedtakGrunnlagMapper.byggGrunnlagForBeregning(
-                                this,
-                                it,
-                            )
+                            vedtakGrunnlagMapper
+                                .byggGrunnlagForBeregning(
+                                    this,
+                                    it,
+                                ).copy(
+                                    opphørSistePeriode = it.opphørSistePeriode,
+                                )
 
                         beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
                     } else {
@@ -649,6 +702,18 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    opphør =
+                        OpphørsdetaljerDto(
+                            opphørsdato = globalOpphørsdato,
+                            opphørRoller =
+                                roller.map {
+                                    OpphørsdetaljerRolleDto(
+                                        rolle = it.tilDto(),
+                                        opphørsdato = globalOpphørsdato,
+                                        eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
+                                    )
+                                },
+                        ),
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
@@ -670,13 +735,14 @@ class Dtomapper(
             ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
             feilOppståttVedSisteGrunnlagsinnhenting =
                 grunnlagsinnhentingFeilet?.let {
-                    val typeRef: TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>> =
-                        object : TypeReference<Map<Grunnlagsdatatype, FeilrapporteringDto>>() {}
+                    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
+                        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
 
                     objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
                 },
             kanBehandlesINyLøsning = kanBehandles,
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
+            privatAvtale = privatAvtale.map { it.tilDto() },
         )
     }
 
@@ -692,7 +758,10 @@ class Dtomapper(
                 valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
             )
         } else {
-            null
+            GebyrDto(
+                gebyrRoller = emptyList(),
+                valideringsfeil = null,
+            )
         }
 
     fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
@@ -711,6 +780,58 @@ class Dtomapper(
                     )
                 }
             }
+
+    fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
+        PrivatAvtaleDto(
+            id = id!!,
+            gjelderBarn = person.tilPersoninfoDto(barnetsRolleIBehandlingen, Kilde.MANUELL),
+            skalIndeksreguleres = skalIndeksreguleres,
+            avtaleDato = avtaleDato,
+            begrunnelse =
+                henteNotatinnhold(
+                    this.behandling,
+                    NotatType.PRIVAT_AVTALE,
+                    barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+                    true,
+                ),
+            begrunnelseFraOpprinneligVedtak =
+                if (behandling.erKlageEllerOmgjøring) {
+                    henteNotatinnhold(
+                        this.behandling,
+                        NotatType.PRIVAT_AVTALE,
+                        barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+                        false,
+                    ).takeIfNotNullOrEmpty { it }
+                } else {
+                    null
+                },
+            valideringsfeil = validerePrivatAvtale().takeIf { it.harFeil },
+            beregnetPrivatAvtale = if (skalIndeksreguleres && perioder.size > 0) behandling.tilBeregnetPrivatAvtale(person) else null,
+            perioder =
+                perioder.sortedBy { it.fom }.map {
+                    PrivatAvtalePeriodeDto(
+                        id = it.id,
+                        periode =
+                            no.nav.bidrag.behandling.dto.v2.behandling
+                                .DatoperiodeDto(it.fom, it.tom),
+                        beløp = it.beløp,
+                    )
+                },
+        )
+
+    private fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
+        val eksisterendeVedtak =
+            grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+                ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+                ?: return null
+        val stønad = eksisterendeVedtak.konvertereData<StønadDto>()
+        val opphørPeriode = stønad!!.periodeListe.filter { it.beløp == null }.maxByOrNull { it.periode.til == null } ?: return null
+        return EksisterendeOpphørsvedtakDto(
+            vedtaksid = opphørPeriode.vedtaksid,
+            opphørsdato = opphørPeriode.periode.fom.atDay(1),
+            vedtaksdato = opphørPeriode.gyldigFra.toLocalDate(),
+        )
+    }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(
@@ -789,8 +910,9 @@ class Dtomapper(
                                 .run {
                                     tilGrunnlagBostatus() + tilPersonobjekter()
                                 }.toList(),
-                        periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, opphørTilDato),
                         søknadsbarnReferanse = "",
+                        opphørSistePeriode = opphørSistePeriode,
                     ),
                 )
             } catch (e: Exception) {

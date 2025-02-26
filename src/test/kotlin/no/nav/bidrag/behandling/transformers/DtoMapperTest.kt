@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
@@ -79,6 +80,9 @@ class DtoMapperTest : TestContainerRunner() {
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
+    @MockkBean(relaxed = true)
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
     lateinit var grunnlagsmapper: BehandlingTilGrunnlagMappingV2
 
     lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper
@@ -95,6 +99,7 @@ class DtoMapperTest : TestContainerRunner() {
                 BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService())),
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )

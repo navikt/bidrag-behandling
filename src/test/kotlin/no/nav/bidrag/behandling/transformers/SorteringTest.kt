@@ -232,10 +232,10 @@ class SorteringTest {
 
         val sortertInntekter = inntekter.årsinntekterSortert()
 
-        sortertInntekter shouldHaveSize 10
-        sortertInntekter[5].type shouldBe Inntektsrapportering.FORELDREPENGER
-        sortertInntekter[5].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
-        sortertInntekter[6].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter shouldHaveSize 8
+        sortertInntekter[4].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter[4].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
+        sortertInntekter[6].type shouldBe Inntektsrapportering.KAPITALINNTEKT
         sortertInntekter[6].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
         sortertInntekter.map { it.type } shouldContainInOrder
             listOf(
@@ -243,8 +243,6 @@ class SorteringTest {
                 Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
                 Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
                 Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
-                Inntektsrapportering.OVERGANGSSTØNAD,
-                Inntektsrapportering.FORELDREPENGER,
                 Inntektsrapportering.FORELDREPENGER,
                 Inntektsrapportering.AINNTEKT,
                 Inntektsrapportering.KAPITALINNTEKT,
@@ -362,22 +360,18 @@ class SorteringTest {
 
         val sortertInntekter = inntekter.årsinntekterSortert()
 
-        sortertInntekter shouldHaveSize 13
-        sortertInntekter[3].type shouldBe Inntektsrapportering.FORELDREPENGER
-        sortertInntekter[3].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
-        sortertInntekter[7].type shouldBe Inntektsrapportering.FORELDREPENGER
-        sortertInntekter[7].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
+        sortertInntekter shouldHaveSize 12
+        sortertInntekter[2].type shouldBe Inntektsrapportering.FORELDREPENGER
+        sortertInntekter[2].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
 
         sortertInntekter.map { it.type } shouldContainInOrder
             listOf(
                 Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
                 Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT,
-                Inntektsrapportering.OVERGANGSSTØNAD,
                 Inntektsrapportering.FORELDREPENGER,
                 Inntektsrapportering.AINNTEKT_BEREGNET_3MND,
                 Inntektsrapportering.NÆRINGSINNTEKT_MANUELT_BEREGNET,
                 Inntektsrapportering.AINNTEKT_BEREGNET_12MND,
-                Inntektsrapportering.FORELDREPENGER,
                 Inntektsrapportering.AINNTEKT,
                 Inntektsrapportering.KAPITALINNTEKT,
                 Inntektsrapportering.LIGNINGSINNTEKT,
@@ -430,7 +424,7 @@ class SorteringTest {
 
         val filtrertInntekter = inntekter.filtrerUtHistoriskeInntekter()
 
-        filtrertInntekter shouldHaveSize 6
+        filtrertInntekter shouldHaveSize 5
     }
 
     @Test

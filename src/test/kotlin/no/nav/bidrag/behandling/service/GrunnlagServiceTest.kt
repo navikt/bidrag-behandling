@@ -2790,6 +2790,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
@@ -2919,6 +2920,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling, true),
                     )
@@ -4015,6 +4017,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
@@ -4098,6 +4101,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val bearbeidaBoforhold =
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
+                        behandling.globalOpphørsdato,
                         behandling.tilType(),
                         jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                             rådataBoforhold.data,
@@ -4274,7 +4278,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             behandling.grunnlag shouldBe emptySet()
 
-            every { bidragGrunnlagConsumerMock.henteGrunnlag(any()) } returns (
+            every { bidragGrunnlagConsumerMock.henteGrunnlag(any(), any()) } returns (
                 HentetGrunnlag(null, "Teknisk feil ved henting av grunnlag")
             )
 
@@ -4304,7 +4308,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any())) } returns (HentetGrunnlag(innhentingMedFeil))
+            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any(), any())) } returns (HentetGrunnlag(innhentingMedFeil))
 
             // hvis
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
@@ -4337,6 +4341,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
@@ -4347,6 +4352,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
@@ -4381,6 +4387,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingUtenFeil))
 
@@ -4391,6 +4398,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
@@ -4439,6 +4447,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
@@ -4449,6 +4458,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
@@ -4501,7 +4511,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any())) } returns (HentetGrunnlag(innhentingMedFeil))
+            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any(), any())) } returns (HentetGrunnlag(innhentingMedFeil))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
 
@@ -4558,6 +4568,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
@@ -4568,6 +4579,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
@@ -4637,6 +4649,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
@@ -4647,6 +4660,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
@@ -4706,6 +4720,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
@@ -4716,6 +4731,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
@@ -4786,6 +4802,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
@@ -4796,6 +4813,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
@@ -4869,6 +4887,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId == behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
@@ -4879,6 +4898,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                             request.personId != behandling.bidragsmottaker?.ident!!
                         } != null
                     },
+                    any(),
                 )
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 

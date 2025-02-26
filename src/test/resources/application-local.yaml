@@ -6,10 +6,10 @@ AZURE_APP_CLIENT_SECRET: unset
 server.port: 8990
 NAIS_APP_NAME: bidrag-behandling
 DB_HOST: localhost
-DB_PORT: 5432
+#DB_PORT: 5432
 DB_DATABASE: bidrag-behandling
 
-#DB_PORT: 5454
+DB_PORT: 5454
 DB_USERNAME: cloudsqliamuser
 DB_PASSWORD: admin
 
@@ -53,7 +53,7 @@ BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
 #BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
 #BIDRAG_FORSENDELSE_URL: http://localhost:8999
 BIDRAG_STONAD_URL: https://bidrag-stonad-q2.intern.dev.nav.no
-BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-syntetisk
+BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-q2
 BIDRAG_BBM_URL: https://bidrag-bbm.dev-fss-pub.nais.io
 BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm
 BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
@@ -67,10 +67,12 @@ BIDRAG_DOKUMENT_PRODUKSJON_URL: http://localhost:8183
 BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
 BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-q2
 BIDRAG_VEDTAK_URL: http://localhost:8889
-BIDRAG_VEDTAK_SCOP2E: dev-gcp.bidrag.bidrag-vedtak-q2
 BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-q2
 BIDRAG_DOKUMENT_URL: https://bidrag-dokument.dev-fss-pub.nais.io/bidrag-dokument
 BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument
+KODEVERK_URL: https://bidrag-kodeverk.intern.dev.nav.no
+OPPGAVE_URL: https://oppgave.dev-fss-pub.nais.io
+OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave
 ---
 spring:
   config:
@@ -94,6 +96,9 @@ BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-q2
 BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak
 BIDRAG_DOKUMENT_URL: https://bidrag-dokument.dev-fss-pub.nais.io/bidrag-dokument
 BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument
+KODEVERK_URL: https://bidrag-kodeverk.intern.dev.nav.no
+OPPGAVE_URL: https://oppgave.dev-fss-pub.nais.io
+OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave
 ---
 spring:
   config:
@@ -117,6 +122,35 @@ BIDRAG_VEDTAK_URL: https://bidrag-vedtak-q1.intern.dev.nav.no
 BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-q1
 BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
 BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
+KODEVERK_URL: https://bidrag-kodeverk.intern.dev.nav.no
+OPPGAVE_URL: https://oppgave-q1.dev-fss-pub.nais.io
+OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave-q1
+---
+spring:
+  config:
+    activate:
+      on-profile: localdevq1
+BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
+BIDRAG_STONAD_URL: https://bidrag-stonad-q1.intern.dev.nav.no
+BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-q1
+BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
+BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
+BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse-feature.intern.dev.nav.no
+BIDRAG_TILGANGSKONTROLL_URL: https://bidrag-tilgangskontroll-feature.intern.dev.nav.no
+BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
+BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
+BIDRAG_GRUNNLAG_URL: https://bidrag-grunnlag-feature.intern.dev.nav.no
+BIDRAG_SAK_URL: https://bidrag-sak-q1.dev.intern.nav.no/bidrag-sak
+BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-q1
+BIDRAG_DOKUMENT_PRODUKSJON_URL: https://bidrag-dokument-produksjon.intern.dev.nav.no
+BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
+BIDRAG_VEDTAK_URL: http://localhost:8889
+BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-q1
+BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
+BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
+KODEVERK_URL: https://bidrag-kodeverk.intern.dev.nav.no
+OPPGAVE_URL: https://oppgave-q1.dev-fss-pub.nais.io
+OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave-q1
 #logging:
 #  level:
 #    org:

@@ -8,6 +8,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -35,6 +36,9 @@ class VedtakGrunnlagMapperTest {
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
     @MockK
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
+    @MockK
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
     @BeforeEach
@@ -47,6 +51,7 @@ class VedtakGrunnlagMapperTest {
                 behandlingTilGrunnlagMappingV2,
                 ValiderBeregning(),
                 evnevurderingService,
+                barnebidragGrunnlagInnhenting,
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
@@ -88,7 +93,7 @@ class VedtakGrunnlagMapperTest {
             ilagtGebyr shouldBe true
             skattepliktigInntekt shouldBe BigDecimal(900000)
             maksBarnetillegg shouldBe BigDecimal(2000)
-            beløpGebyrsats shouldBe BigDecimal(1277)
+            beløpGebyrsats shouldBe BigDecimal(1314)
             resultatkode shouldBe Resultatkode.GEBYR_ILAGT
             grunnlagsreferanseListeEngangsbeløp shouldHaveSize 1
             grunnlagsreferanseListeEngangsbeløp shouldContain grunnlagsliste.find { it.type == Grunnlagstype.SLUTTBEREGNING_GEBYR }!!.referanse
@@ -139,7 +144,7 @@ class VedtakGrunnlagMapperTest {
             ilagtGebyr shouldBe false
             skattepliktigInntekt shouldBe BigDecimal(900000)
             maksBarnetillegg shouldBe null
-            beløpGebyrsats shouldBe BigDecimal(1277)
+            beløpGebyrsats shouldBe BigDecimal(1314)
             resultatkode shouldBe Resultatkode.GEBYR_FRITATT
             grunnlagsreferanseListeEngangsbeløp shouldHaveSize 2
             grunnlagsreferanseListeEngangsbeløp shouldContain grunnlagsliste.find { it.type == Grunnlagstype.SLUTTBEREGNING_GEBYR }!!.referanse
@@ -190,7 +195,7 @@ class VedtakGrunnlagMapperTest {
             ilagtGebyr shouldBe false
             skattepliktigInntekt shouldBe BigDecimal(900000)
             maksBarnetillegg shouldBe null
-            beløpGebyrsats shouldBe BigDecimal(1277)
+            beløpGebyrsats shouldBe BigDecimal(1314)
             resultatkode shouldBe Resultatkode.GEBYR_FRITATT
             grunnlagsreferanseListeEngangsbeløp shouldHaveSize 2
             grunnlagsreferanseListeEngangsbeløp shouldContain grunnlagsliste.find { it.type == Grunnlagstype.SLUTTBEREGNING_GEBYR }!!.referanse

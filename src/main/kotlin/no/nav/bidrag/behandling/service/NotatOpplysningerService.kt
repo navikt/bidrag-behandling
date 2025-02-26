@@ -75,6 +75,7 @@ import no.nav.bidrag.transport.notat.InntekterPerRolle
 import no.nav.bidrag.transport.notat.NotatBegrunnelseDto
 import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
 import no.nav.bidrag.transport.notat.NotatBeregnetInntektDto
+import no.nav.bidrag.transport.notat.NotatBeregnetPrivatAvtalePeriodeDto
 import no.nav.bidrag.transport.notat.NotatBoforholdDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBarnetilleggDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragsevneDto
@@ -90,6 +91,8 @@ import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderhold
 import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderholdBarn
 import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderholdBarn.NotatBarnetilsynOffentligeOpplysninger
 import no.nav.bidrag.transport.notat.NotatPersonDto
+import no.nav.bidrag.transport.notat.NotatPrivatAvtaleDto
+import no.nav.bidrag.transport.notat.NotatPrivatAvtalePeriodeDto
 import no.nav.bidrag.transport.notat.NotatResultatBeregningInntekterDto
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto
@@ -371,6 +374,34 @@ class NotatOpplysningerService(
                         },
                 ),
             vedtak = behandling.hentBeregning(),
+            privatavtale =
+                mapper.run {
+                    behandling.privatAvtale.map { it.tilDto() }.map {
+                        NotatPrivatAvtaleDto(
+                            gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
+                            begrunnelse = NotatBegrunnelseDto(it.begrunnelse),
+                            avtaleDato = it.avtaleDato,
+                            skalIndeksreguleres = it.skalIndeksreguleres,
+                            perioder =
+                                it.perioder.map {
+                                    NotatPrivatAvtalePeriodeDto(
+                                        periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
+                                        beløp = it.beløp,
+                                    )
+                                },
+                            beregnetPrivatAvtalePerioder =
+                                it.beregnetPrivatAvtale?.let {
+                                    it.perioder.map {
+                                        NotatBeregnetPrivatAvtalePeriodeDto(
+                                            periode = DatoperiodeDto(it.periode.fom, it.periode.til),
+                                            beløp = it.beløp,
+                                            indeksfaktor = it.indeksprosent,
+                                        )
+                                    }
+                                } ?: emptyList(),
+                        )
+                    }
+                },
         )
     }
 
@@ -768,6 +799,7 @@ private fun Rolle.tilNotatRolle() =
         rolle = rolletype,
         navn = hentPersonVisningsnavn(ident),
         fødselsdato = fødselsdato,
+        opphørsdato = opphørsdato,
         ident = ident?.let { Personident(it) },
         innbetaltBeløp = innbetaltBeløp,
     )

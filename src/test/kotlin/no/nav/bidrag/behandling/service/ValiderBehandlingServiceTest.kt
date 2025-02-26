@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.getunleash.FakeUnleash
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -12,12 +13,16 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssakerResponse
 import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønad
@@ -34,7 +39,8 @@ import java.time.LocalDate
 class ValiderBehandlingServiceTest {
     val bidragStønadConsumer: BidragStønadConsumer = mockkClass(BidragStønadConsumer::class)
 
-    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer)
+    val unleash = FakeUnleash()
+    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, unleash)
 
     @BeforeEach
     fun initMock() {
@@ -92,6 +98,92 @@ class ValiderBehandlingServiceTest {
                     opprettBidragKanBehandlesINyLøsningRequest(),
                 )
             }
+        }
+
+        @Test
+        fun `skal ikke validere gyldig BIDRAG hvis begrenset revurdering hvis feature toggle av`() {
+            unleash.disable("behandling.begrenset_revurdering")
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader = listOf(opprettSkyldnerStønad()),
+                )
+            every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
+                opprettStønadDto(
+                    stønadstype = Stønadstype.FORSKUDD,
+                    periodeListe =
+                        listOf(
+                            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-07-31"))),
+                            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null)),
+                        ),
+                )
+            every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
+                opprettStønadDto(
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-07-31"))),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null)),
+                    ),
+                )
+            val request = opprettBidragKanBehandlesINyLøsningRequest()
+
+            shouldThrow<HttpClientErrorException> {
+                validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING))
+            }
+        }
+
+        @Test
+        fun `skal validere gyldig BIDRAG hvis begrenset revurdering og har historisk bidrag med norsk valuta`() {
+            unleash.enable("behandling.begrenset_revurdering")
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader = listOf(opprettSkyldnerStønad()),
+                )
+            every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
+                opprettStønadDto(
+                    stønadstype = Stønadstype.FORSKUDD,
+                    periodeListe =
+                        listOf(
+                            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-07-31"))),
+                            opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null)),
+                        ),
+                )
+            every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
+                opprettStønadDto(
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-07-31"))),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null)),
+                    ),
+                )
+            val request = opprettBidragKanBehandlesINyLøsningRequest()
+
+            shouldNotThrow<HttpClientErrorException> {
+                validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING))
+            }
+        }
+
+        @Test
+        fun `skal ikke validere gyldig BIDRAG hvis begrenset revurdering men har historisk bidrag med utenlandsk valuta`() {
+            unleash.enable("behandling.begrenset_revurdering")
+
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader = listOf(opprettSkyldnerStønad()),
+                )
+
+            every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } returns
+                opprettStønadDto(
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-07-31"))),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null), valutakode = "USD"),
+                    ),
+                )
+            val request = opprettBidragKanBehandlesINyLøsningRequest()
+
+            val expection =
+                shouldThrow<HttpClientErrorException> {
+                    validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING))
+                }
+            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
+            expection.validerInneholderMelding("Kan ikke behandle begrenset revurdering. Minst en løpende forskudd eller bidrag periode har utenlandsk valuta")
         }
 
         @Test

@@ -4,13 +4,14 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForYtelseSomGjelderBarn
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForÅrsinntekter
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
-import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
+import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -685,7 +686,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {
@@ -738,7 +739,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 2
             assertSoftly(overlappendePerioder[0]) {
@@ -783,7 +784,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 0
         }
@@ -812,7 +813,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {
@@ -856,7 +857,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 0
         }
@@ -892,7 +893,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 2
             assertSoftly(overlappendePerioder[0]) {
@@ -940,7 +941,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {
@@ -981,7 +982,7 @@ class ValiderInntektPerioderTest {
                     ),
                 )
 
-            val overlappendePerioder = inntekter.finnOverlappendePerioder().toList()
+            val overlappendePerioder = inntekter.finnOverlappendePerioderInntekt().toList()
 
             overlappendePerioder shouldHaveSize 1
             assertSoftly(overlappendePerioder[0]) {
@@ -996,19 +997,295 @@ class ValiderInntektPerioderTest {
             }
         }
     }
+
+    @Test
+    fun `Skal feile validering av inntekter hvis siste periode ikke slutter med opphørsdato hvis opphørsdato er tilbake i tid`() {
+        val bmIdent = "31233123"
+        val barnIdent = "21333123"
+        val barn2Ident = "44444"
+        val behandling = oppretteBehandling()
+        val roller =
+            mutableSetOf(
+                opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                opprettRolle(barn2Ident, Rolletype.BARN, LocalDate.now().minusMonths(3), behandling),
+            )
+        behandling.roller = roller
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    YearMonth.now().minusMonths(5),
+                    YearMonth.now().minusMonths(4),
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(3),
+                    null,
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+            )
+
+        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(YearMonth.now().minusMonths(5).atDay(1), roller).toList()
+        resultat shouldHaveSize 1
+        assertSoftly(resultat[0]) {
+            hullIPerioder shouldHaveSize 0
+            overlappendePerioder shouldHaveSize 0
+            manglerPerioder shouldBe false
+            ingenLøpendePeriode shouldBe false
+            ugyldigSluttPeriode shouldBe true
+            harFeil shouldBe true
+            ident shouldBe bmIdent
+            rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
+        }
+    }
+
+    @Test
+    fun `Skal feile validering av inntekter hvis siste periode ikke er løpende hvis opphørsdato er fram i tid`() {
+        val bmIdent = "31233123"
+        val barnIdent = "21333123"
+        val barn2Ident = "44444"
+        val behandling = oppretteBehandling()
+        val roller =
+            mutableSetOf(
+                opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                opprettRolle(barn2Ident, Rolletype.BARN, LocalDate.now().plusMonths(1).withDayOfMonth(1), behandling),
+            )
+        behandling.roller = roller
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    YearMonth.now().minusMonths(5),
+                    YearMonth.now().minusMonths(4),
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(3),
+                    YearMonth.now(),
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+            )
+
+        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(YearMonth.now().minusMonths(5).atDay(1), roller).toList()
+        resultat shouldHaveSize 1
+        assertSoftly(resultat[0]) {
+            hullIPerioder shouldHaveSize 1
+            overlappendePerioder shouldHaveSize 0
+            manglerPerioder shouldBe false
+            ingenLøpendePeriode shouldBe true
+            ugyldigSluttPeriode shouldBe false
+            harFeil shouldBe true
+            ident shouldBe bmIdent
+            rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
+        }
+    }
+
+    @Test
+    fun `Skal validere gyldig resultat av inntekter hvis siste periode slutter måneden før opphørsdato`() {
+        val bmIdent = "31233123"
+        val barnIdent = "21333123"
+        val barn2Ident = "44444"
+        val behandling = oppretteBehandling()
+        val roller =
+            mutableSetOf(
+                opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                opprettRolle(barn2Ident, Rolletype.BARN, LocalDate.now().minusMonths(2).withDayOfMonth(1), behandling),
+            )
+        behandling.roller = roller
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    YearMonth.now().minusMonths(6),
+                    YearMonth.now().minusMonths(5),
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(4),
+                    YearMonth.now().minusMonths(3),
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+            )
+
+        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(YearMonth.now().minusMonths(6).atDay(1), roller).toList()
+        resultat shouldHaveSize 0
+    }
+
+    @Test
+    fun `Skal validere gyldig resultat av inntekter når opphørsdato er inneværende måned`() {
+        val bmIdent = "31233123"
+        val barnIdent = "21333123"
+        val barn2Ident = "44444"
+        val behandling = oppretteBehandling()
+        val roller =
+            mutableSetOf(
+                opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                opprettRolle(barn2Ident, Rolletype.BARN, LocalDate.now().plusMonths(1).withDayOfMonth(1), behandling),
+            )
+        behandling.roller = roller
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    YearMonth.now().minusMonths(5),
+                    YearMonth.now().minusMonths(4),
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(3),
+                    null,
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+            )
+
+        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(YearMonth.now().minusMonths(5).atDay(1), roller).toList()
+        resultat shouldHaveSize 0
+    }
+
+    @Test
+    fun `Skal validere gyldig resultat av inntekter når opphørsdato tilbake i tid for ene barnet men ingen opphør for andre`() {
+        val bmIdent = "31233123"
+        val barnIdent = "21333123"
+        val barn2Ident = "44444"
+        val behandling = oppretteBehandling()
+        val roller =
+            mutableSetOf(
+                opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                opprettRolle(barnIdent, Rolletype.BARN, null, behandling),
+                opprettRolle(barn2Ident, Rolletype.BARN, LocalDate.now().minusMonths(4), behandling),
+            )
+        behandling.roller = roller
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    YearMonth.now().minusMonths(5),
+                    YearMonth.now().minusMonths(4),
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(3),
+                    null,
+                    ident = bmIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
+                ),
+            )
+
+        val resultat = inntekter.mapValideringsfeilForÅrsinntekter(YearMonth.now().minusMonths(5).atDay(1), roller).toList()
+        resultat shouldHaveSize 0
+    }
+
+    @Test
+    fun `Skal ikke validere resultat av inntekter for ytelse som gjelder barn når opphørsdato for barnet er satt`() {
+        val bmIdent = "31233123"
+        val barnIdent = "21333123"
+        val barn2Ident = "44444"
+        val barn3Ident = "123213213"
+        val behandling = oppretteBehandling()
+        val roller =
+            mutableSetOf(
+                opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                opprettRolle(barnIdent, Rolletype.BARN, LocalDate.now().plusMonths(1).withDayOfMonth(1), behandling),
+                opprettRolle(barn3Ident, Rolletype.BARN, LocalDate.now().minusMonths(1).withDayOfMonth(1), behandling),
+                opprettRolle(barn2Ident, Rolletype.BARN, LocalDate.now().minusMonths(3).withDayOfMonth(1), behandling),
+            )
+        behandling.roller = roller
+        val inntekter =
+            setOf(
+                opprettInntekt(
+                    YearMonth.now().minusMonths(5),
+                    YearMonth.now().minusMonths(4),
+                    ident = bmIdent,
+                    gjelderBarn = barn3Ident,
+                    taMed = true,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(3),
+                    YearMonth.now().minusMonths(2),
+                    ident = bmIdent,
+                    gjelderBarn = barn3Ident,
+                    taMed = true,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(5),
+                    YearMonth.now().minusMonths(4),
+                    ident = bmIdent,
+                    gjelderBarn = barnIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(3),
+                    null,
+                    ident = bmIdent,
+                    gjelderBarn = barnIdent,
+                    taMed = true,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(5),
+                    YearMonth.now().minusMonths(4),
+                    ident = bmIdent,
+                    gjelderBarn = barn2Ident,
+                    taMed = true,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+                opprettInntekt(
+                    YearMonth.now().minusMonths(3),
+                    null,
+                    ident = bmIdent,
+                    gjelderBarn = barn2Ident,
+                    taMed = true,
+                    type = Inntektsrapportering.BARNETILLEGG,
+                    behandling = behandling,
+                ),
+            )
+
+        val resultat = inntekter.mapValideringsfeilForYtelseSomGjelderBarn(Inntektsrapportering.BARNETILLEGG, YearMonth.now().minusMonths(5).atDay(1), roller).toList()
+        resultat shouldHaveSize 1
+        assertSoftly(resultat[0]) {
+            hullIPerioder shouldHaveSize 0
+            ugyldigSluttPeriode shouldBe true
+            gjelderBarn shouldBe barn2Ident
+        }
+    }
 }
 
 fun opprettRolle(
     ident: String,
     rolletype: Rolletype,
+    opphørsdato: LocalDate? = null,
+    behandling: Behandling = oppretteBehandling(),
 ) = Rolle(
     id = Random.nextLong(1000),
     navn = "Test 1",
     ident = ident,
     rolletype = rolletype,
-    behandling = oppretteBehandling(),
+    behandling = behandling,
     fødselsdato = LocalDate.parse("2020-01-01"),
     opprettet = LocalDateTime.now(),
+    opphørsdato = opphørsdato,
 )
 
 fun opprettInntekt(
@@ -1019,11 +1296,13 @@ fun opprettInntekt(
     ident: String = "",
     gjelderBarn: String? = null,
     taMed: Boolean = true,
+    behandling: Behandling = oppretteBehandling(),
 ) = Inntekt(
     datoFom = datoFom.atDay(1),
     datoTom = datoTom?.atEndOfMonth(),
     belop = BigDecimal.ONE,
     ident = ident,
+    behandling = behandling,
     gjelderBarn = gjelderBarn,
     id = Random.nextLong(1000),
     kilde = Kilde.OFFENTLIG,

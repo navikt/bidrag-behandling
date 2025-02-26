@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
@@ -24,4 +26,11 @@ fun Tilleggsstønad.tilGrunnlagsreferanseTilleggsstønad(gjelderBarnReferanse: G
 
 fun FaktiskTilsynsutgift.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse: Grunnlagsreferanse) =
     "${Grunnlagstype.FAKTISK_UTGIFT_PERIODE}_${gjelderBarnReferanse}_" +
+        "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}"
+
+fun PrivatAvtale.tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse: Grunnlagsreferanse) =
+    "${Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG}_$gjelderBarnReferanse"
+
+fun PrivatAvtalePeriode.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse: Grunnlagsreferanse) =
+    "${Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG}_${gjelderBarnReferanse}_" +
         "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}"

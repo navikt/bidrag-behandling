@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -52,6 +53,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoTilsynsutgift
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningPrivatAvtalePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsfradrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
@@ -116,8 +118,9 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
         periode =
             ÅrMånedsperiode(
                 virkningstidspunktEllerSøktFomDato,
-                finnBeregnTilDato(virkningstidspunktEllerSøktFomDato),
+                finnBeregnTilDato(virkningstidspunktEllerSøktFomDato, globalOpphørsdato),
             ),
+        opphørSistePeriode = rolle.opphørSistePeriode,
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
         gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =
@@ -143,6 +146,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                 val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
+                    ugyldigBeregning = resultat.ugyldigBeregning,
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
                             grunnlagsListe.byggResultatBidragsberegning(
@@ -150,6 +154,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 it.resultat.beløp,
                                 resultat.avslaskode,
                                 it.grunnlagsreferanseListe,
+                                resultat.ugyldigBeregning,
                             )
                         },
                 )
@@ -195,6 +200,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     resultat: BigDecimal?,
     resultatkode: Resultatkode?,
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+    ugyldigBeregning: UgyldigBeregningDto?,
 ): ResultatBarnebidragsberegningPeriodeDto {
     val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
     val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
@@ -202,6 +208,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         finnSluttberegningIReferanser(grunnlagsreferanseListe)?.innholdTilObjekt<SluttberegningBarnebidrag>()
     return ResultatBarnebidragsberegningPeriodeDto(
         periode = periode,
+        ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
         underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
         faktiskBidrag = resultat ?: BigDecimal.ZERO,
         resultatKode = resultatkode,
@@ -239,7 +246,13 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     bpHarEvne = delberegningBPsEvne?.let { it.bidragsevne > BigDecimal.ZERO } ?: false,
                 )
             } else {
-                null
+                BidragPeriodeBeregningsdetaljer(
+                    forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
+                    barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),
+                    barnetilleggBP = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSPLIKTIG),
+                    sluttberegning = sluttberegning,
+                    bpHarEvne = false,
+                )
             },
     )
 }
@@ -580,6 +593,17 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
         tilleggsstønad = delberegningTilleggsstønad?.innhold?.beregnetBeløp,
     )
 }
+
+fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(
+    gjelderBarnReferanse: String,
+): List<InnholdMedReferanse<DelberegningPrivatAvtalePeriode>> =
+    this
+        .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtalePeriode>(
+            Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE_PERIODE,
+        ).filter { it.gjelderBarnReferanse == gjelderBarnReferanse }
+        .sortedBy {
+            it.innhold.periode.fom
+        }
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
     this

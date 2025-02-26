@@ -4,16 +4,22 @@ import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.service.UnderholdService
+import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
@@ -42,9 +48,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -71,6 +80,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 class VedtakTilBehandlingMapping(
     val validerBeregning: ValiderBeregning,
     private val underholdService: UnderholdService,
+    private val personRepository: PersonRepository,
+    private val behandlingRepository: BehandlingRepository,
 ) {
     fun VedtakDto.tilBehandling(
         vedtakId: Long,
@@ -138,12 +149,13 @@ class VedtakTilBehandlingMapping(
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
-                datoTom = null,
                 saksnummer = saksnummer!!,
                 soknadsid = søknadId ?: this.søknadId!!,
             )
 
         behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
+
+        behandlingRepository.save(behandling)
         oppdaterDirekteOppgjørBeløp(behandling, lesemodus)
         grunnlagListe.oppdaterRolleGebyr(behandling)
 
@@ -153,6 +165,7 @@ class VedtakTilBehandlingMapping(
         behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
         behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
+        behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
             behandling.grunnlagFraVedtak = grunnlagListe
@@ -177,7 +190,11 @@ class VedtakTilBehandlingMapping(
                 behandling.notater.add(behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = lesemodus))
             }
         }
-
+        behandling.roller.forEach { r ->
+            notatMedType(NotatType.PRIVAT_AVTALE, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
+            }
+        }
         behandling.roller.forEach { r ->
             notatMedType(
                 NotatType.UNDERHOLDSKOSTNAD,
@@ -242,6 +259,71 @@ class VedtakTilBehandlingMapping(
 
         return utgift
     }
+
+    private fun List<GrunnlagDto>.mapPrivatAvtale(
+        behandling: Behandling,
+        lesemodus: Boolean,
+    ): MutableSet<PrivatAvtale> =
+        filtrerBasertPåEgenReferanse(Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG)
+            .groupBy { if (it.gjelderBarnReferanse.isNullOrEmpty()) it.gjelderReferanse else it.gjelderBarnReferanse }
+            .map {
+                val privatAvtaleGrunnlag =
+                    filtrerOgKonverterBasertPåFremmedReferanse<PrivatAvtaleGrunnlag>(
+                        Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
+                        gjelderBarnReferanse = it.key,
+                    ).firstOrNull()
+                val personGrunnlag = hentPersonMedReferanse(it.key)!!
+                val personFraVedtak = personGrunnlag.personObjekt
+                val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personFraVedtak.ident?.verdi }
+                val privatAvtale =
+                    if (lesemodus) {
+                        PrivatAvtale(
+                            id = 1,
+                            avtaleDato = privatAvtaleGrunnlag?.innhold?.avtaleInngåttDato,
+                            skalIndeksreguleres = privatAvtaleGrunnlag?.innhold?.skalIndeksreguleres ?: false,
+                            behandling = behandling,
+                            person =
+                                Person(
+                                    id = 1,
+                                    ident = personFraVedtak.ident?.verdi,
+                                    fødselsdato = personFraVedtak.fødselsdato,
+                                    rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
+                                ),
+                        )
+                    } else {
+                        PrivatAvtale(
+                            avtaleDato = privatAvtaleGrunnlag?.innhold?.avtaleInngåttDato,
+                            skalIndeksreguleres = privatAvtaleGrunnlag?.innhold?.skalIndeksreguleres ?: false,
+                            behandling = behandling,
+                            person =
+                                personRepository.findFirstByIdent(personFraVedtak.ident?.verdi!!) ?: run {
+                                    val person =
+                                        Person(
+                                            ident = personFraVedtak.ident?.verdi,
+                                            fødselsdato =
+                                                hentPersonFødselsdato(personFraVedtak.ident?.verdi)
+                                                    ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
+                                            rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
+                                        )
+                                    person.rolle.forEach { it.person = person }
+                                    personRepository.save(person)
+                                },
+                        )
+                    }
+                it.value.forEach {
+                    val grunnlag = it.innholdTilObjekt<PrivatAvtalePeriodeGrunnlag>()
+                    val paPeriode =
+                        PrivatAvtalePeriode(
+                            id = if (lesemodus) 1 else null,
+                            privatAvtale = privatAvtale,
+                            fom = grunnlag.periode.fom.atDay(1),
+                            tom = grunnlag.periode.til?.atEndOfMonth(),
+                            beløp = grunnlag.beløp,
+                        )
+                    privatAvtale.perioder.add(paPeriode)
+                }
+                privatAvtale
+            }.toMutableSet()
 
     private fun List<GrunnlagDto>.mapUnderholdskostnad(
         behandling: Behandling,

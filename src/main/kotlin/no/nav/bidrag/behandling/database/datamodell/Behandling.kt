@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import com.fasterxml.jackson.core.type.TypeReference
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -14,7 +15,11 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
+import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -27,6 +32,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -44,7 +50,6 @@ open class Behandling(
     open var opprinneligVedtakstype: Vedtakstype? = null,
     @Column(name = "dato_fom")
     open var søktFomDato: LocalDate,
-    open val datoTom: LocalDate? = null,
     open var mottattdato: LocalDate,
     open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
@@ -156,6 +161,13 @@ open class Behandling(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
+    open var privatAvtale: MutableSet<PrivatAvtale> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        mappedBy = "behandling",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE],
         orphanRemoval = true,
     )
@@ -166,6 +178,8 @@ open class Behandling(
     open var søknadstype: BisysSøknadstype? = null,
     @Transient
     var grunnlagFraVedtak: List<GrunnlagDto>? = emptyList(),
+    @Transient
+    var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
@@ -175,6 +189,15 @@ open class Behandling(
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = refVedtaksid != null
+    val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
+    val globalOpphørsdato get() =
+        if (søknadsbarn.any { it.opphørsdato == null }) {
+            null
+        } else {
+            søknadsbarn.maxByOrNull { it.opphørsdato!! }?.opphørsdato
+        }
+    val opphørTilDato get() = justerPeriodeTilOpphørsdato(globalOpphørsdato)
+    val opphørSistePeriode get() = opphørTilDato != null
 }
 
 val Behandling.særbidragKategori
@@ -198,6 +221,13 @@ private fun Behandling.leggeTilBPSomHusstandsmedlem(): Husstandsmedlem {
     return bpSomHusstandsmedlem
 }
 
+fun Behandling.grunnlagsinnhentingFeiletMap(): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
+        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
+
+    return grunnlagsinnhentingFeilet?.let { objectmapper.readValue(grunnlagsinnhentingFeilet, typeRef) } ?: emptyMap()
+}
+
 fun Behandling.henteAlleBostatusperioder() = husstandsmedlem.flatMap { it.perioder }
 
 fun Behandling.finnBostatusperiode(id: Long?) = henteAlleBostatusperioder().find { it.id == id }
@@ -207,6 +237,13 @@ fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.na
 val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG }
 
 val Set<Husstandsmedlem>.voksneIHusstanden get() = find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
+
+fun Behandling.hentMaksTilOgMedDato() = if (globalOpphørsdato != null) globalOpphørsdato!!.withDayOfMonth(1).minusDays(1) else null
+
+fun Behandling.hentBeløpshistorikkForStønadstype(
+    stønadstype: Stønadstype,
+    søknadsbarn: Rolle,
+) = historiskeStønader.find { it.type == stønadstype && it.kravhaver.verdi == søknadsbarn.ident }
 
 @Converter
 open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {

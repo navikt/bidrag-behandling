@@ -355,12 +355,7 @@
       "fødselsdato": "2017-07-07",
       "partPersonId": "{personId}",
       "gjelderPersonId": "{barn1Ident}",
-      "borISammeHusstandDtoListe": [
-        {
-          "periodeFra": "2022-07-26",
-          "periodeTil": null
-        }
-      ]
+      "borISammeHusstandDtoListe": []
     },
     {
       "navn": "STORARTET KILOMETER",

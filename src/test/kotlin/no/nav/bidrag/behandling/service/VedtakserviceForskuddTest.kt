@@ -583,14 +583,14 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.BOSTATUS_PERIODE)) {
         shouldHaveSize(6)
         val bostatusSøknadsbarn1 =
-            it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag.referanse)
+            it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarn1Grunnlag.referanse)
         bostatusSøknadsbarn1.shouldHaveSize(2)
-        it[0].gjelderReferanse shouldBe søknadsbarn1Grunnlag.referanse
-        it[1].gjelderReferanse shouldBe søknadsbarn1Grunnlag.referanse
-        it[4].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
-        it[5].gjelderReferanse shouldBe søknadsbarn2Grunnlag.referanse
-        it[2].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
-        it[3].gjelderReferanse shouldBe husstandsmedlemGrunnlag.referanse
+        it[0].gjelderBarnReferanse shouldBe søknadsbarn1Grunnlag.referanse
+        it[1].gjelderBarnReferanse shouldBe søknadsbarn1Grunnlag.referanse
+        it[4].gjelderBarnReferanse shouldBe søknadsbarn2Grunnlag.referanse
+        it[5].gjelderBarnReferanse shouldBe søknadsbarn2Grunnlag.referanse
+        it[2].gjelderBarnReferanse shouldBe husstandsmedlemGrunnlag.referanse
+        it[3].gjelderBarnReferanse shouldBe husstandsmedlemGrunnlag.referanse
         assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
             bostatus shouldBe Bostatuskode.MED_FORELDER
             periode.fom shouldBe YearMonth.parse("2023-02")
@@ -605,10 +605,10 @@ private fun OpprettVedtakRequestDto.validerBosstatusPerioder() {
         }
 
         it
-            .filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag.referanse)
+            .filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarn2Grunnlag.referanse)
             .shouldHaveSize(2)
         it
-            .filtrerBasertPåFremmedReferanse(referanse = husstandsmedlemGrunnlag.referanse)
+            .filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = husstandsmedlemGrunnlag.referanse)
             .shouldHaveSize(2)
     }
 }

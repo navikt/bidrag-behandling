@@ -25,10 +25,12 @@ import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
@@ -36,6 +38,8 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettEvnevurderingResultat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
+import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtale
+import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtalePeriode
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
@@ -72,6 +76,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
@@ -150,6 +156,7 @@ class GrunnlagMappingTest {
     val personobjekter = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
 
     lateinit var personStub: BidragPersonConsumer
+    lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
     lateinit var mapper: VedtakGrunnlagMapper
     lateinit var behandlingTilGrunnlagMapping: BehandlingTilGrunnlagMappingV2
     val evnevurderingService: BeregningEvnevurderingService = mockkClass(BeregningEvnevurderingService::class)
@@ -159,6 +166,7 @@ class GrunnlagMappingTest {
         clearAllMocks()
         stubKodeverkProvider()
         personStub = stubPersonConsumer()
+        barnebidragGrunnlagInnhenting = mockkClass(BarnebidragGrunnlagInnhenting::class)
         val personService = PersonService(personStub)
         behandlingTilGrunnlagMapping = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         val validering = ValiderBeregning()
@@ -170,7 +178,7 @@ class GrunnlagMappingTest {
                     testdataHusstandsmedlem1 to Stønadstype.BIDRAG,
                 ),
             )
-        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, personService, BeregnGebyrApi(stubSjablonService()))
+        mapper = VedtakGrunnlagMapper(behandlingTilGrunnlagMapping, validering, evnevurderingService, barnebidragGrunnlagInnhenting, personService, BeregnGebyrApi(stubSjablonService()))
     }
 
     @Nested
@@ -419,7 +427,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn1!!)
 
                 assertSoftly(grunnlagForBeregning) {
-                    it.grunnlagListe shouldHaveSize 15
+                    it.grunnlagListe shouldHaveSize 16
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -443,7 +451,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn2!!)
 
                 assertSoftly(grunnlagForBeregning2) {
-                    it.grunnlagListe shouldHaveSize 15
+                    it.grunnlagListe shouldHaveSize 16
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -1545,7 +1553,7 @@ class GrunnlagMappingTest {
                     }
 
                     it.filter { it.type != Grunnlagstype.PERSON_HUSSTANDSMEDLEM }.forEach { grunnlag ->
-                        grunnlag.gjelderReferanse shouldBe husstandsmedlemmer[0].referanse
+                        grunnlag.gjelderBarnReferanse shouldBe husstandsmedlemmer[0].referanse
                         grunnlag.innholdTilObjekt<BostatusPeriode>().relatertTilPart shouldBe grunnlagBm.referanse
                     }
                 }
@@ -1587,11 +1595,11 @@ class GrunnlagMappingTest {
                 assertSoftly(behandling.tilGrunnlagBostatus(personobjekter).toList()) {
                     it shouldHaveSize 18
                     it.filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM } shouldHaveSize 2
-                    assertSoftly(it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag1.referanse)) {
+                    assertSoftly(it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarnGrunnlag1.referanse)) {
                         this shouldHaveSize 4
                         assertSoftly(this[0]) {
                             type shouldBe Grunnlagstype.BOSTATUS_PERIODE
-                            gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
+                            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag1.referanse
                             grunnlagsreferanseListe shouldHaveSize 1
                             grunnlagsreferanseListe shouldContainAll
                                 listOf(
@@ -1609,7 +1617,7 @@ class GrunnlagMappingTest {
                         }
                         assertSoftly(this[3]) {
                             type shouldBe Grunnlagstype.BOSTATUS_PERIODE
-                            gjelderReferanse shouldBe søknadsbarnGrunnlag1.referanse
+                            gjelderBarnReferanse shouldBe søknadsbarnGrunnlag1.referanse
                             grunnlagsreferanseListe shouldHaveSize 0
                             val innhold = innholdTilObjekt<BostatusPeriode>()
                             innhold.bostatus shouldBe Bostatuskode.REGNES_IKKE_SOM_BARN
@@ -1620,9 +1628,9 @@ class GrunnlagMappingTest {
                         }
                     }
 
-                    it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag2.referanse) shouldHaveSize 4
+                    it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarnGrunnlag2.referanse) shouldHaveSize 4
                     it.filter {
-                        it.gjelderReferanse?.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}") == true
+                        it.gjelderBarnReferanse?.startsWith("person_${Grunnlagstype.PERSON_HUSSTANDSMEDLEM}") == true
                     } shouldHaveSize 8
 
                     it.filter { it.type != Grunnlagstype.PERSON_HUSSTANDSMEDLEM }.forEach {
@@ -1636,7 +1644,7 @@ class GrunnlagMappingTest {
                                 listOf(
                                     opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
                                         grunnlagBm.referanse,
-                                        it.gjelderReferanse!!,
+                                        it.gjelderBarnReferanse!!,
                                     ),
                                 ),
                             )
@@ -1775,7 +1783,6 @@ class GrunnlagMappingTest {
                 Vedtakstype.FASTSETTELSE,
                 null,
                 søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
-                datoTom = YearMonth.now().plusYears(100).atEndOfMonth(),
                 mottattdato = LocalDate.parse("2023-03-15"),
                 klageMottattdato = null,
                 SAKSNUMMER,
@@ -1908,5 +1915,89 @@ class GrunnlagMappingTest {
                     }
                 }
             }
+    }
+
+    @Nested
+    inner class PrivatAvtaleGrunnlagTest {
+        @Test
+        fun `skal mappe privat avtale grunnlag`() {
+            val behandling = oppretteTestbehandling(setteDatabaseider = true, behandlingstype = TypeBehandling.BIDRAG, inkludereBoforhold = true, inkludereBp = true, inkludereInntekter = true)
+            val privatAvtale = opprettPrivatAvtale(behandling, testdataBarn1)
+            val barn1 = behandling.søknadsbarn.first()
+            val barn2 = behandling.søknadsbarn.last()
+            privatAvtale.perioder.addAll(
+                listOf(
+                    opprettPrivatAvtalePeriode(
+                        privatAvtale,
+                        fom = YearMonth.from(behandling.virkningstidspunkt),
+                        tom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(7),
+                    ),
+                    opprettPrivatAvtalePeriode(
+                        privatAvtale,
+                        fom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(8),
+                        tom = null,
+                    ),
+                ),
+            )
+            val privatAvtale2 = opprettPrivatAvtale(behandling, testdataBarn2)
+            privatAvtale2.skalIndeksreguleres = false
+            privatAvtale2.perioder.addAll(
+                listOf(
+                    opprettPrivatAvtalePeriode(
+                        privatAvtale2,
+                        fom = YearMonth.from(behandling.virkningstidspunkt),
+                        tom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(7),
+                    ),
+                    opprettPrivatAvtalePeriode(
+                        privatAvtale2,
+                        fom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(8),
+                        tom = null,
+                    ),
+                ),
+            )
+            behandling.privatAvtale.add(privatAvtale)
+            behandling.privatAvtale.add(privatAvtale2)
+            val resultat = behandlingTilGrunnlagMapping.run { behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter()) }
+
+            resultat.shouldHaveSize(6)
+            val barn1Grunnlag = resultat.filter { it.gjelderBarnReferanse == barn1.tilGrunnlagsreferanse() }
+            val barn2Grunnlag = resultat.filter { it.gjelderBarnReferanse == barn2.tilGrunnlagsreferanse() }
+            assertSoftly(barn1Grunnlag) {
+                shouldHaveSize(3)
+                val periode1 = first { it.type == Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG }
+                periode1.referanse shouldBe "PRIVAT_AVTALE_PERIODE_GRUNNLAG_${barn1.tilGrunnlagsreferanse()}__20230201_20230930"
+                periode1.gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                val innhold = periode1.innholdTilObjekt<PrivatAvtalePeriodeGrunnlag>()
+                innhold.beløp shouldBe BigDecimal(1000)
+                innhold.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
+                innhold.periode.til shouldBe
+                    YearMonth
+                        .from(behandling.virkningstidspunkt)
+                        .plusMonths(8)
+
+                val periode2 = last { it.type == Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG }
+                periode2.gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                val innhold2 = periode2.innholdTilObjekt<PrivatAvtalePeriodeGrunnlag>()
+                innhold2.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt).plusMonths(8)
+                innhold2.periode.til shouldBe null
+
+                val privatGrunnlag = first { it.type == Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG }
+                val innholdPrivat = privatGrunnlag.innholdTilObjekt<PrivatAvtaleGrunnlag>()
+                privatGrunnlag.gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                privatGrunnlag.gjelderBarnReferanse shouldBe barn1.tilGrunnlagsreferanse()
+                innholdPrivat.avtaleInngåttDato shouldBe LocalDate.parse("2024-01-01")
+                innholdPrivat.skalIndeksreguleres shouldBe true
+            }
+
+            assertSoftly(barn2Grunnlag) {
+                shouldHaveSize(3)
+                val privatGrunnlag = first { it.type == Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG }
+                val innholdPrivat = privatGrunnlag.innholdTilObjekt<PrivatAvtaleGrunnlag>()
+                innholdPrivat.avtaleInngåttDato shouldBe LocalDate.parse("2024-01-01")
+                innholdPrivat.skalIndeksreguleres shouldBe false
+                privatGrunnlag.gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                privatGrunnlag.gjelderBarnReferanse shouldBe barn2.tilGrunnlagsreferanse()
+            }
+        }
     }
 }

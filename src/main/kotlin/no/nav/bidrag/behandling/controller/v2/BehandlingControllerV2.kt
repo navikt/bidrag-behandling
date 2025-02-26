@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.VedtakService
+import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
@@ -66,6 +67,7 @@ class BehandlingControllerV2(
     private val utgiftService: UtgiftService,
     private val validerBehandlingService: ValiderBehandlingService,
     private val dtomapper: Dtomapper,
+    private val virkningstidspunktService: VirkningstidspunktService,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -210,7 +212,7 @@ class BehandlingControllerV2(
         log.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid med forespørsel $request" }
 
-        val behandling = behandlingService.oppdatereVirkningstidspunkt(behandlingsid, request)
+        val behandling = virkningstidspunktService.oppdatereVirkningstidspunkt(behandlingsid, request)
 
         return dtomapper.tilDto(behandling)
     }

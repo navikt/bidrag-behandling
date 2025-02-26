@@ -23,6 +23,8 @@ import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
+import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -134,7 +136,7 @@ fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertG
     }
 }
 
-fun Underholdskostnad.justerePerioder() {
+fun Underholdskostnad.justerePerioder(forrigeVirkningstidspunkt: LocalDate? = null) {
     val virkningsdato = behandling.virkningstidspunktEllerSøktFomDato
 
     barnetilsyn.filter { it.fom < virkningsdato }.forEach { periode ->
@@ -145,6 +147,10 @@ fun Underholdskostnad.justerePerioder() {
         }
     }
 
+    barnetilsyn.filter { it.fom == forrigeVirkningstidspunkt && it.fom > virkningsdato }.forEach { periode ->
+        periode.fom = virkningsdato
+    }
+
     faktiskeTilsynsutgifter.filter { it.fom < virkningsdato }.forEach { periode ->
         if (periode.tom != null && virkningsdato >= periode.tom) {
             faktiskeTilsynsutgifter.remove(periode)
@@ -152,13 +158,66 @@ fun Underholdskostnad.justerePerioder() {
             periode.fom = virkningsdato
         }
     }
-
+    faktiskeTilsynsutgifter.filter { it.fom == forrigeVirkningstidspunkt && it.fom > virkningsdato }.forEach { periode ->
+        periode.fom = virkningsdato
+    }
     tilleggsstønad.filter { it.fom < virkningsdato }.forEach { periode ->
         if (periode.tom != null && virkningsdato >= periode.tom) {
             tilleggsstønad.remove(periode)
         } else {
             periode.fom = virkningsdato
         }
+    }
+    tilleggsstønad.filter { it.fom == forrigeVirkningstidspunkt && it.fom > virkningsdato }.forEach { periode ->
+        periode.fom = virkningsdato
+    }
+}
+
+fun Underholdskostnad.justerPerioderForOpphørsdato(
+    opphørSlettet: Boolean = false,
+    forrigeOpphørsdato: LocalDate? = null,
+) {
+    if (opphørsdato != null || opphørSlettet) {
+        val opphørsdato = this.barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
+
+        barnetilsyn
+            .filter { opphørsdato == null || it.fom > opphørsdato }
+            .forEach { periode ->
+                barnetilsyn.remove(periode)
+            }
+        barnetilsyn
+            .filter { periode ->
+                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato?.sluttenAvForrigeMåned
+            }.maxByOrNull { it.fom }
+            ?.let {
+                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
+            }
+
+        faktiskeTilsynsutgifter
+            .filter { opphørsdato == null || it.fom > opphørsdato }
+            .forEach { periode ->
+                faktiskeTilsynsutgifter.remove(periode)
+            }
+        faktiskeTilsynsutgifter
+            .filter { periode ->
+                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
+            }.maxByOrNull { it.fom }
+            ?.let {
+                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
+            }
+
+        tilleggsstønad
+            .filter { opphørsdato == null || it.fom > opphørsdato }
+            .forEach { periode ->
+                tilleggsstønad.remove(periode)
+            }
+        tilleggsstønad
+            .filter { periode ->
+                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
+            }.maxByOrNull { it.fom }
+            ?.let {
+                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
+            }
     }
 }
 
