@@ -209,7 +209,7 @@ class VedtakGrunnlagMapper(
                                 .tilGrunnlagDto(grunnlagsliste)
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
-                    TypeBehandling.BIDRAG -> {
+                    TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
                         grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))

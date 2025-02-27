@@ -154,7 +154,7 @@ class VirkningstidspunktService(
                     oppdaterInntekter()
                 }
 
-                TypeBehandling.BIDRAG -> {
+                TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
                     oppdaterBoforhold()
                     oppdaterAndreVoksneIHusstanden()
                     oppdaterInntekter()
