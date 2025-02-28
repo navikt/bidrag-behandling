@@ -2743,6 +2743,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         else -> throw Exception()
                     }
                 }
+                behandling.virkningstidspunkt = LocalDate.now().minusYears(1)
 
                 val rådataBoforhold =
                     behandling.grunnlag
@@ -2874,6 +2875,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     }
                 }
 
+                behandling.virkningstidspunkt = LocalDate.now().minusYears(1)
                 val rådataBoforhold =
                     behandling.grunnlag
                         .filter { !it.erBearbeidet }
@@ -2884,7 +2886,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     listOf(
                         BorISammeHusstandDto(
                             periodeFra = behandling.virkningstidspunktEllerSøktFomDato,
-                            periodeTil = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(7),
+                            periodeTil = YearMonth.from(behandling.virkningstidspunktEllerSøktFomDato.plusMonths(7)).atEndOfMonth(),
                         ),
                         BorISammeHusstandDto(
                             periodeFra = behandling.virkningstidspunktEllerSøktFomDato.plusMonths(10),
