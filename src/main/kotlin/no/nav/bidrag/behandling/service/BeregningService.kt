@@ -201,7 +201,7 @@ class BeregningService(
                         listOf(
                             ResultatPeriodeBidrag(
                                 grunnlagsreferanseListe = emptyList(),
-                                periode = ÅrMånedsperiode(virkningstidspunkt!!, barn.opphørsdato),
+                                periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
                                 resultat =
                                     ResultatBeregningBidrag(
                                         beløp = BigDecimal.ZERO,

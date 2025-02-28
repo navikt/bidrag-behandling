@@ -683,7 +683,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.periodeListe shouldHaveSize 1
                 assertSoftly(it.periodeListe[0]) {
                     it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
-                    it.periode.til shouldBe YearMonth.from(opphørsdato)
+                    it.periode.til shouldBe null
                     it.beløp shouldBe null
                     it.resultatkode shouldBe Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG.name
                 }

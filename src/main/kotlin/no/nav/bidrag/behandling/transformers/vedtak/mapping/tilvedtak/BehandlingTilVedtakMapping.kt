@@ -237,7 +237,7 @@ class BehandlingTilVedtakMapping(
                                 periodeListe =
                                     listOf(
                                         OpprettPeriodeRequestDto(
-                                            periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, it.opphørsdato),
+                                            periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
                                             beløp = null,
                                             resultatkode = avslag!!.name,
                                             valutakode = "NOK",

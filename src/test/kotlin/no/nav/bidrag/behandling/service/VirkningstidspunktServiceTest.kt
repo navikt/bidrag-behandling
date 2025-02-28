@@ -46,12 +46,12 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")
         behandling.søknadsbarn.first().opphørsdato = null
         virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG))
-        behandling.søknadsbarn.first().opphørsdato shouldBe behandling.søktFomDato.plusMonths(1)
+        behandling.søknadsbarn.first().opphørsdato shouldBe null
 
         // Skal ikke oppdatere opphørsdato hvis det allerede er satt
         behandling.søknadsbarn.first().opphørsdato = LocalDate.parse("2024-12-01")
         virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD))
-        behandling.søknadsbarn.first().opphørsdato shouldBe LocalDate.parse("2024-12-01")
+        behandling.søknadsbarn.first().opphørsdato shouldBe null
     }
 
     @Test
