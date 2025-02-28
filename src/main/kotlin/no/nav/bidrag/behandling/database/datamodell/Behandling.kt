@@ -55,8 +55,8 @@ open class Behandling(
     open val saksnummer: String,
     open var soknadsid: Long,
     open val soknadRefId: Long? = null,
-    open val behandlerEnhet: String,
-    open val opprettetAv: String,
+    open var behandlerEnhet: String,
+    open var opprettetAv: String,
     open val opprettetAvNavn: String? = null,
     open val kildeapplikasjon: String,
     @Enumerated(EnumType.STRING)

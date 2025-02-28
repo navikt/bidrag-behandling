@@ -14,8 +14,11 @@ import no.nav.bidrag.behandling.consumer.dto.OppgaveType
 import no.nav.bidrag.behandling.consumer.dto.behandlingstypeNasjonal
 import no.nav.bidrag.behandling.consumer.dto.behandlingstypeUtland
 import no.nav.bidrag.behandling.consumer.dto.formatterDatoForOppgave
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.opprettVedtakhendelse
@@ -24,6 +27,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.commons.util.VirkedagerProvider
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -41,6 +45,7 @@ import stubPersonConsumer
 import stubSaksbehandlernavnProvider
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.Optional
 
 @ExtendWith(MockKExtension::class)
 class OppgaveServiceTest {
@@ -52,9 +57,12 @@ class OppgaveServiceTest {
     @MockK
     lateinit var bidragStønadConsumer: BidragStønadConsumer
 
+    @MockK
+    lateinit var behandlingRepository: BehandlingRepository
+
     @BeforeEach
     fun setUp() {
-        oppgaveService = OppgaveService(oppgaveConsumer, bidragStønadConsumer)
+        oppgaveService = OppgaveService(oppgaveConsumer, bidragStønadConsumer, behandlingRepository)
         stubSaksbehandlernavnProvider()
         stubPersonConsumer()
     }
@@ -124,6 +132,84 @@ class OppgaveServiceTest {
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4806"
+                    it.tilordnetRessurs shouldBe SAKSBEHANDLER_IDENT
+                    it.behandlingstype.shouldBe(behandlingstypeNasjonal)
+                    it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `skal opprette revurder forskudd oppgave hvis det er klageenhet`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.opprettetAv = "Z1123"
+        behandling.behandlerEnhet = "4806"
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { oppgaveConsumer.opprettOppgave(any()) } returns OppgaveDto(1)
+        every { oppgaveConsumer.hentOppgave(any()) } returns OppgaveSokResponse()
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.FORSKUDD,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(
+                            ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                            beløp = BigDecimal("5600"),
+                        ),
+                    ),
+            )
+        oppgaveService.opprettRevurderForskuddOppgave(
+            opprettVedtakhendelse(1, 1).copy(
+                enhetsnummer = Enhetsnummer("4291"),
+                stønadsendringListe =
+                    listOf(
+                        Stønadsendring(
+                            type = Stønadstype.BIDRAG,
+                            eksternReferanse = "",
+                            beslutning = Beslutningstype.ENDRING,
+                            førsteIndeksreguleringsår = 2024,
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            kravhaver = Personident(testdataBarn1.ident),
+                            mottaker = Personident(testdataBM.ident),
+                            omgjørVedtakId = 1,
+                            periodeListe = emptyList(),
+                            sak = Saksnummer(SAKSNUMMER),
+                            skyldner = Personident(testdataBP.ident),
+                        ),
+                    ),
+            ),
+        )
+        verify(exactly = 1) {
+            bidragStønadConsumer.hentHistoriskeStønader(
+                withArg {
+                    it.sak shouldBe Saksnummer(SAKSNUMMER)
+                    it.type shouldBe Stønadstype.FORSKUDD
+                    it.skyldner shouldBe skyldnerNav
+                    it.kravhaver shouldBe Personident(testdataBarn1.ident)
+                },
+            )
+        }
+        verify(exactly = 1) {
+            oppgaveConsumer.hentOppgave(
+                withArg {
+                    it.hentParametre() shouldContain "oppgavetype=GEN"
+                    it.hentParametre() shouldContain "saksreferanse=$SAKSNUMMER"
+                    it.hentParametre() shouldContain "tema=BID"
+                },
+            )
+        }
+        verify(exactly = 1) {
+            oppgaveConsumer.opprettOppgave(
+                withArg {
+                    it.saksreferanse shouldBe SAKSNUMMER
+                    it.tema shouldBe "BID"
+                    it.aktivDato shouldBe formatterDatoForOppgave(LocalDate.now())
+                    it.fristFerdigstillelse shouldBe formatterDatoForOppgave(VirkedagerProvider.nesteVirkedag())
+                    it.personident shouldBe testdataBM.ident
+                    it.oppgavetype shouldBe OppgaveType.GEN
+                    it.tildeltEnhetsnr shouldBe "4806"
+                    it.tilordnetRessurs shouldBe null
                     it.behandlingstype.shouldBe(behandlingstypeNasjonal)
                     it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
                 },
@@ -177,6 +263,7 @@ class OppgaveServiceTest {
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4865"
+                    it.tilordnetRessurs shouldBe SAKSBEHANDLER_IDENT
                     it.behandlingstype.shouldBe(behandlingstypeUtland)
                     it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
                 },
@@ -230,6 +317,7 @@ class OppgaveServiceTest {
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4860"
+                    it.tilordnetRessurs shouldBe SAKSBEHANDLER_IDENT
                     it.behandlingstype.shouldBe(behandlingstypeNasjonal)
                     it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
                 },
@@ -438,6 +526,7 @@ class OppgaveServiceTest {
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4806"
+                    it.tilordnetRessurs shouldBe SAKSBEHANDLER_IDENT
                     it.behandlingstype.shouldBe(behandlingstypeNasjonal)
                     it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
                 },
@@ -514,6 +603,7 @@ class OppgaveServiceTest {
                     it.personident shouldBe testdataBM.ident
                     it.oppgavetype shouldBe OppgaveType.GEN
                     it.tildeltEnhetsnr shouldBe "4806"
+                    it.tilordnetRessurs shouldBe SAKSBEHANDLER_IDENT
                     it.behandlingstype.shouldBe(behandlingstypeNasjonal)
                     it.beskrivelse.shouldContain(revurderForskuddBeskrivelse)
                 },
