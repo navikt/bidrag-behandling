@@ -212,8 +212,9 @@ class BehandlingControllerV2(
         log.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid" }
         secureLogger.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid med forespørsel $request" }
 
-        val behandling = virkningstidspunktService.oppdatereVirkningstidspunkt(behandlingsid, request)
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandlingsid, request)
 
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return dtomapper.tilDto(behandling)
     }
 
