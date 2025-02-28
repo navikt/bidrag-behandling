@@ -2173,6 +2173,7 @@ fun opprettVedtakhendelse(
 ): VedtakHendelse =
     VedtakHendelse(
         type = Vedtakstype.FASTSETTELSE,
+        opprettetAv = SAKSBEHANDLER_IDENT,
         stønadsendringListe =
             listOf(
                 Stønadsendring(
@@ -2196,7 +2197,6 @@ fun opprettVedtakhendelse(
         kildeapplikasjon = "bidrag-behandling",
         opprettetTidspunkt = LocalDateTime.now(),
         opprettetAvNavn = "",
-        opprettetAv = "",
         sporingsdata = Sporingsdata("sporing"),
         innkrevingUtsattTilDato = null,
         vedtakstidspunkt = LocalDateTime.now(),

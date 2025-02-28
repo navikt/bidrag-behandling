@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.dto.OppgaveSokRequest
 import no.nav.bidrag.behandling.consumer.dto.OppgaveType
 import no.nav.bidrag.behandling.consumer.dto.OpprettOppgaveRequest
 import no.nav.bidrag.behandling.consumer.dto.lagBeskrivelseHeader
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -16,8 +17,11 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
 import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
+import no.nav.bidrag.transport.behandling.vedtak.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.saksnummer
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
+import kotlin.jvm.optionals.getOrNull
 
 private val log = KotlinLogging.logger {}
 val revurderForskuddBeskrivelse = "Løper forskuddet med riktig sats? Vurder om forskuddet må revurderes."
@@ -27,6 +31,7 @@ val enhet_farskap = "4860"
 class OppgaveService(
     private val oppgaveConsumer: OppgaveConsumer,
     private val bidragStønadConsumer: BidragStønadConsumer,
+    private val behandlingRepository: BehandlingRepository,
 ) {
     fun opprettRevurderForskuddOppgave(vedtakHendelse: VedtakHendelse) {
         opprettRevurderForskuddOppgaveBidrag(vedtakHendelse)
@@ -100,7 +105,7 @@ class OppgaveService(
         mottaker: String,
     ) {
         if (finnesDetRevurderForskuddOppgaveISak(saksnummer, mottaker)) return
-        val enhet = enhetsnummer!!.verdi
+        val enhet = finnEnhetsnummer(saksnummer)
         val oppgaveResponse =
             oppgaveConsumer.opprettOppgave(
                 OpprettOppgaveRequest(
@@ -108,7 +113,7 @@ class OppgaveService(
                     oppgavetype = OppgaveType.GEN,
                     tema = if (enhet_farskap == enhet) "FAR" else "BID",
                     saksreferanse = saksnummer,
-                    tilordnetRessurs = opprettetAv,
+                    tilordnetRessurs = finnTilordnetRessurs(),
                     tildeltEnhetsnr = enhet,
                     personident = mottaker,
                 ),
@@ -117,6 +122,21 @@ class OppgaveService(
         log.info { "Opprettet revurder forskudd oppgave ${oppgaveResponse.id} for sak $saksnummer" }
         secureLogger.info { "Opprettet revurder forskudd oppgave $oppgaveResponse for sak $saksnummer og bidragsmottaker $mottaker" }
     }
+
+    fun VedtakHendelse.finnTilordnetRessurs(): String? {
+        val vedtakEnhet = enhetsnummer!!.verdi
+        if (!vedtakEnhet.erKlageinstans()) return opprettetAv
+        return null
+    }
+
+    fun VedtakHendelse.finnEnhetsnummer(saksnummer: String): String {
+        val vedtakEnhet = enhetsnummer!!.verdi
+        if (!vedtakEnhet.erKlageinstans()) return vedtakEnhet
+        val behandling = behandlingRepository.findBehandlingById(behandlingId!!).getOrNull() ?: return vedtakEnhet
+        return behandling.behandlerEnhet
+    }
+
+    fun String.erKlageinstans() = startsWith("42")
 
     fun VedtakHendelse.finnesDetRevurderForskuddOppgaveISak(
         saksnummer: String,
