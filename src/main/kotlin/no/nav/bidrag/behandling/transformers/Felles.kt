@@ -47,9 +47,24 @@ val inntekterSomKanHaHullIPerioder = eksplisitteYtelser
 
 fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
 
+fun Behandling.tilTypeBoforhold() = bestemTypeBehandling18ÅrsBidrag(stonadstype, engangsbeloptype)
+
 fun Behandling.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
 
 fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
+
+fun bestemTypeBehandling18ÅrsBidrag(
+    stønadstype: Stønadstype?,
+    engangsbeløptype: Engangsbeløptype?,
+) = if (engangsbeløptype != null && engangsbeløptype == Engangsbeløptype.SÆRBIDRAG) {
+    TypeBehandling.SÆRBIDRAG
+} else if (stønadstype == Stønadstype.FORSKUDD) {
+    TypeBehandling.FORSKUDD
+} else if (stønadstype == Stønadstype.BIDRAG18AAR) {
+    TypeBehandling.BIDRAG_18_ÅR
+} else {
+    TypeBehandling.BIDRAG
+}
 
 fun bestemTypeBehandling(
     stønadstype: Stønadstype?,

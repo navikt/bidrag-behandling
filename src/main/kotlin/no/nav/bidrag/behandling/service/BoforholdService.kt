@@ -55,7 +55,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSvilstandRequest
-import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.behandling.transformers.validereSivilstand
@@ -308,7 +308,7 @@ class BoforholdService(
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             behandling.globalOpphørsdato,
-                            behandling.tilType(),
+                            behandling.tilTypeBoforhold(),
                             behandling
                                 .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
                                 .tilBoforholdBarnRequest(behandling),
@@ -321,7 +321,7 @@ class BoforholdService(
                     respons
                 }
 
-            if (offentligePerioder == null || offentligePerioder.isEmpty()) {
+            if (offentligePerioder.isNullOrEmpty()) {
                 husstandsmedlem.oppdaterePerioder(
                     nyEllerOppdatertBostatusperiode =
                         Bostatusperiode(
@@ -687,7 +687,7 @@ class BoforholdService(
                         .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
-                            behandling.tilType(),
+                            behandling.tilTypeBoforhold(),
                             listOf(
                                 eksisterendeHusstandsmedlem
                                     .tilBoforholdBarnRequest()
@@ -742,6 +742,7 @@ class BoforholdService(
                                 .map { it.tilBostatus() }
                                 .sortedBy { it.periodeFom },
                         behandledeBostatusopplysninger = emptyList(),
+                        erSøknadsbarn = offisieltHusstandsmedlem.erSøknadsbarn,
                         endreBostatus = null,
                     )
                 val periodisertBoforhold =
@@ -749,14 +750,14 @@ class BoforholdService(
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
-                            behandling.tilType(),
+                            behandling.tilTypeBoforhold(),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
-                            behandling.tilType(),
+                            behandling.tilTypeBoforhold(),
                             listOf(
                                 request.copy(
                                     behandledeBostatusopplysninger = manueltMedlem.perioder.map { it.tilBostatus() },
@@ -1085,7 +1086,7 @@ class BoforholdService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 rolle?.opphørsdato ?: behandling.globalOpphørsdato,
-                behandling.tilType(),
+                behandling.tilTypeBoforhold(),
                 listOf(periodiseringsrequest),
             ),
         )
