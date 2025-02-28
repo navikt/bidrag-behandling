@@ -283,9 +283,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerOpphørsdato =
-            if (stonadstype ==
-                Stønadstype.BIDRAG18AAR
-            ) {
+            if (stonadstype == Stønadstype.BIDRAG18AAR && avslag == null) {
                 søknadsbarn.filter { it.opphørsdato == null }.map { it.tilDto() }
             } else {
                 emptyList()
@@ -362,7 +360,14 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
                     rolle = rolle.tilDto(),
                 )
             } else {
-                val hullIPerioder = inntekterTaMed.finnHullIPerioder(virkningstidspunkt, opphørsdato)
+                val hullIPerioder =
+                    if (rolle.rolletype == Rolletype.BARN) {
+                        // Kan ha hull i perioder hvis det er barn
+                        // Feks at barnet bare har inntekt fra sommerjobb
+                        emptyList()
+                    } else {
+                        inntekterTaMed.finnHullIPerioder(virkningstidspunkt, opphørsdato)
+                    }
                 InntektValideringsfeil(
                     hullIPerioder = hullIPerioder,
                     overlappendePerioder = inntekterTaMed.finnOverlappendePerioderInntekt(),

@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -37,6 +38,38 @@ import java.time.YearMonth
 import java.util.Optional
 
 class VirkningstidspunktServiceTest : CommonMockServiceTest() {
+    @Test
+    fun `skal oppdatere virkningstidspunkt og oppdatere opphørsdato hvis det blir satt til avslag`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG_18_ÅR)
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        behandling.søktFomDato = LocalDate.parse("2024-02-01")
+        behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")
+        behandling.søknadsbarn.first().opphørsdato = null
+        virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG))
+        behandling.søknadsbarn.first().opphørsdato shouldBe null
+
+        // Skal ikke oppdatere opphørsdato hvis det allerede er satt
+        behandling.søknadsbarn.first().opphørsdato = LocalDate.parse("2024-12-01")
+        virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD))
+        behandling.søknadsbarn.first().opphørsdato shouldBe null
+    }
+
+    @Test
+    fun `skal ikke oppdatere virkningstidspunkt og oppdatere opphørsdato hvis det blir satt til avslag hvis det er bidrag`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        behandling.søktFomDato = LocalDate.parse("2024-02-01")
+        behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")
+        behandling.søknadsbarn.first().opphørsdato = null
+        virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG))
+        behandling.søknadsbarn.first().opphørsdato shouldBe null
+
+        // Skal ikke oppdatere opphørsdato hvis det allerede er satt
+        behandling.søknadsbarn.first().opphørsdato = LocalDate.parse("2024-12-01")
+        virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD))
+        behandling.søknadsbarn.first().opphørsdato shouldBe LocalDate.parse("2024-12-01")
+    }
+
     @Nested
     inner class BoforholdTest {
         @Test

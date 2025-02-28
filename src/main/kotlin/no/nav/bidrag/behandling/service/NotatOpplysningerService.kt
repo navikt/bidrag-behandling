@@ -226,7 +226,7 @@ class NotatOpplysningerService(
                 when (behandling.tilType()) {
                     TypeBehandling.FORSKUDD -> NotatMalType.FORSKUDD
                     TypeBehandling.SÆRBIDRAG -> NotatMalType.SÆRBIDRAG
-                    TypeBehandling.BIDRAG -> NotatMalType.BIDRAG
+                    TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> NotatMalType.BIDRAG
                 },
             behandling = behandling.tilNotatBehandlingDetaljer(),
             saksbehandlerNavn =

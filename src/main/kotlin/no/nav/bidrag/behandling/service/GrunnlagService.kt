@@ -731,7 +731,7 @@ class GrunnlagService(
     ): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
         val formål =
             when (behandling.tilType()) {
-                TypeBehandling.BIDRAG -> Formål.BIDRAG
+                TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> Formål.BIDRAG
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }

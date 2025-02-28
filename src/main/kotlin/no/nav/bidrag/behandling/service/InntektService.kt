@@ -267,7 +267,12 @@ class InntektService(
                             )
                     }
                 inntekt.datoTom =
-                    if (inntekt.skalAutomatiskSettePeriode()) inntekt.bestemDatoTomForOffentligInntekt() else periode.angittPeriode?.til
+                    if (inntekt.skalAutomatiskSettePeriode()) {
+                        inntekt.bestemDatoTomForOffentligInntekt()
+                    } else {
+                        periode.angittPeriode?.til
+                            ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
+                    }
                 forrigeInntektMedSammeType?.let {
                     if (inntekt.datoFom!! > it.datoFom) {
                         it.datoTom = inntekt.datoFom!!.minusDays(1)

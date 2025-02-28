@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -69,7 +70,7 @@ data class PrivatAvtaleValideringsfeilDto(
         get() =
             overlappendePerioder.isNotEmpty() || manglerAvtaledato || ingenLøpendePeriode
     val gjelderBarn get() = gjelderPerson.ident
-    val gjelderBarnNavn get() = gjelderPerson.navn
+    val gjelderBarnNavn get() = gjelderPerson.navn ?: hentPersonVisningsnavn(gjelderPerson.ident)
 
     @get:JsonIgnore
     val harFeil

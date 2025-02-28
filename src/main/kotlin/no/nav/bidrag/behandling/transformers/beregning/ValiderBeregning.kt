@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.transformers.underhold.valider
 import no.nav.bidrag.behandling.transformers.utgift.hentValideringsfeil
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validereAndreVoksneIHusstanden
+import no.nav.bidrag.behandling.transformers.validerePrivatAvtale
 import no.nav.bidrag.behandling.transformers.validereSivilstand
 import no.nav.bidrag.behandling.transformers.vedtak.hentAlleSomMåBekreftes
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagUtgift
@@ -170,6 +171,7 @@ class ValiderBeregning(
                         ).takeIf {
                             it.harFeil
                         }
+                val privatAvtaleValideringsfeil = privatAvtale.map { it.validerePrivatAvtale() }
                 val husstandsmedlemsfeil =
                     husstandsmedlem.barn
                         .toSet()
@@ -215,6 +217,7 @@ class ValiderBeregning(
                 val harFeil =
                     inntekterFeil != null ||
                         husstandsmedlemsfeil.isNotEmpty() ||
+                        privatAvtaleValideringsfeil.isNotEmpty() ||
                         virkningstidspunktFeil != null ||
                         andreVoksneIHusstandenFeil != null ||
                         samværValideringsfeil.isNotEmpty() ||
@@ -224,6 +227,7 @@ class ValiderBeregning(
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
                         inntekter = inntekterFeil,
+                        privatAvtale = privatAvtaleValideringsfeil.takeIf { it.isNotEmpty() },
                         husstandsmedlem = husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
                         andreVoksneIHusstanden = andreVoksneIHusstandenFeil,
                         måBekrefteNyeOpplysninger = måBekrefteOpplysninger,

@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeil
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -221,6 +222,7 @@ data class BeregningValideringsfeil(
     val virkningstidspunkt: VirkningstidspunktFeilDto? = null,
     val utgift: UtgiftValideringsfeilDto? = null,
     val inntekter: InntektValideringsfeilDto? = null,
+    val privatAvtale: List<PrivatAvtaleValideringsfeilDto>? = null,
     val husstandsmedlem: List<BoforholdPeriodeseringsfeil>? = null,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenPeriodeseringsfeil? = null,
     val sivilstand: SivilstandPeriodeseringsfeil? = null,

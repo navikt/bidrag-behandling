@@ -505,7 +505,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             vedtakstype = vedtakstype,
             virkningstidspunkt =
                 when (typeBehandling) {
-                    TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> LocalDate.parse("2023-02-01")
+                    TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> LocalDate.parse("2023-02-01")
                     TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
                 },
         )
@@ -684,8 +684,8 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
             behandling.inntekter.addAll(inntekterBm)
         }
 
-        TypeBehandling.BIDRAG -> {
-            behandling.stonadstype = Stønadstype.BIDRAG
+        TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
+            behandling.stonadstype = if (typeBehandling == TypeBehandling.BIDRAG_18_ÅR) Stønadstype.BIDRAG18AAR else Stønadstype.BIDRAG
             behandling.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             behandling.engangsbeloptype = null
             behandling.samvær =

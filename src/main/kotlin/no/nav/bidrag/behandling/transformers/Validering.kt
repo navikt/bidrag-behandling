@@ -107,13 +107,17 @@ fun MutableSet<String>.validerSann(
 fun bestemRollerSomMåHaMinstEnInntekt(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
         TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
-        TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG -> listOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER)
+        TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR, TypeBehandling.SÆRBIDRAG ->
+            listOf(
+                Rolletype.BIDRAGSPLIKTIG,
+                Rolletype.BIDRAGSMOTTAKER,
+            )
     }
 
 fun bestemRollerSomKanHaInntekter(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
         TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
-        TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG ->
+        TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR, TypeBehandling.SÆRBIDRAG ->
             listOf(
                 Rolletype.BIDRAGSPLIKTIG,
                 Rolletype.BIDRAGSMOTTAKER,

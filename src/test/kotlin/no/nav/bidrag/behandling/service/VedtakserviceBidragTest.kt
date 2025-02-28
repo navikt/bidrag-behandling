@@ -608,6 +608,124 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
+    fun `Skal fatte vedtak med direkte avslag 18 års bidrag med opphør`() {
+        stubPersonConsumer()
+        val opphørsdato = LocalDate.now().plusMonths(2).withDayOfMonth(1)
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.stonadstype = Stønadstype.BIDRAG18AAR
+        behandling.søknadsbarn.first().fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
+        behandling.søknadsbarn.first().opphørsdato = opphørsdato
+        behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
+        behandling.årsak = null
+        behandling.refVedtaksid = 553
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandlingMedReelMottaker(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.grunnlagListe shouldHaveSize 11
+            hentGrunnlagstyper(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.PERSON_BIDRAGSPLIKTIG) shouldHaveSize 1
+            hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.SØKNAD)) {
+                shouldHaveSize(1)
+                val innhold = it[0].innholdTilObjekt<SøknadGrunnlag>()
+                innhold.søktAv shouldBe SøktAvType.BIDRAGSMOTTAKER
+            }
+
+            request.stønadsendringListe shouldHaveSize 1
+            assertSoftly(request.stønadsendringListe[0]) {
+                it.type shouldBe Stønadstype.BIDRAG18AAR
+                it.beslutning shouldBe Beslutningstype.ENDRING
+                it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                it.sak shouldBe Saksnummer(SAKSNUMMER)
+                it.skyldner shouldBe Personident(testdataBP.ident)
+                it.kravhaver shouldBe Personident(testdataBarn1.ident)
+                it.mottaker shouldBe Personident("REEL_MOTTAKER")
+                it.grunnlagReferanseListe shouldHaveSize 3
+                val vtGrunnlag = request.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.VIRKNINGSTIDSPUNKT, it.grunnlagReferanseListe)
+                vtGrunnlag.size shouldBe 1
+                val virkningstidspunkt = vtGrunnlag.first().innholdTilObjekt<VirkningstidspunktGrunnlag>()
+                virkningstidspunkt.avslag shouldBe Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
+                virkningstidspunkt.årsak shouldBe null
+                virkningstidspunkt.virkningstidspunkt shouldBe behandling.virkningstidspunkt
+                it.periodeListe shouldHaveSize 1
+                assertSoftly(it.periodeListe[0]) {
+                    it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
+                    it.periode.til shouldBe null
+                    it.beløp shouldBe null
+                    it.resultatkode shouldBe Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG.name
+                }
+            }
+        }
+        assertSoftly(opprettVedtakRequest.engangsbeløpListe) {
+            shouldHaveSize(2)
+
+            it.any { it.type == Engangsbeløptype.GEBYR_MOTTAKER }.shouldBeTrue()
+            it.any { it.type == Engangsbeløptype.GEBYR_SKYLDNER }.shouldBeTrue()
+            assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!) {
+                beløp shouldBe null
+                valutakode shouldBe null
+                kravhaver shouldBe Personident("NAV")
+                mottaker shouldBe Personident("NAV")
+                innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                resultatkode shouldBe Resultatkode.GEBYR_FRITATT.name
+                sak shouldBe Saksnummer(SAKSNUMMER)
+                skyldner shouldBe Personident(testdataBM.ident)
+                grunnlagReferanseListe shouldHaveSize 1
+                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe)
+            }
+            assertSoftly(it.find { it.type == Engangsbeløptype.GEBYR_SKYLDNER }!!) {
+                beløp shouldBe BigDecimal(1314)
+                valutakode shouldBe "NOK"
+                kravhaver shouldBe Personident("NAV")
+                mottaker shouldBe Personident("NAV")
+                innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                resultatkode shouldBe Resultatkode.GEBYR_ILAGT.name
+                sak shouldBe Saksnummer(SAKSNUMMER)
+                skyldner shouldBe Personident(testdataBP.ident)
+                grunnlagReferanseListe shouldHaveSize 1
+                opprettVedtakRequest.grunnlagListe.validerHarReferanseTilGrunnlagIReferanser(Grunnlagstype.SLUTTBEREGNING_GEBYR, grunnlagReferanseListe)
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+    }
+
+    @Test
     fun `Skal fatte vedtak for bidrag 18 år`() {
         stubPersonConsumer()
 

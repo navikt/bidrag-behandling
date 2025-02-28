@@ -120,12 +120,12 @@ class BehandlingService(
                     },
                 virkningstidspunkt =
                     when (opprettBehandling.tilType()) {
-                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG -> opprettBehandling.søktFomDato
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> opprettBehandling.søktFomDato
                         TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
                     },
                 årsak =
                     when (opprettBehandling.tilType()) {
-                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
                             if (opprettBehandling.vedtakstype !=
                                 Vedtakstype.OPPHØR
                             ) {
@@ -138,7 +138,7 @@ class BehandlingService(
                     },
                 avslag =
                     when (opprettBehandling.tilType()) {
-                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG ->
+                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
                             if (opprettBehandling.vedtakstype == Vedtakstype.OPPHØR) {
                                 if (opprettBehandling.stønadstype == Stønadstype.BIDRAG18AAR) {
                                     Resultatkode.AVSLUTTET_SKOLEGANG
