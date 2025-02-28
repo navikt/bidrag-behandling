@@ -283,10 +283,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerOpphørsdato =
-            if (stonadstype ==
-                Stønadstype.BIDRAG18AAR &&
-                avslag == null
-            ) {
+            if (stonadstype == Stønadstype.BIDRAG18AAR) {
                 søknadsbarn.filter { it.opphørsdato == null }.map { it.tilDto() }
             } else {
                 emptyList()
