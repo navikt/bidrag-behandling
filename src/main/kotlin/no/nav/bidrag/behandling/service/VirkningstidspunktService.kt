@@ -89,7 +89,7 @@ class VirkningstidspunktService(
                         behandling.søknadsbarn.forEach {
                             // Nå er virkningstidspunkt/avslag/årsak ikke knyttet mot rolle. I V3 av bidrag skal det knyttes mot hver søknadsbarn
                             // Da må dette bare endre for søknadsbarn det endres for
-                            if (behandling.virkningstidspunkt!! == behandling.søktFomDato) {
+                            if (behandling.virkningstidspunkt!! == behandling.søktFomDato && it.opphørsdato == null) {
                                 oppdaterOpphørsdato(
                                     OppdaterOpphørsdatoRequestDto(it.id!!, behandling.søktFomDato.plusMonths(1).withDayOfMonth(1)),
                                     behandling,
