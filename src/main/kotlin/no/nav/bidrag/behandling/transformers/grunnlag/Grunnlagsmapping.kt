@@ -9,9 +9,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.erUnder12År
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -21,6 +23,18 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
 
 fun RelatertPersonGrunnlagDto.erBarnTilBMUnder12År(virkningstidspunkt: LocalDate) = erBarn && fødselsdato.erUnder12År(virkningstidspunkt)
+
+fun Grunnlagsdatatype.grunnlagKreverIkkeAktivering(
+    rolle: Rolletype,
+    typeBehandling: TypeBehandling,
+) = when (this) {
+    Grunnlagsdatatype.ANDRE_BARN -> true
+    Grunnlagsdatatype.TILLEGGSSTØNAD -> true
+//    Grunnlagsdatatype.BOFORHOLD ->
+//        listOf(TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR).contains(typeBehandling) &&
+//            rolle == Rolletype.BIDRAGSMOTTAKER
+    else -> false
+}
 
 val grunnlagstyperSomIkkeKreverAktivering = listOf(Grunnlagsdatatype.ANDRE_BARN, Grunnlagsdatatype.TILLEGGSSTØNAD)
 val summertAinntektstyper =

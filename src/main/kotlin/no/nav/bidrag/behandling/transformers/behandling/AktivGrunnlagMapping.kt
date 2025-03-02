@@ -199,10 +199,11 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
 fun List<Grunnlag>.henteEndringerIBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     behandling: Behandling,
+    hentesForRolle: Rolle? = null,
 ): Set<HusstandsmedlemGrunnlagDto> {
     val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
     val husstandsmedlemmer = behandling.husstandsmedlem
-    val rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!
+    val rolle = hentesForRolle ?: Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!
 
     val aktiveBoforholdsdata =
         aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlemmer, rolle).toSet()

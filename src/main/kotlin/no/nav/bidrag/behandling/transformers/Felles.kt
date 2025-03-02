@@ -49,6 +49,8 @@ fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
 
 fun Behandling.tilTypeBoforhold() = bestemTypeBehandling18ÅrsBidrag(stonadstype, engangsbeloptype)
 
+fun Behandling.erBidrag() = tilType() == TypeBehandling.BIDRAG_18_ÅR || tilType() == TypeBehandling.BIDRAG
+
 fun Behandling.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
 
 fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
