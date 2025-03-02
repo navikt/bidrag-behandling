@@ -33,7 +33,7 @@ import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandskodePDL
-import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
@@ -249,7 +249,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         testdataBarn2.fødselsdato,
                         null,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -298,7 +298,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         LocalDate.now(),
                         null,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling, true),
                     )
 
@@ -400,7 +400,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
                         null,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -498,7 +498,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
                         null,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -597,7 +597,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
                         null,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -690,7 +690,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         periodeFom,
                         null,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         grunnlagBoforhold.tilBoforholdBarnRequest(behandling),
                     )
 
@@ -1312,7 +1312,7 @@ class BoforholdServiceTest : TestContainerRunner() {
                 BoforholdApi.beregnBoforholdBarnV3(
                     testdataBarn2.fødselsdato,
                     null,
-                    behandling.tilType(),
+                    behandling.tilTypeBoforhold(),
                     listOf(periodiseringsrequest),
                 )
 

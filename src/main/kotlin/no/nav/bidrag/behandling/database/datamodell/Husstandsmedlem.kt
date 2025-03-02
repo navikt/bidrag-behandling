@@ -55,6 +55,8 @@ open class Husstandsmedlem(
     @ColumnTransformer(write = "?::jsonb")
     open var forrigePerioder: String? = null,
 ) {
+    val erSøknadsbarn get() = behandling.søknadsbarn.any { it.ident == ident }
+
     override fun toString(): String =
         "Husstandsmedlem(id=$id, behandlingId=${behandling.id}, ident=$ident, navn=$navn, fødselsdato=$fødselsdato," +
             " perioder(size)=${perioder.size}, kilde=$kilde, " +

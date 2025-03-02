@@ -41,7 +41,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
-import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
@@ -1173,7 +1173,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         b.virkningstidspunktEllerSøktFomDato,
                         b.globalOpphørsdato,
-                        b.tilType(),
+                        b.tilTypeBoforhold(),
                         grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(b),
                     )
 

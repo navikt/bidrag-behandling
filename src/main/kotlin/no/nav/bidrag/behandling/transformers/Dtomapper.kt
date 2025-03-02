@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.PeriodeAndreVoksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragUtgifterDto
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
@@ -154,7 +155,7 @@ class Dtomapper(
                 behandling.grunnlagListe
                     .toSet()
                     .hentSisteAktiv()
-                    .tilAktiveGrunnlagsdata(),
+                    .tilAktiveGrunnlagsdata(behandling),
             ikkeAktiverteEndringerIGrunnlagsdata = behandling.ikkeAktiveGrunnlagsdata(),
         )
 
@@ -609,6 +610,12 @@ class Dtomapper(
                             }.toSet(),
                 ),
             arbeidsforhold = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIArbeidsforhold(aktiveGrunnlag),
+            husstandsmedlemBM =
+                sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(
+                    aktiveGrunnlag,
+                    behandling,
+                    behandling.bidragsmottaker!!,
+                ),
             husstandsmedlem =
                 sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, behandling),
             andreVoksneIHusstanden =
@@ -729,7 +736,7 @@ class Dtomapper(
                     inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
                 ),
             underholdskostnader = underholdskostnader.tilDtos(),
-            aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
+            aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(this),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
             ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
@@ -1000,15 +1007,25 @@ class Dtomapper(
         erAktivert: Boolean = true,
     ): List<AndreVoksneIHusstandenDetaljerDto> = hentAlleAndreVoksneHusstandForPeriode(periode, erAktivert).begrensAntallPersoner()
 
-    private fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
+    private fun List<Grunnlag>.tilAktiveGrunnlagsdata(behandling: Behandling) =
         AktiveGrunnlagsdata(
             arbeidsforhold =
                 filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
                     .mapNotNull { it.konvertereData<Set<ArbeidsforholdGrunnlagDto>>() }
                     .flatten()
                     .toSet(),
+            husstandsmedlemBM =
+                filter {
+                    it.type == Grunnlagsdatatype.BOFORHOLD &&
+                        it.erBearbeidet &&
+                        it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER
+                }.tilHusstandsmedlem(),
             husstandsmedlem =
-                filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet }.tilHusstandsmedlem(),
+                filter {
+                    it.type == Grunnlagsdatatype.BOFORHOLD &&
+                        it.erBearbeidet &&
+                        Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.rolletype == it.rolle.rolletype
+                }.tilHusstandsmedlem(),
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
                 find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),

@@ -250,6 +250,7 @@ data class UtgiftspostDto(
 
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
+    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto>,
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
@@ -262,6 +263,7 @@ data class AktiveGrunnlagsdata(
 
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter = IkkeAktiveInntekter(),
+    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
@@ -431,7 +433,7 @@ enum class Grunnlagsdatatype(
     ),
     BOFORHOLD(
         mapOf(
-            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
@@ -560,6 +562,23 @@ fun Grunnlagsdatatype.tilInntektrapporteringYtelse() =
 
 fun Grunnlagsdatatype.innhentesForRolle2(behandling: Behandling) = this.behandlingstypeMotRolletyper[behandling.tilType()]
 
+fun Grunnlagsdatatype.innhentesForRolle3(
+    behandling: Behandling,
+    ident: String,
+) = when (this) {
+    Grunnlagsdatatype.BARNETILSYN,
+    Grunnlagsdatatype.BOFORHOLD,
+    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+    Grunnlagsdatatype.ANDRE_BARN,
+    -> {
+        val t = this.behandlingstypeMotRolletyper[behandling.tilType()]
+        val rolle = behandling.roller.find { it.ident == ident }
+        if (t?.any { it == rolle?.rolletype } == true) rolle else null
+    }
+
+    else -> null
+}
+
 fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
     when (this) {
         Grunnlagsdatatype.BARNETILSYN,
@@ -569,6 +588,7 @@ fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
         -> {
             val t = this.behandlingstypeMotRolletyper[behandling.tilType()]
             t?.let {
+                // La dette være first mtp at BOFORHOLD hentes både for BM og BP i bidrag men for BM så er det for å
                 when (it.first()) {
                     Rolletype.BIDRAGSMOTTAKER -> behandling.bidragsmottaker
                     Rolletype.BIDRAGSPLIKTIG -> behandling.bidragspliktig
