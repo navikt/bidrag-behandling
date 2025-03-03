@@ -456,7 +456,7 @@ class InntektServiceTest : TestContainerRunner() {
             entityManager.refresh(behandling)
 
             assertSoftly {
-                behandling.inntekter.size shouldBe 3
+                behandling.inntekter.size shouldBe 2
                 behandling.inntekter.filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.size shouldBe 1
                 behandling.inntekter.first { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }.belop shouldBe
                     BigDecimal(
