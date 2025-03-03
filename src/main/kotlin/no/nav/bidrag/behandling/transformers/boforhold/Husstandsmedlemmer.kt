@@ -24,6 +24,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import java.time.LocalDate
@@ -92,6 +93,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
     }
 
     return grunnlag.filter { it.erBarn }.filter { it.fødselsdato != null }.map { g ->
+        val barnetsRolle = behandling.roller.find { it.ident == g.gjelderPersonId }
         BoforholdBarnRequestV3(
             innhentedeOffentligeOpplysninger =
                 when (g.borISammeHusstandDtoListe.isNotEmpty()) {
@@ -124,6 +126,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
             gjelderPersonId = g.gjelderPersonId,
             behandledeBostatusopplysninger = emptyList(),
             endreBostatus = null,
+            erSøknadsbarn = barnetsRolle?.rolletype == Rolletype.BARN,
         )
     }
 }
@@ -138,6 +141,7 @@ fun Husstandsmedlem.tilBoforholdBarnRequest(endreBostatus: EndreBostatus? = null
         behandledeBostatusopplysninger =
             perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
         endreBostatus = endreBostatus,
+        erSøknadsbarn = erSøknadsbarn,
     )
 
 fun Husstandsmedlem.tilBoforholdVoksneRequest(

@@ -34,7 +34,7 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilOb
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
-import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.lagGrunnlagsdata
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
@@ -2249,11 +2249,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag.isNotEmpty()
                     behandling.grunnlag.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 5
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
-                    behandling.inntekter.size shouldBe 5
+                    behandling.inntekter.size shouldBe 4
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
                         .filter { it.ident == behandling.bidragspliktig!!.ident }
-                        .size shouldBe 5
+                        .size shouldBe 4
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
                         .filter { BigDecimal.ZERO == it.belop }
@@ -2499,11 +2499,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag.isNotEmpty()
                     behandling.grunnlag.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 5
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
-                    behandling.inntekter.size shouldBe 5
+                    behandling.inntekter.size shouldBe 4
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
                         .filter { it.ident == behandling.bidragspliktig!!.ident }
-                        .size shouldBe 5
+                        .size shouldBe 4
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
                         .filter { BigDecimal.ZERO == it.belop }
@@ -2792,7 +2792,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
 
@@ -2923,7 +2923,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling, true),
                     )
 
@@ -3506,11 +3506,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.grunnlag.isNotEmpty()
                     behandling.grunnlag.filter { LocalDate.now() == it.aktiv?.toLocalDate() }.size shouldBe 5
                     behandling.grunnlag.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
-                    behandling.inntekter.size shouldBe 5
+                    behandling.inntekter.size shouldBe 4
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
                         .filter { it.ident == behandling.bidragsmottaker!!.ident }
-                        .size shouldBe 5
+                        .size shouldBe 4
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
                         .filter { BigDecimal.ZERO == it.belop }
@@ -4020,7 +4020,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
 
@@ -4104,7 +4104,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
-                        behandling.tilType(),
+                        behandling.tilTypeBoforhold(),
                         jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                             rådataBoforhold.data,
                         ).tilBoforholdBarnRequest(behandling),

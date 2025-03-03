@@ -46,6 +46,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
@@ -1477,7 +1478,7 @@ private fun oppretteBoforhold(
         BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
             behandling.globalOpphørsdato,
-            behandling.tilType(),
+            behandling.tilTypeBoforhold(),
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )
 
