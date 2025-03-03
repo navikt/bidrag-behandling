@@ -24,7 +24,7 @@ import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
-import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -379,7 +379,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.globalOpphørsdato,
-                    behandling.tilType(),
+                    behandling.tilTypeBoforhold(),
                     grunnlag.tilBoforholdBarnRequest(behandling, true),
                 )
             listOf(
