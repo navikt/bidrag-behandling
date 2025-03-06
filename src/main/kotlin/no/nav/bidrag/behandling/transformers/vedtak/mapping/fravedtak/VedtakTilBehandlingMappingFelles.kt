@@ -24,10 +24,12 @@ import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -375,6 +377,14 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         .groupBy { it.partPersonId }
         .flatMap { (innhentetForIdent, grunnlag) ->
 
+            val grunnlagsdatatype =
+                if (behandling.tilType() == TypeBehandling.BIDRAG &&
+                    innhentetForIdent == behandling.bidragsmottaker?.ident
+                ) {
+                    Grunnlagsdatatype.BOFORHOLD_BM
+                } else {
+                    Grunnlagsdatatype.BOFORHOLD
+                }
             val boforholdPeriodisert =
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
@@ -384,7 +394,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 )
             listOf(
                 behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.BOFORHOLD,
+                    grunnlagsdatatype,
                     grunnlag,
                     innhentetForIdent!!,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
@@ -396,7 +406,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                     .groupBy { it.gjelderPersonId }
                     .map {
                         behandling.opprettGrunnlag(
-                            Grunnlagsdatatype.BOFORHOLD,
+                            grunnlagsdatatype,
                             it.value,
                             grunnlag.firstOrNull()?.partPersonId!!,
                             innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),

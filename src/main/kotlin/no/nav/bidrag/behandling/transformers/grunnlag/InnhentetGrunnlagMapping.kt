@@ -132,31 +132,45 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
         return relatertPersonGrunnlag
     }
 
+    fun opprettGrunnlagBoforhold(
+        partPersonId: String?,
+        grunnlagListe: List<Grunnlag>,
+    ): List<GrunnlagDto> {
+        val grunnlag = grunnlagListe.first()
+        val husstandsmedlemList =
+            grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
+        val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
+        return husstandsmedlemList
+            .groupBy { it.gjelderPersonId }
+            .map { (relatertPersonPersonId, relatertPersonListe) ->
+                val relatertPersonObjekt =
+                    (personobjekter + personobjekterInnhentetHusstandsmedlem).hentPersonNyesteIdent(
+                        relatertPersonPersonId,
+                    )
+                        ?: relatertPersonListe[0].opprettPersonGrunnlag()
+                if (relatertPersonListe.size > 1) innhentetGrunnlagHarFlereRelatertePersonMedSammeId()
+
+                relatertPersonListe.first().tilGrunnlagsobjekt(
+                    grunnlag.innhentet,
+                    gjelder.referanse,
+                    relatertPersonObjekt.referanse,
+                )
+            }
+    }
     val innhentetHusstandsmedlemGrunnlagListe =
         filter { it.type == Grunnlagsdatatype.BOFORHOLD }
             .groupBy { it.rolle.ident }
             .flatMap { (partPersonId, grunnlagListe) ->
-                val grunnlag = grunnlagListe.first()
-                val husstandsmedlemList =
-                    grunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: emptyList()
-                val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
-                husstandsmedlemList
-                    .groupBy { it.gjelderPersonId }
-                    .map { (relatertPersonPersonId, relatertPersonListe) ->
-                        val relatertPersonObjekt =
-                            (personobjekter + personobjekterInnhentetHusstandsmedlem).hentPersonNyesteIdent(
-                                relatertPersonPersonId,
-                            )
-                                ?: relatertPersonListe[0].opprettPersonGrunnlag()
-                        if (relatertPersonListe.size > 1) innhentetGrunnlagHarFlereRelatertePersonMedSammeId()
-
-                        relatertPersonListe.first().tilGrunnlagsobjekt(
-                            grunnlag.innhentet,
-                            gjelder.referanse,
-                            relatertPersonObjekt.referanse,
-                        )
-                    }
+                opprettGrunnlagBoforhold(partPersonId, grunnlagListe)
             }.toSet()
+
+    val innhentetHusstandsmedlemBMGrunnlagListe =
+        filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM }
+            .groupBy { it.rolle.ident }
+            .flatMap { (partPersonId, grunnlagListe) ->
+                opprettGrunnlagBoforhold(partPersonId, grunnlagListe)
+            }.toSet()
+
     val innhentetAndreVoksneIHusstandenGrunnlagListe =
         find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN }
             ?.let { grunnlag ->
@@ -184,7 +198,10 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
                 )
             }?.let { setOf(it) } ?: emptySet()
 
-    return innhentetHusstandsmedlemGrunnlagListe + personobjekterInnhentetHusstandsmedlem + innhentetAndreVoksneIHusstandenGrunnlagListe +
+    return innhentetHusstandsmedlemGrunnlagListe +
+        personobjekterInnhentetHusstandsmedlem +
+        innhentetAndreVoksneIHusstandenGrunnlagListe +
+        innhentetHusstandsmedlemBMGrunnlagListe +
         opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMangler(innhentetHusstandsmedlemGrunnlagListe, personobjekter)
 }
 

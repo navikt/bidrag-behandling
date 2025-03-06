@@ -1011,6 +1011,7 @@ class Dtomapper(
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
                 find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+            husstandsmedlemBM = filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM && it.erBearbeidet }.tilHusstandsmedlem(),
             stønadTilBarnetilsyn =
                 filter { it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
                     .toSet()
