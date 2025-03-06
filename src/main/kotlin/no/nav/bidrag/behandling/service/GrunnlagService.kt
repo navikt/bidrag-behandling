@@ -1405,6 +1405,10 @@ class GrunnlagService(
                 Grunnlagstype(
                     Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
                     false,
+                ) == grunnlagstype ||
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD_BM,
+                    false,
                 ) == grunnlagstype
 
         if (erFørstegangsinnhenting && skalLagres || erGrunnlagEndret && nyesteGrunnlag?.aktiv != null) {
