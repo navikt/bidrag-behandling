@@ -4998,7 +4998,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
         gjelderBidrag: Boolean = false,
     ) {
         assertSoftly {
-            grunnlag.size shouldBe if (gjelderBidrag) 10 else 13
+            grunnlag.size shouldBe if (gjelderBidrag) 13 else 13
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.ARBEIDSFORHOLD }.size shouldBe 1
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.BOFORHOLD }.size shouldBe if (gjelderBidrag) 0 else 3
             grunnlag.filter { g -> g.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER }.size shouldBe 2
