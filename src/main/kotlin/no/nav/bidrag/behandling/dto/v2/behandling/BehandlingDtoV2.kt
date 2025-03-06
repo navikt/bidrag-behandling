@@ -585,7 +585,11 @@ fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
                 }
             }
         }
-        Grunnlagsdatatype.BOFORHOLD_BM -> behandling.bidragsmottaker
+        Grunnlagsdatatype.BOFORHOLD_BM ->
+            when (behandling.tilType()) {
+                TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG -> behandling.bidragsmottaker
+                else -> null
+            }
 
         else -> null
     }

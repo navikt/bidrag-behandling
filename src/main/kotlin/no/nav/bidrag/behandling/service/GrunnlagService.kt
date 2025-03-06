@@ -1755,7 +1755,11 @@ class GrunnlagService(
                     GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
                     innhentetFor,
                 )
-
+            Grunnlagsdatatype.BOFORHOLD_BM ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
+                    innhentetFor,
+                )
             Grunnlagsdatatype.SIVILSTAND ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SIVILSTAND,
