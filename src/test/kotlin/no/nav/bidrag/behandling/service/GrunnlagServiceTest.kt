@@ -650,7 +650,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
@@ -663,7 +663,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbp shouldHaveSize 9
                     gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
-                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM } shouldHaveSize 0
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 0
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1
@@ -2092,7 +2092,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
@@ -2105,7 +2105,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbp shouldHaveSize 9
                     gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
-                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM } shouldHaveSize 0
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 0
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1
@@ -2175,7 +2175,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
@@ -2188,7 +2188,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     gbp shouldHaveSize 9
                     gbp.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 3
-                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM } shouldHaveSize 0
+                    gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 0
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN } shouldHaveSize 2
                     gbp.filter { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && it.erBearbeidet } shouldHaveSize 1

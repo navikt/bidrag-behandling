@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
+import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
@@ -76,6 +77,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -791,7 +793,7 @@ class GrunnlagService(
         val innhentingAvBoforholdFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
         val innhentingAvBoforholdBMFeilet =
-            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD_BM == it.key }.isNotEmpty()
+            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == it.key }.isNotEmpty()
 
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
@@ -815,13 +817,13 @@ class GrunnlagService(
                 }
             }
             if (behandling.søknadsbarn.isNotEmpty() &&
-                Grunnlagsdatatype.BOFORHOLD_BM.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi &&
+                Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi &&
                 !innhentingAvBoforholdBMFeilet
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
                     it.husstandsmedlemmerOgEgneBarnListe.filtrerSøknadsbarn(behandling).toSet(),
-                    Grunnlagsdatatype.BOFORHOLD_BM,
+                    Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
                 )
             }
             if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi) {
@@ -1051,7 +1053,14 @@ class GrunnlagService(
                     grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
                     innhentetGrunnlag = it.value.toSet(),
                     gjelderPerson = Personident(it.key!!),
-                    aktiveringstidspunkt = if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM) LocalDateTime.now() else null,
+                    aktiveringstidspunkt =
+                        if (grunnlagsdatatype ==
+                            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+                        ) {
+                            LocalDateTime.now()
+                        } else {
+                            null
+                        },
                 )
             }
 
@@ -1407,7 +1416,7 @@ class GrunnlagService(
                     false,
                 ) == grunnlagstype ||
                 Grunnlagstype(
-                    Grunnlagsdatatype.BOFORHOLD_BM,
+                    Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
                     false,
                 ) == grunnlagstype
 
@@ -1759,7 +1768,7 @@ class GrunnlagService(
                     GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
                     innhentetFor,
                 )
-            Grunnlagsdatatype.BOFORHOLD_BM ->
+            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
                     innhentetFor,
@@ -1841,7 +1850,7 @@ class GrunnlagService(
                         }.toSet(),
                 )
             }
-            Grunnlagsdatatype.BOFORHOLD_BM -> {
+            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN -> {
                 lagreGrunnlagHvisEndret(
                     behandling,
                     rolleInhentetFor,
@@ -1925,8 +1934,15 @@ class GrunnlagService(
 }
 
 fun List<RelatertPersonGrunnlagDto>.filtrerSøknadsbarn(behandling: Behandling) =
-    filter {
-        behandling.søknadsbarn.any { rolle -> rolle.ident == it.gjelderPersonId }
+    behandling.søknadsbarn.map {
+        this.find { rolle -> rolle.gjelderPersonId == it.ident } ?: RelatertPersonGrunnlagDto(
+            gjelderPersonId = it.ident,
+            partPersonId = behandling.bidragsmottaker!!.ident,
+            navn = it.hentNavn(),
+            fødselsdato = it.fødselsdato,
+            relasjon = Familierelasjon.BARN,
+            borISammeHusstandDtoListe = emptyList(),
+        )
     }
 
 fun List<RelatertPersonGrunnlagDto>.filtrerBasertPåRolle(

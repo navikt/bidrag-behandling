@@ -381,7 +381,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 if (behandling.tilType() == TypeBehandling.BIDRAG &&
                     innhentetForIdent == behandling.bidragsmottaker?.ident
                 ) {
-                    Grunnlagsdatatype.BOFORHOLD_BM
+                    Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
                 } else {
                     Grunnlagsdatatype.BOFORHOLD
                 }

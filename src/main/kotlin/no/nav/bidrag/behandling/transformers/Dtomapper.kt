@@ -106,7 +106,6 @@ import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -1011,7 +1010,7 @@ class Dtomapper(
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
                 find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
-            husstandsmedlemBM = filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM && it.erBearbeidet }.tilHusstandsmedlem(),
+            husstandsmedlemBM = filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }.tilHusstandsmedlem(),
             stønadTilBarnetilsyn =
                 filter { it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
                     .toSet()

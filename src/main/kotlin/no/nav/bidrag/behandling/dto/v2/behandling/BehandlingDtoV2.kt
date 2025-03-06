@@ -438,7 +438,7 @@ enum class Grunnlagsdatatype(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
-    BOFORHOLD_BM(
+    BOFORHOLD_BM_SØKNADSBARN(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
             TypeBehandling.FORSKUDD to setOf(),
@@ -585,7 +585,7 @@ fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
                 }
             }
         }
-        Grunnlagsdatatype.BOFORHOLD_BM ->
+        Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN ->
             when (behandling.tilType()) {
                 TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG -> behandling.bidragsmottaker
                 else -> null

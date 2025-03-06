@@ -165,7 +165,7 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
             }.toSet()
 
     val innhentetHusstandsmedlemBMGrunnlagListe =
-        filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM }
+        filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN }
             .groupBy { it.rolle.ident }
             .flatMap { (partPersonId, grunnlagListe) ->
                 opprettGrunnlagBoforhold(partPersonId, grunnlagListe)
