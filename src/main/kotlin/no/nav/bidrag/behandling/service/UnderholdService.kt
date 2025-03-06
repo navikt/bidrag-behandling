@@ -37,7 +37,7 @@ import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
 import no.nav.bidrag.behandling.ugyldigForespørsel
-import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -244,7 +244,7 @@ class UnderholdService(
             barnetilsyn.kilde = kilde
 
             barnetilsyn.fom = request.periode.fom
-            barnetilsyn.tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato)
+            barnetilsyn.tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato)
             barnetilsyn.under_skolealder =
                 when (request.skolealder) {
                     Skolealder.UNDER -> true
@@ -257,7 +257,7 @@ class UnderholdService(
         } ?: run {
             val periodeJustert =
                 request.periode.copy(
-                    tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato),
+                    tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato),
                 )
             underholdskostnad.barnetilsyn.add(
                 Barnetilsyn(
@@ -311,7 +311,7 @@ class UnderholdService(
             underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }
             val faktiskTilsynsutgift = underholdskostnad.faktiskeTilsynsutgifter.find { id == it.id }!!
             faktiskTilsynsutgift.fom = request.periode.fom
-            faktiskTilsynsutgift.tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato)
+            faktiskTilsynsutgift.tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato)
             faktiskTilsynsutgift.kostpenger = request.kostpenger
             faktiskTilsynsutgift.tilsynsutgift = request.utgift
             faktiskTilsynsutgift.kommentar = request.kommentar
@@ -319,7 +319,7 @@ class UnderholdService(
         } ?: run {
             val periodeJustert =
                 request.periode.copy(
-                    tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato),
+                    tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato),
                 )
             underholdskostnad.faktiskeTilsynsutgifter.add(
                 FaktiskTilsynsutgift(
@@ -361,14 +361,14 @@ class UnderholdService(
         request.id?.let { id ->
             val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
             tilleggsstønad.fom = request.periode.fom
-            tilleggsstønad.tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato)
+            tilleggsstønad.tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato)
             tilleggsstønad.dagsats = request.dagsats
             tilleggsstønad.underholdskostnad = underholdskostnad
             tilleggsstønad
         } ?: run {
             val periodeJustert =
                 request.periode.copy(
-                    tom = request.periode.tom ?: justerPeriodeTilOpphørsdato(underholdskostnad.opphørsdato),
+                    tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato),
                 )
             underholdskostnad.tilleggsstønad.add(
                 Tilleggsstønad(

@@ -68,13 +68,13 @@ data class PrivatAvtaleValideringsfeilDto(
 ) {
     val harPeriodiseringsfeil
         get() =
-            overlappendePerioder.isNotEmpty() || manglerAvtaledato || ingenLøpendePeriode
+            overlappendePerioder.isNotEmpty() || ingenLøpendePeriode
     val gjelderBarn get() = gjelderPerson.ident
     val gjelderBarnNavn get() = gjelderPerson.navn ?: hentPersonVisningsnavn(gjelderPerson.ident)
 
     @get:JsonIgnore
     val harFeil
-        get() = manglerBegrunnelse || harPeriodiseringsfeil
+        get() = manglerBegrunnelse || harPeriodiseringsfeil || manglerAvtaledato
 }
 
 data class BeregnetPrivatAvtaleDto(

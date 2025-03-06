@@ -23,7 +23,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
-import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
@@ -190,7 +190,7 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
                 periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato?.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
-                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
+                it.tom = justerPeriodeTomOpphørsdato(opphørsdato)
             }
 
         faktiskeTilsynsutgifter
@@ -203,7 +203,7 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
                 periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
-                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
+                it.tom = justerPeriodeTomOpphørsdato(opphørsdato)
             }
 
         tilleggsstønad
@@ -216,7 +216,7 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
                 periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
-                it.tom = justerPeriodeTilOpphørsdato(opphørsdato)
+                it.tom = justerPeriodeTomOpphørsdato(opphørsdato)
             }
     }
 }

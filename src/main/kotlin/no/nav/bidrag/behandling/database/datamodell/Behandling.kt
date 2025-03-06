@@ -19,7 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
-import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -38,6 +38,7 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 @Suppress("Unused")
 @Entity(name = "behandling")
@@ -190,13 +191,14 @@ open class Behandling(
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = refVedtaksid != null
     val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
+    val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
     val globalOpphørsdato get() =
         if (søknadsbarn.any { it.opphørsdato == null }) {
             null
         } else {
             søknadsbarn.maxByOrNull { it.opphørsdato!! }?.opphørsdato
         }
-    val opphørTilDato get() = justerPeriodeTilOpphørsdato(globalOpphørsdato)
+    val opphørTilDato get() = justerPeriodeTomOpphørsdato(globalOpphørsdato)
     val opphørSistePeriode get() = opphørTilDato != null
 }
 
