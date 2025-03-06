@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
-import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -31,6 +31,7 @@ import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 @Entity(name = "rolle")
 @SQLDelete(sql = "UPDATE rolle SET deleted = true WHERE id=?")
@@ -94,7 +95,8 @@ open class Rolle(
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
-    val opphørTilDato get() = justerPeriodeTilOpphørsdato(opphørsdato)
+    val opphørsdatoYearMonth get() = opphørsdato?.let { YearMonth.from(it) }
+    val opphørTilDato get() = justerPeriodeTomOpphørsdato(opphørsdato)
     val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato
     val opphørSistePeriode get() = opphørTilDato != null
 

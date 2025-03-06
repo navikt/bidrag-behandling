@@ -85,6 +85,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
@@ -244,8 +245,6 @@ class Dtomapper(
                         .byggGrunnlagForBeregningPrivatAvtale(
                             this,
                             gjelderBarn,
-                        ).copy(
-                            opphørSistePeriode = globalOpphørsdato != null,
                         )
 
                 (
@@ -282,7 +281,7 @@ class Dtomapper(
                                     this,
                                     it,
                                 ).copy(
-                                    opphørSistePeriode = it.opphørSistePeriode,
+                                    opphørsdato = it.opphørsdatoYearMonth,
                                 )
 
                         beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
@@ -910,9 +909,9 @@ class Dtomapper(
                                 .run {
                                     tilGrunnlagBostatus() + tilPersonobjekter()
                                 }.toList(),
-                        periode = ÅrMånedsperiode(virkningstidspunkt!!, opphørTilDato),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, finnBeregnTilDatoBehandling(globalOpphørsdatoYearMonth)),
+                        opphørsdato = globalOpphørsdatoYearMonth,
                         søknadsbarnReferanse = "",
-                        opphørSistePeriode = opphørSistePeriode,
                     ),
                 )
             } catch (e: Exception) {

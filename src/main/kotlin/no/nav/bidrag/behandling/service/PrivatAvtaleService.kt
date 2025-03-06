@@ -45,7 +45,7 @@ class PrivatAvtaleService(
         val privatAvtale =
             behandling.privatAvtale.find { it.id == privatavtaleId }
                 ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
-        privatAvtale.avtaleDato = request.avtaleDato
+        privatAvtale.avtaleDato = request.avtaleDato ?: privatAvtale.avtaleDato
         privatAvtale.skalIndeksreguleres = request.skalIndeksreguleres ?: privatAvtale.skalIndeksreguleres
         request.oppdaterPeriode?.let {
             oppdaterPrivatAvtaleAvtalePeriode(behandlingsid, privatavtaleId, it)

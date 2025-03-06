@@ -13,7 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
@@ -70,7 +70,7 @@ class SamværService(
                 Samværsperiode(
                     oppdaterSamvær,
                     request.periode.fom,
-                    request.periode.tom ?: justerPeriodeTilOpphørsdato(oppdaterSamvær.rolle.opphørsdato),
+                    request.periode.tom ?: justerPeriodeTomOpphørsdato(oppdaterSamvær.rolle.opphørsdato),
                     oppdatertSamværsklasse!!,
                     beregningJson = request.beregning.tilJsonString(),
                 )

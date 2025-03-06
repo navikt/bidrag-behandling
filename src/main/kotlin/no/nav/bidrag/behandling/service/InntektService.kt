@@ -30,7 +30,7 @@ import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
-import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -158,7 +158,7 @@ class InntektService(
             }.sortedBy { it.datoFom }
             .lastOrNull()
             ?.let { inntekt ->
-                inntekt.datoTom = justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
+                inntekt.datoTom = justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
             }
     }
 
@@ -271,7 +271,7 @@ class InntektService(
                         inntekt.bestemDatoTomForOffentligInntekt()
                     } else {
                         periode.angittPeriode?.til
-                            ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
+                            ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
                     }
                 forrigeInntektMedSammeType?.let {
                     if (inntekt.datoFom!! > it.datoFom) {

@@ -171,7 +171,7 @@ class ValiderBeregning(
                         ).takeIf {
                             it.harFeil
                         }
-                val privatAvtaleValideringsfeil = privatAvtale.map { it.validerePrivatAvtale() }
+                val privatAvtaleValideringsfeil = privatAvtale.map { it.validerePrivatAvtale() }.filter { it.harFeil }
                 val husstandsmedlemsfeil =
                     husstandsmedlem.barn
                         .toSet()

@@ -35,7 +35,7 @@ open class Person(
     )
     open val rolle: MutableSet<Rolle> = mutableSetOf(),
 ) {
-    fun opphørsdatoForRolle(behandling: Behandling) = behandling.roller.find { it.person?.id == id }?.opphørsdato
+    fun opphørsdatoForRolle(behandling: Behandling) = behandling.roller.find { it.person?.id == id }?.opphørsdatoYearMonth
 
     val personident get() = ident?.let { Personident(it) } ?: rolle.firstOrNull()?.ident?.let { Personident(it) }
 

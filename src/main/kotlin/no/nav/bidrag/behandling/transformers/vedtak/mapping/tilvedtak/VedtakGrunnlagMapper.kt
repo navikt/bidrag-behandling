@@ -49,17 +49,22 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
-fun Behandling.finnBeregnTilDatoBehandling(opphørsdato: LocalDate? = null) =
+fun Behandling.finnBeregnTilDatoBehandling(opphørsdato: YearMonth? = null) =
     if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
     } else {
-        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdato)
+        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
     }
 
 fun finnBeregnTilDato(
     virkningstidspunkt: LocalDate,
-    opphørsdato: LocalDate? = null,
-) = opphørsdato ?: maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+    opphørsdato: YearMonth? = null,
+): LocalDate =
+    if (opphørsdato == null || opphørsdato.isAfter(YearMonth.now().plusMonths(1))) {
+        maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+    } else {
+        opphørsdato.atDay(1)
+    }
 
 @Component
 class VedtakGrunnlagMapper(
@@ -172,8 +177,8 @@ class VedtakGrunnlagMapper(
                             beregnFraDato,
                             beregningTilDato,
                         ),
+                    opphørsdato = opphørsdato,
                     stønadstype = stonadstype ?: Stønadstype.BIDRAG,
-                    opphørSistePeriode = opphørsdato != null,
                     søknadsbarnReferanse = personObjekt.referanse,
                     grunnlagListe = (personobjekter + privatavtaleGrunnlag).toSet().toList(),
                 )
@@ -226,7 +231,7 @@ class VedtakGrunnlagMapper(
                             beregningTilDato,
                         ),
                     stønadstype = stonadstype ?: Stønadstype.BIDRAG,
-                    opphørSistePeriode = globalOpphørsdato != null,
+                    opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
                     søknadsbarnReferanse = søknadsbarn.referanse,
                     grunnlagListe = grunnlagsliste.toSet().toList(),
                 )

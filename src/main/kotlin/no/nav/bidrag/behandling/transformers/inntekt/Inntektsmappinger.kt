@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndrin
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
-import no.nav.bidrag.beregn.core.util.justerPeriodeTilOpphørsdato
+import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -61,9 +61,9 @@ fun Inntekt.bestemDatoTomForOffentligInntekt() =
                     behandling!!.virkningstidspunktEllerSøktFomDato,
                 )
             if (tom.plusMonths(1).isAfter(maxDate)) {
-                justerPeriodeTilOpphørsdato(opphørsdato)
+                justerPeriodeTomOpphørsdato(opphørsdato)
             } else {
-                justerPeriodeTilOpphørsdato(opphørsdato)
+                justerPeriodeTomOpphørsdato(opphørsdato)
                     ?: tom
             }
         }
@@ -163,7 +163,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
     inntekt.type = this.type
     inntekt.belop = this.beløp.nærmesteHeltall
     inntekt.datoFom = this.datoFom
-    inntekt.datoTom = this.datoTom ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
+    inntekt.datoTom = this.datoTom ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
     inntekt.gjelderBarn = this.gjelderBarn?.verdi
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
@@ -275,7 +275,7 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
             behandling = behandling,
         )
 
-    inntekt.datoTom = this.datoTom ?: justerPeriodeTilOpphørsdato(inntekt.opphørsdato)
+    inntekt.datoTom = this.datoTom ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
 
     if (this.inntektstype != null) {
         inntekt.inntektsposter =
