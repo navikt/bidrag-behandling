@@ -378,7 +378,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         .flatMap { (innhentetForIdent, grunnlag) ->
 
             val grunnlagsdatatype =
-                if (behandling.tilType() == TypeBehandling.BIDRAG &&
+                if (behandling.tilType() != TypeBehandling.FORSKUDD &&
                     innhentetForIdent == behandling.bidragsmottaker?.ident
                 ) {
                     Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
