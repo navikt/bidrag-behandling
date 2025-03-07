@@ -417,7 +417,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     filter { it.aktiv != null && !it.erBearbeidet } shouldHaveSize 1
                 }
 
-                behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 4
+                behandling.grunnlag.filter { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype } shouldHaveSize 5
 
                 val barnetilsyn =
                     behandling.grunnlag.find { Rolletype.BIDRAGSMOTTAKER == it.rolle.rolletype && Grunnlagsdatatype.BARNETILSYN == it.type }
@@ -646,11 +646,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
 
                 assertSoftly(grunnlagBm) { gbm ->
-                    gbm shouldHaveSize 12
+                    gbm shouldHaveSize 13
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 3
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
@@ -2088,11 +2088,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
 
                 assertSoftly(grunnlagBm) { gbm ->
-                    gbm shouldHaveSize 12
+                    gbm shouldHaveSize 13
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 3
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
@@ -2171,11 +2171,11 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val grunnlagBm = behandling.grunnlag.filter { it.rolle == behandling.bidragsmottaker }
 
                 assertSoftly(grunnlagBm) { gbm ->
-                    gbm shouldHaveSize 12
+                    gbm shouldHaveSize 13
                     gbm.filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.BARNETILLEGG } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD } shouldHaveSize 0
-                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 2
+                    gbm.filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN } shouldHaveSize 3
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 2
                     gbm.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && it.erBearbeidet } shouldHaveSize 1
                     gbm.filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER } shouldHaveSize 1
