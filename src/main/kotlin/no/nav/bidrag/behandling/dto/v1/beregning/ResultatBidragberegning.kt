@@ -11,7 +11,6 @@ import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
-import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
@@ -41,24 +40,24 @@ fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
             )
         }
     }
-    if (stonadstype == Stønadstype.BIDRAG18AAR) {
-        if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)) {
-            return UgyldigBeregningDto(
-                tittel = "Innhenting av beløpshistorikk feilet",
-                begrunnelse =
-                    "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
-                resultatPeriode = emptyList(),
-            )
-        }
-    }
-    if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)) {
-        return UgyldigBeregningDto(
-            tittel = "Innhenting av beløpshistorikk feilet",
-            begrunnelse =
-                "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
-            resultatPeriode = emptyList(),
-        )
-    }
+//    if (stonadstype == Stønadstype.BIDRAG18AAR) {
+//        if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)) {
+//            return UgyldigBeregningDto(
+//                tittel = "Innhenting av beløpshistorikk feilet",
+//                begrunnelse =
+//                    "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
+//                resultatPeriode = emptyList(),
+//            )
+//        }
+//    }
+//    if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)) {
+//        return UgyldigBeregningDto(
+//            tittel = "Innhenting av beløpshistorikk feilet",
+//            begrunnelse =
+//                "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
+//            resultatPeriode = emptyList(),
+//        )
+//    }
 
     return null
 }
