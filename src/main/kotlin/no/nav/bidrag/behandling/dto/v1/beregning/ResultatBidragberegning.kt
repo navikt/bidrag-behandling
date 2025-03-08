@@ -15,7 +15,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -178,7 +177,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
 ) {
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
-        if (resultatKode?.erDirekteAvslag() == true || resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE) {
+        if (resultatKode?.erDirekteAvslag() == true) {
             resultatKode.visningsnavnIntern()
         } else if (ugyldigBeregning != null) {
             when (ugyldigBeregning.type) {
@@ -207,7 +206,6 @@ data class BidragPeriodeBeregningsdetaljer(
     val inntekter: ResultatBeregningInntekterDto? = null,
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
     val samværsfradrag: BeregningsdetaljerSamværsfradrag? = null,
-    val endringUnderGrense: DelberegningEndringSjekkGrensePeriode? = null,
     val sluttberegning: SluttberegningBarnebidrag? = null,
     val delberegningUnderholdskostnad: DelberegningUnderholdskostnad? = null,
     val delberegningBidragspliktigesBeregnedeTotalBidrag: DelberegningBidragspliktigesBeregnedeTotalbidragDto? = null,
