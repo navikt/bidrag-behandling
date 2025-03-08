@@ -308,7 +308,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         oppdatertBehandling.get().virkningstidspunkt shouldBe nyttVirkningstidspunkt
         val inntekter = oppdatertBehandling.get().inntekter.toList()
-        inntekter shouldHaveSize 6
+        inntekter shouldHaveSize 7
         inntekter.filter { it.datoFom == nyttVirkningstidspunkt } shouldHaveSize 4
         inntekter
             .find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
