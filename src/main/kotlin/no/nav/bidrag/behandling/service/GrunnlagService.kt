@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
+import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
@@ -51,6 +52,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.grunnlag.grunnlagstyperSomIkkeKreverAktivering
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
@@ -75,6 +77,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.BARNETILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.KONTANTSTØTTE
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -789,6 +792,8 @@ class GrunnlagService(
 
         val innhentingAvBoforholdFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
+        val innhentingAvBoforholdBMFeilet =
+            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == it.key }.isNotEmpty()
 
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
@@ -810,6 +815,16 @@ class GrunnlagService(
                         it.husstandsmedlemmerOgEgneBarnListe.toSet(),
                     )
                 }
+            }
+            if (behandling.søknadsbarn.isNotEmpty() &&
+                Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi &&
+                !innhentingAvBoforholdBMFeilet
+            ) {
+                periodisereOgLagreBoforhold(
+                    behandling,
+                    it.husstandsmedlemmerOgEgneBarnListe.filtrerSøknadsbarn(behandling).toSet(),
+                    Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
+                )
             }
             if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi) {
                 lagreAndreBarnTilBMGrunnlag(behandling, it.husstandsmedlemmerOgEgneBarnListe.toSet())
@@ -1010,8 +1025,8 @@ class GrunnlagService(
     private fun periodisereOgLagreBoforhold(
         behandling: Behandling,
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
+        grunnlagsdatatype: Grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD,
     ) {
-        val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
@@ -1038,6 +1053,14 @@ class GrunnlagService(
                     grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
                     innhentetGrunnlag = it.value.toSet(),
                     gjelderPerson = Personident(it.key!!),
+                    aktiveringstidspunkt =
+                        if (grunnlagsdatatype ==
+                            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+                        ) {
+                            LocalDateTime.now()
+                        } else {
+                            null
+                        },
                 )
             }
 
@@ -1049,7 +1072,10 @@ class GrunnlagService(
             )
 
         // oppdatere husstandsmedlem og bostatusperiode-tabellene hvis førstegangslagring
-        if (nyesteBearbeidaBoforholdFørLagring.isEmpty() && innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()) {
+        if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD &&
+            nyesteBearbeidaBoforholdFørLagring.isEmpty() &&
+            innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()
+        ) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
 
@@ -1387,6 +1413,10 @@ class GrunnlagService(
             innhentetGrunnlag.isNotEmpty() ||
                 Grunnlagstype(
                     Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    false,
+                ) == grunnlagstype ||
+                Grunnlagstype(
+                    Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
                     false,
                 ) == grunnlagstype
 
@@ -1738,7 +1768,11 @@ class GrunnlagService(
                     GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
                     innhentetFor,
                 )
-
+            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN ->
+                innhentetGrunnlag.hentFeilFor(
+                    GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
+                    innhentetFor,
+                )
             Grunnlagsdatatype.SIVILSTAND ->
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SIVILSTAND,
@@ -1816,6 +1850,14 @@ class GrunnlagService(
                         }.toSet(),
                 )
             }
+            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN -> {
+                lagreGrunnlagHvisEndret(
+                    behandling,
+                    rolleInhentetFor,
+                    Grunnlagstype(grunnlagsdatatype, false),
+                    innhentetGrunnlag.husstandsmedlemmerOgEgneBarnListe.filtrerSøknadsbarn(behandling).toSet(),
+                )
+            }
 
             Grunnlagsdatatype.BOFORHOLD -> {
                 if (behandling.tilType() == TypeBehandling.BIDRAG && rolleInhentetFor.rolletype == Rolletype.BIDRAGSMOTTAKER) return
@@ -1888,5 +1930,28 @@ class GrunnlagService(
                 lagringAvGrunnlagFeiletException(behandling.id!!)
             }
         }
+    }
+}
+
+fun List<RelatertPersonGrunnlagDto>.filtrerSøknadsbarn(behandling: Behandling) =
+    behandling.søknadsbarn.map {
+        this.find { rolle -> rolle.gjelderPersonId == it.ident } ?: RelatertPersonGrunnlagDto(
+            gjelderPersonId = it.ident,
+            partPersonId = behandling.bidragsmottaker!!.ident,
+            navn = it.hentNavn(),
+            fødselsdato = it.fødselsdato,
+            relasjon = Familierelasjon.BARN,
+            borISammeHusstandDtoListe = emptyList(),
+        )
+    }
+
+fun List<RelatertPersonGrunnlagDto>.filtrerBasertPåRolle(
+    behandling: Behandling,
+    rolleInhentetFor: Rolle,
+) = filter {
+    if (behandling.erBidrag() && rolleInhentetFor.rolletype == Rolletype.BIDRAGSMOTTAKER) {
+        behandling.søknadsbarn.any { rolle -> rolle.ident == it.gjelderPersonId }
+    } else {
+        true
     }
 }
