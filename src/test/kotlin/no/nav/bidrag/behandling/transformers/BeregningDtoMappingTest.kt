@@ -6,6 +6,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -71,6 +72,7 @@ class BeregningDtoMappingTest {
                         Personident(testdataBarn1.ident),
                         testdataBarn1.navn,
                         testdataBarn1.fødselsdato,
+                        referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
                     ),
                     BeregnetForskuddResultat(
                         beregnetForskuddPeriodeListe =
@@ -119,6 +121,7 @@ class BeregningDtoMappingTest {
                             Personident(testdataBarn1.ident),
                             testdataBarn1.navn,
                             testdataBarn1.fødselsdato,
+                            referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
                         ),
                     resultat =
                         BeregnetForskuddResultat(
@@ -181,6 +184,7 @@ class BeregningDtoMappingTest {
                     Personident(testDataPerson.ident),
                     testDataPerson.navn,
                     testDataPerson.fødselsdato,
+                    referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
                 ),
             resultat =
                 BeregnetForskuddResultat(

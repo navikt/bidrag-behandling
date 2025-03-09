@@ -106,7 +106,6 @@ import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -823,8 +822,8 @@ class Dtomapper(
             grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
                 ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
                 ?: return null
-        val stønad = eksisterendeVedtak.konvertereData<StønadDto>()
-        val opphørPeriode = stønad!!.periodeListe.filter { it.beløp == null }.maxByOrNull { it.periode.til == null } ?: return null
+        val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
+        val opphørPeriode = stønad.periodeListe.filter { it.beløp == null }.maxByOrNull { it.periode.til == null } ?: return null
         return EksisterendeOpphørsvedtakDto(
             vedtaksid = opphørPeriode.vedtaksid,
             opphørsdato = opphørPeriode.periode.fom.atDay(1),
@@ -1011,6 +1010,7 @@ class Dtomapper(
             andreVoksneIHusstanden = tilAndreVoksneIHusstanden(true),
             sivilstand =
                 find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
+            husstandsmedlemBM = filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }.tilHusstandsmedlem(),
             stønadTilBarnetilsyn =
                 filter { it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
                     .toSet()

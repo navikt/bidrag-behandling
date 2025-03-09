@@ -531,6 +531,7 @@ class NotatOpplysningerService(
                                                             barnetilleggBM = it.barnetilleggBM.tilNotatDto(),
                                                             barnetilleggBP = it.barnetilleggBP.tilNotatDto(),
                                                             voksenIHusstanden = it.voksenIHusstanden,
+                                                            endringUnderGrense = it.endringUnderGrense,
                                                             enesteVoksenIHusstandenErEgetBarn = it.enesteVoksenIHusstandenErEgetBarn,
                                                             bpsAndel = it.bpsAndel,
                                                             inntekter =

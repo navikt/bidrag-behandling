@@ -191,7 +191,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 110
+                request.grunnlagListe shouldHaveSize 111
             }
             validerNotater()
         }
@@ -323,7 +323,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN) shouldHaveSize 1
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 11
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 12
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 0
         }
 
@@ -515,7 +515,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 107
+            grunnlagsliste shouldHaveSize 108
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
@@ -609,7 +609,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 103
+            grunnlagsliste shouldHaveSize 104
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG)) {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
@@ -757,7 +757,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 111
+                request.grunnlagListe shouldHaveSize 112
             }
         }
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
@@ -903,7 +903,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 111
+                request.grunnlagListe shouldHaveSize 112
             }
         }
 
@@ -1000,7 +1000,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN) shouldHaveSize 1
-            hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 11
+            hentGrunnlagstyper(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM) shouldHaveSize 12
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_SIVILSTAND) shouldHaveSize 0
         }
 

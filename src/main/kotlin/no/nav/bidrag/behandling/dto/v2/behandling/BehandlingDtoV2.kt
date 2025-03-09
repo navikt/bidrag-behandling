@@ -250,6 +250,7 @@ data class UtgiftspostDto(
 
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
+    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto>,
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
@@ -262,6 +263,7 @@ data class AktiveGrunnlagsdata(
 
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter = IkkeAktiveInntekter(),
+    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
@@ -436,6 +438,13 @@ enum class Grunnlagsdatatype(
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
     ),
+    BOFORHOLD_BM_SØKNADSBARN(
+        mapOf(
+            TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
+            TypeBehandling.FORSKUDD to setOf(),
+            TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER),
+        ),
+    ),
     BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
@@ -483,9 +492,9 @@ enum class Grunnlagsdatatype(
         ),
     ),
     TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
-    BELØPSHISTORIKK_BIDRAG(mapOf()),
-    BELØPSHISTORIKK_FORSKUDD(mapOf()),
-    BELØPSHISTORIKK_BIDRAG_18_ÅR(mapOf()),
+    BELØPSHISTORIKK_BIDRAG(mapOf(), erGjeldende = false),
+    BELØPSHISTORIKK_FORSKUDD(mapOf(), erGjeldende = false),
+    BELØPSHISTORIKK_BIDRAG_18_ÅR(mapOf(), erGjeldende = false),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     @Schema(deprecated = true)
@@ -576,6 +585,11 @@ fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
                 }
             }
         }
+        Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN ->
+            when (behandling.tilType()) {
+                TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG -> behandling.bidragsmottaker
+                else -> null
+            }
 
         else -> null
     }
