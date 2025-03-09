@@ -492,9 +492,9 @@ enum class Grunnlagsdatatype(
         ),
     ),
     TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
-    BELØPSHISTORIKK_BIDRAG(mapOf()),
-    BELØPSHISTORIKK_FORSKUDD(mapOf()),
-    BELØPSHISTORIKK_BIDRAG_18_ÅR(mapOf()),
+    BELØPSHISTORIKK_BIDRAG(mapOf(), erGjeldende = false),
+    BELØPSHISTORIKK_FORSKUDD(mapOf(), erGjeldende = false),
+    BELØPSHISTORIKK_BIDRAG_18_ÅR(mapOf(), erGjeldende = false),
 
     @Deprecated("Erstattes av SKATTEPLIKTIGE_INNTEKTER")
     @Schema(deprecated = true)
