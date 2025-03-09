@@ -84,15 +84,16 @@ val inntektsrapporteringSomKreverBarn =
 fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
     stønadsendringListe.map { stønadsendring ->
         val barnIdent = stønadsendring.kravhaver
-        val barn =
-            grunnlagListe.hentPerson(barnIdent.verdi)?.innholdTilObjekt<Person>()
-                ?: manglerPersonGrunnlag(barnIdent.verdi)
+        val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi) ?: manglerPersonGrunnlag(barnIdent.verdi)
+        val barn = barnGrunnlag.innholdTilObjekt<Person>()
+
         ResultatBeregningBarnDto(
             barn =
                 ResultatRolle(
                     barn.ident,
                     barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
                     barn.fødselsdato,
+                    referanse = barnGrunnlag.referanse,
                 ),
             perioder =
                 stønadsendring.periodeListe.map {
@@ -114,9 +115,8 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         stønadsendringListe.map { stønadsendring ->
             val barnIdent = stønadsendring.kravhaver
-            val barn =
-                grunnlagListe.hentPerson(barnIdent.verdi)?.innholdTilObjekt<Person>()
-                    ?: manglerPersonGrunnlag(barnIdent.verdi)
+            val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi) ?: manglerPersonGrunnlag(barnIdent.verdi)
+            val barn = barnGrunnlag.innholdTilObjekt<Person>()
             ResultatBidragsberegningBarnDto(
                 barn =
                     ResultatRolle(
@@ -124,6 +124,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                         barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
                         barn.fødselsdato,
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
+                        referanse = barnGrunnlag.referanse,
                     ),
                 perioder =
                     stønadsendring.periodeListe.filter { it.resultatkode != Resultatkode.OPPHØR.name }.map {
@@ -133,6 +134,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                             Resultatkode.fraKode(it.resultatkode)!!,
                             it.grunnlagReferanseListe,
                             null,
+                            Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
                         )
                     },
             )

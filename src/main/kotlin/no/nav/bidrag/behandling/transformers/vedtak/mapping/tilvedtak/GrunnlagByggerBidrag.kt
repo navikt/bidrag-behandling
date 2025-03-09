@@ -154,8 +154,7 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
                     )
             val sluttberegning = sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
             val ikkeOmsorgForBarnet = sluttberegning?.ikkeOmsorgForBarnet == true
-            val erResultatIngenEndringUnderGrense =
-                sluttberegningGrunnlag?.let { grunnlagListe.toList().erResultatEndringUnderGrense(it.referanse) } ?: false
+            val erResultatIngenEndringUnderGrense = grunnlagListe.toList().erResultatEndringUnderGrense(søknadsbarn.tilGrunnlagsreferanse())
             OpprettPeriodeRequestDto(
                 periode = it.periode,
                 beløp = it.resultat.beløp,

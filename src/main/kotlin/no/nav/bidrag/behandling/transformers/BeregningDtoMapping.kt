@@ -158,6 +158,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 resultat.avslaskode,
                                 it.grunnlagsreferanseListe,
                                 resultat.ugyldigBeregning,
+                                grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
                             )
                         },
                 )
@@ -204,6 +205,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     resultatkode: Resultatkode?,
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
     ugyldigBeregning: UgyldigBeregningDto?,
+    erResultatEndringUnderGrense: Boolean,
 ): ResultatBarnebidragsberegningPeriodeDto {
     val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
     val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
@@ -211,14 +213,13 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     val sluttberegning =
         sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
     val delberegningGrensePeriode = sluttberegningGrunnlag?.let { finnDelberegningSjekkGrensePeriode(it.referanse) }
-    val resultatUnderGrense = sluttberegningGrunnlag?.let { erResultatEndringUnderGrense(it.referanse) } ?: false
     return ResultatBarnebidragsberegningPeriodeDto(
         periode = periode,
         ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
         underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
         faktiskBidrag = resultat ?: BigDecimal.ZERO,
         resultatKode =
-            if (resultatUnderGrense) {
+            if (erResultatEndringUnderGrense) {
                 Resultatkode.INGEN_ENDRING_UNDER_GRENSE
             } else {
                 resultatkode
