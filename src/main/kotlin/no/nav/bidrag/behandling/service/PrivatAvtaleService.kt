@@ -151,6 +151,11 @@ class PrivatAvtaleService(
         gjelderBarn: BarnDto,
     ): PrivatAvtale {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        behandling.privatAvtale
+            .find { it.person.ident == gjelderBarn.personident?.verdi }
+            ?.let {
+                ugyldigForespørsel("Privat avtale for barn med personident ${gjelderBarn.personident?.verdi} finnes allerede")
+            }
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
             personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
