@@ -1945,6 +1945,20 @@ fun Behandling.leggTilSamvær(
     )
 }
 
+fun Behandling.leggTilPrivatAvtale(
+    barn: TestDataPerson,
+    fom: YearMonth,
+    tom: YearMonth?,
+    beløp: BigDecimal = BigDecimal(1000),
+) {
+    val privatAvtale =
+        this.privatAvtale.find { it.person.ident == barn.ident } ?: opprettPrivatAvtale(this, barn).let { pa ->
+            privatAvtale.add(pa)
+            pa
+        }
+    privatAvtale.perioder.add(opprettPrivatAvtalePeriode(privatAvtale, fom, tom, beløp))
+}
+
 fun Behandling.leggTilBarnetillegg(
     forBarn: TestDataPerson,
     rolle: Rolle,

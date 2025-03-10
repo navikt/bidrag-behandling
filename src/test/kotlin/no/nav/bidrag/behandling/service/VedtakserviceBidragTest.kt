@@ -38,6 +38,7 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
+import no.nav.bidrag.behandling.utils.testdata.leggTilPrivatAvtale
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
@@ -864,6 +865,233 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.periode.til shouldBe YearMonth.from(opphørsdato)
                 it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
                 it.beløp shouldBe BigDecimal(6480)
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    fun `Skal fatte vedtak for bidrag med privat avtale hvor resultat er ingen endring under grense`() {
+        stubPersonConsumer()
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), testdataHusstandsmedlem1, medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
+            testdataBarnBm,
+            medId = true,
+        )
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), medId = true)
+        behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), generateId = true)
+        behandling.leggTilBarnetilsyn(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
+            generateId = true,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
+            kilde = Kilde.OFFENTLIG,
+        )
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
+        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2023-01"), YearMonth.parse("2024-05"), BigDecimal(6500))
+        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2024-06"), null, BigDecimal(5600))
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Privat avtale kun i notat",
+            NotatType.PRIVAT_AVTALE,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.refVedtaksid = 553
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
+                testdataBarn1.copy(
+                    fødselsdato = behandling.søknadsbarn.first().fødselsdato,
+                ),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG) shouldHaveSize 1
+        }
+
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            stønadsendring.periodeListe.forEach {
+                it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    fun `Skal fatte vedtak for bidrag med privat avtale og beløpshistorikk hvor resultat er ingen endring under grense`() {
+        stubPersonConsumer()
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), testdataHusstandsmedlem1, medId = true)
+        behandling.leggTilFaktiskTilsynsutgift(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
+            testdataBarnBm,
+            medId = true,
+        )
+        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), medId = true)
+        behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), generateId = true)
+        behandling.leggTilBarnetilsyn(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
+            generateId = true,
+            tilsynstype = Tilsynstype.HELTID,
+            under_skolealder = true,
+            kilde = Kilde.OFFENTLIG,
+        )
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
+        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
+        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2023-01"), YearMonth.parse("2024-05"), BigDecimal(2500))
+        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2024-06"), null, BigDecimal(1600))
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Privat avtale kun i notat",
+            NotatType.PRIVAT_AVTALE,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.refVedtaksid = 553
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
+                testdataBarn1.copy(
+                    fødselsdato = behandling.søknadsbarn.first().fødselsdato,
+                ),
+            )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2023-01"), YearMonth.parse("2024-05")),
+                    beløp = BigDecimal("6800"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2024-05"), null),
+                    beløp = BigDecimal("5600"),
+                ),
+            ),
+        )
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG) shouldHaveSize 1
+        }
+
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            stønadsendring.periodeListe.forEach {
+                it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
             }
         }
 
