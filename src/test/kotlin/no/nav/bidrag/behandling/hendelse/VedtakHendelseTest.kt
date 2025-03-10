@@ -151,7 +151,7 @@ class VedtakHendelseTest : TestContainerRunner() {
                         ),
                 )
         vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
-        stubUtils.Verify().opprettOppgaveKalt(1)
+        stubUtils.Verify().opprettOppgaveKalt(0)
     }
 
     @Test
@@ -204,8 +204,8 @@ class VedtakHendelseTest : TestContainerRunner() {
                         ),
                 )
         vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
-        stubUtils.Verify().opprettOppgaveKalt(1)
-        stubUtils.Verify().hentBidragStonadHistoriskeSakerKalt(1)
+        stubUtils.Verify().opprettOppgaveKalt(0)
+        stubUtils.Verify().hentBidragStonadHistoriskeSakerKalt(0)
     }
 
     @Test

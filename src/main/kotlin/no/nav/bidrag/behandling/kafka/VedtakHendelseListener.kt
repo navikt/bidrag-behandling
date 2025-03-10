@@ -37,7 +37,7 @@ class VedtakHendelseListener(
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
         if (vedtak.kilde != Vedtakskilde.AUTOMATISK) {
-            opprettRevurderForskuddOppgaveVedBehov(vedtak)
+//            opprettRevurderForskuddOppgaveVedBehov(vedtak)
         }
         if (!vedtak.erFattetGjennomBidragBehandling()) {
             log.info {
