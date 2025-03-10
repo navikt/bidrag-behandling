@@ -229,6 +229,10 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         bpsAndelU = bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO,
         bpsAndelBeløp = bpsAndel?.andelBeløp ?: BigDecimal.ZERO,
         erDirekteAvslag = resultatkode?.erDirekteAvslag() ?: false,
+        erEndringUnderGrense = erResultatEndringUnderGrense,
+        erBeregnetAvslag =
+            sluttberegning != null &&
+                (sluttberegning.barnetErSelvforsørget || sluttberegning.ikkeOmsorgForBarnet),
         beregningsdetaljer =
             if (resultatkode?.erAvslag() != true) {
                 val delberegningBPsEvne = finnDelberegningBidragsevne(grunnlagsreferanseListe)

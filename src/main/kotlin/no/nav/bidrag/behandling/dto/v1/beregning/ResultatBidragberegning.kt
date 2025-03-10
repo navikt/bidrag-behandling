@@ -177,6 +177,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val faktiskBidrag: BigDecimal,
     val resultatKode: Resultatkode?,
     val erDirekteAvslag: Boolean = false,
+    val erBeregnetAvslag: Boolean = false,
+    val erEndringUnderGrense: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
 ) {
     @Suppress("unused")
