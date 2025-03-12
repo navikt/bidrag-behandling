@@ -53,6 +53,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.grunnlag.grunnlagstyperSomIkkeKreverAktivering
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
@@ -1860,7 +1861,9 @@ class GrunnlagService(
             }
 
             Grunnlagsdatatype.BOFORHOLD -> {
-                if (behandling.tilType() == TypeBehandling.BIDRAG && rolleInhentetFor.rolletype == Rolletype.BIDRAGSMOTTAKER) return
+                if ((behandling.erBidrag() || behandling.erSærbidrag()) && rolleInhentetFor.rolletype == Rolletype.BIDRAGSMOTTAKER) {
+                    return
+                }
                 lagreGrunnlagHvisEndret(
                     behandling,
                     rolleInhentetFor,
@@ -1932,6 +1935,9 @@ class GrunnlagService(
         }
     }
 }
+
+fun Behandling.skalLagreBoforhold(rolleInhentetFor: Rolletype) =
+    tilType() != TypeBehandling.FORSKUDD && rolleInhentetFor == Rolletype.BIDRAGSPLIKTIG
 
 fun List<RelatertPersonGrunnlagDto>.filtrerSøknadsbarn(behandling: Behandling) =
     behandling.søknadsbarn.map {
