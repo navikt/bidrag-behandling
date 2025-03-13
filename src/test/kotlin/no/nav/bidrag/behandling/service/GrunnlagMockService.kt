@@ -252,7 +252,7 @@ class GrunnlagMockService {
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 6
+        grunnlag shouldHaveSize 9
         grunnlag.filter { it.type == Grunnlagsdatatype.ANDRE_BARN } shouldHaveSize 1
         grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD && it.erBearbeidet } shouldHaveSize 2
         grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD && !it.erBearbeidet } shouldHaveSize 1
@@ -356,7 +356,7 @@ class GrunnlagMockService {
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 6
+        grunnlag shouldHaveSize 9
 
         behandling.underholdskostnader shouldHaveSize 4
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm.ident }) {
@@ -418,7 +418,7 @@ class GrunnlagMockService {
         )
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 5
+        grunnlag shouldHaveSize 8
         assertSoftly(grunnlag.find { it.type == Grunnlagsdatatype.ANDRE_BARN }!!) {
             it.aktiv.shouldNotBeNull()
             it.rolle.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
@@ -500,7 +500,7 @@ class GrunnlagMockService {
         )
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 5
+        grunnlag shouldHaveSize 8
         assertSoftly(grunnlag.find { it.type == Grunnlagsdatatype.ANDRE_BARN }!!) {
             it.aktiv.shouldNotBeNull()
             it.rolle.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER

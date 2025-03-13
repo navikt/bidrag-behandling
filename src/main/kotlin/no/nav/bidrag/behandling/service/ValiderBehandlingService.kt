@@ -78,6 +78,17 @@ class ValiderBehandlingService(
             ) {
                 return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
             }
+        } else {
+            val søknadsbarn = request.søknadsbarn.first()
+            val harBPStønadForFlereBarn =
+                bidragStonadConsumer
+                    .hentAlleStønaderForBidragspliktig(bp.ident)
+                    .stønader
+                    .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
+                    .any { it.type != Stønadstype.FORSKUDD }
+            if (harBPStønadForFlereBarn) {
+                return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
+            }
         }
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {

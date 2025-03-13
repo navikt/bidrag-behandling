@@ -5,9 +5,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
+import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
-import no.nav.bidrag.behandling.transformers.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -30,6 +30,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderB
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
 import java.time.YearMonth
 
 // Lager PERSON_BARN_BIDRAGSMOTTAKER objekter for at beregningen skal kunne hente ut riktig antall barn til BM
@@ -145,18 +146,27 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
     val grunnlagListe = resultat.grunnlagListe.toSet()
     val periodeliste =
         resultat.beregnetBarnebidragPeriodeListe.map {
-            val sluttberegning =
+            val sluttberegningGrunnlag =
                 grunnlagListe
                     .toList()
                     .finnSluttberegningIReferanser(
                         it.grunnlagsreferanseListe,
-                    )?.innholdTilObjekt<SluttberegningBarnebidrag>()
+                    )
+            val sluttberegning = sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
             val ikkeOmsorgForBarnet = sluttberegning?.ikkeOmsorgForBarnet == true
+            val erResultatIngenEndringUnderGrense = grunnlagListe.toList().erResultatEndringUnderGrense(søknadsbarn.tilGrunnlagsreferanse())
             OpprettPeriodeRequestDto(
                 periode = it.periode,
                 beløp = it.resultat.beløp,
                 valutakode = if (ikkeOmsorgForBarnet) null else "NOK",
-                resultatkode = if (ikkeOmsorgForBarnet) Resultatkode.IKKE_OMSORG_FOR_BARNET.name else Resultatkode.BEREGNET_BIDRAG.name,
+                resultatkode =
+                    if (ikkeOmsorgForBarnet) {
+                        Resultatkode.IKKE_OMSORG_FOR_BARNET.name
+                    } else if (erResultatIngenEndringUnderGrense) {
+                        Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
+                    } else {
+                        Resultatkode.BEREGNET_BIDRAG.name
+                    },
                 grunnlagReferanseListe = it.grunnlagsreferanseListe,
             )
         }

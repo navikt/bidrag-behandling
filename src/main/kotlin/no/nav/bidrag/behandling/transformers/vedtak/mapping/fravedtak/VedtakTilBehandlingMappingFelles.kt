@@ -24,10 +24,12 @@ import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -82,15 +84,16 @@ val inntektsrapporteringSomKreverBarn =
 fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
     stønadsendringListe.map { stønadsendring ->
         val barnIdent = stønadsendring.kravhaver
-        val barn =
-            grunnlagListe.hentPerson(barnIdent.verdi)?.innholdTilObjekt<Person>()
-                ?: manglerPersonGrunnlag(barnIdent.verdi)
+        val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi) ?: manglerPersonGrunnlag(barnIdent.verdi)
+        val barn = barnGrunnlag.innholdTilObjekt<Person>()
+
         ResultatBeregningBarnDto(
             barn =
                 ResultatRolle(
                     barn.ident,
                     barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
                     barn.fødselsdato,
+                    referanse = barnGrunnlag.referanse,
                 ),
             perioder =
                 stønadsendring.periodeListe.map {
@@ -112,9 +115,8 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         stønadsendringListe.map { stønadsendring ->
             val barnIdent = stønadsendring.kravhaver
-            val barn =
-                grunnlagListe.hentPerson(barnIdent.verdi)?.innholdTilObjekt<Person>()
-                    ?: manglerPersonGrunnlag(barnIdent.verdi)
+            val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi) ?: manglerPersonGrunnlag(barnIdent.verdi)
+            val barn = barnGrunnlag.innholdTilObjekt<Person>()
             ResultatBidragsberegningBarnDto(
                 barn =
                     ResultatRolle(
@@ -122,6 +124,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                         barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
                         barn.fødselsdato,
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
+                        referanse = barnGrunnlag.referanse,
                     ),
                 perioder =
                     stønadsendring.periodeListe.filter { it.resultatkode != Resultatkode.OPPHØR.name }.map {
@@ -131,6 +134,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                             Resultatkode.fraKode(it.resultatkode)!!,
                             it.grunnlagReferanseListe,
                             null,
+                            Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
                         )
                     },
             )
@@ -375,6 +379,14 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         .groupBy { it.partPersonId }
         .flatMap { (innhentetForIdent, grunnlag) ->
 
+            val grunnlagsdatatype =
+                if (behandling.tilType() != TypeBehandling.FORSKUDD &&
+                    innhentetForIdent == behandling.bidragsmottaker?.ident
+                ) {
+                    Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+                } else {
+                    Grunnlagsdatatype.BOFORHOLD
+                }
             val boforholdPeriodisert =
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
@@ -384,7 +396,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 )
             listOf(
                 behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.BOFORHOLD,
+                    grunnlagsdatatype,
                     grunnlag,
                     innhentetForIdent!!,
                     innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
@@ -396,7 +408,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                     .groupBy { it.gjelderPersonId }
                     .map {
                         behandling.opprettGrunnlag(
-                            Grunnlagsdatatype.BOFORHOLD,
+                            grunnlagsdatatype,
                             it.value,
                             grunnlag.firstOrNull()?.partPersonId!!,
                             innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),

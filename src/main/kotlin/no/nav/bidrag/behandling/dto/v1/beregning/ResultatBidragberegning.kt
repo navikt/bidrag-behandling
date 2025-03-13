@@ -4,19 +4,22 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.transformers.finnSluttberegningIReferanser
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
@@ -174,11 +177,13 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val faktiskBidrag: BigDecimal,
     val resultatKode: Resultatkode?,
     val erDirekteAvslag: Boolean = false,
+    val erBeregnetAvslag: Boolean = false,
+    val erEndringUnderGrense: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
 ) {
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
-        if (resultatKode?.erDirekteAvslag() == true) {
+        if (resultatKode?.erDirekteAvslag() == true || resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE) {
             resultatKode.visningsnavnIntern()
         } else if (ugyldigBeregning != null) {
             when (ugyldigBeregning.type) {
@@ -207,6 +212,7 @@ data class BidragPeriodeBeregningsdetaljer(
     val inntekter: ResultatBeregningInntekterDto? = null,
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
     val samværsfradrag: BeregningsdetaljerSamværsfradrag? = null,
+    val endringUnderGrense: DelberegningEndringSjekkGrensePeriode? = null,
     val sluttberegning: SluttberegningBarnebidrag? = null,
     val delberegningUnderholdskostnad: DelberegningUnderholdskostnad? = null,
     val delberegningBidragspliktigesBeregnedeTotalBidrag: DelberegningBidragspliktigesBeregnedeTotalbidragDto? = null,
@@ -221,3 +227,13 @@ data class BidragPeriodeBeregningsdetaljer(
         sluttberegning?.bidragJustertForDeltBosted == true ||
             sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }
+
+fun List<GrunnlagDto>.finnSluttberegningIReferanser(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
+    find {
+        listOf(
+            Grunnlagstype.SLUTTBEREGNING_FORSKUDD,
+            Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG,
+            Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG,
+        ).contains(it.type) &&
+            grunnlagsreferanseListe.contains(it.referanse)
+    }

@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
@@ -54,7 +55,7 @@ private val LOGGER = KotlinLogging.logger {}
 
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
-private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp)
+private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse())
 
 @Service
 class BeregningService(

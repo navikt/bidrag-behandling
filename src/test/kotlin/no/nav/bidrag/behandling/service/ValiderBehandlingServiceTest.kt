@@ -318,6 +318,66 @@ class ValiderBehandlingServiceTest {
             expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
             expection.validerInneholderMelding("Kan ikke behandle klage eller omgjøring")
         }
+
+        @Test
+        fun `skal ikke validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for flere barn`() {
+            unleash.enable("behandling.v2_endring")
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader =
+                        listOf(
+                            opprettSkyldnerStønad()
+                                .copy(
+                                    kravhaver = Personident("søknadsbarn1"),
+                                ),
+                            opprettSkyldnerStønad().copy(
+                                kravhaver = Personident("søknadsbarn2"),
+                            ),
+                        ),
+                )
+            val expection =
+                shouldThrow<HttpClientErrorException> {
+                    validerBehandlingService.validerKanBehandlesINyLøsning(
+                        opprettBidragKanBehandlesINyLøsningRequest().copy(
+                            roller =
+                                listOf(
+                                    SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("3231"), false),
+                                    SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123"), false),
+                                    SjekkRolleDto(Rolletype.BARN, ident = Personident("søknadsbarn1"), false),
+                                ),
+                        ),
+                    )
+                }
+            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
+            expection.validerInneholderMelding("Bidragspliktig har historiske eller løpende bidrag for flere barn")
+        }
+
+        @Test
+        fun `skal validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for ett barn`() {
+            unleash.enable("behandling.v2_endring")
+            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
+                SkyldnerStønaderResponse(
+                    stønader =
+                        listOf(
+                            opprettSkyldnerStønad()
+                                .copy(
+                                    kravhaver = Personident("søknadsbarn1"),
+                                ),
+                        ),
+                )
+            shouldNotThrow<HttpClientErrorException> {
+                validerBehandlingService.validerKanBehandlesINyLøsning(
+                    opprettBidragKanBehandlesINyLøsningRequest().copy(
+                        roller =
+                            listOf(
+                                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("3231"), false),
+                                SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123"), false),
+                                SjekkRolleDto(Rolletype.BARN, ident = Personident("søknadsbarn1"), false),
+                            ),
+                    ),
+                )
+            }
+        }
     }
 }
 
