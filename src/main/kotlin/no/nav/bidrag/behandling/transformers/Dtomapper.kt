@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
@@ -123,6 +124,7 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 @Component
 class Dtomapper(
@@ -693,6 +695,27 @@ class Dtomapper(
             roller = roller.map { it.tilDto() }.toSet(),
             søknadRefId = soknadRefId,
             vedtakRefId = refVedtaksid,
+            virkningstidspunktV2 =
+                roller.map {
+                    VirkningstidspunktDtoV2(
+                        rolle = it.tilDto(),
+                        virkningstidspunkt = virkningstidspunkt,
+                        opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                        årsak = årsak,
+                        avslag = avslag,
+                        begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                        harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                        eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
+                        opphørsdato = it.opphørsdato,
+                        begrunnelseFraOpprinneligVedtak =
+                            if (erKlageEllerOmgjøring) {
+                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
+                                    .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
+                            } else {
+                                null
+                            },
+                    )
+                },
             virkningstidspunkt =
                 VirkningstidspunktDto(
                     virkningstidspunkt = virkningstidspunkt,
@@ -700,6 +723,7 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    harLøpendeStønad = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                     opphør =
                         OpphørsdetaljerDto(
                             opphørsdato = globalOpphørsdato,
@@ -707,7 +731,7 @@ class Dtomapper(
                                 roller.map {
                                     OpphørsdetaljerRolleDto(
                                         rolle = it.tilDto(),
-                                        opphørsdato = globalOpphørsdato,
+                                        opphørsdato = it.opphørsdato,
                                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                                     )
                                 },
@@ -816,6 +840,16 @@ class Dtomapper(
                     )
                 },
         )
+
+    private fun Behandling.finnesLøpendeBidragForRolle(rolle: Rolle): Boolean {
+        val eksisterendeVedtak =
+            grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+                ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+                ?: return false
+        val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return false
+        val sistePeriode = stønad.periodeListe.maxBy { it.periode.fom }.periode
+        return sistePeriode.til == null || sistePeriode.til!!.isAfter(YearMonth.now())
+    }
 
     private fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
         val eksisterendeVedtak =
