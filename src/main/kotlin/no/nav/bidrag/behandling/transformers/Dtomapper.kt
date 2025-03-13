@@ -22,7 +22,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
@@ -849,20 +848,6 @@ class Dtomapper(
         val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return false
         val sistePeriode = stønad.periodeListe.maxBy { it.periode.fom }.periode
         return sistePeriode.til == null || sistePeriode.til!!.isAfter(YearMonth.now())
-    }
-
-    private fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
-        val eksisterendeVedtak =
-            grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
-                ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
-                ?: return null
-        val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
-        val opphørPeriode = stønad.periodeListe.filter { it.beløp == null }.maxByOrNull { it.periode.til == null } ?: return null
-        return EksisterendeOpphørsvedtakDto(
-            vedtaksid = opphørPeriode.vedtaksid,
-            opphørsdato = opphørPeriode.periode.fom.atDay(1),
-            vedtaksdato = opphørPeriode.gyldigFra.toLocalDate(),
-        )
     }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =

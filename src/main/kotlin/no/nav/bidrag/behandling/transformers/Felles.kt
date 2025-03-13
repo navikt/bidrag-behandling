@@ -1,10 +1,16 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -113,3 +119,20 @@ fun LocalDate?.erUnder12År(basertPåDato: LocalDate = LocalDate.now()) =
                 .withMonth(1)
                 .withDayOfMonth(1),
         ).years < 13
+
+fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
+    val eksisterendeVedtak =
+        grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+            ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+            ?: return null
+    val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
+    val opphørPeriode = stønad.periodeListe.maxByOrNull { it.periode.fom }.takeIf { it?.periode?.til != null } ?: return null
+    return EksisterendeOpphørsvedtakDto(
+        vedtaksid = opphørPeriode.vedtaksid,
+        opphørsdato =
+            opphørPeriode.periode.til!!
+                .plusMonths(1)
+                .atDay(1),
+        vedtaksdato = opphørPeriode.gyldigFra.toLocalDate(),
+    )
+}
