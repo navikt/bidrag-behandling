@@ -696,7 +696,7 @@ class Dtomapper(
             søknadRefId = soknadRefId,
             vedtakRefId = refVedtaksid,
             virkningstidspunktV2 =
-                roller.map {
+                søknadsbarn.map {
                     VirkningstidspunktDtoV2(
                         rolle = it.tilDto(),
                         virkningstidspunkt = virkningstidspunkt,
@@ -728,7 +728,7 @@ class Dtomapper(
                         OpphørsdetaljerDto(
                             opphørsdato = globalOpphørsdato,
                             opphørRoller =
-                                roller.map {
+                                søknadsbarn.map {
                                     OpphørsdetaljerRolleDto(
                                         rolle = it.tilDto(),
                                         opphørsdato = it.opphørsdato,
