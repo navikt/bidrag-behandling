@@ -196,6 +196,42 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
     return null
 }
 
+fun List<Grunnlag>.henteEndringerIBoforholdBM(
+    aktiveGrunnlag: List<Grunnlag>,
+    behandling: Behandling,
+): Set<HusstandsmedlemGrunnlagDto> {
+    val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+    val rolle = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)!!
+
+    val aktiveBoforholdsdata =
+        aktiveGrunnlag
+            .asSequence()
+            .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+            .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
+            .flatten()
+            .distinct()
+            .toList()
+            .filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(virkniningstidspunkt)
+            .toSet()
+    // Hent første for å finne innhentet tidspunkt
+    val nyeBoforholdsgrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+    val nyeBoforholdsdata =
+        asSequence()
+            .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+            .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
+            .flatten()
+            .distinct()
+            .toList()
+            .filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(virkniningstidspunkt)
+            .toSet()
+
+    return nyeBoforholdsdata.finnEndringerBoforhold(
+        virkniningstidspunkt,
+        aktiveBoforholdsdata,
+        nyeBoforholdsgrunnlag?.innhentet ?: LocalDateTime.now(),
+    )
+}
+
 fun List<Grunnlag>.henteEndringerIBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     behandling: Behandling,

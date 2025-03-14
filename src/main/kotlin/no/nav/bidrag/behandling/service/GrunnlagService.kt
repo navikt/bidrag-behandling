@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBM
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
@@ -1098,8 +1099,11 @@ class GrunnlagService(
         ) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
-
-        aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+        if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN) {
+            aktiverGrunnlagForBoforholdTilBMHvisIngenEndringerMåAksepteres(behandling)
+        } else {
+            aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+        }
     }
 
     fun aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
@@ -1123,6 +1127,36 @@ class GrunnlagService(
                 ).forEach { ikkeAktivtBoforholdBp ->
                     ikkeAktivtBoforholdBp.aktiv = LocalDateTime.now()
                 }
+        }
+    }
+
+    fun aktiverGrunnlagForBoforholdTilBMHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+        val rolleInhentetFor = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)!!
+        val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+
+        if (ikkeAktiveGrunnlag.isEmpty()) return
+        val endringerSomMåBekreftes =
+            ikkeAktiveGrunnlag.henteEndringerIBoforholdBM(aktiveGrunnlag, behandling)
+
+        if (endringerSomMåBekreftes.isEmpty()) {
+            val ikkeAktiverteGrunnlag =
+                ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN, rolleInhentetFor.ident!!)
+
+            ikkeAktiverteGrunnlag.forEach {
+                val type =
+                    when (it.erBearbeidet) {
+                        true -> "bearbeida"
+                        false -> "ikke-bearbeida"
+                    }
+
+                log.info {
+                    "Ikke-aktivert $type boforhold til bidragsmottaker med søknadsbarn med id ${it.id} i behandling ${behandling.id},"
+                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
+                }
+
+                it.aktiv = LocalDateTime.now()
+            }
         }
     }
 

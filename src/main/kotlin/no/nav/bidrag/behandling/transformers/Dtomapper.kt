@@ -65,6 +65,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBM
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.behandling.tilBarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
@@ -608,6 +609,7 @@ class Dtomapper(
                             }.toSet(),
                 ),
             arbeidsforhold = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIArbeidsforhold(aktiveGrunnlag),
+            husstandsmedlemBM = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforholdBM(aktiveGrunnlag, behandling),
             husstandsmedlem =
                 sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, behandling),
             andreVoksneIHusstanden =

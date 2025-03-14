@@ -557,6 +557,24 @@ fun Set<BarnetilsynGrunnlagDto>.filtrerePerioderEtterVirkningstidspunkt(virkning
             }
         }.toSet()
 
+fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(
+    virkningstidspunkt: LocalDate,
+): List<BoforholdResponseV2> =
+    groupBy { it.gjelderPersonId }.flatMap { (_, perioder) ->
+        val perioderFiltrert =
+            perioder.sortedBy { it.periodeFom }.slice(
+                perioder
+                    .map { it.periodeFom }
+                    .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, null),
+            )
+        val cutoffPeriodeFom = finnCutoffDatoFom(virkningstidspunkt, null)
+        perioderFiltrert.map { periode ->
+            periode
+                .takeIf { it == perioderFiltrert.first() }
+                ?.copy(periodeFom = maxOf(periode.periodeFom, cutoffPeriodeFom)) ?: periode
+        }
+    }
+
 fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunkt(
     husstandsmedlemListe: Set<Husstandsmedlem>,
     virkningstidspunkt: LocalDate,
