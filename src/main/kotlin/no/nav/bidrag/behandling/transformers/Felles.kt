@@ -129,10 +129,7 @@ fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpph�
     val opphørPeriode = stønad.periodeListe.maxByOrNull { it.periode.fom }.takeIf { it?.periode?.til != null } ?: return null
     return EksisterendeOpphørsvedtakDto(
         vedtaksid = opphørPeriode.vedtaksid,
-        opphørsdato =
-            opphørPeriode.periode.til!!
-                .plusMonths(1)
-                .atDay(1),
+        opphørsdato = opphørPeriode.periode.til!!.atDay(1),
         vedtaksdato = opphørPeriode.gyldigFra.toLocalDate(),
     )
 }
