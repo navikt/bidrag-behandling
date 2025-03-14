@@ -325,6 +325,8 @@ class GrunnlagService(
                 request.gjelderIdent!!,
                 request.overskriveManuelleOpplysninger,
             )
+        } else if (Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == request.grunnlagstype) {
+            aktivereBoforholdBMsSøknadsbarn(behandling)
         } else if (Grunnlagsdatatype.BOFORHOLD == request.grunnlagstype) {
             aktivereBoforhold(
                 behandling,
@@ -614,6 +616,32 @@ class GrunnlagService(
         )
 
         nyesteIkkeaktiverteBoforhold.forEach {
+            it.aktiv = LocalDateTime.now()
+        }
+    }
+
+    private fun aktivereBoforholdBMsSøknadsbarn(behandling: Behandling) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+        val nyesteIkkeAktiverteBearbeidet =
+            behandling.grunnlag
+                .hentSisteIkkeAktiv()
+                .filter { grunnlagsdatatype == it.type }
+                .firstOrNull { it.erBearbeidet }
+        val nyesteIkkeAktiverteIkkeBearbeidet =
+            behandling.grunnlag
+                .hentSisteIkkeAktiv()
+                .filter { grunnlagsdatatype == it.type }
+                .firstOrNull { !it.erBearbeidet }
+        if (nyesteIkkeAktiverteBearbeidet == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ingen grunnlag av type $grunnlagsdatatype å aktivere for oppgitt husstandsmeldem i  behandling " +
+                    behandling.id,
+            )
+        }
+
+        nyesteIkkeAktiverteBearbeidet.aktiv = LocalDateTime.now()
+        nyesteIkkeAktiverteIkkeBearbeidet?.let {
             it.aktiv = LocalDateTime.now()
         }
     }
@@ -1053,14 +1081,6 @@ class GrunnlagService(
                     grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
                     innhentetGrunnlag = it.value.toSet(),
                     gjelderPerson = Personident(it.key!!),
-                    aktiveringstidspunkt =
-                        if (grunnlagsdatatype ==
-                            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
-                        ) {
-                            LocalDateTime.now()
-                        } else {
-                            null
-                        },
                 )
             }
 
