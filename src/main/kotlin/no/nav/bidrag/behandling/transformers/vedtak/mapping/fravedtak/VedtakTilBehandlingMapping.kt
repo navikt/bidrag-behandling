@@ -155,7 +155,9 @@ class VedtakTilBehandlingMapping(
 
         behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
 
-        behandlingRepository.save(behandling)
+        if (!lesemodus) {
+            behandlingRepository.save(behandling)
+        }
         oppdaterDirekteOppgjørBeløp(behandling, lesemodus)
         grunnlagListe.oppdaterRolleGebyr(behandling)
 
