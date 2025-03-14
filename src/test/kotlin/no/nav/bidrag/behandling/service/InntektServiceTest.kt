@@ -1469,6 +1469,7 @@ class InntektServiceTest : TestContainerRunner() {
                         datoTom = YearMonth.parse("2023-06"),
                         type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
                         kilde = Kilde.MANUELL,
+                        medId = false,
                     ),
                     opprettInntekt(
                         behandling = behandling,
@@ -1476,6 +1477,7 @@ class InntektServiceTest : TestContainerRunner() {
                         datoTom = YearMonth.parse("2024-07"),
                         type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
                         kilde = Kilde.MANUELL,
+                        medId = false,
                     ),
                     opprettInntekt(
                         behandling = behandling,
@@ -1483,12 +1485,14 @@ class InntektServiceTest : TestContainerRunner() {
                         datoTom = YearMonth.parse("2024-07"),
                         type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
                         kilde = Kilde.MANUELL,
+                        medId = false,
                     ),
                     opprettInntekt(
                         behandling = behandling,
                         datoFom = YearMonth.parse("2024-01"),
                         datoTom = null,
                         type = Inntektsrapportering.AINNTEKT,
+                        medId = false,
                     ),
                 )
 
