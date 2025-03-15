@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -21,9 +22,11 @@ import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtale
 import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtalePeriode
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -38,6 +41,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -97,6 +101,156 @@ class DtoMapperMockTest {
         every { validerBehandlingService.kanBehandlesINyLøsning(any()) } returns null
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
         every { tilgangskontrollService.harTilgang(any(), any()) } returns true
+    }
+
+    @Test
+    fun `skal finne opphørdato fra løpende bidrag`() {
+        assertSoftly("Finnes ikke opphør hvis siste periode er løpende") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2025-01-01")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(YearMonth.parse("2024-01"), null), beløp = null),
+                    ),
+            )
+            val opphør = behandling.finnEksisterendeVedtakMedOpphør(behandling.søknadsbarn.first())
+            opphør.shouldBeNull()
+        }
+
+        assertSoftly("Finnes ikke opphør hvis siste periode er opphør men er før søkt fom dato") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2025-01-01")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(YearMonth.parse("2023-01"), YearMonth.parse("2023-12"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(YearMonth.parse("2024-01"), YearMonth.parse("2024-05"))),
+                    ),
+            )
+            val opphør = behandling.finnEksisterendeVedtakMedOpphør(behandling.søknadsbarn.first())
+            opphør.shouldBeNull()
+        }
+
+        assertSoftly("Finnes opphør hvis siste periode ikke er løpende og er innenfor søkt fom dato") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2024-02-01")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(YearMonth.parse("2023-01"), YearMonth.parse("2023-12"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(YearMonth.parse("2024-01"), YearMonth.parse("2024-06"))).copy(
+                            vedtaksid = 300,
+                            gyldigFra = LocalDate.parse("2024-01-01").atTime(0, 0),
+                            valutakode = "NOK",
+                        ),
+                    ),
+            )
+            val opphør = behandling.finnEksisterendeVedtakMedOpphør(behandling.søknadsbarn.first())
+            opphør.shouldNotBeNull()
+            opphør.vedtaksid shouldBe 300
+            opphør.opphørsdato shouldBe LocalDate.parse("2024-06-01")
+            opphør.vedtaksdato shouldBe LocalDate.parse("2024-01-01")
+        }
+    }
+
+    @Test
+    fun `test finnesLøpendeBidragForRolle`() {
+        assertSoftly("Finnes løpende bidrag hvis siste periode er løpende") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2025-01-01")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null)),
+                    ),
+            )
+            behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe true
+        }
+
+        assertSoftly("Finnes løpende bidrag hvis siste periode er etter søkt fom dato") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2023-12-01")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-05-31"))),
+                    ),
+            )
+            behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe true
+        }
+
+        assertSoftly("Finnes ikke løpende bidrag hvis siste periode er før søkt fom dato") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2025-01-01")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-05-31"))),
+                    ),
+            )
+            behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe false
+        }
+        assertSoftly("Finnes løpende bidrag hvis siste periode er samme måned som søkt fom dato") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2025-01-15")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2025-01-31"))),
+                    ),
+            )
+            behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe true
+        }
+        assertSoftly("Finnes ikke løpende bidrag hvis siste periode er måned etter søkt fom dato") {
+            val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+            behandling.søktFomDato = LocalDate.parse("2025-02-01")
+            behandling.leggTilGrunnlagBeløpshistorikk(
+                Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                            vedtaksid = 200,
+                            valutakode = "NOK",
+                        ),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2025-01-31"))),
+                    ),
+            )
+            behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe false
+        }
     }
 
     @Test

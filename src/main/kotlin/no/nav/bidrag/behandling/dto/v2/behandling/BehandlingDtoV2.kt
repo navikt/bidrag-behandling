@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
@@ -116,6 +117,7 @@ data class BehandlingDtoV2(
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
     val virkningstidspunkt: VirkningstidspunktDto,
+    val virkningstidspunktV2: List<VirkningstidspunktDtoV2> = emptyList(),
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
     val gebyr: GebyrDto? = null,

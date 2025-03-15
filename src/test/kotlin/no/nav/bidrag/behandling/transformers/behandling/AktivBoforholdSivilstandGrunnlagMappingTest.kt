@@ -27,6 +27,192 @@ class AktivBoforholdSivilstandGrunnlagMappingTest : AktivGrunnlagTestFelles() {
     @Nested
     inner class BoforholdGrunnlagendringTest {
         @Test
+        fun `skal ikke finne differanser i boforhold BM søknadsbarn ved endring hvis endring ikke etter virkningstidspunkt`() {
+            val behandling = byggBehandling()
+            val aktivBoforholdGrunnlagListe =
+                listOf(
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2005, 1).atDay(1),
+                        periodeTom = YearMonth.of(2022, 11).atEndOfMonth(),
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2022, 12).atDay(1),
+                        periodeTom = null,
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                )
+            val aktivGrunnlagBoforhold =
+                Grunnlag(
+                    erBearbeidet = true,
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
+                    data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                )
+            val boforholdGrunnlagListe =
+                listOf(
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2005, 1).atDay(1),
+                        periodeTom = YearMonth.of(2021, 11).atEndOfMonth(),
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2021, 12).atDay(1),
+                        periodeTom = YearMonth.of(2022, 5).atEndOfMonth(),
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2022, 6).atDay(1),
+                        periodeTom = YearMonth.of(2022, 11).atEndOfMonth(),
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2022, 12).atDay(1),
+                        periodeTom = null,
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                )
+            val nyttGrunnlagBoforhold =
+                Grunnlag(
+                    erBearbeidet = true,
+                    rolle = behandling.bidragsmottaker!!,
+                    type = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
+                    data = commonObjectmapper.writeValueAsString(boforholdGrunnlagListe),
+                    behandling = behandling,
+                    innhentet = LocalDateTime.now(),
+                )
+
+            val resultat =
+                listOf(nyttGrunnlagBoforhold).henteEndringerIBoforhold(listOf(aktivGrunnlagBoforhold), behandling)
+
+            resultat shouldHaveSize 0
+        }
+
+        @Test
+        fun `skal finne differanser i boforhold til BMs søknadsbarn ved endring`() {
+            val behandling = byggBehandling()
+            val aktivBoforholdGrunnlagListe =
+                listOf(
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2005, 1).atDay(1),
+                        periodeTom = YearMonth.of(2023, 11).atEndOfMonth(),
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2023, 12).atDay(1),
+                        periodeTom = null,
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                )
+            val aktivtBoforholdGrunnlagListe2 =
+                listOf(
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2023, 12).atDay(1),
+                        periodeTom = null,
+                        gjelderPersonId = testdataBarn2.ident,
+                    ),
+                )
+            val aktivtGrunnlagBoforhold =
+                listOf(
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
+                        data = commonObjectmapper.writeValueAsString(aktivBoforholdGrunnlagListe),
+                        behandling = behandling,
+                        gjelder = testdataBarn1.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
+                        data = commonObjectmapper.writeValueAsString(aktivtBoforholdGrunnlagListe2),
+                        behandling = behandling,
+                        gjelder = testdataBarn2.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                )
+
+            val boforholdGrunnlagListe =
+                listOf(
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2005, 1).atDay(1),
+                        periodeTom = null,
+                        gjelderPersonId = testdataBarn1.ident,
+                    ),
+                )
+            val boforholdGrunnlagListe2 =
+                listOf(
+                    BoforholdResponseV2(
+                        bostatus = Bostatuskode.MED_FORELDER,
+                        fødselsdato = LocalDate.parse("2005-01-01"),
+                        periodeFom = YearMonth.of(2023, 12).atDay(1),
+                        periodeTom = null,
+                        gjelderPersonId = testdataBarn2.ident,
+                    ),
+                )
+            val nyttGrunnlagBoforhold =
+                listOf(
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
+                        data = commonObjectmapper.writeValueAsString(boforholdGrunnlagListe),
+                        behandling = behandling,
+                        gjelder = testdataBarn1.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                    Grunnlag(
+                        erBearbeidet = true,
+                        rolle = behandling.bidragsmottaker!!,
+                        type = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
+                        data = commonObjectmapper.writeValueAsString(boforholdGrunnlagListe2),
+                        behandling = behandling,
+                        gjelder = testdataBarn2.ident,
+                        innhentet = LocalDateTime.now(),
+                    ),
+                )
+
+            val resultat = nyttGrunnlagBoforhold.henteEndringerIBoforholdBMSøknadsbarn(aktivtGrunnlagBoforhold, behandling)
+
+            resultat shouldHaveSize 2
+            val resultatBarn1 = resultat.find { it.ident == testdataBarn1.ident }
+            resultatBarn1!!.perioder shouldHaveSize 1
+            resultatBarn1.perioder.toList()[0].datoFom shouldBe behandling.virkningstidspunkt
+            resultatBarn1.perioder.toList()[0].datoTom shouldBe null
+            resultatBarn1.perioder.toList()[0].bostatus shouldBe Bostatuskode.MED_FORELDER
+
+            val resultatBarn2 = resultat.find { it.ident == testdataBarn2.ident }
+            resultatBarn2!!.perioder shouldHaveSize 1
+            resultatBarn2.perioder.toList()[0].datoFom shouldBe LocalDate.parse("2023-12-01")
+            resultatBarn2.perioder.toList()[0].datoTom shouldBe null
+            resultatBarn2.perioder.toList()[0].bostatus shouldBe Bostatuskode.MED_FORELDER
+        }
+
+        @Test
         fun `skal finne differanser i boforhold ved endring`() {
             val behandling = byggBehandling()
             val aktivBoforholdGrunnlagListe =
