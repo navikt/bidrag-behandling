@@ -1203,21 +1203,21 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
-                    dato = LocalDate.now().minusYears(3),
+                    dato = behandling.mottattdato.minusYears(3),
                     type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
                     godkjentBeløp = BigDecimal(0),
                 ),
                 Utgiftspost(
-                    dato = LocalDate.now().minusYears(8),
+                    dato = behandling.mottattdato.minusYears(8),
                     type = Utgiftstype.KLÆR.name,
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
                     godkjentBeløp = BigDecimal(0),
                 ),
                 Utgiftspost(
-                    dato = LocalDate.now().minusYears(5),
+                    dato = behandling.mottattdato.minusYears(5),
                     type = Utgiftstype.SELSKAP.name,
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(10000),
@@ -1327,7 +1327,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 val innholdList = innholdTilObjektListe<List<UtgiftspostGrunnlag>>().first()
                 innholdList shouldHaveSize 3
                 val utgiftspost = innholdList.find { it.type == Utgiftstype.KONFIRMASJONSAVGIFT.name }!!
-                utgiftspost.dato shouldBe LocalDate.now().minusYears(3)
+                utgiftspost.dato shouldBe behandling.mottattdato.minusYears(3)
                 utgiftspost.type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
                 utgiftspost.kravbeløp shouldBe BigDecimal(15000)
                 utgiftspost.godkjentBeløp shouldBe BigDecimal(0)

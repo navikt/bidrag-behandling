@@ -870,7 +870,7 @@ class UtgiftserviceTest : TestContainerRunner() {
             OppdatereUtgiftRequest(
                 nyEllerEndretUtgift =
                     OppdatereUtgift(
-                        dato = LocalDate.now().minusYears(3),
+                        dato = behandling.mottattdato.minusYears(3),
                         type = Utgiftstype.REISEUTGIFT.name,
                         kravbeløp = BigDecimal(2000),
                         godkjentBeløp = BigDecimal(0),
