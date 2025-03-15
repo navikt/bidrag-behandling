@@ -881,7 +881,7 @@ class UtgiftserviceTest : TestContainerRunner() {
 
         response.utgiftposter shouldHaveSize 2
         assertSoftly(response.utgiftposter[1]) {
-            dato shouldBe LocalDate.now().minusYears(3)
+            dato shouldBe behandling.mottattdato.minusYears(3)
         }
 
         response.avslag shouldBe Resultatkode.ALLE_UTGIFTER_ER_FORELDET
