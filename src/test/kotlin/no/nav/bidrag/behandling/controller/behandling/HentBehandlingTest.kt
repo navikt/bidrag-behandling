@@ -124,7 +124,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
         behandling.utgift!!.utgiftsposter =
             mutableSetOf(
                 Utgiftspost(
-                    dato = LocalDate.now().minusYears(3),
+                    dato = behandling.mottattdato.minusYears(3),
                     type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
                     utgift = behandling.utgift!!,
                     kravbeløp = BigDecimal(15000),
