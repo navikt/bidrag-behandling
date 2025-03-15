@@ -48,7 +48,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
-import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBM
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
@@ -1100,7 +1100,7 @@ class GrunnlagService(
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
         if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN) {
-            aktiverGrunnlagForBoforholdTilBMHvisIngenEndringerMåAksepteres(behandling)
+            aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         } else {
             aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
         }
@@ -1130,14 +1130,14 @@ class GrunnlagService(
         }
     }
 
-    fun aktiverGrunnlagForBoforholdTilBMHvisIngenEndringerMåAksepteres(behandling: Behandling) {
-        val rolleInhentetFor = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)!!
+    fun aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+        val rolleInhentetFor = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling) ?: return
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
 
         if (ikkeAktiveGrunnlag.isEmpty()) return
         val endringerSomMåBekreftes =
-            ikkeAktiveGrunnlag.henteEndringerIBoforholdBM(aktiveGrunnlag, behandling)
+            ikkeAktiveGrunnlag.henteEndringerIBoforholdBMSøknadsbarn(aktiveGrunnlag, behandling)
 
         if (endringerSomMåBekreftes.isEmpty()) {
             val ikkeAktiverteGrunnlag =

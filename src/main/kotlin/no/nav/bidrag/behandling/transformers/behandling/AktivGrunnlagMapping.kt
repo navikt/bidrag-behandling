@@ -196,34 +196,19 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
     return null
 }
 
-fun List<Grunnlag>.henteEndringerIBoforholdBM(
+fun List<Grunnlag>.henteEndringerIBoforholdBMSøknadsbarn(
     aktiveGrunnlag: List<Grunnlag>,
     behandling: Behandling,
 ): Set<HusstandsmedlemGrunnlagDto> {
     val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
-    val rolle = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)!!
 
     val aktiveBoforholdsdata =
-        aktiveGrunnlag
-            .asSequence()
-            .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
-            .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
-            .flatten()
-            .distinct()
-            .toList()
-            .filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(virkniningstidspunkt)
-            .toSet()
+        aktiveGrunnlag.hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt).toSet()
     // Hent første for å finne innhentet tidspunkt
-    val nyeBoforholdsgrunnlag = find { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
-    val nyeBoforholdsdata =
-        asSequence()
-            .filter { (it.rolle.id == rolle.id) && it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
-            .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
-            .flatten()
-            .distinct()
-            .toList()
-            .filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(virkniningstidspunkt)
-            .toSet()
+    val nyeBoforholdsgrunnlag =
+        filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+            .maxByOrNull { it.innhentet }
+    val nyeBoforholdsdata = hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt).toSet()
 
     return nyeBoforholdsdata.finnEndringerBoforhold(
         virkniningstidspunkt,

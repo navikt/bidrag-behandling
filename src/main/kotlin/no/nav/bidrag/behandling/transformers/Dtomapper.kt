@@ -14,7 +14,6 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
-import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
@@ -65,7 +64,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
-import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBM
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.behandling.tilBarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
@@ -110,7 +109,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
-import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
@@ -124,7 +122,6 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.YearMonth
 
 @Component
 class Dtomapper(
@@ -609,7 +606,7 @@ class Dtomapper(
                             }.toSet(),
                 ),
             arbeidsforhold = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIArbeidsforhold(aktiveGrunnlag),
-            husstandsmedlemBM = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforholdBM(aktiveGrunnlag, behandling),
+            husstandsmedlemBM = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforholdBMSøknadsbarn(aktiveGrunnlag, behandling),
             husstandsmedlem =
                 sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, behandling),
             andreVoksneIHusstanden =
@@ -705,7 +702,7 @@ class Dtomapper(
                         årsak = årsak,
                         avslag = avslag,
                         begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-                        harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                        harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                         opphørsdato = it.opphørsdato,
                         begrunnelseFraOpprinneligVedtak =
@@ -724,7 +721,7 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-                    harLøpendeStønad = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                    harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                     opphør =
                         OpphørsdetaljerDto(
                             opphørsdato = globalOpphørsdato,
@@ -841,16 +838,6 @@ class Dtomapper(
                     )
                 },
         )
-
-    private fun Behandling.finnesLøpendeBidragForRolle(rolle: Rolle): Boolean {
-        val eksisterendeVedtak =
-            grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
-                ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
-                ?: return false
-        val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return false
-        val sistePeriode = stønad.periodeListe.maxBy { it.periode.fom }.periode
-        return sistePeriode.til == null || sistePeriode.til!!.isAfter(YearMonth.now())
-    }
 
     private fun Husstandsmedlem.mapTilOppdatereBoforholdResponse() =
         OppdatereBoforholdResponse(

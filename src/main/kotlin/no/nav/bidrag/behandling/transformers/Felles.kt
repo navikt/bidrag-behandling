@@ -11,10 +11,12 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
+import no.nav.bidrag.transport.behandling.stonad.response.StønadPeriodeDto
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Period
+import java.time.YearMonth
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =
@@ -120,13 +122,24 @@ fun LocalDate?.erUnder12År(basertPåDato: LocalDate = LocalDate.now()) =
                 .withDayOfMonth(1),
         ).years < 13
 
-fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
+fun Behandling.finnesLøpendeBidragForRolle(rolle: Rolle): Boolean = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) != null
+
+fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
         grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
             ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
             ?: return null
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
-    val opphørPeriode = stønad.periodeListe.maxByOrNull { it.periode.fom }.takeIf { it?.periode?.til != null } ?: return null
+    val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
+    return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! >= YearMonth.from(søktFomDato)) {
+        sistePeriode
+    } else {
+        null
+    }
+}
+
+fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
+    val opphørPeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle)?.takeIf { it.periode.til != null } ?: return null
     return EksisterendeOpphørsvedtakDto(
         vedtaksid = opphørPeriode.vedtaksid,
         opphørsdato = opphørPeriode.periode.til!!.atDay(1),

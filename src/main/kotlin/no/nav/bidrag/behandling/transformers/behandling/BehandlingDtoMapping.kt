@@ -645,6 +645,16 @@ fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkning
         it.periodeFom
     }.slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
 
+fun List<Grunnlag>.hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt: LocalDate) =
+    asSequence()
+        .filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+        .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
+        .flatten()
+        .distinct()
+        .toList()
+        .filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(virkniningstidspunkt)
+        .sortedBy { it.periodeFom }
+
 fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     virkniningstidspunkt: LocalDate,
     husstandsmedlem: Set<Husstandsmedlem>,
