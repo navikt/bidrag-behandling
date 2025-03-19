@@ -1,3 +1,8 @@
+FROM ubuntu:22.04 as locales
+RUN apt-get update && apt-get install -y locales
+RUN locale-gen nb_NO.UTF-8 && \
+    update-locale LANG=nb_NO.UTF-8 LANGUAGE="nb_NO:nb" LC_ALL=nb_NO.UTF-8
+
 FROM gcr.io/distroless/java21
 LABEL maintainer="Team Bidrag" \
       email="bidrag@nav.no"
@@ -5,8 +10,8 @@ LABEL maintainer="Team Bidrag" \
 COPY --from=busybox /bin/sh /bin/sh
 COPY --from=busybox /bin/printenv /bin/printenv
 
-COPY --from=ubuntu:22.04 /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive
-COPY --from=ubuntu:22.04 /usr/share/i18n/locales/nb_NO /usr/share/i18n/locales/nb_NO
+# Copy locale files from the locales stage
+COPY --from=locales /usr/lib/locale/ /usr/lib/locale/
 
 WORKDIR /app
 
