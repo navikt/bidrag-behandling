@@ -33,7 +33,7 @@ env:
   KODEVERK_URL: http://bidrag-kodeverk
   OPPGAVE_URL: https://oppgave.dev-fss-pub.nais.io
   OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave
-  JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -Dfile.encoding=UTF-8
+  JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
   pool: nav-dev
 azure_access_inbound:
