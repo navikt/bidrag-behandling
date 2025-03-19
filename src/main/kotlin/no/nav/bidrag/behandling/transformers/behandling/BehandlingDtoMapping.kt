@@ -557,6 +557,24 @@ fun Set<BarnetilsynGrunnlagDto>.filtrerePerioderEtterVirkningstidspunkt(virkning
             }
         }.toSet()
 
+fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(
+    virkningstidspunkt: LocalDate,
+): List<BoforholdResponseV2> =
+    groupBy { it.gjelderPersonId }.flatMap { (_, perioder) ->
+        val perioderFiltrert =
+            perioder.sortedBy { it.periodeFom }.slice(
+                perioder
+                    .map { it.periodeFom }
+                    .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, null),
+            )
+        val cutoffPeriodeFom = finnCutoffDatoFom(virkningstidspunkt, null)
+        perioderFiltrert.map { periode ->
+            periode
+                .takeIf { it == perioderFiltrert.first() }
+                ?.copy(periodeFom = maxOf(periode.periodeFom, cutoffPeriodeFom)) ?: periode
+        }
+    }
+
 fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunkt(
     husstandsmedlemListe: Set<Husstandsmedlem>,
     virkningstidspunkt: LocalDate,
@@ -626,6 +644,16 @@ fun List<Sivilstand>.filtrerSivilstandBeregnetEtterVirkningstidspunktV2(virkning
     sortedBy {
         it.periodeFom
     }.slice(map { it.periodeFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
+
+fun List<Grunnlag>.hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt: LocalDate) =
+    asSequence()
+        .filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+        .mapNotNull { it.konvertereData<List<BoforholdResponseV2>>() }
+        .flatten()
+        .distinct()
+        .toList()
+        .filtrerPerioderEtterVirkningstidspunktForBMsBoforhold(virkniningstidspunkt)
+        .sortedBy { it.periodeFom }
 
 fun List<Grunnlag>.hentAlleBearbeidaBoforhold(
     virkniningstidspunkt: LocalDate,

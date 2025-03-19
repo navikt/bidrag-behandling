@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
+import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
@@ -84,6 +85,7 @@ class BehandlingService(
             }
         }
 
+    @Transactional
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
         opprettBehandling.roller.forEach { rolle ->
             rolle.ident?.let {
@@ -195,6 +197,12 @@ class BehandlingService(
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
+        behandling.søknadsbarn.forEach { rolle ->
+            behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
+                rolle.opphørsdato = it.opphørsdato
+            }
+        }
+        behandlingRepository.save(behandling)
         log.info {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
                 "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
