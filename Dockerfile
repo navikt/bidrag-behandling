@@ -11,5 +11,6 @@ COPY ./target/app.jar app.jar
 EXPOSE 8080
 ENV LANG='nb_NO.UTF-8' LANGUAGE='nb_NO:nb' LC_ALL='nb:NO.UTF-8' TZ="Europe/Oslo"
 ENV SPRING_PROFILES_ACTIVE=nais
+ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
 
 CMD ["app.jar"]
