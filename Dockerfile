@@ -4,6 +4,10 @@ LABEL maintainer="Team Bidrag" \
 
 COPY --from=busybox /bin/sh /bin/sh
 COPY --from=busybox /bin/printenv /bin/printenv
+
+COPY --from=ubuntu:22.04 /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive
+COPY --from=ubuntu:22.04 /usr/share/i18n/locales/nb_NO /usr/share/i18n/locales/nb_NO
+
 WORKDIR /app
 
 COPY ./target/app.jar app.jar
