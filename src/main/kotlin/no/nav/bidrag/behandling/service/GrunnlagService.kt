@@ -411,6 +411,20 @@ class GrunnlagService(
     }
 
     @Transactional
+    fun oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+        val sisteIkkeAktiveGrunnlag =
+            behandling.henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, false),
+                grunnlagsdatatype.innhentesForRolle(behandling)!!,
+            ) ?: run {
+                log.debug { "Fant ingen ikke-aktive boforholdsgrunnlag. Gjør ingen endringer" }
+                return
+            }
+        sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBMBearbeidetGrunnlag(false)
+    }
+
+    @Transactional
     fun oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD
         val sisteIkkeAktiveGrunnlag =
@@ -422,6 +436,19 @@ class GrunnlagService(
                 return
             }
         sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(false)
+    }
+
+    @Transactional
+    fun oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val sisteAktiveGrunnlag =
+            behandling.henteNyesteAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN, false),
+                Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)!!,
+            ) ?: run {
+                log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                return
+            }
+        sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBMBearbeidetGrunnlag()
     }
 
     @Transactional
@@ -491,6 +518,24 @@ class GrunnlagService(
         )
     }
 
+    private fun Grunnlag.rekalkulerOgOppdaterBoforholdBMBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
+        val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
+        val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
+        val boforholdPeriodisert =
+            BoforholdApi.beregnBoforholdBarnV3(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.tilTypeBoforhold(),
+                boforhold.tilBoforholdBarnRequest(behandling, true),
+            )
+        boforholdPeriodisert
+            .filter { it.gjelderPersonId != null }
+            .groupBy { it.gjelderPersonId }
+            .forEach { (gjelder, perioder) ->
+                overskrivBearbeidetBoforholdBMGrunnlag(behandling, gjelder, perioder, rekalkulerOgOverskriveAktiverte)
+            }
+    }
+
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
         val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
         val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
@@ -531,6 +576,29 @@ class GrunnlagService(
         grunnlagSomSkalOverskrives.forEach {
             it.data = tilJson(perioder)
         }
+    }
+
+    private fun overskrivBearbeidetBoforholdBMGrunnlag(
+        behandling: Behandling,
+        gjelder: String?,
+        perioder: List<BoforholdResponseV2>,
+        rekalkulerOgOverskriveAktiverte: Boolean = true,
+    ) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+
+        val grunnlagSomSkalOverskrives =
+            if (rekalkulerOgOverskriveAktiverte) {
+                behandling.henteAktiverteGrunnlag(
+                    Grunnlagstype(grunnlagsdatatype, true),
+                    grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                )
+            } else {
+                behandling.henteUaktiverteGrunnlag(
+                    Grunnlagstype(grunnlagsdatatype, true),
+                    grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                )
+            }
+        grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let { it.data = tilJson(perioder) }
     }
 
     private fun overskrivBearbeidetBoforholdGrunnlag(
@@ -602,11 +670,15 @@ class GrunnlagService(
         val nyesteIkkeAktivertGrunnlagBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { !it.erBearbeidet }
 
         if (nyesteIkkeAktivertGrunnlagBoforhold == null) {
-            throw HttpClientErrorException(
-                HttpStatus.NOT_FOUND,
-                "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
-                    "å aktivere for BP i  behandling ${behandling.id}",
-            )
+//            throw HttpClientErrorException(
+//                HttpStatus.NOT_FOUND,
+//                "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
+//                    "å aktivere for BP i  behandling ${behandling.id}",
+//            )
+            nyesteIkkeaktiverteBoforhold.forEach {
+                it.aktiv = LocalDateTime.now()
+            }
+            return
         }
 
         boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
