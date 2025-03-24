@@ -212,7 +212,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
     val sluttberegning =
         sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
-    val delberegningGrensePeriode = sluttberegningGrunnlag?.let { finnDelberegningSjekkGrensePeriode(it.referanse) }
+    val delberegningGrensePeriode = finnDelberegningSjekkGrensePeriode(periode)
     return ResultatBarnebidragsberegningPeriodeDto(
         periode = periode,
         ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
