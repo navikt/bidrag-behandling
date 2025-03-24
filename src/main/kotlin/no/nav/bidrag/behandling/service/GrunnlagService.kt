@@ -413,10 +413,11 @@ class GrunnlagService(
     @Transactional
     fun oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+        val innhentesForRolle = grunnlagsdatatype.innhentesForRolle(behandling) ?: return
         val sisteIkkeAktiveGrunnlag =
             behandling.henteNyesteIkkeAktiveGrunnlag(
                 Grunnlagstype(grunnlagsdatatype, false),
-                grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                innhentesForRolle,
             ) ?: run {
                 log.debug { "Fant ingen ikke-aktive boforholdsgrunnlag. Gjør ingen endringer" }
                 return
@@ -440,10 +441,11 @@ class GrunnlagService(
 
     @Transactional
     fun oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val innhentesForRolle = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling) ?: return
         val sisteAktiveGrunnlag =
             behandling.henteNyesteAktiveGrunnlag(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN, false),
-                Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)!!,
+                innhentesForRolle,
             ) ?: run {
                 log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
                 return
