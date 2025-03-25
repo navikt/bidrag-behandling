@@ -56,6 +56,7 @@ import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -109,6 +110,7 @@ import no.nav.bidrag.transport.behandling.vedtak.Behandlingsreferanse
 import no.nav.bidrag.transport.behandling.vedtak.Sporingsdata
 import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
+import no.nav.bidrag.transport.behandling.vedtak.response.EngangsbeløpDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
@@ -2253,4 +2255,41 @@ fun opprettPrivatAvtalePeriode(
         fom = fom.atDay(1),
         tom = tom?.atEndOfMonth(),
         beløp = beløp,
+    )
+
+fun opprettVedtakDto() =
+    VedtakDto(
+        kilde = Vedtakskilde.MANUELT,
+        fastsattILand = "",
+        type = Vedtakstype.ENDRING,
+        opprettetAv = "",
+        opprettetAvNavn = "",
+        kildeapplikasjon = "bisys",
+        vedtakstidspunkt = LocalDateTime.now(),
+        enhetsnummer = Enhetsnummer("4444"),
+        innkrevingUtsattTilDato = null,
+        opprettetTidspunkt = LocalDateTime.now(),
+        engangsbeløpListe = emptyList(),
+        behandlingsreferanseListe = emptyList(),
+        grunnlagListe = emptyList(),
+        stønadsendringListe = emptyList(),
+    )
+
+fun opprettEngangsbeløp(type: Engangsbeløptype = Engangsbeløptype.SÆRBIDRAG) =
+    EngangsbeløpDto(
+        type = type,
+        kravhaver = Personident(testdataBarn1.ident),
+        mottaker = Personident(testdataBM.ident),
+        skyldner = Personident(testdataBP.ident),
+        sak = Saksnummer(SAKSNUMMER),
+        innkreving = Innkrevingstype.MED_INNKREVING,
+        beslutning = Beslutningstype.ENDRING,
+        omgjørVedtakId = null,
+        eksternReferanse = null,
+        resultatkode = Resultatkode.SÆRBIDRAG_INNVILGET.name,
+        beløp = BigDecimal(1000),
+        valutakode = "",
+        referanse = "",
+        delytelseId = "",
+        grunnlagReferanseListe = emptyList(),
     )

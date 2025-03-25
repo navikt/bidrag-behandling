@@ -158,7 +158,7 @@ class BehandlingTilVedtakMapping(
                         beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
                         betaltBeløp = null,
                         resultatkode = beregning.resultatkode.name,
-                        referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_SKYLDNER, skyldner),
+                        referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
                         eksternReferanse = null,
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,

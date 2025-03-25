@@ -241,6 +241,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
             gebyrMottaker.beløp shouldBe null
             gebyrMottaker.valutakode shouldBe null
+            gebyrMottaker.referanse shouldNotBe null
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -259,6 +260,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             gebyrSkyldner.valutakode shouldBe "NOK"
             gebyrSkyldner.kravhaver shouldBe Personident("NAV")
             gebyrSkyldner.mottaker shouldBe Personident("NAV")
+            gebyrSkyldner.referanse shouldNotBe null
+
             gebyrSkyldner.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             gebyrSkyldner.resultatkode shouldBe Resultatkode.GEBYR_ILAGT.name
             gebyrSkyldner.sak shouldBe Saksnummer(SAKSNUMMER)
@@ -1935,6 +1938,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             it.any { it.type == Engangsbeløptype.DIREKTE_OPPGJØR }.shouldBeTrue()
             assertSoftly(it.find { it.type == Engangsbeløptype.DIREKTE_OPPGJØR }!!) {
                 beløp shouldBe innbetaltBeløp
+                referanse shouldNotBe null
                 skyldner shouldBe Personident(testdataBP.ident)
                 kravhaver shouldBe Personident(testdataBarn1.ident)
                 mottaker shouldBe Personident(testdataBM.ident)
