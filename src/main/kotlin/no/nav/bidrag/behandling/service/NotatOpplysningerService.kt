@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Personinfo
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforholdTilBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
@@ -77,6 +78,7 @@ import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
 import no.nav.bidrag.transport.notat.NotatBeregnetInntektDto
 import no.nav.bidrag.transport.notat.NotatBeregnetPrivatAvtalePeriodeDto
 import no.nav.bidrag.transport.notat.NotatBoforholdDto
+import no.nav.bidrag.transport.notat.NotatBoforholdTilBMMedSøknadsbarn
 import no.nav.bidrag.transport.notat.NotatDelberegningBarnetilleggDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragsevneDto
 import no.nav.bidrag.transport.notat.NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto
@@ -194,6 +196,10 @@ class NotatOpplysningerService(
     }
 
     fun hentNotatOpplysningerForBehandling(behandling: Behandling): VedtakNotatDto {
+        val opplysningerBoforholdBM =
+            behandling.grunnlag
+                .hentSisteAktiv()
+                .hentAlleBearbeidaBoforholdTilBMSøknadsbarn(behandling.virkningstidspunktEllerSøktFomDato)
         val opplysningerBoforhold =
             behandling.grunnlag
                 .hentSisteAktiv()
@@ -341,6 +347,24 @@ class NotatOpplysningerService(
                 NotatBoforholdDto(
                     begrunnelse = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
+                    boforholdBMSøknadsbarn =
+                        opplysningerBoforholdBM.groupBy { it.gjelderPersonId }.mapNotNull { (gjelderBarnIdent, perioder) ->
+                            val gjelderBarn = behandling.søknadsbarn.find { it.ident == gjelderBarnIdent } ?: return@mapNotNull null
+                            NotatBoforholdTilBMMedSøknadsbarn(
+                                gjelderBarn = gjelderBarn.tilNotatRolle(),
+                                perioder =
+                                    perioder.map {
+                                        OpplysningerFraFolkeregisteret(
+                                            periode =
+                                                ÅrMånedsperiode(
+                                                    it.periodeFom,
+                                                    it.periodeTom,
+                                                ),
+                                            status = it.bostatus,
+                                        )
+                                    },
+                            )
+                        },
                     andreVoksneIHusstanden = mapper.tilAndreVoksneIHusstanden(behandling),
                     beregnetBoforhold = mapper.run { behandling.tilBeregnetBoforhold() },
                     barn =

@@ -88,6 +88,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
+import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
@@ -158,7 +159,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 resultat.avslaskode,
                                 it.grunnlagsreferanseListe,
                                 resultat.ugyldigBeregning,
-                                grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
+                                grunnlagsListe.erResultatEndringUnderGrenseForPeriode(it.periode),
                             )
                         },
                 )
@@ -212,7 +213,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
     val sluttberegning =
         sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
-    val delberegningGrensePeriode = sluttberegningGrunnlag?.let { finnDelberegningSjekkGrensePeriode(it.referanse) }
+    val delberegningGrensePeriode = finnDelberegningSjekkGrensePeriode(periode)
     return ResultatBarnebidragsberegningPeriodeDto(
         periode = periode,
         ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },

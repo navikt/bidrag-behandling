@@ -15,7 +15,7 @@ import no.nav.bidrag.behandling.consumer.dto.behandlingstypeNasjonal
 import no.nav.bidrag.behandling.consumer.dto.behandlingstypeUtland
 import no.nav.bidrag.behandling.consumer.dto.formatterDatoForOppgave
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -108,7 +108,7 @@ class OppgaveServiceTest {
                 withArg {
                     it.sak shouldBe Saksnummer(SAKSNUMMER)
                     it.type shouldBe Stønadstype.FORSKUDD
-                    it.skyldner shouldBe skyldnerNav
+                    it.skyldner shouldBe personIdentNav
                     it.kravhaver shouldBe Personident(testdataBarn1.ident)
                 },
             )
@@ -185,7 +185,7 @@ class OppgaveServiceTest {
                 withArg {
                     it.sak shouldBe Saksnummer(SAKSNUMMER)
                     it.type shouldBe Stønadstype.FORSKUDD
-                    it.skyldner shouldBe skyldnerNav
+                    it.skyldner shouldBe personIdentNav
                     it.kravhaver shouldBe Personident(testdataBarn1.ident)
                 },
             )
@@ -356,7 +356,7 @@ class OppgaveServiceTest {
                             omgjørVedtakId = 1,
                             periodeListe = emptyList(),
                             sak = Saksnummer(SAKSNUMMER),
-                            skyldner = skyldnerNav,
+                            skyldner = personIdentNav,
                         ),
                     ),
             ),
@@ -579,7 +579,7 @@ class OppgaveServiceTest {
                 withArg {
                     it.sak shouldBe Saksnummer(SAKSNUMMER)
                     it.type shouldBe Stønadstype.FORSKUDD
-                    it.skyldner shouldBe skyldnerNav
+                    it.skyldner shouldBe personIdentNav
                     it.kravhaver shouldBe Personident(testdataBarn1.ident)
                 },
             )

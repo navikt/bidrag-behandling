@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
@@ -325,6 +326,8 @@ class GrunnlagService(
                 request.gjelderIdent!!,
                 request.overskriveManuelleOpplysninger,
             )
+        } else if (Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == request.grunnlagstype) {
+            aktivereBoforholdBMsSøknadsbarn(behandling)
         } else if (Grunnlagsdatatype.BOFORHOLD == request.grunnlagstype) {
             aktivereBoforhold(
                 behandling,
@@ -408,6 +411,21 @@ class GrunnlagService(
     }
 
     @Transactional
+    fun oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+        val innhentesForRolle = grunnlagsdatatype.innhentesForRolle(behandling) ?: return
+        val sisteIkkeAktiveGrunnlag =
+            behandling.henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, false),
+                innhentesForRolle,
+            ) ?: run {
+                log.debug { "Fant ingen ikke-aktive boforholdsgrunnlag. Gjør ingen endringer" }
+                return
+            }
+        sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBMBearbeidetGrunnlag(false)
+    }
+
+    @Transactional
     fun oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD
         val sisteIkkeAktiveGrunnlag =
@@ -419,6 +437,20 @@ class GrunnlagService(
                 return
             }
         sisteIkkeAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(false)
+    }
+
+    @Transactional
+    fun oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        val innhentesForRolle = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling) ?: return
+        val sisteAktiveGrunnlag =
+            behandling.henteNyesteAktiveGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN, false),
+                innhentesForRolle,
+            ) ?: run {
+                log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
+                return
+            }
+        sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBMBearbeidetGrunnlag()
     }
 
     @Transactional
@@ -488,6 +520,24 @@ class GrunnlagService(
         )
     }
 
+    private fun Grunnlag.rekalkulerOgOppdaterBoforholdBMBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
+        val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
+        val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
+        val boforholdPeriodisert =
+            BoforholdApi.beregnBoforholdBarnV3(
+                behandling.virkningstidspunktEllerSøktFomDato,
+                gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.tilTypeBoforhold(),
+                boforhold.tilBoforholdBarnRequest(behandling, true),
+            )
+        boforholdPeriodisert
+            .filter { it.gjelderPersonId != null }
+            .groupBy { it.gjelderPersonId }
+            .forEach { (gjelder, perioder) ->
+                overskrivBearbeidetBoforholdBMGrunnlag(behandling, gjelder, perioder, rekalkulerOgOverskriveAktiverte)
+            }
+    }
+
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
         val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
         val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
@@ -528,6 +578,29 @@ class GrunnlagService(
         grunnlagSomSkalOverskrives.forEach {
             it.data = tilJson(perioder)
         }
+    }
+
+    private fun overskrivBearbeidetBoforholdBMGrunnlag(
+        behandling: Behandling,
+        gjelder: String?,
+        perioder: List<BoforholdResponseV2>,
+        rekalkulerOgOverskriveAktiverte: Boolean = true,
+    ) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+
+        val grunnlagSomSkalOverskrives =
+            if (rekalkulerOgOverskriveAktiverte) {
+                behandling.henteAktiverteGrunnlag(
+                    Grunnlagstype(grunnlagsdatatype, true),
+                    grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                )
+            } else {
+                behandling.henteUaktiverteGrunnlag(
+                    Grunnlagstype(grunnlagsdatatype, true),
+                    grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                )
+            }
+        grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let { it.data = tilJson(perioder) }
     }
 
     private fun overskrivBearbeidetBoforholdGrunnlag(
@@ -599,11 +672,15 @@ class GrunnlagService(
         val nyesteIkkeAktivertGrunnlagBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { !it.erBearbeidet }
 
         if (nyesteIkkeAktivertGrunnlagBoforhold == null) {
-            throw HttpClientErrorException(
-                HttpStatus.NOT_FOUND,
-                "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
-                    "å aktivere for BP i  behandling ${behandling.id}",
-            )
+//            throw HttpClientErrorException(
+//                HttpStatus.NOT_FOUND,
+//                "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
+//                    "å aktivere for BP i  behandling ${behandling.id}",
+//            )
+            nyesteIkkeaktiverteBoforhold.forEach {
+                it.aktiv = LocalDateTime.now()
+            }
+            return
         }
 
         boforholdService.oppdatereAutomatiskInnhentetBoforholdAndreVoksneIHusstanden(
@@ -614,6 +691,32 @@ class GrunnlagService(
         )
 
         nyesteIkkeaktiverteBoforhold.forEach {
+            it.aktiv = LocalDateTime.now()
+        }
+    }
+
+    private fun aktivereBoforholdBMsSøknadsbarn(behandling: Behandling) {
+        val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
+        val nyesteIkkeAktiverteBearbeidet =
+            behandling.grunnlag
+                .hentSisteIkkeAktiv()
+                .filter { grunnlagsdatatype == it.type }
+                .firstOrNull { it.erBearbeidet }
+        val nyesteIkkeAktiverteIkkeBearbeidet =
+            behandling.grunnlag
+                .hentSisteIkkeAktiv()
+                .filter { grunnlagsdatatype == it.type }
+                .firstOrNull { !it.erBearbeidet }
+        if (nyesteIkkeAktiverteBearbeidet == null) {
+            throw HttpClientErrorException(
+                HttpStatus.NOT_FOUND,
+                "Fant ingen grunnlag av type $grunnlagsdatatype å aktivere for oppgitt husstandsmeldem i  behandling " +
+                    behandling.id,
+            )
+        }
+
+        nyesteIkkeAktiverteBearbeidet.aktiv = LocalDateTime.now()
+        nyesteIkkeAktiverteIkkeBearbeidet?.let {
             it.aktiv = LocalDateTime.now()
         }
     }
@@ -1053,14 +1156,6 @@ class GrunnlagService(
                     grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
                     innhentetGrunnlag = it.value.toSet(),
                     gjelderPerson = Personident(it.key!!),
-                    aktiveringstidspunkt =
-                        if (grunnlagsdatatype ==
-                            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
-                        ) {
-                            LocalDateTime.now()
-                        } else {
-                            null
-                        },
                 )
             }
 
@@ -1078,8 +1173,11 @@ class GrunnlagService(
         ) {
             boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
         }
-
-        aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+        if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN) {
+            aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
+        } else {
+            aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+        }
     }
 
     fun aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
@@ -1103,6 +1201,36 @@ class GrunnlagService(
                 ).forEach { ikkeAktivtBoforholdBp ->
                     ikkeAktivtBoforholdBp.aktiv = LocalDateTime.now()
                 }
+        }
+    }
+
+    fun aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+        val rolleInhentetFor = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling) ?: return
+        val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+
+        if (ikkeAktiveGrunnlag.isEmpty()) return
+        val endringerSomMåBekreftes =
+            ikkeAktiveGrunnlag.henteEndringerIBoforholdBMSøknadsbarn(aktiveGrunnlag, behandling)
+
+        if (endringerSomMåBekreftes.isEmpty()) {
+            val ikkeAktiverteGrunnlag =
+                ikkeAktiveGrunnlag.hentGrunnlagForType(Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN, rolleInhentetFor.ident!!)
+
+            ikkeAktiverteGrunnlag.forEach {
+                val type =
+                    when (it.erBearbeidet) {
+                        true -> "bearbeida"
+                        false -> "ikke-bearbeida"
+                    }
+
+                log.info {
+                    "Ikke-aktivert $type boforhold til bidragsmottaker med søknadsbarn med id ${it.id} i behandling ${behandling.id},"
+                    "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
+                }
+
+                it.aktiv = LocalDateTime.now()
+            }
         }
     }
 

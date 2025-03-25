@@ -196,6 +196,27 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
     return null
 }
 
+fun List<Grunnlag>.henteEndringerIBoforholdBMSøknadsbarn(
+    aktiveGrunnlag: List<Grunnlag>,
+    behandling: Behandling,
+): Set<HusstandsmedlemGrunnlagDto> {
+    val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+
+    val aktiveBoforholdsdata =
+        aktiveGrunnlag.hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt).toSet()
+    // Hent første for å finne innhentet tidspunkt
+    val nyeBoforholdsgrunnlag =
+        filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+            .maxByOrNull { it.innhentet }
+    val nyeBoforholdsdata = hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt).toSet()
+
+    return nyeBoforholdsdata.finnEndringerBoforhold(
+        virkniningstidspunkt,
+        aktiveBoforholdsdata,
+        nyeBoforholdsgrunnlag?.innhentet ?: LocalDateTime.now(),
+    )
+}
+
 fun List<Grunnlag>.henteEndringerIBoforhold(
     aktiveGrunnlag: List<Grunnlag>,
     behandling: Behandling,

@@ -13,12 +13,20 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilB
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
+import no.nav.bidrag.behandling.utils.testdata.opprettEngangsbeløp
+import no.nav.bidrag.behandling.utils.testdata.opprettVedtakDto
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -93,6 +101,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 sakConsumer,
                 vedtakGrunnlagMapper,
                 beregningService,
+                vedtakConsumer,
             )
 
         vedtakService =
@@ -118,6 +127,24 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         every { behandlingService.oppdaterVedtakFattetStatus(any(), any(), any()) } returns Unit
         every { validerBehandlingService.validerKanBehandlesINyLøsning(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
+        every { vedtakConsumer.hentVedtak(any()) } returns
+            opprettVedtakDto().copy(
+                engangsbeløpListe =
+                    listOf(
+                        opprettEngangsbeløp(Engangsbeløptype.GEBYR_MOTTAKER).copy(
+                            kravhaver = personIdentNav,
+                            skyldner = Personident(testdataBM.ident),
+                        ),
+                        opprettEngangsbeløp(Engangsbeløptype.GEBYR_SKYLDNER).copy(
+                            kravhaver = personIdentNav,
+                            skyldner = Personident(testdataBP.ident),
+                        ),
+                        opprettEngangsbeløp(Engangsbeløptype.DIREKTE_OPPGJØR).copy(
+                            kravhaver = Personident(testdataBarn1.ident),
+                            skyldner = Personident(testdataBP.ident),
+                        ),
+                    ),
+            )
         stubSjablonProvider()
         stubPersonConsumer()
         stubTokenUtils()

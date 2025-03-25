@@ -34,11 +34,11 @@ val særbidragDirekteAvslagskoderSomKreverBeregning = listOf(Resultatkode.GODKJE
 val særbidragDirekteAvslagskoderSomInneholderUtgifter =
     listOf(Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS, Resultatkode.ALLE_UTGIFTER_ER_FORELDET)
 val grunnlagstyperSomIkkeTrengerÅBekreftes =
-    listOf(Grunnlagsdatatype.ARBEIDSFORHOLD)
+    listOf(Grunnlagsdatatype.ARBEIDSFORHOLD, Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN)
 
 fun Set<Grunnlag>.hentAlleSomMåBekreftes() = hentAlleIkkeAktiv().filter { !grunnlagstyperSomIkkeTrengerÅBekreftes.contains(it.type) }
 
-val skyldnerNav = Personident("NAV")
+val personIdentNav = Personident("NAV")
 val inntektsrapporteringSomKreverSøknadsbarn =
     listOf(
         Inntektsrapportering.KONTANTSTØTTE,

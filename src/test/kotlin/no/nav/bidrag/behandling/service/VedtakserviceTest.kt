@@ -40,8 +40,10 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
+import no.nav.bidrag.behandling.utils.testdata.opprettEngangsbeløp
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.testdata.opprettVedtakDto
 import no.nav.bidrag.behandling.utils.testdata.taMedInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
@@ -189,6 +191,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 sakConsumer,
                 vedtakGrunnlagMapper,
                 beregningService,
+                vedtakConsumer,
             )
         vedtakService =
             VedtakService(
@@ -211,6 +214,11 @@ class VedtakserviceTest : TestContainerRunner() {
         stubKodeverkProvider()
         stubPersonConsumer()
         stubUtils.stubFatteVedtak()
+        stubUtils.stubHenteVedtak(
+            opprettVedtakDto().copy(
+                engangsbeløpListe = listOf(opprettEngangsbeløp()),
+            ),
+        )
         stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
         stubUtils.stubBidragStonadLøpendeSaker()
@@ -303,7 +311,6 @@ class VedtakserviceTest : TestContainerRunner() {
             "Boforhold",
             NotatGrunnlag.NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
         behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
@@ -318,6 +325,7 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null))
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!)
+        behandling.refVedtaksid = null
 
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)

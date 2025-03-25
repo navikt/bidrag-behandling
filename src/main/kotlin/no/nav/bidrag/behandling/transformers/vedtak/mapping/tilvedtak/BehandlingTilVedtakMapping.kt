@@ -1,7 +1,9 @@
 package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.BeregningService
@@ -9,8 +11,8 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -49,6 +51,7 @@ class BehandlingTilVedtakMapping(
     private val sakConsumer: BidragSakConsumer,
     private val mapper: VedtakGrunnlagMapper,
     private val beregningService: BeregningService,
+    private val vedtaksconsumer: BidragVedtakConsumer,
 ) {
     fun Behandling.byggOpprettVedtakRequestBidrag(enhet: String? = null): OpprettVedtakRequestDto {
         val behandling = this
@@ -127,18 +130,20 @@ class BehandlingTilVedtakMapping(
                     val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyr)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     val ilagtGebyr = beregning.ilagtGebyr
+                    val skyldner = Personident(bidragspliktig!!.ident!!)
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_SKYLDNER,
                         beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
                         betaltBeløp = null,
                         resultatkode = beregning.resultatkode.name,
                         eksternReferanse = null,
+                        referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_SKYLDNER, skyldner),
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
                         innkreving = Innkrevingstype.MED_INNKREVING,
-                        skyldner = Personident(bidragspliktig!!.ident!!),
-                        kravhaver = skyldnerNav,
-                        mottaker = skyldnerNav,
+                        skyldner = skyldner,
+                        kravhaver = personIdentNav,
+                        mottaker = personIdentNav,
                         valutakode = if (ilagtGebyr) "NOK" else null,
                         sak = Saksnummer(saksnummer),
                     )
@@ -147,18 +152,20 @@ class BehandlingTilVedtakMapping(
                     val beregning = mapper.beregnGebyr(this, bidragsmottaker!!, grunnlagslisteGebyr)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     val ilagtGebyr = beregning.ilagtGebyr
+                    val skyldner = Personident(bidragsmottaker!!.ident!!)
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_MOTTAKER,
                         beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
                         betaltBeløp = null,
                         resultatkode = beregning.resultatkode.name,
+                        referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
                         eksternReferanse = null,
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
                         innkreving = Innkrevingstype.MED_INNKREVING,
-                        skyldner = Personident(bidragsmottaker!!.ident!!),
-                        kravhaver = skyldnerNav,
-                        mottaker = skyldnerNav,
+                        skyldner = skyldner,
+                        kravhaver = personIdentNav,
+                        mottaker = personIdentNav,
                         valutakode = if (ilagtGebyr) "NOK" else null,
                         sak = Saksnummer(saksnummer),
                     )
@@ -174,6 +181,7 @@ class BehandlingTilVedtakMapping(
                     it.innbetaltBeløp!! > BigDecimal.ZERO
             }.map {
                 mapper.run {
+                    val kravhaver = it.tilNyestePersonident() ?: rolleManglerIdent(Rolletype.BARN, id!!)
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.DIREKTE_OPPGJØR,
                         beløp = it.innbetaltBeløp,
@@ -182,6 +190,7 @@ class BehandlingTilVedtakMapping(
                         eksternReferanse = null,
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = emptyList(),
+                        referanse = hentUnikReferanseEngangsbeløp(kravhaver, Engangsbeløptype.DIREKTE_OPPGJØR),
                         innkreving = innkrevingstype!!,
                         skyldner = tilSkyldner(),
                         kravhaver =
@@ -259,6 +268,8 @@ class BehandlingTilVedtakMapping(
             val grunnlagListe = byggGrunnlagGenereltAvslag()
             val barn = søknadsbarn.first()
 
+            val kravhaver = barn.tilNyestePersonident() ?: rolleManglerIdent(Rolletype.BARN, id!!)
+
             return byggOpprettVedtakRequestObjekt(enhet)
                 .copy(
                     engangsbeløpListe =
@@ -269,12 +280,11 @@ class BehandlingTilVedtakMapping(
                                 resultatkode = tilSærbidragAvslagskode()!!.name,
                                 valutakode = "NOK",
                                 betaltBeløp = null,
+                                referanse = hentUnikReferanseEngangsbeløp(kravhaver, engangsbeloptype!!),
                                 innkreving = innkrevingstype!!,
                                 skyldner = tilSkyldner(),
                                 omgjørVedtakId = refVedtaksid?.toInt(),
-                                kravhaver =
-                                    barn.tilNyestePersonident()
-                                        ?: rolleManglerIdent(Rolletype.BARN, id!!),
+                                kravhaver = kravhaver,
                                 mottaker =
                                     roller
                                         .reelMottakerEllerBidragsmottaker(
@@ -290,7 +300,24 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    fun Behandling.byggOpprettVedtakRequestSærbidrag(enhet: String?? = null): OpprettVedtakRequestDto {
+    fun Behandling.hentUnikReferanseEngangsbeløp(
+        kravhaver: Personident,
+        type: Engangsbeløptype,
+        skyldner: Personident? = null,
+    ) = if (refVedtaksid != null) {
+        val vedtak = vedtaksconsumer.hentVedtak(refVedtaksid!!.toLong())!!
+        val engangsbeløp =
+            vedtak.engangsbeløpListe.find {
+                it.type == type &&
+                    it.kravhaver == kravhaver &&
+                    (skyldner == null || it.skyldner == skyldner)
+            }!!
+        engangsbeløp.referanse
+    } else {
+        opprettUnikReferanse(type.name)
+    }
+
+    fun Behandling.byggOpprettVedtakRequestSærbidrag(enhet: String? = null): OpprettVedtakRequestDto {
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val beregning = beregningService.beregneSærbidrag(id!!)
@@ -311,6 +338,7 @@ class BehandlingTilVedtakMapping(
 
             val barn = søknadsbarn.first()
 
+            val kravhaver = barn.tilNyestePersonident() ?: rolleManglerIdent(Rolletype.BARN, id!!)
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 engangsbeløpListe =
                     listOf(
@@ -322,6 +350,7 @@ class BehandlingTilVedtakMapping(
                             betaltBeløp = utgift!!.totalBeløpBetaltAvBp,
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
+                            referanse = hentUnikReferanseEngangsbeløp(kravhaver, engangsbeloptype!!),
                             omgjørVedtakId = refVedtaksid?.toInt(),
                             kravhaver =
                                 barn.tilNyestePersonident()
