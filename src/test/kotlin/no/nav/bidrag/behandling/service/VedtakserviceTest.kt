@@ -277,7 +277,6 @@ class VedtakserviceTest : TestContainerRunner() {
     fun `Skal fatte vedtak for bidrag behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.refVedtaksid = null
         behandling.leggTilNotat(
             "Notat samvær BARN",
             NotatGrunnlag.NotatType.SAMVÆR,
@@ -326,6 +325,7 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null))
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!)
+        behandling.refVedtaksid = null
 
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)

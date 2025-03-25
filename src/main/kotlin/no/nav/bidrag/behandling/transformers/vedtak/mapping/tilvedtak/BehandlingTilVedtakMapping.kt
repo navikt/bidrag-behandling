@@ -314,7 +314,7 @@ class BehandlingTilVedtakMapping(
             }!!
         engangsbeløp.referanse
     } else {
-        opprettUnikReferanse(engangsbeloptype!!.name)
+        opprettUnikReferanse(type.name)
     }
 
     fun Behandling.byggOpprettVedtakRequestSærbidrag(enhet: String? = null): OpprettVedtakRequestDto {
