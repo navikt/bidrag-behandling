@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGru
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -48,7 +48,7 @@ class BarnebidragGrunnlagInnhenting(
                     .konvertereData<StønadDto>()
                     .tilGrunnlag(
                         kravhaver = søknadsbarn.ident!!,
-                        skyldner = skyldnerNav.verdi,
+                        skyldner = personIdentNav.verdi,
                         type = Stønadstype.FORSKUDD,
                         behandling,
                         søknadsbarn,
@@ -95,7 +95,7 @@ class BarnebidragGrunnlagInnhenting(
             if (stønadstype == Stønadstype.FORSKUDD) {
                 behandling.createStønadHistoriskRequest(
                     stønadstype = Stønadstype.FORSKUDD,
-                    skyldner = skyldnerNav,
+                    skyldner = personIdentNav,
                     søknadsbarn = søknadsbarn,
                 )
             } else {

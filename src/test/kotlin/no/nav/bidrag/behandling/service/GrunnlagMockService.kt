@@ -30,7 +30,7 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
@@ -653,7 +653,7 @@ class GrunnlagMockService {
             bidragStønadConsumer.hentHistoriskeStønader(
                 withArg {
                     it.type shouldBe Stønadstype.FORSKUDD
-                    it.skyldner.verdi shouldBe skyldnerNav.verdi
+                    it.skyldner.verdi shouldBe personIdentNav.verdi
                     it.sak.verdi shouldBe behandling.saksnummer
                     it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
                 },
@@ -739,7 +739,7 @@ class GrunnlagMockService {
             bidragStønadConsumer.hentHistoriskeStønader(
                 withArg {
                     it.type shouldBe Stønadstype.FORSKUDD
-                    it.skyldner.verdi shouldBe skyldnerNav.verdi
+                    it.skyldner.verdi shouldBe personIdentNav.verdi
                     it.sak.verdi shouldBe behandling.saksnummer
                     it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
                 },
@@ -815,7 +815,7 @@ class GrunnlagMockService {
             bidragStønadConsumer.hentHistoriskeStønader(
                 withArg {
                     it.type shouldBe Stønadstype.FORSKUDD
-                    it.skyldner.verdi shouldBe skyldnerNav.verdi
+                    it.skyldner.verdi shouldBe personIdentNav.verdi
                     it.sak.verdi shouldBe behandling.saksnummer
                     it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
                 },
@@ -1023,7 +1023,7 @@ class GrunnlagMockService {
             bidragStønadConsumer.hentHistoriskeStønader(
                 withArg {
                     it.type shouldBe Stønadstype.FORSKUDD
-                    it.skyldner.verdi shouldBe skyldnerNav.verdi
+                    it.skyldner.verdi shouldBe personIdentNav.verdi
                     it.sak.verdi shouldBe behandling.saksnummer
                     it.kravhaver.verdi shouldBe behandling.søknadsbarn.first().ident
                 },

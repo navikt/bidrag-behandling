@@ -48,7 +48,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -2150,7 +2150,7 @@ fun opprettStønadDto(
     opprettetTidspunkt: LocalDateTime = LocalDateTime.parse("2025-01-01T00:00:00"),
 ) = StønadDto(
     sak = Saksnummer(SAKSNUMMER),
-    skyldner = if (stønadstype == Stønadstype.BIDRAG) Personident(testdataBP.ident) else skyldnerNav,
+    skyldner = if (stønadstype == Stønadstype.BIDRAG) Personident(testdataBP.ident) else personIdentNav,
     kravhaver = Personident(testdataBarn1.ident),
     mottaker = Personident(testdataBM.ident),
     førsteIndeksreguleringsår = 2025,

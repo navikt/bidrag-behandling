@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.consumer.dto.OppgaveType
 import no.nav.bidrag.behandling.consumer.dto.OpprettOppgaveRequest
 import no.nav.bidrag.behandling.consumer.dto.lagBeskrivelseHeader
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -18,7 +18,6 @@ import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskReq
 import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
-import no.nav.bidrag.transport.behandling.vedtak.saksnummer
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import kotlin.jvm.optionals.getOrNull
@@ -167,7 +166,7 @@ class OppgaveService(
             HentStønadHistoriskRequest(
                 type = Stønadstype.FORSKUDD,
                 sak = Saksnummer(saksnummer),
-                skyldner = skyldnerNav,
+                skyldner = personIdentNav,
                 kravhaver = Personident(søknadsbarnIdent),
                 gyldigTidspunkt = LocalDateTime.now(),
             ),

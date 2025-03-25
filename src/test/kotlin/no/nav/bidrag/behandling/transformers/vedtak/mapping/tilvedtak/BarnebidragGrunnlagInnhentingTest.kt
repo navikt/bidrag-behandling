@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
@@ -181,7 +181,7 @@ class BarnebidragGrunnlagInnhentingTest {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
             referanse shouldBe "BELØPSHISTORIKK_FORSKUDD_${SAKSNUMMER}_" +
-                "${behandling.søknadsbarn.first().ident}_${skyldnerNav.verdi}_${LocalDate.now().toCompactString()}"
+                "${behandling.søknadsbarn.first().ident}_${personIdentNav.verdi}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
             grunnlagsreferanseListe shouldHaveSize 0
@@ -224,7 +224,7 @@ class BarnebidragGrunnlagInnhentingTest {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
             referanse shouldBe "BELØPSHISTORIKK_FORSKUDD_${SAKSNUMMER}_" +
-                "${behandling.søknadsbarn.first().ident}_${skyldnerNav.verdi}_${LocalDate.now().toCompactString()}"
+                "${behandling.søknadsbarn.first().ident}_${personIdentNav.verdi}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
             grunnlagsreferanseListe shouldHaveSize 0

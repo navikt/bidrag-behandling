@@ -93,6 +93,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 sakConsumer,
                 vedtakGrunnlagMapper,
                 beregningService,
+                vedtakConsumer,
             )
 
         vedtakService =

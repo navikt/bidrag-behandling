@@ -38,7 +38,7 @@ val grunnlagstyperSomIkkeTrengerÅBekreftes =
 
 fun Set<Grunnlag>.hentAlleSomMåBekreftes() = hentAlleIkkeAktiv().filter { !grunnlagstyperSomIkkeTrengerÅBekreftes.contains(it.type) }
 
-val skyldnerNav = Personident("NAV")
+val personIdentNav = Personident("NAV")
 val inntektsrapporteringSomKreverSøknadsbarn =
     listOf(
         Inntektsrapportering.KONTANTSTØTTE,

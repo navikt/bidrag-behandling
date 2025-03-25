@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
-import no.nav.bidrag.behandling.transformers.vedtak.skyldnerNav
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -229,7 +229,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
 
 fun Behandling.tilSkyldner() =
     when (stonadstype) {
-        Stønadstype.FORSKUDD -> skyldnerNav
+        Stønadstype.FORSKUDD -> personIdentNav
         else ->
             bidragspliktig?.tilNyestePersonident()
                 ?: rolleManglerIdent(Rolletype.BIDRAGSPLIKTIG, id!!)

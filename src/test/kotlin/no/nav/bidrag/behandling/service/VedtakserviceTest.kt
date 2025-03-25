@@ -189,6 +189,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 sakConsumer,
                 vedtakGrunnlagMapper,
                 beregningService,
+                vedtakConsumer,
             )
         vedtakService =
             VedtakService(
