@@ -118,6 +118,7 @@ fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
                     eksternReferanse = it.eksternReferanse,
                     omgjørVedtakId = it.omgjørVedtakId,
                     førsteIndeksreguleringsår = it.førsteIndeksreguleringsår,
+                    sisteVedtaksid = null,
                     periodeListe =
                         it.periodeListe.map {
                             VedtakPeriodeDto(
@@ -151,6 +152,7 @@ fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
                     referanse = it.referanse ?: "",
                 )
             },
+        unikReferanse = null,
         grunnlagListe =
             grunnlagListe.map {
                 GrunnlagDto(
