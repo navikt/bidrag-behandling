@@ -80,9 +80,9 @@ class VedtakService(
                 .flatMap { vedtaksid ->
                     val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid.toLong())!!
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
-                }.toSet() + setOf(vedtak.vedtakstidspunkt)
+                }.toSet() + setOf(vedtak.vedtakstidspunkt!!)
         }
-        return setOf(vedtak.vedtakstidspunkt)
+        return setOf(vedtak.vedtakstidspunkt!!)
     }
 
     @Transactional

@@ -2273,6 +2273,7 @@ fun opprettVedtakDto() =
         behandlingsreferanseListe = emptyList(),
         grunnlagListe = emptyList(),
         stønadsendringListe = emptyList(),
+        unikReferanse = null,
     )
 
 fun opprettEngangsbeløp(type: Engangsbeløptype = Engangsbeløptype.SÆRBIDRAG) =

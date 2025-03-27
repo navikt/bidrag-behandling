@@ -1943,7 +1943,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 kravhaver shouldBe Personident(testdataBarn1.ident)
                 mottaker shouldBe Personident(testdataBM.ident)
                 innkreving shouldBe Innkrevingstype.MED_INNKREVING
-                resultatkode shouldBe Resultatkode.DIREKTE_OPPJØR.name
+                resultatkode shouldBe Resultatkode.DIREKTE_OPPGJØR.name
                 sak shouldBe Saksnummer(SAKSNUMMER)
                 beslutning shouldBe Beslutningstype.ENDRING
             }

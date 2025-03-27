@@ -186,7 +186,7 @@ class BehandlingTilVedtakMapping(
                         type = Engangsbeløptype.DIREKTE_OPPGJØR,
                         beløp = it.innbetaltBeløp,
                         betaltBeløp = null,
-                        resultatkode = Resultatkode.DIREKTE_OPPJØR.name,
+                        resultatkode = Resultatkode.DIREKTE_OPPGJØR.name,
                         eksternReferanse = null,
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = emptyList(),
@@ -504,6 +504,7 @@ class BehandlingTilVedtakMapping(
             grunnlagListe = emptyList(),
             kilde = Vedtakskilde.MANUELT,
             fastsattILand = null,
+            unikReferanse = opprettUnikReferanse(null),
             innkrevingUtsattTilDato = null,
             // Settes automatisk av bidrag-vedtak basert på token
             opprettetAv = null,

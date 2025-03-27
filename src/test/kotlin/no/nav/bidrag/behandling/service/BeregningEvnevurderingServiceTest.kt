@@ -523,6 +523,7 @@ fun opprettVedtakForStønad(
             omgjørVedtakId = null,
             eksternReferanse = "123456",
             grunnlagReferanseListe = emptyList(),
+            sisteVedtaksid = null,
             periodeListe =
                 listOf(
                     VedtakPeriodeDto(
