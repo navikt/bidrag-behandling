@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -85,7 +84,7 @@ class VirkningstidspunktService(
             when (behandling.tilType()) {
                 TypeBehandling.BIDRAG -> {
                     oppdaterGebyr()
-                    if (behandling.stonadstype == Stønadstype.BIDRAG18AAR && behandling.avslag != null) {
+                    if (behandling.avslag != null) {
                         behandling.søknadsbarn.forEach {
                             // Nå er virkningstidspunkt/avslag/årsak ikke knyttet mot rolle. I V3 av bidrag skal det knyttes mot hver søknadsbarn
                             // Da må dette bare endre for søknadsbarn det endres for
