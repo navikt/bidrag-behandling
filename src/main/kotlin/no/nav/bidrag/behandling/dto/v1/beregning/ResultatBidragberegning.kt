@@ -23,6 +23,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
+import java.time.Year
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
@@ -162,6 +163,7 @@ data class ResultatBidragberegningDto(
 
 data class ResultatBidragsberegningBarnDto(
     val barn: ResultatRolle,
+    val indeksår: Int = Year.now().value,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
 )

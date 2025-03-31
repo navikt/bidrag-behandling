@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.BeregningService
+import no.nav.bidrag.behandling.transformers.finnIndeksår
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
@@ -30,6 +31,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
@@ -43,7 +45,6 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import java.time.YearMonth
 
 @Service
 @Import(BeregnGebyrApi::class)
@@ -83,6 +84,7 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
+                        val barnReferanse = grunnlagListe.toList().hentPerson(it.barn.ident)!!.referanse
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
@@ -106,7 +108,7 @@ class BehandlingTilVedtakMapping(
                                         }!!
                                         .referanse,
                             periodeListe = it.perioder,
-                            førsteIndeksreguleringsår = YearMonth.now().plusYears(1).year,
+                            førsteIndeksreguleringsår = grunnlagListe.toList().finnIndeksår(barnReferanse),
                         )
                     },
                 engangsbeløpListe =
