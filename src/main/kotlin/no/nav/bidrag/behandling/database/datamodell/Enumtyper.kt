@@ -7,6 +7,6 @@ fun String.tilÅrsakstype(): VirkningstidspunktÅrsakstype? {
     return try {
         VirkningstidspunktÅrsakstype.valueOf(this)
     } catch (e: IllegalArgumentException) {
-        return VirkningstidspunktÅrsakstype.entries.find { it.legacyKode == this }
+        return VirkningstidspunktÅrsakstype.entries.find { it.legacyKode.contains(this) }
     }
 }

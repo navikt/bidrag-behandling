@@ -34,7 +34,7 @@ val særbidragDirekteAvslagskoderSomKreverBeregning = listOf(Resultatkode.GODKJE
 val særbidragDirekteAvslagskoderSomInneholderUtgifter =
     listOf(Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS, Resultatkode.ALLE_UTGIFTER_ER_FORELDET)
 val grunnlagstyperSomIkkeTrengerÅBekreftes =
-    listOf(Grunnlagsdatatype.ARBEIDSFORHOLD, Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN)
+    listOf(Grunnlagsdatatype.ARBEIDSFORHOLD)
 
 fun Set<Grunnlag>.hentAlleSomMåBekreftes() = hentAlleIkkeAktiv().filter { !grunnlagstyperSomIkkeTrengerÅBekreftes.contains(it.type) }
 
@@ -118,6 +118,7 @@ fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
                     eksternReferanse = it.eksternReferanse,
                     omgjørVedtakId = it.omgjørVedtakId,
                     førsteIndeksreguleringsår = it.førsteIndeksreguleringsår,
+                    sisteVedtaksid = null,
                     periodeListe =
                         it.periodeListe.map {
                             VedtakPeriodeDto(
@@ -151,6 +152,7 @@ fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
                     referanse = it.referanse ?: "",
                 )
             },
+        unikReferanse = null,
         grunnlagListe =
             grunnlagListe.map {
                 GrunnlagDto(

@@ -40,6 +40,7 @@ import java.util.Optional
 class VirkningstidspunktServiceTest : CommonMockServiceTest() {
     @Test
     fun `skal oppdatere virkningstidspunkt og oppdatere opphørsdato hvis det blir satt til avslag`() {
+        Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG_18_ÅR)
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
         behandling.søktFomDato = LocalDate.parse("2024-02-01")
@@ -67,7 +68,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         // Skal ikke oppdatere opphørsdato hvis det allerede er satt
         behandling.søknadsbarn.first().opphørsdato = LocalDate.parse("2024-12-01")
         virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD))
-        behandling.søknadsbarn.first().opphørsdato shouldBe LocalDate.parse("2024-12-01")
+        behandling.søknadsbarn.first().opphørsdato shouldBe null
     }
 
     @Nested

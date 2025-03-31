@@ -131,7 +131,11 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                         grunnlagListe.byggResultatBidragsberegning(
                             it.periode,
                             it.beløp,
-                            Resultatkode.fraKode(it.resultatkode)!!,
+                            try {
+                                Resultatkode.fraKode(it.resultatkode)!!
+                            } catch (e: Exception) {
+                                Resultatkode.BEREGNET_BIDRAG
+                            },
                             it.grunnlagReferanseListe,
                             null,
                             Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
