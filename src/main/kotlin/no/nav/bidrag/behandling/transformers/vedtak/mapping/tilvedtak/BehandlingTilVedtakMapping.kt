@@ -31,7 +31,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
@@ -84,7 +83,6 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
-                        val barnReferanse = grunnlagListe.toList().hentPerson(it.barn.ident)!!.referanse
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
@@ -108,7 +106,7 @@ class BehandlingTilVedtakMapping(
                                         }!!
                                         .referanse,
                             periodeListe = it.perioder,
-                            førsteIndeksreguleringsår = grunnlagListe.toList().finnIndeksår(barnReferanse),
+                            førsteIndeksreguleringsår = behandling.finnIndeksår(it.barn),
                         )
                     },
                 engangsbeløpListe =

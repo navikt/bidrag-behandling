@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.UnderholdskostnadPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -46,7 +47,6 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
-import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
@@ -79,7 +79,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertAv
@@ -90,7 +89,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
-import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrense
 import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
@@ -146,15 +144,16 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                 },
     )
 
-fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
+fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         resultatBarn =
             map { resultat ->
                 val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
+                val rolleBarn = behandling.roller.find { it.ident == resultat.barn.ident?.verdi }
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
-                    indeksår = grunnlagsListe.finnIndeksår(resultat.barn.referanse),
+                    indeksår = behandling.finnIndeksår(rolleBarn!!),
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
                             grunnlagsListe.byggResultatBidragsberegning(
@@ -170,20 +169,11 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
             },
     )
 
-fun List<GrunnlagDto>.finnIndeksår(søknadsbarnReferanse: String): Int {
-    val delberegningGrense = finnDelberegningSjekkGrense(søknadsbarnReferanse)
-    val erUnderGrense = delberegningGrense?.innhold?.endringErOverGrense == false
-    if (!erUnderGrense) Year.now().value
-    val beløpshistorikk =
-        filtrerOgKonverterBasertPåFremmedReferanse<BeløpshistorikkGrunnlag>(
-            Grunnlagstype.BELØPSHISTORIKK_BIDRAG,
-            gjelderBarnReferanse = søknadsbarnReferanse,
-        ).firstOrNull() ?: filtrerOgKonverterBasertPåFremmedReferanse<BeløpshistorikkGrunnlag>(
-            Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR,
-            gjelderBarnReferanse = søknadsbarnReferanse,
-        ).firstOrNull()
-
-    return beløpshistorikk?.innhold?.førsteIndeksreguleringsår ?: Year.now().value
+fun Behandling.finnIndeksår(rolle: Rolle): Int {
+    val løpendePeriode = finnEksisterendeVedtakMedOpphør(rolle) ?: return Year.now().value
+    return hentVedtak(løpendePeriode.vedtaksid.toLong())?.let {
+        it.stønadsendringListe.find { it.kravhaver.verdi == rolle.ident }?.førsteIndeksreguleringsår
+    } ?: Year.now().value
 }
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =

@@ -530,10 +530,11 @@ class NotatOpplysningerService(
                             )
                         }
                     TypeBehandling.BIDRAG ->
-                        beregningService.beregneBidrag(this).tilDto().let {
+                        beregningService.beregneBidrag(this).tilDto(this).let {
                             it.resultatBarn.map { beregning ->
                                 NotatResultatBidragsberegningBarnDto(
                                     barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
+                                    indeksår = beregning.indeksår,
                                     perioder =
                                         beregning.perioder.map {
                                             ResultatBarnebidragsberegningPeriodeDto(
