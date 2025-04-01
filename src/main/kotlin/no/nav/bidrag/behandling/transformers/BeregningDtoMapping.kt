@@ -170,10 +170,10 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
     )
 
 fun Behandling.finnIndeksår(rolle: Rolle): Int {
-    val løpendePeriode = finnEksisterendeVedtakMedOpphør(rolle) ?: return Year.now().value
+    val løpendePeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) ?: return Year.now().plusYears(1).value
     return hentVedtak(løpendePeriode.vedtaksid.toLong())?.let {
         it.stønadsendringListe.find { it.kravhaver.verdi == rolle.ident }?.førsteIndeksreguleringsår
-    } ?: Year.now().value
+    } ?: Year.now().plusYears(1).value
 }
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
