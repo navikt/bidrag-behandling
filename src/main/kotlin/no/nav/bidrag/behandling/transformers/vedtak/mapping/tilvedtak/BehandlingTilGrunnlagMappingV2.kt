@@ -22,6 +22,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -227,6 +228,7 @@ class BehandlingTilGrunnlagMappingV2(
                             POJONode(
                                 PrivatAvtaleGrunnlag(
                                     avtaleInngåttDato = pa.avtaleDato ?: virkningstidspunkt!!,
+                                    type = pa.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                                     skalIndeksreguleres = pa.skalIndeksreguleres,
                                 ),
                             ),

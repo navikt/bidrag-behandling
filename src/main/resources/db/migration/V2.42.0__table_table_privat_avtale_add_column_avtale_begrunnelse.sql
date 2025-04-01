@@ -1,0 +1,1 @@
+alter table privat_avtale add column if not exists avtale_type text;

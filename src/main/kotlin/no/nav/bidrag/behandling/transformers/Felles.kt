@@ -135,7 +135,45 @@ fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsper
         .filter {
             it.beløp != null
         }.map { it.periode }
+        .mergePeriods()
 }
+
+fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
+    if (isEmpty()) return emptyList()
+
+    val sortedPeriods = sortedBy { it.fom }
+    val mergedPeriods = mutableListOf<ÅrMånedsperiode>()
+
+    var currentPeriod = sortedPeriods.first()
+
+    for (period in sortedPeriods.drop(1)) {
+        if (currentPeriod.til == null || period.fom.isAfter(currentPeriod.til)) {
+            mergedPeriods.add(currentPeriod)
+            currentPeriod = period
+        } else {
+            val tilDato =
+                when {
+                    currentPeriod.til == null || period.til == null -> null
+                    currentPeriod.til == null && period.til == null -> null
+                    else -> maxOf(currentPeriod.til!!, period.til!!)
+                }
+            currentPeriod = ÅrMånedsperiode(currentPeriod.fom, tilDato)
+        }
+    }
+
+    mergedPeriods.add(currentPeriod)
+    return mergedPeriods
+}
+
+fun <T : Comparable<T>> maxOfNullable(
+    a: T?,
+    b: T?,
+): T? =
+    when {
+        a == null -> b
+        b == null -> a
+        else -> maxOf(a, b)
+    }
 
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =

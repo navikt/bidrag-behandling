@@ -2156,6 +2156,7 @@ fun opprettStønadDto(
     kravhaver = Personident(testdataBarn1.ident),
     mottaker = Personident(testdataBM.ident),
     førsteIndeksreguleringsår = 2025,
+    nesteIndeksreguleringsår = 2025,
     innkreving = Innkrevingstype.MED_INNKREVING,
     opprettetAv = "",
     opprettetTidspunkt = opprettetTidspunkt,

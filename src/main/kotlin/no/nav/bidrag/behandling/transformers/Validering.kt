@@ -303,6 +303,7 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
         privatAvtaleId = id!!,
         gjelderPerson = person,
         manglerAvtaledato = avtaleDato == null,
+        manglerAvtaletype = avtaleType == null,
         ingenLøpendePeriode = perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null,
         manglerBegrunnelse = notatPrivatAvtale?.innhold.isNullOrEmpty(),
         overlappendePerioder =

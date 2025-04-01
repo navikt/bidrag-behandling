@@ -808,6 +808,7 @@ class Dtomapper(
             gjelderBarn = person.tilPersoninfoDto(barnetsRolleIBehandlingen, Kilde.MANUELL),
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = avtaleDato,
+            avtaleType = avtaleType,
             begrunnelse =
                 henteNotatinnhold(
                     this.behandling,
