@@ -95,6 +95,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
+import java.time.YearMonth
 
 fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
     val erManueltOverstyrt = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true
@@ -175,10 +176,16 @@ fun Behandling.finnIndeksår(
     søknadsbarnReferanse: String,
 ): Int {
     if (!grunnlagsListe.erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
-    val løpendePeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) ?: return Year.now().plusYears(1).value
+    val nesteIndeksår =
+        if (YearMonth.now().isAfter(YearMonth.now().withMonth(7))) {
+            Year.now().plusYears(1).value
+        } else {
+            Year.now().value
+        }
+    val løpendePeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) ?: return nesteIndeksår
     return hentVedtak(løpendePeriode.vedtaksid.toLong())?.let {
         it.stønadsendringListe.find { it.kravhaver.verdi == rolle.ident }?.førsteIndeksreguleringsår
-    } ?: Year.now().plusYears(1).value
+    } ?: nesteIndeksår
 }
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
