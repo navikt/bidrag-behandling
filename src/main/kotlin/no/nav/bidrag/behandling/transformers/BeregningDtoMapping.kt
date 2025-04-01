@@ -153,7 +153,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
-                    indeksår = behandling.finnIndeksår(rolleBarn!!),
+                    indeksår = behandling.finnIndeksår(rolleBarn!!, grunnlagsListe, resultat.barn.referanse),
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
                             grunnlagsListe.byggResultatBidragsberegning(
@@ -169,7 +169,12 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
             },
     )
 
-fun Behandling.finnIndeksår(rolle: Rolle): Int {
+fun Behandling.finnIndeksår(
+    rolle: Rolle,
+    grunnlagsListe: List<GrunnlagDto>,
+    søknadsbarnReferanse: String,
+): Int {
+    if (!grunnlagsListe.erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
     val løpendePeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) ?: return Year.now().plusYears(1).value
     return hentVedtak(løpendePeriode.vedtaksid.toLong())?.let {
         it.stønadsendringListe.find { it.kravhaver.verdi == rolle.ident }?.førsteIndeksreguleringsår
