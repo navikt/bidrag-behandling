@@ -124,6 +124,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.Year
 import java.time.YearMonth
 
 private val log = KotlinLogging.logger {}
@@ -534,7 +535,7 @@ class NotatOpplysningerService(
                             it.resultatBarn.map { beregning ->
                                 NotatResultatBidragsberegningBarnDto(
                                     barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
-                                    indeksår = beregning.indeksår,
+                                    indeksår = beregning.indeksår ?: Year.now().value,
                                     perioder =
                                         beregning.perioder.map {
                                             ResultatBarnebidragsberegningPeriodeDto(
