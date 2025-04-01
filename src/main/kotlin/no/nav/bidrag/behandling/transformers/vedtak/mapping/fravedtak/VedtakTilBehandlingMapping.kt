@@ -296,7 +296,7 @@ class VedtakTilBehandlingMapping(
                     } else {
                         PrivatAvtale(
                             avtaleDato = privatAvtaleGrunnlag?.innhold?.avtaleInngåttDato,
-                            avtaleType = privatAvtaleGrunnlag?.innhold?.type ?: PrivatAvtaleType.PRIVAT_AVTALE,
+                            avtaleType = privatAvtaleGrunnlag?.innhold?.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                             skalIndeksreguleres = privatAvtaleGrunnlag?.innhold?.skalIndeksreguleres ?: false,
                             behandling = behandling,
                             person =

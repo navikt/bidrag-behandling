@@ -228,7 +228,7 @@ class BehandlingTilGrunnlagMappingV2(
                             POJONode(
                                 PrivatAvtaleGrunnlag(
                                     avtaleInngåttDato = pa.avtaleDato ?: virkningstidspunkt!!,
-                                    type = pa.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
+                                    avtaleType = pa.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                                     skalIndeksreguleres = pa.skalIndeksreguleres,
                                 ),
                             ),
