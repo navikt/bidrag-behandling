@@ -24,7 +24,6 @@ jobs:
       - name: Deploy unleash to prod-gcp
         uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-gcp
           RESOURCE: .nais/unleash.yaml
           VARS: .nais/prod.yaml
