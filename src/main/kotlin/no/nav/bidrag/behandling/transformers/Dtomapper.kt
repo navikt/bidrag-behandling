@@ -260,9 +260,9 @@ class Dtomapper(
             gjelderBarn = gjelderBarn.tilPersoninfoDto(rolle, null),
             privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
                 BeregnetPrivatAvtalePeriodeDto(
-                    periode = Datoperiode(it.innhold.periode.fom, it.innhold.periode.til),
-                    beløp = it.innhold.beløp,
-                    indeksprosent = it.innhold.indeksreguleringFaktor ?: BigDecimal.ZERO,
+                    periode = Datoperiode(it.periode.fom, it.periode.til),
+                    beløp = it.beløp,
+                    indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
                 )
             },
         )

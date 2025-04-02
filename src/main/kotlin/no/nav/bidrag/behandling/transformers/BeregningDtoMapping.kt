@@ -57,6 +57,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoTilsynsutgift
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningPrivatAvtale
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningPrivatAvtalePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsfradrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
@@ -81,6 +82,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertAv
@@ -98,6 +100,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
+import java.time.YearMonth
 
 fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
     val erManueltOverstyrt = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true
@@ -178,15 +181,29 @@ fun Behandling.finnIndeksår(
     søknadsbarnReferanse: String,
 ): Int {
     if (!grunnlagsListe.erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
-    val nesteIndeksår = Year.now().plusYears(1).value
+    val nesteIndeksår =
+        if (YearMonth.now().isAfter(YearMonth.now().withMonth(7))) {
+            Year.now().plusYears(1).value
+        } else {
+            Year.now().value
+        }
     val grunnlag =
         grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
             ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
-            ?: return nesteIndeksår
+            ?: return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteIndeksår
 
     val stønad = grunnlag.konvertereData<StønadDto>() ?: return nesteIndeksår
     return stønad.nesteIndeksreguleringsår!!
 }
+
+fun List<GrunnlagDto>.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse: String): Int? =
+    filtrerOgKonverterBasertPåFremmedReferanse<DelberegningPrivatAvtale>(
+        Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
+        gjelderBarnReferanse = søknadsbarnReferanse,
+    ).firstOrNull()
+        ?.innhold
+        ?.nesteIndeksreguleringsår
+        ?.toInt()
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
     let {
@@ -635,15 +652,15 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
     )
 }
 
-fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(
-    gjelderBarnReferanse: String,
-): List<InnholdMedReferanse<DelberegningPrivatAvtalePeriode>> =
+fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse: String): List<DelberegningPrivatAvtalePeriode> =
     this
-        .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtalePeriode>(
-            Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE_PERIODE,
+        .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtale>(
+            Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
         ).filter { it.gjelderBarnReferanse == gjelderBarnReferanse }
+        .first()
+        .innhold.perioder
         .sortedBy {
-            it.innhold.periode.fom
+            it.periode.fom
         }
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
