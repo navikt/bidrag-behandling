@@ -406,6 +406,7 @@ class NotatOpplysningerService(
                             gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
                             begrunnelse = NotatBegrunnelseDto(it.begrunnelse),
                             avtaleDato = it.avtaleDato,
+                            avtaleType = it.avtaleType,
                             skalIndeksreguleres = it.skalIndeksreguleres,
                             perioder =
                                 it.perioder.map {

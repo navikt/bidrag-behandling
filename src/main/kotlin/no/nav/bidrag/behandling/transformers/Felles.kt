@@ -153,8 +153,7 @@ fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
         } else {
             val tilDato =
                 when {
-                    currentPeriod.til == null || period.til == null -> null
-                    currentPeriod.til == null && period.til == null -> null
+                    period.til == null -> null
                     else -> maxOf(currentPeriod.til!!, period.til!!)
                 }
             currentPeriod = ÅrMånedsperiode(currentPeriod.fom, tilDato)
@@ -164,16 +163,6 @@ fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
     mergedPeriods.add(currentPeriod)
     return mergedPeriods
 }
-
-fun <T : Comparable<T>> maxOfNullable(
-    a: T?,
-    b: T?,
-): T? =
-    when {
-        a == null -> b
-        b == null -> a
-        else -> maxOf(a, b)
-    }
 
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =

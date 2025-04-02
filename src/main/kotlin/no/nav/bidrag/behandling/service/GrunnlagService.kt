@@ -198,11 +198,14 @@ class GrunnlagService(
                 Stønadstype.BIDRAG18AAR -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR
                 else -> return emptyMap()
             }
-        behandling.søknadsbarn.map {
+        behandling.søknadsbarn.forEach { sb ->
             try {
                 val eksisterendeGrunnlag =
-                    behandling.grunnlag.hentSisteBeløpshistorikkGrunnlag(it.personident!!.verdi, type)
-                val respons = barnebidragGrunnlagInnhenting.hentBeløpshistorikk(behandling, it, stønadstype)
+                    behandling.grunnlag.hentSisteBeløpshistorikkGrunnlag(sb.personident!!.verdi, type)
+                val respons =
+                    barnebidragGrunnlagInnhenting
+                        .hentBeløpshistorikk(behandling, sb, stønadstype)
+                        ?.korrigerIndeksår(sb)
                 if (eksisterendeGrunnlag == null &&
                     respons != null ||
                     respons != null &&
@@ -217,7 +220,7 @@ class GrunnlagService(
                             behandling = behandling,
                             type = type,
                             data = commonObjectmapper.writeValueAsString(respons),
-                            gjelder = it.personident!!.verdi,
+                            gjelder = sb.personident!!.verdi,
                             innhentet = LocalDateTime.now(),
                             aktiv = LocalDateTime.now(),
                             rolle =
@@ -233,7 +236,7 @@ class GrunnlagService(
                 feilrapporteringer.put(
                     type,
                     GrunnlagFeilDto(
-                        personId = it.personident!!.verdi,
+                        personId = sb.personident!!.verdi,
                         feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
                         feilmelding = e.message,
                     ),
@@ -241,6 +244,18 @@ class GrunnlagService(
             }
         }
         return feilrapporteringer
+    }
+
+    private fun StønadDto?.korrigerIndeksår(søknadsbarn: Rolle): StønadDto? {
+        val løpendePeriode = this?.periodeListe?.maxByOrNull { it.periode.fom }
+        return this?.copy(
+            nesteIndeksreguleringsår =
+                løpendePeriode?.let {
+                    hentVedtak(løpendePeriode.vedtaksid.toLong())?.let { v ->
+                        v.stønadsendringListe.find { it.kravhaver == søknadsbarn.personident }?.førsteIndeksreguleringsår
+                    }
+                } ?: førsteIndeksreguleringsår,
+        )
     }
 
     fun sjekkOgOppdaterIdenter(behandling: Behandling) {
