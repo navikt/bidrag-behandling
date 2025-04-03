@@ -83,6 +83,7 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
+                        val sistePeriode = it.perioder.maxBy { it.periode.fom }.periode
                         val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
@@ -107,7 +108,13 @@ class BehandlingTilVedtakMapping(
                                         }!!
                                         .referanse,
                             periodeListe = it.perioder,
-                            førsteIndeksreguleringsår = behandling.finnIndeksår(it.barn, grunnlagListe.toList(), søknadsbarnReferanse),
+                            førsteIndeksreguleringsår =
+                                behandling.finnIndeksår(
+                                    it.barn,
+                                    grunnlagListe.toList(),
+                                    søknadsbarnReferanse,
+                                    sistePeriode,
+                                ),
                         )
                     },
                 engangsbeløpListe =

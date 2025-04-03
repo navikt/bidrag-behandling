@@ -19,7 +19,9 @@ jobs:
   deploy_unleash:
     runs-on: ubuntu-latest
     name: Deploy unleash
-
+    permissions:
+      contents: "read"
+      id-token: "write"
     steps:
       - uses: actions/checkout@v4
       - name: Deploy unleash to dev-gcp

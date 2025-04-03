@@ -156,10 +156,14 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
             map { resultat ->
                 val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
                 val rolleBarn = behandling.roller.find { it.ident == resultat.barn.ident?.verdi }
+                val sistePeriode =
+                    resultat.resultat.beregnetBarnebidragPeriodeListe
+                        .maxBy { it.periode.fom }
+                        .periode
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
-                    indeksår = behandling.finnIndeksår(rolleBarn!!, grunnlagsListe, resultat.barn.referanse),
+                    indeksår = behandling.finnIndeksår(rolleBarn!!, grunnlagsListe, resultat.barn.referanse, sistePeriode),
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
                             grunnlagsListe.byggResultatBidragsberegning(
@@ -179,6 +183,7 @@ fun Behandling.finnIndeksår(
     rolle: Rolle,
     grunnlagsListe: List<GrunnlagDto>,
     søknadsbarnReferanse: String,
+    sistePeriode: ÅrMånedsperiode,
 ): Int {
     if (!grunnlagsListe.erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
     val nesteIndeksår =
@@ -193,7 +198,11 @@ fun Behandling.finnIndeksår(
             ?: return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteIndeksår
 
     val stønad = grunnlag.konvertereData<StønadDto>() ?: return nesteIndeksår
-    return stønad.nesteIndeksreguleringsår!!
+    val stønadSistePeriode = stønad.periodeListe.maxBy { it.periode.fom }.periode
+    if (stønadSistePeriode.til != null && stønadSistePeriode.til!! <= sistePeriode.fom) {
+        return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteIndeksår
+    }
+    return if (stønad.nesteIndeksreguleringsår!! < nesteIndeksår) nesteIndeksår else stønad.nesteIndeksreguleringsår ?: nesteIndeksår
 }
 
 fun List<GrunnlagDto>.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse: String): Int? =
