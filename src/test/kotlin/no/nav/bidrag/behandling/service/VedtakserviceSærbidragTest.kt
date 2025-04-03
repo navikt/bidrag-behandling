@@ -191,7 +191,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 110
+                request.grunnlagListe shouldHaveSize 109
             }
             validerNotater()
         }
@@ -515,7 +515,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 107
+            grunnlagsliste shouldHaveSize 106
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
@@ -609,7 +609,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 103
+            grunnlagsliste shouldHaveSize 102
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG)) {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
@@ -757,7 +757,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 111
+                request.grunnlagListe shouldHaveSize 110
             }
         }
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
@@ -903,7 +903,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 111
+                request.grunnlagListe shouldHaveSize 110
             }
         }
 
@@ -1889,13 +1889,13 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
         val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)) {
-            shouldHaveSize(24)
+            shouldHaveSize(23)
             val inntekterBM = it.filter { it.gjelderReferanse == bmGrunnlag.referanse }
             val inntekterBP = it.filter { it.gjelderReferanse == bpGrunnlag.referanse }
             val inntekterBA = it.filter { it.gjelderReferanse == søknadsbarnGrunnlag.referanse }
             inntekterBM shouldHaveSize 11
             inntekterBP shouldHaveSize 8
-            inntekterBA shouldHaveSize 5
+            inntekterBA shouldHaveSize 4
 
             val inntektBm =
                 inntekterBM.map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }.find {

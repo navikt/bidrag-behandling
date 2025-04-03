@@ -162,6 +162,7 @@ data class ResultatBidragberegningDto(
 
 data class ResultatBidragsberegningBarnDto(
     val barn: ResultatRolle,
+    val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
 )

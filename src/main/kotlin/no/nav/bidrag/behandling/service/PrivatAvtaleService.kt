@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,7 +29,7 @@ class PrivatAvtaleService(
         behandling: Behandling,
         person: Person,
     ): PrivatAvtale {
-        val privatAvtale = PrivatAvtale(behandling = behandling, person = person)
+        val privatAvtale = PrivatAvtale(behandling = behandling, person = person, avtaleType = PrivatAvtaleType.PRIVAT_AVTALE)
         behandling.privatAvtale.add(privatAvtale)
         return privatAvtale
     }
@@ -46,6 +47,7 @@ class PrivatAvtaleService(
             behandling.privatAvtale.find { it.id == privatavtaleId }
                 ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
         privatAvtale.avtaleDato = request.avtaleDato ?: privatAvtale.avtaleDato
+        privatAvtale.avtaleType = request.avtaleType ?: privatAvtale.avtaleType
         privatAvtale.skalIndeksreguleres = request.skalIndeksreguleres ?: privatAvtale.skalIndeksreguleres
         request.oppdaterPeriode?.let {
             oppdaterPrivatAvtaleAvtalePeriode(behandlingsid, privatavtaleId, it)

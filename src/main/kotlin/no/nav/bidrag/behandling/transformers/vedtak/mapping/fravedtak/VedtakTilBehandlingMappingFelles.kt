@@ -126,6 +126,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
                         referanse = barnGrunnlag.referanse,
                     ),
+                indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =
                     stønadsendring.periodeListe.filter { it.resultatkode != Resultatkode.OPPHØR.name }.map {
                         grunnlagListe.byggResultatBidragsberegning(

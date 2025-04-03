@@ -19,13 +19,14 @@ jobs:
   deploy_unleash:
     runs-on: ubuntu-latest
     name: Deploy unleash
-
+    permissions:
+      contents: "read"
+      id-token: "write"
     steps:
       - uses: actions/checkout@v4
       - name: Deploy unleash to dev-gcp
         uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: .nais/unleash.yaml
           VARS: .nais/main.yaml

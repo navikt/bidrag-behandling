@@ -260,9 +260,9 @@ class Dtomapper(
             gjelderBarn = gjelderBarn.tilPersoninfoDto(rolle, null),
             privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
                 BeregnetPrivatAvtalePeriodeDto(
-                    periode = Datoperiode(it.innhold.periode.fom, it.innhold.periode.til),
-                    beløp = it.innhold.beløp,
-                    indeksprosent = it.innhold.indeksreguleringFaktor ?: BigDecimal.ZERO,
+                    periode = Datoperiode(it.periode.fom, it.periode.til),
+                    beløp = it.beløp,
+                    indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
                 )
             },
         )
@@ -804,9 +804,11 @@ class Dtomapper(
     fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
         PrivatAvtaleDto(
             id = id!!,
+            perioderLøperBidrag = barnetsRolleIBehandlingen?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
             gjelderBarn = person.tilPersoninfoDto(barnetsRolleIBehandlingen, Kilde.MANUELL),
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = avtaleDato,
+            avtaleType = avtaleType,
             begrunnelse =
                 henteNotatinnhold(
                     this.behandling,

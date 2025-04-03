@@ -65,6 +65,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.sak.Bidragssakstatus
@@ -1857,6 +1858,7 @@ fun Behandling.leggTilGrunnlagBeløpshistorikk(
             ),
             opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
         ),
+    nesteIndeksår: Int = YearMonth.now().plusYears(1).year,
 ) {
     grunnlag.add(
         Grunnlag(
@@ -1873,6 +1875,7 @@ fun Behandling.leggTilGrunnlagBeløpshistorikk(
             data =
                 commonObjectmapper.writeValueAsString(
                     opprettStønadDto(
+                        indeksår = nesteIndeksår,
                         stønadstype =
                             when (type) {
                                 Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD -> Stønadstype.FORSKUDD
@@ -2150,12 +2153,14 @@ fun opprettStønadDto(
     periodeListe: List<StønadPeriodeDto>,
     stønadstype: Stønadstype = Stønadstype.BIDRAG,
     opprettetTidspunkt: LocalDateTime = LocalDateTime.parse("2025-01-01T00:00:00"),
+    indeksår: Int = YearMonth.now().plusYears(1).year,
 ) = StønadDto(
     sak = Saksnummer(SAKSNUMMER),
     skyldner = if (stønadstype == Stønadstype.BIDRAG) Personident(testdataBP.ident) else personIdentNav,
     kravhaver = Personident(testdataBarn1.ident),
     mottaker = Personident(testdataBM.ident),
-    førsteIndeksreguleringsår = 2025,
+    førsteIndeksreguleringsår = indeksår,
+    nesteIndeksreguleringsår = indeksår,
     innkreving = Innkrevingstype.MED_INNKREVING,
     opprettetAv = "",
     opprettetTidspunkt = opprettetTidspunkt,
@@ -2241,6 +2246,7 @@ fun opprettPrivatAvtale(
         behandling = behandling,
         avtaleDato = privatAvtaleDato,
         person = person.tilPerson(behandling),
+        avtaleType = PrivatAvtaleType.PRIVAT_AVTALE,
     )
 
 fun opprettPrivatAvtalePeriode(

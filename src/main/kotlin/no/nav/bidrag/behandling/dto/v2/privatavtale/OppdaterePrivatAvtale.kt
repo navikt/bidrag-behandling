@@ -7,7 +7,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -24,6 +26,7 @@ data class OppdaterePrivatAvtaleRequest(
         description = "Oppdater begrunnelse",
     )
     val begrunnelse: String? = null,
+    val avtaleType: PrivatAvtaleType? = null,
     val oppdaterPeriode: OppdaterePrivatAvtalePeriodeDto? = null,
     val slettePeriodeId: Long? = null,
 )
@@ -42,7 +45,9 @@ data class OppdaterePrivatAvtalePeriodeDto(
 data class PrivatAvtaleDto(
     val id: Long,
     val gjelderBarn: PersoninfoDto,
+    val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
     val avtaleDato: LocalDate?,
+    val avtaleType: PrivatAvtaleType?,
     val skalIndeksreguleres: Boolean,
     val begrunnelse: String?,
     val begrunnelseFraOpprinneligVedtak: String? = null,
@@ -61,14 +66,16 @@ data class PrivatAvtaleValideringsfeilDto(
     val privatAvtaleId: Long,
     @JsonIgnore
     val gjelderPerson: Person,
+    val perioderOverlapperMedLøpendeBidrag: Set<Datoperiode>,
     val manglerBegrunnelse: Boolean,
     val manglerAvtaledato: Boolean,
+    val manglerAvtaletype: Boolean,
     val ingenLøpendePeriode: Boolean,
     val overlappendePerioder: Set<OverlappendePeriode>,
 ) {
     val harPeriodiseringsfeil
         get() =
-            overlappendePerioder.isNotEmpty() || ingenLøpendePeriode
+            overlappendePerioder.isNotEmpty() || ingenLøpendePeriode || perioderOverlapperMedLøpendeBidrag.isNotEmpty()
     val gjelderBarn get() = gjelderPerson.ident
     val gjelderBarnNavn get() = gjelderPerson.navn ?: hentPersonVisningsnavn(gjelderPerson.ident)
 

@@ -84,7 +84,7 @@ class BarnebidragGrunnlagInnhentingTest {
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
-            innhold.førsteIndeksreguleringsår shouldBe null
+            innhold.nesteIndeksreguleringsår shouldBe null
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             innhold.beløpshistorikk shouldHaveSize 0
@@ -96,7 +96,7 @@ class BarnebidragGrunnlagInnhentingTest {
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
-            innhold.førsteIndeksreguleringsår shouldBe 2025
+            innhold.nesteIndeksreguleringsår shouldBe 2025
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             innhold.beløpshistorikk shouldHaveSize 2
@@ -186,7 +186,7 @@ class BarnebidragGrunnlagInnhentingTest {
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.beløpshistorikk shouldHaveSize 2
-            innhold.førsteIndeksreguleringsår shouldBe null
+            innhold.nesteIndeksreguleringsår shouldBe null
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             val periode1 =
                 innhold.beløpshistorikk.first()
@@ -203,7 +203,7 @@ class BarnebidragGrunnlagInnhentingTest {
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.beløpshistorikk shouldHaveSize 1
-            innhold.førsteIndeksreguleringsår shouldBe 2025
+            innhold.nesteIndeksreguleringsår shouldBe 2025
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             val periode1 =
                 innhold.beløpshistorikk.first()
@@ -229,7 +229,7 @@ class BarnebidragGrunnlagInnhentingTest {
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.beløpshistorikk shouldHaveSize 0
-            innhold.førsteIndeksreguleringsår shouldBe null
+            innhold.nesteIndeksreguleringsår shouldBe null
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
         }
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }) {
@@ -239,7 +239,7 @@ class BarnebidragGrunnlagInnhentingTest {
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
-            innhold.førsteIndeksreguleringsår shouldBe null
+            innhold.nesteIndeksreguleringsår shouldBe null
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             innhold.beløpshistorikk shouldHaveSize 0

@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.BeregningService
+import no.nav.bidrag.behandling.transformers.finnIndeksår
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
@@ -43,7 +44,6 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import java.time.YearMonth
 
 @Service
 @Import(BeregnGebyrApi::class)
@@ -83,6 +83,8 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
+                        val sistePeriode = it.perioder.maxBy { it.periode.fom }.periode
+                        val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
@@ -106,7 +108,13 @@ class BehandlingTilVedtakMapping(
                                         }!!
                                         .referanse,
                             periodeListe = it.perioder,
-                            førsteIndeksreguleringsår = YearMonth.now().plusYears(1).year,
+                            førsteIndeksreguleringsår =
+                                behandling.finnIndeksår(
+                                    it.barn,
+                                    grunnlagListe.toList(),
+                                    søknadsbarnReferanse,
+                                    sistePeriode,
+                                ),
                         )
                     },
                 engangsbeløpListe =

@@ -37,6 +37,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -283,6 +284,7 @@ class VedtakTilBehandlingMapping(
                             id = 1,
                             avtaleDato = privatAvtaleGrunnlag?.innhold?.avtaleInngåttDato,
                             skalIndeksreguleres = privatAvtaleGrunnlag?.innhold?.skalIndeksreguleres ?: false,
+                            avtaleType = privatAvtaleGrunnlag?.innhold?.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                             behandling = behandling,
                             person =
                                 Person(
@@ -295,6 +297,7 @@ class VedtakTilBehandlingMapping(
                     } else {
                         PrivatAvtale(
                             avtaleDato = privatAvtaleGrunnlag?.innhold?.avtaleInngåttDato,
+                            avtaleType = privatAvtaleGrunnlag?.innhold?.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                             skalIndeksreguleres = privatAvtaleGrunnlag?.innhold?.skalIndeksreguleres ?: false,
                             behandling = behandling,
                             person =
