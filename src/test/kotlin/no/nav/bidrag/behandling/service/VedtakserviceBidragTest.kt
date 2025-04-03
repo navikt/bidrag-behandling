@@ -191,7 +191,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 177
+                request.grunnlagListe shouldHaveSize 174
             }
         }
 
@@ -304,7 +304,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 6
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 30
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 27
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 4
@@ -578,7 +578,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 155
+                request.grunnlagListe shouldHaveSize 153
             }
             val virkningstidspunktGrunnlag =
                 grunnlagListe.find { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT && it.gjelderBarnReferanse == behandling.søknadsbarn.first().tilGrunnlagsreferanse() }?.innholdTilObjekt<VirkningstidspunktGrunnlag>()
@@ -973,6 +973,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            stønadsendring.førsteIndeksreguleringsår shouldBe YearMonth.now().year
             stønadsendring.periodeListe.forEach {
                 it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
             }
@@ -1010,8 +1011,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
-        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2023-01"), YearMonth.parse("2024-05"), BigDecimal(2500))
-        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2024-06"), null, BigDecimal(1600))
+        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2023-01"), YearMonth.parse("2023-03"), BigDecimal(2500))
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,
@@ -1059,7 +1059,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.søknadsbarn.first(),
             listOf(
                 opprettStønadPeriodeDto(
-                    ÅrMånedsperiode(YearMonth.parse("2023-01"), YearMonth.parse("2024-05")),
+                    ÅrMånedsperiode(YearMonth.parse("2023-04"), YearMonth.parse("2024-05")),
                     beløp = BigDecimal("6800"),
                 ),
                 opprettStønadPeriodeDto(
@@ -1067,6 +1067,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal("5600"),
                 ),
             ),
+            2024,
         )
         every { behandlingService.hentBehandlingById(any()) } returns behandling
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
@@ -1093,6 +1094,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            stønadsendring.førsteIndeksreguleringsår shouldBe 2024
             stønadsendring.periodeListe.forEach {
                 it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
             }
@@ -1363,7 +1365,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 169
+                request.grunnlagListe shouldHaveSize 166
             }
         }
 
@@ -1429,7 +1431,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 6
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 29
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 26
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 4
@@ -2443,7 +2445,7 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
         innhold.underholdskostnad shouldBe BigDecimal("8441.78")
         innhold.nettoTilsynsutgift shouldBe BigDecimal("1273.78")
         innhold.barnetilsynMedStønad shouldBe BigDecimal("621.00")
-        it.grunnlagsreferanseListe shouldHaveSize 7
+        it.grunnlagsreferanseListe shouldHaveSize 6
     }
 
     assertSoftly(hentGrunnlagstyperForReferanser(Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG, sluttberegningPeriode.grunnlagsreferanseListe).first()) {

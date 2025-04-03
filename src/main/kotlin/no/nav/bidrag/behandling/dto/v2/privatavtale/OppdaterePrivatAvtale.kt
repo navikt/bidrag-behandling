@@ -66,6 +66,7 @@ data class PrivatAvtaleValideringsfeilDto(
     val privatAvtaleId: Long,
     @JsonIgnore
     val gjelderPerson: Person,
+    val perioderOverlapperMedLøpendeBidrag: Set<Datoperiode>,
     val manglerBegrunnelse: Boolean,
     val manglerAvtaledato: Boolean,
     val manglerAvtaletype: Boolean,
@@ -74,7 +75,7 @@ data class PrivatAvtaleValideringsfeilDto(
 ) {
     val harPeriodiseringsfeil
         get() =
-            overlappendePerioder.isNotEmpty() || ingenLøpendePeriode
+            overlappendePerioder.isNotEmpty() || ingenLøpendePeriode || perioderOverlapperMedLøpendeBidrag.isNotEmpty()
     val gjelderBarn get() = gjelderPerson.ident
     val gjelderBarnNavn get() = gjelderPerson.navn ?: hentPersonVisningsnavn(gjelderPerson.ident)
 

@@ -7,6 +7,8 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
@@ -304,7 +306,14 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
         gjelderPerson = person,
         manglerAvtaledato = avtaleDato == null,
         manglerAvtaletype = avtaleType == null,
-        ingenLøpendePeriode = perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null,
+        perioderOverlapperMedLøpendeBidrag =
+            behandling.finnPerioderSomOverlapperMedLøpendeBidrag(
+                perioder.map {
+                    it.tilDatoperiode()
+                },
+                barnetsRolleIBehandlingen!!,
+            ),
+        ingenLøpendePeriode = behandling.manglerLøpendePeriode(perioder, barnetsRolleIBehandlingen!!),
         manglerBegrunnelse = notatPrivatAvtale?.innhold.isNullOrEmpty(),
         overlappendePerioder =
             perioder
@@ -396,6 +405,28 @@ fun Set<Sivilstand>.validereSivilstand(virkningstidspunkt: LocalDate): Sivilstan
         overlappendePerioder = finnSivilstandOverlappendePerioder(),
         ugyldigStatus = any { it.sivilstand == Sivilstandskode.UKJENT },
     )
+}
+
+fun Behandling.manglerLøpendePeriode(
+    perioder: Set<PrivatAvtalePeriode>,
+    søknadsbarn: Rolle,
+): Boolean {
+    val løpendeBidrag = finnPerioderHvorDetLøperBidrag(søknadsbarn)
+    val løperBidrag = løpendeBidrag.isNotEmpty() && løpendeBidrag.maxBy { it.fom }.til == null
+    val harLøpendePrivatAvtale = perioder.isNotEmpty() && perioder.maxBy { it.fom }.tom == null
+    return !(løperBidrag || harLøpendePrivatAvtale)
+}
+
+fun Behandling.finnPerioderSomOverlapperMedLøpendeBidrag(
+    perioder: List<Datoperiode>,
+    søknadsbarn: Rolle,
+): Set<Datoperiode> {
+    val løpendeBidrag = finnPerioderHvorDetLøperBidrag(søknadsbarn)
+    return perioder
+        .sortedBy { it.fom }
+        .filter {
+            løpendeBidrag.any { lb -> it.overlapper(lb.toDatoperiode()) }
+        }.toSet()
 }
 
 fun List<Pair<Long, Datoperiode>>.finnOverlappendePerioder(): Set<no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode> =
