@@ -1895,7 +1895,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             val inntekterBA = it.filter { it.gjelderReferanse == søknadsbarnGrunnlag.referanse }
             inntekterBM shouldHaveSize 11
             inntekterBP shouldHaveSize 8
-            inntekterBA shouldHaveSize 5
+            inntekterBA shouldHaveSize 4
 
             val inntektBm =
                 inntekterBM.map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }.find {
