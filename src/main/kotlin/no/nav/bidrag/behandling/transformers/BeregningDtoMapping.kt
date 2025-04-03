@@ -198,8 +198,8 @@ fun Behandling.finnIndeksår(
             ?: return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteIndeksår
 
     val stønad = grunnlag.konvertereData<StønadDto>() ?: return nesteIndeksår
-    val stønadSistePeriode = stønad.periodeListe.maxBy { it.periode.fom }.periode
-    if (stønadSistePeriode.til != null && stønadSistePeriode.til!! <= sistePeriode.fom) {
+    val stønadSistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom }?.periode
+    if (stønadSistePeriode == null || stønadSistePeriode.til != null && stønadSistePeriode.til!! <= sistePeriode.fom) {
         return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteIndeksår
     }
     return if (stønad.nesteIndeksreguleringsår!! < nesteIndeksår) nesteIndeksår else stønad.nesteIndeksreguleringsår ?: nesteIndeksår
