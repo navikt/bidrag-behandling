@@ -109,12 +109,7 @@ class BehandlingTilVedtakMapping(
                                         .referanse,
                             periodeListe = it.perioder,
                             førsteIndeksreguleringsår =
-                                behandling.finnIndeksår(
-                                    it.barn,
-                                    grunnlagListe.toList(),
-                                    søknadsbarnReferanse,
-                                    sistePeriode,
-                                ),
+                                grunnlagListe.toList().finnIndeksår(søknadsbarnReferanse, sistePeriode),
                         )
                     },
                 engangsbeløpListe =
