@@ -10,17 +10,21 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.validerePrivatAvtale
+import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtale
 import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtalePeriode
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -303,6 +307,94 @@ class PrivatAvtaleServiceTest {
     }
 
     @Test
+    fun `skal validere privat avtale  overlapper med løpende`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+        behandling.leggTilNotat("Test", NotatGrunnlag.NotatType.PRIVAT_AVTALE, rolle = behandling.søknadsbarn.first())
+        val privatAvtale =
+            opprettPrivatAvtale(
+                behandling = behandling,
+                person = testdataBarn1,
+            )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2023-04"), YearMonth.parse("2024-05")),
+                    beløp = BigDecimal("6800"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2024-05"), null),
+                    beløp = BigDecimal("5600"),
+                ),
+            ),
+            2024,
+        )
+
+        privatAvtale.perioder.add(
+            opprettPrivatAvtalePeriode(
+                privatAvtale = privatAvtale,
+                fom = YearMonth.parse("2024-01"),
+                beløp = BigDecimal(1000),
+                tom = null,
+            ),
+        )
+
+        assertSoftly(privatAvtale.validerePrivatAvtale()) {
+            it.ingenLøpendePeriode shouldBe false
+            it.perioderOverlapperMedLøpendeBidrag shouldHaveSize 1
+            it.overlappendePerioder.shouldHaveSize(0)
+            it.manglerAvtaledato shouldBe false
+            it.manglerAvtaletype shouldBe false
+            it.manglerBegrunnelse shouldBe false
+        }
+    }
+
+    @Test
+    fun `skal validere privat avtale når det ikke overlapper men har tom dato`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+        behandling.leggTilNotat("Test", NotatGrunnlag.NotatType.PRIVAT_AVTALE, rolle = behandling.søknadsbarn.first())
+        val privatAvtale =
+            opprettPrivatAvtale(
+                behandling = behandling,
+                person = testdataBarn1,
+            )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2023-04"), YearMonth.parse("2024-05")),
+                    beløp = BigDecimal("6800"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2024-05"), null),
+                    beløp = BigDecimal("5600"),
+                ),
+            ),
+            2024,
+        )
+
+        privatAvtale.perioder.add(
+            opprettPrivatAvtalePeriode(
+                privatAvtale = privatAvtale,
+                fom = YearMonth.parse("2023-01"),
+                beløp = BigDecimal(1000),
+                tom = YearMonth.parse("2023-03"),
+            ),
+        )
+
+        assertSoftly(privatAvtale.validerePrivatAvtale()) {
+            it.ingenLøpendePeriode shouldBe false
+            it.perioderOverlapperMedLøpendeBidrag shouldHaveSize 0
+            it.overlappendePerioder.shouldHaveSize(0)
+            it.manglerAvtaledato shouldBe false
+            it.manglerAvtaletype shouldBe false
+            it.manglerBegrunnelse shouldBe false
+        }
+    }
+
+    @Test
     fun `skal validere privat avtale manglende begrunnelse og avtaledato`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
         val privatAvtale =
@@ -311,6 +403,7 @@ class PrivatAvtaleServiceTest {
                 person = testdataBarn1,
             )
         privatAvtale.avtaleDato = null
+        privatAvtale.avtaleType = null
 
         privatAvtale.perioder.add(
             opprettPrivatAvtalePeriode(
@@ -325,6 +418,7 @@ class PrivatAvtaleServiceTest {
             it.ingenLøpendePeriode shouldBe false
             it.overlappendePerioder.shouldHaveSize(0)
             it.manglerAvtaledato shouldBe true
+            it.manglerAvtaletype shouldBe true
             it.manglerBegrunnelse shouldBe true
         }
     }

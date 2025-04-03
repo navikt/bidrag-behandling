@@ -425,7 +425,7 @@ fun Behandling.finnPerioderSomOverlapperMedLøpendeBidrag(
     return perioder
         .sortedBy { it.fom }
         .filter {
-            løpendeBidrag.any { lb -> it.overlapper(lb.toDatoperiode()) }
+            løpendeBidrag.any { lb -> it.overlapper(Datoperiode(lb.fom, lb.til?.minusMonths(1))) }
         }.toSet()
 }
 
