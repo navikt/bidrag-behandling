@@ -107,6 +107,7 @@ import org.springframework.web.client.HttpStatusCodeException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.Year
 import java.time.YearMonth
 import java.util.Optional
 
@@ -1094,7 +1095,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
-            stønadsendring.førsteIndeksreguleringsår shouldBe 2024
+            stønadsendring.førsteIndeksreguleringsår shouldBe Year.now().value
             stønadsendring.periodeListe.forEach {
                 it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
             }
