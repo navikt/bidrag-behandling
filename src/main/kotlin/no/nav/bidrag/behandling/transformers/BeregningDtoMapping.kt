@@ -186,7 +186,7 @@ fun Behandling.finnIndeksår(
     sistePeriode: ÅrMånedsperiode,
 ): Int {
     if (!grunnlagsListe.erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
-    val nesteIndeksår =
+    val nesteKalkulertIndeksår =
         if (YearMonth.now().isAfter(YearMonth.now().withMonth(7))) {
             Year.now().plusYears(1).value
         } else {
@@ -195,14 +195,20 @@ fun Behandling.finnIndeksår(
     val grunnlag =
         grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
             ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
-            ?: return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteIndeksår
+            ?: return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteKalkulertIndeksår
 
-    val stønad = grunnlag.konvertereData<StønadDto>() ?: return nesteIndeksår
+    val stønad = grunnlag.konvertereData<StønadDto>() ?: return nesteKalkulertIndeksår
     val stønadSistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom }?.periode
     if (stønadSistePeriode == null || stønadSistePeriode.til != null && stønadSistePeriode.til!! <= sistePeriode.fom) {
-        return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteIndeksår
+        return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteKalkulertIndeksår
     }
-    return if (stønad.nesteIndeksreguleringsår!! < nesteIndeksår) nesteIndeksår else stønad.nesteIndeksreguleringsår ?: nesteIndeksår
+    return if (stønad.nesteIndeksreguleringsår!! <
+        nesteKalkulertIndeksår
+    ) {
+        nesteKalkulertIndeksår
+    } else {
+        stønad.nesteIndeksreguleringsår ?: nesteKalkulertIndeksår
+    }
 }
 
 fun List<GrunnlagDto>.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse: String): Int? =
