@@ -121,7 +121,7 @@ class BidragGrunnlagConsumer(
         }
     }
 
-    @Retryable(maxAttempts = 3, backoff = Backoff(delay = 200, maxDelay = 500, multiplier = 2.0))
+    @Retryable(maxAttempts = 2, backoff = Backoff(delay = 100, maxDelay = 300, multiplier = 2.0))
     fun henteGrunnlag(
         grunnlag: List<GrunnlagRequestDto>,
         formål: Formål,
