@@ -2,8 +2,6 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
-import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
@@ -19,7 +17,6 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
@@ -49,12 +46,14 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoTilsynsutgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningPrivatAvtale
@@ -92,7 +91,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
-import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.felles.ifTrue
@@ -150,12 +148,11 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                 },
     )
 
-fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatBidragberegningDto =
+fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         resultatBarn =
             map { resultat ->
                 val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
-                val rolleBarn = behandling.roller.find { it.ident == resultat.barn.ident?.verdi }
                 val sistePeriode =
                     resultat.resultat.beregnetBarnebidragPeriodeListe
                         .maxBy { it.periode.fom }
@@ -163,7 +160,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
-                    indeksår = behandling.finnIndeksår(rolleBarn!!, grunnlagsListe, resultat.barn.referanse, sistePeriode),
+                    indeksår = grunnlagsListe.finnIndeksår(resultat.barn.referanse, sistePeriode),
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
                             grunnlagsListe.byggResultatBidragsberegning(
@@ -179,46 +176,55 @@ fun List<ResultatBidragsberegningBarn>.tilDto(behandling: Behandling): ResultatB
             },
     )
 
-fun Behandling.finnIndeksår(
-    rolle: Rolle,
-    grunnlagsListe: List<GrunnlagDto>,
+fun List<GrunnlagDto>.finnDelberegningSjekkGrensePeriodeOgBarn(
+    periode: ÅrMånedsperiode,
+    søknadsbarnReferanse: String,
+) = filtrerOgKonverterBasertPåFremmedReferanse<DelberegningEndringSjekkGrensePeriode>(
+    Grunnlagstype.DELBEREGNING_ENDRING_SJEKK_GRENSE_PERIODE,
+).find { it.innhold.periode == periode && it.gjelderBarnReferanse == søknadsbarnReferanse }
+
+fun List<GrunnlagDto>.finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int? {
+    val beløpshistorikk =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<BeløpshistorikkGrunnlag>(
+            Grunnlagstype.BELØPSHISTORIKK_BIDRAG,
+            grunnlagsreferanseListe,
+        ).firstOrNull()
+            ?: finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<BeløpshistorikkGrunnlag>(
+                Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR,
+                grunnlagsreferanseListe,
+            ).firstOrNull()
+
+    return beløpshistorikk?.innhold?.nesteIndeksreguleringsår
+}
+
+fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int? {
+    val delberegningPrivatAvtale =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningPrivatAvtale>(
+            Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
+            grunnlagsreferanseListe,
+        ).firstOrNull()
+
+    return delberegningPrivatAvtale?.innhold?.nesteIndeksreguleringsår?.toInt()
+}
+
+fun List<GrunnlagDto>.finnIndeksår(
     søknadsbarnReferanse: String,
     sistePeriode: ÅrMånedsperiode,
 ): Int {
-    if (!grunnlagsListe.erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
+    if (!erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
     val nesteKalkulertIndeksår =
         if (YearMonth.now().isAfter(YearMonth.now().withMonth(7))) {
             Year.now().plusYears(1).value
         } else {
             Year.now().value
         }
-    val grunnlag =
-        grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
-            ?: grunnlag.hentSisteBeløpshistorikkGrunnlag(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
-            ?: return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteKalkulertIndeksår
 
-    val stønad = grunnlag.konvertereData<StønadDto>() ?: return nesteKalkulertIndeksår
-    val stønadSistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom }?.periode
-    if (stønadSistePeriode == null || stønadSistePeriode.til != null && stønadSistePeriode.til!! <= sistePeriode.fom) {
-        return grunnlagsListe.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse) ?: nesteKalkulertIndeksår
-    }
-    return if (stønad.nesteIndeksreguleringsår!! <
-        nesteKalkulertIndeksår
-    ) {
-        nesteKalkulertIndeksår
-    } else {
-        stønad.nesteIndeksreguleringsår ?: nesteKalkulertIndeksår
-    }
+    val endringUnderGrensePeriode = finnDelberegningSjekkGrensePeriodeOgBarn(sistePeriode, søknadsbarnReferanse)!!
+    val grunnlagsreferanseListe = endringUnderGrensePeriode.grunnlag.grunnlagsreferanseListe
+    return finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe)
+        ?: finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe)
+        ?: nesteKalkulertIndeksår
 }
-
-fun List<GrunnlagDto>.finnIndeksårFraPrivatAvtale(søknadsbarnReferanse: String): Int? =
-    filtrerOgKonverterBasertPåFremmedReferanse<DelberegningPrivatAvtale>(
-        Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
-        gjelderBarnReferanse = søknadsbarnReferanse,
-    ).firstOrNull()
-        ?.innhold
-        ?.nesteIndeksreguleringsår
-        ?.toInt()
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
     let {
