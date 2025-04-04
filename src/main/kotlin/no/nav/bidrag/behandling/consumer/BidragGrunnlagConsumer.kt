@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.web.client.AbstractRestClient
@@ -20,6 +21,8 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 import java.time.LocalDate
+
+private val logger = KotlinLogging.logger {}
 
 @Component
 class BidragGrunnlagConsumer(
@@ -131,7 +134,7 @@ class BidragGrunnlagConsumer(
                 ),
             )
         } catch (e: Exception) {
-            log.error("Feil oppstod ved henting av grunnlag.")
+            logger.error(e) { "Feil oppstod ved henting av grunnlag med melding ${e.message}." }
             return HentetGrunnlag(null, tekniskFeil = "Feil ved henting av grunnlag")
         }
     }
