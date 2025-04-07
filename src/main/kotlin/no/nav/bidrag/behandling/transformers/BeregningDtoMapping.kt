@@ -597,9 +597,6 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     val sumTilsynsutgifter = nettoTilsyn.innhold.tilsynsutgiftBarnListe.sumOf { it.sumTilsynsutgifter }
     val erBegrensetAvMaksTilsyn =
         nettoTilsyn.innhold.totalTilsynsutgift.setScale(0, RoundingMode.HALF_UP) != sumTilsynsutgifter.setScale(0, RoundingMode.HALF_UP)
-    val sjablonMaksFradragBeløp = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO
-    val antallBarn = nettoTilsyn.innhold.tilsynsutgiftBarnListe.size
-    val maksfradragAndel = sjablonMaksFradragBeløp.divide(antallBarn.toBigDecimal(), 10, RoundingMode.HALF_UP)
     val skattesatsFaktor = sjablonSkattesats?.innhold?.verdi?.divide(BigDecimal(100), 10, RoundingMode.HALF_UP) ?: BigDecimal.ZERO
     return UnderholdskostnadPeriodeBeregningsdetaljer(
         tilsynsutgifterBarn =
@@ -616,7 +613,6 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
         sumTilsynsutgifter = sumTilsynsutgifter,
         fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
         skattefradragPerBarn = nettoTilsyn.innhold.skattefradragPerBarn,
-        maksfradragAndel = maksfradragAndel, // TODO Remove
         sjablonMaksFradrag = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO,
         skattefradragTotalTilsynsutgift = nettoTilsyn.innhold.skattefradragTotalTilsynsutgift,
         skattefradragMaksFradrag = nettoTilsyn.innhold.skattefradragMaksfradrag,

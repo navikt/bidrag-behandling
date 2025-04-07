@@ -128,7 +128,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =
-                    stønadsendring.periodeListe.filter { it.resultatkode != Resultatkode.OPPHØR.name }.map {
+                    stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
                         grunnlagListe.byggResultatBidragsberegning(
                             it.periode,
                             it.beløp,
