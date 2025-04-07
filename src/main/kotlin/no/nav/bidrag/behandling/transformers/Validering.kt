@@ -84,7 +84,7 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (rolle != null &&
         behandling.stonadstype == Stønadstype.BIDRAG &&
         rolle.rolletype == Rolletype.BARN &&
-        opphørsdato.isAfter(rolle.fødselsdato.plusYears(18))
+        opphørsdato.isAfter(rolle.fødselsdato.plusYears(18).plusMonths(1))
     ) {
         feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
     }
