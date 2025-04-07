@@ -29,8 +29,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
             ?: rolleManglerFødselsdato(rolletype)
 
-    val dagensdatoEllerVirkning = maxOf(LocalDate.now().withDayOfMonth(1), behandling.virkningstidspunkt!!)
-    val barnErOver18 = fødselsdatoKorrigert.plusYears(18).plusMonths(1).isAfter(dagensdatoEllerVirkning)
+    val barnErOver18 = fødselsdatoKorrigert.plusYears(18).plusMonths(1).isAfter(LocalDate.now().withDayOfMonth(1))
     return Rolle(
         behandling = behandling,
         rolletype = rolletype,
