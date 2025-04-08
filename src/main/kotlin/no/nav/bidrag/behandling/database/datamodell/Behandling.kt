@@ -179,6 +179,8 @@ open class Behandling(
     @Enumerated(EnumType.STRING)
     open var søknadstype: BisysSøknadstype? = null,
     @Transient
+    var erBisysVedtak: Boolean = false,
+    @Transient
     var grunnlagFraVedtak: List<GrunnlagDto>? = emptyList(),
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),

@@ -291,7 +291,7 @@ class Dtomapper(
                     it.tilPersoninfoDto(),
                     underholdBeregning
                         .finnAlleDelberegningUnderholdskostnad(it)
-                        .tilUnderholdskostnadDto(underholdBeregning),
+                        .tilUnderholdskostnadDto(underholdBeregning, erBisysVedtak),
                 )
             }.toSet()
 

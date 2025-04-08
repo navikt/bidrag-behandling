@@ -544,30 +544,36 @@ fun List<GrunnlagDto>.finnDelberegningSamværsfradrag(
     )
 }
 
-fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostnadDto(underholdBeregning: List<GrunnlagDto>) =
-    this
-        .map { delberegning ->
-            val it = delberegning.innhold
-            UnderholdskostnadDto(
-                stønadTilBarnetilsyn = it.barnetilsynMedStønad ?: BigDecimal.ZERO,
-                tilsynsutgifter = it.nettoTilsynsutgift ?: BigDecimal.ZERO,
-                periode =
-                    DatoperiodeDto(
-                        it.periode.fom.atDay(1),
-                        it.periode.til
-                            ?.atDay(1)
-                            ?.minusDays(1),
-                    ),
-                forbruk = it.forbruksutgift,
-                barnetrygd = it.barnetrygd,
-                boutgifter = it.boutgift,
-                total = it.underholdskostnad,
-                beregningsdetaljer =
+fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostnadDto(
+    underholdBeregning: List<GrunnlagDto>,
+    erBisysVedtak: Boolean,
+) = this
+    .map { delberegning ->
+        val it = delberegning.innhold
+        UnderholdskostnadDto(
+            stønadTilBarnetilsyn = it.barnetilsynMedStønad ?: BigDecimal.ZERO,
+            tilsynsutgifter = it.nettoTilsynsutgift ?: BigDecimal.ZERO,
+            periode =
+                DatoperiodeDto(
+                    it.periode.fom.atDay(1),
+                    it.periode.til
+                        ?.atDay(1)
+                        ?.minusDays(1),
+                ),
+            forbruk = it.forbruksutgift,
+            barnetrygd = it.barnetrygd,
+            boutgifter = it.boutgift,
+            total = it.underholdskostnad,
+            beregningsdetaljer =
+                if (erBisysVedtak) {
+                    null
+                } else {
                     underholdBeregning.tilUnderholdskostnadDetaljer(
                         delberegning.grunnlag.grunnlagsreferanseListe,
-                    ),
-            )
-        }.toSet()
+                    )
+                },
+        )
+    }.toSet()
 
 fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
