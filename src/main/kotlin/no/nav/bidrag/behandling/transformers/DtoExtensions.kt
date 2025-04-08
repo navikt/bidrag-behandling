@@ -12,6 +12,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import java.time.LocalDate
+import java.time.Period
 
 fun Set<Sivilstand>.toSivilstandDto() =
     this.map { SivilstandDto(it.id, it.datoFom, it.datoTom, it.sivilstand, it.kilde) }.sortedBy { it.datoFom }.toSet()
@@ -29,7 +30,10 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
             ?: rolleManglerFødselsdato(rolletype)
 
-    val barnErOver18 = fødselsdatoKorrigert.plusYears(18).plusMonths(1).isAfter(LocalDate.now().withDayOfMonth(1))
+    val barnErOver18 =
+        Period
+            .between(fødselsdatoKorrigert.plusYears(18).plusMonths(1), LocalDate.now().withDayOfMonth(1))
+            .years >= 18
     return Rolle(
         behandling = behandling,
         rolletype = rolletype,
