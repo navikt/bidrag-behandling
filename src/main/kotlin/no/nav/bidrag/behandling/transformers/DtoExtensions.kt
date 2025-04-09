@@ -26,23 +26,24 @@ fun Behandling.tilForsendelseRolleDto() =
     }
 
 fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
-    val fødselsdatoKorrigert =
+    val fødselsdatoPerson =
         fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
             ?: rolleManglerFødselsdato(rolletype)
 
     val barnErOver18 =
-        Period
-            .between(fødselsdatoKorrigert.plusYears(18).plusMonths(1), LocalDate.now().withDayOfMonth(1))
-            .years >= 18
+        rolletype == Rolletype.BARN &&
+            Period
+                .between(fødselsdatoPerson, LocalDate.now().withDayOfMonth(1))
+                .years >= 18
     return Rolle(
         behandling = behandling,
         rolletype = rolletype,
         ident = ident?.verdi,
-        fødselsdato = fødselsdatoKorrigert,
+        fødselsdato = fødselsdatoPerson,
         navn = navn,
         opphørsdato =
-            if (barnErOver18 && rolletype == Rolletype.BARN) {
-                fødselsdatoKorrigert.plusYears(18).plusMonths(1).withDayOfMonth(1)
+            if (barnErOver18) {
+                fødselsdatoPerson.plusYears(18).plusMonths(1).withDayOfMonth(1)
             } else {
                 null
             },
