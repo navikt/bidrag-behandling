@@ -41,7 +41,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         fødselsdato = fødselsdatoKorrigert,
         navn = navn,
         opphørsdato =
-            if (barnErOver18) {
+            if (barnErOver18 && rolletype == Rolletype.BARN) {
                 fødselsdatoKorrigert.plusYears(18).plusMonths(1).withDayOfMonth(1)
             } else {
                 null
