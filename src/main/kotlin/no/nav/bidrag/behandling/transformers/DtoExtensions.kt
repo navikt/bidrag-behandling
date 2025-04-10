@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
@@ -42,7 +43,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         fødselsdato = fødselsdatoPerson,
         navn = navn,
         opphørsdato =
-            if (barnErOver18) {
+            if (barnErOver18 && behandling.tilType() == TypeBehandling.BIDRAG) {
                 fødselsdatoPerson.plusYears(18).plusMonths(1).withDayOfMonth(1)
             } else {
                 null
