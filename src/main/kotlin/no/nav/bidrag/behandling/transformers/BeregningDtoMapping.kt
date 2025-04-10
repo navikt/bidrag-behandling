@@ -544,30 +544,36 @@ fun List<GrunnlagDto>.finnDelberegningSamværsfradrag(
     )
 }
 
-fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostnadDto(underholdBeregning: List<GrunnlagDto>) =
-    this
-        .map { delberegning ->
-            val it = delberegning.innhold
-            UnderholdskostnadDto(
-                stønadTilBarnetilsyn = it.barnetilsynMedStønad ?: BigDecimal.ZERO,
-                tilsynsutgifter = it.nettoTilsynsutgift ?: BigDecimal.ZERO,
-                periode =
-                    DatoperiodeDto(
-                        it.periode.fom.atDay(1),
-                        it.periode.til
-                            ?.atDay(1)
-                            ?.minusDays(1),
-                    ),
-                forbruk = it.forbruksutgift,
-                barnetrygd = it.barnetrygd,
-                boutgifter = it.boutgift,
-                total = it.underholdskostnad,
-                beregningsdetaljer =
+fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostnadDto(
+    underholdBeregning: List<GrunnlagDto>,
+    erBisysVedtak: Boolean,
+) = this
+    .map { delberegning ->
+        val it = delberegning.innhold
+        UnderholdskostnadDto(
+            stønadTilBarnetilsyn = it.barnetilsynMedStønad ?: BigDecimal.ZERO,
+            tilsynsutgifter = it.nettoTilsynsutgift ?: BigDecimal.ZERO,
+            periode =
+                DatoperiodeDto(
+                    it.periode.fom.atDay(1),
+                    it.periode.til
+                        ?.atDay(1)
+                        ?.minusDays(1),
+                ),
+            forbruk = it.forbruksutgift,
+            barnetrygd = it.barnetrygd,
+            boutgifter = it.boutgift,
+            total = it.underholdskostnad,
+            beregningsdetaljer =
+                if (erBisysVedtak) {
+                    null
+                } else {
                     underholdBeregning.tilUnderholdskostnadDetaljer(
                         delberegning.grunnlag.grunnlagsreferanseListe,
-                    ),
-            )
-        }.toSet()
+                    )
+                },
+        )
+    }.toSet()
 
 fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
@@ -597,9 +603,6 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     val sumTilsynsutgifter = nettoTilsyn.innhold.tilsynsutgiftBarnListe.sumOf { it.sumTilsynsutgifter }
     val erBegrensetAvMaksTilsyn =
         nettoTilsyn.innhold.totalTilsynsutgift.setScale(0, RoundingMode.HALF_UP) != sumTilsynsutgifter.setScale(0, RoundingMode.HALF_UP)
-    val sjablonMaksFradragBeløp = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO
-    val antallBarn = nettoTilsyn.innhold.tilsynsutgiftBarnListe.size
-    val maksfradragAndel = sjablonMaksFradragBeløp.divide(antallBarn.toBigDecimal(), 10, RoundingMode.HALF_UP)
     val skattesatsFaktor = sjablonSkattesats?.innhold?.verdi?.divide(BigDecimal(100), 10, RoundingMode.HALF_UP) ?: BigDecimal.ZERO
     return UnderholdskostnadPeriodeBeregningsdetaljer(
         tilsynsutgifterBarn =
@@ -616,7 +619,6 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
         sumTilsynsutgifter = sumTilsynsutgifter,
         fordelingFaktor = nettoTilsyn.innhold.andelTilsynsutgiftFaktor,
         skattefradragPerBarn = nettoTilsyn.innhold.skattefradragPerBarn,
-        maksfradragAndel = maksfradragAndel, // TODO Remove
         sjablonMaksFradrag = sjablonMaksfradrag.firstOrNull()?.innhold?.maksBeløpFradrag ?: BigDecimal.ZERO,
         skattefradragTotalTilsynsutgift = nettoTilsyn.innhold.skattefradragTotalTilsynsutgift,
         skattefradragMaksFradrag = nettoTilsyn.innhold.skattefradragMaksfradrag,
@@ -684,11 +686,12 @@ fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnRefer
             it.periode.fom
         }
 
-fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
+fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(rolle: Rolle): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
     this
         .filtrerOgKonverterBasertPåEgenReferanse<DelberegningUnderholdskostnad>(
             Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD,
-        ).sortedBy {
+        ).filter { hentPersonMedReferanse(it.gjelderBarnReferanse)?.personIdent == rolle.personident?.verdi }
+        .sortedBy {
             it.innhold.periode.fom
         }
 

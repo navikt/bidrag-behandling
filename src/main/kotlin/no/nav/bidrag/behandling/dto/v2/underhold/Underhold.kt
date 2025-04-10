@@ -176,7 +176,6 @@ data class UnderholdskostnadDto(
         val erBegrensetAvMaksTilsyn: Boolean,
         val fordelingFaktor: BigDecimal,
         val skattefradragPerBarn: BigDecimal,
-        val maksfradragAndel: BigDecimal,
         val skattefradrag: BigDecimal,
         val skattefradragMaksFradrag: BigDecimal,
         val skattefradragTotalTilsynsutgift: BigDecimal,

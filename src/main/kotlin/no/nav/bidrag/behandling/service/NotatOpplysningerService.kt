@@ -297,7 +297,7 @@ class NotatOpplysningerService(
                                                         erBegrensetAvMaksTilsyn = it.erBegrensetAvMaksTilsyn,
                                                         bruttoTilsynsutgift = it.bruttoTilsynsutgift,
                                                         fordelingFaktor = it.fordelingFaktor,
-                                                        maksfradragAndel = it.maksfradragAndel,
+                                                        maksfradragAndel = BigDecimal.ZERO,
                                                         skattefradrag = it.skattefradrag,
                                                         skattefradragMaksFradrag = it.skattefradragMaksFradrag,
                                                         skattefradragPerBarn = it.skattefradragPerBarn,

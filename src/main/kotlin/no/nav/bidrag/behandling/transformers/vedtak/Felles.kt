@@ -153,6 +153,7 @@ fun OpprettVedtakRequestDto.tilVedtakDto(): VedtakDto =
                 )
             },
         unikReferanse = null,
+        vedtaksid = 1,
         grunnlagListe =
             grunnlagListe.map {
                 GrunnlagDto(
