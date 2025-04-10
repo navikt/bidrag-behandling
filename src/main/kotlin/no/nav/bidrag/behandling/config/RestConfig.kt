@@ -38,8 +38,8 @@ class RestConfig {
     @Primary
     fun restTemplateBuilder(restTemplate: RestTemplateBuilder): RestTemplateBuilder =
         restTemplate
-            .setConnectTimeout(Duration.of(30, ChronoUnit.SECONDS))
-            .setReadTimeout(Duration.of(30, ChronoUnit.SECONDS))
+            .connectTimeout(Duration.of(30, ChronoUnit.SECONDS))
+            .readTimeout(Duration.of(30, ChronoUnit.SECONDS))
 
     @Bean
     fun jackson2ObjectMapperBuilder(): Jackson2ObjectMapperBuilder =
