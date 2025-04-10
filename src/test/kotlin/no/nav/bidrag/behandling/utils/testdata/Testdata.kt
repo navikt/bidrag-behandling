@@ -2265,6 +2265,7 @@ fun opprettPrivatAvtalePeriode(
 
 fun opprettVedtakDto() =
     VedtakDto(
+        vedtaksid = 1,
         kilde = Vedtakskilde.MANUELT,
         fastsattILand = "",
         type = Vedtakstype.ENDRING,

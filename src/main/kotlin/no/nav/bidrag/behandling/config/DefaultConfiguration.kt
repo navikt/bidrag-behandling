@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.commons.web.CorrelationIdFilter
 import no.nav.bidrag.commons.web.DefaultCorsFilter
+import no.nav.bidrag.commons.web.MdcConstants.MDC_ENHET
 import no.nav.bidrag.commons.web.UserMdcFilter
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.security.token.support.client.spring.oauth2.EnableOAuth2Client
@@ -81,6 +82,7 @@ class DefaultUnleashContextProvider : UnleashContextProvider {
         return UnleashContext
             .builder()
             .userId(userId)
+            .addProperty("enhet", MDC.get(MDC_ENHET))
             .appName(MDC.get("applicationKey"))
             .build()
     }
