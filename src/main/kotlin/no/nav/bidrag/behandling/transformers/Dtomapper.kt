@@ -673,6 +673,7 @@ class Dtomapper(
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
+            erBisysVedtak = erBisysVedtak,
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
             innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
             vedtakstype = vedtakstype,

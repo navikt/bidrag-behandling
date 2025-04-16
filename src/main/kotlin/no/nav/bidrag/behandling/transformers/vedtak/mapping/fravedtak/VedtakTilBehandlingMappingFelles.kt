@@ -299,16 +299,20 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
 ) = listOfNotNull(
     hentInnhentetAndreBarnTilBidragsmottaker()
         ?.let {
-            listOf(
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.ANDRE_BARN,
-                    it,
-                    it.firstOrNull()?.partPersonId!!,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER),
-                    lesemodus,
-                    false,
-                ),
-            )
+            if (it.isEmpty()) {
+                emptyList()
+            } else {
+                listOf(
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.ANDRE_BARN,
+                        it,
+                        it.firstOrNull()?.partPersonId!!,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_BARN_TIL_BIDRAGSMOTTAKER),
+                        lesemodus,
+                        false,
+                    ),
+                )
+            }
         },
     hentGrunnlagArbeidsforhold()
         .groupBy { it.partPersonId }

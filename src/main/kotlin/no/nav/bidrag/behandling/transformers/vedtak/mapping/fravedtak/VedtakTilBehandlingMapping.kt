@@ -546,7 +546,7 @@ class VedtakTilBehandlingMapping(
                         ?.atEndOfMonth(),
                 under_skolealder = it.skolealder == Skolealder.UNDER,
                 omfang = it.tilsynstype,
-                kilde = Kilde.OFFENTLIG,
+                kilde = if (it.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
             )
         }
 
