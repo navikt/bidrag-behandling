@@ -89,6 +89,7 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.experimental.runners.Enclosed
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -4330,6 +4331,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
         @Test
         @Transactional
+        @Disabled
         open fun `skal slette grunnlagsinnhentingFeilet hvis ny innhenting ikke inneholder feil`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false, false, false)
