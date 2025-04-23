@@ -566,7 +566,9 @@ fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostna
             total = it.underholdskostnad,
             beregningsdetaljer =
                 if (erBisysVedtak) {
-                    null
+                    underholdBeregning.tilUnderholdskostnadDetaljer(
+                        delberegning.grunnlag.grunnlagsreferanseListe,
+                    )
                 } else {
                     underholdBeregning.tilUnderholdskostnadDetaljer(
                         delberegning.grunnlag.grunnlagsreferanseListe,
@@ -790,7 +792,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
                 delberegningBidragspliktigesAndel.grunnlagsreferanseListe.contains(
                     it.referanse,
                 )
-        }?.innholdTilObjekt<SjablonBidragsevnePeriode>() ?: return null
+        }?.innholdTilObjekt<SjablonBidragsevnePeriode>()
     val sjablonUnderholdEgnebarnIHusstand =
         find {
             it.type == Grunnlagstype.SJABLON_SJABLONTALL &&
@@ -798,7 +800,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
                     it.referanse,
                 ) &&
                 it.innholdTilObjekt<SjablonSjablontallPeriode>().sjablon == SjablonTallNavn.UNDERHOLD_EGNE_BARN_I_HUSSTAND_BELØP
-        }?.innholdTilObjekt<SjablonSjablontallPeriode>() ?: return null
+        }?.innholdTilObjekt<SjablonSjablontallPeriode>()
     val delberegningBidragsevne = delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragsevne>()
     return DelberegningBidragsevneDto(
         bidragsevne = delberegningBidragsevne.beløp,
@@ -814,13 +816,13 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
         underholdEgneBarnIHusstand =
             DelberegningBidragsevneDto.UnderholdEgneBarnIHusstand(
                 årsbeløp = delberegningBidragsevne.underholdBarnEgenHusstand,
-                sjablon = sjablonUnderholdEgnebarnIHusstand.verdi,
+                sjablon = sjablonUnderholdEgnebarnIHusstand?.verdi ?: BigDecimal.ZERO,
                 antallBarnIHusstanden = delberegningBarnIHusstanden.antallBarn,
             ),
         utgifter =
             DelberegningBidragsevneDto.BidragsevneUtgifterBolig(
-                underholdBeløp = sjablonBidragsevne.underholdBeløp,
-                boutgiftBeløp = sjablonBidragsevne.boutgiftBeløp,
+                underholdBeløp = sjablonBidragsevne?.underholdBeløp ?: BigDecimal.ZERO,
+                boutgiftBeløp = sjablonBidragsevne?.boutgiftBeløp ?: BigDecimal.ZERO,
                 borMedAndreVoksne = delberegningVoksneIHusstand.borMedAndreVoksne,
             ),
     )

@@ -84,7 +84,7 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
     )
 }
 
-fun Samværsperiode.tilDatoperiode() = Datoperiode(fom, tom)
+fun Samværsperiode.tilDatoperiode() = Datoperiode(fom, if (tom?.isBefore(fom) == true) null else tom)
 
 fun OppdaterSamværDto.valider(opphørsdato: LocalDate?) {
     val feilliste = mutableListOf<String>()
