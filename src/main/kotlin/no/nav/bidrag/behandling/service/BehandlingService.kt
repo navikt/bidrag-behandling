@@ -199,7 +199,7 @@ class BehandlingService(
 
         behandling.søknadsbarn.forEach { rolle ->
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
-                rolle.opphørsdato = it.opphørsdato
+                rolle.opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
             }
         }
         behandlingRepository.save(behandling)
