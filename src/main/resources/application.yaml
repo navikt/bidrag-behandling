@@ -3,7 +3,8 @@ management:
     web:
       exposure:
         include: "prometheus,health"
-
+spring:
+  mandatory-file-encoding: UTF-8
 logging.level:
   secureLogger: DEBUG
 
@@ -19,7 +20,8 @@ spring.main.banner-mode: off
 egenskaper:
   grunnlag:
     min-antall-minutter-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING}
-
+management.metrics.distribution.percentiles-histogram.http.server.requests: true
+management.metrics.distribution.percentiles-histogram.http.client.requests: true
 ---
 spring.config.activate.on-profile: nais,lokal-nais
 
