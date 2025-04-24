@@ -100,6 +100,8 @@ import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
 
+val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
+
 fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
     val erManueltOverstyrt = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true
 
@@ -136,7 +138,7 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
             inntekter
                 .filter { it.ident == rolle.ident }
                 .filter { it.taMed }
-                .filter { !it.inntektsposter.mapNotNull { it.inntektstype }.contains(Inntektstype.BARNETILLEGG_TILTAKSPENGER) }
+                .filter { !it.inntektsposter.mapNotNull { it.inntektstype }.any { ikkeBeregnForBarnetillegg.contains(it) } }
                 .map {
                     InntektsgrunnlagPeriode(
                         periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
