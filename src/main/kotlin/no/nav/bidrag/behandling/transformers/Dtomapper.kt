@@ -670,10 +670,12 @@ class Dtomapper(
         val kanIkkeBehandlesBegrunnelse =
             if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
+        val grunnlagFraVedtak = grunnlagFraVedtak?.finnKopiDelberegningBidragspliktigesAndel()?.fraVedtakId
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
             erBisysVedtak = erBisysVedtak,
+            grunnlagFraVedtaksid = grunnlagFraVedtak,
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
             innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
             vedtakstype = vedtakstype,

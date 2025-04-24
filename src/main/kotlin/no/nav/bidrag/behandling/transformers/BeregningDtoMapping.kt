@@ -281,7 +281,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     gjelderBarnIdent: String,
 ): ResultatBarnebidragsberegningPeriodeDto {
     if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-        val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)!!
+        val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel()!!
         val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
         val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
         val sluttberegning =
@@ -529,10 +529,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndel>()
 }
 
-fun List<GrunnlagDto>.finnKopiDelberegningBidragspliktigesAndel(
-    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
-): KopiDelberegningBidragspliktigesAndel? {
-    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
+fun List<GrunnlagDto>.finnKopiDelberegningBidragspliktigesAndel(): KopiDelberegningBidragspliktigesAndel? {
     val delberegningBidragspliktigesAndel =
         find {
             it.type == Grunnlagstype.KOPI_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL
