@@ -152,7 +152,7 @@ class VedtakTilBehandlingMapping(
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
                 saksnummer = saksnummer!!,
-                soknadsid = søknadId ?: this.søknadId!!,
+                soknadsid = søknadId ?: this.søknadId,
             )
 
         behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)

@@ -112,7 +112,7 @@ data class BehandlingDtoV2(
     val klageMottattdato: LocalDate? = null,
     val søktAv: SøktAvType,
     val saksnummer: String,
-    val søknadsid: Long,
+    val søknadsid: Long? = null,
     val søknadRefId: Long? = null,
     val vedtakRefId: Long? = null,
     val behandlerenhet: String,

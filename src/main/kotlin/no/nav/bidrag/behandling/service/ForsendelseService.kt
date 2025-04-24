@@ -40,7 +40,7 @@ class ForsendelseService(
     private fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> =
         slettVarselbrevUnderOpprettelse(
             request.saksnummer,
-            request.behandlingInfo.soknadId,
+            request.behandlingInfo.soknadId!!,
         ).map { it.toString() }
 
     private fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
@@ -86,7 +86,7 @@ class ForsendelseService(
             }
         }
         if (request.behandlingInfo.erVedtakFattet()) {
-            slettVarselbrevUnderOpprettelse(request.saksnummer, request.behandlingInfo.soknadId)
+            slettVarselbrevUnderOpprettelse(request.saksnummer, request.behandlingInfo.soknadId!!)
         }
         return opprettetForsendelser
     }

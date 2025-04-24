@@ -55,7 +55,7 @@ open class Behandling(
     open var mottattdato: LocalDate,
     open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
-    open var soknadsid: Long,
+    open var soknadsid: Long?,
     open val soknadRefId: Long? = null,
     open var behandlerEnhet: String,
     open var opprettetAv: String,

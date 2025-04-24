@@ -8,7 +8,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 data class BehandlingInfoDto(
     val vedtakId: Long? = null,
     val behandlingId: Long? = null,
-    val soknadId: Long,
+    val soknadId: Long?,
     val erFattetBeregnet: Boolean? = null,
     val erVedtakIkkeTilbakekreving: Boolean = false,
     val stonadType: Stønadstype? = null,

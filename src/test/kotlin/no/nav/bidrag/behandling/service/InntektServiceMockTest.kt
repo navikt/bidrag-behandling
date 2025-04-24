@@ -133,6 +133,23 @@ class InntektServiceMockTest {
     }
 
     @Test
+    fun test() {
+        val periods =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2023, 1), YearMonth.of(2023, 3)),
+                ÅrMånedsperiode(YearMonth.of(2023, 4), null), // `til` is null here
+                ÅrMånedsperiode(YearMonth.of(2023, 6), YearMonth.of(2023, 8)),
+            )
+
+        val result =
+            periods.map { period ->
+                period.til ?: YearMonth.now().plusYears(10000) // Handle null `til`
+            }
+
+        println(result)
+    }
+
+    @Test
     fun `skal oppdatere periode på inntekter etter endring i virkningstidspunkt`() {
         val behandling = oppretteBehandling(1)
         val virkningstidspunkt = LocalDate.parse("2023-07-01")

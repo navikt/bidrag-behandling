@@ -75,7 +75,7 @@ class BehandlingService(
     }
 
     fun opprettBehandling(behandling: Behandling): Behandling =
-        behandlingRepository.findFirstBySoknadsid(behandling.soknadsid)?.let {
+        behandlingRepository.findFirstBySoknadsid(behandling.soknadsid!!)?.let {
             log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${behandling.soknadsid}. Oppretter ikke ny behandling" }
             return it
         } ?: run {

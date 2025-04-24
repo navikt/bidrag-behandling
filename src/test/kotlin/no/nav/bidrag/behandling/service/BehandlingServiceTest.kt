@@ -2194,7 +2194,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             mottattdato = this.mottattdato,
             søknadFra = this.soknadFra,
             saksnummer = this.saksnummer,
-            søknadsid = this.soknadsid,
+            søknadsid = this.soknadsid!!,
             behandlerenhet = this.behandlerEnhet,
             stønadstype = this.stonadstype,
             engangsbeløpstype = this.engangsbeloptype,

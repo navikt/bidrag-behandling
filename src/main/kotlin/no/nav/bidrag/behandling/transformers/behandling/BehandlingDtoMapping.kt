@@ -92,7 +92,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         mottattdato = mottattdato,
         søktAv = soknadFra,
         saksnummer = saksnummer,
-        søknadsid = soknadsid,
+        søknadsid = soknadsid!!,
         behandlerenhet = behandlerEnhet,
         roller =
             roller
