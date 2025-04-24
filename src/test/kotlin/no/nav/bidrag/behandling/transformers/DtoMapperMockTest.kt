@@ -219,7 +219,7 @@ class DtoMapperMockTest {
             )
             behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe false
         }
-        assertSoftly("Finnes løpende bidrag hvis siste periode er samme måned som søkt fom dato") {
+        assertSoftly("Finnes ikke løpende bidrag hvis siste periode er samme måned som søkt fom dato") {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
             behandling.søktFomDato = LocalDate.parse("2025-01-15")
             behandling.leggTilGrunnlagBeløpshistorikk(
@@ -233,7 +233,7 @@ class DtoMapperMockTest {
                         opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2025-01-31"))),
                     ),
             )
-            behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe true
+            behandling.finnesLøpendeBidragForRolle(behandling.søknadsbarn.first()) shouldBe false
         }
         assertSoftly("Finnes ikke løpende bidrag hvis siste periode er måned etter søkt fom dato") {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
