@@ -140,6 +140,8 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                             it.grunnlagReferanseListe,
                             null,
                             Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                            type,
+                            barn.ident!!.verdi,
                         )
                     },
             )

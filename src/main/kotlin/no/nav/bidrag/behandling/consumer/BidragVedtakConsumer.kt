@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.VEDTAK_CACHE
+import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -29,6 +31,7 @@ class BidragVedtakConsumer(
             request,
         )
 
+    @BrukerCacheable(VEDTAK_CACHE)
     fun hentVedtak(vedtakId: Long): VedtakDto? =
         getForEntity(
             bidragVedtakUri.pathSegment(vedtakId.toString()).build().toUri(),
