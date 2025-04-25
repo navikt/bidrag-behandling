@@ -275,6 +275,14 @@
                     <groupId>io.github.oshai</groupId>
                     <artifactId>kotlin-logging-jvm</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.github.oshai</groupId>
+                    <artifactId>kotlin-logging-jvm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>no.nav.security</groupId>
+                    <artifactId>token-validation-spring</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
