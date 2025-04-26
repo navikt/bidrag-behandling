@@ -173,7 +173,7 @@ class VedtakTilBehandlingMapping(
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
             behandling.grunnlagFraVedtak = grunnlagListe
-            behandling.erBisysVedtak = behandlingId == null
+            behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
         }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {

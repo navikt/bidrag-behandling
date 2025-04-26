@@ -141,7 +141,6 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                             null,
                             Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
                             type,
-                            barn.ident!!.verdi,
                         )
                     },
             )

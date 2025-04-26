@@ -24,7 +24,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.UnderholdskostnadPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
-import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -98,7 +97,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrensePeriode
-import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -179,7 +177,6 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 resultat.ugyldigBeregning,
                                 grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
                                 resultat.vedtakstype,
-                                resultat.barn.ident!!.verdi,
                             )
                         },
                 )
@@ -278,7 +275,6 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     ugyldigBeregning: UgyldigBeregningDto?,
     erResultatEndringUnderGrense: Boolean,
     vedtakstype: Vedtakstype,
-    gjelderBarnIdent: String,
 ): ResultatBarnebidragsberegningPeriodeDto {
     if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
         val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel()!!
@@ -286,8 +282,6 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
         val sluttberegning =
             sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidragAldersjustering>()
-        val delberegningGrensePeriode =
-            finnDelberegningSjekkGrensePeriode(periode) ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null))
         val bpsAndel =
             DelberegningBidragspliktigesAndel(
                 periode = periode,
@@ -297,14 +291,6 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                 barnetErSelvforsørget = false,
                 barnEndeligInntekt = BigDecimal.ZERO,
             )
-        val referertVedtak = hentVedtak(bpsAndelKopi.fraVedtakId)!!
-        val sistePeriode = referertVedtak.stønadsendringListe.find { it.kravhaver.verdi == gjelderBarnIdent }!!.finnSistePeriode()
-        val sluttberegningOpprinneligGrunnlag =
-            referertVedtak.grunnlagListe.finnSluttberegningIReferanser(
-                sistePeriode.grunnlagReferanseListe,
-            )
-        val sluttberegningOpprinnelig =
-            sluttberegningOpprinneligGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
         return ResultatBarnebidragsberegningPeriodeDto(
             vedtakstype = vedtakstype,
             periode = periode,
@@ -318,41 +304,16 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             bpsAndelBeløp = sluttberegning.bpAndelBeløp,
             beregningsdetaljer =
                 run {
-                    val delberegningBPsEvne = referertVedtak.grunnlagListe.finnDelberegningBidragsevne(sistePeriode.grunnlagReferanseListe)
                     BidragPeriodeBeregningsdetaljer(
-                        delberegningBidragsevne = delberegningBPsEvne,
-                        endringUnderGrense = delberegningGrensePeriode?.innhold,
-                        barnetilleggBM =
-                            referertVedtak.grunnlagListe.finnBarnetillegg(
-                                sistePeriode.grunnlagReferanseListe,
-                                Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
-                            ),
-                        barnetilleggBP =
-                            referertVedtak.grunnlagListe.finnBarnetillegg(
-                                sistePeriode.grunnlagReferanseListe,
-                                Grunnlagstype.PERSON_BIDRAGSPLIKTIG,
-                            ),
                         samværsfradrag =
                             finnAldersjusteringDelberegningSamværsfradrag(
                                 grunnlagsreferanseListe,
                             ),
                         delberegningUnderholdskostnad = delberegningUnderholdskostnad,
-                        forskuddssats = finnForskuddssats(sistePeriode.grunnlagReferanseListe),
-                        delberegningBidragspliktigesBeregnedeTotalBidrag =
-                            referertVedtak.grunnlagListe.finnDelberegningBPsBeregnedeTotalbidrag(
-                                sistePeriode.grunnlagReferanseListe,
-                            ),
                         bpsAndel = bpsAndel,
-                        sluttberegning = sluttberegningOpprinnelig,
                         sluttberegningAldersjustering = sluttberegning,
-                        antallBarnIHusstanden = referertVedtak.grunnlagListe.finnAntallBarnIHusstanden(sistePeriode.grunnlagReferanseListe),
-                        inntekter = referertVedtak.grunnlagListe.byggResultatSærbidragInntekter(sistePeriode.grunnlagReferanseListe),
-                        voksenIHusstanden = referertVedtak.grunnlagListe.finnBorMedAndreVoksne(sistePeriode.grunnlagReferanseListe),
-                        enesteVoksenIHusstandenErEgetBarn =
-                            referertVedtak.grunnlagListe.finnEnesteVoksenIHusstandenErEgetBarn(
-                                sistePeriode.grunnlagReferanseListe,
-                            ),
-                        bpHarEvne = delberegningBPsEvne?.let { it.bidragsevne > BigDecimal.ZERO } ?: false,
+                        bpHarEvne = false,
+                        forskuddssats = BigDecimal.ZERO,
                     )
                 },
         )
