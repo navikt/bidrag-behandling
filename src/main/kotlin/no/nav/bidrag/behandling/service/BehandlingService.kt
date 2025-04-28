@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -75,7 +76,7 @@ class BehandlingService(
     }
 
     fun opprettBehandling(behandling: Behandling): Behandling =
-        behandlingRepository.findFirstBySoknadsid(behandling.soknadsid)?.let {
+        behandlingRepository.findFirstBySoknadsid(behandling.soknadsid!!)?.let {
             log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${behandling.soknadsid}. Oppretter ikke ny behandling" }
             return it
         } ?: run {
@@ -199,7 +200,16 @@ class BehandlingService(
 
         behandling.søknadsbarn.forEach { rolle ->
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
-                rolle.opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
+                val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
+                if (opphørsdato != null) {
+                    virkningstidspunktService.oppdaterOpphørsdato(
+                        behandling.id!!,
+                        OppdaterOpphørsdatoRequestDto(
+                            rolle.id!!,
+                            opphørsdato,
+                        ),
+                    )
+                }
             }
         }
         behandlingRepository.save(behandling)

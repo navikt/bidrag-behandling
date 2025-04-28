@@ -16,7 +16,7 @@
     <properties>
         <java.version>21</java.version>
         <kotlin.version>2.1.10</kotlin.version>
-        <bidrag-felles.version>2025.04.15.154241</bidrag-felles.version>
+        <bidrag-felles.version>2025.04.26.125053</bidrag-felles.version>
         <bidrag-beregn-felles.version>2025.04.16.131242</bidrag-beregn-felles.version>
         <h2.version>2.3.232</h2.version>
         <logback-encoder.version>8.0</logback-encoder.version>
@@ -447,6 +447,7 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.errorprone</groupId>

@@ -132,6 +132,7 @@ class BeregningService(
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                         barn = søknasdbarn.mapTilResultatBarn(),
+                        vedtakstype = behandling.vedtakstype,
                         resultat =
                             beregnBarnebidragApi.beregn(grunnlagBeregning).let {
                                 it.copy(
@@ -147,6 +148,7 @@ class BeregningService(
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
+                        vedtakstype = behandling.vedtakstype,
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -160,6 +162,7 @@ class BeregningService(
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
+                        vedtakstype = behandling.vedtakstype,
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -196,6 +199,7 @@ class BeregningService(
         ResultatBidragsberegningBarn(
             barn = barn.mapTilResultatBarn(),
             avslaskode = avslag,
+            vedtakstype = vedtakstype,
             resultat =
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =

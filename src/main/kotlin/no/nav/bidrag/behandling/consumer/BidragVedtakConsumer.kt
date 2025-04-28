@@ -29,6 +29,7 @@ class BidragVedtakConsumer(
             request,
         )
 
+//    @BrukerCacheable(VEDTAK_CACHE)
     fun hentVedtak(vedtakId: Long): VedtakDto? =
         getForEntity(
             bidragVedtakUri.pathSegment(vedtakId.toString()).build().toUri(),

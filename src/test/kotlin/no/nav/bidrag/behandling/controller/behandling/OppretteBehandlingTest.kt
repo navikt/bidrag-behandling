@@ -400,7 +400,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
                     ),
                 )
             val request =
-                oppretteBehandlingRequestTest("1900000", "en12", roller, behandling.soknadsid)
+                oppretteBehandlingRequestTest("1900000", "en12", roller, behandling.soknadsid!!)
             val response =
                 httpHeaderTestRestTemplate.exchange(
                     "${rootUriV2()}/behandling",

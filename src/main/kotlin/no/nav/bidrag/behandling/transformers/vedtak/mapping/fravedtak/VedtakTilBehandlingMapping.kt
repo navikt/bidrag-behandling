@@ -152,7 +152,7 @@ class VedtakTilBehandlingMapping(
                 opprettetAvNavn = opprettetAvNavn,
                 kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
                 saksnummer = saksnummer!!,
-                soknadsid = søknadId ?: this.søknadId!!,
+                soknadsid = søknadId ?: this.søknadId,
             )
 
         behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
@@ -173,7 +173,7 @@ class VedtakTilBehandlingMapping(
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
             behandling.grunnlagFraVedtak = grunnlagListe
-            behandling.erBisysVedtak = behandlingId == null
+            behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
         }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {
