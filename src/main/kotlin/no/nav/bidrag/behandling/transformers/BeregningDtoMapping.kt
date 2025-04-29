@@ -647,6 +647,7 @@ fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostna
             forbruk = it.forbruksutgift,
             barnetrygd = it.barnetrygd,
             boutgifter = it.boutgift,
+            forpleining = it.forpleining,
             total = it.underholdskostnad,
             beregningsdetaljer =
                 if (erBisysVedtak) {

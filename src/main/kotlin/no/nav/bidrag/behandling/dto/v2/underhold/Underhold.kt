@@ -156,6 +156,7 @@ data class UnderholdskostnadDto(
     val stønadTilBarnetilsyn: BigDecimal = BigDecimal.ZERO,
     val tilsynsutgifter: BigDecimal = BigDecimal.ZERO,
     val barnetrygd: BigDecimal = BigDecimal.ZERO,
+    val forpleining: BigDecimal? = BigDecimal.ZERO,
     val total: BigDecimal,
     val beregningsdetaljer: UnderholdskostnadPeriodeBeregningsdetaljer? = null,
 ) {
