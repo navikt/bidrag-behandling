@@ -24,7 +24,7 @@ class NotatFeilhåndteringScheduler(
         behandlingerSomManglerNotater.forEach { behandling ->
             log.info { "Oppretter notat for behandling ${behandling.id}" }
             try {
-                // notatService.opprettNotat(behandling.id!!)
+                notatService.opprettNotat(behandling.id!!)
             } catch (e: Exception) {
                 log.error(e) { "Det skjedde en feil ved opprettelse av notat for behandling ${behandling.id}" }
             }
