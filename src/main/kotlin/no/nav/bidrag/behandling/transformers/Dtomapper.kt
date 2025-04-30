@@ -708,6 +708,7 @@ class Dtomapper(
                         harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                         opphørsdato = it.opphørsdato,
+                        globalOpphørsdato = globalOpphørsdato,
                         begrunnelseFraOpprinneligVedtak =
                             if (erKlageEllerOmgjøring) {
                                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
