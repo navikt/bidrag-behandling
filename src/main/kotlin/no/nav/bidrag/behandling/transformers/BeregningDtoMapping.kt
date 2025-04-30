@@ -344,7 +344,12 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                 },
             beregnetBidrag = sluttberegning?.beregnetBeløp ?: BigDecimal.ZERO,
             samværsfradrag = finnSamværsfradrag(grunnlagsreferanseListe),
-            bpsAndelU = bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO,
+            bpsAndelU =
+                if (sluttberegning?.bidragJustertForDeltBosted == true) {
+                    sluttberegning.bpAndelAvUVedDeltBostedFaktor
+                } else {
+                    bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO
+                },
             bpsAndelBeløp = bpsAndel?.andelBeløp ?: BigDecimal.ZERO,
             erDirekteAvslag = resultatkode?.erDirekteAvslag() ?: false,
             erEndringUnderGrense = erResultatEndringUnderGrense,
