@@ -286,7 +286,12 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             DelberegningBidragspliktigesAndel(
                 periode = periode,
                 andelBeløp = sluttberegning!!.beregnetBeløp,
-                endeligAndelFaktor = bpsAndelKopi.endeligAndelFaktor,
+                endeligAndelFaktor =
+                    if (sluttberegning.deltBosted) {
+                        sluttberegning.bpAndelFaktorVedDeltBosted!!
+                    } else {
+                        bpsAndelKopi.endeligAndelFaktor
+                    },
                 beregnetAndelFaktor = bpsAndelKopi.endeligAndelFaktor,
                 barnetErSelvforsørget = false,
                 barnEndeligInntekt = BigDecimal.ZERO,
@@ -647,6 +652,7 @@ fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostna
             forbruk = it.forbruksutgift,
             barnetrygd = it.barnetrygd,
             boutgifter = it.boutgift,
+            forpleining = it.forpleining,
             total = it.underholdskostnad,
             beregningsdetaljer =
                 if (erBisysVedtak) {

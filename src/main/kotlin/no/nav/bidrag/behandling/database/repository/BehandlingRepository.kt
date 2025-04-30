@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
+import java.time.LocalDateTime
 import java.util.Optional
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
@@ -19,6 +20,6 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     @Query("update behandling set deleted = true, slettet_tidspunkt = now() where id = :behandlingsid", nativeQuery = true)
     fun logiskSlett(behandlingsid: Long)
 
-    @Query("select b from behandling b where b.vedtaksid is not null and b.notatJournalpostId is null")
-    fun hentBehandlingerSomManglerNotater(): List<Behandling>
+    @Query("select b from behandling b where b.vedtaksid is not null and b.notatJournalpostId is null and b.vedtakstidspunkt >= :afterDate")
+    fun hentBehandlingerSomManglerNotater(afterDate: LocalDateTime): List<Behandling>
 }

@@ -48,6 +48,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadP
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
+import no.nav.bidrag.transport.behandling.felles.grunnlag.KopiBarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
@@ -385,6 +386,13 @@ class VedtakTilBehandlingMapping(
                             }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
                             .mapBarnetilsyn(underholdskostnad, lesemodus),
                     )
+                    underholdskostnad.barnetilsyn.addAll(
+                        filtrerBasertPåEgenReferanse(Grunnlagstype.KOPI_BARNETILSYN_MED_STØNAD_PERIODE)
+                            .filter { ts ->
+                                hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                            }.map { it.innholdTilObjekt<KopiBarnetilsynMedStønadPeriode>() }
+                            .mapBarnetilsynKopi(underholdskostnad, lesemodus),
+                    )
                     underholdskostnad.harTilsynsordning =
                         underholdskostnad.barnetilsyn.isNotEmpty() ||
                         underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() ||
@@ -528,6 +536,25 @@ class VedtakTilBehandlingMapping(
                 tilsynsutgift = it.faktiskUtgiftBeløp,
                 kostpenger = it.kostpengerBeløp,
                 kommentar = it.kommentar,
+            )
+        }
+
+    private fun List<KopiBarnetilsynMedStønadPeriode>.mapBarnetilsynKopi(
+        underholdskostnad: Underholdskostnad,
+        lesemodus: Boolean,
+    ): List<Barnetilsyn> =
+        mapIndexed { index, it ->
+            Barnetilsyn(
+                id = if (lesemodus) index.toLong() else null,
+                underholdskostnad = underholdskostnad,
+                fom = it.periode.fom.atDay(1),
+                tom =
+                    it.periode.til
+                        ?.minusMonths(1)
+                        ?.atEndOfMonth(),
+                under_skolealder = it.skolealder == Skolealder.UNDER,
+                omfang = it.tilsynstype,
+                kilde = Kilde.MANUELL,
             )
         }
 

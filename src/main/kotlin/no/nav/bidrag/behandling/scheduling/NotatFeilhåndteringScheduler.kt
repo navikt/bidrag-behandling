@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
 
@@ -19,12 +20,12 @@ class NotatFeilhåndteringScheduler(
     @SchedulerLock(name = "opprettNotatHvisFeilet", lockAtLeastFor = "10m")
     @Transactional
     fun oppdaterStatusPaFerdigstilteDokumenterSkeduler() {
-        val behandlingerSomManglerNotater = behandlingRepository.hentBehandlingerSomManglerNotater()
+        val behandlingerSomManglerNotater = behandlingRepository.hentBehandlingerSomManglerNotater(LocalDateTime.now().minusMonths(6))
         log.info { "Fant ${behandlingerSomManglerNotater.size} behandlinger som mangler notat" }
         behandlingerSomManglerNotater.forEach { behandling ->
             log.info { "Oppretter notat for behandling ${behandling.id}" }
             try {
-                // notatService.opprettNotat(behandling.id!!)
+                notatService.opprettNotat(behandling.id!!)
             } catch (e: Exception) {
                 log.error(e) { "Det skjedde en feil ved opprettelse av notat for behandling ${behandling.id}" }
             }
