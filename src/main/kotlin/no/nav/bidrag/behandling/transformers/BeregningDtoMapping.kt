@@ -276,7 +276,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     erResultatEndringUnderGrense: Boolean,
     vedtakstype: Vedtakstype,
 ): ResultatBarnebidragsberegningPeriodeDto {
-    if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+    if (vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringBisysVedtak()) {
         val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel()!!
         val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
         val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
@@ -500,6 +500,8 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndel>()
 }
 
+fun List<GrunnlagDto>.erAldersjusteringBisysVedtak(): Boolean = finnKopiDelberegningBidragspliktigesAndel() == null
+
 fun List<GrunnlagDto>.finnKopiDelberegningBidragspliktigesAndel(): KopiDelberegningBidragspliktigesAndel? {
     val delberegningBidragspliktigesAndel =
         find {
@@ -704,7 +706,7 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
     return UnderholdskostnadPeriodeBeregningsdetaljer(
         tilsynsutgifterBarn =
             nettoTilsyn.innhold.tilsynsutgiftBarnListe
-                .map { fu ->
+                .mapNotNull { fu ->
                     tilsynsutgifterBarn(grunnlagsreferanseListe, fu)
                 }.sortedWith(
                     compareByDescending<UnderholdskostnadDto.TilsynsutgiftBarn> { it.gjelderBarn.medIBehandlingen }
@@ -733,12 +735,12 @@ fun List<GrunnlagDto>.tilUnderholdskostnadDetaljer(
 fun List<GrunnlagDto>.tilsynsutgifterBarn(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
     tilsynsutgiftBarn: TilsynsutgiftBarn,
-): UnderholdskostnadDto.TilsynsutgiftBarn {
+): UnderholdskostnadDto.TilsynsutgiftBarn? {
     val faktiskUtgiftPeriode =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<FaktiskUtgiftPeriode>(
             Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
             grunnlagsreferanseListe,
-        ).find { it.gjelderBarnReferanse == tilsynsutgiftBarn.gjelderBarn }!!
+        ).find { it.gjelderBarnReferanse == tilsynsutgiftBarn.gjelderBarn } ?: return null
 
     val delberegningTilleggsstønad =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningTilleggsstønad>(
