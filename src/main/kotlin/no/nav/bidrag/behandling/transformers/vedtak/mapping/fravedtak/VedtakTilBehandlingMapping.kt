@@ -432,7 +432,7 @@ class VedtakTilBehandlingMapping(
                                 kilde = kilde,
                                 person =
                                     Person(
-                                        id = 1,
+                                        id = indexU,
                                         ident = gjelderBarn.ident?.verdi,
                                         navn = gjelderBarn.navn,
                                         fødselsdato = gjelderBarn.fødselsdato,
@@ -469,13 +469,14 @@ class VedtakTilBehandlingMapping(
                 .filter { hentPersonMedReferanse(it.gjelderPerson)?.type != Grunnlagstype.PERSON_SØKNADSBARN }
                 .map {
                     val gjelderBarn = hentPersonMedReferanse(it.gjelderPerson)!!.personObjekt
+                    indexU += 1L
                     if (lesemodus) {
                         Underholdskostnad(
-                            id = 1,
+                            id = indexU,
                             behandling = behandling,
                             person =
                                 Person(
-                                    id = 1,
+                                    id = indexU,
                                     ident = gjelderBarn.ident?.verdi,
                                     navn = gjelderBarn.navn,
                                     fødselsdato = gjelderBarn.fødselsdato,
