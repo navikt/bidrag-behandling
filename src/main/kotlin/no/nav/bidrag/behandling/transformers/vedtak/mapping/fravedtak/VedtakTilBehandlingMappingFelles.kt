@@ -63,6 +63,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
+import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -628,8 +629,12 @@ internal fun List<GrunnlagDto>.hentVirkningstidspunkt(gjelderBarnReferanse: Stri
 internal fun VedtakDto.hentSøknad(): SøknadGrunnlag =
     grunnlagListe
         .filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
-        .first()
-        .innholdTilObjekt<SøknadGrunnlag>()
+        .firstOrNull()
+        ?.innholdTilObjekt<SøknadGrunnlag>() ?: SøknadGrunnlag(
+        mottattDato = vedtakstidspunkt!!.toLocalDate(),
+        søktFraDato = vedtakstidspunkt!!.toLocalDate(),
+        søktAv = SøktAvType.NAV_BIDRAG,
+    )
 
 internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
     gjelderReferanse: Grunnlagsreferanse,
