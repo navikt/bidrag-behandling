@@ -631,8 +631,8 @@ internal fun VedtakDto.hentSøknad(): SøknadGrunnlag =
         .filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
         .firstOrNull()
         ?.innholdTilObjekt<SøknadGrunnlag>() ?: SøknadGrunnlag(
-        mottattDato = vedtakstidspunkt!!.toLocalDate(),
-        søktFraDato = vedtakstidspunkt!!.toLocalDate(),
+        mottattDato = vedtakstidspunkt?.toLocalDate() ?: opprettetTidspunkt.toLocalDate(),
+        søktFraDato = vedtakstidspunkt?.toLocalDate() ?: opprettetTidspunkt.toLocalDate(),
         søktAv = SøktAvType.NAV_BIDRAG,
     )
 
