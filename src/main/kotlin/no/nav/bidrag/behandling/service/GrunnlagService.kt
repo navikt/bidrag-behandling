@@ -863,14 +863,14 @@ class GrunnlagService(
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }
-        val innhentetGrunnlag1 = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
-        val innhentetGrunnlag =
-            innhentetGrunnlag1.copy(
-                hentGrunnlagDto =
-                    innhentetGrunnlag1.hentGrunnlagDto?.copy(
-                        husstandsmedlemmerOgEgneBarnListe = emptyList(),
-                    ),
-            )
+        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
+//        val innhentetGrunnlag =
+//            innhentetGrunnlag1.copy(
+//                hentGrunnlagDto =
+//                    innhentetGrunnlag1.hentGrunnlagDto?.copy(
+//                        husstandsmedlemmerOgEgneBarnListe = emptyList(),
+//                    ),
+//            )
 
         val feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?> =
             innhentetGrunnlag.hentGrunnlagDto?.let { g ->
