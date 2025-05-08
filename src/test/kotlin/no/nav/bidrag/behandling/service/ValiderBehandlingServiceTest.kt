@@ -8,13 +8,16 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockkClass
+import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -38,12 +41,14 @@ import java.time.LocalDate
 
 class ValiderBehandlingServiceTest {
     val bidragStønadConsumer: BidragStønadConsumer = mockkClass(BidragStønadConsumer::class)
+    val bidragSakConsumer: BidragSakConsumer = mockkClass(BidragSakConsumer::class)
 
     val unleash = FakeUnleash()
-    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, unleash)
+    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, bidragSakConsumer, unleash)
 
     @BeforeEach
     fun initMock() {
+        every { bidragSakConsumer.hentSak(any()) } returns opprettSakForBehandling(oppretteBehandling())
         every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns
             LøpendeBidragssakerResponse(
                 bidragssakerListe = oppretLøpendeBidragListeMedBareNorskValuta(),
