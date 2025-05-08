@@ -62,7 +62,7 @@ class VirkningstidspunktService(
                     it.bidragsmottaker!!,
                 )
             }
-            oppdaterVirkningstidspunkt(request.virkningstidspunkt, it)
+            oppdaterVirkningstidspunkt(null, request.virkningstidspunkt, it)
             it
         }
 
@@ -75,11 +75,18 @@ class VirkningstidspunktService(
             log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
             gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
         }
-        val erAvslagÅrsakEndret = request.årsak != behandling.årsak || request.avslag != behandling.avslag
+        val forRolle = request.barnId?.let { behandling.roller.find { it.id == request.barnId } }
+        val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
+        val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
+        val erAvslagÅrsakEndret = request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
 
         if (erAvslagÅrsakEndret) {
             behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
             behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
+            forRolle?.let {
+                it.årsak = if (request.avslag != null) null else request.årsak ?: forRolle.årsak
+                it.avslag = if (request.årsak != null) null else request.avslag ?: forRolle.avslag
+            }
 
             when (behandling.tilType()) {
                 TypeBehandling.BIDRAG -> {
@@ -102,6 +109,7 @@ class VirkningstidspunktService(
 
     @Transactional
     fun oppdaterVirkningstidspunkt(
+        rolleId: Long?,
         nyVirkningstidspunkt: LocalDate?,
         behandling: Behandling,
     ) {
@@ -234,7 +242,7 @@ class VirkningstidspunktService(
                 "Virkningstidspunkt $virkningstidspunkt på særbidrag er ikke riktig som følge av ny kalendermåned." +
                     " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"
             }
-            oppdaterVirkningstidspunkt(nyVirkningstidspunkt, this)
+            oppdaterVirkningstidspunkt(null, nyVirkningstidspunkt, this)
         }
     }
 }

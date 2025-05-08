@@ -149,6 +149,11 @@ class GrunnlagService(
             if (feilrapporteringer.isNotEmpty()) {
                 behandling.grunnlagsinnhentingFeilet =
                     objectmapper.writeValueAsString(feilrapporteringer)
+                behandling.grunnlagSistInnhentet =
+                    LocalDateTime
+                        .now()
+                        .plusMinutes(grenseInnhenting.toLong())
+                        .minusMinutes(10)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
@@ -259,7 +264,6 @@ class GrunnlagService(
     }
 
     fun sjekkOgOppdaterIdenter(behandling: Behandling) {
-        if (!unleashInstance.isEnabled("behandling.opppdater_identer", false)) return
         log.info { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
@@ -840,10 +844,13 @@ class GrunnlagService(
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
-        behandling.grunnlagSistInnhentet == null ||
-            LocalDateTime
-                .now()
-                .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+        !behandling.erVedtakFattet &&
+            (
+                behandling.grunnlagSistInnhentet == null ||
+                    LocalDateTime
+                        .now()
+                        .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+            )
 
     private fun henteOglagreGrunnlag(
         behandling: Behandling,
@@ -856,7 +863,14 @@ class GrunnlagService(
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }
-        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
+        val innhentetGrunnlag1 = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
+        val innhentetGrunnlag =
+            innhentetGrunnlag1.copy(
+                hentGrunnlagDto =
+                    innhentetGrunnlag1.hentGrunnlagDto?.copy(
+                        husstandsmedlemmerOgEgneBarnListe = emptyList(),
+                    ),
+            )
 
         val feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?> =
             innhentetGrunnlag.hentGrunnlagDto?.let { g ->
@@ -915,8 +929,7 @@ class GrunnlagService(
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
             if (behandling.søknadsbarn.isNotEmpty() &&
-                Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi &&
-                !innhentingAvBoforholdFeilet
+                Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1144,12 +1157,31 @@ class GrunnlagService(
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
         grunnlagsdatatype: Grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD,
     ) {
+        val husstandsmedlemmerOgEgneBarnMedSøknadsbarn =
+            husstandsmedlemmerOgEgneBarn.toMutableSet().apply {
+                behandling.søknadsbarn.forEach { søknadsbarn ->
+                    if (none { it.gjelderPersonId == søknadsbarn.ident }) {
+                        // Add søknadsbarn as a RelatertPersonGrunnlagDto if not already in the list
+                        add(
+                            RelatertPersonGrunnlagDto(
+                                gjelderPersonId = søknadsbarn.ident,
+                                partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
+                                navn = søknadsbarn.hentNavn(),
+                                fødselsdato = søknadsbarn.fødselsdato,
+                                erBarnAvBmBp = true,
+                                relasjon = Familierelasjon.BARN,
+                                borISammeHusstandDtoListe = emptyList(),
+                            ),
+                        )
+                    }
+                }
+            }
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                null,
+                behandling.globalOpphørsdato,
                 behandling.tilTypeBoforhold(),
-                husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
+                husstandsmedlemmerOgEgneBarnMedSøknadsbarn.tilBoforholdBarnRequest(behandling, true),
             )
 
         val nyesteBearbeidaBoforholdFørLagring =
