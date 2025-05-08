@@ -54,12 +54,13 @@ class VirkningstidspunktService(
             secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
             request.valider(it)
             oppdaterAvslagÅrsak(it, request)
+            val gjelderRolle = request.barnRolleId?.let { rolleId -> it.roller.find { it.id == rolleId } }
             request.henteOppdatereNotat()?.let { n ->
                 notatService.oppdatereNotat(
                     it,
                     NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
                     n.henteNyttNotat() ?: "",
-                    it.bidragsmottaker!!,
+                    gjelderRolle ?: it.bidragsmottaker!!,
                 )
             }
             oppdaterVirkningstidspunkt(request.barnRolleId, request.virkningstidspunkt, it)
@@ -118,8 +119,9 @@ class VirkningstidspunktService(
         nyVirkningstidspunkt: LocalDate?,
         behandling: Behandling,
     ) {
-        val forrigeVirkningstidspunkt = behandling.globalVirkningstidspunkt
-        val erVirkningstidspunktEndret = nyVirkningstidspunkt != behandling.globalVirkningstidspunkt
+        val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
+        val forrigeVirkningstidspunkt = gjelderBarn?.virkningstidspunkt ?: behandling.virkningstidspunkt
+        val erVirkningstidspunktEndret = nyVirkningstidspunkt != forrigeVirkningstidspunkt
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny virkningsdato i behandling ${behandling.id}" }
@@ -164,7 +166,6 @@ class VirkningstidspunktService(
         }
 
         if (erVirkningstidspunktEndret) {
-            val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
             if (gjelderBarn != null) {
                 gjelderBarn.virkningstidspunkt = nyVirkningstidspunkt ?: gjelderBarn.virkningstidspunkt
             } else {

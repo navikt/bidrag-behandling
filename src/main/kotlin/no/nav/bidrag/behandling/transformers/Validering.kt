@@ -277,18 +277,35 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
 
 fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
+    if (barnRolleId != null && behandling.søknadsbarn.none { it.id == barnRolleId }) {
+        feilliste.add("Barn med id $barnRolleId finnes ikke i behandling ${behandling.id}")
+    }
+    val gjelderBarn = behandling.søknadsbarn.find { it.id == barnRolleId }
+    if (gjelderBarn != null) {
+        if (gjelderBarn.opphørsdato != null && gjelderBarn.virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
+            feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
+        }
+
+        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
+            avslag == null &&
+            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
+        ) {
+            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+        }
+    } else {
+        if (behandling.opprinneligVirkningstidspunkt != null &&
+            avslag == null &&
+            virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
+        ) {
+            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+        }
+
+        if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
+            feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
+        }
+    }
     if (avslag != null && årsak != null) {
         feilliste.add("Kan ikke sette både avslag og årsak samtidig")
-    }
-    if (behandling.opprinneligVirkningstidspunkt != null &&
-        avslag == null &&
-        virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
-    ) {
-        feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
-    }
-
-    if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
-        feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
     }
 
     if (feilliste.isNotEmpty()) {
