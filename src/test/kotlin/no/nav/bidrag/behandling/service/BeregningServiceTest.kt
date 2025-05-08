@@ -332,9 +332,9 @@ class BeregningServiceTest {
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldNotBe null
             it.ugyldigBeregning!!.begrunnelse shouldContain "er lik eller lavere enn løpende bidrag"
-            it.ugyldigBeregning!!.perioder shouldHaveSize 2
+            it.ugyldigBeregning!!.perioder shouldHaveSize 1
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG
-            it.resultat.grunnlagListe shouldHaveSize 52
+            it.resultat.grunnlagListe shouldHaveSize 48
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1
@@ -343,7 +343,7 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(2600)
         }
@@ -391,9 +391,9 @@ class BeregningServiceTest {
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldNotBe null
             it.ugyldigBeregning!!.begrunnelse shouldContain "har ingen løpende forskudd"
-            it.ugyldigBeregning!!.perioder shouldHaveSize 2
+            it.ugyldigBeregning!!.perioder shouldHaveSize 1
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD
-            it.resultat.grunnlagListe shouldHaveSize 53
+            it.resultat.grunnlagListe shouldHaveSize 49
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1
@@ -402,7 +402,7 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 3
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(0)
         }
