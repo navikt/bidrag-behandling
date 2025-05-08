@@ -700,11 +700,11 @@ class Dtomapper(
                 søknadsbarn.map {
                     VirkningstidspunktDtoV2(
                         rolle = it.tilDto(),
-                        virkningstidspunkt = virkningstidspunkt,
-                        opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-                        årsak = it.årsak ?: årsak,
-                        avslag = it.avslag ?: avslag,
-                        begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                        virkningstidspunkt = it.virkningstidspunkt,
+                        opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt,
+                        årsak = it.årsak,
+                        avslag = it.avslag,
+                        begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)),
                         harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                         opphørsdato = it.opphørsdato,
