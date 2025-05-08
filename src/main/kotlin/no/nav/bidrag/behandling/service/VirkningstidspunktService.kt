@@ -62,7 +62,7 @@ class VirkningstidspunktService(
                     it.bidragsmottaker!!,
                 )
             }
-            oppdaterVirkningstidspunkt(null, request.virkningstidspunkt, it)
+            oppdaterVirkningstidspunkt(request.barnRolleId, request.virkningstidspunkt, it)
             it
         }
 
@@ -75,7 +75,7 @@ class VirkningstidspunktService(
             log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
             gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
         }
-        val forRolle = request.barnId?.let { behandling.roller.find { it.id == request.barnId } }
+        val forRolle = request.barnRolleId?.let { behandling.roller.find { it.id == request.barnRolleId } }
         val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
         val erAvslagÅrsakEndret = request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
@@ -83,9 +83,14 @@ class VirkningstidspunktService(
         if (erAvslagÅrsakEndret) {
             behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
             behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
-            forRolle?.let {
-                it.årsak = if (request.avslag != null) null else request.årsak ?: forRolle.årsak
-                it.avslag = if (request.årsak != null) null else request.avslag ?: forRolle.avslag
+            if (forRolle != null) {
+                forRolle.årsak = if (request.avslag != null) null else request.årsak ?: forRolle.årsak
+                forRolle.avslag = if (request.årsak != null) null else request.avslag ?: forRolle.avslag
+            } else {
+                behandling.roller.forEach {
+                    it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
+                    it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
+                }
             }
 
             when (behandling.tilType()) {
@@ -113,8 +118,8 @@ class VirkningstidspunktService(
         nyVirkningstidspunkt: LocalDate?,
         behandling: Behandling,
     ) {
-        val forrigeVirkningstidspunkt = behandling.virkningstidspunkt
-        val erVirkningstidspunktEndret = nyVirkningstidspunkt != behandling.virkningstidspunkt
+        val forrigeVirkningstidspunkt = behandling.globalVirkningstidspunkt
+        val erVirkningstidspunktEndret = nyVirkningstidspunkt != behandling.globalVirkningstidspunkt
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny virkningsdato i behandling ${behandling.id}" }
@@ -159,6 +164,14 @@ class VirkningstidspunktService(
         }
 
         if (erVirkningstidspunktEndret) {
+            val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
+            if (gjelderBarn != null) {
+                gjelderBarn.virkningstidspunkt = nyVirkningstidspunkt ?: gjelderBarn.virkningstidspunkt
+            } else {
+                behandling.søknadsbarn.forEach {
+                    it.virkningstidspunkt = nyVirkningstidspunkt ?: it.virkningstidspunkt
+                }
+            }
             behandling.virkningstidspunkt = nyVirkningstidspunkt ?: behandling.virkningstidspunkt
 
             when (behandling.tilType()) {
