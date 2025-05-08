@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.commons.service.sjablon.SjablonService
 import no.nav.bidrag.commons.web.mock.sjablonSamværsfradragResponse
@@ -83,6 +84,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
         stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubHentSak(opprettSakForBehandling(oppretteBehandling()))
         stubUtils.stubOpprettJournalpost("12333")
     }
 
@@ -233,7 +235,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         // TODO endre dette når notat er klart
         behandlingEtter.notatJournalpostId shouldBe "12333"
         stubUtils.Verify().fatteVedtakKalt()
-        stubUtils.Verify().hentSakKalt(behandling.saksnummer)
+        stubUtils.Verify().hentSakKalt(behandling.saksnummer, 3)
         stubUtils.Verify().opprettNotatKalt()
         stubUtils.Verify().opprettJournalpostKaltMed()
     }

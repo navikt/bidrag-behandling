@@ -942,12 +942,15 @@ class StubUtils {
             return commonObjectmapper.readValue(requests.first().bodyAsString)
         }
 
-        fun hentSakKalt(saksnummer: String) {
+        fun hentSakKalt(
+            saksnummer: String,
+            antall: Int = 1,
+        ) {
             val verify =
                 WireMock.getRequestedFor(
                     urlMatching("/sak/sak/$saksnummer"),
                 )
-            WireMock.verify(1, verify)
+            WireMock.verify(antall, verify)
         }
 
         fun hentGrunnlagKalt(
