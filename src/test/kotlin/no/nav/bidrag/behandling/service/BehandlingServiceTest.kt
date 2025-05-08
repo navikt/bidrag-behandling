@@ -46,6 +46,7 @@ import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggeTilNyttBarnetilsyn
+import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandlingRoller
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
@@ -130,6 +131,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         stubUtils.stubTilgangskontrollPerson()
         stubUtils.stubTilgangskontrollPersonISak()
         stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubHentSak(opprettSakForBehandling(oppretteBehandling()))
         stubKodeverkProvider()
         stubSjablonProvider()
     }

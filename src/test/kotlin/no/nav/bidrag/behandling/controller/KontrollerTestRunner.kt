@@ -8,6 +8,8 @@ import io.mockk.every
 import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
+import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -97,5 +99,6 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
         stubUtils.stubTilgangskontrollPerson()
         stubUtils.stubTilgangskontrollPersonISak()
         stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubHentSak(opprettSakForBehandling(oppretteBehandling()))
     }
 }
