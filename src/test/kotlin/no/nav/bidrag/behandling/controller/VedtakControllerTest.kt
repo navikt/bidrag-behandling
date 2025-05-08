@@ -235,7 +235,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         // TODO endre dette når notat er klart
         behandlingEtter.notatJournalpostId shouldBe "12333"
         stubUtils.Verify().fatteVedtakKalt()
-        stubUtils.Verify().hentSakKalt(behandling.saksnummer)
+        stubUtils.Verify().hentSakKalt(behandling.saksnummer, 3)
         stubUtils.Verify().opprettNotatKalt()
         stubUtils.Verify().opprettJournalpostKaltMed()
     }
