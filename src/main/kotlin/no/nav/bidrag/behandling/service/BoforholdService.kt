@@ -165,7 +165,7 @@ class BoforholdService(
         overskriveManuelleOpplysninger: Boolean,
         gjelderHusstandsmedlem: Personident,
     ) {
-        val nyeHusstandsmedlemMedPerioder = periodisertBoforhold.tilHusstandsmedlem(behandling).first()
+        val nyeHusstandsmedlemMedPerioder = periodisertBoforhold.tilHusstandsmedlem(behandling).firstOrNull() ?: return
         // Ved overskriving bevares manuelle medlemmer, men dersom manuelt medlem med personident også finnes i grunnlag,
         // erstattes dette med offentlige opplysninger. Manuelle perioder til offisielle husstandsmedlem slettes.
         if (overskriveManuelleOpplysninger) {
