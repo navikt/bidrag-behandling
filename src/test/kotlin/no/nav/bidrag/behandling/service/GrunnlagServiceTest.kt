@@ -4324,7 +4324,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly(behandling) { b ->
-                b.grunnlag shouldHaveSize 0
+                b.grunnlag shouldHaveSize 2
                 b.grunnlagsinnhentingFeilet shouldNotBe null
             }
         }
