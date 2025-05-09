@@ -111,6 +111,39 @@ class BehandlingService(
             TokenUtils
                 .hentSaksbehandlerIdent()
                 ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+        val virkningstidspunkt =
+            when (opprettBehandling.tilType()) {
+                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> opprettBehandling.søktFomDato
+                TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
+            }
+        val årsak =
+            when (opprettBehandling.tilType()) {
+                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
+                    if (opprettBehandling.vedtakstype !=
+                        Vedtakstype.OPPHØR
+                    ) {
+                        VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                    } else {
+                        null
+                    }
+
+                TypeBehandling.SÆRBIDRAG -> null
+            }
+        val avslag =
+            when (opprettBehandling.tilType()) {
+                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
+                    if (opprettBehandling.vedtakstype == Vedtakstype.OPPHØR) {
+                        if (opprettBehandling.stønadstype == Stønadstype.BIDRAG18AAR) {
+                            Resultatkode.AVSLUTTET_SKOLEGANG
+                        } else {
+                            Resultatkode.IKKE_OMSORG
+                        }
+                    } else {
+                        null
+                    }
+
+                TypeBehandling.SÆRBIDRAG -> null
+            }
         val behandling =
             Behandling(
                 søknadstype = opprettBehandling.søknadstype,
@@ -121,39 +154,9 @@ class BehandlingService(
                         TypeBehandling.FORSKUDD -> Innkrevingstype.MED_INNKREVING
                         else -> opprettBehandling.innkrevingstype
                     },
-                virkningstidspunkt =
-                    when (opprettBehandling.tilType()) {
-                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> opprettBehandling.søktFomDato
-                        TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
-                    },
-                årsak =
-                    when (opprettBehandling.tilType()) {
-                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
-                            if (opprettBehandling.vedtakstype !=
-                                Vedtakstype.OPPHØR
-                            ) {
-                                VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-                            } else {
-                                null
-                            }
-
-                        TypeBehandling.SÆRBIDRAG -> null
-                    },
-                avslag =
-                    when (opprettBehandling.tilType()) {
-                        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
-                            if (opprettBehandling.vedtakstype == Vedtakstype.OPPHØR) {
-                                if (opprettBehandling.stønadstype == Stønadstype.BIDRAG18AAR) {
-                                    Resultatkode.AVSLUTTET_SKOLEGANG
-                                } else {
-                                    Resultatkode.IKKE_OMSORG
-                                }
-                            } else {
-                                null
-                            }
-
-                        TypeBehandling.SÆRBIDRAG -> null
-                    },
+                virkningstidspunkt = virkningstidspunkt,
+                årsak = årsak,
+                avslag = avslag,
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,

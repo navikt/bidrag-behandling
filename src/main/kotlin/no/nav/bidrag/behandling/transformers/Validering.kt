@@ -68,12 +68,7 @@ val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PA
 fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (opphørsdato == null) return
     val feilliste = mutableListOf<String>()
-    if (opphørsdato == behandling.virkningstidspunkt) {
-        feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
-    }
-    if (opphørsdato.isBefore(behandling.virkningstidspunkt)) {
-        feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
-    }
+
     val rolle = behandling.roller.find { it.id == idRolle }
     if (rolle == null) {
         feilliste.add("Rolle med id $idRolle finnes ikke i behandling ${behandling.id}")
@@ -87,6 +82,15 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
         opphørsdato.isAfter(rolle.fødselsdato.plusYears(18).plusMonths(1))
     ) {
         feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
+    }
+
+    val virkningstidspunkt = rolle?.virkningstidspunkt ?: behandling.virkningstidspunkt
+
+    if (opphørsdato == virkningstidspunkt) {
+        feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
+    }
+    if (opphørsdato.isBefore(virkningstidspunkt)) {
+        feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
     }
 
     if (feilliste.isNotEmpty()) {

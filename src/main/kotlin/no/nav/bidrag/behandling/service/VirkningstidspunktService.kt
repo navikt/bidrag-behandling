@@ -173,7 +173,9 @@ class VirkningstidspunktService(
                     it.virkningstidspunkt = nyVirkningstidspunkt ?: it.virkningstidspunkt
                 }
             }
-            behandling.virkningstidspunkt = nyVirkningstidspunkt ?: behandling.virkningstidspunkt
+
+            val lavesteVirkningstidspunkt = behandling.søknadsbarn.mapNotNull { it.virkningstidspunkt }.minOrNull() ?: nyVirkningstidspunkt
+            behandling.virkningstidspunkt = lavesteVirkningstidspunkt ?: behandling.virkningstidspunkt
 
             when (behandling.tilType()) {
                 TypeBehandling.FORSKUDD -> {
