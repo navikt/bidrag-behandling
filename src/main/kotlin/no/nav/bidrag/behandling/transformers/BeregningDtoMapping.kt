@@ -166,7 +166,12 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
-                    indeksår = grunnlagsListe.finnIndeksår(resultat.barn.referanse, sistePeriode),
+                    indeksår =
+                        if (resultat.avslaskode == null) {
+                            grunnlagsListe.finnIndeksår(resultat.barn.referanse, sistePeriode)
+                        } else {
+                            null
+                        },
                     perioder =
                         resultat.resultat.beregnetBarnebidragPeriodeListe.map {
                             grunnlagsListe.byggResultatBidragsberegning(

@@ -134,6 +134,19 @@ class BoforholdService(
     }
 
     @Transactional
+    fun lagreNyePeriodisertBoforhold(
+        behandling: Behandling,
+        periodisertBoforhold: List<BoforholdResponseV2>,
+    ) {
+        behandling.husstandsmedlem.addAll(
+            periodisertBoforhold
+                .filter {
+                    behandling.husstandsmedlem.none { hm -> it.gjelderPersonId == hm.ident }
+                }.tilHusstandsmedlem(behandling),
+        )
+    }
+
+    @Transactional
     fun lagreFørstegangsinnhentingAvPeriodisertBoforhold(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponseV2>,
@@ -146,7 +159,12 @@ class BoforholdService(
                 sletteHusstandsmedlem(behandling, it)
             }
 
-        behandling.husstandsmedlem.addAll(periodisertBoforhold.tilHusstandsmedlem(behandling))
+        behandling.husstandsmedlem.addAll(
+            periodisertBoforhold
+                .filter {
+                    behandling.husstandsmedlem.none { hm -> it.gjelderPersonId == hm.ident }
+                }.tilHusstandsmedlem(behandling),
+        )
     }
 
     @Transactional
@@ -157,7 +175,7 @@ class BoforholdService(
         overskriveManuelleOpplysninger: Boolean,
         gjelderHusstandsmedlem: Personident,
     ) {
-        val nyeHusstandsmedlemMedPerioder = periodisertBoforhold.tilHusstandsmedlem(behandling).first()
+        val nyeHusstandsmedlemMedPerioder = periodisertBoforhold.tilHusstandsmedlem(behandling).firstOrNull() ?: return
         // Ved overskriving bevares manuelle medlemmer, men dersom manuelt medlem med personident også finnes i grunnlag,
         // erstattes dette med offentlige opplysninger. Manuelle perioder til offisielle husstandsmedlem slettes.
         if (overskriveManuelleOpplysninger) {
