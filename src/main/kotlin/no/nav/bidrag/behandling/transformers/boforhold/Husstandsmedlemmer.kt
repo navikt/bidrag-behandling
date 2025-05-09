@@ -271,7 +271,6 @@ fun BoforholdResponseV2.tilPeriode(husstandsmedlem: Husstandsmedlem) =
 fun List<BoforholdResponseV2>.tilHusstandsmedlem(behandling: Behandling): Set<Husstandsmedlem> =
     this
         .groupBy { it.gjelderPersonId }
-        .filter { behandling.husstandsmedlem.none { hm -> it.key == hm.ident } }
         .map {
             val fødselsdatoFraRespons = it.value.first().fødselsdato
             val husstandsmedlem =

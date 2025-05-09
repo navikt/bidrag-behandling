@@ -138,7 +138,12 @@ class BoforholdService(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponseV2>,
     ) {
-        behandling.husstandsmedlem.addAll(periodisertBoforhold.tilHusstandsmedlem(behandling))
+        behandling.husstandsmedlem.addAll(
+            periodisertBoforhold
+                .filter {
+                    behandling.husstandsmedlem.none { hm -> it.gjelderPersonId == hm.ident }
+                }.tilHusstandsmedlem(behandling),
+        )
     }
 
     @Transactional
@@ -154,7 +159,12 @@ class BoforholdService(
                 sletteHusstandsmedlem(behandling, it)
             }
 
-        behandling.husstandsmedlem.addAll(periodisertBoforhold.tilHusstandsmedlem(behandling))
+        behandling.husstandsmedlem.addAll(
+            periodisertBoforhold
+                .filter {
+                    behandling.husstandsmedlem.none { hm -> it.gjelderPersonId == hm.ident }
+                }.tilHusstandsmedlem(behandling),
+        )
     }
 
     @Transactional
