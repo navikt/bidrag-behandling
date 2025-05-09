@@ -149,6 +149,11 @@ class GrunnlagService(
             if (feilrapporteringer.isNotEmpty()) {
                 behandling.grunnlagsinnhentingFeilet =
                     objectmapper.writeValueAsString(feilrapporteringer)
+                behandling.grunnlagSistInnhentet =
+                    LocalDateTime
+                        .now()
+                        .minusMinutes(grenseInnhenting.toLong())
+                        .plusMinutes(10)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
@@ -839,10 +844,13 @@ class GrunnlagService(
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
-        behandling.grunnlagSistInnhentet == null ||
-            LocalDateTime
-                .now()
-                .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+        !behandling.erVedtakFattet &&
+            (
+                behandling.grunnlagSistInnhentet == null ||
+                    LocalDateTime
+                        .now()
+                        .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+            )
 
     private fun henteOglagreGrunnlag(
         behandling: Behandling,
@@ -906,16 +914,13 @@ class GrunnlagService(
             }
         }
 
-        val innhentingAvBoforholdFeilet =
-            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
         val innhentingAvBoforholdBMFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == it.key }.isNotEmpty()
 
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
             if (behandling.søknadsbarn.isNotEmpty() &&
-                Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi &&
-                !innhentingAvBoforholdFeilet
+                Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1146,16 +1151,9 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                null,
+                behandling.globalOpphørsdato,
                 behandling.tilTypeBoforhold(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
-            )
-
-        val nyesteBearbeidaBoforholdFørLagring =
-            sistAktiverteGrunnlag<BoforholdResponseV2>(
-                behandling,
-                Grunnlagstype(grunnlagsdatatype, true),
-                grunnlagsdatatype.innhentesForRolle(behandling)!!,
             )
 
         // lagre bearbeidet grunnlag per husstandsmedlem i grunnlagstabellen
@@ -1172,23 +1170,10 @@ class GrunnlagService(
                 )
             }
 
-        val innhentetRollesNyesteBearbeidaBoforholdEtterLagring =
-            sistAktiverteGrunnlag<BoforholdResponseV2>(
-                behandling,
-                Grunnlagstype(grunnlagsdatatype, true),
-                grunnlagsdatatype.innhentesForRolle(behandling)!!,
-            )
-
-        // oppdatere husstandsmedlem og bostatusperiode-tabellene hvis førstegangslagring
-        if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD &&
-            nyesteBearbeidaBoforholdFørLagring.isEmpty() &&
-            innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()
-        ) {
-            boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
-        }
         if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN) {
             aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         } else {
+            boforholdService.lagreNyePeriodisertBoforhold(behandling, boforholdPeriodisert)
             aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
         }
     }

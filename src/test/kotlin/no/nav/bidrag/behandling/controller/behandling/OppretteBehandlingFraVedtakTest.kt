@@ -79,7 +79,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(9)
             sivilstand shouldHaveSize 2
             // TODO: Boforhold grunnlag inneholder sju unike husstandsmedlemmer - fikse stub-vedtaksdata slik at tallene stemmer
-            husstandsmedlem shouldHaveSize 6
+            husstandsmedlem shouldHaveSize 7
             søktFomDato shouldBe LocalDate.parse("2020-01-01")
             vedtakstype shouldBe Vedtakstype.KLAGE
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
