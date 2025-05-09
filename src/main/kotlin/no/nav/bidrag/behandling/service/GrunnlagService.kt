@@ -152,8 +152,8 @@ class GrunnlagService(
                 behandling.grunnlagSistInnhentet =
                     LocalDateTime
                         .now()
-                        .plusMinutes(grenseInnhenting.toLong())
-                        .minusMinutes(10)
+                        .minusMinutes(grenseInnhenting.toLong())
+                        .plusMinutes(10)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
@@ -863,9 +863,10 @@ class GrunnlagService(
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }
-        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
-//        val innhentetGrunnlag =
-//            innhentetGrunnlag1.copy(
+        val innhentetGrunnlag1 = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
+        val innhentetGrunnlag =
+            innhentetGrunnlag1
+//                .copy(
 //                hentGrunnlagDto =
 //                    innhentetGrunnlag1.hentGrunnlagDto?.copy(
 //                        husstandsmedlemmerOgEgneBarnListe = emptyList(),
@@ -1157,31 +1158,12 @@ class GrunnlagService(
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
         grunnlagsdatatype: Grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD,
     ) {
-        val husstandsmedlemmerOgEgneBarnMedSøknadsbarn =
-            husstandsmedlemmerOgEgneBarn.toMutableSet().apply {
-                behandling.søknadsbarn.forEach { søknadsbarn ->
-                    if (none { it.gjelderPersonId == søknadsbarn.ident }) {
-                        // Add søknadsbarn as a RelatertPersonGrunnlagDto if not already in the list
-                        add(
-                            RelatertPersonGrunnlagDto(
-                                gjelderPersonId = søknadsbarn.ident,
-                                partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
-                                navn = søknadsbarn.hentNavn(),
-                                fødselsdato = søknadsbarn.fødselsdato,
-                                erBarnAvBmBp = true,
-                                relasjon = Familierelasjon.BARN,
-                                borISammeHusstandDtoListe = emptyList(),
-                            ),
-                        )
-                    }
-                }
-            }
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.globalOpphørsdato,
                 behandling.tilTypeBoforhold(),
-                husstandsmedlemmerOgEgneBarnMedSøknadsbarn.tilBoforholdBarnRequest(behandling, true),
+                husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )
 
         val nyesteBearbeidaBoforholdFørLagring =
@@ -1222,6 +1204,7 @@ class GrunnlagService(
         if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN) {
             aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         } else {
+            boforholdService.lagreNyePeriodisertBoforhold(behandling, boforholdPeriodisert)
             aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
         }
     }

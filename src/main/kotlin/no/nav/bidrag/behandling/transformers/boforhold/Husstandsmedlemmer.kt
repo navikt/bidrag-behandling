@@ -108,7 +108,11 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
                             Bostatus(
                                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                                 kilde = Kilde.OFFENTLIG,
-                                periodeFom = maxOf(g.fødselsdato!!, behandling.virkningstidspunktEllerSøktFomDato),
+                                periodeFom =
+                                    maxOf(
+                                        g.fødselsdato!!.plusMonths(1).withDayOfMonth(1),
+                                        minOf(behandling.virkningstidspunktEllerSøktFomDato, LocalDate.now().withDayOfMonth(1)),
+                                    ),
                                 periodeTom = null,
                             ),
                         )
@@ -267,6 +271,7 @@ fun BoforholdResponseV2.tilPeriode(husstandsmedlem: Husstandsmedlem) =
 fun List<BoforholdResponseV2>.tilHusstandsmedlem(behandling: Behandling): Set<Husstandsmedlem> =
     this
         .groupBy { it.gjelderPersonId }
+        .filter { behandling.husstandsmedlem.none { hm -> it.key == hm.ident } }
         .map {
             val fødselsdatoFraRespons = it.value.first().fødselsdato
             val husstandsmedlem =

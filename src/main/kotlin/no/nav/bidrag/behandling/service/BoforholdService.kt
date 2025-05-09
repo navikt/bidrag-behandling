@@ -134,6 +134,14 @@ class BoforholdService(
     }
 
     @Transactional
+    fun lagreNyePeriodisertBoforhold(
+        behandling: Behandling,
+        periodisertBoforhold: List<BoforholdResponseV2>,
+    ) {
+        behandling.husstandsmedlem.addAll(periodisertBoforhold.tilHusstandsmedlem(behandling))
+    }
+
+    @Transactional
     fun lagreFørstegangsinnhentingAvPeriodisertBoforhold(
         behandling: Behandling,
         periodisertBoforhold: List<BoforholdResponseV2>,
