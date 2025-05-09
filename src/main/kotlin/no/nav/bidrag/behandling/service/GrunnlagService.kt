@@ -863,15 +863,7 @@ class GrunnlagService(
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }
-        val innhentetGrunnlag1 = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
-        val innhentetGrunnlag =
-            innhentetGrunnlag1
-//                .copy(
-//                hentGrunnlagDto =
-//                    innhentetGrunnlag1.hentGrunnlagDto?.copy(
-//                        husstandsmedlemmerOgEgneBarnListe = emptyList(),
-//                    ),
-//            )
+        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
 
         val feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?> =
             innhentetGrunnlag.hentGrunnlagDto?.let { g ->
@@ -922,8 +914,6 @@ class GrunnlagService(
             }
         }
 
-        val innhentingAvBoforholdFeilet =
-            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD == it.key }.isNotEmpty()
         val innhentingAvBoforholdBMFeilet =
             feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == it.key }.isNotEmpty()
 
@@ -1166,13 +1156,6 @@ class GrunnlagService(
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )
 
-        val nyesteBearbeidaBoforholdFørLagring =
-            sistAktiverteGrunnlag<BoforholdResponseV2>(
-                behandling,
-                Grunnlagstype(grunnlagsdatatype, true),
-                grunnlagsdatatype.innhentesForRolle(behandling)!!,
-            )
-
         // lagre bearbeidet grunnlag per husstandsmedlem i grunnlagstabellen
         boforholdPeriodisert
             .filter { it.gjelderPersonId != null }
@@ -1187,20 +1170,6 @@ class GrunnlagService(
                 )
             }
 
-        val innhentetRollesNyesteBearbeidaBoforholdEtterLagring =
-            sistAktiverteGrunnlag<BoforholdResponseV2>(
-                behandling,
-                Grunnlagstype(grunnlagsdatatype, true),
-                grunnlagsdatatype.innhentesForRolle(behandling)!!,
-            )
-
-        // oppdatere husstandsmedlem og bostatusperiode-tabellene hvis førstegangslagring
-        if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD &&
-            nyesteBearbeidaBoforholdFørLagring.isEmpty() &&
-            innhentetRollesNyesteBearbeidaBoforholdEtterLagring.isNotEmpty()
-        ) {
-            boforholdService.lagreFørstegangsinnhentingAvPeriodisertBoforhold(behandling, boforholdPeriodisert)
-        }
         if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN) {
             aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         } else {

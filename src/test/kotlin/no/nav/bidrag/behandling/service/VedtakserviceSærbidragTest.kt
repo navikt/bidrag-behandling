@@ -190,9 +190,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-//            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-//                request.grunnlagListe shouldHaveSize 108
-//            }
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 108
+            }
             validerNotater()
         }
 
@@ -279,10 +279,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     Grunnlagstype.PERSON_SØKNADSBARN
                 innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
-                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
                 innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
-                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
                 shouldHaveSize(5)
@@ -515,7 +515,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-            grunnlagsliste shouldHaveSize 106
+            grunnlagsliste shouldHaveSize 105
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
@@ -525,7 +525,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                     Grunnlagstype.PERSON_SØKNADSBARN
                 innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
-                    Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
                 innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[2].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
@@ -609,7 +609,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
 
         assertSoftly(opprettVedtakRequest) {
-//            grunnlagsliste shouldHaveSize 102
+            grunnlagsliste shouldHaveSize 101
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG)) {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
@@ -624,7 +624,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE)) {
                 shouldHaveSize(1)
                 val innhold = innholdTilObjekt<DelberegningBidragsevne>().first()
-                innhold.beløp shouldBe BigDecimal("22759.04")
+                innhold.beløp shouldBe BigDecimal("14253.04")
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL)) {
                 shouldHaveSize(1)
@@ -756,9 +756,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-//            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-//                request.grunnlagListe shouldHaveSize 110
-//            }
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 109
+            }
         }
         val grunnlagsliste = opprettVedtakRequest.grunnlagListe
         val sluttberegningSærbidrag = grunnlagsliste.hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_SÆRBIDRAG)
@@ -902,9 +902,9 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
 
             request.stønadsendringListe.shouldBeEmpty()
             request.engangsbeløpListe shouldHaveSize 1
-//            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-//                request.grunnlagListe shouldHaveSize 110
-//            }
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 109
+            }
         }
 
         opprettVedtakRequest.validerVedtaksdetaljer(behandling)
@@ -1858,13 +1858,13 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
         val husstandsmedlemGrunnlag = grunnlagListe.hentPerson(testdataHusstandsmedlem1.ident)!!
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.BOSTATUS_PERIODE)) {
-            shouldHaveSize(5)
+            shouldHaveSize(4)
             val bostatusSøknadsbarn1 =
                 it.filtrerBasertPåFremmedReferanse(gjelderBarnReferanse = søknadsbarn1Grunnlag.referanse)
             bostatusSøknadsbarn1.shouldHaveSize(1)
 
             assertSoftly(bostatusSøknadsbarn1[0].innholdTilObjekt<BostatusPeriode>()) {
-                bostatus shouldBe Bostatuskode.IKKE_MED_FORELDER
+                bostatus shouldBe Bostatuskode.MED_FORELDER
                 periode.fom shouldBe YearMonth.from(virkningstidspunkt)
                 periode.til shouldBe null
                 relatertTilPart shouldBe bpGrunnlag.referanse
@@ -1941,7 +1941,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         assertSoftly(delberegningBidragsevne) {
             shouldHaveSize(1)
             val innhold = innholdTilObjekt<DelberegningBidragsevne>().first()
-            innhold.beløp shouldBe BigDecimal("22759.04")
+            innhold.beløp shouldBe BigDecimal("14253.04")
             innhold.periode shouldBe ÅrMånedsperiode(virkningstidspunkt, virkningstidspunkt.plusMonths(1))
         }
 
