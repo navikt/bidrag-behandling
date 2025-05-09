@@ -259,7 +259,6 @@ class GrunnlagService(
     }
 
     fun sjekkOgOppdaterIdenter(behandling: Behandling) {
-        if (!unleashInstance.isEnabled("behandling.opppdater_identer", false)) return
         log.info { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident

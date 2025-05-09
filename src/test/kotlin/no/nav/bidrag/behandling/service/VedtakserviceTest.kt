@@ -147,7 +147,9 @@ class VedtakserviceTest : TestContainerRunner() {
     fun initMocks() {
         clearAllMocks()
         stubTokenUtils()
-        unleash.enableAll()
+        unleash.enable("behandling.v2_endring")
+        unleash.enable("behandling.begrenset_revurdering")
+        unleash.disable("Vedtakssperre")
         bidragPersonConsumer = stubPersonConsumer()
         every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()

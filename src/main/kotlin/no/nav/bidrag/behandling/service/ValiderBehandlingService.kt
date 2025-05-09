@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
@@ -29,14 +30,20 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 @Service
 class ValiderBehandlingService(
     private val bidragStonadConsumer: BidragStønadConsumer,
+    private val bidragSakConsumer: BidragSakConsumer,
     private val unleash: Unleash,
 ) {
-    fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? =
-        when (request.tilType()) {
+    fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
+        val sak = bidragSakConsumer.hentSak(request.saksnummer)
+        if (sak.vedtakssperre || unleash.isEnabled("Vedtakssperre", false)) {
+            return "Denne saken er midlertidig stengt for vedtak"
+        }
+        return when (request.tilType()) {
             TypeBehandling.SÆRBIDRAG -> kanSærbidragBehandlesINyLøsning(request)
             TypeBehandling.BIDRAG -> kanBidragBehandlesINyLøsning(request)
             else -> null
         }
+    }
 
     private fun kanSærbidragBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         val bp = request.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }!!

@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
-import no.nav.bidrag.behandling.toggleFatteVedtakName
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.tilType
@@ -250,13 +249,6 @@ class VedtakService(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
     ): Int {
-        val isEnabled = unleashInstance.isEnabled(toggleFatteVedtakName, false)
-        if (isEnabled.not()) {
-            throw HttpClientErrorException(
-                HttpStatus.PRECONDITION_FAILED,
-                "Fattevedtak er ikke aktivert",
-            )
-        }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 

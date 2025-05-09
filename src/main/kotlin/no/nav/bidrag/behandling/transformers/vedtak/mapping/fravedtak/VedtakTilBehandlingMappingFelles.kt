@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
+import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
@@ -58,11 +59,17 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
+import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
+import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
 
 fun manglerPersonGrunnlag(referanse: Grunnlagsreferanse?): Nothing =
     vedtakmappingFeilet(
@@ -356,34 +363,65 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 ),
             )
         },
-    hentInnhentetAndreVoksneIHusstanden().groupBy { it.partPersonId }.flatMap { (gjelderRolle, grunnlag) ->
-
-        val andreVoksneIHusstandPeriodisert =
-            BoforholdApi.beregnBoforholdAndreVoksne(
-                behandling.virkningstidspunktEllerSøktFomDato,
-                BoforholdVoksneRequest(
-                    innhentedeOffentligeOpplysninger = grunnlag.tilHusstandsmedlemmer(),
-                    behandledeBostatusopplysninger = emptyList(),
-                    endreBostatus = null,
+    hentInnhentetAndreVoksneIHusstanden().let {
+        if (it.isEmpty() && !behandling.erForskudd()) {
+            val andreVoksneIHusstandPeriodisert =
+                BoforholdApi.beregnBoforholdAndreVoksne(
+                    behandling.virkningstidspunktEllerSøktFomDato,
+                    BoforholdVoksneRequest(
+                        innhentedeOffentligeOpplysninger = emptyList(),
+                        behandledeBostatusopplysninger = emptyList(),
+                        endreBostatus = null,
+                    ),
+                )
+            listOf(
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    emptyList<RelatertPersonGrunnlagDto>(),
+                    behandling.bidragspliktig!!.ident!!,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN),
+                    lesemodus,
+                ),
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    andreVoksneIHusstandPeriodisert,
+                    behandling.bidragspliktig!!.ident!!,
+                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                    lesemodus,
+                    true,
                 ),
             )
-        listOf(
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
-                grunnlag,
-                gjelderRolle!!,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN),
-                lesemodus,
-            ),
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
-                andreVoksneIHusstandPeriodisert,
-                gjelderRolle,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                lesemodus,
-                true,
-            ),
-        )
+        } else {
+            it.groupBy { it.partPersonId }.flatMap { (gjelderRolle, grunnlag) ->
+
+                val andreVoksneIHusstandPeriodisert =
+                    BoforholdApi.beregnBoforholdAndreVoksne(
+                        behandling.virkningstidspunktEllerSøktFomDato,
+                        BoforholdVoksneRequest(
+                            innhentedeOffentligeOpplysninger = grunnlag.tilHusstandsmedlemmer(),
+                            behandledeBostatusopplysninger = emptyList(),
+                            endreBostatus = null,
+                        ),
+                    )
+                listOf(
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        grunnlag,
+                        gjelderRolle!!,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN),
+                        lesemodus,
+                    ),
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        andreVoksneIHusstandPeriodisert,
+                        gjelderRolle,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                        lesemodus,
+                        true,
+                    ),
+                )
+            }
+        }
     },
     hentInnhentetHusstandsmedlem()
         .groupBy { it.partPersonId }
@@ -591,8 +629,12 @@ internal fun List<GrunnlagDto>.hentVirkningstidspunkt(gjelderBarnReferanse: Stri
 internal fun VedtakDto.hentSøknad(): SøknadGrunnlag =
     grunnlagListe
         .filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
-        .first()
-        .innholdTilObjekt<SøknadGrunnlag>()
+        .firstOrNull()
+        ?.innholdTilObjekt<SøknadGrunnlag>() ?: SøknadGrunnlag(
+        mottattDato = vedtakstidspunkt?.toLocalDate() ?: opprettetTidspunkt.toLocalDate(),
+        søktFraDato = vedtakstidspunkt?.toLocalDate() ?: opprettetTidspunkt.toLocalDate(),
+        søktAv = SøktAvType.NAV_BIDRAG,
+    )
 
 internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
     gjelderReferanse: Grunnlagsreferanse,

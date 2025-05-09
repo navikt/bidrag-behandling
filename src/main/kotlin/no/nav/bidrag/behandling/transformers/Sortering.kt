@@ -91,7 +91,8 @@ fun Inntekt.erLigningsinntektHistorisk(inntekter: Collection<Inntekt>): Boolean 
             ?.opprinneligFom
             ?.year
             ?: return false
-    return ligningsinntekter.contains(type) && opprinneligFom?.year != sisteLigningsår
+    val erHistorisk = ligningsinntekter.contains(type) && opprinneligFom?.year != sisteLigningsår
+    return erHistorisk || datoFom != null && datoFom!! < behandling!!.virkningstidspunktEllerSøktFomDato
 }
 
 fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
