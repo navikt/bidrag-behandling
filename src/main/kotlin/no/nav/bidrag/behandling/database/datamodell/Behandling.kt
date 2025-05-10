@@ -195,6 +195,8 @@ open class Behandling(
     val erKlageEllerOmgjøring get() = refVedtaksid != null
     val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
+    val globalVirkningstidspunkt get() =
+        søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt
     val globalOpphørsdato get() =
         if (søknadsbarn.any { it.opphørsdato == null }) {
             null

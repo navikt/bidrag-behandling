@@ -68,12 +68,7 @@ val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PA
 fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (opphørsdato == null) return
     val feilliste = mutableListOf<String>()
-    if (opphørsdato == behandling.virkningstidspunkt) {
-        feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
-    }
-    if (opphørsdato.isBefore(behandling.virkningstidspunkt)) {
-        feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
-    }
+
     val rolle = behandling.roller.find { it.id == idRolle }
     if (rolle == null) {
         feilliste.add("Rolle med id $idRolle finnes ikke i behandling ${behandling.id}")
@@ -87,6 +82,15 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
         opphørsdato.isAfter(rolle.fødselsdato.plusYears(18).plusMonths(1))
     ) {
         feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
+    }
+
+    val virkningstidspunkt = rolle?.virkningstidspunkt ?: behandling.virkningstidspunkt
+
+    if (opphørsdato == virkningstidspunkt) {
+        feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
+    }
+    if (opphørsdato.isBefore(virkningstidspunkt)) {
+        feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
     }
 
     if (feilliste.isNotEmpty()) {
@@ -277,18 +281,35 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
 
 fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
+    if (barnRolleId != null && behandling.søknadsbarn.none { it.id == barnRolleId }) {
+        feilliste.add("Barn med id $barnRolleId finnes ikke i behandling ${behandling.id}")
+    }
+    val gjelderBarn = behandling.søknadsbarn.find { it.id == barnRolleId }
+    if (gjelderBarn != null) {
+        if (gjelderBarn.opphørsdato != null && gjelderBarn.virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
+            feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
+        }
+
+        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
+            avslag == null &&
+            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
+        ) {
+            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+        }
+    } else {
+        if (behandling.opprinneligVirkningstidspunkt != null &&
+            avslag == null &&
+            virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
+        ) {
+            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+        }
+
+        if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
+            feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
+        }
+    }
     if (avslag != null && årsak != null) {
         feilliste.add("Kan ikke sette både avslag og årsak samtidig")
-    }
-    if (behandling.opprinneligVirkningstidspunkt != null &&
-        avslag == null &&
-        virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
-    ) {
-        feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
-    }
-
-    if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
-        feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
     }
 
     if (feilliste.isNotEmpty()) {

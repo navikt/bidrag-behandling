@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
@@ -20,11 +21,14 @@ import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
 import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
+import no.nav.bidrag.behandling.transformers.erAldersjusteringNyLøsning
 import no.nav.bidrag.behandling.transformers.erUnder12År
+import no.nav.bidrag.behandling.transformers.finnKopiDelberegningBidragspliktigesAndel
 import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -363,43 +367,35 @@ class VedtakTilBehandlingMapping(
                             )
                         }
 
-                    underholdskostnad.tilleggsstønad.addAll(
-                        filtrerBasertPåEgenReferanse(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)
-                            .filter {
-                                hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
-                            }.map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
-                            .mapTillegsstønad(underholdskostnad, lesemodus),
-                    )
-
-                    underholdskostnad.faktiskeTilsynsutgifter.addAll(
-                        filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
-                            .filter {
-                                hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
-                            }.map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
-                            .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
-                    )
-
-                    underholdskostnad.barnetilsyn.addAll(
-                        filtrerBasertPåEgenReferanse(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)
-                            .filter { ts ->
-                                hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
-                            }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
-                            .mapBarnetilsyn(underholdskostnad, lesemodus),
-                    )
-                    underholdskostnad.barnetilsyn.addAll(
-                        filtrerBasertPåEgenReferanse(Grunnlagstype.KOPI_BARNETILSYN_MED_STØNAD_PERIODE)
-                            .filter { ts ->
-                                hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
-                            }.map { it.innholdTilObjekt<KopiBarnetilsynMedStønadPeriode>() }
-                            .mapBarnetilsynKopi(underholdskostnad, lesemodus),
-                    )
-                    underholdskostnad.harTilsynsordning =
-                        underholdskostnad.barnetilsyn.isNotEmpty() ||
-                        underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() ||
-                        underholdskostnad.tilleggsstønad.isNotEmpty()
+                    if (erAldersjusteringNyLøsning()) {
+                        val kopiDelberegningU = finnKopiDelberegningBidragspliktigesAndel()!!
+                        val grunnlagFraVedtak = hentVedtak(kopiDelberegningU.fraVedtakId)!!
+                        grunnlagFraVedtak.grunnlagListe.hentUnderholdskostnadPerioder(underholdskostnad, lesemodus, rolle)
+                    } else {
+                        hentUnderholdskostnadPerioder(underholdskostnad, lesemodus, rolle)
+                    }
                     underholdskostnad
                 }.toMutableSet()
+        val underholdskostnadAndreBarn =
+            if (erAldersjusteringNyLøsning()) {
+                val kopiDelberegningU = finnKopiDelberegningBidragspliktigesAndel()!!
+                val grunnlagFraVedtak = hentVedtak(kopiDelberegningU.fraVedtakId)!!
+                grunnlagFraVedtak.grunnlagListe.hentAndreBarnUnderholdskostnadPerioder(behandling, lesemodus, virkningstidspunkt)
+            } else {
+                hentAndreBarnUnderholdskostnadPerioder(
+                    behandling,
+                    lesemodus,
+                    virkningstidspunkt,
+                )
+            }
+        return (underholdskostnadAndreBarn + underholdskostnadSøknadsbarn).toMutableSet()
+    }
 
+    private fun List<GrunnlagDto>.hentAndreBarnUnderholdskostnadPerioder(
+        behandling: Behandling,
+        lesemodus: Boolean,
+        virkningstidspunkt: LocalDate,
+    ): MutableSet<Underholdskostnad> {
         val andreBarnTilBidragsmottakerGrunnlag = hentAndreBarnTilBidragsmottakerGrunnlagUnder12År(virkningstidspunkt)
         val andreBarnTilBidragsmottakerIdenter =
             andreBarnTilBidragsmottakerGrunnlag.mapNotNull {
@@ -493,8 +489,48 @@ class VedtakTilBehandlingMapping(
                         )
                     }
                 }
+        return (underholdskostnadAndreBarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
+    }
 
-        return (underholdskostnadAndreBarn + underholdskostnadSøknadsbarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
+    private fun List<GrunnlagDto>.hentUnderholdskostnadPerioder(
+        underholdskostnad: Underholdskostnad,
+        lesemodus: Boolean,
+        rolle: Rolle,
+    ) {
+        underholdskostnad.tilleggsstønad.addAll(
+            filtrerBasertPåEgenReferanse(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)
+                .filter {
+                    hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                }.map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
+                .mapTillegsstønad(underholdskostnad, lesemodus),
+        )
+
+        underholdskostnad.faktiskeTilsynsutgifter.addAll(
+            filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
+                .filter {
+                    hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                }.map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
+                .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
+        )
+
+        underholdskostnad.barnetilsyn.addAll(
+            filtrerBasertPåEgenReferanse(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)
+                .filter { ts ->
+                    hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
+                .mapBarnetilsyn(underholdskostnad, lesemodus),
+        )
+        underholdskostnad.barnetilsyn.addAll(
+            filtrerBasertPåEgenReferanse(Grunnlagstype.KOPI_BARNETILSYN_MED_STØNAD_PERIODE)
+                .filter { ts ->
+                    hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
+                }.map { it.innholdTilObjekt<KopiBarnetilsynMedStønadPeriode>() }
+                .mapBarnetilsynKopi(underholdskostnad, lesemodus),
+        )
+        underholdskostnad.harTilsynsordning =
+            underholdskostnad.barnetilsyn.isNotEmpty() ||
+            underholdskostnad.faktiskeTilsynsutgifter.isNotEmpty() ||
+            underholdskostnad.tilleggsstønad.isNotEmpty()
     }
 
     private fun List<GrunnlagDto>.hentAndreBarnTilBidragsmottakerGrunnlagUnder12År(virkningstidspunkt: LocalDate) =

@@ -66,7 +66,6 @@ import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
@@ -174,7 +173,7 @@ internal fun List<GrunnlagDto>.mapRoller(
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
             val virkningstidspunkt = hentVirkningstidspunkt(rolle.referanse)
-            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, opphørsdato = virkningstidspunkt?.opphørsdato)
+            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunkt)
         }.toMutableSet()
 
 internal fun VedtakDto.oppdaterDirekteOppgjørBeløp(
@@ -784,7 +783,7 @@ private fun BaseGrunnlag.tilInntekt(
 private fun GrunnlagDto.tilRolle(
     behandling: Behandling,
     id: Long? = null,
-    opphørsdato: LocalDate? = null,
+    virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
 ) = Rolle(
     behandling,
     id = id,
@@ -800,7 +799,10 @@ private fun GrunnlagDto.tilRolle(
                 )
         },
     ident = personIdent,
-    opphørsdato = opphørsdato,
+    virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
+    årsak = virkningstidspunktGrunnlag?.årsak,
+    avslag = virkningstidspunktGrunnlag?.avslag,
+    opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
     fødselsdato = personObjekt.fødselsdato,
 )
 

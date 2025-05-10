@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.UnderholdskostnadPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -507,6 +508,8 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
 
 fun List<GrunnlagDto>.erAldersjusteringBisysVedtak(): Boolean = finnKopiDelberegningBidragspliktigesAndel() == null
 
+fun List<GrunnlagDto>.erAldersjusteringNyLøsning(): Boolean = finnKopiDelberegningBidragspliktigesAndel() != null
+
 fun List<GrunnlagDto>.finnKopiDelberegningBidragspliktigesAndel(): KopiDelberegningBidragspliktigesAndel? {
     val delberegningBidragspliktigesAndel =
         find {
@@ -667,7 +670,22 @@ fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostna
             forpleining = it.forpleining,
             total = it.underholdskostnad,
             beregningsdetaljer =
-                if (erBisysVedtak) {
+                if (underholdBeregning.erAldersjusteringNyLøsning()) {
+                    val opprinneligVedtak = hentVedtak(underholdBeregning.finnKopiDelberegningBidragspliktigesAndel()!!.fraVedtakId)!!
+                    underholdBeregning.hentPersonMedReferanse(delberegning.gjelderBarnReferanse)?.let { person ->
+                        val stønadsendring =
+                            opprinneligVedtak.stønadsendringListe
+                                .find {
+                                    it.kravhaver.verdi == person.personIdent
+                                } ?: opprinneligVedtak.stønadsendringListe.first()
+                        val sistePeriode =
+                            stønadsendring.periodeListe
+                                .maxBy { it.periode.fom }
+                        opprinneligVedtak.grunnlagListe.tilUnderholdskostnadDetaljer(
+                            sistePeriode.grunnlagReferanseListe,
+                        )
+                    }
+                } else if (erBisysVedtak) {
                     underholdBeregning.tilUnderholdskostnadDetaljer(
                         delberegning.grunnlag.grunnlagsreferanseListe,
                     )

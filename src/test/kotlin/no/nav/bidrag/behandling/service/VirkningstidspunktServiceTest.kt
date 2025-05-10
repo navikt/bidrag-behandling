@@ -30,6 +30,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -38,6 +39,166 @@ import java.time.YearMonth
 import java.util.Optional
 
 class VirkningstidspunktServiceTest : CommonMockServiceTest() {
+    @Test
+    fun `skal oppdatere avslag`() {
+        Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 55,
+            )
+
+        behandling.roller.add(barn2)
+        barn1.virkningstidspunkt = LocalDate.parse("2025-01-01")
+        barn2.virkningstidspunkt = LocalDate.parse("2025-02-01")
+        behandling.virkningstidspunkt = LocalDate.parse("2025-03-01")
+        barn1.avslag = null
+        barn2.avslag = null
+        behandling.avslag = null
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn2.id, avslag = Resultatkode.AVSLAG))
+        behandling.avslag shouldBe Resultatkode.AVSLAG
+        barn1.avslag shouldBe null
+        barn2.avslag shouldBe Resultatkode.AVSLAG
+
+        barn1.avslag = null
+        barn2.avslag = null
+        behandling.avslag = null
+
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, avslag = Resultatkode.AVSLAG))
+        behandling.avslag shouldBe Resultatkode.AVSLAG
+        barn1.avslag shouldBe Resultatkode.AVSLAG
+        barn2.avslag shouldBe Resultatkode.AVSLAG
+    }
+
+    @Test
+    fun `skal oppdatere virkningstidspunkt hvis barn virkningstidspunkt er null`() {
+        Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 55,
+            )
+
+        behandling.roller.add(barn2)
+        barn1.virkningstidspunkt = null
+        barn2.virkningstidspunkt = null
+        behandling.virkningstidspunkt = LocalDate.parse("2025-01-01")
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, virkningstidspunkt = LocalDate.parse("2025-10-01")))
+        behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
+        barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
+        barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
+    }
+
+    @Test
+    fun `skal oppdatere virkningstidspunkt`() {
+        Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 55,
+            )
+
+        behandling.roller.add(barn2)
+        barn1.virkningstidspunkt = LocalDate.parse("2025-01-01")
+        barn2.virkningstidspunkt = LocalDate.parse("2025-02-01")
+        behandling.virkningstidspunkt = LocalDate.parse("2025-01-01")
+
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn2.id, virkningstidspunkt = LocalDate.parse("2025-02-01")))
+        behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+        barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+        barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-02-01")
+
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn2.id, virkningstidspunkt = LocalDate.parse("2025-05-01")))
+        behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+        barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+        barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-05-01")
+
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn1.id, virkningstidspunkt = LocalDate.parse("2025-03-01")))
+        behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-03-01")
+        barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-03-01")
+        barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-05-01")
+
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, virkningstidspunkt = LocalDate.parse("2025-10-01")))
+        behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
+        barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
+        barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
+    }
+
+    @Test
+    fun `skal oppdatere virkningstidspunkt og årsak for ett barn`() {
+        Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 55,
+            )
+
+        behandling.roller.add(barn2)
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        behandling.søktFomDato = LocalDate.parse("2024-02-01")
+        behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")
+        behandling.søknadsbarn.first().opphørsdato = null
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = 55, virkningstidspunkt = LocalDate.parse("2025-01-01"), årsak = VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE))
+        behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+        behandling.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE
+        barn1.årsak shouldBe null
+        barn1.virkningstidspunkt shouldBe null
+        barn2.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE
+        barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+    }
+
+    @Test
+    fun `skal oppdatere virkningstidspunkt og årsak for alle barn`() {
+        Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 55,
+            )
+
+        behandling.roller.add(barn2)
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        behandling.søktFomDato = LocalDate.parse("2024-02-01")
+        behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")
+        behandling.søknadsbarn.first().opphørsdato = null
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, virkningstidspunkt = LocalDate.parse("2025-01-01"), årsak = VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE))
+        behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+        behandling.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE
+        barn1.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE
+        barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+        barn2.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE
+        barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
+    }
+
     @Test
     fun `skal oppdatere virkningstidspunkt og oppdatere opphørsdato hvis det blir satt til avslag`() {
         Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
@@ -48,11 +209,13 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.søknadsbarn.first().opphørsdato = null
         virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG))
         behandling.søknadsbarn.first().opphørsdato shouldBe null
+        behandling.søknadsbarn.first().avslag shouldBe Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
 
         // Skal ikke oppdatere opphørsdato hvis det allerede er satt
         behandling.søknadsbarn.first().opphørsdato = LocalDate.parse("2024-12-01")
         virkningstidspunktService.oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD))
         behandling.søknadsbarn.first().opphørsdato shouldBe null
+        behandling.søknadsbarn.first().avslag shouldBe Resultatkode.BIDRAGSPLIKTIG_ER_DØD
     }
 
     @Test

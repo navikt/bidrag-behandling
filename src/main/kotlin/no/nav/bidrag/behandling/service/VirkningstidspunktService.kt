@@ -54,15 +54,16 @@ class VirkningstidspunktService(
             secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
             request.valider(it)
             oppdaterAvslagÅrsak(it, request)
+            val gjelderRolle = request.barnRolleId?.let { rolleId -> it.roller.find { it.id == rolleId } }
             request.henteOppdatereNotat()?.let { n ->
                 notatService.oppdatereNotat(
                     it,
                     NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
                     n.henteNyttNotat() ?: "",
-                    it.bidragsmottaker!!,
+                    gjelderRolle ?: it.bidragsmottaker!!,
                 )
             }
-            oppdaterVirkningstidspunkt(request.virkningstidspunkt, it)
+            oppdaterVirkningstidspunkt(request.barnRolleId, request.virkningstidspunkt, it)
             it
         }
 
@@ -75,11 +76,23 @@ class VirkningstidspunktService(
             log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
             gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
         }
-        val erAvslagÅrsakEndret = request.årsak != behandling.årsak || request.avslag != behandling.avslag
+        val forRolle = request.barnRolleId?.let { behandling.roller.find { it.id == request.barnRolleId } }
+        val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
+        val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
+        val erAvslagÅrsakEndret = request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
 
         if (erAvslagÅrsakEndret) {
             behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
             behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
+            if (forRolle != null) {
+                forRolle.årsak = if (request.avslag != null) null else request.årsak ?: forRolle.årsak
+                forRolle.avslag = if (request.årsak != null) null else request.avslag ?: forRolle.avslag
+            } else {
+                behandling.roller.forEach {
+                    it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
+                    it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
+                }
+            }
 
             when (behandling.tilType()) {
                 TypeBehandling.BIDRAG -> {
@@ -102,11 +115,13 @@ class VirkningstidspunktService(
 
     @Transactional
     fun oppdaterVirkningstidspunkt(
+        rolleId: Long?,
         nyVirkningstidspunkt: LocalDate?,
         behandling: Behandling,
     ) {
-        val forrigeVirkningstidspunkt = behandling.virkningstidspunkt
-        val erVirkningstidspunktEndret = nyVirkningstidspunkt != behandling.virkningstidspunkt
+        val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
+        val forrigeVirkningstidspunkt = gjelderBarn?.virkningstidspunkt ?: behandling.virkningstidspunkt
+        val erVirkningstidspunktEndret = nyVirkningstidspunkt != forrigeVirkningstidspunkt
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny virkningsdato i behandling ${behandling.id}" }
@@ -151,7 +166,16 @@ class VirkningstidspunktService(
         }
 
         if (erVirkningstidspunktEndret) {
-            behandling.virkningstidspunkt = nyVirkningstidspunkt ?: behandling.virkningstidspunkt
+            if (gjelderBarn != null) {
+                gjelderBarn.virkningstidspunkt = nyVirkningstidspunkt ?: gjelderBarn.virkningstidspunkt
+            } else {
+                behandling.søknadsbarn.forEach {
+                    it.virkningstidspunkt = nyVirkningstidspunkt ?: it.virkningstidspunkt
+                }
+            }
+
+            val lavesteVirkningstidspunkt = behandling.søknadsbarn.mapNotNull { it.virkningstidspunkt }.minOrNull() ?: nyVirkningstidspunkt
+            behandling.virkningstidspunkt = lavesteVirkningstidspunkt ?: behandling.virkningstidspunkt
 
             when (behandling.tilType()) {
                 TypeBehandling.FORSKUDD -> {
@@ -234,7 +258,7 @@ class VirkningstidspunktService(
                 "Virkningstidspunkt $virkningstidspunkt på særbidrag er ikke riktig som følge av ny kalendermåned." +
                     " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"
             }
-            oppdaterVirkningstidspunkt(nyVirkningstidspunkt, this)
+            oppdaterVirkningstidspunkt(null, nyVirkningstidspunkt, this)
         }
     }
 }

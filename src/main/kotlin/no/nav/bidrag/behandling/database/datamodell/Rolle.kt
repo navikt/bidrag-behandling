@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,9 +19,11 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
@@ -92,6 +95,12 @@ open class Rolle(
     )
     open var person: Person? = null,
     open var opphørsdato: LocalDate? = null,
+    open var virkningstidspunkt: LocalDate? = null,
+    open var opprinneligVirkningstidspunkt: LocalDate? = null,
+    @Convert(converter = ÅrsakConverter::class)
+    open var årsak: VirkningstidspunktÅrsakstype? = null,
+    @Enumerated(EnumType.STRING)
+    open var avslag: Resultatkode? = null,
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
