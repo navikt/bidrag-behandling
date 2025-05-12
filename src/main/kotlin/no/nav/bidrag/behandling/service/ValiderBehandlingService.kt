@@ -35,7 +35,7 @@ class ValiderBehandlingService(
 ) {
     fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         val sak = bidragSakConsumer.hentSak(request.saksnummer)
-        if (sak.vedtakssperre || unleash.isEnabled("Vedtakssperre", false)) {
+        if (sak.vedtakssperre || unleash.isEnabled("vedtakssperre", false)) {
             return "Denne saken er midlertidig stengt for vedtak"
         }
         return when (request.tilType()) {

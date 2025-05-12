@@ -76,7 +76,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
     fun initMocks() {
         clearMocks(unleashInstance)
         every { unleashInstance.isEnabled(any(), any<Boolean>()) } returns true
-        every { unleashInstance.isEnabled(eq("Vedtakssperre"), any<Boolean>()) } returns false
+        every { unleashInstance.isEnabled(eq("vedtakssperre"), any<Boolean>()) } returns false
         mockkObject(SaksbehandlernavnProvider)
         every { SaksbehandlernavnProvider.hentSaksbehandlernavn(any()) } returns "Fornavn Etternavn"
         stubSjablonProvider()
