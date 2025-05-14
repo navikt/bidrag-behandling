@@ -62,7 +62,7 @@ class ValiderBehandlingService(
         if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
-//        if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
+        if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
         if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }
@@ -93,9 +93,9 @@ class ValiderBehandlingService(
                     .stønader
                     .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
                     .any { it.type != Stønadstype.FORSKUDD }
-//            if (harBPStønadForFlereBarn) {
-//                return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
-//            }
+            if (harBPStønadForFlereBarn) {
+                return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
+            }
         }
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {
