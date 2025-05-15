@@ -630,7 +630,10 @@ private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
 
 private fun Behandling.tilNotatVirkningstidspunkt() =
     NotatBegrunnelseDto(
-        innhold = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
+        innhold =
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first()).ifEmpty {
+                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
+            },
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
     )
 
