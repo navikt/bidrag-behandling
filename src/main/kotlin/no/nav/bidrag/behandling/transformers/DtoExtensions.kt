@@ -48,6 +48,9 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
             } else {
                 null
             },
+        virkningstidspunkt = maxOf(fødselsdatoPerson, behandling.virkningstidspunktEllerSøktFomDato),
+        årsak = behandling.årsak,
+        avslag = behandling.avslag,
         innbetaltBeløp = innbetaltBeløp,
         harGebyrsøknad = harGebyrsøknad,
     )

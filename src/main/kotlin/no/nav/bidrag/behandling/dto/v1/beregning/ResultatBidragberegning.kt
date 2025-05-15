@@ -190,9 +190,10 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
         if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
+            beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
+                ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
         } else if (resultatKode?.erDirekteAvslag() == true || resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE) {
-            resultatKode.visningsnavnIntern()
+            resultatKode.visningsnavnIntern(vedtakstype)
         } else if (ugyldigBeregning != null) {
             when (ugyldigBeregning.type) {
                 UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,

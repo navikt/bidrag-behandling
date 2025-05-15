@@ -697,14 +697,22 @@ class Dtomapper(
             søknadRefId = soknadRefId,
             vedtakRefId = refVedtaksid,
             virkningstidspunktV2 =
-                søknadsbarn.map {
+                søknadsbarn.sortedBy { it.fødselsdato }.map {
+                    val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                     VirkningstidspunktDtoV2(
                         rolle = it.tilDto(),
-                        virkningstidspunkt = virkningstidspunkt,
-                        opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-                        årsak = årsak,
-                        avslag = avslag,
-                        begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                        virkningstidspunkt = it.virkningstidspunkt,
+                        opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt,
+                        årsak = it.årsak,
+                        avslag = it.avslag,
+                        begrunnelse =
+                            if (notat.isEmpty()) {
+                                BegrunnelseDto(
+                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
+                                )
+                            } else {
+                                BegrunnelseDto(notat)
+                            },
                         harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                         opphørsdato = it.opphørsdato,

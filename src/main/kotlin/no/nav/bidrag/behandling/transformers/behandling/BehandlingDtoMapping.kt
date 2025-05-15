@@ -476,7 +476,7 @@ fun Behandling.henteRolleForNotat(
     when (notattype) {
         Notattype.BOFORHOLD -> Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
         Notattype.UTGIFTER -> this.bidragsmottaker!!
-        Notattype.VIRKNINGSTIDSPUNKT -> this.bidragsmottaker!!
+        Notattype.VIRKNINGSTIDSPUNKT -> forRolle ?: this.bidragsmottaker!!
         Notattype.INNTEKT -> {
             if (forRolle == null) {
                 log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }

@@ -12,6 +12,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -23,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
+import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtale
 import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtalePeriode
@@ -43,6 +45,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.assertj.core.error.ShouldNotBeNull
@@ -101,6 +104,60 @@ class DtoMapperMockTest {
         every { validerBehandlingService.kanBehandlesINyLøsning(any()) } returns null
         every { tilgangskontrollService.harBeskyttelse(any()) } returns false
         every { tilgangskontrollService.harTilgang(any(), any()) } returns true
+    }
+
+    @Test
+    fun `skal returnere virkningstidspunkt notat hvis ikke finnes på barn`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        behandling.leggTilNotat(
+            "test",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            behandling.bidragsmottaker,
+        )
+        val dto = dtomapper.tilDto(behandling)
+        dto.virkningstidspunktV2
+            .find { it.rolle.ident == barn1.ident }!!
+            .begrunnelse.innhold shouldBe "test"
+        dto.virkningstidspunkt.begrunnelse.innhold shouldBe "test"
+    }
+
+    @Test
+    fun `skal returnere virkningstidspunkt notat hvis finnes på barn`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 4,
+            )
+        behandling.roller.add(barn2)
+        behandling.leggTilNotat(
+            "Notat BM",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Notat barn 1",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            barn1,
+        )
+        behandling.leggTilNotat(
+            "Notat barn 2",
+            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+            barn2,
+        )
+        val dto = dtomapper.tilDto(behandling)
+        dto.virkningstidspunktV2
+            .find { it.rolle.ident == barn1.ident }!!
+            .begrunnelse.innhold shouldBe "Notat barn 1"
+        dto.virkningstidspunktV2
+            .find { it.rolle.ident == barn2.ident }!!
+            .begrunnelse.innhold shouldBe "Notat barn 2"
+        dto.virkningstidspunkt.begrunnelse.innhold shouldBe "Notat BM"
     }
 
     @Test

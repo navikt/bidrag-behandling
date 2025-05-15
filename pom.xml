@@ -16,8 +16,8 @@
     <properties>
         <java.version>21</java.version>
         <kotlin.version>2.1.10</kotlin.version>
-        <bidrag-felles.version>2025.05.09.114308</bidrag-felles.version>
-        <bidrag-beregn-felles.version>2025.05.09.115640</bidrag-beregn-felles.version>
+        <bidrag-felles.version>2025.05.09.124517</bidrag-felles.version>
+        <bidrag-beregn-felles.version>2025.05.09.162635</bidrag-beregn-felles.version>
         <h2.version>2.3.232</h2.version>
         <shedlock.version>6.3.0</shedlock.version>
         <logback-encoder.version>8.0</logback-encoder.version>
@@ -37,7 +37,7 @@
         <skipOwasp>false</skipOwasp>
         <checker-qual.version>3.48.3</checker-qual.version>
         <asm.version>9.7.1</asm.version>
-        <swagger.version>2.2.25</swagger.version>
+        <swagger.version>2.2.30</swagger.version>
         <jetbrains.annotations.version>26.0.1</jetbrains.annotations.version>
         <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
     </properties>
