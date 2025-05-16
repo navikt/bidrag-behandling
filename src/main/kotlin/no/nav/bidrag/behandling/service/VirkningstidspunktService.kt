@@ -54,7 +54,10 @@ class VirkningstidspunktService(
             secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
             request.valider(it)
             oppdaterAvslagÅrsak(it, request)
-            val gjelderRolle = request.barnRolleId?.let { rolleId -> it.roller.find { it.id == rolleId } }
+            val gjelderBarnRolle =
+                request.rolleId?.let { rolleId ->
+                    it.søknadsbarn.find { it.id == rolleId }
+                }
             request.henteOppdatereNotat()?.let { n ->
                 notatService.oppdatereNotat(
                     it,
@@ -62,7 +65,7 @@ class VirkningstidspunktService(
                     n.henteNyttNotat() ?: "",
                     it.bidragsmottaker!!,
                 )
-                gjelderRolle?.let { rolle ->
+                gjelderBarnRolle?.let { rolle ->
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
@@ -71,7 +74,7 @@ class VirkningstidspunktService(
                     )
                 }
             }
-            oppdaterVirkningstidspunkt(request.barnRolleId, request.virkningstidspunkt, it)
+            oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, it)
             it
         }
 
@@ -84,7 +87,7 @@ class VirkningstidspunktService(
             log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
             gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
         }
-        val forRolle = request.barnRolleId?.let { behandling.roller.find { it.id == request.barnRolleId } }
+        val forRolle = request.rolleId?.let { behandling.roller.find { it.id == request.rolleId } }
         val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
         val erAvslagÅrsakEndret = request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag

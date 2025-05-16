@@ -10,7 +10,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 
 data class OppdatereVirkningstidspunkt(
-    val barnRolleId: Long? = null,
+    val rolleId: Long? = null,
     @Schema(
         name = "årsak",
         description =
