@@ -701,10 +701,10 @@ class Dtomapper(
                     val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                     VirkningstidspunktDtoV2(
                         rolle = it.tilDto(),
-                        virkningstidspunkt = it.virkningstidspunkt,
-                        opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt,
-                        årsak = it.årsak,
-                        avslag = it.avslag,
+                        virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
+                        opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
+                        årsak = it.årsak ?: årsak,
+                        avslag = it.avslag ?: avslag,
                         begrunnelse =
                             if (notat.isEmpty()) {
                                 BegrunnelseDto(
