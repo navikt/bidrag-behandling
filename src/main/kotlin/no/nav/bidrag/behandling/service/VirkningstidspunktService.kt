@@ -60,8 +60,16 @@ class VirkningstidspunktService(
                     it,
                     NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
                     n.henteNyttNotat() ?: "",
-                    gjelderRolle ?: it.bidragsmottaker!!,
+                    it.bidragsmottaker!!,
                 )
+                gjelderRolle?.let { rolle ->
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                        n.henteNyttNotat() ?: "",
+                        rolle,
+                    )
+                }
             }
             oppdaterVirkningstidspunkt(request.barnRolleId, request.virkningstidspunkt, it)
             it
