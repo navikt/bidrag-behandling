@@ -697,33 +697,55 @@ class Dtomapper(
             søknadRefId = soknadRefId,
             vedtakRefId = refVedtaksid,
             virkningstidspunktV2 =
-                søknadsbarn.sortedBy { it.fødselsdato }.map {
-                    val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
-                    VirkningstidspunktDtoV2(
-                        rolle = it.tilDto(),
-                        virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                        opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
-                        årsak = it.årsak ?: årsak,
-                        avslag = it.avslag ?: avslag,
-                        begrunnelse =
-                            if (notat.isEmpty()) {
-                                BegrunnelseDto(
-                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
-                                )
-                            } else {
-                                BegrunnelseDto(notat)
-                            },
-                        harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
-                        eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
-                        opphørsdato = it.opphørsdato,
-                        globalOpphørsdato = globalOpphørsdato,
-                        begrunnelseFraOpprinneligVedtak =
-                            if (erKlageEllerOmgjøring) {
-                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
-                                    .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
-                            } else {
-                                null
-                            },
+                if (tilType() == TypeBehandling.BIDRAG) {
+                    søknadsbarn.sortedBy { it.fødselsdato }.map {
+                        val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
+                        VirkningstidspunktDtoV2(
+                            rolle = it.tilDto(),
+                            virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
+                            opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
+                            årsak = it.årsak ?: årsak,
+                            avslag = it.avslag ?: avslag,
+                            begrunnelse =
+                                if (notat.isEmpty()) {
+                                    BegrunnelseDto(
+                                        henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
+                                    )
+                                } else {
+                                    BegrunnelseDto(notat)
+                                },
+                            harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
+                            eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
+                            opphørsdato = it.opphørsdato,
+                            globalOpphørsdato = globalOpphørsdato,
+                            begrunnelseFraOpprinneligVedtak =
+                                if (erKlageEllerOmgjøring) {
+                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
+                                        .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
+                                } else {
+                                    null
+                                },
+                        )
+                    }
+                } else {
+                    listOf(
+                        VirkningstidspunktDtoV2(
+                            rolle = bidragsmottaker!!.tilDto(),
+                            virkningstidspunkt = virkningstidspunkt,
+                            opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                            årsak = årsak,
+                            avslag = avslag,
+                            begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                            harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                            opphørsdato = globalOpphørsdato,
+                            begrunnelseFraOpprinneligVedtak =
+                                if (erKlageEllerOmgjøring) {
+                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
+                                        .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
+                                } else {
+                                    null
+                                },
+                        ),
                     )
                 },
             virkningstidspunkt =
