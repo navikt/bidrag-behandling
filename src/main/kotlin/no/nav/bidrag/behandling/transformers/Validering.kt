@@ -281,7 +281,7 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
 
 fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
-    if (barnRolleId != null && behandling.søknadsbarn.none { it.id == barnRolleId }) {
+    if (barnRolleId != null && behandling.roller.none { it.id == barnRolleId }) {
         feilliste.add("Barn med id $barnRolleId finnes ikke i behandling ${behandling.id}")
     }
     val gjelderBarn = behandling.søknadsbarn.find { it.id == barnRolleId }

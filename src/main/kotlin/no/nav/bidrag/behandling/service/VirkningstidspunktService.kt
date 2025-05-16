@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -54,7 +55,10 @@ class VirkningstidspunktService(
             secureLogger.info { "Oppdaterer informasjon om virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
             request.valider(it)
             oppdaterAvslagÅrsak(it, request)
-            val gjelderRolle = request.barnRolleId?.let { rolleId -> it.roller.find { it.id == rolleId } }
+            val gjelderBarnRolle =
+                request.barnRolleId?.let { rolleId ->
+                    it.roller.find { it.id == rolleId && it.rolletype == Rolletype.BARN }
+                }
             request.henteOppdatereNotat()?.let { n ->
                 notatService.oppdatereNotat(
                     it,
@@ -62,7 +66,7 @@ class VirkningstidspunktService(
                     n.henteNyttNotat() ?: "",
                     it.bidragsmottaker!!,
                 )
-                gjelderRolle?.let { rolle ->
+                gjelderBarnRolle?.let { rolle ->
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
@@ -127,7 +131,7 @@ class VirkningstidspunktService(
         nyVirkningstidspunkt: LocalDate?,
         behandling: Behandling,
     ) {
-        val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
+        val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId && it.rolletype == Rolletype.BARN }
         val forrigeVirkningstidspunkt = gjelderBarn?.virkningstidspunkt ?: behandling.virkningstidspunkt
         val erVirkningstidspunktEndret = nyVirkningstidspunkt != forrigeVirkningstidspunkt
 
