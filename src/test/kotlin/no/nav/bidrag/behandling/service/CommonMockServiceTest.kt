@@ -3,8 +3,10 @@ package no.nav.bidrag.behandling.service
 import io.getunleash.FakeUnleash
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockkClass
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.controller.v2.BehandlingControllerV2
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
@@ -37,6 +39,8 @@ abstract class CommonMockServiceTest {
     @MockK
     lateinit var underholdService: UnderholdService
     val notatService = NotatService()
+
+    lateinit var behandlingControllerV2: BehandlingControllerV2
 
     @MockK
     lateinit var grunnlagConsumer: BidragGrunnlagConsumer
@@ -75,6 +79,14 @@ abstract class CommonMockServiceTest {
 
     @MockK
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
+
+    @MockK
+    lateinit var utgiftService: UtgiftService
+
+    lateinit var vedtakService: VedtakService
+
+    @MockK
+    lateinit var gebyrService: GebyrService
 
     @MockK
     lateinit var samværRepository: SamværRepository
@@ -125,10 +137,24 @@ abstract class CommonMockServiceTest {
             )
         val unleash = FakeUnleash()
         unleash.enableAll()
+
         grunnlagService =
             GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, unleash)
         inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
         boforholdService = BoforholdService(behandlingRepository, husstandsmedlemRepository, notatService, sivilstandRepository, dtomapper)
         virkningstidspunktService = VirkningstidspunktService(behandlingRepository, boforholdService, notatService, grunnlagService, inntektService, samværService, underholdService, GebyrService(vedtakGrunnlagMapper))
+        vedtakService = mockkClass(VedtakService::class)
+        behandlingControllerV2 =
+            BehandlingControllerV2(
+                vedtakService,
+                behandlingService,
+                gebyrService,
+                boforholdService,
+                inntektService,
+                utgiftService,
+                validerBehandlingService,
+                dtomapper,
+                virkningstidspunktService,
+            )
     }
 }

@@ -50,7 +50,6 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
 
     @MockK
     lateinit var sakConsumer: BidragSakConsumer
-    lateinit var vedtakService: VedtakService
 
     lateinit var beregningService: BeregningService
     val unleash = FakeUnleash()
