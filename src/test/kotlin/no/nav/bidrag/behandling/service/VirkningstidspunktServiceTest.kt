@@ -61,7 +61,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         barn2.avslag = null
         behandling.avslag = null
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn2.id, avslag = Resultatkode.AVSLAG))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = barn2.id, avslag = Resultatkode.AVSLAG))
         behandling.avslag shouldBe Resultatkode.AVSLAG
         barn1.avslag shouldBe null
         barn2.avslag shouldBe Resultatkode.AVSLAG
@@ -70,7 +70,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         barn2.avslag = null
         behandling.avslag = null
 
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, avslag = Resultatkode.AVSLAG))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = null, avslag = Resultatkode.AVSLAG))
         behandling.avslag shouldBe Resultatkode.AVSLAG
         barn1.avslag shouldBe Resultatkode.AVSLAG
         barn2.avslag shouldBe Resultatkode.AVSLAG
@@ -96,7 +96,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.virkningstidspunkt = LocalDate.parse("2025-01-01")
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
 
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, virkningstidspunkt = LocalDate.parse("2025-10-01")))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = null, virkningstidspunkt = LocalDate.parse("2025-10-01")))
         behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
         barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
         barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
@@ -122,22 +122,22 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.virkningstidspunkt = LocalDate.parse("2025-01-01")
 
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn2.id, virkningstidspunkt = LocalDate.parse("2025-02-01")))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = barn2.id, virkningstidspunkt = LocalDate.parse("2025-02-01")))
         behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
         barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
         barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-02-01")
 
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn2.id, virkningstidspunkt = LocalDate.parse("2025-05-01")))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = barn2.id, virkningstidspunkt = LocalDate.parse("2025-05-01")))
         behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
         barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
         barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-05-01")
 
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = barn1.id, virkningstidspunkt = LocalDate.parse("2025-03-01")))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = barn1.id, virkningstidspunkt = LocalDate.parse("2025-03-01")))
         behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-03-01")
         barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-03-01")
         barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-05-01")
 
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, virkningstidspunkt = LocalDate.parse("2025-10-01")))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = null, virkningstidspunkt = LocalDate.parse("2025-10-01")))
         behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
         barn1.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
         barn2.virkningstidspunkt shouldBe LocalDate.parse("2025-10-01")
@@ -162,7 +162,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.søktFomDato = LocalDate.parse("2024-02-01")
         behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")
         behandling.søknadsbarn.first().opphørsdato = null
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = 55, virkningstidspunkt = LocalDate.parse("2025-01-01"), årsak = VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = 55, virkningstidspunkt = LocalDate.parse("2025-01-01"), årsak = VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE))
         behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
         behandling.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE
         barn1.årsak shouldBe null
@@ -190,7 +190,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.søktFomDato = LocalDate.parse("2024-02-01")
         behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")
         behandling.søknadsbarn.first().opphørsdato = null
-        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(barnRolleId = null, virkningstidspunkt = LocalDate.parse("2025-01-01"), årsak = VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE))
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = null, virkningstidspunkt = LocalDate.parse("2025-01-01"), årsak = VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE))
         behandling.virkningstidspunkt shouldBe LocalDate.parse("2025-01-01")
         behandling.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE
         barn1.årsak shouldBe VirkningstidspunktÅrsakstype.ENDRING_3_MÅNEDER_TILBAKE

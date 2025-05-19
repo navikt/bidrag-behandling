@@ -281,10 +281,10 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
 
 fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
-    if (barnRolleId != null && behandling.søknadsbarn.none { it.id == barnRolleId }) {
-        feilliste.add("Barn med id $barnRolleId finnes ikke i behandling ${behandling.id}")
+    if (rolleId != null && behandling.roller.none { it.id == rolleId }) {
+        feilliste.add("Barn med id $rolleId finnes ikke i behandling ${behandling.id}")
     }
-    val gjelderBarn = behandling.søknadsbarn.find { it.id == barnRolleId }
+    val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
     if (gjelderBarn != null) {
         if (gjelderBarn.opphørsdato != null && gjelderBarn.virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
             feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
