@@ -87,7 +87,7 @@ class ValiderBehandlingService(
                 return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
             }
         } else {
-            val søknadsbarn = request.søknadsbarn.first()
+            val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
             val harBPStønadForFlereBarn =
                 bidragStonadConsumer
                     .hentAlleStønaderForBidragspliktig(bp.ident)
