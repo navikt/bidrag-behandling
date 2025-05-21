@@ -286,7 +286,7 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     }
     val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
     if (gjelderBarn != null) {
-        if (gjelderBarn.opphørsdato != null && gjelderBarn.virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
+        if (gjelderBarn.opphørsdato != null && virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
             feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
         }
 
