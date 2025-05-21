@@ -58,6 +58,7 @@ class ValiderBehandlingService(
     private fun kanBidragBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? = kanBidragV1BehandlesINyLøsning(request)
 
     private fun kanBidragV1BehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
+        secureLogger.info { "Sjekker om bidrag kan behandles i ny løsning for request: $request" }
         if (!request.skruddAvManuelt.isNullOrEmpty()) return request.skruddAvManuelt
         if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
