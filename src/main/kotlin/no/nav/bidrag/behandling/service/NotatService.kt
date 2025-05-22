@@ -125,7 +125,7 @@ class NotatService {
             behandling: Behandling,
             notattype: Notattype,
         ): String? {
-            log.info { "Henter notat av type $notattype fra gammel datastruktur i behandling ${behandling.id}" }
+            log.debug { "Henter notat av type $notattype fra gammel datastruktur i behandling ${behandling.id}" }
             return when (notattype) {
                 Notattype.BOFORHOLD -> behandling.boforholdsbegrunnelseKunINotat
                 Notattype.INNTEKT -> behandling.inntektsbegrunnelseKunINotat
