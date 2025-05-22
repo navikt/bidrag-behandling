@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.config
 import io.getunleash.DefaultUnleash
 import io.getunleash.UnleashContext
 import io.getunleash.UnleashContextProvider
-import io.getunleash.strategy.DefaultStrategy
 import io.getunleash.util.UnleashConfig
 import io.micrometer.core.aop.TimedAspect
 import io.micrometer.core.instrument.MeterRegistry
@@ -71,6 +70,7 @@ class DefaultConfiguration {
     @Bean
     fun unleashConfig(
         @Value("\${NAIS_APP_NAME}") appName: String,
+        @Value("\${NAIS_APP_IMAGE}") imageName: String,
         @Value("\${UNLEASH_SERVER_API_URL}") apiUrl: String,
         @Value("\${UNLEASH_SERVER_API_TOKEN}") apiToken: String,
         @Value("\${UNLEASH_SERVER_API_ENV}") environment: String,
@@ -79,7 +79,7 @@ class DefaultConfiguration {
         .builder()
         .appName(appName)
         .unleashAPI("$apiUrl/api/")
-        .instanceId(appName)
+        .instanceId(imageName)
         .environment(environment)
         .synchronousFetchOnInitialisation(true)
         .apiKey(apiToken)
@@ -88,7 +88,7 @@ class DefaultConfiguration {
 
     @Bean
     @Scope("prototype")
-    fun unleashInstance(unleashConfig: UnleashConfig) = DefaultUnleash(unleashConfig, DefaultStrategy())
+    fun unleashInstance(unleashConfig: UnleashConfig) = DefaultUnleash(unleashConfig)
 
     @Bean
     fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)
