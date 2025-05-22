@@ -83,7 +83,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.ident.ReellMottager
+import no.nav.bidrag.domene.ident.ReellMottaker
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -491,7 +491,7 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
             behandling.roller.map {
                 RolleDto(
                     fødselsnummer = Personident(it.ident!!),
-                    reellMottager = if (it.ident == testdataBarn1.ident) ReellMottager("REEL_MOTTAKER") else null,
+                    reellMottager = if (it.ident == testdataBarn1.ident) ReellMottaker("REEL_MOTTAKER") else null,
                     type = it.rolletype,
                 )
             },
