@@ -139,7 +139,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =
-                    if (!aldersjusteringDetaljer!!.aldersjustert) {
+                    if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {
                         listOf(
                             ResultatBarnebidragsberegningPeriodeDto(
                                 erDirekteAvslag = true,
