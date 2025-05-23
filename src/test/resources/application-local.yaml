@@ -5,13 +5,13 @@ AZURE_APP_CLIENT_ID: <app_client_id>
 AZURE_APP_CLIENT_SECRET: unset
 server.port: 8990
 NAIS_APP_NAME: bidrag-behandling
+NAIS_APP_IMAGE: europe-north1-docker.pkg.dev/nais-management-233d/bidrag/bidrag-dokument-forsendelse:2025.05.20-14.36-95e7fbb
 DB_HOST: localhost
-#DB_PORT: 5432
-DB_DATABASE: bidrag-behandling
-
 DB_PORT: 5454
+DB_DATABASE: bidrag-behandling
 DB_USERNAME: cloudsqliamuser
 DB_PASSWORD: admin
+
 
 #  jpa:
 #    properties:

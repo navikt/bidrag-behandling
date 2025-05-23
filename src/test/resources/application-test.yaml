@@ -21,6 +21,7 @@ AZURE_APP_TENANT_ID: 12321321-123213-3213123
 AZURE_APP_CLIENT_ID: asdasd-sadas-ddas-qwe
 AZURE_APP_CLIENT_SECRET: asdasdsad214123sadas
 NAIS_APP_NAME: bidrag-behandling
+NAIS_APP_IMAGE: europe-north1-docker.pkg.dev/nais-management-233d/bidrag/bidrag-dokument-forsendelse:2025.05.20-14.36-95e7fbb
 TOPIC_VEDTAK: bidrag.vedtak-test
 UNLEASH_SERVER_API_ENV: development
 UNLEASH_SERVER_API_PROJECTS: default
