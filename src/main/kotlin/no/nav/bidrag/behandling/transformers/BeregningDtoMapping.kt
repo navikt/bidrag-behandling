@@ -47,6 +47,7 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
+import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
@@ -506,9 +507,17 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     return delberegningBidragspliktigesAndel.innholdTilObjekt<DelberegningBidragspliktigesAndel>()
 }
 
-fun List<GrunnlagDto>.erAldersjusteringBisysVedtak(): Boolean = finnKopiDelberegningBidragspliktigesAndel() == null
+fun List<GrunnlagDto>.erAldersjusteringBisysVedtak(): Boolean = finnAldersjusteringDetaljerGrunnlag() == null
 
-fun List<GrunnlagDto>.erAldersjusteringNyLøsning(): Boolean = finnKopiDelberegningBidragspliktigesAndel() != null
+fun List<GrunnlagDto>.erAldersjusteringNyLøsning(): Boolean = finnAldersjusteringDetaljerGrunnlag() != null
+
+fun List<GrunnlagDto>.finnAldersjusteringDetaljerGrunnlag(): AldersjusteringDetaljerGrunnlag? {
+    val grunnlag =
+        find {
+            it.type == Grunnlagstype.ALDERSJUSTERING_DETALJER
+        } ?: return null
+    return grunnlag.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
+}
 
 fun List<GrunnlagDto>.finnKopiDelberegningBidragspliktigesAndel(): KopiDelberegningBidragspliktigesAndel? {
     val delberegningBidragspliktigesAndel =
@@ -671,19 +680,24 @@ fun List<InnholdMedReferanse<DelberegningUnderholdskostnad>>.tilUnderholdskostna
             total = it.underholdskostnad,
             beregningsdetaljer =
                 if (underholdBeregning.erAldersjusteringNyLøsning()) {
-                    val opprinneligVedtak = hentVedtak(underholdBeregning.finnKopiDelberegningBidragspliktigesAndel()!!.fraVedtakId)!!
-                    underholdBeregning.hentPersonMedReferanse(delberegning.gjelderBarnReferanse)?.let { person ->
-                        val stønadsendring =
-                            opprinneligVedtak.stønadsendringListe
-                                .find {
-                                    it.kravhaver.verdi == person.personIdent
-                                } ?: opprinneligVedtak.stønadsendringListe.first()
-                        val sistePeriode =
-                            stønadsendring.periodeListe
-                                .maxBy { it.periode.fom }
-                        opprinneligVedtak.grunnlagListe.tilUnderholdskostnadDetaljer(
-                            sistePeriode.grunnlagReferanseListe,
-                        )
+                    val vedtaksid = underholdBeregning.finnAldersjusteringDetaljerGrunnlag()?.grunnlagFraVedtak
+                    if (vedtaksid != null) {
+                        val opprinneligVedtak = hentVedtak(vedtaksid)!!
+                        underholdBeregning.hentPersonMedReferanse(delberegning.gjelderBarnReferanse)?.let { person ->
+                            val stønadsendring =
+                                opprinneligVedtak.stønadsendringListe
+                                    .find {
+                                        it.kravhaver.verdi == person.personIdent
+                                    } ?: opprinneligVedtak.stønadsendringListe.first()
+                            val sistePeriode =
+                                stønadsendring.periodeListe
+                                    .maxBy { it.periode.fom }
+                            opprinneligVedtak.grunnlagListe.tilUnderholdskostnadDetaljer(
+                                sistePeriode.grunnlagReferanseListe,
+                            )
+                        }
+                    } else {
+                        null
                     }
                 } else if (erBisysVedtak) {
                     underholdBeregning.tilUnderholdskostnadDetaljer(

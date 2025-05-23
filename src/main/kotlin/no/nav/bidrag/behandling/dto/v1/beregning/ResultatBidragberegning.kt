@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.lastVisningsnavnFraFil
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
@@ -174,12 +175,13 @@ data class ResultatBidragsberegningBarnDto(
 data class ResultatBarnebidragsberegningPeriodeDto(
     val periode: ÅrMånedsperiode,
     val ugyldigBeregning: UgyldigResultatPeriode? = null,
-    val underholdskostnad: BigDecimal,
-    val bpsAndelU: BigDecimal,
-    val bpsAndelBeløp: BigDecimal,
-    val samværsfradrag: BigDecimal,
-    val beregnetBidrag: BigDecimal,
-    val faktiskBidrag: BigDecimal,
+    val aldersjusteringDetaljer: AldersjusteringDetaljerGrunnlag? = null,
+    val underholdskostnad: BigDecimal = BigDecimal(0),
+    val bpsAndelU: BigDecimal = BigDecimal(0),
+    val bpsAndelBeløp: BigDecimal = BigDecimal(0),
+    val samværsfradrag: BigDecimal = BigDecimal(0),
+    val beregnetBidrag: BigDecimal = BigDecimal(0),
+    val faktiskBidrag: BigDecimal = BigDecimal(0),
     val resultatKode: Resultatkode?,
     val erDirekteAvslag: Boolean = false,
     val erBeregnetAvslag: Boolean = false,
@@ -190,8 +192,12 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
         if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
-                ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
+            if (aldersjusteringDetaljer?.aldersjustert == false) {
+                aldersjusteringDetaljer.begrunnelserVisningsnavn
+            } else {
+                beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
+                    ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
+            }
         } else if (resultatKode?.erDirekteAvslag() == true || resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE) {
             resultatKode.visningsnavnIntern(vedtakstype)
         } else if (ugyldigBeregning != null) {
