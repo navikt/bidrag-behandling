@@ -41,7 +41,6 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
@@ -69,7 +68,6 @@ import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
@@ -142,8 +140,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                     if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
                         listOf(
                             ResultatBarnebidragsberegningPeriodeDto(
-                                erDirekteAvslag = true,
-                                periode = ÅrMånedsperiode(LocalDate.now().withMonth(7), null),
+                                periode = aldersjusteringDetaljer.periode,
                                 vedtakstype = Vedtakstype.ALDERSJUSTERING,
                                 resultatKode = null,
                                 aldersjusteringDetaljer = aldersjusteringDetaljer,
