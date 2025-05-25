@@ -815,12 +815,12 @@ fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnRefer
     this
         .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtale>(
             Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
-        ).filter { it.gjelderBarnReferanse == gjelderBarnReferanse }
-        .first()
-        .innhold.perioder
-        .sortedBy {
+        ).firstOrNull { it.gjelderBarnReferanse == gjelderBarnReferanse }
+        ?.innhold
+        ?.perioder
+        ?.sortedBy {
             it.periode.fom
-        }
+        } ?: emptyList()
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(rolle: Rolle): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
     this
