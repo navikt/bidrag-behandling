@@ -116,6 +116,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
+import no.nav.bidrag.transport.sak.ReellMottakerDto
 import no.nav.bidrag.transport.sak.RolleDto
 import java.math.BigDecimal
 import java.nio.charset.Charset
@@ -492,6 +493,14 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
                 RolleDto(
                     fødselsnummer = Personident(it.ident!!),
                     reellMottager = if (it.ident == testdataBarn1.ident) ReellMottaker("REEL_MOTTAKER") else null,
+                    reellMottaker =
+                        if (it.ident == testdataBarn1.ident) {
+                            ReellMottakerDto(
+                                ident = ReellMottaker("REEL_MOTTAKER"),
+                            )
+                        } else {
+                            null
+                        },
                     type = it.rolletype,
                 )
             },
