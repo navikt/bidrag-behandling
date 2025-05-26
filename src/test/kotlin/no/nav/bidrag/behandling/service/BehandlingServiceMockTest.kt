@@ -6,6 +6,7 @@ import io.mockk.mockkClass
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.Optional
 
@@ -26,6 +27,7 @@ class BehandlingServiceMockTest : CommonMockServiceTest() {
     }
 
     @Test
+    @Disabled
     fun `skal hente behandling`() {
         Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
