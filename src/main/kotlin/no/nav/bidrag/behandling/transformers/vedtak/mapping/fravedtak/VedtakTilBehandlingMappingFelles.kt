@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
@@ -22,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
 import no.nav.bidrag.behandling.transformers.erForskudd
+import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
@@ -123,6 +125,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
             val barnIdent = stønadsendring.kravhaver
             val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi) ?: manglerPersonGrunnlag(barnIdent.verdi)
             val barn = barnGrunnlag.innholdTilObjekt<Person>()
+            val aldersjusteringDetaljer = grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
             ResultatBidragsberegningBarnDto(
                 barn =
                     ResultatRolle(
@@ -134,20 +137,31 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =
-                    stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
-                        grunnlagListe.byggResultatBidragsberegning(
-                            it.periode,
-                            it.beløp,
-                            try {
-                                Resultatkode.fraKode(it.resultatkode)!!
-                            } catch (e: Exception) {
-                                Resultatkode.BEREGNET_BIDRAG
-                            },
-                            it.grunnlagReferanseListe,
-                            null,
-                            Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
-                            type,
+                    if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
+                        listOf(
+                            ResultatBarnebidragsberegningPeriodeDto(
+                                periode = aldersjusteringDetaljer.periode,
+                                vedtakstype = Vedtakstype.ALDERSJUSTERING,
+                                resultatKode = null,
+                                aldersjusteringDetaljer = aldersjusteringDetaljer,
+                            ),
                         )
+                    } else {
+                        stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
+                            grunnlagListe.byggResultatBidragsberegning(
+                                it.periode,
+                                it.beløp,
+                                try {
+                                    Resultatkode.fraKode(it.resultatkode)!!
+                                } catch (e: Exception) {
+                                    Resultatkode.BEREGNET_BIDRAG
+                                },
+                                it.grunnlagReferanseListe,
+                                null,
+                                Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                                type,
+                            )
+                        }
                     },
             )
         },

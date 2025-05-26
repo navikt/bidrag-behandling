@@ -223,7 +223,7 @@ fun List<Grunnlag>.henteEndringerIBoforhold(
 ): Set<HusstandsmedlemGrunnlagDto> {
     val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
     val husstandsmedlemmer = behandling.husstandsmedlem
-    val rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!
+    val rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling) ?: return emptySet()
 
     val aktiveBoforholdsdata =
         aktiveGrunnlag.hentAlleBearbeidaBoforhold(virkniningstidspunkt, husstandsmedlemmer, rolle).toSet()
