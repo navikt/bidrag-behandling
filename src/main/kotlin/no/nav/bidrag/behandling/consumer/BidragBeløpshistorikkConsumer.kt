@@ -4,12 +4,12 @@ import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_C
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
-import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
-import no.nav.bidrag.transport.behandling.stonad.request.SkyldnerStønaderRequest
-import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssakerResponse
-import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
-import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.SkyldnerStønaderRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssakerResponse
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.SkyldnerStønaderResponse
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.annotation.Backoff
@@ -20,8 +20,8 @@ import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
 @Component
-class BidragStønadConsumer(
-    @Value("\${BIDRAG_STONAD_URL}") private val bidragStønadUrl: URI,
+class BidragBeløpshistorikkConsumer(
+    @Value("\${BIDRAG_BELOPSHISTORIKK_URL}") private val bidragStønadUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-stønad") {
     private val bidragsStønadUri

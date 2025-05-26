@@ -4,8 +4,8 @@ import io.getunleash.FakeUnleash
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -40,7 +40,7 @@ import stubUnderholdskostnadRepository
 @ExtendWith(MockKExtension::class)
 abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     @MockK
-    lateinit var bidragStønadConsumer: BidragStønadConsumer
+    lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
     @MockK
     lateinit var notatOpplysningerService: NotatOpplysningerService

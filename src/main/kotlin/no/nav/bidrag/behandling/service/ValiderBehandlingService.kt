@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.service
 
 import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
@@ -14,8 +14,8 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.sak.Saksnummer
-import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
-import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -29,7 +29,7 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 
 @Service
 class ValiderBehandlingService(
-    private val bidragStonadConsumer: BidragStønadConsumer,
+    private val bidragStonadConsumer: BidragBeløpshistorikkConsumer,
     private val bidragSakConsumer: BidragSakConsumer,
     private val unleash: Unleash,
 ) {

@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.OppgaveConsumer
 import no.nav.bidrag.behandling.consumer.dto.OppgaveSokRequest
 import no.nav.bidrag.behandling.consumer.dto.OppgaveType
@@ -14,8 +14,8 @@ import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
-import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
-import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import org.springframework.stereotype.Component
@@ -29,7 +29,7 @@ val enhet_farskap = "4860"
 @Component
 class OppgaveService(
     private val oppgaveConsumer: OppgaveConsumer,
-    private val bidragStønadConsumer: BidragStønadConsumer,
+    private val bidragStønadConsumer: BidragBeløpshistorikkConsumer,
     private val behandlingRepository: BehandlingRepository,
 ) {
     fun opprettRevurderForskuddOppgave(vedtakHendelse: VedtakHendelse) {

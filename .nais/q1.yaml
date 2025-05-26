@@ -12,8 +12,8 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
-  BIDRAG_STONAD_URL: http://bidrag-stonad-q1
-  BIDRAG_STONAD_SCOPE: dev-gcp.bidrag.bidrag-stonad-q1
+  BIDRAG_BELOPSHISTORIKK_URL: http://bidrag-belopshistorikk-q1
+  BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-belopshistorikk-q1
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak-q1
   BIDRAG_VEDTAK_SCOPE: dev-gcp.bidrag.bidrag-vedtak-q1
   BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
@@ -55,7 +55,7 @@ database:
   tier: db-f1-micro
   auditlog: "off"
 outbound-access-apps:
-  - bidrag-stonad-q1
+  - bidrag-belopshistorikk-q1
   - bidrag-vedtak-q1
   - bidrag-dokument-produksjon
   - bidrag-grunnlag-feature

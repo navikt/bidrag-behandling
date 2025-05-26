@@ -12,7 +12,7 @@ import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.verify
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigBeregningType
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -86,7 +86,7 @@ class BeregningServiceTest {
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
 
     @MockkBean
-    lateinit var bidragStønadConsumer: BidragStønadConsumer
+    lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
     @BeforeEach
     fun initMocks() {

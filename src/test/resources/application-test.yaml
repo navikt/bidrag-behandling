@@ -1,6 +1,6 @@
 BIDRAG_PERSON_URL: http://localhost:${wiremock.server.port}/bidrag-person
 BIDRAG_BBM_URL: http://localhost:${wiremock.server.port}/bbm
-BIDRAG_STONAD_URL: http://localhost:${wiremock.server.port}/stonad
+BIDRAG_BELOPSHISTORIKK_URL: http://localhost:${wiremock.server.port}/stonad
 BIDRAG_GRUNNLAG_URL: http://localhost:${wiremock.server.port}
 BIDRAG_DOKUMENT_URL: http://localhost:${wiremock.server.port}/dokument
 BIDRAG_DOKUMENT_PRODUKSJON_URL: http://localhost:${wiremock.server.port}/dokumentproduksjon
@@ -105,8 +105,8 @@ no.nav.security.jwt:
           client-id: 123
           client-secret: 123
           client-auth-method: client_secret_basic
-        bidrag-stonad:
-          resource-url: ${BIDRAG_STONAD_URL}
+        bidrag-belopshistorikk:
+          resource-url: ${BIDRAG_BELOPSHISTORIKK_URL}
           token-endpoint-url: http://localhost:${mock-oauth2-server.port:1234}/aad/token
           grant-type: urn:ietf:params:oauth:grant-type:jwt-bearer
           scope: api://123/.default

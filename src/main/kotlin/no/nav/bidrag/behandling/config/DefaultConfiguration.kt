@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
-import org.springframework.context.annotation.Scope
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.scheduling.annotation.EnableScheduling
 import javax.sql.DataSource
@@ -87,7 +86,6 @@ class DefaultConfiguration {
         .build()
 
     @Bean
-    @Scope("prototype")
     fun unleashInstance(unleashConfig: UnleashConfig) = DefaultUnleash(unleashConfig)
 
     @Bean

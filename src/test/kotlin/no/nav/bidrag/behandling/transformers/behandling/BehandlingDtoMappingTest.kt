@@ -8,7 +8,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockkClass
 import no.nav.bidrag.behandling.TestContainerRunner
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
@@ -60,7 +60,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     lateinit var mapper: Dtomapper
-    lateinit var bidragStonadConsumer: BidragStønadConsumer
+    lateinit var bidragStonadConsumer: BidragBeløpshistorikkConsumer
     lateinit var validering: ValiderBeregning
     lateinit var validerBehandling: ValiderBehandlingService
     lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper

@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.databind.node.POJONode
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
@@ -14,11 +14,11 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
-import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
-import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -31,7 +31,7 @@ val stønadstyperSomKreverBeløpshistorikkBidrag = setOf(Stønadstype.BIDRAG, St
 
 @Service
 class BarnebidragGrunnlagInnhenting(
-    private val bidragStønadConsumer: BidragStønadConsumer,
+    private val bidragStønadConsumer: BidragBeløpshistorikkConsumer,
 ) {
     fun byggGrunnlagBeløpshistorikk(
         behandling: Behandling,
