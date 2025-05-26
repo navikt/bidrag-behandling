@@ -221,7 +221,7 @@ class VedtakserviceTest : TestContainerRunner() {
         )
         stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
-        stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubBidragBeløpshistorikkLøpendeSaker()
         stubUtils.stubBidragStønaderForSkyldner()
     }
 
@@ -331,7 +331,7 @@ class VedtakserviceTest : TestContainerRunner() {
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
         behandling.initGrunnlagRespons(stubUtils)
-        stubUtils.stubBidragStonadHistoriskeSaker()
+        stubUtils.stubBidragBeløpshistorikkHistoriskeSaker()
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()
         entityManager.refresh(behandling)

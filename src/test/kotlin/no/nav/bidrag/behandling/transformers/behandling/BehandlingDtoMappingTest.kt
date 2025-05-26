@@ -60,7 +60,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
     lateinit var tilgangskontrollService: TilgangskontrollService
 
     lateinit var mapper: Dtomapper
-    lateinit var bidragStonadConsumer: BidragBeløpshistorikkConsumer
+    lateinit var bidragBeløpsistorikkConsumer: BidragBeløpshistorikkConsumer
     lateinit var validering: ValiderBeregning
     lateinit var validerBehandling: ValiderBehandlingService
     lateinit var vedtakGrunnlagsmapper: VedtakGrunnlagMapper

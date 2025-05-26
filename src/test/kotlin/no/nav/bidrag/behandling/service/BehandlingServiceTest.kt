@@ -130,7 +130,7 @@ class BehandlingServiceTest : TestContainerRunner() {
         stubUtils.stubTilgangskontrollSak()
         stubUtils.stubTilgangskontrollPerson()
         stubUtils.stubTilgangskontrollPersonISak()
-        stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubBidragBeløpshistorikkLøpendeSaker()
         stubUtils.stubHentSak(opprettSakForBehandling(oppretteBehandling()))
         stubKodeverkProvider()
         stubSjablonProvider()

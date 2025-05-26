@@ -31,7 +31,7 @@ val stønadstyperSomKreverBeløpshistorikkBidrag = setOf(Stønadstype.BIDRAG, St
 
 @Service
 class BarnebidragGrunnlagInnhenting(
-    private val bidragStønadConsumer: BidragBeløpshistorikkConsumer,
+    private val bidragBeløpshistorikkConsumer: BidragBeløpshistorikkConsumer,
 ) {
     fun byggGrunnlagBeløpshistorikk(
         behandling: Behandling,
@@ -105,7 +105,7 @@ class BarnebidragGrunnlagInnhenting(
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
                 )
             }
-        return bidragStønadConsumer.hentHistoriskeStønader(request)
+        return bidragBeløpshistorikkConsumer.hentHistoriskeStønader(request)
     }
 
     fun StønadDto?.tilGrunnlag(

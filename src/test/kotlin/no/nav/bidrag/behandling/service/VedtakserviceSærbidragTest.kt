@@ -452,7 +452,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     @Transactional
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag og personobjekter`() {
         stubPersonConsumer()
-        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_annen_barn")
+        stubUtils.stubBidragBeløpshistorikkLøpendeSaker("løpende-bidragssaker-bp_annen_barn")
         stubUtils.stubBidraBBMHentBeregning("bbm-beregning_annen_barn")
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.refVedtaksid = 553
@@ -546,7 +546,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en særbidrag behandling med løpende bidrag med flere vedtak`() {
         stubPersonConsumer()
         stubUtils.stubBidragVedtakForStønad(testdataBarn1.ident, "vedtak-for-stønad-barn1_2")
-        stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_2")
+        stubUtils.stubBidragBeløpshistorikkLøpendeSaker("løpende-bidragssaker-bp_2")
         stubUtils.stubBidraBBMHentBeregning("bbm-beregning_2")
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.refVedtaksid = 553

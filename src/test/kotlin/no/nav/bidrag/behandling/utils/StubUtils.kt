@@ -285,7 +285,7 @@ class StubUtils {
         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")
     }
 
-    fun stubBidragStonadHistoriskeSaker(
+    fun stubBidragBeløpshistorikkHistoriskeSaker(
         stønadDto: StønadDto? =
             opprettStønadDto(
                 stønadstype = Stønadstype.BIDRAG,
@@ -311,7 +311,7 @@ class StubUtils {
         )
     }
 
-    fun stubBidragStonadLøpendeSaker(
+    fun stubBidragBeløpshistorikkLøpendeSaker(
         filnavn: String = "løpende-bidragssaker-bp",
         status: HttpStatus = HttpStatus.OK,
     ) {
@@ -920,7 +920,7 @@ class StubUtils {
             WireMock.verify(antall, verify)
         }
 
-        fun hentBidragStonadHistoriskeSakerKalt(antall: Int) {
+        fun hentBidragBeløpshistorikkHistoriskeSakerKalt(antall: Int) {
             val verify =
                 postRequestedFor(
                     urlMatching("/stonad/hent-stonad-historisk/"),

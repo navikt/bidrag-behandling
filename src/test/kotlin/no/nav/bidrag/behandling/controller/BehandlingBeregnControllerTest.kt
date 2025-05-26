@@ -62,7 +62,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
         stubUtils.stubHentePersonInfoForTestpersoner()
         stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
-        stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubBidragBeløpshistorikkLøpendeSaker()
     }
 
     @Test

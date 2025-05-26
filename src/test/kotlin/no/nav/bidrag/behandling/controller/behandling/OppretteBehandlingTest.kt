@@ -633,7 +633,7 @@ class OppretteBehandlingTest : BehandlingControllerTest() {
             val personidentBp = Personident("12345678912")
             val personidentBm = Personident("213213")
             val personidentBarn = Personident("123213123")
-            stubUtils.stubBidragStonadLøpendeSaker("løpende-bidragssaker-bp_utenlandsk_valuta")
+            stubUtils.stubBidragBeløpshistorikkLøpendeSaker("løpende-bidragssaker-bp_utenlandsk_valuta")
 
             val roller =
                 setOf(
