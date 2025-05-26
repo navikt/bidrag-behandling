@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
-import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
@@ -136,9 +135,6 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @MockK
     lateinit var personRepository: PersonRepository
-
-    @Autowired
-    lateinit var unleash: FakeUnleash
 
     val notatService = NotatService()
 

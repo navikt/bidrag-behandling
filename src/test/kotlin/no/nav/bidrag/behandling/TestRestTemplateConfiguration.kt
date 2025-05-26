@@ -23,12 +23,14 @@ import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
+import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpHeaders
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.stereotype.Component
@@ -45,6 +47,7 @@ class TestRestTemplateConfiguration {
 
     @Bean
     @Primary
+    @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     fun unleash(): Unleash = FakeUnleash()
 
     @Bean

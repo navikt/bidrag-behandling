@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling
 
 import StubUtils
 import com.github.tomakehurst.wiremock.WireMockServer
+import io.getunleash.FakeUnleash
 import no.nav.security.token.support.spring.test.EnableMockOAuth2Server
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -17,7 +18,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 
 @ExtendWith(SpringExtension::class)
 @ContextConfiguration(classes = [BidragBehandlingLocal::class])
-@SpringBootTest(classes = [BidragBehandlingLocal::class, StubUtils::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = [BidragBehandlingLocal::class, StubUtils::class, TestRestTemplateConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWireMock(port = 0)
 @ActiveProfiles("test")
 @EnableMockOAuth2Server
@@ -33,6 +34,9 @@ class SpringTestRunner {
 
     @Autowired
     lateinit var httpHeaderTestRestTemplate: TestRestTemplate
+
+    @Autowired
+    lateinit var unleash: FakeUnleash
 
     @AfterEach
     fun reset() {

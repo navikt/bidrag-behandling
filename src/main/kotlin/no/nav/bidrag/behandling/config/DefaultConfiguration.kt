@@ -24,10 +24,13 @@ import no.nav.security.token.support.client.spring.oauth2.EnableOAuth2Client
 import no.nav.security.token.support.spring.api.EnableJwtTokenValidation
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Profile
+import org.springframework.context.annotation.Scope
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.scheduling.annotation.EnableScheduling
 import javax.sql.DataSource
@@ -86,6 +89,8 @@ class DefaultConfiguration {
         .build()
 
     @Bean
+    @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
+    @Profile("nais")
     fun unleashInstance(unleashConfig: UnleashConfig) = DefaultUnleash(unleashConfig)
 
     @Bean
