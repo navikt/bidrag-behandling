@@ -70,7 +70,7 @@ class DefaultConfiguration {
     @Bean
     fun unleashConfig(
         @Value("\${NAIS_APP_NAME}") appName: String,
-        @Value("\${NAIS_APP_IMAGE}") imageName: String,
+        @Value("\${UNLEASH_INSTANCE_ID}") instanceId: String,
         @Value("\${UNLEASH_SERVER_API_URL}") apiUrl: String,
         @Value("\${UNLEASH_SERVER_API_TOKEN}") apiToken: String,
         @Value("\${UNLEASH_SERVER_API_ENV}") environment: String,
@@ -79,7 +79,7 @@ class DefaultConfiguration {
         .builder()
         .appName(appName)
         .unleashAPI("$apiUrl/api/")
-        .instanceId(imageName)
+        .instanceId(instanceId)
         .environment(environment)
         .synchronousFetchOnInitialisation(true)
         .apiKey(apiToken)
