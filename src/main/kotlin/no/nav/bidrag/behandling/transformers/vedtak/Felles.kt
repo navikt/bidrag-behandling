@@ -59,7 +59,10 @@ fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
 
 // TODO: Reel mottaker fra bidrag-sak?
 fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =
-    rolle.reellMottager?.verdi?.let { Personident(it) }
+    rolle.reellMottaker
+        ?.ident
+        ?.verdi
+        ?.let { Personident(it) }
         ?: find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }!!.let { hentNyesteIdent(it.ident)!! }
 
 fun String?.nullIfEmpty() = if (this.isNullOrEmpty()) null else this

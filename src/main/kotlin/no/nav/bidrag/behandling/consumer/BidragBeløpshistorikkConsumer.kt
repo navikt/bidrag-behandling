@@ -21,11 +21,11 @@ import java.net.URI
 
 @Component
 class BidragBeløpshistorikkConsumer(
-    @Value("\${BIDRAG_BELOPSHISTORIKK_URL}") private val bidragStønadUrl: URI,
+    @Value("\${BIDRAG_BELOPSHISTORIKK_URL}") private val bidragBeløpshistorikkUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
-) : AbstractRestClient(restTemplate, "bidrag-stønad") {
-    private val bidragsStønadUri
-        get() = UriComponentsBuilder.fromUri(bidragStønadUrl)
+) : AbstractRestClient(restTemplate, "bidrag-beløpshistorikk") {
+    private val bidragBeløpshistorikkUri
+        get() = UriComponentsBuilder.fromUri(bidragBeløpshistorikkUrl)
 
     //    @BrukerCacheable(STØNAD_LØPENDE_BIDRAG_CACHE)
     @Retryable(
@@ -35,7 +35,7 @@ class BidragBeløpshistorikkConsumer(
     )
     fun hentLøpendeBidrag(request: LøpendeBidragssakerRequest): LøpendeBidragssakerResponse =
         postForNonNullEntity(
-            bidragsStønadUri.pathSegment("hent-lopende-bidragssaker-for-skyldner").build().toUri(),
+            bidragBeløpshistorikkUri.pathSegment("hent-lopende-bidragssaker-for-skyldner").build().toUri(),
             request,
         )
 
@@ -46,7 +46,7 @@ class BidragBeløpshistorikkConsumer(
     )
     fun hentAlleStønaderForBidragspliktig(personidentBidragspliktig: Personident): SkyldnerStønaderResponse =
         postForNonNullEntity(
-            bidragsStønadUri.pathSegment("hent-alle-stonader-for-skyldner").build().toUri(),
+            bidragBeløpshistorikkUri.pathSegment("hent-alle-stonader-for-skyldner").build().toUri(),
             SkyldnerStønaderRequest(personidentBidragspliktig),
         )
 
@@ -58,7 +58,7 @@ class BidragBeløpshistorikkConsumer(
     @BrukerCacheable(STØNAD_HISTORIKK_CACHE)
     fun hentHistoriskeStønader(request: HentStønadHistoriskRequest): StønadDto? =
         postForEntity(
-            bidragsStønadUri.pathSegment("hent-stonad-historisk/").build().toUri(),
+            bidragBeløpshistorikkUri.pathSegment("hent-stonad-historisk/").build().toUri(),
             request,
         )
 }
