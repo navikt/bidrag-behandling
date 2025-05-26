@@ -3,17 +3,17 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.micrometer.core.annotation.Timed
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
-import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
-import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadsid
@@ -25,7 +25,7 @@ private val log = KotlinLogging.logger {}
 @Service
 @Import(Vedtaksfiltrering::class)
 class BeregningEvnevurderingService(
-    private val bidragStønadConsumer: BidragStønadConsumer,
+    private val bidragStønadConsumer: BidragBeløpshistorikkConsumer,
     private val bidragVedtakConsumer: BidragVedtakConsumer,
     private val bidragBBMConsumer: BidragBBMConsumer,
     private val beregingVedtaksfiltrering: Vedtaksfiltrering,

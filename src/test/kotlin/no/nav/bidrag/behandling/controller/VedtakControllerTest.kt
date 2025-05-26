@@ -83,7 +83,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubHentePersonInfoForTestpersoner()
         stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
-        stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubBidragBeløpshistorikkLøpendeSaker()
         stubUtils.stubHentSak(opprettSakForBehandling(oppretteBehandling()))
         stubUtils.stubOpprettJournalpost("12333")
     }

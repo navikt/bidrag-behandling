@@ -6,7 +6,7 @@ import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.mockkClass
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -35,7 +35,7 @@ import kotlin.test.Test
 
 @ExtendWith(SpringExtension::class)
 class BarnebidragGrunnlagInnhentingTest {
-    val bidragStønadConsumer = mockkClass(BidragStønadConsumer::class)
+    val bidragStønadConsumer = mockkClass(BidragBeløpshistorikkConsumer::class)
     var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
 
     @Test

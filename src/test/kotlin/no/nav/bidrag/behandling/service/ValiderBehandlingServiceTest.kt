@@ -8,8 +8,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockkClass
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
@@ -26,10 +26,10 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssak
-import no.nav.bidrag.transport.behandling.stonad.response.LøpendeBidragssakerResponse
-import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønad
-import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssakerResponse
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.SkyldnerStønad
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -40,7 +40,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 class ValiderBehandlingServiceTest {
-    val bidragStønadConsumer: BidragStønadConsumer = mockkClass(BidragStønadConsumer::class)
+    val bidragStønadConsumer: BidragBeløpshistorikkConsumer = mockkClass(BidragBeløpshistorikkConsumer::class)
     val bidragSakConsumer: BidragSakConsumer = mockkClass(BidragSakConsumer::class)
 
     val unleash = FakeUnleash()

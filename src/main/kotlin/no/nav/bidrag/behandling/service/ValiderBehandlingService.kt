@@ -2,8 +2,8 @@ package no.nav.bidrag.behandling.service
 
 import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
@@ -14,8 +14,8 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.sak.Saksnummer
-import no.nav.bidrag.transport.behandling.stonad.request.HentStønadHistoriskRequest
-import no.nav.bidrag.transport.behandling.stonad.request.LøpendeBidragssakerRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -29,7 +29,7 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 
 @Service
 class ValiderBehandlingService(
-    private val bidragStonadConsumer: BidragStønadConsumer,
+    private val bidragBeløpshistorikkConsumer: BidragBeløpshistorikkConsumer,
     private val bidragSakConsumer: BidragSakConsumer,
     private val unleash: Unleash,
 ) {
@@ -47,7 +47,7 @@ class ValiderBehandlingService(
 
     private fun kanSærbidragBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         val bp = request.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }!!
-        val løpendeBidrag = bidragStonadConsumer.hentLøpendeBidrag(LøpendeBidragssakerRequest(skyldner = bp.ident!!))
+        val løpendeBidrag = bidragBeløpshistorikkConsumer.hentLøpendeBidrag(LøpendeBidragssakerRequest(skyldner = bp.ident!!))
         val harLøpendeBidragUtenlandskValuta =
             løpendeBidrag.bidragssakerListe.all {
                 it.valutakode == "NOK" || it.valutakode.isEmpty()
@@ -77,7 +77,7 @@ class ValiderBehandlingService(
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
         if (!unleash.isEnabled("behandling.v2_endring", false)) {
             val harBPMinstEnBidragsstønad =
-                bidragStonadConsumer
+                bidragBeløpshistorikkConsumer
                     .hentAlleStønaderForBidragspliktig(bp.ident)
                     .stønader
                     .any { it.type != Stønadstype.FORSKUDD }
@@ -89,7 +89,7 @@ class ValiderBehandlingService(
         } else {
             val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
             val harBPStønadForFlereBarn =
-                bidragStonadConsumer
+                bidragBeløpshistorikkConsumer
                     .hentAlleStønaderForBidragspliktig(bp.ident)
                     .stønader
                     .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
@@ -138,7 +138,7 @@ class ValiderBehandlingService(
         stønadstype: Stønadstype,
     ): Boolean =
         request.søknadsbarn.filter { it.ident != null }.all {
-            bidragStonadConsumer
+            bidragBeløpshistorikkConsumer
                 .hentHistoriskeStønader(
                     HentStønadHistoriskRequest(
                         type = stønadstype,

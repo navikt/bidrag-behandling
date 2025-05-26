@@ -113,7 +113,7 @@ class VedtakHendelseTest : TestContainerRunner() {
         stubUtils.stubOpprettOppgave()
         stubUtils.stubSøkOppgave()
         stubUtils.stubHentSaksbehandler()
-        stubUtils.stubBidragStonadHistoriskeSaker(
+        stubUtils.stubBidragBeløpshistorikkHistoriskeSaker(
             opprettStønadDto(
                 stønadstype = Stønadstype.FORSKUDD,
                 periodeListe =
@@ -159,7 +159,7 @@ class VedtakHendelseTest : TestContainerRunner() {
         stubUtils.stubOpprettOppgave()
         stubUtils.stubSøkOppgave()
         stubUtils.stubHentSaksbehandler()
-        stubUtils.stubBidragStonadHistoriskeSaker(
+        stubUtils.stubBidragBeløpshistorikkHistoriskeSaker(
             opprettStønadDto(
                 stønadstype = Stønadstype.FORSKUDD,
                 periodeListe =
@@ -205,7 +205,7 @@ class VedtakHendelseTest : TestContainerRunner() {
                 )
         vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
         stubUtils.Verify().opprettOppgaveKalt(0)
-        stubUtils.Verify().hentBidragStonadHistoriskeSakerKalt(0)
+        stubUtils.Verify().hentBidragBeløpshistorikkHistoriskeSakerKalt(0)
     }
 
     @Test
@@ -213,7 +213,7 @@ class VedtakHendelseTest : TestContainerRunner() {
         stubUtils.stubOpprettOppgave()
         stubUtils.stubSøkOppgave()
         stubUtils.stubHentSaksbehandler()
-        stubUtils.stubBidragStonadHistoriskeSaker(
+        stubUtils.stubBidragBeløpshistorikkHistoriskeSaker(
             opprettStønadDto(
                 stønadstype = Stønadstype.FORSKUDD,
                 periodeListe =
@@ -260,7 +260,7 @@ class VedtakHendelseTest : TestContainerRunner() {
                 )
         vedtakHendelseListener.prossesserVedtakHendelse(opprettHendelseRecord(vedtakHendelse))
         stubUtils.Verify().opprettOppgaveKalt(0)
-        stubUtils.Verify().hentBidragStonadHistoriskeSakerKalt(0)
+        stubUtils.Verify().hentBidragBeløpshistorikkHistoriskeSakerKalt(0)
     }
 
     private fun opprettHendelseRecord(vedtakHendelse: VedtakHendelse) =

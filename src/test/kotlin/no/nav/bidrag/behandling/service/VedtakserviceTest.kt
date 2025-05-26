@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
-import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
@@ -14,9 +13,9 @@ import io.mockk.slot
 import io.mockk.verify
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
@@ -119,7 +118,7 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
     @Autowired
-    lateinit var bidragStønadConsumer: BidragStønadConsumer
+    lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
     @Autowired
     lateinit var evnevurderingService: BeregningEvnevurderingService
@@ -136,9 +135,6 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @MockK
     lateinit var personRepository: PersonRepository
-
-    @Autowired
-    lateinit var unleash: FakeUnleash
 
     val notatService = NotatService()
 
@@ -221,7 +217,7 @@ class VedtakserviceTest : TestContainerRunner() {
         )
         stubUtils.stubAlleBidragVedtakForStønad()
         stubUtils.stubBidraBBMHentBeregning()
-        stubUtils.stubBidragStonadLøpendeSaker()
+        stubUtils.stubBidragBeløpshistorikkLøpendeSaker()
         stubUtils.stubBidragStønaderForSkyldner()
     }
 
@@ -331,7 +327,7 @@ class VedtakserviceTest : TestContainerRunner() {
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
 
         behandling.initGrunnlagRespons(stubUtils)
-        stubUtils.stubBidragStonadHistoriskeSaker()
+        stubUtils.stubBidragBeløpshistorikkHistoriskeSaker()
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()
         entityManager.refresh(behandling)

@@ -12,8 +12,8 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: prod-gcp.bidrag.bidrag-dokument-forsendelse
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll
   BIDRAG_TILGANGGSKONTROLL_SCOPE: prod-gcp.bidrag.bidrag-tilgangskontroll
-  BIDRAG_STONAD_URL: http://bidrag-stonad
-  BIDRAG_STONAD_SCOPE: prod-gcp.bidrag.bidrag-stonad
+  BIDRAG_BELOPSHISTORIKK_URL: http://bidrag-stonad
+  BIDRAG_BELOPSHISTORIKK_SCOPE: prod-gcp.bidrag.bidrag-stonad
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak
   BIDRAG_VEDTAK_SCOPE: prod-gcp.bidrag.bidrag-vedtak
   BIDRAG_BBM_URL: https://bidrag-bbm.prod-fss-pub.nais.io

@@ -61,9 +61,9 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.SkyldnerStønaderResponse
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
-import no.nav.bidrag.transport.behandling.stonad.response.SkyldnerStønaderResponse
-import no.nav.bidrag.transport.behandling.stonad.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
@@ -285,7 +285,7 @@ class StubUtils {
         stubBidragVedtakForStønad(BP_BARN_ANNEN_IDENT_2, "vedtak-for-stønad-barn_annen_2")
     }
 
-    fun stubBidragStonadHistoriskeSaker(
+    fun stubBidragBeløpshistorikkHistoriskeSaker(
         stønadDto: StønadDto? =
             opprettStønadDto(
                 stønadstype = Stønadstype.BIDRAG,
@@ -311,7 +311,7 @@ class StubUtils {
         )
     }
 
-    fun stubBidragStonadLøpendeSaker(
+    fun stubBidragBeløpshistorikkLøpendeSaker(
         filnavn: String = "løpende-bidragssaker-bp",
         status: HttpStatus = HttpStatus.OK,
     ) {
@@ -920,7 +920,7 @@ class StubUtils {
             WireMock.verify(antall, verify)
         }
 
-        fun hentBidragStonadHistoriskeSakerKalt(antall: Int) {
+        fun hentBidragBeløpshistorikkHistoriskeSakerKalt(antall: Int) {
             val verify =
                 postRequestedFor(
                     urlMatching("/stonad/hent-stonad-historisk/"),

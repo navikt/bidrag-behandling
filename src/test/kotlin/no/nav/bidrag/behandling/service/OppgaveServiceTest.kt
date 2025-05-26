@@ -6,7 +6,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.verify
-import no.nav.bidrag.behandling.consumer.BidragStønadConsumer
+import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.OppgaveConsumer
 import no.nav.bidrag.behandling.consumer.dto.OppgaveDto
 import no.nav.bidrag.behandling.consumer.dto.OppgaveSokResponse
@@ -55,7 +55,7 @@ class OppgaveServiceTest {
     lateinit var oppgaveConsumer: OppgaveConsumer
 
     @MockK
-    lateinit var bidragStønadConsumer: BidragStønadConsumer
+    lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
     @MockK
     lateinit var behandlingRepository: BehandlingRepository
