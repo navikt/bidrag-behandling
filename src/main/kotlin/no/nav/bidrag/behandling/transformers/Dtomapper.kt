@@ -676,6 +676,7 @@ class Dtomapper(
             id = id!!,
             type = tilType(),
             erBisysVedtak = erBisysVedtak,
+            erVedtakUtenBeregning = aldersjusteringGrunnlag != null && !aldersjusteringGrunnlag.aldersjustert || erVedtakUtenBeregning,
             erAvvistAldersjustering = aldersjusteringGrunnlag != null && !aldersjusteringGrunnlag.aldersjustert,
             grunnlagFraVedtaksid = grunnlagFraVedtak,
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
