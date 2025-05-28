@@ -71,6 +71,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBel�
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
@@ -178,6 +179,8 @@ class VedtakTilBehandlingMapping(
         if (lesemodus) {
             behandling.grunnlagFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
+            behandling.erVedtakUtenBeregning =
+                stønadsendringListe.all { it.periodeListe.isEmpty() || it.finnSistePeriode().resultatkode == "IV" }
         }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {

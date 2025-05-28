@@ -181,6 +181,8 @@ open class Behandling(
     @Transient
     var erBisysVedtak: Boolean = false,
     @Transient
+    var erVedtakUtenBeregning: Boolean = false,
+    @Transient
     var grunnlagFraVedtak: List<GrunnlagDto>? = emptyList(),
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),

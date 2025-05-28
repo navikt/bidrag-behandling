@@ -167,6 +167,7 @@ data class ResultatBidragberegningDto(
 
 data class ResultatBidragsberegningBarnDto(
     val barn: ResultatRolle,
+    val resultatUtenBeregning: Boolean = false,
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
@@ -198,7 +199,10 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                 beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
                     ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
             }
-        } else if (resultatKode?.erDirekteAvslag() == true || resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE) {
+        } else if (resultatKode?.erDirekteAvslag() == true ||
+            resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
+            resultatKode == Resultatkode.INNVILGET_VEDTAK
+        ) {
             resultatKode.visningsnavnIntern(vedtakstype)
         } else if (ugyldigBeregning != null) {
             when (ugyldigBeregning.type) {

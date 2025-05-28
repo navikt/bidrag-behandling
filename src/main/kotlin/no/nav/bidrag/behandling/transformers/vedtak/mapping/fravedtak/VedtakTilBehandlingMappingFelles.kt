@@ -64,8 +64,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
-import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -126,7 +126,10 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
             val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi) ?: manglerPersonGrunnlag(barnIdent.verdi)
             val barn = barnGrunnlag.innholdTilObjekt<Person>()
             val aldersjusteringDetaljer = grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
+            val erResultatUtenBeregning =
+                stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode().resultatkode == "IV"
             ResultatBidragsberegningBarnDto(
+                resultatUtenBeregning = erResultatUtenBeregning,
                 barn =
                     ResultatRolle(
                         barn.ident,
@@ -137,7 +140,17 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =
-                    if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
+                    if (erResultatUtenBeregning) {
+                        val sistePeriode = stønadsendring.finnSistePeriode()
+                        listOf(
+                            ResultatBarnebidragsberegningPeriodeDto(
+                                periode = sistePeriode.periode,
+                                vedtakstype = type,
+                                resultatKode = Resultatkode.fraKode(sistePeriode.resultatkode),
+                                beregnetBidrag = sistePeriode.beløp ?: BigDecimal.ZERO,
+                            ),
+                        )
+                    } else if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
                         listOf(
                             ResultatBarnebidragsberegningPeriodeDto(
                                 periode = aldersjusteringDetaljer.periode,
