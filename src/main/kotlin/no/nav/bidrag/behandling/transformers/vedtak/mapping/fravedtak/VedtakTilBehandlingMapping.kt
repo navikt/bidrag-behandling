@@ -180,7 +180,7 @@ class VedtakTilBehandlingMapping(
             behandling.grunnlagFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
             behandling.erVedtakUtenBeregning =
-                stønadsendringListe.all { it.periodeListe.isEmpty() || it.finnSistePeriode().resultatkode == "IV" }
+                stønadsendringListe.all { it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" }
         }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {

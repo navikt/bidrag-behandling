@@ -127,7 +127,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
             val barn = barnGrunnlag.innholdTilObjekt<Person>()
             val aldersjusteringDetaljer = grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
             val erResultatUtenBeregning =
-                stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode().resultatkode == "IV"
+                stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV"
             ResultatBidragsberegningBarnDto(
                 resultatUtenBeregning = erResultatUtenBeregning,
                 barn =
@@ -141,15 +141,16 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =
                     if (erResultatUtenBeregning) {
-                        val sistePeriode = stønadsendring.finnSistePeriode()
-                        listOf(
-                            ResultatBarnebidragsberegningPeriodeDto(
-                                periode = sistePeriode.periode,
-                                vedtakstype = type,
-                                resultatKode = Resultatkode.fraKode(sistePeriode.resultatkode),
-                                beregnetBidrag = sistePeriode.beløp ?: BigDecimal.ZERO,
-                            ),
-                        )
+                        stønadsendring.finnSistePeriode()?.let {
+                            listOf(
+                                ResultatBarnebidragsberegningPeriodeDto(
+                                    periode = it.periode,
+                                    vedtakstype = type,
+                                    resultatKode = Resultatkode.fraKode(it.resultatkode),
+                                    beregnetBidrag = it.beløp ?: BigDecimal.ZERO,
+                                ),
+                            )
+                        } ?: emptyList()
                     } else if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
                         listOf(
                             ResultatBarnebidragsberegningPeriodeDto(
@@ -166,7 +167,7 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                                 it.beløp,
                                 try {
                                     Resultatkode.fraKode(it.resultatkode)!!
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     Resultatkode.BEREGNET_BIDRAG
                                 },
                                 it.grunnlagReferanseListe,
