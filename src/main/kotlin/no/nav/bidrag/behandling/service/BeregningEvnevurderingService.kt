@@ -11,8 +11,10 @@ import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningRes
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.util.avrundetTilNærmesteTier
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
@@ -48,11 +50,11 @@ class BeregningEvnevurderingService(
             secureLogger.info { "Hentet løpende stønader $løpendeStønader for BP ${bpIdent.verdi} og behandling ${behandling.id}" }
             val sisteLøpendeVedtak = løpendeStønader.hentLøpendeVedtak(bpIdent)
             secureLogger.info { "Hentet siste løpende vedtak $sisteLøpendeVedtak for BP ${bpIdent.verdi} og behandling ${behandling.id}" }
-            val beregnetBeløpListe = sisteLøpendeVedtak.hentBeregning()
+            val beregnetBeløpListe = sisteLøpendeVedtak.hentBeregningNy()
             secureLogger.info { "Hentet beregnet beløp $beregnetBeløpListe og behandling ${behandling.id}" }
             return EvnevurderingBeregningResultat(beregnetBeløpListe, løpendeStønader)
         } catch (e: Exception) {
-            log.error(e) { "Det skjedden en feil ved opprettelse av grunnlag for løpende bidrag for BP evnevurdering: ${e.message}" }
+            log.error(e) { "Det skjedde en feil ved opprettelse av grunnlag for løpende bidrag for BP evnevurdering: ${e.message}" }
             throw e
         }
     }
@@ -103,6 +105,61 @@ class BeregningEvnevurderingService(
             bidragBeregningResponsDto = BidragBeregningResponsDto(beregningListe)
         }
         return bidragBeregningResponsDto
+    }
+
+    private fun List<VedtakForStønad>.hentBeregningNy(): BidragBeregningResponsDto {
+        val hentBeregningFraBidragVedtakListe = mutableListOf<VedtakForStønad>()
+        val hentBeregningFraBBMListe = mutableListOf<VedtakForStønad>()
+
+        // Bestemmer hvilke vedtak som skal hentes fra bidrag-vedtak og hvilke som skal hentes fra BBM og lager en liste for hver
+        map {
+            if (it.behandlingsreferanser.filter { it.kilde == BehandlingsrefKilde.BEHANDLING_ID }.isNotEmpty()) {
+                hentBeregningFraBidragVedtakListe.add(it)
+            } else {
+                hentBeregningFraBBMListe.add(it)
+            }
+        }
+
+        secureLogger.info { "Følgende beregninger skal hentes fra BBM: $hentBeregningFraBBMListe" }
+        secureLogger.info { "Følgende beregninger skal hentes fra bidrag-vedtak: $hentBeregningFraBidragVedtakListe" }
+
+        // Henter beregningsgrunnlag fra BBM
+        var bidragBeregningResponsDtoFraBBM = BidragBeregningResponsDto(emptyList())
+        if (hentBeregningFraBBMListe.isNotEmpty()) {
+            bidragBeregningResponsDtoFraBBM =
+                bidragBBMConsumer.hentBeregning(
+                    BidragBeregningRequestDto(
+                        map {
+                            BidragBeregningRequestDto.HentBidragBeregning(
+                                stønadstype = it.stønadsendring.type,
+                                søknadsid = it.behandlingsreferanser.søknadsid.toString(),
+                                saksnummer = it.stønadsendring.sak.verdi,
+                                personidentBarn = it.stønadsendring.kravhaver,
+                            )
+                        },
+                    ),
+                )
+            secureLogger.info { "Respons fra BBM: $bidragBeregningResponsDtoFraBBM" }
+        }
+
+        // Henter beregningsgrunnlag fra bidrag-vedtak
+        var bidragBeregningResponsDtoFraBidragVedtak = BidragBeregningResponsDto(emptyList())
+        if (hentBeregningFraBidragVedtakListe.isNotEmpty()) {
+            val beregningListe = mutableListOf<BidragBeregningResponsDto.BidragBeregning>()
+
+            map {
+                val beregning = finnBeregningIBidragVedtak(it)
+                secureLogger.info { "Behandler VedtakForStønad: $it" }
+                if (beregning != null) {
+                    secureLogger.info { "Legger til følgende beregning for vedtak ${it.vedtaksid} i bidrag-vedtak: $beregning" }
+                    beregningListe.add(beregning)
+                }
+            }
+            bidragBeregningResponsDtoFraBidragVedtak = BidragBeregningResponsDto(beregningListe)
+        }
+
+        // Returnerer sammenslått beregningsgrunnlag fra BBM og bidrag-vedtak
+        return BidragBeregningResponsDto(bidragBeregningResponsDtoFraBBM.beregningListe + bidragBeregningResponsDtoFraBidragVedtak.beregningListe)
     }
 
     private fun finnBeregningIBidragVedtak(vedtakForStønad: VedtakForStønad): BidragBeregningResponsDto.BidragBeregning? {
@@ -176,8 +233,8 @@ class BeregningEvnevurderingService(
             personidentBarn = vedtakForStønad.stønadsendring.kravhaver,
             gjelderFom = LocalDate.now(), // Brukes ikke
             datoSøknad = LocalDate.now(), // Brukes ikke
-            beregnetBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBM,
-            faktiskBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBP,
+            beregnetBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBM.avrundetTilNærmesteTier,
+            faktiskBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBP.avrundetTilNærmesteTier,
             beløpSamvær = BigDecimal.ZERO, // Brukes ikke
             stønadstype = Stønadstype.BIDRAG,
             samværsklasse = samværsklasse,
