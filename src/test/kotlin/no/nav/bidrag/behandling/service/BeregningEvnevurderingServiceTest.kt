@@ -425,6 +425,10 @@ class BeregningEvnevurderingServiceTest {
         } returns
             opprettVedtakForStønadRespons(testdataHusstandsmedlem1.ident, Stønadstype.BIDRAG18AAR)
 
+        every {
+            bidragVedtakConsumer.hentVedtak(any())
+        } returns null
+
         every { bidragBBMConsumer.hentBeregning(any()) } answers {
             val request = it.invocation.args[0] as BidragBeregningRequestDto
             BidragBeregningResponsDto(
