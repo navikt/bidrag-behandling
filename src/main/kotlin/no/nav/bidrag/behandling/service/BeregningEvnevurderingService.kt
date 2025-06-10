@@ -159,7 +159,9 @@ class BeregningEvnevurderingService(
         }
 
         // Returnerer sammenslått beregningsgrunnlag fra BBM og bidrag-vedtak
-        return BidragBeregningResponsDto(bidragBeregningResponsDtoFraBBM.beregningListe + bidragBeregningResponsDtoFraBidragVedtak.beregningListe)
+        return BidragBeregningResponsDto(
+            bidragBeregningResponsDtoFraBBM.beregningListe + bidragBeregningResponsDtoFraBidragVedtak.beregningListe,
+        )
     }
 
     private fun finnBeregningIBidragVedtak(vedtakForStønad: VedtakForStønad): BidragBeregningResponsDto.BidragBeregning? {
