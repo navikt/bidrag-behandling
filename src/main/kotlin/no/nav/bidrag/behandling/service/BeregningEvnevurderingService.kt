@@ -120,12 +120,10 @@ class BeregningEvnevurderingService(
             }
         }
 
-        secureLogger.info { "Følgende beregninger skal hentes fra BBM: $hentBeregningFraBBMListe" }
-        secureLogger.info { "Følgende beregninger skal hentes fra bidrag-vedtak: $hentBeregningFraBidragVedtakListe" }
-
         // Henter beregningsgrunnlag fra BBM
         var bidragBeregningResponsDtoFraBBM = BidragBeregningResponsDto(emptyList())
         if (hentBeregningFraBBMListe.isNotEmpty()) {
+            secureLogger.info { "Følgende beregninger skal hentes fra BBM: $hentBeregningFraBBMListe" }
             bidragBeregningResponsDtoFraBBM =
                 bidragBBMConsumer.hentBeregning(
                     BidragBeregningRequestDto(
@@ -145,11 +143,12 @@ class BeregningEvnevurderingService(
         // Henter beregningsgrunnlag fra bidrag-vedtak
         var bidragBeregningResponsDtoFraBidragVedtak = BidragBeregningResponsDto(emptyList())
         if (hentBeregningFraBidragVedtakListe.isNotEmpty()) {
+            secureLogger.info { "Følgende beregninger skal hentes fra bidrag-vedtak: $hentBeregningFraBidragVedtakListe" }
             val beregningListe = mutableListOf<BidragBeregningResponsDto.BidragBeregning>()
 
             map {
-                val beregning = finnBeregningIBidragVedtak(it)
                 secureLogger.info { "Behandler VedtakForStønad: $it" }
+                val beregning = finnBeregningIBidragVedtak(it)
                 if (beregning != null) {
                     secureLogger.info { "Legger til følgende beregning for vedtak ${it.vedtaksid} i bidrag-vedtak: $beregning" }
                     beregningListe.add(beregning)
