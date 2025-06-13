@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
@@ -233,11 +234,17 @@ fun List<GrunnlagDto>.finnIndeksår(
             Year.now().value
         }
 
-    val endringUnderGrensePeriode = finnDelberegningSjekkGrensePeriodeOgBarn(sistePeriode, søknadsbarnReferanse)!!
-    val grunnlagsreferanseListe = endringUnderGrensePeriode.grunnlag.grunnlagsreferanseListe
-    return finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe)
-        ?: finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe)
-        ?: nesteKalkulertIndeksår
+    return finnDelberegningSjekkGrensePeriodeOgBarn(sistePeriode, søknadsbarnReferanse)?.let { endringUnderGrensePeriode ->
+        val grunnlagsreferanseListe = endringUnderGrensePeriode.grunnlag.grunnlagsreferanseListe
+        finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe)
+            ?: finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe)
+    } ?: run {
+        secureLogger.info {
+            "Ingen resultat på finnDelberegningSjekkGrensePeriodeOgBarn for liste $this " +
+                "og periode $sistePeriode og søknadsbarnReferanse $søknadsbarnReferanse"
+        }
+        null
+    } ?: nesteKalkulertIndeksår
 }
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
