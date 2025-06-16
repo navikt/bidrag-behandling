@@ -165,10 +165,10 @@ spring:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}?user=${DB_USERNAME}&password=${DB_PASSWORD}
     hikari:
       idle-timeout: 600000
-      max-lifetime: 1800000
+      max-lifetime: 120000
       connectionTimeout: 30000
       maximum-pool-size: 15
-      minimum-idle: 2
+      minimum-idle: 1
   flyway:
     enabled: true
     locations: classpath:/db/migration
