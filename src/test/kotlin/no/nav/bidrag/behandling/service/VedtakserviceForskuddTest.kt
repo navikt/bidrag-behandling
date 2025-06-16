@@ -218,8 +218,8 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 83 grunnlag") {
-                request.grunnlagListe shouldHaveSize 83
+            withClue("Grunnlagliste skal inneholde 85 grunnlag") {
+                request.grunnlagListe shouldHaveSize 85
             }
         }
         opprettVedtakRequest.validerVedtaksdetaljer(behandling)
