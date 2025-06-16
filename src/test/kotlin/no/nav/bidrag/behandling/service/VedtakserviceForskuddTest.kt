@@ -67,8 +67,113 @@ import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
+import java.util.Optional
 
 class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
+    @Test
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en forskudd behandling opphør`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
+        behandling.inntekter = behandling.inntekter.filter { it.type != Inntektsrapportering.BARNETILLEGG }.toMutableSet()
+        val søknadsbarn = behandling.søknadsbarn.first()
+        søknadsbarn.fødselsdato = LocalDate.now().minusMonths(2).minusYears(18)
+
+        behandling.søknadsbarn.first().opphørsdato =
+            søknadsbarn.fødselsdato
+                .plusYears(18)
+                .plusMonths(1)
+                .withDayOfMonth(1)
+        behandling.roller = (behandling.søknadsbarn.filter { it.id == søknadsbarn.id } + listOf(behandling.bidragsmottaker!!)).toMutableSet()
+        val husstandsmedlemSøknadsbarn = behandling.husstandsmedlem.find { it.ident == søknadsbarn.ident }!!
+        husstandsmedlemSøknadsbarn.perioder =
+            mutableSetOf(
+                Bostatusperiode(
+                    husstandsmedlem = husstandsmedlemSøknadsbarn,
+                    datoFom = behandling.virkningstidspunkt,
+                    datoTom = behandling.søknadsbarn.first().opphørsdato,
+                    bostatus = Bostatuskode.MED_FORELDER,
+                    kilde = Kilde.MANUELL,
+                    id = 2,
+                ),
+            )
+        behandling.inntekter.forEach {
+            if (it.datoTom == null) {
+                it.datoTom =
+                    behandling.søknadsbarn
+                        .first()
+                        .opphørsdato!!
+                        .minusDays(1)
+            }
+        }
+        behandling.husstandsmedlem.forEach {
+            it.perioder.forEach { p ->
+                if (p.datoTom == null) {
+                    p.datoTom =
+                        behandling.søknadsbarn
+                            .first()
+                            .opphørsdato!!
+                            .minusDays(1)
+                }
+            }
+        }
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatType.BOFORHOLD,
+        )
+        behandling.refVedtaksid = 553
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                "grunnlagresponse.json",
+                testdataBarn =
+                    testdataBarn1.copy(
+                        fødselsdato = søknadsbarn.fødselsdato,
+                    ),
+            )
+
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!)
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+
+            request.stønadsendringListe shouldHaveSize 1
+            val periodeliste = request.stønadsendringListe.first().periodeListe
+            periodeliste shouldHaveSize 3
+            periodeliste.last().periode.fom shouldBe YearMonth.from(behandling.søknadsbarn.first().opphørsdato)
+            periodeliste.last().resultatkode shouldBe Resultatkode.OPPHØR.name
+            request.engangsbeløpListe.shouldBeEmpty()
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
     @Test
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en forskudd behandling`() {
         stubPersonConsumer()

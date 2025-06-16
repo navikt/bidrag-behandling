@@ -396,6 +396,11 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
+                        val søknadsbarn =
+                            behandling.søknadsbarn.find { sb -> sb.ident == it.barn.ident }
+                                ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
+                        val opphørPeriode =
+                            listOfNotNull(opprettPeriodeOpphør(søknadsbarn, it.perioder, TypeBehandling.FORSKUDD))
                         OpprettStønadsendringRequestDto(
                             innkreving = Innkrevingstype.MED_INNKREVING,
                             skyldner = tilSkyldner(),
@@ -412,7 +417,7 @@ class BehandlingTilVedtakMapping(
                             type = stonadstype!!,
                             beslutning = Beslutningstype.ENDRING,
                             grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
-                            periodeListe = it.perioder,
+                            periodeListe = it.perioder + opphørPeriode,
                             // Settes null for forskudd men skal settes til riktig verdi for bidrag
                             førsteIndeksreguleringsår = null,
                         )

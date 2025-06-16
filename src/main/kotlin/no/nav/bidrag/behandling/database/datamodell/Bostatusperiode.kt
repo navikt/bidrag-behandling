@@ -21,7 +21,7 @@ open class Bostatusperiode(
     @JoinColumn(name = "husstandsmedlem_id", nullable = false)
     open var husstandsmedlem: Husstandsmedlem,
     open var datoFom: LocalDate?,
-    open val datoTom: LocalDate?,
+    open var datoTom: LocalDate?,
     @Enumerated(EnumType.STRING)
     open val bostatus: Bostatuskode,
     @Enumerated(EnumType.STRING)

@@ -36,6 +36,8 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
             Period
                 .between(fødselsdatoPerson, LocalDate.now().withDayOfMonth(1))
                 .years >= 18
+
+    val skalOpphørVed18År = (behandling.stonadstype == Stønadstype.BIDRAG || behandling.stonadstype == Stønadstype.FORSKUDD)
     return Rolle(
         behandling = behandling,
         rolletype = rolletype,
@@ -43,7 +45,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         fødselsdato = fødselsdatoPerson,
         navn = navn,
         opphørsdato =
-            if (barnErOver18 && behandling.stonadstype == Stønadstype.BIDRAG) {
+            if (barnErOver18 && skalOpphørVed18År) {
                 fødselsdatoPerson.plusYears(18).plusMonths(1).withDayOfMonth(1)
             } else {
                 null
