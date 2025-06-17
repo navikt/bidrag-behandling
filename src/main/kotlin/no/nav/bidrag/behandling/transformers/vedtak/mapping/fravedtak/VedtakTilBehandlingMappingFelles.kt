@@ -140,7 +140,16 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =
-                    if (erResultatUtenBeregning) {
+                    if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
+                        listOf(
+                            ResultatBarnebidragsberegningPeriodeDto(
+                                periode = aldersjusteringDetaljer.periode,
+                                vedtakstype = Vedtakstype.ALDERSJUSTERING,
+                                resultatKode = null,
+                                aldersjusteringDetaljer = aldersjusteringDetaljer,
+                            ),
+                        )
+                    } else if (erResultatUtenBeregning) {
                         stønadsendring.finnSistePeriode()?.let {
                             listOf(
                                 ResultatBarnebidragsberegningPeriodeDto(
@@ -151,15 +160,6 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                                 ),
                             )
                         } ?: emptyList()
-                    } else if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
-                        listOf(
-                            ResultatBarnebidragsberegningPeriodeDto(
-                                periode = aldersjusteringDetaljer.periode,
-                                vedtakstype = Vedtakstype.ALDERSJUSTERING,
-                                resultatKode = null,
-                                aldersjusteringDetaljer = aldersjusteringDetaljer,
-                            ),
-                        )
                     } else {
                         stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
                             grunnlagListe.byggResultatBidragsberegning(
