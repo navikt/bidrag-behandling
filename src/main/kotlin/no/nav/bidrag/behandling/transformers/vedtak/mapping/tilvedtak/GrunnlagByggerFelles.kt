@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -45,10 +46,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilInnholdMedReferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 val grunnlagsreferanse_delberegning_utgift = "delberegning_utgift"
@@ -376,3 +379,39 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
             ),
         ),
 )
+
+fun opprettPeriodeOpphør(
+    søknadsbarn: Rolle,
+    periodeliste: List<OpprettPeriodeRequestDto>,
+    type: TypeBehandling = TypeBehandling.BIDRAG,
+): OpprettPeriodeRequestDto? =
+    søknadsbarn.opphørsdato?.let {
+        val opphørsmåned = YearMonth.from(it)
+        val sistePeriode = periodeliste.maxBy { it.periode.fom }
+        if (sistePeriode.periode.til != opphørsmåned) {
+            ugyldigForespørsel("Siste periode i beregningen $sistePeriode er ikke lik opphørsdato $opphørsmåned")
+        }
+        OpprettPeriodeRequestDto(
+            periode = ÅrMånedsperiode(it, null),
+            resultatkode = Resultatkode.OPPHØR.name,
+            beløp = null,
+            grunnlagReferanseListe =
+                listOf(
+                    if (type == TypeBehandling.BIDRAG) {
+                        opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
+                    } else {
+                        opprettGrunnlagsreferanseVirkningstidspunkt()
+                    },
+                ),
+        )
+    } ?: periodeliste.maxBy { it.periode.fom }.periode.til?.let {
+        OpprettPeriodeRequestDto(
+            periode = ÅrMånedsperiode(it, null),
+            resultatkode = Resultatkode.OPPHØR.name,
+            beløp = null,
+            grunnlagReferanseListe =
+                listOf(
+                    opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn),
+                ),
+        )
+    }

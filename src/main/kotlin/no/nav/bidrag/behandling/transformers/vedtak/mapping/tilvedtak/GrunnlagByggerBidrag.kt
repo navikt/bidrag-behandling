@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
@@ -31,7 +30,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
-import java.time.YearMonth
 
 // Lager PERSON_BARN_BIDRAGSMOTTAKER objekter for at beregningen skal kunne hente ut riktig antall barn til BM
 // Kan hende barn til BM er husstandsmedlem
@@ -180,24 +178,3 @@ fun ResultatBidragsberegningBarn.byggStønadsendringerForVedtak(behandling: Beha
         grunnlagListe,
     )
 }
-
-private fun opprettPeriodeOpphør(
-    søknadsbarn: Rolle,
-    periodeliste: List<OpprettPeriodeRequestDto>,
-): OpprettPeriodeRequestDto? =
-    søknadsbarn.opphørsdato?.let {
-        val opphørsmåned = YearMonth.from(it)
-        val sistePeriode = periodeliste.maxBy { it.periode.fom }
-        if (sistePeriode.periode.til != opphørsmåned) {
-            ugyldigForespørsel("Siste periode i beregningen $sistePeriode er ikke lik opphørsdato $opphørsmåned")
-        }
-        OpprettPeriodeRequestDto(
-            periode = ÅrMånedsperiode(it, null),
-            resultatkode = Resultatkode.OPPHØR.name,
-            beløp = null,
-            grunnlagReferanseListe =
-                listOf(
-                    opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn),
-                ),
-        )
-    }
