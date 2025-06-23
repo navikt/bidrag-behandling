@@ -4,12 +4,16 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.commons.util.secureLogger
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
@@ -36,4 +40,27 @@ class VirkningstidspunktController(
 
         return dtomapper.tilDto(behandling)
     }
+
+    @GetMapping("/behandling/{behandlingsid}/manuelleVedtak")
+    @Operation(
+        description = "Hent manuelle vedtak.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun hentManuelleVedtak(
+        @PathVariable behandlingsid: Long,
+    ): ManuellVedtakResponse =
+        virkningstidspunktService.hentManuelleVedtakForBehandling(behandlingsid).let {
+            secureLogger.info { "Hentet manuelle vedtak for behandling $behandlingsid: $it" }
+            ManuellVedtakResponse(it)
+        }
+
+    @PostMapping("/behandling/{behandlingsid}/manuelleVedtak")
+    @Operation(
+        description = "Velg manuelle vedtak for beregning.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun oppdaterValgtManuellVedtak(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdaterManuellVedtakRequest,
+    ) = virkningstidspunktService.oppdaterBeregnManuellVedtak(behandlingsid, request)
 }

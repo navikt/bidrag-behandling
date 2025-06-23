@@ -9,6 +9,24 @@ import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
+import java.time.LocalDateTime
+
+data class OppdaterManuellVedtakRequest(
+    val barnId: Long,
+    val vedtaksid: Long,
+)
+
+data class ManuellVedtakResponse(
+    val manuelleVedtak: List<ManuellVedtakDto>,
+)
+
+data class ManuellVedtakDto(
+    val vedtaksid: Long,
+    val fattetTidspunkt: LocalDateTime,
+    val virkningsDato: LocalDate,
+    val resultatSistePeriode: String,
+    val manglerGrunnlag: Boolean = false,
+)
 
 data class VirkningstidspunktDtoV2(
     val rolle: RolleDto,
@@ -30,6 +48,8 @@ data class VirkningstidspunktDtoV2(
     val globalOpphørsdato: LocalDate? = null,
     @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
+    @Schema(description = "Manuell vedtak valgt for beregning av aldersjustering")
+    val grunnlagFraVedtak: Long? = null,
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)

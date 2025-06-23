@@ -709,6 +709,7 @@ class Dtomapper(
                             opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
+                            grunnlagFraVedtak = it.grunnlagFraVedtak,
                             begrunnelse =
                                 if (notat.isEmpty()) {
                                     BegrunnelseDto(

@@ -6,7 +6,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
@@ -44,9 +43,6 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
 
     @MockK
     lateinit var notatOpplysningerService: NotatOpplysningerService
-
-    @MockK
-    lateinit var vedtakConsumer: BidragVedtakConsumer
 
     @MockK
     lateinit var sakConsumer: BidragSakConsumer

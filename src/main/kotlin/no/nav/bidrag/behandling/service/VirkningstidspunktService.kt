@@ -2,15 +2,32 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.util.visningsnavn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
+import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -27,7 +44,94 @@ class VirkningstidspunktService(
     private val samværService: SamværService,
     private val underholdService: UnderholdService,
     private val gebyrService: GebyrService,
+    private val vedtakConsumer: BidragVedtakConsumer,
 ) {
+    fun hentManuelleVedtakForBehandling(behandlingsid: Long): List<ManuellVedtakDto> {
+        log.info { "Henter manuelle vedtak for behandling $behandlingsid" }
+        secureLogger.info { "Henter manuelle vedtak for behandling $behandlingsid" }
+
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        val response =
+            vedtakConsumer.hentVedtakForStønad(
+                HentVedtakForStønadRequest(
+                    skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+                    sak = Saksnummer(behandling.saksnummer),
+                    kravhaver = Personident(behandling.søknadsbarn.first().ident!!),
+                    type = behandling.stonadstype!!,
+                ),
+            )
+
+        return response.vedtakListe.filter { it.kilde != Vedtakskilde.AUTOMATISK }.map {
+            val stønadsendring = it.stønadsendring
+            val sistePeriode = stønadsendring.hentSisteLøpendePeriode()!!
+            val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid)!!
+            val virkningstidspunkt = stønadsendring.periodeListe.minBy { it.periode.fom }
+            val sluttberegningSistePeriode =
+                vedtak
+                    .grunnlagListe
+                    .finnSluttberegningIReferanser(sistePeriode.grunnlagReferanseListe)
+                    ?.innholdTilObjekt<SluttberegningBarnebidrag>()
+            val resultatSistePeriode =
+                when (Resultatkode.fraKode(sistePeriode.resultatkode)) {
+                    Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                    Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BEGGE_PARTER,
+                    Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSPLIKTIG,
+                    Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSMOTTAKER,
+                    Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BEGGE_PARTER,
+                    Resultatkode.MMANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
+                    Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSPLIKTIG,
+                    Resultatkode.INNTIL_1_ÅR_TILBAKE,
+                    Resultatkode.INNVILGET_VEDTAK,
+                    -> Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
+                    else ->
+                        sluttberegningSistePeriode?.resultatVisningsnavn?.intern
+                            ?: Resultatkode.fraKode(sistePeriode.resultatkode)?.visningsnavn?.intern
+                            ?: sistePeriode.resultatkode
+                }
+
+            ManuellVedtakDto(
+                it.vedtaksid,
+                it.vedtakstidspunkt,
+                virkningstidspunkt.periode.fom.atDay(1),
+                resultatSistePeriode,
+                vedtak.grunnlagListe.isEmpty(),
+            )
+        }
+    }
+
+    @Transactional
+    fun oppdaterBeregnManuellVedtak(
+        behandlingsid: Long,
+        request: OppdaterManuellVedtakRequest,
+    ) {
+        secureLogger.info { "Oppdaterer manuell vedtak for behandling $behandlingsid, forespørsel=$request" }
+
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        behandling.søknadsbarn
+            .find {
+                it.id == request.barnId
+            }!!
+            .let {
+                it.grunnlagFraVedtak = request.vedtaksid
+            }
+    }
+
+    fun List<GrunnlagDto>.hentPersonForNyesteIdent(identFraVedtak: String): BaseGrunnlag? {
+        val kravhaverNyesteIdent = hentNyesteIdent(identFraVedtak) ?: identFraVedtak
+        return hentAllePersoner().find {
+            val personNyesteIdent = hentNyesteIdent(it.personIdent!!) ?: it.personIdent!!
+            personNyesteIdent == kravhaverNyesteIdent
+        }
+    }
+
     @Transactional
     fun oppdaterOpphørsdato(
         behandlingsid: Long,
