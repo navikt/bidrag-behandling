@@ -19,13 +19,9 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.util.visningsnavn
-import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
 import org.springframework.stereotype.Service
@@ -82,7 +78,7 @@ class VirkningstidspunktService(
                     Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSPLIKTIG,
                     Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSMOTTAKER,
                     Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BEGGE_PARTER,
-                    Resultatkode.MMANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
+                    Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
                     Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSPLIKTIG,
                     Resultatkode.INNTIL_1_ÅR_TILBAKE,
                     Resultatkode.INNVILGET_VEDTAK,
@@ -122,14 +118,6 @@ class VirkningstidspunktService(
             .let {
                 it.grunnlagFraVedtak = request.vedtaksid
             }
-    }
-
-    fun List<GrunnlagDto>.hentPersonForNyesteIdent(identFraVedtak: String): BaseGrunnlag? {
-        val kravhaverNyesteIdent = hentNyesteIdent(identFraVedtak) ?: identFraVedtak
-        return hentAllePersoner().find {
-            val personNyesteIdent = hentNyesteIdent(it.personIdent!!) ?: it.personIdent!!
-            personNyesteIdent == kravhaverNyesteIdent
-        }
     }
 
     @Transactional
