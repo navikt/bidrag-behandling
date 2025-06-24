@@ -113,7 +113,7 @@ class BeregningEvnevurderingService(
 
         // Bestemmer hvilke vedtak som skal hentes fra bidrag-vedtak og hvilke som skal hentes fra BBM og lager en liste for hver
         map {
-            if (it.behandlingsreferanser.filter { it.kilde == BehandlingsrefKilde.BEHANDLING_ID }.isNotEmpty()) {
+            if (it.behandlingsreferanser.any { it.kilde == BehandlingsrefKilde.BEHANDLING_ID }) {
                 hentBeregningFraBidragVedtakListe.add(it)
             } else {
                 hentBeregningFraBBMListe.add(it)
@@ -257,6 +257,6 @@ class BeregningEvnevurderingService(
                             type = it.type,
                         ),
                     ).vedtakListe
-            beregingVedtaksfiltrering.finneVedtakForEvnevurdering(vedtakListe, it.kravhaver)
+            beregingVedtaksfiltrering.finneVedtakForEvnevurderingNy(vedtakListe, it.kravhaver)
         }
 }
