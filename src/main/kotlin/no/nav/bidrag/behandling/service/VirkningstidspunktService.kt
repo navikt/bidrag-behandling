@@ -51,12 +51,13 @@ class VirkningstidspunktService(
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
+        val søknadsbarn = behandling.søknadsbarn.first()
         val response =
             vedtakConsumer.hentVedtakForStønad(
                 HentVedtakForStønadRequest(
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
                     sak = Saksnummer(behandling.saksnummer),
-                    kravhaver = Personident(behandling.søknadsbarn.first().ident!!),
+                    kravhaver = Personident(søknadsbarn.ident!!),
                     type = behandling.stonadstype!!,
                 ),
             )
@@ -91,6 +92,7 @@ class VirkningstidspunktService(
 
             ManuellVedtakDto(
                 it.vedtaksid,
+                søknadsbarn.id!!,
                 it.vedtakstidspunkt,
                 virkningstidspunkt.periode.fom.atDay(1),
                 resultatSistePeriode,

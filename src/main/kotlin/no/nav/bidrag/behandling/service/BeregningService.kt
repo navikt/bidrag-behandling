@@ -11,11 +11,16 @@ import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
+import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDetaljerGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
 import no.nav.bidrag.beregn.core.bo.SjablonInnhold
@@ -187,23 +192,104 @@ class BeregningService(
         }
     }
 
-    private fun beregnBidragAldersjustering(behandlingsid: Long): List<ResultatBidragsberegningBarn> {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+    private fun beregnBidragAldersjustering(behandling: Behandling): List<ResultatBidragsberegningBarn> {
         val søknadsbarn = behandling.søknadsbarn.first()
         val stønadsid =
             Stønadsid(
                 behandling.stonadstype!!,
-                Personident(behandling.bidragspliktig!!.ident!!),
                 Personident(søknadsbarn.ident!!),
+                Personident(behandling.bidragspliktig!!.ident!!),
                 Saksnummer(behandling.saksnummer),
             )
-        val beregning =
-            aldersjusteringOrchestrator.utførAldersjustering(
-                stønadsid,
-                behandling.virkningstidspunkt!!.year,
-                søknadsbarn.grunnlagFraVedtak!!.toInt(),
+        try {
+            val beregning =
+                aldersjusteringOrchestrator.utførAldersjustering(
+                    stønadsid,
+                    behandling.virkningstidspunkt!!.year,
+                    søknadsbarn.grunnlagFraVedtak!!.toInt(),
+                )
+
+            val søknadsbarnGrunnlag = beregning.beregning.grunnlagListe.hentPersonNyesteIdent(søknadsbarn.ident)!!
+            return listOf(
+                ResultatBidragsberegningBarn(
+                    barn = søknadsbarn.mapTilResultatBarn(),
+                    vedtakstype = behandling.vedtakstype,
+                    resultat =
+                        beregning.beregning.copy(
+                            grunnlagListe =
+                                beregning.beregning.grunnlagListe +
+                                    listOf(
+                                        behandling.opprettAldersjusteringDetaljerGrunnlag(
+                                            søknadsbarnGrunnlag.referanse,
+                                            søknadsbarn = søknadsbarn,
+                                        ),
+                                    ),
+                        ),
+                ),
             )
-        return emptyList()
+        } catch (e: SkalIkkeAldersjusteresException) {
+            val søknadsbarnGrunnlag = søknadsbarn.tilGrunnlagPerson()
+            val aldersjusteringGrunnlag =
+                behandling.opprettAldersjusteringDetaljerGrunnlag(
+                    søknadsbarnGrunnlag.referanse,
+                    søknadsbarn = søknadsbarn,
+                    aldersjustert = false,
+                    begrunnelser = e.begrunnelser.map { it.name },
+                )
+            return listOf(
+                ResultatBidragsberegningBarn(
+                    barn = søknadsbarn.mapTilResultatBarn(),
+                    vedtakstype = behandling.vedtakstype,
+                    resultat =
+                        BeregnetBarnebidragResultat(
+                            grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
+                            beregnetBarnebidragPeriodeListe =
+                                listOf(
+                                    no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode(
+                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                        grunnlagsreferanseListe = listOf(aldersjusteringGrunnlag.referanse, søknadsbarnGrunnlag.referanse),
+                                        resultat =
+                                            ResultatBeregningBidrag(
+                                                beløp = BigDecimal.ZERO,
+                                            ),
+                                    ),
+                                ),
+                        ),
+                ),
+            )
+        } catch (e: AldersjusteresManueltException) {
+            val søknadsbarnGrunnlag = søknadsbarn.tilGrunnlagPerson()
+            val aldersjusteringGrunnlag =
+                behandling.opprettAldersjusteringDetaljerGrunnlag(
+                    søknadsbarnGrunnlag.referanse,
+                    søknadsbarn = søknadsbarn,
+                    aldersjustert = false,
+                    begrunnelser = listOf(e.begrunnelse.name),
+                )
+            return listOf(
+                ResultatBidragsberegningBarn(
+                    barn = søknadsbarn.mapTilResultatBarn(),
+                    vedtakstype = behandling.vedtakstype,
+                    resultat =
+                        BeregnetBarnebidragResultat(
+                            grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
+                            beregnetBarnebidragPeriodeListe =
+                                listOf(
+                                    no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode(
+                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                        grunnlagsreferanseListe = listOf(aldersjusteringGrunnlag.referanse, søknadsbarnGrunnlag.referanse),
+                                        resultat =
+                                            ResultatBeregningBidrag(
+                                                beløp = BigDecimal.ZERO,
+                                            ),
+                                    ),
+                                ),
+                        ),
+                ),
+            )
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
     fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
@@ -218,7 +304,11 @@ class BeregningService(
 
     fun beregneBidrag(behandlingsid: Long): List<ResultatBidragsberegningBarn> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        return beregneBidrag(behandling)
+        return if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            beregnBidragAldersjustering(behandling)
+        } else {
+            beregneBidrag(behandling)
+        }
     }
 
     private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =

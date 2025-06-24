@@ -212,7 +212,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -271,7 +271,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -327,7 +327,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -386,7 +386,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -442,7 +442,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 1) {
@@ -523,7 +523,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 1) {
@@ -557,7 +557,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1)
 
         verify(exactly = 1) {
             BeregnSærbidragApi().beregn(any(), any())
@@ -586,7 +586,7 @@ class BeregningServiceTest {
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
 
         val exception =
-            assertThrows<HttpClientErrorException> { BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1) }
+            assertThrows<HttpClientErrorException> { BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1) }
         verify(exactly = 0) {
             BeregnSærbidragApi().beregn(any(), any())
         }

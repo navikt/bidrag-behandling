@@ -22,6 +22,7 @@ data class ManuellVedtakResponse(
 
 data class ManuellVedtakDto(
     val vedtaksid: Long,
+    val barnId: Long,
     val fattetTidspunkt: LocalDateTime,
     val virkningsDato: LocalDate,
     val resultatSistePeriode: String,

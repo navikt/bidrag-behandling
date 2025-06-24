@@ -31,6 +31,9 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.felles.toCompactString
@@ -207,6 +210,14 @@ open class Behandling(
         }
     val opphørTilDato get() = justerPeriodeTomOpphørsdato(globalOpphørsdato)
     val opphørSistePeriode get() = opphørTilDato != null
+
+    fun tilStønadsid(søknadsbarn: Rolle) =
+        Stønadsid(
+            stonadstype!!,
+            Personident(søknadsbarn.ident!!),
+            Personident(bidragspliktig!!.ident!!),
+            Saksnummer(saksnummer),
+        )
 }
 
 val Behandling.særbidragKategori

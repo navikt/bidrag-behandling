@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -80,6 +81,9 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var behandlingService: BehandlingService
+
+    @MockkBean
+    lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
     lateinit var notatOpplysningerService: NotatOpplysningerService
@@ -164,6 +168,7 @@ class VedtakserviceTest : TestContainerRunner() {
             BeregningService(
                 behandlingService,
                 vedtakGrunnlagMapper,
+                aldersjusteringOrchestrator,
             )
         val dtomapper =
             Dtomapper(

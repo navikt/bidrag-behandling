@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningVedtakConsumer
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -19,7 +20,8 @@ import java.net.URI
 class BidragVedtakConsumer(
     @Value("\${BIDRAG_VEDTAK_URL}") private val bidragVedtakUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
-) : AbstractRestClient(restTemplate, "bidrag-vedtak") {
+) : AbstractRestClient(restTemplate, "bidrag-vedtak"),
+    BeregningVedtakConsumer {
     private val bidragVedtakUri
         get() = UriComponentsBuilder.fromUri(bidragVedtakUrl).pathSegment("vedtak")
 
@@ -35,13 +37,15 @@ class BidragVedtakConsumer(
             bidragVedtakUri.pathSegment(vedtakId.toString()).build().toUri(),
         )
 
+    override fun hentVedtak(vedtaksid: Int): VedtakDto? = hentVedtak(vedtaksid.toLong())
+
     //    @BrukerCacheable(VEDTAK_FOR_STØNAD_CACHE)
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun hentVedtakForStønad(request: HentVedtakForStønadRequest): HentVedtakForStønadResponse =
+    override fun hentVedtakForStønad(request: HentVedtakForStønadRequest): HentVedtakForStønadResponse =
         postForNonNullEntity(
             bidragVedtakUri.pathSegment("hent-vedtak").build().toUri(),
             request,
