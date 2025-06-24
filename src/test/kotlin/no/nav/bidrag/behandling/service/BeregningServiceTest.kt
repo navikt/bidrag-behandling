@@ -34,6 +34,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -77,6 +78,9 @@ import java.time.YearMonth
 class BeregningServiceTest {
     @MockkBean
     lateinit var behandlingService: BehandlingService
+
+    @MockkBean
+    lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
@@ -131,7 +135,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnForskuddApi::class)
         every { BeregnForskuddApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneForskudd(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneForskudd(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 2) {

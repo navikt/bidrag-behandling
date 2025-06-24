@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
 import no.nav.bidrag.beregn.core.bo.SjablonInnhold
@@ -34,7 +35,10 @@ import no.nav.bidrag.beregn.særbidrag.core.felles.bo.SjablonListe
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -61,6 +65,7 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val mapper: VedtakGrunnlagMapper,
+    private val aldersjusteringOrchestrator: AldersjusteringOrchestrator,
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
@@ -122,7 +127,9 @@ class BeregningService(
             behandling.validerForBeregningBidrag()
         }
 
-        return if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
+        return if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            emptyList()
+        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
             behandling.søknadsbarn.map { søknasdbarn ->
@@ -178,6 +185,25 @@ class BeregningService(
                 }
             }
         }
+    }
+
+    private fun beregnBidragAldersjustering(behandlingsid: Long): List<ResultatBidragsberegningBarn> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        val stønadsid =
+            Stønadsid(
+                behandling.stonadstype!!,
+                Personident(behandling.bidragspliktig!!.ident!!),
+                Personident(søknadsbarn.ident!!),
+                Saksnummer(behandling.saksnummer),
+            )
+        val beregning =
+            aldersjusteringOrchestrator.utførAldersjustering(
+                stønadsid,
+                behandling.virkningstidspunkt!!.year,
+                søknadsbarn.grunnlagFraVedtak!!.toInt(),
+            )
+        return emptyList()
     }
 
     fun beregneForskudd(behandlingsid: Long): List<ResultatForskuddsberegningBarn> {
