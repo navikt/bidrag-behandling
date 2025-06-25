@@ -202,6 +202,7 @@ class BeregningService(
                 Saksnummer(behandling.saksnummer),
             )
         try {
+            if (søknadsbarn.grunnlagFraVedtak == null) return emptyList()
             val beregning =
                 aldersjusteringOrchestrator.utførAldersjustering(
                     stønadsid,

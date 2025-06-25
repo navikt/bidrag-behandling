@@ -500,7 +500,7 @@ class VedtakTilBehandlingMapping(
         return (underholdskostnadAndreBarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
     }
 
-    private fun List<GrunnlagDto>.hentUnderholdskostnadPerioder(
+    fun List<GrunnlagDto>.hentUnderholdskostnadPerioder(
         underholdskostnad: Underholdskostnad,
         lesemodus: Boolean,
         rolle: Rolle,

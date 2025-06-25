@@ -60,6 +60,7 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
@@ -86,6 +87,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
@@ -136,6 +138,7 @@ class Dtomapper(
     val beregnBarnebidragApi: BeregnBarnebidragApi,
     @Lazy
     val beregningService: BeregningService? = null,
+    val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping? = null,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -666,7 +669,7 @@ class Dtomapper(
         return null
     }
 
-    private fun Behandling.erAldersjusteringMedBeregning(): List<ResultatBidragsberegningBarn> {
+    private fun Behandling.hentAldersjusteringBeregning(): List<ResultatBidragsberegningBarn> {
         if (vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyList()
         return try {
             beregningService!!.beregneBidrag(this)
@@ -686,16 +689,17 @@ class Dtomapper(
             if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
         val aldersjusteringGrunnlag = grunnlagFraVedtak?.finnAldersjusteringDetaljerGrunnlag()
+        val aldersjusteringBeregning = hentAldersjusteringBeregning()
         val grunnlagFraVedtak =
             aldersjusteringGrunnlag?.grunnlagFraVedtak
-        this.grunnlagFraVedtak = erAldersjusteringMedBeregning()?.firstOrNull()?.resultat?.grunnlagListe
+        this.grunnlagFraVedtak = aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
             erBisysVedtak = erBisysVedtak,
             erVedtakUtenBeregning =
                 !lesemodus &&
-                    !erAldersjusteringMedBeregning().any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
+                    !hentAldersjusteringBeregning().any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
                     aldersjusteringGrunnlag != null &&
                     !aldersjusteringGrunnlag.aldersjustert ||
                     erVedtakUtenBeregning,
@@ -808,7 +812,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                     inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
                 ),
-            underholdskostnader = underholdskostnader.tilDtos(),
+            underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
@@ -825,6 +829,41 @@ class Dtomapper(
             privatAvtale = privatAvtale.map { it.tilDto() },
         )
     }
+
+    fun tilUnderholdskostnadDto(
+        behandling: Behandling,
+        beregning: List<ResultatBidragsberegningBarn> = emptyList(),
+    ): Set<UnderholdDto> =
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            vedtakTilBehandlingMapping!!
+                .run {
+                    behandling.søknadsbarn.mapIndexed { index, rolle ->
+                        val beregningBarn = beregning.find { it.barn.ident!!.verdi == rolle.ident } ?: return@mapIndexed null
+                        if (beregningBarn.resultat.beregnetBarnebidragPeriodeListe.isEmpty()) {
+                            return@mapIndexed null
+                        }
+                        val grunnlagFraVedtak = hentVedtak(rolle.grunnlagFraVedtak)!!
+                        val underholdskostnad =
+                            Underholdskostnad(
+                                id = index.toLong(),
+                                behandling = behandling,
+                                person =
+                                    Person(
+                                        id = index.toLong(),
+                                        ident = rolle.ident!!,
+                                        fødselsdato = rolle.fødselsdato,
+                                        rolle = mutableSetOf(rolle),
+                                    ),
+                            )
+                        grunnlagFraVedtak.grunnlagListe.hentUnderholdskostnadPerioder(underholdskostnad, true, rolle)
+                        underholdskostnad
+                    }
+                }.filterNotNull()
+                .toSet()
+                .tilDtos()
+        } else {
+            behandling.underholdskostnader.tilDtos()
+        }
 
     fun Behandling.mapGebyr() =
         if (roller.any { it.harGebyrsøknad }) {

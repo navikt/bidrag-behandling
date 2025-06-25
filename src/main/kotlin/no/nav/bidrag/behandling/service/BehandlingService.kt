@@ -190,7 +190,7 @@ class BehandlingService(
 
         val behandlingDo = opprettBehandling(behandling)
 
-        if (TypeBehandling.BIDRAG == opprettBehandling.tilType()) {
+        if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandlingDo.underholdskostnader.add(
