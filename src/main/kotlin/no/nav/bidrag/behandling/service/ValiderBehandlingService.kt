@@ -73,6 +73,7 @@ class ValiderBehandlingService(
         if (!kanBehandleBegrensetRevurdering(request)) {
             return "Kan ikke behandle begrenset revurdering. Minst en løpende forskudd eller bidrag periode har utenlandsk valuta"
         }
+        if (request.vedtakstype == Vedtakstype.ALDERSJUSTERING) return null
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
         if (!unleash.isEnabled("behandling.v2_endring", false)) {

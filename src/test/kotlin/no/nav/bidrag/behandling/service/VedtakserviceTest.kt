@@ -121,6 +121,9 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockkBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
+    @MockkBean
+    lateinit var vedtakService2: no.nav.bidrag.beregn.barnebidrag.service.VedtakService
+
     @Autowired
     lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
@@ -193,6 +196,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 vedtakGrunnlagMapper,
                 beregningService,
                 vedtakConsumer,
+                vedtakService2,
             )
         vedtakService =
             VedtakService(

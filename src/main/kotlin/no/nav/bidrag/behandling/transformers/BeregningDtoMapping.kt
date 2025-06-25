@@ -163,16 +163,19 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
             map { resultat ->
                 val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
                 val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag()
-                val sistePeriode =
-                    resultat.resultat.beregnetBarnebidragPeriodeListe
-                        .maxBy { it.periode.fom }
-                        .periode
+
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
                     resultatUtenBeregning = aldersjusteringDetaljer?.aldersjustert != true,
                     indeksår =
-                        if (resultat.avslaskode == null) {
+                        if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {
+                            Year.now().value
+                        } else if (aldersjusteringDetaljer == null && resultat.avslaskode == null) {
+                            val sistePeriode =
+                                resultat.resultat.beregnetBarnebidragPeriodeListe
+                                    .maxBy { it.periode.fom }
+                                    .periode
                             grunnlagsListe.finnIndeksår(resultat.barn.referanse, sistePeriode)
                         } else {
                             null
@@ -532,6 +535,14 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
 fun List<GrunnlagDto>.erAldersjusteringBisysVedtak(): Boolean = finnAldersjusteringDetaljerGrunnlag() == null
 
 fun List<GrunnlagDto>.erAldersjusteringNyLøsning(): Boolean = finnAldersjusteringDetaljerGrunnlag() != null
+
+fun List<GrunnlagDto>.finnAldersjusteringDetaljerReferanse(): String? {
+    val grunnlag =
+        find {
+            it.type == Grunnlagstype.ALDERSJUSTERING_DETALJER
+        } ?: return null
+    return grunnlag.referanse
+}
 
 fun List<GrunnlagDto>.finnAldersjusteringDetaljerGrunnlag(): AldersjusteringDetaljerGrunnlag? {
     val grunnlag =

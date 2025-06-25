@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
@@ -53,6 +54,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
@@ -98,6 +100,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.Datoperiode
@@ -118,6 +121,7 @@ import no.nav.bidrag.transport.notat.NotatVoksenIHusstandenDetaljerDto
 import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -130,6 +134,8 @@ class Dtomapper(
     val validerBehandlingService: ValiderBehandlingService,
     val vedtakGrunnlagMapper: VedtakGrunnlagMapper,
     val beregnBarnebidragApi: BeregnBarnebidragApi,
+    @Lazy
+    val beregningService: BeregningService? = null,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -660,6 +666,15 @@ class Dtomapper(
         return null
     }
 
+    private fun Behandling.erAldersjusteringMedBeregning(): List<ResultatBidragsberegningBarn> {
+        if (vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyList()
+        return try {
+            beregningService!!.beregneBidrag(this)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
     @Suppress("ktlint:standard:value-argument-comment")
     private fun Behandling.tilDto(
@@ -671,12 +686,19 @@ class Dtomapper(
             if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
         val aldersjusteringGrunnlag = grunnlagFraVedtak?.finnAldersjusteringDetaljerGrunnlag()
-        val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
+        val grunnlagFraVedtak =
+            aldersjusteringGrunnlag?.grunnlagFraVedtak
+        this.grunnlagFraVedtak = erAldersjusteringMedBeregning()?.firstOrNull()?.resultat?.grunnlagListe
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
             erBisysVedtak = erBisysVedtak,
-            erVedtakUtenBeregning = aldersjusteringGrunnlag != null && !aldersjusteringGrunnlag.aldersjustert || erVedtakUtenBeregning,
+            erVedtakUtenBeregning =
+                !lesemodus &&
+                    !erAldersjusteringMedBeregning().any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
+                    aldersjusteringGrunnlag != null &&
+                    !aldersjusteringGrunnlag.aldersjustert ||
+                    erVedtakUtenBeregning,
             erAvvistAldersjustering = aldersjusteringGrunnlag != null && !aldersjusteringGrunnlag.aldersjustert,
             grunnlagFraVedtaksid = grunnlagFraVedtak,
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,

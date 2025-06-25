@@ -62,43 +62,45 @@ class VirkningstidspunktService(
                 ),
             )
 
-        return response.vedtakListe.filter { it.kilde != Vedtakskilde.AUTOMATISK }.map {
-            val stønadsendring = it.stønadsendring
-            val sistePeriode = stønadsendring.hentSisteLøpendePeriode()!!
-            val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid)!!
-            val virkningstidspunkt = stønadsendring.periodeListe.minBy { it.periode.fom }
-            val sluttberegningSistePeriode =
-                vedtak
-                    .grunnlagListe
-                    .finnSluttberegningIReferanser(sistePeriode.grunnlagReferanseListe)
-                    ?.innholdTilObjekt<SluttberegningBarnebidrag>()
-            val resultatSistePeriode =
-                when (Resultatkode.fraKode(sistePeriode.resultatkode)) {
-                    Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
-                    Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BEGGE_PARTER,
-                    Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSPLIKTIG,
-                    Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSMOTTAKER,
-                    Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BEGGE_PARTER,
-                    Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
-                    Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSPLIKTIG,
-                    Resultatkode.INNTIL_1_ÅR_TILBAKE,
-                    Resultatkode.INNVILGET_VEDTAK,
-                    -> Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
-                    else ->
-                        sluttberegningSistePeriode?.resultatVisningsnavn?.intern
-                            ?: Resultatkode.fraKode(sistePeriode.resultatkode)?.visningsnavn?.intern
-                            ?: sistePeriode.resultatkode
-                }
+        return response.vedtakListe
+            .filter { it.kilde != Vedtakskilde.AUTOMATISK }
+            .mapNotNull {
+                val stønadsendring = it.stønadsendring
+                val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null
+                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid)!!
+                val virkningstidspunkt = stønadsendring.periodeListe.minBy { it.periode.fom }
+                val sluttberegningSistePeriode =
+                    vedtak
+                        .grunnlagListe
+                        .finnSluttberegningIReferanser(sistePeriode.grunnlagReferanseListe)
+                        ?.innholdTilObjekt<SluttberegningBarnebidrag>()
+                val resultatSistePeriode =
+                    when (Resultatkode.fraKode(sistePeriode.resultatkode)) {
+                        Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BEGGE_PARTER,
+                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSPLIKTIG,
+                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSMOTTAKER,
+                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BEGGE_PARTER,
+                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
+                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSPLIKTIG,
+                        Resultatkode.INNTIL_1_ÅR_TILBAKE,
+                        Resultatkode.INNVILGET_VEDTAK,
+                        -> Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
+                        else ->
+                            sluttberegningSistePeriode?.resultatVisningsnavn?.intern
+                                ?: Resultatkode.fraKode(sistePeriode.resultatkode)?.visningsnavn?.intern
+                                ?: sistePeriode.resultatkode
+                    }
 
-            ManuellVedtakDto(
-                it.vedtaksid,
-                søknadsbarn.id!!,
-                it.vedtakstidspunkt,
-                virkningstidspunkt.periode.fom.atDay(1),
-                resultatSistePeriode,
-                vedtak.grunnlagListe.isEmpty(),
-            )
-        }
+                ManuellVedtakDto(
+                    it.vedtaksid,
+                    søknadsbarn.id!!,
+                    it.vedtakstidspunkt,
+                    virkningstidspunkt.periode.fom.atDay(1),
+                    resultatSistePeriode,
+                    vedtak.grunnlagListe.isEmpty(),
+                )
+            }.sortedByDescending { it.fattetTidspunkt }
     }
 
     @Transactional

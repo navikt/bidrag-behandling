@@ -133,7 +133,7 @@ class BeregningService(
         }
 
         return if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            emptyList()
+            beregnBidragAldersjustering(behandling)
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
@@ -243,17 +243,7 @@ class BeregningService(
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
-                            beregnetBarnebidragPeriodeListe =
-                                listOf(
-                                    no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode(
-                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                        grunnlagsreferanseListe = listOf(aldersjusteringGrunnlag.referanse, søknadsbarnGrunnlag.referanse),
-                                        resultat =
-                                            ResultatBeregningBidrag(
-                                                beløp = BigDecimal.ZERO,
-                                            ),
-                                    ),
-                                ),
+                            beregnetBarnebidragPeriodeListe = emptyList(),
                         ),
                 ),
             )
@@ -264,6 +254,7 @@ class BeregningService(
                     søknadsbarnGrunnlag.referanse,
                     søknadsbarn = søknadsbarn,
                     aldersjustert = false,
+                    aldersjusteresManuelt = true,
                     begrunnelser = listOf(e.begrunnelse.name),
                 )
             return listOf(
@@ -273,22 +264,13 @@ class BeregningService(
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
-                            beregnetBarnebidragPeriodeListe =
-                                listOf(
-                                    no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode(
-                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                        grunnlagsreferanseListe = listOf(aldersjusteringGrunnlag.referanse, søknadsbarnGrunnlag.referanse),
-                                        resultat =
-                                            ResultatBeregningBidrag(
-                                                beløp = BigDecimal.ZERO,
-                                            ),
-                                    ),
-                                ),
+                            beregnetBarnebidragPeriodeListe = emptyList(),
                         ),
                 ),
             )
         } catch (e: Exception) {
-            throw e
+            LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
         }
     }
 
@@ -304,11 +286,7 @@ class BeregningService(
 
     fun beregneBidrag(behandlingsid: Long): List<ResultatBidragsberegningBarn> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        return if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            beregnBidragAldersjustering(behandling)
-        } else {
-            beregneBidrag(behandling)
-        }
+        return beregneBidrag(behandling)
     }
 
     private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =

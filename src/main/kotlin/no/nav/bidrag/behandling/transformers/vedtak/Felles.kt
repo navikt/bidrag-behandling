@@ -67,7 +67,17 @@ fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =
 
 fun String?.nullIfEmpty() = if (this.isNullOrEmpty()) null else this
 
-fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? = if (this == null || this is String && this.trim().isEmpty()) null else block(this)
+fun <T, R> T?.takeIfNotNullOrEmpty(block: (T) -> R): R? =
+    if (this == null ||
+        this is String &&
+        this.trim().isEmpty() ||
+        this is List<*> &&
+        this.isEmpty()
+    ) {
+        null
+    } else {
+        block(this)
+    }
 
 fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
     if (this?.taMed == true) block(this)

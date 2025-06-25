@@ -258,7 +258,7 @@ class VedtakService(
                     if (behandling.avslag != null) {
                         behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
                     } else {
-                        behandling.byggOpprettVedtakRequestBidrag(request?.enhet)
+                        behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
                     }
                 }.copy(
                     innkrevingUtsattTilDato =
@@ -275,7 +275,11 @@ class VedtakService(
             vedtaksid = response.vedtaksid.toLong(),
             request?.enhet ?: behandling.behandlerEnhet,
         )
-        opprettNotat(behandling)
+
+        if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) {
+            opprettNotat(behandling)
+        }
+
         LOGGER.info {
             "Fattet vedtak for behandling ${behandling.id} med ${
                 behandling.årsak?.let { "årsakstype $it" }
