@@ -703,7 +703,10 @@ class Dtomapper(
                     aldersjusteringGrunnlag != null &&
                     !aldersjusteringGrunnlag.aldersjustert ||
                     erVedtakUtenBeregning,
-            erAvvistAldersjustering = aldersjusteringGrunnlag != null && !aldersjusteringGrunnlag.aldersjustert,
+            erAvvistAldersjustering =
+                aldersjusteringGrunnlag != null &&
+                    !aldersjusteringGrunnlag.aldersjustert ||
+                    hentAldersjusteringBeregning().all { it.resultat.beregnetBarnebidragPeriodeListe.isEmpty() },
             grunnlagFraVedtaksid = grunnlagFraVedtak,
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
             innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,

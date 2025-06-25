@@ -24,6 +24,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -41,6 +42,8 @@ class VirkningstidspunktService(
     private val underholdService: UnderholdService,
     private val gebyrService: GebyrService,
     private val vedtakConsumer: BidragVedtakConsumer,
+    @Lazy
+    private val beregningService: BeregningService? = null,
 ) {
     fun hentManuelleVedtakForBehandling(behandlingsid: Long): List<ManuellVedtakDto> {
         log.info { "Henter manuelle vedtak for behandling $behandlingsid" }
@@ -107,7 +110,7 @@ class VirkningstidspunktService(
     fun oppdaterBeregnManuellVedtak(
         behandlingsid: Long,
         request: OppdaterManuellVedtakRequest,
-    ) {
+    ): Boolean {
         secureLogger.info { "Oppdaterer manuell vedtak for behandling $behandlingsid, forespørsel=$request" }
 
         val behandling =
@@ -122,6 +125,8 @@ class VirkningstidspunktService(
             .let {
                 it.grunnlagFraVedtak = request.vedtaksid
             }
+
+        return beregningService!!.beregneBidrag(behandling).all { it.resultat.beregnetBarnebidragPeriodeListe.isEmpty() }
     }
 
     @Transactional
