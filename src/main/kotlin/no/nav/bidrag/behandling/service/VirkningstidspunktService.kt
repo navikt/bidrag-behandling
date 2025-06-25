@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
@@ -110,7 +111,7 @@ class VirkningstidspunktService(
     fun oppdaterBeregnManuellVedtak(
         behandlingsid: Long,
         request: OppdaterManuellVedtakRequest,
-    ): Boolean {
+    ): OppdaterManuellVedtakResponse {
         secureLogger.info { "Oppdaterer manuell vedtak for behandling $behandlingsid, forespørsel=$request" }
 
         val behandling =
@@ -126,7 +127,11 @@ class VirkningstidspunktService(
                 it.grunnlagFraVedtak = request.vedtaksid
             }
 
-        return beregningService!!.beregneBidrag(behandling).all { it.resultat.beregnetBarnebidragPeriodeListe.isEmpty() }
+        return OppdaterManuellVedtakResponse(
+            beregningService!!.beregneBidrag(behandling).all {
+                it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
+            },
+        )
     }
 
     @Transactional

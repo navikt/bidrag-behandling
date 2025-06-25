@@ -11,6 +11,10 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+data class OppdaterManuellVedtakResponse(
+    val erVedtakUtenBeregning: Boolean,
+)
+
 data class OppdaterManuellVedtakRequest(
     val barnId: Long,
     val vedtaksid: Long,
