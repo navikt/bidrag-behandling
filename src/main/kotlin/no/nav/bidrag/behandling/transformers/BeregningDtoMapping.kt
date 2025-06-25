@@ -168,7 +168,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
                     forsendelseDistribueresAutomatisk = aldersjusteringDetaljer?.aldersjustert == true,
-                    resultatUtenBeregning = aldersjusteringDetaljer?.aldersjustert != true,
+                    resultatUtenBeregning = aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert,
                     indeksår =
                         if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {
                             Year.now().value
