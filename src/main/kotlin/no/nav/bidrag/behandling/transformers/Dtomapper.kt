@@ -696,6 +696,7 @@ class Dtomapper(
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
+            lesemodus = lesemodus,
             erBisysVedtak = erBisysVedtak,
             erVedtakUtenBeregning =
                 !lesemodus &&

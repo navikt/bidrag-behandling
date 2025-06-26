@@ -89,6 +89,7 @@ data class BehandlingDetaljerDtoV2(
 data class BehandlingDtoV2(
     val id: Long,
     val type: TypeBehandling,
+    val lesemodus: Boolean = false,
     val erBisysVedtak: Boolean,
     val erVedtakUtenBeregning: Boolean = false,
     val grunnlagFraVedtaksid: Long? = null,
