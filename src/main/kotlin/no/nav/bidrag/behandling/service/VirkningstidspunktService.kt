@@ -18,6 +18,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.util.visningsnavn
@@ -32,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
+private val vedtakstyperIkkeBeregning =
+    listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
 
 @Service
 class VirkningstidspunktService(
@@ -68,7 +71,7 @@ class VirkningstidspunktService(
             )
 
         return response.vedtakListe
-            .filter { it.kilde != Vedtakskilde.AUTOMATISK }
+            .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
             .mapNotNull {
                 val stønadsendring = it.stønadsendring
                 val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null
