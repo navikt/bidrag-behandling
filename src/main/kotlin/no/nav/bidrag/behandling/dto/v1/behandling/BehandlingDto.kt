@@ -17,7 +17,7 @@ data class OppdaterManuellVedtakResponse(
 
 data class OppdaterManuellVedtakRequest(
     val barnId: Long,
-    val vedtaksid: Long,
+    val vedtaksid: Long?,
 )
 
 data class ManuellVedtakResponse(
