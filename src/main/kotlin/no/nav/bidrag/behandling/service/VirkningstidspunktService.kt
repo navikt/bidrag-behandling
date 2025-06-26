@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
@@ -44,7 +45,7 @@ class VirkningstidspunktService(
     private val gebyrService: GebyrService,
     private val vedtakConsumer: BidragVedtakConsumer,
     @Lazy
-    private val beregningService: BeregningService? = null,
+    private val dtoMapper: Dtomapper? = null,
 ) {
     fun hentManuelleVedtakForBehandling(behandlingsid: Long): List<ManuellVedtakDto> {
         log.info { "Henter manuelle vedtak for behandling $behandlingsid" }
@@ -127,10 +128,13 @@ class VirkningstidspunktService(
                 it.grunnlagFraVedtak = request.vedtaksid
             }
 
+        val beregning =
+            dtoMapper!!.beregningService!!.beregneBidrag(behandling)
         return OppdaterManuellVedtakResponse(
-            beregningService!!.beregneBidrag(behandling).all {
+            beregning.all {
                 it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
             },
+            dtoMapper.tilUnderholdskostnadDto(behandling, beregning),
         )
     }
 

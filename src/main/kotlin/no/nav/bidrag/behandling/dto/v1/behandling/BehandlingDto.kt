@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
@@ -13,6 +14,7 @@ import java.time.LocalDateTime
 
 data class OppdaterManuellVedtakResponse(
     val erVedtakUtenBeregning: Boolean,
+    var underholdskostnader: Set<UnderholdDto> = emptySet(),
 )
 
 data class OppdaterManuellVedtakRequest(
