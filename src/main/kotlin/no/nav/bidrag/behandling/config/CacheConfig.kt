@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit
 @EnableUserCache
 class CacheConfig {
     companion object {
+        const val SAMHANDLER_CACHE = "SAMHANDLER_CACHE"
         const val PERSON_CACHE = "PERSON_CACHE"
         const val PERSON_FØDSELSDATO_CACHE = "PERSON_FØDSELSDATO_CACHE"
         const val STØNAD_HISTORIKK_CACHE = "STØNAD_HISTORIKK_CACHE"
@@ -35,6 +36,10 @@ class CacheConfig {
         val caffeineCacheManager = CaffeineCacheManager()
         caffeineCacheManager.registerCustomCache(
             PERSON_FØDSELSDATO_CACHE,
+            Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
+        )
+        caffeineCacheManager.registerCustomCache(
+            SAMHANDLER_CACHE,
             Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
         )
         caffeineCacheManager.registerCustomCache(
