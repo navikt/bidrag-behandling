@@ -47,6 +47,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
@@ -504,13 +505,15 @@ class VedtakTilBehandlingMapping(
         underholdskostnad: Underholdskostnad,
         lesemodus: Boolean,
         rolle: Rolle,
+        filtrerEtterPeriode: ÅrMånedsperiode? = null,
     ) {
         underholdskostnad.tilleggsstønad.addAll(
             filtrerBasertPåEgenReferanse(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)
                 .filter {
                     hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
                 }.map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
-                .mapTillegsstønad(underholdskostnad, lesemodus),
+                .mapTillegsstønad(underholdskostnad, lesemodus)
+                .filter { filtrerEtterPeriode == null || ÅrMånedsperiode(it.fom, it.tom).overlapper(filtrerEtterPeriode) },
         )
 
         underholdskostnad.faktiskeTilsynsutgifter.addAll(
@@ -518,7 +521,8 @@ class VedtakTilBehandlingMapping(
                 .filter {
                     hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
                 }.map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
-                .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
+                .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus)
+                .filter { filtrerEtterPeriode == null || ÅrMånedsperiode(it.fom, it.tom).overlapper(filtrerEtterPeriode) },
         )
 
         underholdskostnad.barnetilsyn.addAll(
@@ -526,7 +530,8 @@ class VedtakTilBehandlingMapping(
                 .filter { ts ->
                     hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
                 }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
-                .mapBarnetilsyn(underholdskostnad, lesemodus),
+                .mapBarnetilsyn(underholdskostnad, lesemodus)
+                .filter { filtrerEtterPeriode == null || ÅrMånedsperiode(it.fom, it.tom).overlapper(filtrerEtterPeriode) },
         )
         underholdskostnad.harTilsynsordning =
             underholdskostnad.barnetilsyn.isNotEmpty() ||

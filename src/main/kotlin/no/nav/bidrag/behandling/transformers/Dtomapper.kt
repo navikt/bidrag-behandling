@@ -855,7 +855,12 @@ class Dtomapper(
                                         rolle = mutableSetOf(rolle),
                                     ),
                             )
-                        grunnlagFraVedtak.grunnlagListe.hentUnderholdskostnadPerioder(underholdskostnad, true, rolle)
+                        grunnlagFraVedtak.grunnlagListe.hentUnderholdskostnadPerioder(
+                            underholdskostnad,
+                            true,
+                            rolle,
+                            ÅrMånedsperiode(behandling.virkningstidspunkt!!, rolle.opphørsdato),
+                        )
                         underholdskostnad
                     }
                 }.filterNotNull()

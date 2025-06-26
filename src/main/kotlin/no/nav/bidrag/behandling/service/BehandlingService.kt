@@ -81,7 +81,9 @@ class BehandlingService(
             return it
         } ?: run {
             behandlingRepository.save(behandling).let {
-                opprettForsendelseForBehandling(it)
+                if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) {
+                    opprettForsendelseForBehandling(it)
+                }
                 it
             }
         }
