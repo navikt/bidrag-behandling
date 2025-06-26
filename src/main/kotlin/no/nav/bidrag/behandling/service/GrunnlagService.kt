@@ -128,21 +128,22 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             sjekkOgOppdaterIdenter(behandling)
-            val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
-            val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
-                tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
-            behandling.grunnlagsinnhentingFeilet = null
+            if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) {
+                val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+                val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
+                    tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
+                behandling.grunnlagsinnhentingFeilet = null
 
-            grunnlagRequestobjekter.forEach {
-                feilrapporteringer +=
-                    henteOglagreGrunnlag(
-                        behandling,
-                        it,
-                        tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
-                    )
+                grunnlagRequestobjekter.forEach {
+                    feilrapporteringer +=
+                        henteOglagreGrunnlag(
+                            behandling,
+                            it,
+                            tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
+                        )
+                }
             }
-
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
 
             behandling.grunnlagSistInnhentet = LocalDateTime.now()
@@ -846,7 +847,6 @@ class GrunnlagService(
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
         !behandling.erVedtakFattet &&
-            behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING &&
             (
                 behandling.grunnlagSistInnhentet == null ||
                     LocalDateTime
