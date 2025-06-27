@@ -10,6 +10,8 @@ env:
   BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
   BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse-feature
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
+  BIDRAG_SAMHANDLER_URL: http://bidrag-samhandler-q1
+  BIDRAG_SAMHANDLER_SCOPE: dev-gcp.bidrag.bidrag-samhandler-q1
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
   BIDRAG_BELOPSHISTORIKK_URL: http://bidrag-stonad-q1
@@ -57,6 +59,7 @@ database:
 outbound-access-apps:
   - bidrag-stonad-q1
   - bidrag-vedtak-q1
+  - bidrag-samhandler-q1
   - bidrag-dokument-produksjon
   - bidrag-grunnlag-feature
   - bidrag-dokument-forsendelse-feature

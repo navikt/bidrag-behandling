@@ -33,6 +33,8 @@ env:
   KODEVERK_URL: http://bidrag-kodeverk
   OPPGAVE_URL: https://oppgave.dev-fss-pub.nais.io
   OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave
+  BIDRAG_SAMHANDLER_URL: http://bidrag-samhandler-q2
+  BIDRAG_SAMHANDLER_SCOPE: dev-gcp.bidrag.bidrag-samhandler-q2
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
   pool: nav-dev
@@ -57,6 +59,7 @@ database:
 outbound-access-apps:
   - bidrag-grunnlag
   - bidrag-stonad-q2
+  - bidrag-samhandler-q2
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
   - bidrag-vedtak-q2
