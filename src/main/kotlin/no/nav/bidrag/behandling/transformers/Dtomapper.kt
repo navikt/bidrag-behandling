@@ -692,7 +692,7 @@ class Dtomapper(
         val aldersjusteringBeregning = hentAldersjusteringBeregning()
         val grunnlagFraVedtak =
             aldersjusteringGrunnlag?.grunnlagFraVedtak
-        this.grunnlagFraVedtak = aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
+        this.grunnlagFraVedtak = this.grunnlagFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
