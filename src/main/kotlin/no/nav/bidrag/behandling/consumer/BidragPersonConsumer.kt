@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_FØDSELSDATO_CACHE
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningPersonConsumer
 import no.nav.bidrag.commons.cache.BrukerCacheable
+import no.nav.bidrag.commons.service.consumers.FellesPersonConsumer
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.person.NavnFødselDødDto
@@ -26,7 +27,8 @@ class BidragPersonConsumer(
     @Value("\${BIDRAG_PERSON_URL}") bidragPersonUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-person"),
-    BeregningPersonConsumer {
+    BeregningPersonConsumer,
+    FellesPersonConsumer {
     private val hentPersonUri =
         UriComponentsBuilder
             .fromUri(bidragPersonUrl)
@@ -60,6 +62,8 @@ class BidragPersonConsumer(
             throw e
         }
     }
+
+    override fun hentPerson(personident: Personident): PersonDto = hentPerson(personident.verdi)
 
     private fun opprettFødselsdatoFraFødselsår(fødselsår: Int): LocalDate {
         // Fødselsår finnes for alle i PDL, mens noen ikke har utfyllt fødselsdato. I disse tilfellene settes 1. januar.

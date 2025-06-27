@@ -1,12 +1,20 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.behandling.dto.v1.forsendelse.OpprettForsendelseForespørsel
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.dokument.AvvikType
 import no.nav.bidrag.transport.dokument.Avvikshendelse
+import no.nav.bidrag.transport.dokument.DistribuerJournalpostRequest
+import no.nav.bidrag.transport.dokument.DistribuerJournalpostResponse
+import no.nav.bidrag.transport.dokument.forsendelse.OpprettForsendelseForespørsel
+import no.nav.bidrag.transport.dokument.forsendelse.OpprettForsendelseRespons
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpHeaders
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
@@ -19,8 +27,29 @@ class BidragForsendelseConsumer(
     private val bidragForsendelsedUri get() =
         UriComponentsBuilder.fromUri(bidragForsnendelseUrl).pathSegment("api").pathSegment("forsendelse")
 
-    fun opprettForsendelse(payload: OpprettForsendelseForespørsel): OpprettForsendelseRespons =
-        postForNonNullEntity(bidragForsendelsedUri.build().toUri(), payload)
+    private fun createUri(path: String = "") = URI.create("$bidragForsnendelseUrl/$path")
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun distribuerForsendelse(forsendelseId: Long): DistribuerJournalpostResponse {
+        val distribuerJournalpostRequest = DistribuerJournalpostRequest()
+
+        try {
+            return postForNonNullEntity<DistribuerJournalpostResponse>(
+                createUri("api/forsendelse/journal/distribuer/$forsendelseId"),
+                distribuerJournalpostRequest,
+            )
+        } catch (e: HttpStatusCodeException) {
+            val begrunnelse = e.responseHeaders?.getOrEmpty(HttpHeaders.WARNING)?.firstOrNull()
+            throw HttpClientErrorException(e.statusCode, begrunnelse ?: e.message ?: "Ukjent feil ved distribusjon av forsendelse")
+        }
+    }
+
+    fun opprettForsendelse(opprettForsendelseForespørsel: OpprettForsendelseForespørsel): OpprettForsendelseRespons =
+        postForNonNullEntity(bidragForsendelsedUri.build().toUri(), opprettForsendelseForespørsel)
 
     fun hentForsendelserISak(saksnummer: String): List<ForsendelseResponsTo> =
         getForNonNullEntity(
@@ -44,10 +73,6 @@ class BidragForsendelseConsumer(
         )
     }
 }
-
-data class OpprettForsendelseRespons(
-    var forsendelseId: String? = null,
-)
 
 data class ForsendelseResponsTo(
     val forsendelseId: Long,

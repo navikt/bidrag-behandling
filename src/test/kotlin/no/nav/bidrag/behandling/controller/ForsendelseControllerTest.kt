@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.controller
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
-import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -14,6 +13,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.dokument.BidragEnhet
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -204,7 +204,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             BehandlingInfoDto(
                                 soknadId = SOKNAD_ID,
                                 stonadType = Stønadstype.FORSKUDD,
-                                vedtakId = 1,
+                                vedtakId = "1",
                             ),
                         roller =
                             listOf(
@@ -253,7 +253,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             BehandlingInfoDto(
                                 soknadId = SOKNAD_ID,
                                 stonadType = Stønadstype.FORSKUDD,
-                                vedtakId = 1,
+                                vedtakId = "1",
                             ),
                         roller =
                             listOf(

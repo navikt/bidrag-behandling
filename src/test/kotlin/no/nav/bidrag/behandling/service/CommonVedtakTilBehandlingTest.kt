@@ -49,6 +49,9 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockK
+    lateinit var forsendelseService: ForsendelseService
+
+    @MockK
     lateinit var sakConsumer: BidragSakConsumer
 
     @MockK
@@ -115,11 +118,11 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                unleash,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
+                forsendelseService,
             )
 
         unleash.enableAll()

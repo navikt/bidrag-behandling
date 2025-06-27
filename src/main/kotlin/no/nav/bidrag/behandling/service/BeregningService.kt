@@ -223,6 +223,7 @@ class BeregningService(
                                         behandling.opprettAldersjusteringDetaljerGrunnlag(
                                             søknadsbarnGrunnlag.referanse,
                                             søknadsbarn = søknadsbarn,
+                                            vedtaksidBeregning = søknadsbarn.grunnlagFraVedtak,
                                         ),
                                     ),
                         ),

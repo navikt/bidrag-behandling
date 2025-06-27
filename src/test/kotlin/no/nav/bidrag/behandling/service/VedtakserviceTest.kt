@@ -143,6 +143,9 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockK
     lateinit var personRepository: PersonRepository
 
+    @MockK
+    lateinit var forsendelseService: ForsendelseService
+
     val notatService = NotatService()
 
     @BeforeEach
@@ -205,11 +208,11 @@ class VedtakserviceTest : TestContainerRunner() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                unleash,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
+                forsendelseService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

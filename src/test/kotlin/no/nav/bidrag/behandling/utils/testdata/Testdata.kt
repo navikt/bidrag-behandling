@@ -127,7 +127,7 @@ import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
 val SAKSNUMMER = "1233333"
-val SOKNAD_ID = 12412421414L
+val SOKNAD_ID = "12412421414L"
 val SOKNAD_ID_2 = 1241552421414L
 val SOKNAD_ID_3 = 124152421414L
 val SAKSBEHANDLER_IDENT = "Z999999"
@@ -262,7 +262,7 @@ fun oppretteBehandling(
         mottattdato = LocalDate.parse("2023-03-15"),
         klageMottattdato = null,
         SAKSNUMMER,
-        SOKNAD_ID,
+        SOKNAD_ID.toLong(),
         null,
         "4806",
         "Z9999",

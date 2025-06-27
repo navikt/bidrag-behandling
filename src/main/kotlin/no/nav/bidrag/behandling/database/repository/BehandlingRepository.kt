@@ -22,4 +22,9 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
 
     @Query("select b from behandling b where b.vedtaksid is not null and b.notatJournalpostId is null and b.vedtakstidspunkt >= :afterDate")
     fun hentBehandlingerSomManglerNotater(afterDate: LocalDateTime): List<Behandling>
+
+    @Query(
+        "select b from behandling b where jsonb_path_exists(b.forsendelseBestillingerJsonString, '\$.bestillinger[*] ? (@.feilBegrunnelse != null)') and b.vedtakstype = 'ALDERSJUSTERING' and b.vedtaksid is not null",
+    )
+    fun hentBehandlingerHvorDistribusjonAvForsendelseFeilet(): List<Behandling>
 }

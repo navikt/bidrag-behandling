@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -39,11 +38,11 @@ class VedtakService(
     private val notatOpplysningerService: NotatOpplysningerService,
     private val tilgangskontrollService: TilgangskontrollService,
     private val vedtakConsumer: BidragVedtakConsumer,
-    private val unleashInstance: Unleash,
     private val validering: ValiderBeregning,
     private val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping,
     private val behandlingTilVedtakMapping: BehandlingTilVedtakMapping,
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
+    private val forsendelseService: ForsendelseService,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
         try {
@@ -276,7 +275,9 @@ class VedtakService(
             request?.enhet ?: behandling.behandlerEnhet,
         )
 
-        if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) {
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            forsendelseService.opprettForsendelseForAldersjustering(behandling)
+        } else {
             opprettNotat(behandling)
         }
 

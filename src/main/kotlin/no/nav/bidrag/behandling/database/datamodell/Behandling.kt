@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -23,6 +24,7 @@ import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.diverse.Språk
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -36,6 +38,7 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toCompactString
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
@@ -106,6 +109,9 @@ open class Behandling(
     @Column(name = "grunnlagsinnhenting_feilet", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var grunnlagsinnhentingFeilet: String? = null,
+    @Column(name = "forsendelse_bestillinger", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    open var forsendelseBestillingerJsonString: String? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -218,7 +224,39 @@ open class Behandling(
             Personident(bidragspliktig!!.ident!!),
             Saksnummer(saksnummer),
         )
+
+    fun lagreBestillinger(forsendelseBestillinger: ForsendelseBestillinger) {
+        forsendelseBestillingerJsonString = commonObjectmapper.writeValueAsString(forsendelseBestillinger)
+    }
+
+    val forsendelseBestillinger get() =
+        forsendelseBestillingerJsonString?.let { commonObjectmapper.readValue<ForsendelseBestillinger>(it) }
+            ?: ForsendelseBestillinger(mutableSetOf())
 }
+
+fun ForsendelseBestillinger.finnForGjelderOgMottaker(
+    gjelder: String?,
+    mottaker: String?,
+    rolletype: Rolletype?,
+) = bestillinger.find { it.gjelder == gjelder && it.mottaker == mottaker && it.rolletype == rolletype }
+
+data class ForsendelseBestillinger(
+    val bestillinger: MutableSet<ForsendelseBestilling>,
+)
+
+data class ForsendelseBestilling(
+    var forsendelseId: Long? = null,
+    var journalpostId: Long? = null,
+    val rolletype: Rolletype?,
+    val gjelder: String? = null,
+    val mottaker: String? = null,
+    val språkkode: Språk? = null,
+    val dokumentmal: String? = null,
+    val opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
+    var forsendelseOpprettetTidspunkt: LocalDateTime? = null,
+    var distribuertTidspunkt: LocalDateTime? = null,
+    var feilBegrunnelse: String? = null,
+)
 
 val Behandling.særbidragKategori
     get() =

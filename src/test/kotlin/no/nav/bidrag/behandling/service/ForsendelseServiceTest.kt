@@ -12,8 +12,6 @@ import no.nav.bidrag.behandling.consumer.BidragForsendelseConsumer
 import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
-import no.nav.bidrag.behandling.consumer.OpprettForsendelseRespons
-import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -22,10 +20,14 @@ import no.nav.bidrag.behandling.utils.testdata.opprettForsendelseResponsUnderOpp
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.commons.service.forsendelse.FellesForsendelseMapper
+import no.nav.bidrag.commons.service.forsendelse.FellesForsendelseService
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.transport.dokument.forsendelse.OpprettForsendelseRespons
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -38,16 +40,20 @@ class ForsendelseServiceTest {
 
     @MockkBean
     lateinit var bidragTIlgangskontrollConsumer: BidragTilgangskontrollConsumer
+
+    @MockkBean
+    lateinit var fellesForsendelseService: FellesForsendelseService
+
+    @MockkBean
+    lateinit var fellesForsendelseMapper: FellesForsendelseMapper
     lateinit var forsendelseService: ForsendelseService
 
     @BeforeEach
     fun initMocks() {
         forsendelseService =
-            ForsendelseService(bidragForsendelseConsumer, bidragTIlgangskontrollConsumer)
+            ForsendelseService(bidragForsendelseConsumer, bidragTIlgangskontrollConsumer, fellesForsendelseService, fellesForsendelseMapper)
         every { bidragForsendelseConsumer.opprettForsendelse(any()) } returns
-            OpprettForsendelseRespons(
-                "2313",
-            )
+            OpprettForsendelseRespons(123)
         every { bidragForsendelseConsumer.slettForsendelse(any()) } returns Unit
         every { bidragTIlgangskontrollConsumer.sjekkTilgangTema(any()) } returns true
     }
@@ -61,7 +67,7 @@ class ForsendelseServiceTest {
                 enhet = ENHET_FARSKAP,
                 behandlingInfo =
                     BehandlingInfoDto(
-                        soknadId = SOKNAD_ID,
+                        soknadId = SOKNAD_ID.toString(),
                         stonadType = Stønadstype.FORSKUDD,
                         vedtakType = Vedtakstype.KLAGE,
                     ),

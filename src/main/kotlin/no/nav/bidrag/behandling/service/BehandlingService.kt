@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
-import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
@@ -40,6 +39,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -234,8 +234,8 @@ class BehandlingService(
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
                     BehandlingInfoDto(
-                        behandlingId = behandling.id,
-                        soknadId = behandling.soknadsid,
+                        behandlingId = behandling.id?.toString(),
+                        soknadId = behandling.soknadsid?.toString(),
                         soknadFra = behandling.soknadFra,
                         behandlingType = behandling.tilBehandlingstype(),
                         stonadType = behandling.stonadstype,
