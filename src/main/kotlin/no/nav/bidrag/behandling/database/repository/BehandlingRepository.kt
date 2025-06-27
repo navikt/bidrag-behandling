@@ -24,7 +24,8 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     fun hentBehandlingerSomManglerNotater(afterDate: LocalDateTime): List<Behandling>
 
     @Query(
-        "select b from behandling b where jsonb_path_exists(b.forsendelseBestillingerJsonString, '\$.bestillinger[*] ? (@.feilBegrunnelse != null)') and b.vedtakstype = 'ALDERSJUSTERING' and b.vedtaksid is not null",
+        "select * from behandling b where jsonb_path_exists(b.forsendelse_bestillinger, '\$.bestillinger[*] ? (@.feilBegrunnelse != null)') and b.vedtakstype = 'ALDERSJUSTERING' and b.vedtaksid is not null",
+        nativeQuery = true,
     )
     fun hentBehandlingerHvorDistribusjonAvForsendelseFeilet(): List<Behandling>
 }
