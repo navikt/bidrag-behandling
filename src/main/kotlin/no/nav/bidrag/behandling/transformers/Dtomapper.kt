@@ -815,7 +815,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                     inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
                 ),
-            underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning),
+            underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
@@ -836,8 +836,9 @@ class Dtomapper(
     fun tilUnderholdskostnadDto(
         behandling: Behandling,
         beregning: List<ResultatBidragsberegningBarn> = emptyList(),
+        lesemodus: Boolean = false,
     ): Set<UnderholdDto> =
-        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING && !lesemodus) {
             vedtakTilBehandlingMapping!!
                 .run {
                     behandling.søknadsbarn.mapIndexed { index, rolle ->
