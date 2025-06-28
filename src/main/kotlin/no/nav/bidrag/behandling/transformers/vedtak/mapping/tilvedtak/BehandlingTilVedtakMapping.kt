@@ -113,9 +113,9 @@ class BehandlingTilVedtakMapping(
                             sisteVedtaksid = vedtakService.finnSisteVedtaksid(stønad),
                             førsteIndeksreguleringsår =
                                 if (erAldersjustert) {
-                                    null
-                                } else {
                                     YearMonth.now().year + 1
+                                } else {
+                                    null
                                 },
                             periodeListe = perioder + opphørPeriode,
                         )
