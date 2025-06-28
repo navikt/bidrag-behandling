@@ -104,21 +104,19 @@ class ForsendelseService(
 
         if (mottakerInfo.feilBegrunnelse.isNullOrEmpty()) {
             bestillingBm.opprett(behandling, søknadsbarn)
-            distribuerForsendelse(bestillingBm)
         }
 
         bestillingBp.opprett(behandling, søknadsbarn)
-        distribuerForsendelse(bestillingBp)
 
         behandling.lagreBestillinger(bestillinger)
     }
 
     fun distribuerForsendelse(forsendelseBestilling: ForsendelseBestilling) {
         try {
-//            if (forsendelseBestilling.distribuertTidspunkt != null) {
-//                secureLogger.info { "Forsendelsebestilling $forsendelseBestilling er allerede distribuert" }
-//                return
-//            }
+            if (forsendelseBestilling.distribuertTidspunkt != null) {
+                secureLogger.info { "Forsendelsebestilling $forsendelseBestilling er allerede distribuert" }
+                return
+            }
             val forsendelseId =
                 forsendelseBestilling.forsendelseId ?: run {
                     secureLogger.error { "Forsendelsebestilling $forsendelseBestilling har ingen forsendelseId" }
@@ -127,6 +125,9 @@ class ForsendelseService(
             val response = bidragForsendelseConsumer.distribuerForsendelse(forsendelseId)
             forsendelseBestilling.distribuertTidspunkt = LocalDateTime.now()
             forsendelseBestilling.journalpostId = response.journalpostId.numeric
+            secureLogger.info {
+                "Distribuerte forsendelse $forsendelseId med journalpostId ${response.journalpostId} og bestillingsid ${response.bestillingsId}"
+            }
         } catch (e: Exception) {
             secureLogger.error(e) { "Feil ved distribusjon av forsendelse: ${forsendelseBestilling.forsendelseId}" }
             forsendelseBestilling.feilBegrunnelse = "Feil ved distribusjon av forsendelse: ${e.message}"
@@ -138,6 +139,7 @@ class ForsendelseService(
         søknadsbarn: Rolle,
     ) {
         try {
+            if (forsendelseId != null) return
             feilBegrunnelse = null
             val forsendelseId = fellesForsendelseService.opprettForsendelse(tilFellesForsendelseBestilling(behandling, søknadsbarn))
             this.forsendelseId = forsendelseId

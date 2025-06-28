@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
+import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
@@ -81,7 +82,7 @@ class BehandlingService(
             return it
         } ?: run {
             behandlingRepository.save(behandling).let {
-                if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) {
+                if (behandling.vedtakstype.kreverGrunnlag()) {
                     opprettForsendelseForBehandling(it)
                 }
                 it
@@ -192,7 +193,7 @@ class BehandlingService(
 
         val behandlingDo = opprettBehandling(behandling)
 
-        if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) {
+        if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype.kreverGrunnlag()) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandlingDo.underholdskostnader.add(

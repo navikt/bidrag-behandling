@@ -133,7 +133,7 @@ class VirkningstidspunktService(
 
         val beregning =
             dtoMapper!!.beregningService!!.beregneBidrag(behandling)
-        behandling.grunnlagFraVedtak = beregning.flatMap { it.resultat.grunnlagListe }
+        behandling.grunnlagslisteFraVedtak = beregning.flatMap { it.resultat.grunnlagListe }
         return OppdaterManuellVedtakResponse(
             beregning.all {
                 it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()

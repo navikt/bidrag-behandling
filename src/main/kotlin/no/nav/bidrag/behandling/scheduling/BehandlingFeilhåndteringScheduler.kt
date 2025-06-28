@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.service.ForsendelseService
+import no.nav.bidrag.commons.util.secureLogger
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
@@ -22,9 +23,17 @@ class BehandlingFeilhåndteringScheduler(
         val behandlinger = behandlingRepository.hentBehandlingerHvorDistribusjonAvForsendelseFeilet()
         log.info { "Fant ${behandlinger.size} behandlinger hvor distribusjon av forsendelse feilet" }
         behandlinger.forEach { behandling ->
-            log.info { "Forsøker opprett og distribuer forsendelser for ${behandling.id}" }
+            secureLogger.info {
+                "Forsøker opprett og distribuer forsendelser for ${behandling.id} med bestilling ${behandling.forsendelseBestillinger}"
+            }
+            behandling.forsendelseBestillinger.bestillinger.forEach {
+                it.antallForsøkOpprettEllerDistribuer += 1
+            }
             try {
                 forsendelseService.opprettForsendelseForAldersjustering(behandling)
+                behandling.forsendelseBestillinger.bestillinger.forEach {
+                    forsendelseService.distribuerForsendelse(it)
+                }
             } catch (e: Exception) {
                 log.error(e) {
                     "Det skjedde en feil ved opprettelse av forsendelse og distribusjon for aldersjustering vedtak i behandling ${behandling.id}"

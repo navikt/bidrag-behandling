@@ -246,7 +246,7 @@ class Dtomapper(
 
     fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Person): BeregnetPrivatAvtaleDto {
         val privatAvtaleBeregning =
-            if (grunnlagFraVedtak.isNullOrEmpty()) {
+            if (grunnlagslisteFraVedtak.isNullOrEmpty()) {
                 val grunnlag =
                     vedtakGrunnlagMapper
                         .byggGrunnlagForBeregningPrivatAvtale(
@@ -260,7 +260,7 @@ class Dtomapper(
                     ) + grunnlag.grunnlagListe
                 ).toSet().toList()
             } else {
-                grunnlagFraVedtak!!
+                grunnlagslisteFraVedtak!!
             }
 
         val rolle = roller.find { it.ident == gjelderBarn.ident }
@@ -281,7 +281,7 @@ class Dtomapper(
         this.søknadsbarn
             .map {
                 val underholdBeregning =
-                    if (grunnlagFraVedtak.isNullOrEmpty()) {
+                    if (grunnlagslisteFraVedtak.isNullOrEmpty()) {
                         val grunnlag =
                             vedtakGrunnlagMapper
                                 .byggGrunnlagForBeregning(
@@ -293,7 +293,7 @@ class Dtomapper(
 
                         beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
                     } else {
-                        grunnlagFraVedtak!!
+                        grunnlagslisteFraVedtak!!
                     }
 
                 BeregnetUnderholdskostnad(
@@ -688,22 +688,25 @@ class Dtomapper(
         val kanIkkeBehandlesBegrunnelse =
             if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
-        val aldersjusteringGrunnlag = grunnlagFraVedtak?.finnAldersjusteringDetaljerGrunnlag()
+        val aldersjusteringGrunnlag = grunnlagslisteFraVedtak?.finnAldersjusteringDetaljerGrunnlag()
         val aldersjusteringBeregning = hentAldersjusteringBeregning()
-        val grunnlagFraVedtak =
-            aldersjusteringGrunnlag?.grunnlagFraVedtak
-        this.grunnlagFraVedtak = this.grunnlagFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
+        val erAldersjusteringOgErAldersjustert =
+            vedtakstype == Vedtakstype.ALDERSJUSTERING &&
+                (
+                    hentAldersjusteringBeregning()
+                        .any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
+                        aldersjusteringGrunnlag != null &&
+                        aldersjusteringGrunnlag.aldersjustert
+                )
+        val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
+        this.grunnlagslisteFraVedtak = this.grunnlagslisteFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
             lesemodus = lesemodus,
             erBisysVedtak = erBisysVedtak,
             erVedtakUtenBeregning =
-                !lesemodus &&
-                    !hentAldersjusteringBeregning().any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
-                    aldersjusteringGrunnlag != null &&
-                    !aldersjusteringGrunnlag.aldersjustert ||
-                    erVedtakUtenBeregning,
+                vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
             grunnlagFraVedtaksid = grunnlagFraVedtak,
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
             innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,

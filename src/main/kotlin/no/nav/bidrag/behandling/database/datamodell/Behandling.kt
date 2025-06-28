@@ -192,7 +192,7 @@ open class Behandling(
     @Transient
     var erVedtakUtenBeregning: Boolean = false,
     @Transient
-    var grunnlagFraVedtak: List<GrunnlagDto>? = emptyList(),
+    var grunnlagslisteFraVedtak: List<GrunnlagDto>? = emptyList(),
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
@@ -256,6 +256,7 @@ data class ForsendelseBestilling(
     var forsendelseOpprettetTidspunkt: LocalDateTime? = null,
     var distribuertTidspunkt: LocalDateTime? = null,
     var feilBegrunnelse: String? = null,
+    var antallForsøkOpprettEllerDistribuer: Int = 1,
 )
 
 val Behandling.særbidragKategori

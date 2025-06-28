@@ -33,6 +33,7 @@ env:
   OPPGAVE_URL: https://oppgave.prod-fss-pub.nais.io
   OPPGAVE_SCOPE: prod-fss.oppgavehandtering.oppgave
   TOPIC_VEDTAK: bidrag.vedtak
+  TOPIC_JOURNALPOST: bidrag.journalpost
   BIDRAG_SAMHANDLER_URL: http://bidrag-samhandler
   BIDRAG_SAMHANDLER_SCOPE: prod-gcp.bidrag.bidrag-samhandler-q1
 kafka:
