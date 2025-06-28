@@ -34,6 +34,7 @@ class BehandlingFeilhåndteringScheduler(
                 behandling.forsendelseBestillinger.bestillinger.forEach {
                     forsendelseService.distribuerForsendelse(it)
                 }
+                behandlingRepository.save(behandling)
             } catch (e: Exception) {
                 log.error(e) {
                     "Det skjedde en feil ved opprettelse av forsendelse og distribusjon for aldersjustering vedtak i behandling ${behandling.id}"
