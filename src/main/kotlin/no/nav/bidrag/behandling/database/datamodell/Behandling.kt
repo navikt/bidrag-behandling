@@ -112,7 +112,7 @@ open class Behandling(
     @Column(name = "forsendelse_bestillinger", columnDefinition = "jsonb")
     @Convert(converter = ForsendelseBestillingerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
-    open var forsendelseBestillinger: ForsendelseBestillinger? = null,
+    open var forsendelseBestillinger: ForsendelseBestillinger = ForsendelseBestillinger(),
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -245,7 +245,7 @@ fun ForsendelseBestillinger.finnForGjelderOgMottaker(
 ) = bestillinger.find { it.gjelder == gjelder && it.mottaker == mottaker && it.rolletype == rolletype }
 
 data class ForsendelseBestillinger(
-    val bestillinger: MutableSet<ForsendelseBestilling>,
+    val bestillinger: MutableSet<ForsendelseBestilling> = mutableSetOf(),
 )
 
 data class ForsendelseBestilling(
