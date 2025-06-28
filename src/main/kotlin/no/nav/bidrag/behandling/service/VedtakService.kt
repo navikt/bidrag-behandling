@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
@@ -275,7 +276,10 @@ class VedtakService(
             request?.enhet ?: behandling.behandlerEnhet,
         )
 
-        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+        val aldersjusteringBeregnet =
+            vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
+                vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
+        if (aldersjusteringBeregnet) {
             forsendelseService.opprettForsendelseForAldersjustering(behandling)
         } else {
             opprettNotat(behandling)

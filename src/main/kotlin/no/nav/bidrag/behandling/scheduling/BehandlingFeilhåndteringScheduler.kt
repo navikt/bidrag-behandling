@@ -35,7 +35,6 @@ class BehandlingFeilhåndteringScheduler(
                 bestillinger.bestillinger.forEach {
                     forsendelseService.distribuerForsendelse(it)
                 }
-                behandling.lagreBestillinger(bestillinger)
                 behandlingRepository.save(behandling)
             } catch (e: Exception) {
                 log.error(e) {

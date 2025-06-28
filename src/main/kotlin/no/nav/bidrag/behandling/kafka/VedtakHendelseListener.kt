@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
@@ -88,6 +89,7 @@ class VedtakHendelseListener(
         vedtak: VedtakHendelse,
         behandling: Behandling,
     ) {
+        if (vedtak.type == Vedtakstype.ALDERSJUSTERING) return
         forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer!!,

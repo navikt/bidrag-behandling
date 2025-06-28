@@ -110,8 +110,9 @@ open class Behandling(
     @ColumnTransformer(write = "?::jsonb")
     open var grunnlagsinnhentingFeilet: String? = null,
     @Column(name = "forsendelse_bestillinger", columnDefinition = "jsonb")
+    @Convert(converter = ForsendelseBestillingerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
-    open var forsendelseBestillingerJsonString: String? = null,
+    open var forsendelseBestillinger: ForsendelseBestillinger = ForsendelseBestillinger(mutableSetOf()),
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -224,14 +225,17 @@ open class Behandling(
             Personident(bidragspliktig!!.ident!!),
             Saksnummer(saksnummer),
         )
+}
 
-    fun lagreBestillinger(forsendelseBestillinger: ForsendelseBestillinger) {
-        forsendelseBestillingerJsonString = commonObjectmapper.writeValueAsString(forsendelseBestillinger)
-    }
+@Converter
+class ForsendelseBestillingerConverter : AttributeConverter<ForsendelseBestillinger, String?> {
+    override fun convertToDatabaseColumn(attribute: ForsendelseBestillinger?): String? =
+        attribute?.let { commonObjectmapper.writeValueAsString(it) }
 
-    val forsendelseBestillinger get() =
-        forsendelseBestillingerJsonString?.let { commonObjectmapper.readValue<ForsendelseBestillinger>(it) }
-            ?: ForsendelseBestillinger(mutableSetOf())
+    override fun convertToEntityAttribute(dbData: String?): ForsendelseBestillinger? =
+        dbData?.let {
+            commonObjectmapper.readValue(it, ForsendelseBestillinger::class.java)
+        }
 }
 
 fun ForsendelseBestillinger.finnForGjelderOgMottaker(

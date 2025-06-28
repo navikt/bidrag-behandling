@@ -107,8 +107,6 @@ class ForsendelseService(
         }
 
         bestillingBp.opprett(behandling, søknadsbarn)
-
-        behandling.lagreBestillinger(bestillinger)
     }
 
     fun distribuerForsendelse(forsendelseBestilling: ForsendelseBestilling) {

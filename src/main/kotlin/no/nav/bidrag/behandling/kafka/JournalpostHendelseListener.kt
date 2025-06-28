@@ -29,12 +29,9 @@ class JournalpostHendelseListener(
         val behandlinger = behandlingRepository.hentBehandlingerSomInneholderBestillingMedForsendelseId(hendelse.journalpostId.numeric)
         behandlinger.forEach { behandling ->
             val bestillinger = behandling.forsendelseBestillinger
-            secureLogger.info { "Distribuerer forsendelse bestillinger ${bestillinger.bestillinger} i behandling ${behandling.id}" }
-            bestillinger.bestillinger
-                .forEach {
-                    forsendelseService.distribuerForsendelse(it)
-                }
-            behandling.lagreBestillinger(bestillinger)
+            val bestillingForForsendelse = bestillinger.bestillinger.find { it.forsendelseId == hendelse.journalpostId.numeric }!!
+            secureLogger.info { "Distribuerer forsendelse bestilling $bestillingForForsendelse i behandling ${behandling.id}" }
+            forsendelseService.distribuerForsendelse(bestillingForForsendelse)
             behandlingRepository.save(behandling)
         }
     }
