@@ -34,6 +34,7 @@ class JournalpostHendelseListener(
                 .forEach {
                     forsendelseService.distribuerForsendelse(it)
                 }
+            behandlingRepository.save(behandling)
         }
     }
 
