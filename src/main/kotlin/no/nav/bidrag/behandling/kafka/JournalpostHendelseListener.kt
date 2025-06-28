@@ -26,6 +26,7 @@ class JournalpostHendelseListener(
     fun prossesserJournalpostHendelse(melding: ConsumerRecord<String, String>) {
         val hendelse = parseJournalpostHendelse(melding)
         if (!hendelse.erForsendelse() && hendelse.status != JournalpostStatus.KLAR_FOR_DISTRIBUSJON) return
+        secureLogger.info { "Mottok journalpost hendelse $hendelse for forsendelseId ${hendelse.journalpostId.numeric}" }
         val behandlinger = behandlingRepository.hentBehandlingerSomInneholderBestillingMedForsendelseId(hendelse.journalpostId.numeric)
         behandlinger.forEach { behandling ->
             val bestillinger = behandling.forsendelseBestillinger
