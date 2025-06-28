@@ -112,7 +112,7 @@ open class Behandling(
     @Column(name = "forsendelse_bestillinger", columnDefinition = "jsonb")
     @Convert(converter = ForsendelseBestillingerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
-    open var forsendelseBestillinger: ForsendelseBestillinger = ForsendelseBestillinger(mutableSetOf()),
+    open var forsendelseBestillinger: ForsendelseBestillinger? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,

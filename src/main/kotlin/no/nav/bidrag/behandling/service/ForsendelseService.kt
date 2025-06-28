@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.ForsendelseBestilling
+import no.nav.bidrag.behandling.database.datamodell.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.finnForGjelderOgMottaker
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
@@ -64,7 +65,7 @@ class ForsendelseService(
 
     @Transactional
     fun opprettForsendelseForAldersjustering(behandling: Behandling) {
-        val bestillinger = behandling.forsendelseBestillinger
+        val bestillinger = behandling.forsendelseBestillinger ?: ForsendelseBestillinger(mutableSetOf())
         val søknadsbarn = behandling.søknadsbarn.first()
         val bestillingBp =
             bestillinger.finnForGjelderOgMottaker(

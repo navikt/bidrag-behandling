@@ -26,7 +26,7 @@ class BehandlingFeilhåndteringScheduler(
             secureLogger.info {
                 "Forsøker opprett og distribuer forsendelser for ${behandling.id} med bestilling ${behandling.forsendelseBestillinger}"
             }
-            val bestillinger = behandling.forsendelseBestillinger
+            val bestillinger = behandling.forsendelseBestillinger!!
             bestillinger.bestillinger.forEach {
                 it.antallForsøkOpprettEllerDistribuer += 1
             }
