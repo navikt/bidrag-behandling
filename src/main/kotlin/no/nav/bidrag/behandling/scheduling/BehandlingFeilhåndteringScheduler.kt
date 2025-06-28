@@ -26,14 +26,16 @@ class BehandlingFeilhåndteringScheduler(
             secureLogger.info {
                 "Forsøker opprett og distribuer forsendelser for ${behandling.id} med bestilling ${behandling.forsendelseBestillinger}"
             }
-            behandling.forsendelseBestillinger.bestillinger.forEach {
+            val bestillinger = behandling.forsendelseBestillinger
+            bestillinger.bestillinger.forEach {
                 it.antallForsøkOpprettEllerDistribuer += 1
             }
             try {
                 forsendelseService.opprettForsendelseForAldersjustering(behandling)
-                behandling.forsendelseBestillinger.bestillinger.forEach {
+                bestillinger.bestillinger.forEach {
                     forsendelseService.distribuerForsendelse(it)
                 }
+                behandling.lagreBestillinger(bestillinger)
                 behandlingRepository.save(behandling)
             } catch (e: Exception) {
                 log.error(e) {
