@@ -21,7 +21,9 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     @Query("update behandling set deleted = true, slettet_tidspunkt = now() where id = :behandlingsid", nativeQuery = true)
     fun logiskSlett(behandlingsid: Long)
 
-    @Query("select b from behandling b where b.vedtaksid is not null and b.notatJournalpostId is null and b.vedtakstidspunkt >= :afterDate")
+    @Query(
+        "select b from behandling b where b.vedtaksid is not null and b.notatJournalpostId is null and b.vedtakstidspunkt >= :afterDate and b.vedtakstype != 'ALDERSJUSTERING'",
+    )
     fun hentBehandlingerSomManglerNotater(afterDate: LocalDateTime): List<Behandling>
 
     @Query(

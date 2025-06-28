@@ -25,14 +25,15 @@ class JournalpostHendelseListener(
     @Transactional
     fun prossesserJournalpostHendelse(melding: ConsumerRecord<String, String>) {
         val hendelse = parseJournalpostHendelse(melding)
-        if (!hendelse.erForsendelse() && hendelse.status != JournalpostStatus.KLAR_FOR_DISTRIBUSJON) return
+        if (!hendelse.erForsendelse() && hendelse.status != JournalpostStatus.DISTRIBUERT) return
         secureLogger.info { "Mottok journalpost hendelse $hendelse for forsendelseId ${hendelse.journalpostId.numeric}" }
         val behandlinger = behandlingRepository.hentBehandlingerSomInneholderBestillingMedForsendelseId(hendelse.journalpostId.numeric)
         behandlinger.forEach { behandling ->
             val bestillinger = behandling.forsendelseBestillinger
             val bestillingForForsendelse = bestillinger.bestillinger.find { it.forsendelseId == hendelse.journalpostId.numeric }!!
-            secureLogger.info { "Distribuerer forsendelse bestilling $bestillingForForsendelse i behandling ${behandling.id}" }
-            forsendelseService.distribuerForsendelse(bestillingForForsendelse)
+            secureLogger.info { "Oppdaterer status på forsendelse bestilling $bestillingForForsendelse i behandling ${behandling.id}" }
+            bestillingForForsendelse.journalpostId = hendelse.journalpostIdFagarkiv?.numeric
+            bestillingForForsendelse.distribuertTidspunkt = hendelse.distribuertTidspunkt
             behandlingRepository.save(behandling)
         }
     }

@@ -139,7 +139,7 @@ class ForsendelseService(
         try {
             if (forsendelseId != null) return
             feilBegrunnelse = null
-            val forsendelseId = fellesForsendelseService.opprettForsendelse(tilFellesForsendelseBestilling(behandling, søknadsbarn))
+            val forsendelseId = fellesForsendelseService.opprettForsendelse(tilFellesForsendelseBestilling(behandling, søknadsbarn), true)
             this.forsendelseId = forsendelseId
             this.forsendelseOpprettetTidspunkt = LocalDateTime.now()
         } catch (e: Exception) {
