@@ -48,7 +48,7 @@ class VedtakService(
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
         try {
             LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
-            val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+            val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return null
             tilgangskontrollService.sjekkTilgangVedtak(vedtak)
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
@@ -64,7 +64,7 @@ class VedtakService(
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
         if (refererTilVedtakId.isNotEmpty()) {
-            val opprinneligVedtak = vedtakConsumer.hentVedtak(refererTilVedtakId.first().toLong())!!
+            val opprinneligVedtak = vedtakConsumer.hentVedtak(refererTilVedtakId.first())!!
             return hentOpprinneligVedtakstype(opprinneligVedtak)
         }
         return vedtak.type
@@ -77,7 +77,7 @@ class VedtakService(
         if (refererTilVedtakId.isNotEmpty()) {
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
-                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid.toLong())!!
+                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
                 }.toSet() + setOf(vedtak.vedtakstidspunkt!!)
         }
@@ -119,7 +119,7 @@ class VedtakService(
     ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(refVedtaksid) ?: return null
+            vedtakConsumer.hentVedtak(refVedtaksid.toInt()) ?: return null
         if (vedtak.behandlingId == null) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -145,17 +145,17 @@ class VedtakService(
     }
 
     fun konverterVedtakTilBeregningResultatBidrag(vedtakId: Long): ResultatBidragberegningDto? {
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return null
         return vedtak.tilBeregningResultatBidrag()
     }
 
     fun konverterVedtakTilBeregningResultatForskudd(vedtakId: Long): List<ResultatBeregningBarnDto> {
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return emptyList()
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return emptyList()
         return vedtak.tilBeregningResultatForskudd()
     }
 
     fun konverterVedtakTilBeregningResultatSærbidrag(vedtakId: Long): ResultatSærbidragsberegningDto? {
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return null
         return vedtakTilBehandlingMapping.run { vedtak.tilBeregningResultatSærbidrag() }
     }
 

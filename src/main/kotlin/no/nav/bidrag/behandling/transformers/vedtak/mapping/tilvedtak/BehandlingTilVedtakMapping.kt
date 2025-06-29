@@ -386,7 +386,7 @@ class BehandlingTilVedtakMapping(
         type: Engangsbeløptype,
         skyldner: Personident? = null,
     ) = if (refVedtaksid != null) {
-        val vedtak = vedtaksconsumer.hentVedtak(refVedtaksid!!.toLong())!!
+        val vedtak = vedtaksconsumer.hentVedtak(refVedtaksid!!.toInt())!!
         val engangsbeløp =
             vedtak.engangsbeløpListe.find {
                 it.type == type &&

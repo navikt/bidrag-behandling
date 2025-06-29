@@ -165,7 +165,7 @@ class BeregningEvnevurderingService(
 
     private fun finnBeregningIBidragVedtak(vedtakForStønad: VedtakForStønad): BidragBeregningResponsDto.BidragBeregning? {
         // Henter vedtak fra bidrag-vedtak (med fullstendige opplysninger)
-        val vedtakDto = bidragVedtakConsumer.hentVedtak(vedtakForStønad.vedtaksid)
+        val vedtakDto = bidragVedtakConsumer.hentVedtak(vedtakForStønad.vedtaksid.toInt())
         if (vedtakDto == null) {
             secureLogger.warn { "Fant ikke vedtak for vedtaksid ${vedtakForStønad.vedtaksid} i bidrag-vedtak." }
             return null

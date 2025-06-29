@@ -51,13 +51,10 @@ class BidragVedtakConsumer(
             }
         }
 
-//    @BrukerCacheable(VEDTAK_CACHE)
-    fun hentVedtak(vedtakId: Long): VedtakDto? =
+    override fun hentVedtak(vedtaksid: Int): VedtakDto? =
         getForEntity(
-            bidragVedtakUri.pathSegment(vedtakId.toString()).build().toUri(),
+            bidragVedtakUri.pathSegment(vedtaksid.toString()).build().toUri(),
         )
-
-    override fun hentVedtak(vedtaksid: Int): VedtakDto? = hentVedtak(vedtaksid.toLong())
 
     //    @BrukerCacheable(VEDTAK_FOR_STØNAD_CACHE)
     @Retryable(

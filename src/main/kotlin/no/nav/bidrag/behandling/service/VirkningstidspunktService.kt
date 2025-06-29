@@ -70,7 +70,7 @@ class VirkningstidspunktService(
             .mapNotNull {
                 val stønadsendring = it.stønadsendring
                 val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null
-                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid)!!
+                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid.toInt())!!
                 val virkningstidspunkt = stønadsendring.periodeListe.minBy { it.periode.fom }
                 val sluttberegningSistePeriode =
                     vedtak
