@@ -154,6 +154,7 @@ class ForsendelseService(
                 behandlingInfo =
                     request.behandlingInfo
                         .copy(
+                            erVedtakIkkeTilbakekreving = false,
                             barnIBehandling =
                                 request.roller
                                     .filter { it.type == Rolletype.BARN && !it.fødselsnummer?.verdi.isNullOrEmpty() }
@@ -163,6 +164,7 @@ class ForsendelseService(
                 enhet = request.enhet!!,
                 gjelderIdent = "", // Placeholder: Settes i neste steg
                 opprettTittel = true,
+                språk = Språk.NB.name,
                 tema =
                     request.tema
                         ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) JournalTema.FAR else JournalTema.BID,

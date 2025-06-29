@@ -58,29 +58,35 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val expectedRequest =
             """
             {
-                "mottaker": {
-                    "ident": "${testdataBM.ident}"
-                },
                 "gjelderIdent": "${testdataBM.ident}",
+                "mottaker": {
+                    "ident": "${testdataBM.ident}",
+                    "språk":null,
+                    "navn":null,
+                    "identType":null,
+                    "adresse":null
+                },
+                "dokumenter":[],
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
-                "språk": "NB",
-                "tema": "FAR",
                 "behandlingInfo": {
                     "vedtakId": null,
                     "behandlingId": null,
-                    "soknadId": $SOKNAD_ID,
+                    "soknadId": "$SOKNAD_ID",
+                    "engangsBelopType": null,
+                    "stonadType": "FORSKUDD",
+                    "behandlingType": null,
+                    "vedtakType": null,
+                    "soknadType": null,
                     "erFattetBeregnet": null,
                     "erVedtakIkkeTilbakekreving": false,
-                    "stonadType": "FORSKUDD",
-                    "engangsBelopType": null,
-                    "behandlingType": null,
-                    "soknadType": null,
                     "soknadFra": null,
-                    "vedtakType": null,
                     "barnIBehandling":["${testdataBarn1.ident}"]
                 },
-                "opprettTittel": true
+                "tema": "FAR",
+                "språk": "NB",
+                "opprettTittel": true,
+                "distribuerAutomatiskEtterFerdigstilling":false
             }
             """.trimIndent().replace("\n", "").replace(" ", "")
         stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
@@ -147,29 +153,35 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val expectedRequest =
             """
             {
-                "mottaker": {
-                    "ident": "${testdataBM.ident}"
-                },
                 "gjelderIdent": "${testdataBM.ident}",
+                "mottaker": {
+                    "ident": "${testdataBM.ident}",
+                    "språk":null,
+                    "navn":null,
+                    "identType":null,
+                    "adresse":null
+                },
+                "dokumenter":[],
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
-                "språk": "NB",
-                "tema": "FAR",
                 "behandlingInfo": {
                     "vedtakId": null,
                     "behandlingId": null,
-                    "soknadId": $SOKNAD_ID,
+                    "soknadId": "$SOKNAD_ID",
+                    "engangsBelopType": null,
+                    "stonadType": "FORSKUDD",
+                    "behandlingType": null,
+                    "vedtakType": null,
+                    "soknadType": null,
                     "erFattetBeregnet": null,
                     "erVedtakIkkeTilbakekreving": false,
-                    "stonadType": "FORSKUDD",
-                    "engangsBelopType": null,
-                    "behandlingType": null,
-                    "soknadType": null,
                     "soknadFra": null,
-                    "vedtakType": null,
                     "barnIBehandling":["${testdataBarn1.ident}"]
                 },
-                "opprettTittel": true
+                "tema": "FAR",
+                "språk": "NB",
+                "opprettTittel": true,
+                "distribuerAutomatiskEtterFerdigstilling":false
             }
             """.trimIndent().replace("\n", "").replace(" ", "")
         stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
