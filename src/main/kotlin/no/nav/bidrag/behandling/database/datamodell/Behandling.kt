@@ -308,7 +308,7 @@ fun Behandling.hentBeløpshistorikkForStønadstype(
     søknadsbarn: Rolle,
 ) = historiskeStønader.find { it.type == stønadstype && it.kravhaver.verdi == søknadsbarn.ident }
 
-fun Behandling.opprettUnikReferanse(postfix: String?) =
+fun Behandling.opprettUnikReferanse(postfix: String? = null) =
     "behandling_${id}_${opprettetTidspunkt.toCompactString()}${postfix?.let { "_$it" } ?: ""}"
 
 @Converter

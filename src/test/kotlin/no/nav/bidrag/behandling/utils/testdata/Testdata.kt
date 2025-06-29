@@ -254,6 +254,7 @@ fun oppretteBehandling(
     id: Long? = null,
     vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
     virkningstidspunkt: LocalDate = LocalDate.parse("2023-02-01"),
+    stønadstype: Stønadstype = Stønadstype.FORSKUDD,
 ): Behandling =
     Behandling(
         vedtakstype,
@@ -269,7 +270,7 @@ fun oppretteBehandling(
         "Navn Navnesen",
         "bisys",
         SøktAvType.BIDRAGSMOTTAKER,
-        Stønadstype.FORSKUDD,
+        stønadstype,
         null,
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
         virkningstidspunkt = virkningstidspunkt,
@@ -505,6 +506,43 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
                 )
             },
     )
+
+fun opprettGyldigBehandlingAldersjustering(generateId: Boolean): Behandling {
+    val behandling =
+        oppretteBehandling(
+            if (generateId) 1 else null,
+            vedtakstype = Vedtakstype.ALDERSJUSTERING,
+            virkningstidspunkt = LocalDate.parse("2025-07-01"),
+            stønadstype = Stønadstype.BIDRAG,
+        )
+    behandling.roller =
+        mutableSetOf(
+            Rolle(
+                ident = testdataBM.ident,
+                rolletype = Rolletype.BIDRAGSMOTTAKER,
+                behandling = behandling,
+                fødselsdato = testdataBM.fødselsdato,
+                id = if (generateId) (1).toLong() else null,
+                harGebyrsøknad = false,
+            ),
+            Rolle(
+                ident = testdataBP.ident,
+                rolletype = Rolletype.BIDRAGSPLIKTIG,
+                behandling = behandling,
+                fødselsdato = testdataBP.fødselsdato,
+                id = if (generateId) (2).toLong() else null,
+                harGebyrsøknad = false,
+            ),
+            Rolle(
+                ident = testdataBarn1.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn1.fødselsdato,
+                id = if (generateId) (3).toLong() else null,
+            ),
+        )
+    return behandling
+}
 
 fun opprettGyldigBehandlingForBeregningOgVedtak(
     generateId: Boolean = false,

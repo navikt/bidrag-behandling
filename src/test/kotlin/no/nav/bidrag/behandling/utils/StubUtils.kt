@@ -56,6 +56,7 @@ import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.util.IdentConsumer
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -169,6 +170,28 @@ fun stubInntektRepository(inntektRepository: InntektRepository = mockkClass(Innt
     return inntektRepository
 }
 
+fun stubIdentConsumer(identConsumer: IdentConsumer? = null): IdentConsumer {
+    try {
+        clearMocks(IdentConsumer::class)
+    } catch (e: Exception) {
+        // Ignore
+    }
+    val personConsumerMock = identConsumer ?: mockkClass(IdentConsumer::class)
+    every { personConsumerMock.sjekkIdent(any<String>()) }.answers {
+        val personId = firstArg<String>()
+        personId
+    }
+    every { personConsumerMock.hentAlleIdenter(any<String>()) }.answers {
+        val personId = firstArg<String>()
+        listOf(personId)
+    }
+    mockkObject(AppContext)
+    every {
+        AppContext.getBean<IdentConsumer>(any())
+    } returns personConsumerMock
+    return personConsumerMock
+}
+
 fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): BidragPersonConsumer {
     try {
         clearMocks(BidragPersonConsumer::class)
@@ -185,6 +208,9 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
             fødselsdato = LocalDate.parse("2015-05-01"),
             aktørId = firstArg<String>(),
         )
+    }
+    every { personConsumerMock.hentFødselsdatoForPerson(any<Personident>()) }.answers {
+        LocalDate.now().minusYears(11)
     }
     mockkObject(AppContext)
     every {

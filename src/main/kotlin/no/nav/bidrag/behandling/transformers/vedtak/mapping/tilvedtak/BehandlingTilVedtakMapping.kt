@@ -71,8 +71,9 @@ class BehandlingTilVedtakMapping(
         }
         val beregningGrunnlagsliste = beregning.first().resultat.grunnlagListe
 
+        val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt().map { it.tilOpprettRequestDto() }
         val grunnlagsliste =
-            beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + byggGrunnlagVirkningsttidspunkt().map { it.tilOpprettRequestDto() }
+            beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + stønadsendringGrunnlag
 
         val aldersjusteringGrunnlag = beregningGrunnlagsliste.finnAldersjusteringDetaljerGrunnlag()
 
@@ -108,7 +109,9 @@ class BehandlingTilVedtakMapping(
                                         sak.hentRolleMedFnr(søknadsbarnRolle.ident!!),
                                     ),
                             beslutning = if (erAldersjustert) Beslutningstype.ENDRING else Beslutningstype.AVVIST,
-                            grunnlagReferanseListe = listOfNotNull(beregningGrunnlagsliste.finnAldersjusteringDetaljerReferanse()),
+                            grunnlagReferanseListe =
+                                listOfNotNull(beregningGrunnlagsliste.finnAldersjusteringDetaljerReferanse()) +
+                                    stønadsendringGrunnlag.map { it.referanse },
                             innkreving = Innkrevingstype.MED_INNKREVING,
                             sisteVedtaksid = vedtakService.finnSisteVedtaksid(stønad),
                             førsteIndeksreguleringsår =

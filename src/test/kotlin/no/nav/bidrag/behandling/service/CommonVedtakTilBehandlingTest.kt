@@ -22,6 +22,8 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
+import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -31,6 +33,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseD
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import stubBehandlingrepository
+import stubIdentConsumer
 import stubPersonConsumer
 import stubPersonRepository
 import stubSaksbehandlernavnProvider
@@ -44,9 +47,6 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
 
     @MockK
     lateinit var notatOpplysningerService: NotatOpplysningerService
-
-    @MockK
-    lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockK
     lateinit var forsendelseService: ForsendelseService
@@ -64,6 +64,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     fun initMocks() {
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
+
         val validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
@@ -96,6 +97,17 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 personService,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService, personRepository, behandlingRepository)
+        val identConsumer = stubIdentConsumer()
+        val identUtils = IdentUtils(identConsumer)
+        val aldersjusteringOrchestrator =
+            AldersjusteringOrchestrator(
+                no.nav.bidrag.beregn.barnebidrag.service
+                    .VedtakService(vedtakConsumer, bidragStønadConsumer, Vedtaksfiltrering(), identUtils),
+                sakConsumer,
+                BeregnBarnebidragApi(),
+                personConsumer,
+                identUtils,
+            )
         beregningService =
             BeregningService(
                 behandlingService,
@@ -132,6 +144,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { behandlingService.oppdaterVedtakFattetStatus(any(), any(), any()) } returns Unit
+        every { forsendelseService.opprettForsendelseForAldersjustering(any()) } returns Unit
         every { validerBehandlingService.validerKanBehandlesINyLøsning(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         every { vedtakConsumer.hentVedtak(any()) } returns

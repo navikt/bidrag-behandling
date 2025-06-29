@@ -262,8 +262,12 @@ class VedtakService(
                     }
                 }.copy(
                     innkrevingUtsattTilDato =
-                        request?.innkrevingUtsattAntallDager?.let {
-                            LocalDate.now().plusDays(it)
+                        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+                            null
+                        } else {
+                            request?.innkrevingUtsattAntallDager?.let {
+                                LocalDate.now().plusDays(it)
+                            }
                         },
                 )
 
