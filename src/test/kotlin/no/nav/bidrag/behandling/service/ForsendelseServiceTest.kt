@@ -27,6 +27,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.dokument.BidragEnhet.ENHET_FARSKAP
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.transport.dokument.forsendelse.JournalTema
 import no.nav.bidrag.transport.dokument.forsendelse.OpprettForsendelseRespons
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -82,7 +83,7 @@ class ForsendelseServiceTest {
         verify(exactly = 1) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.tema shouldBe "FAR"
+                    it.tema shouldBe JournalTema.FAR
                     it.behandlingInfo!!.barnIBehandling shouldHaveSize 1
                     it.behandlingInfo!!.barnIBehandling shouldContain testdataBarn1.ident
                 },
@@ -174,7 +175,7 @@ class ForsendelseServiceTest {
         verify(exactly = 2) {
             bidragForsendelseConsumer.opprettForsendelse(
                 withArg {
-                    it.tema shouldBe "BID"
+                    it.tema shouldBe JournalTema.BID
                 },
             )
         }
@@ -205,7 +206,7 @@ class ForsendelseServiceTest {
                 withArg {
                     it.enhet shouldBe "4806"
                     it.saksnummer shouldBe SAKSNUMMER
-                    it.tema shouldBe "BID"
+                    it.tema shouldBe JournalTema.BID
                     it.opprettTittel shouldBe true
 
                     it.behandlingInfo shouldNotBe null
@@ -244,7 +245,7 @@ class ForsendelseServiceTest {
                 withArg {
                     it.enhet shouldBe "4806"
                     it.saksnummer shouldBe SAKSNUMMER
-                    it.tema shouldBe "BID"
+                    it.tema shouldBe JournalTema.BID
                     it.opprettTittel shouldBe true
 
                     it.behandlingInfo shouldNotBe null
@@ -296,7 +297,7 @@ class ForsendelseServiceTest {
                 withArg {
                     it.enhet shouldBe "4806"
                     it.saksnummer shouldBe SAKSNUMMER
-                    it.tema shouldBe "BID"
+                    it.tema shouldBe JournalTema.BID
                     it.opprettTittel shouldBe true
 
                     it.behandlingInfo shouldNotBe null
@@ -418,7 +419,7 @@ class ForsendelseServiceTest {
                 withArg {
                     it.enhet shouldBe "4806"
                     it.saksnummer shouldBe SAKSNUMMER
-                    it.tema shouldBe "BID"
+                    it.tema shouldBe JournalTema.BID
                     it.opprettTittel shouldBe true
 
                     it.behandlingInfo shouldNotBe null

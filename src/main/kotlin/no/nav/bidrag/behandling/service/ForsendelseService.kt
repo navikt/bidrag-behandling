@@ -161,7 +161,8 @@ class ForsendelseService(
                         ),
                 saksnummer = request.saksnummer,
                 enhet = request.enhet!!,
-                gjelderIdent = "",
+                gjelderIdent = "", // Placeholder: Settes i neste steg
+                opprettTittel = true,
                 tema =
                     request.tema
                         ?: if (request.enhet == ENHET_FARSKAP && harTilgangTilTemaFar()) JournalTema.FAR else JournalTema.BID,
