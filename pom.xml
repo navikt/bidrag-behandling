@@ -309,6 +309,12 @@
             <groupId>no.nav.bidrag</groupId>
             <artifactId>bidrag-transport-felles</artifactId>
             <version>${bidrag-felles.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>no.nav.bidrag</groupId>
