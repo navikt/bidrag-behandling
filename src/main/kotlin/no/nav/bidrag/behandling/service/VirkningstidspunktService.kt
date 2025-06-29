@@ -7,11 +7,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
-import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
@@ -27,7 +25,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
-import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -47,8 +44,6 @@ class VirkningstidspunktService(
     private val underholdService: UnderholdService,
     private val gebyrService: GebyrService,
     private val vedtakConsumer: BidragVedtakConsumer,
-    @Lazy
-    private val dtoMapper: Dtomapper? = null,
 ) {
     fun hentManuelleVedtakForBehandling(behandlingsid: Long): List<ManuellVedtakDto> {
         log.info { "Henter manuelle vedtak for behandling $behandlingsid" }
@@ -115,7 +110,7 @@ class VirkningstidspunktService(
     fun oppdaterBeregnManuellVedtak(
         behandlingsid: Long,
         request: OppdaterManuellVedtakRequest,
-    ): OppdaterManuellVedtakResponse {
+    ) {
         secureLogger.info { "Oppdaterer manuell vedtak for behandling $behandlingsid, forespørsel=$request" }
 
         val behandling =
@@ -130,16 +125,6 @@ class VirkningstidspunktService(
             .let {
                 it.grunnlagFraVedtak = request.vedtaksid
             }
-
-        val beregning =
-            dtoMapper!!.beregningService!!.beregneBidrag(behandling)
-        behandling.grunnlagslisteFraVedtak = beregning.flatMap { it.resultat.grunnlagListe }
-        return OppdaterManuellVedtakResponse(
-            beregning.all {
-                it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
-            },
-            dtoMapper.tilUnderholdskostnadDto(behandling, beregning),
-        )
     }
 
     @Transactional

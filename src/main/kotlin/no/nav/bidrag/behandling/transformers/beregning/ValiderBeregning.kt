@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
@@ -270,7 +271,18 @@ class ValiderBeregning(
         }
     }
 
-    fun validerForBeregningAldersjusteringBidrag(): BeregningValideringsfeil? = null
+    fun Behandling.validerForBeregningAldersjusteringBidrag(): BeregningValideringsfeil? =
+        BeregningValideringsfeil(
+            virkningstidspunkt =
+                VirkningstidspunktFeilDto(
+                    måVelgeVedtakForBeregning =
+                        søknadsbarn
+                            .filter {
+                                it.grunnlagFraVedtak ==
+                                    null
+                            }.map { it.tilDto() },
+                ).takeIf { it.harFeil },
+        ).takeIf { it.virkningstidspunkt != null }
 
     fun Behandling.validerForBeregningSærbidrag() {
         val feil =
