@@ -25,6 +25,7 @@ env:
   BIDRAG_SAK_URL: https://bidrag-sak-q4.dev-fss-pub.nais.io/bidrag-sak
   BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-q4
   TOPIC_VEDTAK: bidrag.vedtak-q4
+  TOPIC_JOURNALPOST: bidrag.journalpost-feature
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon-feature
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
@@ -33,6 +34,8 @@ env:
   KODEVERK_URL: http://bidrag-kodeverk
   OPPGAVE_URL: https://oppgave-q1.dev-fss-pub.nais.io
   OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave-q1
+  BIDRAG_SAMHANDLER_URL: http://bidrag-samhandler-q4
+  BIDRAG_SAMHANDLER_SCOPE: dev-gcp.bidrag.bidrag-samhandler-q4
   JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 kafka:
   pool: nav-dev
@@ -57,6 +60,7 @@ database:
 outbound-access-apps:
   - bidrag-grunnlag
   - bidrag-stonad-q4
+  - bidrag-samhandler-q4
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
   - bidrag-vedtak-q4

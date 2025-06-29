@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.grunnlag
 
+import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -13,12 +14,15 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
+import java.time.YearMonth
 
 fun RelatertPersonGrunnlagDto.erBarnTilBMUnder12År(virkningstidspunkt: LocalDate) = erBarn && fødselsdato.erUnder12År(virkningstidspunkt)
 
@@ -162,3 +166,29 @@ fun Behandling.henteNyesteGrunnlag(
                 it.gjelder == gjelder?.verdi
         }.toSet()
         .maxByOrNull { it.innhentet }
+
+fun Behandling.opprettAldersjusteringDetaljerGrunnlag(
+    søknadsbarnReferanse: String,
+    aldersjusteresManuelt: Boolean = false,
+    aldersjustert: Boolean = true,
+    søknadsbarn: Rolle,
+    begrunnelser: List<String>? = null,
+    vedtaksidBeregning: Long? = null,
+) = GrunnlagDto(
+    referanse = "${no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.ALDERSJUSTERING_DETALJER}_${tilStønadsid(
+        søknadsbarn,
+    ).toReferanse()}",
+    type = no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.ALDERSJUSTERING_DETALJER,
+    gjelderBarnReferanse = søknadsbarnReferanse,
+    gjelderReferanse = søknadsbarnReferanse,
+    innhold =
+        POJONode(
+            AldersjusteringDetaljerGrunnlag(
+                periode = ÅrMånedsperiode(YearMonth.now().withMonth(7), null),
+                aldersjusteresManuelt = aldersjusteresManuelt,
+                aldersjustert = aldersjustert,
+                begrunnelser = begrunnelser,
+                grunnlagFraVedtak = vedtaksidBeregning,
+            ),
+        ),
+)

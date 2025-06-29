@@ -170,6 +170,7 @@ data class ResultatBidragsberegningBarnDto(
     val resultatUtenBeregning: Boolean = false,
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
+    val forsendelseDistribueresAutomatisk: Boolean = false,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
 )
 

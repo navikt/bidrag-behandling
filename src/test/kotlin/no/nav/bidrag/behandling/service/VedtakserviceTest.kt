@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -80,6 +81,9 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @Autowired
     lateinit var behandlingService: BehandlingService
+
+    @MockkBean
+    lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
     lateinit var notatOpplysningerService: NotatOpplysningerService
@@ -117,6 +121,9 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockkBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
+    @MockkBean
+    lateinit var vedtakService2: no.nav.bidrag.beregn.barnebidrag.service.VedtakService
+
     @Autowired
     lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
@@ -135,6 +142,9 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @MockK
     lateinit var personRepository: PersonRepository
+
+    @MockK
+    lateinit var forsendelseService: ForsendelseService
 
     val notatService = NotatService()
 
@@ -164,6 +174,7 @@ class VedtakserviceTest : TestContainerRunner() {
             BeregningService(
                 behandlingService,
                 vedtakGrunnlagMapper,
+                aldersjusteringOrchestrator,
             )
         val dtomapper =
             Dtomapper(
@@ -188,6 +199,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 vedtakGrunnlagMapper,
                 beregningService,
                 vedtakConsumer,
+                vedtakService2,
             )
         vedtakService =
             VedtakService(
@@ -196,11 +208,11 @@ class VedtakserviceTest : TestContainerRunner() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                unleash,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
+                forsendelseService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

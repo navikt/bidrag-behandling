@@ -15,6 +15,9 @@ import net.javacrumbs.shedlock.core.LockProvider
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.commons.service.forsendelse.EnableForsendelseService
+import no.nav.bidrag.commons.util.EnableSjekkForNyIdent
 import no.nav.bidrag.commons.web.CorrelationIdFilter
 import no.nav.bidrag.commons.web.DefaultCorsFilter
 import no.nav.bidrag.commons.web.MdcConstants.MDC_ENHET
@@ -55,8 +58,11 @@ import javax.sql.DataSource
     UserMdcFilter::class,
     InntektApi::class,
     BeregnBarnebidragApi::class,
+    AldersjusteringOrchestrator::class,
 )
+@EnableSjekkForNyIdent
 @EnableScheduling
+@EnableForsendelseService
 @EnableSchedulerLock(defaultLockAtMostFor = "30m")
 class DefaultConfiguration {
     @Bean

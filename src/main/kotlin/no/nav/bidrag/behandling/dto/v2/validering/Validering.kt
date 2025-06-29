@@ -20,16 +20,18 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import java.time.LocalDate
 
 data class VirkningstidspunktFeilDto(
-    val manglerVirkningstidspunkt: Boolean,
+    val manglerVirkningstidspunkt: Boolean = false,
     val manglerOpphørsdato: List<RolleDto> = emptyList(),
-    val manglerÅrsakEllerAvslag: Boolean,
+    val manglerÅrsakEllerAvslag: Boolean = false,
+    val måVelgeVedtakForBeregning: List<RolleDto> = emptyList(),
     val manglerBegrunnelse: Boolean = false,
-    val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean,
+    val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean = false,
 ) {
     @get:JsonIgnore
     val harFeil
         get() =
             manglerBegrunnelse ||
+                måVelgeVedtakForBeregning.isNotEmpty() ||
                 manglerOpphørsdato.isNotEmpty() ||
                 manglerVirkningstidspunkt ||
                 manglerÅrsakEllerAvslag ||

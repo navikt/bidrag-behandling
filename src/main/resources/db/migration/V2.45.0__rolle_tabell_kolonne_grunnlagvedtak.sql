@@ -1,0 +1,1 @@
+alter table rolle add column if not exists grunnlag_fra_vedtak numeric;

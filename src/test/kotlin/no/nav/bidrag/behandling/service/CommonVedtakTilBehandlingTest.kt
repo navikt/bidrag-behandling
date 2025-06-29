@@ -6,7 +6,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
@@ -22,6 +21,9 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
+import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -31,6 +33,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseD
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import stubBehandlingrepository
+import stubIdentConsumer
 import stubPersonConsumer
 import stubPersonRepository
 import stubSaksbehandlernavnProvider
@@ -46,10 +49,13 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var notatOpplysningerService: NotatOpplysningerService
 
     @MockK
-    lateinit var vedtakConsumer: BidragVedtakConsumer
+    lateinit var forsendelseService: ForsendelseService
 
     @MockK
     lateinit var sakConsumer: BidragSakConsumer
+
+    @MockK
+    lateinit var vedtakService2: no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 
     lateinit var beregningService: BeregningService
     val unleash = FakeUnleash()
@@ -58,6 +64,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     fun initMocks() {
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
+
         val validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
@@ -90,10 +97,22 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 personService,
             )
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService, personRepository, behandlingRepository)
+        val identConsumer = stubIdentConsumer()
+        val identUtils = IdentUtils(identConsumer)
+        val aldersjusteringOrchestrator =
+            AldersjusteringOrchestrator(
+                no.nav.bidrag.beregn.barnebidrag.service
+                    .VedtakService(vedtakConsumer, bidragStønadConsumer, Vedtaksfiltrering(), identUtils),
+                sakConsumer,
+                BeregnBarnebidragApi(),
+                personConsumer,
+                identUtils,
+            )
         beregningService =
             BeregningService(
                 behandlingService,
                 vedtakGrunnlagMapper,
+                aldersjusteringOrchestrator,
             )
         val behandlingTilVedtakMapping =
             BehandlingTilVedtakMapping(
@@ -101,6 +120,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 vedtakGrunnlagMapper,
                 beregningService,
                 vedtakConsumer,
+                vedtakService2,
             )
 
         vedtakService =
@@ -110,11 +130,11 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                unleash,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
+                forsendelseService,
             )
 
         unleash.enableAll()
@@ -124,6 +144,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { behandlingService.oppdaterVedtakFattetStatus(any(), any(), any()) } returns Unit
+        every { forsendelseService.opprettForsendelseForAldersjustering(any()) } returns Unit
         every { validerBehandlingService.validerKanBehandlesINyLøsning(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())
         every { vedtakConsumer.hentVedtak(any()) } returns

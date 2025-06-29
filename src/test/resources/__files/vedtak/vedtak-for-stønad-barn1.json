@@ -3,6 +3,7 @@
     "vedtaksid" : 466,
     "vedtakstidspunkt" : "2024-09-19T06:21:18.000266",
     "type" : "FASTSETTELSE",
+    "kildeapplikasjon": "",
     "kilde" : "MANUELT",
     "stønadsendring" : {
       "type" : "BIDRAG",

@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
-import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
@@ -23,6 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
+import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
@@ -40,6 +40,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -81,7 +82,9 @@ class BehandlingService(
             return it
         } ?: run {
             behandlingRepository.save(behandling).let {
-                opprettForsendelseForBehandling(it)
+                if (behandling.vedtakstype.kreverGrunnlag()) {
+                    opprettForsendelseForBehandling(it)
+                }
                 it
             }
         }
@@ -190,7 +193,7 @@ class BehandlingService(
 
         val behandlingDo = opprettBehandling(behandling)
 
-        if (TypeBehandling.BIDRAG == opprettBehandling.tilType()) {
+        if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype.kreverGrunnlag()) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandlingDo.underholdskostnader.add(
@@ -232,8 +235,8 @@ class BehandlingService(
                 roller = behandling.tilForsendelseRolleDto(),
                 behandlingInfo =
                     BehandlingInfoDto(
-                        behandlingId = behandling.id,
-                        soknadId = behandling.soknadsid,
+                        behandlingId = behandling.id?.toString(),
+                        soknadId = behandling.soknadsid?.toString(),
                         soknadFra = behandling.soknadFra,
                         behandlingType = behandling.tilBehandlingstype(),
                         stonadType = behandling.stonadstype,

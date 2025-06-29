@@ -1786,7 +1786,7 @@ class GrunnlagMappingTest {
                 mottattdato = LocalDate.parse("2023-03-15"),
                 klageMottattdato = null,
                 SAKSNUMMER,
-                SOKNAD_ID,
+                SOKNAD_ID.toLong(),
                 søknadRefId,
                 "4806",
                 "Z9999",

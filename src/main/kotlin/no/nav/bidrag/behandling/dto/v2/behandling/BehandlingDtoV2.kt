@@ -89,9 +89,9 @@ data class BehandlingDetaljerDtoV2(
 data class BehandlingDtoV2(
     val id: Long,
     val type: TypeBehandling,
+    val lesemodus: Boolean = false,
     val erBisysVedtak: Boolean,
     val erVedtakUtenBeregning: Boolean = false,
-    val erAvvistAldersjustering: Boolean = false,
     val grunnlagFraVedtaksid: Long? = null,
     val medInnkreving: Boolean,
     val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,

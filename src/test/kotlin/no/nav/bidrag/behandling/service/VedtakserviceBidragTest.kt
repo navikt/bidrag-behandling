@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
+import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
@@ -33,6 +34,7 @@ import no.nav.bidrag.behandling.utils.shouldContainPerson
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
+import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetillegg
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
@@ -42,10 +44,12 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilPrivatAvtale
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
+import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingAldersjustering
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandlingMedReelMottaker
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
@@ -76,6 +80,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
@@ -107,11 +112,128 @@ import org.springframework.web.client.HttpStatusCodeException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.util.Optional
 
 @ExtendWith(SpringExtension::class)
 class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
+    @Test
+    fun `Skal fatte vedtak og opprette grunnlagsstruktur for en bidrag aldersjustering behandling`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingAldersjustering(true)
+        behandling.virkningstidspunkt = YearMonth.now().withMonth(7).atDay(1)
+
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                    beløp = BigDecimal("2600"),
+                ),
+            ),
+        )
+        val originalVedtak = lagVedtaksdata("fattetvedtak/bidrag-innvilget")
+
+        behandling.søknadsbarn.first().grunnlagFraVedtak = 1
+        every { vedtakConsumer.hentVedtak(any()) } returns originalVedtak
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+        every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns
+            opprettStønadDto(
+                stønadstype = Stønadstype.BIDRAG,
+                periodeListe =
+                    listOf(
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), LocalDate.parse("2024-07-31"))),
+                        opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null)),
+                    ),
+            )
+
+        every { vedtakService2.finnSisteVedtaksid(any()) } returns 1
+//        every { vedtakService2.hentBeløpshistorikk(any(), any()) } returns 1
+        every { vedtakService2.hentLøpendeStønad(any()) } returns
+            StønadPeriodeDto(
+                periode = ÅrMånedsperiode(LocalDate.now().minusMonths(5).withDayOfMonth(1), null),
+                periodeid = 1,
+                stønadsid = 1,
+                vedtaksid = 1,
+                gyldigFra = LocalDateTime.now(),
+                gyldigTil = null,
+                beløp = BigDecimal("2600"),
+                valutakode = "",
+                resultatkode = "KBB",
+                periodeGjortUgyldigAvVedtaksid = null,
+            )
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = null))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.ALDERSJUSTERING
+            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
+                request.grunnlagListe shouldHaveSize 16
+            }
+            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
+        }
+
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            assertSoftly(stønadsendring) {
+                it.type shouldBe Stønadstype.BIDRAG
+                it.sak shouldBe Saksnummer(behandling.saksnummer)
+                it.skyldner shouldBe Personident(behandling.bidragspliktig!!.ident!!)
+                it.kravhaver shouldBe Personident(behandling.søknadsbarn.first().ident!!)
+                it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
+                it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                it.beslutning shouldBe Beslutningstype.ENDRING
+                it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
+
+                it.sisteVedtaksid shouldBe 1
+                it.periodeListe shouldHaveSize 1
+                it.grunnlagReferanseListe shouldHaveSize 2
+
+                opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                    Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                    it.grunnlagReferanseListe,
+                ) shouldHaveSize
+                    1
+
+                opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                    Grunnlagstype.ALDERSJUSTERING_DETALJER,
+                    it.grunnlagReferanseListe,
+                ) shouldHaveSize
+                    1
+
+                assertSoftly(it.periodeListe[0]) {
+                    opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                        Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG_ALDERSJUSTERING,
+                        it.grunnlagReferanseListe,
+                    ) shouldHaveSize
+                        1
+                    it.periode.fom.shouldBe(YearMonth.now().withMonth(7))
+                    it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
+                }
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 0) { notatOpplysningerService.opprettNotat(any()) }
+        verify(exactly = 1) { forsendelseService.opprettForsendelseForAldersjustering(any()) }
+    }
+
     @Test
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en bidrag behandling`() {
         stubPersonConsumer()

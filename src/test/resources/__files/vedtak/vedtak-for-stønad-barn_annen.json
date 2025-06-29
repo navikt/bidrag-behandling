@@ -4,6 +4,7 @@
     "vedtakstidspunkt" : "2024-09-19T06:21:18.000266",
     "type" : "FASTSETTELSE",
     "kilde" : "MANUELT",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG18AAR",
       "sak" : "2400101",

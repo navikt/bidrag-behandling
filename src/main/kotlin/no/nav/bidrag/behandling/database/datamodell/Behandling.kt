@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -23,6 +24,7 @@ import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.diverse.Språk
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -31,8 +33,12 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toCompactString
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
@@ -103,6 +109,10 @@ open class Behandling(
     @Column(name = "grunnlagsinnhenting_feilet", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var grunnlagsinnhentingFeilet: String? = null,
+    @Column(name = "forsendelse_bestillinger", columnDefinition = "jsonb")
+    @Convert(converter = ForsendelseBestillingerConverter::class)
+    @ColumnTransformer(write = "?::jsonb")
+    open var forsendelseBestillinger: ForsendelseBestillinger = ForsendelseBestillinger(),
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -183,7 +193,7 @@ open class Behandling(
     @Transient
     var erVedtakUtenBeregning: Boolean = false,
     @Transient
-    var grunnlagFraVedtak: List<GrunnlagDto>? = emptyList(),
+    var grunnlagslisteFraVedtak: List<GrunnlagDto>? = emptyList(),
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
@@ -207,7 +217,51 @@ open class Behandling(
         }
     val opphørTilDato get() = justerPeriodeTomOpphørsdato(globalOpphørsdato)
     val opphørSistePeriode get() = opphørTilDato != null
+
+    fun tilStønadsid(søknadsbarn: Rolle) =
+        Stønadsid(
+            stonadstype!!,
+            Personident(søknadsbarn.ident!!),
+            Personident(bidragspliktig!!.ident!!),
+            Saksnummer(saksnummer),
+        )
 }
+
+@Converter
+class ForsendelseBestillingerConverter : AttributeConverter<ForsendelseBestillinger, String?> {
+    override fun convertToDatabaseColumn(attribute: ForsendelseBestillinger?): String? =
+        attribute?.let { commonObjectmapper.writeValueAsString(it) }
+
+    override fun convertToEntityAttribute(dbData: String?): ForsendelseBestillinger? =
+        dbData?.let {
+            commonObjectmapper.readValue(it, ForsendelseBestillinger::class.java)
+        }
+}
+
+fun ForsendelseBestillinger.finnForGjelderOgMottaker(
+    gjelder: String?,
+    mottaker: String?,
+    rolletype: Rolletype?,
+) = bestillinger.find { it.gjelder == gjelder && it.mottaker == mottaker && it.rolletype == rolletype }
+
+data class ForsendelseBestillinger(
+    val bestillinger: MutableSet<ForsendelseBestilling> = mutableSetOf(),
+)
+
+data class ForsendelseBestilling(
+    var forsendelseId: Long? = null,
+    var journalpostId: Long? = null,
+    val rolletype: Rolletype?,
+    val gjelder: String? = null,
+    val mottaker: String? = null,
+    val språkkode: Språk? = null,
+    val dokumentmal: String? = null,
+    val opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
+    var forsendelseOpprettetTidspunkt: LocalDateTime? = null,
+    var distribuertTidspunkt: LocalDateTime? = null,
+    var feilBegrunnelse: String? = null,
+    var antallForsøkOpprettEllerDistribuer: Int = 1,
+)
 
 val Behandling.særbidragKategori
     get() =
@@ -254,7 +308,7 @@ fun Behandling.hentBeløpshistorikkForStønadstype(
     søknadsbarn: Rolle,
 ) = historiskeStønader.find { it.type == stønadstype && it.kravhaver.verdi == søknadsbarn.ident }
 
-fun Behandling.opprettUnikReferanse(postfix: String?) =
+fun Behandling.opprettUnikReferanse(postfix: String? = null) =
     "behandling_${id}_${opprettetTidspunkt.toCompactString()}${postfix?.let { "_$it" } ?: ""}"
 
 @Converter

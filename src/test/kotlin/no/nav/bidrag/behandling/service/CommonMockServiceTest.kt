@@ -6,6 +6,7 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.mockkClass
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.controller.v2.BehandlingControllerV2
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
@@ -44,6 +45,9 @@ abstract class CommonMockServiceTest {
 
     @MockK
     lateinit var grunnlagConsumer: BidragGrunnlagConsumer
+
+    @MockK
+    lateinit var vedtakConsumer: BidragVedtakConsumer
 
     lateinit var boforholdService: BoforholdService
 
@@ -142,7 +146,7 @@ abstract class CommonMockServiceTest {
             GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, unleash)
         inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
         boforholdService = BoforholdService(behandlingRepository, husstandsmedlemRepository, notatService, sivilstandRepository, dtomapper)
-        virkningstidspunktService = VirkningstidspunktService(behandlingRepository, boforholdService, notatService, grunnlagService, inntektService, samværService, underholdService, GebyrService(vedtakGrunnlagMapper))
+        virkningstidspunktService = VirkningstidspunktService(behandlingRepository, boforholdService, notatService, grunnlagService, inntektService, samværService, underholdService, GebyrService(vedtakGrunnlagMapper), vedtakConsumer)
         vedtakService = mockkClass(VedtakService::class)
         behandlingControllerV2 =
             BehandlingControllerV2(

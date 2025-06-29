@@ -4038,7 +4038,7 @@
         "samvær_SAMVÆRSPERIODE_20240201_20240531_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20130615_285_202403_202406",
@@ -4077,7 +4077,7 @@
         "samvær_SAMVÆRSPERIODE_20240201_20240531_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20130615_285_202406_202407",
@@ -4116,7 +4116,7 @@
         "samvær_SAMVÆRSPERIODE_20240601_20240831_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20130615_285_202407_202408",
@@ -4156,7 +4156,7 @@
         "samvær_SAMVÆRSPERIODE_20240601_20240831_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20130615_285_202408_202409",
@@ -4199,7 +4199,7 @@
         "samvær_SAMVÆRSPERIODE_20240601_20240831_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20130615_285_202409_202410",
@@ -4241,7 +4241,7 @@
         "samvær_SAMVÆRSPERIODE_20240901_20241031_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20130615_285_202410_202411",
@@ -4283,7 +4283,7 @@
         "samvær_SAMVÆRSPERIODE_20240901_20241031_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "sluttberegning_person_PERSON_SØKNADSBARN_20130615_285_202411",
@@ -4320,7 +4320,7 @@
         "samvær_SAMVÆRSPERIODE_20241101_person_PERSON_SØKNADSBARN_20130615_285"
       ],
       "gjelderReferanse": null,
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "person_PERSON_BARN_BIDRAGSMOTTAKER_20140627_-637281321",

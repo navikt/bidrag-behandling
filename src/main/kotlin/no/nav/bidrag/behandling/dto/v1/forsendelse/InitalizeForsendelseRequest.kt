@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.transport.dokument.forsendelse.JournalTema
 
 data class InitalizeForsendelseRequest(
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
@@ -11,7 +13,7 @@ data class InitalizeForsendelseRequest(
     val saksnummer: String,
     val behandlingInfo: BehandlingInfoDto,
     val enhet: String? = null,
-    val tema: String? = null,
+    val tema: JournalTema? = null,
     val roller: List<ForsendelseRolleDto>,
     val behandlingStatus: BehandlingStatus? = null,
 )

@@ -61,6 +61,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
+import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
@@ -127,21 +128,22 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             sjekkOgOppdaterIdenter(behandling)
-            val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
-            val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
-                tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
-            behandling.grunnlagsinnhentingFeilet = null
+            if (behandling.vedtakstype.kreverGrunnlag()) {
+                val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+                val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
+                    tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
+                behandling.grunnlagsinnhentingFeilet = null
 
-            grunnlagRequestobjekter.forEach {
-                feilrapporteringer +=
-                    henteOglagreGrunnlag(
-                        behandling,
-                        it,
-                        tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
-                    )
+                grunnlagRequestobjekter.forEach {
+                    feilrapporteringer +=
+                        henteOglagreGrunnlag(
+                            behandling,
+                            it,
+                            tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
+                        )
+                }
             }
-
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
 
             behandling.grunnlagSistInnhentet = LocalDateTime.now()
