@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerReferanse
 import no.nav.bidrag.behandling.transformers.finnIndeksår
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.tilType
@@ -71,10 +72,15 @@ class BehandlingTilVedtakMapping(
         }
         val beregningGrunnlagsliste = beregning.first().resultat.grunnlagListe
 
+        val grunnlagPersoner =
+            setOf(
+                bidragspliktig!!.tilGrunnlagPerson(),
+                bidragsmottaker!!.tilGrunnlagPerson(),
+            ).map { it.tilOpprettRequestDto() }
         val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak().map { it.tilOpprettRequestDto() }
         val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt().map { it.tilOpprettRequestDto() }
         val grunnlagsliste =
-            beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + stønadsendringGrunnlag + grunnlagManuelleVedtak
+            beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + stønadsendringGrunnlag + grunnlagManuelleVedtak + grunnlagPersoner
 
         val aldersjusteringGrunnlag = beregningGrunnlagsliste.finnAldersjusteringDetaljerGrunnlag()
 
