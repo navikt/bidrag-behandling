@@ -96,6 +96,7 @@ import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriod
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -122,6 +123,7 @@ import java.math.BigDecimal
 import java.nio.charset.Charset
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
@@ -1890,6 +1892,37 @@ fun Behandling.leggTilTillegsstønad(
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
             dagsats = BigDecimal(50),
+        ),
+    )
+}
+
+fun Behandling.leggTilGrunnlagManuelleVedtak(
+    søknadsbarn: Rolle = this.søknadsbarn.first(),
+) {
+    grunnlag.add(
+        Grunnlag(
+            type = Grunnlagsdatatype.MANUELLE_VEDTAK,
+            rolle = bidragspliktig!!,
+            behandling = this,
+            innhentet = LocalDateTime.now(),
+            aktiv = LocalDateTime.now(),
+            gjelder = søknadsbarn.ident,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    listOf(
+                        ManuellVedtakGrunnlag(
+                            1,
+                            LocalDateTime.of(LocalDate.parse("2024-01-01"), LocalTime.of(1, 0)),
+                            LocalDate.parse("2024-01-01"),
+                            Vedtakstype.FASTSETTELSE,
+                            Stønadstype.BIDRAG,
+                            false,
+                            false,
+                            "",
+                            "",
+                        ),
+                    ),
+                ),
         ),
     )
 }

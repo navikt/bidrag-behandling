@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetillegg
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
+import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagManuelleVedtak
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.leggTilPrivatAvtale
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
@@ -124,6 +125,20 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         val behandling = opprettGyldigBehandlingAldersjustering(true)
         behandling.virkningstidspunkt = YearMonth.now().withMonth(7).atDay(1)
 
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                    beløp = BigDecimal("2600"),
+                ),
+            ),
+        )
+
+        behandling.leggTilGrunnlagManuelleVedtak(
+            behandling.søknadsbarn.first(),
+        )
         behandling.leggTilGrunnlagBeløpshistorikk(
             Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
             behandling.søknadsbarn.first(),
