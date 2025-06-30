@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodes
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -31,6 +32,7 @@ data class ManuellVedtakDto(
     val barnId: Long,
     val fattetTidspunkt: LocalDateTime,
     val virkningsDato: LocalDate,
+    val vedtakstype: Vedtakstype,
     val resultatSistePeriode: String,
     val manglerGrunnlag: Boolean = false,
 )
@@ -57,6 +59,7 @@ data class VirkningstidspunktDtoV2(
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
     @Schema(description = "Manuell vedtak valgt for beregning av aldersjustering")
     val grunnlagFraVedtak: Long? = null,
+    val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)

@@ -6,7 +6,10 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
@@ -34,6 +37,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -144,6 +148,28 @@ fun Behandling.byggGrunnlagSøknad() =
                 ),
         ),
     )
+
+fun Behandling.byggGrunnlagManuelleVedtak(): Set<GrunnlagDto> =
+    søknadsbarn
+        .map {
+            val grunnlag =
+                grunnlag
+                    .hentSisteGrunnlagSomGjelderBarn(
+                        it.personident!!.verdi,
+                        Grunnlagsdatatype.MANUELLE_VEDTAK,
+                    )
+            val innhold = grunnlag?.konvertereData<List<ManuellVedtakGrunnlag>>()
+            GrunnlagDto(
+                referanse = "${Grunnlagstype.MANUELLE_VEDTAK}_${it.tilGrunnlagsreferanse()}",
+                type = Grunnlagstype.MANUELLE_VEDTAK,
+                innhold =
+                    POJONode(
+                        innhold,
+                    ),
+                gjelderReferanse = grunnlag!!.rolle.tilGrunnlagsreferanse(),
+                gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
+            )
+        }.toSet()
 
 fun Behandling.byggGrunnlagVirkningsttidspunkt() =
     if (tilType() == TypeBehandling.BIDRAG) {
@@ -413,10 +439,10 @@ fun opprettPeriodeOpphør(
                 grunnlagReferanseListe =
                     listOf(
                         if (type == TypeBehandling.BIDRAG) {
-                        opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
-                    } else {
-                        opprettGrunnlagsreferanseVirkningstidspunkt()
-                    },
+                            opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
+                        } else {
+                            opprettGrunnlagsreferanseVirkningstidspunkt()
+                        },
                     ),
             )
         }

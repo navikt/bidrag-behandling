@@ -71,9 +71,10 @@ class BehandlingTilVedtakMapping(
         }
         val beregningGrunnlagsliste = beregning.first().resultat.grunnlagListe
 
+        val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak().map { it.tilOpprettRequestDto() }
         val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt().map { it.tilOpprettRequestDto() }
         val grunnlagsliste =
-            beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + stønadsendringGrunnlag
+            beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + stønadsendringGrunnlag + grunnlagManuelleVedtak
 
         val aldersjusteringGrunnlag = beregningGrunnlagsliste.finnAldersjusteringDetaljerGrunnlag()
 
@@ -98,6 +99,11 @@ class BehandlingTilVedtakMapping(
                             }
                         val opphørPeriode =
                             listOfNotNull(opprettPeriodeOpphør(søknadsbarnRolle, perioder, TypeBehandling.BIDRAG))
+                        val grunnlagManuelleVedtakBarn =
+                            grunnlagManuelleVedtak.filter {
+                                it.gjelderBarnReferanse ==
+                                    søknadsbarnRolle.tilGrunnlagsreferanse()
+                            }
                         OpprettStønadsendringRequestDto(
                             type = stønad.type,
                             sak = stønad.sak,
@@ -111,7 +117,7 @@ class BehandlingTilVedtakMapping(
                             beslutning = if (erAldersjustert) Beslutningstype.ENDRING else Beslutningstype.AVVIST,
                             grunnlagReferanseListe =
                                 listOfNotNull(beregningGrunnlagsliste.finnAldersjusteringDetaljerReferanse()) +
-                                    stønadsendringGrunnlag.map { it.referanse },
+                                    stønadsendringGrunnlag.map { it.referanse } + grunnlagManuelleVedtakBarn.map { it.referanse },
                             innkreving = Innkrevingstype.MED_INNKREVING,
                             sisteVedtaksid = vedtakService.finnSisteVedtaksid(stønad),
                             førsteIndeksreguleringsår =

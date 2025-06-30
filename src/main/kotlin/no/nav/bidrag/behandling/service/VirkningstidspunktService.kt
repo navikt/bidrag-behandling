@@ -2,35 +2,28 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
-import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.domene.enums.beregning.Resultatkode
-import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.sak.Saksnummer
-import no.nav.bidrag.domene.util.visningsnavn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
-import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
-import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
-private val vedtakstyperIkkeBeregning =
+val vedtakstyperIkkeBeregning =
     listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
 
 @Service
@@ -43,7 +36,6 @@ class VirkningstidspunktService(
     private val samværService: SamværService,
     private val underholdService: UnderholdService,
     private val gebyrService: GebyrService,
-    private val vedtakConsumer: BidragVedtakConsumer,
 ) {
     fun hentManuelleVedtakForBehandling(behandlingsid: Long): List<ManuellVedtakDto> {
         log.info { "Henter manuelle vedtak for behandling $behandlingsid" }
@@ -55,55 +47,24 @@ class VirkningstidspunktService(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         val søknadsbarn = behandling.søknadsbarn.first()
-        val response =
-            vedtakConsumer.hentVedtakForStønad(
-                HentVedtakForStønadRequest(
-                    skyldner = Personident(behandling.bidragspliktig!!.ident!!),
-                    sak = Saksnummer(behandling.saksnummer),
-                    kravhaver = Personident(søknadsbarn.ident!!),
-                    type = behandling.stonadstype!!,
-                ),
+        val grunnlag =
+            behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(
+                søknadsbarn.personident!!.verdi,
+                Grunnlagsdatatype.MANUELLE_VEDTAK,
             )
-
-        return response.vedtakListe
-            .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
-            .mapNotNull {
-                val stønadsendring = it.stønadsendring
-                val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null
-                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid.toInt())!!
-                val virkningstidspunkt = stønadsendring.periodeListe.minBy { it.periode.fom }
-                val sluttberegningSistePeriode =
-                    vedtak
-                        .grunnlagListe
-                        .finnSluttberegningIReferanser(sistePeriode.grunnlagReferanseListe)
-                        ?.innholdTilObjekt<SluttberegningBarnebidrag>()
-                val resultatSistePeriode =
-                    when (Resultatkode.fraKode(sistePeriode.resultatkode)) {
-                        Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
-                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BEGGE_PARTER,
-                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSPLIKTIG,
-                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSMOTTAKER,
-                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BEGGE_PARTER,
-                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
-                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSPLIKTIG,
-                        Resultatkode.INNTIL_1_ÅR_TILBAKE,
-                        Resultatkode.INNVILGET_VEDTAK,
-                        -> Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
-                        else ->
-                            sluttberegningSistePeriode?.resultatVisningsnavn?.intern
-                                ?: Resultatkode.fraKode(sistePeriode.resultatkode)?.visningsnavn?.intern
-                                ?: sistePeriode.resultatkode
-                    }
-
+        return grunnlag
+            .konvertereData<List<ManuellVedtakGrunnlag>>()
+            ?.map {
                 ManuellVedtakDto(
                     it.vedtaksid,
                     søknadsbarn.id!!,
-                    it.vedtakstidspunkt,
-                    virkningstidspunkt.periode.fom.atDay(1),
-                    resultatSistePeriode,
-                    vedtak.grunnlagListe.isEmpty(),
+                    it.fattetTidspunkt,
+                    it.virkningsDato,
+                    it.vedtakstype,
+                    it.resultatSistePeriode,
+                    it.manglerGrunnlag,
                 )
-            }.sortedByDescending { it.fattetTidspunkt }
+            }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
     }
 
     @Transactional

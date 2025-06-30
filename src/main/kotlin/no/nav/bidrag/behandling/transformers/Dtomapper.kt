@@ -14,11 +14,13 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
@@ -109,6 +111,7 @@ import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -145,6 +148,30 @@ class Dtomapper(
         inkluderHistoriskeInntekter: Boolean = false,
         lesemodus: Boolean = false,
     ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter, lesemodus)
+
+    fun hentManuelleVedtakForBehandling(
+        behandling: Behandling,
+        søknadsbarn: Rolle,
+    ): List<ManuellVedtakDto> {
+        val grunnlag =
+            behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(
+                søknadsbarn.personident!!.verdi,
+                Grunnlagsdatatype.MANUELLE_VEDTAK,
+            )
+        return grunnlag
+            .konvertereData<List<ManuellVedtakGrunnlag>>()
+            ?.map {
+                ManuellVedtakDto(
+                    it.vedtaksid,
+                    søknadsbarn.id!!,
+                    it.fattetTidspunkt,
+                    it.virkningsDato,
+                    it.vedtakstype,
+                    it.resultatSistePeriode,
+                    it.manglerGrunnlag,
+                )
+            }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
+    }
 
     fun tilUnderholdDto(underholdskostnad: Underholdskostnad) = underholdskostnad.tilDto()
 
@@ -736,6 +763,7 @@ class Dtomapper(
                             rolle = it.tilDto(),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
                             opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
+                            manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
                             grunnlagFraVedtak = it.grunnlagFraVedtak,

@@ -143,10 +143,20 @@ abstract class CommonMockServiceTest {
         unleash.enableAll()
 
         grunnlagService =
-            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, unleash)
+            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, vedtakConsumer)
         inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
         boforholdService = BoforholdService(behandlingRepository, husstandsmedlemRepository, notatService, sivilstandRepository, dtomapper)
-        virkningstidspunktService = VirkningstidspunktService(behandlingRepository, boforholdService, notatService, grunnlagService, inntektService, samværService, underholdService, GebyrService(vedtakGrunnlagMapper), vedtakConsumer)
+        virkningstidspunktService =
+            VirkningstidspunktService(
+                behandlingRepository,
+                boforholdService,
+                notatService,
+                grunnlagService,
+                inntektService,
+                samværService,
+                underholdService,
+                GebyrService(vedtakGrunnlagMapper),
+            )
         vedtakService = mockkClass(VedtakService::class)
         behandlingControllerV2 =
             BehandlingControllerV2(
