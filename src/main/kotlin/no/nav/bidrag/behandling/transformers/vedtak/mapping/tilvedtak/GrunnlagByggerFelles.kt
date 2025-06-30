@@ -61,7 +61,7 @@ val grunnlagsreferanse_utgift_maks_godkjent_beløp = "utgift_maks_godkjent_belø
 val grunnlagsreferanse_løpende_bidrag = "løpende_bidrag_bidragspliktig"
 
 fun opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn: Rolle? = null) =
-    "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" }}"
+    "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" } ?: ""}"
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
@@ -412,7 +412,11 @@ fun opprettPeriodeOpphør(
                 beløp = null,
                 grunnlagReferanseListe =
                     listOf(
-                        opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn),
+                        if (type == TypeBehandling.BIDRAG) {
+                        opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
+                    } else {
+                        opprettGrunnlagsreferanseVirkningstidspunkt()
+                    },
                     ),
             )
         }
