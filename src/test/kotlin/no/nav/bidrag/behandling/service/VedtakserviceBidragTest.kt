@@ -216,7 +216,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
                 it.sisteVedtaksid shouldBe 1
                 it.periodeListe shouldHaveSize 1
-                it.grunnlagReferanseListe shouldHaveSize 2
+                it.grunnlagReferanseListe shouldHaveSize 3
 
                 opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                     Grunnlagstype.VIRKNINGSTIDSPUNKT,
