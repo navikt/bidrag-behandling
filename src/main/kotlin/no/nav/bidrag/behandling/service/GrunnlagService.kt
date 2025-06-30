@@ -291,6 +291,7 @@ class GrunnlagService(
                     stønadsendring.type,
                     søknad?.egetTiltak == true,
                     søknad?.begrensetRevurdering == true,
+                    søknad?.privatAvtale == true,
                     sistePeriode.resultatkode,
                     resultatSistePeriode,
                     vedtak.grunnlagListe.isEmpty(),

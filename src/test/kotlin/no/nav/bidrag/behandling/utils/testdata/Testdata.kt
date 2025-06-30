@@ -1918,6 +1918,7 @@ fun Behandling.leggTilGrunnlagManuelleVedtak(
                             Stønadstype.BIDRAG,
                             false,
                             false,
+                            false,
                             "",
                             "",
                         ),
