@@ -427,7 +427,7 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    fun Behandling.byggOpprettVedtakRequestAvslagForForskudd(enhet: String?? = null): OpprettVedtakRequestDto =
+    fun Behandling.byggOpprettVedtakRequestAvslagForForskudd(enhet: String? = null): OpprettVedtakRequestDto =
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
             val grunnlagListe = byggGrunnlagGenereltAvslag()
