@@ -188,6 +188,7 @@ fun Behandling.opprettAldersjusteringDetaljerGrunnlag(
                 aldersjusteresManuelt = aldersjusteresManuelt,
                 aldersjustert = aldersjustert,
                 begrunnelser = begrunnelser,
+                aldersjustertManuelt = true,
                 grunnlagFraVedtak = vedtaksidBeregning,
             ),
         ),

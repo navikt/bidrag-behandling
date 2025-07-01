@@ -61,6 +61,8 @@ class VirkningstidspunktService(
                     it.fattetTidspunkt,
                     it.virkningsDato,
                     it.vedtakstype,
+                    it.privatAvtale,
+                    it.begrensetRevurdering,
                     it.resultatSistePeriode,
                     it.manglerGrunnlag,
                 )

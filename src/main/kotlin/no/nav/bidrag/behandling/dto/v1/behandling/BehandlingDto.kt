@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
@@ -10,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.domene.util.visningsnavn
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -33,9 +35,20 @@ data class ManuellVedtakDto(
     val fattetTidspunkt: LocalDateTime,
     val virkningsDato: LocalDate,
     val vedtakstype: Vedtakstype,
+    @JsonIgnore
+    val privatAvtale: Boolean,
+    @JsonIgnore
+    val begrensetRevurdering: Boolean,
     val resultatSistePeriode: String,
     val manglerGrunnlag: Boolean = false,
-)
+) {
+    val søknadstype get() =
+        when {
+            privatAvtale -> "Privat avtale"
+            begrensetRevurdering -> "Begrenset revurdering"
+            else -> vedtakstype.visningsnavn.intern
+        }
+}
 
 data class VirkningstidspunktDtoV2(
     val rolle: RolleDto,

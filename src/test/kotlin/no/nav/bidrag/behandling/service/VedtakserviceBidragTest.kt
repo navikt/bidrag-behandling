@@ -93,6 +93,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværskl
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
@@ -103,6 +104,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremme
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.Test
@@ -229,6 +231,17 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     it.grunnlagReferanseListe,
                 ) shouldHaveSize
                     1
+
+                val manuelleVedtakgrunnlag =
+                    opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                        Grunnlagstype.MANUELLE_VEDTAK,
+                        it.grunnlagReferanseListe,
+                    )
+
+                manuelleVedtakgrunnlag shouldHaveSize 1
+                val manuelleVedtakInnhold = manuelleVedtakgrunnlag.first().innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
+                manuelleVedtakInnhold shouldHaveSize 1
+                manuelleVedtakgrunnlag.first().gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
 
                 assertSoftly(it.periodeListe[0]) {
                     opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
