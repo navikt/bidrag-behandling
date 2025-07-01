@@ -276,6 +276,8 @@ class GrunnlagService(
                         Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
                         Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSPLIKTIG,
                         Resultatkode.INNTIL_1_ÅR_TILBAKE,
+                        Resultatkode.PRIVAT_AVTALE,
+                        Resultatkode.MANGLER_BIDRAGSEVNE,
                         Resultatkode.INNVILGET_VEDTAK,
                         -> Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
                         else ->
