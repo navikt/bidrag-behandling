@@ -293,7 +293,7 @@ class GrunnlagService(
                     stønadsendring.type,
                     søknad?.egetTiltak == true,
                     søknad?.begrensetRevurdering == true,
-                    søknad?.privatAvtale == true,
+                    søknad?.privatAvtale == true || Resultatkode.fraKode(sistePeriode.resultatkode) == Resultatkode.PRIVAT_AVTALE,
                     sistePeriode.resultatkode,
                     resultatSistePeriode,
                     vedtak.grunnlagListe.isEmpty(),
