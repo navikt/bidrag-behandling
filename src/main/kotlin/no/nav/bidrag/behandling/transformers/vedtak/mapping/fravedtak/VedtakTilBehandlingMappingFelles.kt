@@ -47,6 +47,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -59,6 +60,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -348,6 +350,21 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                     ),
                 )
             }
+        },
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
+        .groupBy { it.gjelderBarnReferanse }
+        .map { (gjelderBarn, grunnlagListe) ->
+            val grunnlag = grunnlagListe.first()
+            val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
+            val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.MANUELLE_VEDTAK,
+                grunnlag.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>(),
+                gjelder = gjelderBarnGrunnlag.personIdent!!,
+                rolleIdent = gjelderGrunnlag.personIdent!!,
+                innhentetTidspunkt = LocalDateTime.now(),
+                lesemodus = lesemodus,
+            )
         },
     hentGrunnlagArbeidsforhold()
         .groupBy { it.partPersonId }

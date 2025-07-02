@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
@@ -35,6 +36,8 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
@@ -70,15 +73,22 @@ class BehandlingTilVedtakMapping(
                 "Kan ikke fatte vedtak: $begrunnelse",
             )
         }
-        val beregningGrunnlagsliste = beregning.first().resultat.grunnlagListe
+        // Ønsker ikke virkningstidspunkt grunnlag fra aldersjusteringen
+        val beregningGrunnlagsliste =
+            beregning
+                .first()
+                .resultat.grunnlagListe
+                .filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
 
+        val bidragspliktigGrunnlag = beregningGrunnlagsliste.bidragspliktig ?: bidragspliktig!!.tilGrunnlagPerson()
+        val bidragsmottakerGrunnlag = beregningGrunnlagsliste.bidragsmottaker ?: bidragsmottaker!!.tilGrunnlagPerson()
         val grunnlagPersoner =
             setOf(
-                bidragspliktig!!.tilGrunnlagPerson(),
-                bidragsmottaker!!.tilGrunnlagPerson(),
+                bidragspliktigGrunnlag,
+                bidragsmottakerGrunnlag,
             ).map { it.tilOpprettRequestDto() }
-        val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak().map { it.tilOpprettRequestDto() }
-        val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt().map { it.tilOpprettRequestDto() }
+        val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak(beregningGrunnlagsliste).map { it.tilOpprettRequestDto() }
+        val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt(beregningGrunnlagsliste).map { it.tilOpprettRequestDto() }
         val grunnlagsliste =
             beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + stønadsendringGrunnlag + grunnlagManuelleVedtak + grunnlagPersoner
 
@@ -92,6 +102,8 @@ class BehandlingTilVedtakMapping(
                 stønadsendringListe =
                     beregning.map {
                         val søknadsbarnRolle = søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!
+                        val søknadsbarnGrunnlag =
+                            grunnlagsliste.toSet().hentPersonMedIdent(søknadsbarnRolle.ident) ?: søknadsbarnRolle.tilGrunnlagPerson()
                         val stønad = tilStønadsid(søknadsbarnRolle)
                         val perioder =
                             it.resultat.beregnetBarnebidragPeriodeListe.map {
@@ -108,7 +120,7 @@ class BehandlingTilVedtakMapping(
                         val grunnlagManuelleVedtakBarn =
                             grunnlagManuelleVedtak.filter {
                                 it.gjelderBarnReferanse ==
-                                    søknadsbarnRolle.tilGrunnlagsreferanse()
+                                    søknadsbarnGrunnlag.referanse
                             }
                         OpprettStønadsendringRequestDto(
                             type = stønad.type,

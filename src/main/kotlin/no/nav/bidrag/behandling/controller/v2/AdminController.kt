@@ -56,7 +56,8 @@ class AdminController(
             sak.roller
                 .filter { it.type == Rolletype.BARN }
                 .firstOrNull {
-                    listOf(6, 11, 15).contains(getAge(hentPersonFødselsdato(it.fødselsnummer!!.verdi)!!)) ||
+                    barnIdent == null &&
+                        listOf(6, 11, 15).contains(getAge(hentPersonFødselsdato(it.fødselsnummer!!.verdi)!!)) ||
                         barnIdent == it.fødselsnummer!!.verdi
                 }
                 ?: return null

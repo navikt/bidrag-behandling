@@ -122,14 +122,15 @@ class BehandlingService(
         val årsak =
             when (opprettBehandling.tilType()) {
                 TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
-                    if (opprettBehandling.vedtakstype !=
+                    if (opprettBehandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+                        VirkningstidspunktÅrsakstype.AUTOMATISK_JUSTERING
+                    } else if (opprettBehandling.vedtakstype !=
                         Vedtakstype.OPPHØR
                     ) {
                         VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
                     } else {
                         null
                     }
-
                 TypeBehandling.SÆRBIDRAG -> null
             }
         val avslag =

@@ -55,6 +55,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBidrag
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBidrag
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatBeregning as ResultatBeregningSærbidrag
@@ -208,6 +209,7 @@ class BeregningService(
                     stønadsid,
                     behandling.virkningstidspunkt!!.year,
                     søknadsbarn.grunnlagFraVedtak!!.toInt(),
+                    søknadsbarn.opphørsdato?.let { YearMonth.from(it) },
                 )
 
             val søknadsbarnGrunnlag = beregning.beregning.grunnlagListe.hentPersonNyesteIdent(søknadsbarn.ident)!!
