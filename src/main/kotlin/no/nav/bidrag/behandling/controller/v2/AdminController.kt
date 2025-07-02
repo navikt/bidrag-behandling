@@ -104,5 +104,5 @@ class AdminController(
         return behandlingService.opprettBehandling(request)
     }
 
-    fun getAge(birthDate: LocalDate): Int = Period.between(birthDate, LocalDate.now()).years
+    fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
 }
