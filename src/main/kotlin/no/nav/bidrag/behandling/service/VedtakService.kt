@@ -289,6 +289,16 @@ class VedtakService(
             opprettNotat(behandling)
         }
 
+        if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING) {
+            try {
+                // Venter i 2 sekunder for å sikre at vedtaksbro har lest inn vedtaket og har oppdatert saksloggen
+                Thread.sleep(2000)
+            } catch (ie: InterruptedException) {
+                Thread.currentThread().interrupt()
+                LOGGER.warn(ie) { "Tråd avbrutt under venting" }
+            }
+        }
+
         LOGGER.info {
             "Fattet vedtak for behandling ${behandling.id} med ${
                 behandling.årsak?.let { "årsakstype $it" }
