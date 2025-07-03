@@ -382,15 +382,15 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
         }
     }
 
-    private val aldersjusteringFølgerAutomatiskVedtak = "aldersjustering_følger_automatisk_vedtak"
+    private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
 
     private val objectMapper = ObjectMapper().findAndRegisterModules()
 
-    fun setAldersjusteringFølgerAutomatiskVedtak(vedtaksid: Int?) {
-        vedtaksid?.let { update(aldersjusteringFølgerAutomatiskVedtak, it.toString()) }
+    fun setFølgerAutomatiskVedtak(vedtaksid: Int?) {
+        vedtaksid?.let { update(følgerAutomatiskVedtak, it.toString()) }
     }
 
-    fun getAldersjusteringFølgerAutomatiskVedtak(): Int? = get(aldersjusteringFølgerAutomatiskVedtak)?.toIntOrNull()
+    fun getFølgerAutomatiskVedtak(): Int? = get(følgerAutomatiskVedtak)?.toIntOrNull()
 
     private fun update(
         key: String,

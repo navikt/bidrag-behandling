@@ -179,7 +179,7 @@ class BehandlingService(
 
         if (opprettBehandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             val metadata = BehandlingMetadataDo()
-            metadata.setAldersjusteringFølgerAutomatiskVedtak(opprettBehandling.vedtaksid)
+            metadata.setFølgerAutomatiskVedtak(opprettBehandling.vedtaksid)
             behandling.metadata = metadata
         }
         behandling.roller.addAll(
