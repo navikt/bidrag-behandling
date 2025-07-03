@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
@@ -164,7 +165,6 @@ class BehandlingService(
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
-                vedtaksid = opprettBehandling.vedtaksid?.toLong(),
                 soknadRefId = opprettBehandling.søknadsreferanseid,
                 behandlerEnhet = opprettBehandling.behandlerenhet,
                 soknadFra = opprettBehandling.søknadFra,
@@ -177,6 +177,11 @@ class BehandlingService(
                 kategoriBeskrivelse = opprettBehandling.kategori?.beskrivelse,
             )
 
+        if (opprettBehandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            val metadata = BehandlingMetadataDo()
+            metadata.setAldersjusteringFølgerVedtaksid(opprettBehandling.vedtaksid)
+            behandling.metadata = metadata
+        }
         behandling.roller.addAll(
             HashSet(
                 opprettBehandling.roller.map {

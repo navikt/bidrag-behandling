@@ -1,7 +1,9 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.hypersistence.utils.hibernate.type.ImmutableType
+import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -44,6 +46,12 @@ import no.nav.bidrag.transport.felles.toCompactString
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import org.hibernate.annotations.Type
+import org.hibernate.engine.spi.SessionFactoryImplementor
+import org.hibernate.engine.spi.SharedSessionContractImplementor
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.sql.Types
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -187,6 +195,9 @@ open class Behandling(
     open var underholdskostnader: MutableSet<Underholdskostnad> = mutableSetOf(),
     open var deleted: Boolean = false,
     open var vedtakFattetAvEnhet: String? = null,
+    @Type(BehandlingMetadataDoConverter::class)
+    @Column(columnDefinition = "hstore", name = "metadata")
+    var metadata: BehandlingMetadataDo? = null,
     @Enumerated(EnumType.STRING)
     open var søknadstype: BisysSøknadstype? = null,
     @Transient
@@ -319,4 +330,75 @@ open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, 
     override fun convertToDatabaseColumn(attribute: VirkningstidspunktÅrsakstype?): String? = attribute?.name
 
     override fun convertToEntityAttribute(dbData: String?): VirkningstidspunktÅrsakstype? = dbData?.tilÅrsakstype()
+}
+
+class BehandlingMetadataDoConverter : ImmutableType<BehandlingMetadataDo>(BehandlingMetadataDo::class.java) {
+    override fun get(
+        rs: ResultSet,
+        p1: Int,
+        session: SharedSessionContractImplementor?,
+        owner: Any?,
+    ): BehandlingMetadataDo? {
+        val map = rs.getObject(p1) as Map<String, String>?
+        return map?.let { BehandlingMetadataDo.from(it) }
+    }
+
+    override fun set(
+        st: PreparedStatement,
+        value: BehandlingMetadataDo?,
+        index: Int,
+        session: SharedSessionContractImplementor,
+    ) {
+        st.setObject(index, value?.toMap())
+    }
+
+    override fun getSqlType(): Int = Types.OTHER
+
+    override fun compare(
+        p0: Any?,
+        p1: Any?,
+        p2: SessionFactoryImplementor?,
+    ): Int = 0
+
+    override fun fromStringValue(sequence: CharSequence?): BehandlingMetadataDo? =
+        try {
+            sequence?.let { JacksonUtil.fromString(sequence as String, BehandlingMetadataDo::class.java) }
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                String.format(
+                    "Could not transform the [%s] value to a Map!",
+                    sequence,
+                ),
+            )
+        }
+}
+
+class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
+    companion object {
+        fun from(initValue: Map<String, String> = hashMapOf()): BehandlingMetadataDo {
+            val dokmap = BehandlingMetadataDo()
+            dokmap.putAll(initValue)
+            return dokmap
+        }
+    }
+
+    private val aldersjusteringFølgerVedtakid = "aldersjustering_følger_vedtaksid"
+
+    private val objectMapper = ObjectMapper().findAndRegisterModules()
+
+    fun setAldersjusteringFølgerVedtaksid(vedtaksid: Int?) {
+        vedtaksid?.let { update(aldersjusteringFølgerVedtakid, it.toString()) }
+    }
+
+    fun getAldersjusteringFølgerVedtaksid(): Int? = get(aldersjusteringFølgerVedtakid)?.toIntOrNull()
+
+    private fun update(
+        key: String,
+        value: String?,
+    ) {
+        remove(key)
+        value?.let { put(key, value) }
+    }
+
+    fun copy(): BehandlingMetadataDo = from(this)
 }

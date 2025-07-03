@@ -188,7 +188,7 @@ fun Behandling.opprettAldersjusteringDetaljerGrunnlag(
                 aldersjusteresManuelt = aldersjusteresManuelt,
                 aldersjustert = aldersjustert,
                 begrunnelser = begrunnelser,
-                følgerAutomatiskVedtak = vedtaksid?.toInt(),
+                følgerAutomatiskVedtak = metadata?.getAldersjusteringFølgerVedtaksid(),
                 aldersjustertManuelt = true,
                 grunnlagFraVedtak = vedtaksidBeregning,
             ),
