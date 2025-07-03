@@ -239,6 +239,7 @@ class BeregningService(
                     søknadsbarn = søknadsbarn,
                     aldersjustert = false,
                     begrunnelser = e.begrunnelser.map { it.name },
+                    vedtaksidBeregning = søknadsbarn.grunnlagFraVedtak,
                 )
             return listOf(
                 ResultatBidragsberegningBarn(
@@ -259,6 +260,7 @@ class BeregningService(
                     søknadsbarn = søknadsbarn,
                     aldersjustert = false,
                     aldersjusteresManuelt = true,
+                    vedtaksidBeregning = søknadsbarn.grunnlagFraVedtak,
                     begrunnelser = listOf(e.begrunnelse.name),
                 )
             return listOf(
