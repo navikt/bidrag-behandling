@@ -86,10 +86,15 @@ data class BehandlingDetaljerDtoV2(
     val opprettetAv: SaksbehandlerDto,
 )
 
+data class LesemodusVedtak(
+    val erAvvist: Boolean,
+    val opprettetAvBatch: Boolean,
+)
+
 data class BehandlingDtoV2(
     val id: Long,
     val type: TypeBehandling,
-    val lesemodus: Boolean = false,
+    val lesemodus: LesemodusVedtak? = null,
     val erBisysVedtak: Boolean,
     val erVedtakUtenBeregning: Boolean = false,
     val grunnlagFraVedtaksid: Long? = null,

@@ -17,6 +17,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
@@ -190,6 +191,8 @@ open class Behandling(
     open var søknadstype: BisysSøknadstype? = null,
     @Transient
     var erBisysVedtak: Boolean = false,
+    @Transient
+    var lesemodusVedtak: LesemodusVedtak? = null,
     @Transient
     var erVedtakUtenBeregning: Boolean = false,
     @Transient

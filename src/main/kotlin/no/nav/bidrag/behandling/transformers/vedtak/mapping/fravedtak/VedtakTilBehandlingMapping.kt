@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
@@ -44,7 +45,9 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -178,6 +181,11 @@ class VedtakTilBehandlingMapping(
         behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
+            behandling.lesemodusVedtak =
+                LesemodusVedtak(
+                    erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
+                    opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
+                )
             behandling.grunnlagslisteFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
             behandling.erVedtakUtenBeregning =

@@ -732,7 +732,7 @@ class Dtomapper(
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
-            lesemodus = lesemodus,
+            lesemodus = lesemodusVedtak,
             erBisysVedtak = erBisysVedtak,
             erVedtakUtenBeregning =
                 vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
