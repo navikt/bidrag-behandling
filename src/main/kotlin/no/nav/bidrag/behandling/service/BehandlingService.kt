@@ -164,6 +164,7 @@ class BehandlingService(
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
+                vedtaksid = opprettBehandling.vedtaksid?.toLong(),
                 soknadRefId = opprettBehandling.søknadsreferanseid,
                 behandlerEnhet = opprettBehandling.behandlerenhet,
                 soknadFra = opprettBehandling.søknadFra,
