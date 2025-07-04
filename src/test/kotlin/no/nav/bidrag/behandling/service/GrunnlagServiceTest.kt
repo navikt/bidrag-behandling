@@ -3035,7 +3035,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val voksneIBpsHusstand =
                     BoforholdApi.beregnBoforholdAndreVoksne(
                         behandling.virkningstidspunktEllerSøktFomDato,
-                        oppdatertVoksenIBpsHusstand.tilBoforholdVoksneRequest(),
+                        oppdatertVoksenIBpsHusstand.tilBoforholdVoksneRequest(behandling),
                     )
 
                 behandling.grunnlag.add(

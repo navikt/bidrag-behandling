@@ -330,7 +330,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         val behandlaAndreVoksneOppdatert =
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                andreVoksneUbehandlaOppdatert!!.tilBoforholdVoksneRequest(),
+                andreVoksneUbehandlaOppdatert!!.tilBoforholdVoksneRequest(behandling),
             )
         behandling.grunnlag.add(
             Grunnlag(

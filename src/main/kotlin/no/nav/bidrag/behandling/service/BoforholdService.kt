@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.boforhold.filtrerUtUrelevantePerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveAndreVoksneIHusstandMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaBostatusperioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
@@ -247,7 +248,10 @@ class BoforholdService(
                 BoforholdApi.beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     periodiseringsrequest.copy(
-                        innhentedeOffentligeOpplysninger = ikkeaktivertGrunnlag.tilHusstandsmedlemmer(),
+                        innhentedeOffentligeOpplysninger =
+                            ikkeaktivertGrunnlag.tilHusstandsmedlemmer().filtrerUtUrelevantePerioder(
+                                behandling,
+                            ),
                     ),
                 )
 
@@ -1121,7 +1125,10 @@ class BoforholdService(
         val borMedAndreVoksneperioder =
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                periodiseringsrequest,
+                periodiseringsrequest.copy(
+                    behandledeBostatusopplysninger = emptyList(),
+                    endreBostatus = null,
+                ),
                 behandling.globalOpphørsdato,
             )
 

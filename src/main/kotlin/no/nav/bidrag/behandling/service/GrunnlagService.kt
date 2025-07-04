@@ -655,7 +655,7 @@ class GrunnlagService(
         val andreVoksneIHusstandenPeriodisert =
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                boforhold.tilBoforholdVoksneRequest(),
+                boforhold.tilBoforholdVoksneRequest(behandling),
             )
 
         overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
@@ -1238,7 +1238,7 @@ class GrunnlagService(
             BoforholdApi
                 .beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(),
+                    husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(behandling),
                 ).toSet()
 
         val bpsNyesteBearbeidaBoforholdFørLagring =

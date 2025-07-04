@@ -1497,7 +1497,7 @@ private fun oppretteBoforhold(
         val periodisertVoksneIBpsHusstand =
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                grunnlagHusstandsmedlemmer.tilBoforholdVoksneRequest(),
+                grunnlagHusstandsmedlemmer.tilBoforholdVoksneRequest(behandling),
             )
 
         behandling.grunnlag.add(
@@ -1569,7 +1569,7 @@ private fun leggeTilAndreVoksneIBpsHusstand(
     val andreVoksneIBpsHusstand =
         BoforholdApi.beregnBoforholdAndreVoksne(
             behandling.virkningstidspunktEllerSøktFomDato,
-            grunnlag.tilBoforholdVoksneRequest(),
+            grunnlag.tilBoforholdVoksneRequest(behandling),
         )
 
     husstandsmedlemBp.perioder.addAll(andreVoksneIBpsHusstand.toSet().tilBostatusperiode(husstandsmedlemBp))
