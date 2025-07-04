@@ -238,10 +238,11 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                         it.grunnlagReferanseListe,
                     )
 
+                val søknadsbarnGrunnlag = opprettVedtakRequest.grunnlagListe.hentPerson(behandling.søknadsbarn.first().ident!!)
                 manuelleVedtakgrunnlag shouldHaveSize 1
                 val manuelleVedtakInnhold = manuelleVedtakgrunnlag.first().innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
                 manuelleVedtakInnhold shouldHaveSize 1
-                manuelleVedtakgrunnlag.first().gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
+                manuelleVedtakgrunnlag.first().gjelderBarnReferanse shouldBe søknadsbarnGrunnlag!!.referanse
 
                 assertSoftly(it.periodeListe[0]) {
                     opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
@@ -358,7 +359,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.beslutning shouldBe Beslutningstype.ENDRING
                 it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
 
-                it.periodeListe shouldHaveSize 7
+                it.periodeListe shouldHaveSize 8
                 it.grunnlagReferanseListe shouldHaveSize 8
                 opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                     Grunnlagstype.NOTAT,
@@ -1053,8 +1054,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
-        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2023-01"), YearMonth.parse("2024-05"), BigDecimal(6500))
-        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2024-06"), null, BigDecimal(5600))
+        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2023-01"), YearMonth.parse("2024-04"), BigDecimal(6500))
+        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2024-05"), null, BigDecimal(5600))
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,
@@ -1123,7 +1124,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
-            stønadsendring.førsteIndeksreguleringsår shouldBe YearMonth.now().year
+            stønadsendring.førsteIndeksreguleringsår shouldBe if (YearMonth.now().month.value >= 7) YearMonth.now().plusYears(1).year else YearMonth.now().year
             stønadsendring.periodeListe.forEach {
                 it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
             }
@@ -1563,7 +1564,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest) {
             val sluttberegning =
                 hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG)
-            sluttberegning shouldHaveSize (7)
+            sluttberegning shouldHaveSize (8)
 
             val sluttberegningPeriode = sluttberegning[6]
             assertSoftly(sluttberegningPeriode) {
@@ -2558,7 +2559,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
 private fun OpprettVedtakRequestDto.validerSluttberegning() {
     val sluttberegning =
         hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG)
-    sluttberegning shouldHaveSize (7)
+    sluttberegning shouldHaveSize (8)
     val søknadsbarn1Grunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
 
     val sluttberegningPeriode = sluttberegning[6]
