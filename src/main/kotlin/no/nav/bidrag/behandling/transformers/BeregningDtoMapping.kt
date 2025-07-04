@@ -171,7 +171,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                     resultatUtenBeregning = aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert,
                     indeksår =
                         if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {
-                            Year.now().value
+                            Year.of(aldersjusteringDetaljer.periode.fom.year).plusYears(1).value
                         } else if (aldersjusteringDetaljer == null && resultat.avslaskode == null) {
                             val sistePeriode =
                                 resultat.resultat.beregnetBarnebidragPeriodeListe
