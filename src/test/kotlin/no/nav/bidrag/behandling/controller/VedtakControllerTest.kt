@@ -68,8 +68,12 @@ class VedtakControllerTest : KontrollerTestRunner() {
 
     @BeforeEach
     fun oppsett() {
-        behandlingRepository.deleteAll()
-        grunnlagRepository.deleteAll()
+        try {
+            behandlingRepository.deleteAll()
+            grunnlagRepository.deleteAll()
+        } catch (e: Exception) {
+        }
+
         every {
             sjablonService.hentSjablonSamværsfradrag()
         } returns sjablonSamværsfradragResponse()
