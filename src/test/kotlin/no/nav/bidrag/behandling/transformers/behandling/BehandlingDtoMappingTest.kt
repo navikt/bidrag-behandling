@@ -350,7 +350,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
         assertSoftly(behandlingDto) { b ->
             b.aktiveGrunnlagsdata.andreVoksneIHusstanden
                 ?.perioder
-                ?.shouldHaveSize(1)
+                ?.shouldHaveSize(3)
             b.ikkeAktiverteEndringerIGrunnlagsdata.andreVoksneIHusstanden
                 ?.perioder
                 ?.shouldHaveSize(2)

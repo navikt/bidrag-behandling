@@ -168,16 +168,17 @@ fun Husstandsmedlem.tilBoforholdVoksneRequest(
 fun List<Husstandsmedlemmer>.filtrerUtUrelevantePerioder(behandling: Behandling): List<Husstandsmedlemmer> =
     this.map { hm ->
         if (behandling.erSærbidrag()) {
-            hm.copy(
-                borISammeHusstandListe =
-                    hm.borISammeHusstandListe.filter {
-                        it.periodeFom == null ||
-                            // Ønsker ikke å ta med perioder som kommer etter virkningstidspunkt i særbidrag pga at det gjelder bare for en måned. Det som kommer senere er ikke relevant.
-                            // Dette er relevant i klagesaker hvor virkningstidspunkt kan være tilbake i tid enn inneværende måned
-                            it.periodeFom!! <
-                            behandling.virkningstidspunktEllerSøktFomDato.plusMonths(1).withDayOfMonth(1)
-                    },
-            )
+            hm
+//            hm.copy(
+//                borISammeHusstandListe =
+//                    hm.borISammeHusstandListe.filter {
+//                        it.periodeFom == null ||
+//                            // Ønsker ikke å ta med perioder som kommer etter virkningstidspunkt i særbidrag pga at det gjelder bare for en måned. Det som kommer senere er ikke relevant.
+//                            // Dette er relevant i klagesaker hvor virkningstidspunkt kan være tilbake i tid enn inneværende måned
+//                            it.periodeFom!! <
+//                            behandling.virkningstidspunktEllerSøktFomDato.plusMonths(1).withDayOfMonth(1)
+//                    },
+//            )
         } else {
             hm
         }
