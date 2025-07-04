@@ -70,17 +70,18 @@ class VirkningstidspunktController(
         virkningstidspunktService.oppdaterBeregnManuellVedtak(behandlingsid, request)
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         val beregning = hentBeregning(behandling)
+        behandling.grunnlagslisteFraVedtak = beregning.firstOrNull()?.resultat?.grunnlagListe
         return OppdaterManuellVedtakResponse(
             beregning.all {
                 it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
             },
-            dtomapper!!.tilUnderholdskostnadDto(behandling, beregning),
+            dtomapper.tilUnderholdskostnadDto(behandling, beregning),
         )
     }
 
     private fun hentBeregning(behandling: Behandling) =
         try {
-            dtomapper!!.beregningService!!.beregneBidrag(behandling)
+            dtomapper.beregningService!!.beregneBidrag(behandling)
         } catch (e: Exception) {
             emptyList()
         }

@@ -198,7 +198,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.ALDERSJUSTERING
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 19
+                request.grunnlagListe shouldHaveSize 16
             }
             request.unikReferanse shouldBe behandling.opprettUnikReferanse()
         }
@@ -341,7 +341,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 174
+                request.grunnlagListe shouldHaveSize 177
             }
         }
 
@@ -629,7 +629,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
-            stønadsendring.periodeListe shouldHaveSize 8
+            stønadsendring.periodeListe shouldHaveSize 9
             val resultatIkkeOmsorgPerioder = stønadsendring.periodeListe.filter { it.resultatkode == Resultatkode.IKKE_OMSORG_FOR_BARNET.name }
             resultatIkkeOmsorgPerioder.shouldHaveSize(2)
             assertSoftly(resultatIkkeOmsorgPerioder[0]) {
@@ -637,7 +637,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.valutakode shouldBe null
             }
             val resultatPerioder = stønadsendring.periodeListe.filter { it.resultatkode == Resultatkode.BEREGNET_BIDRAG.name }
-            resultatPerioder shouldHaveSize 6
+            resultatPerioder shouldHaveSize 7
         }
 
         verify(exactly = 1) {
@@ -1014,7 +1014,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             }
             val nestSistePeriode = stønadsendring.periodeListe[stønadsendring.periodeListe.size - 2]
             assertSoftly(nestSistePeriode) {
-                it.periode.fom shouldBe YearMonth.parse("2025-01")
+                it.periode.fom shouldBe YearMonth.parse("2025-07")
                 it.periode.til shouldBe YearMonth.from(opphørsdato)
                 it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
                 it.beløp shouldBe BigDecimal(6480)
@@ -1515,7 +1515,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 166
+                request.grunnlagListe shouldHaveSize 168
             }
         }
 
@@ -1532,7 +1532,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.beslutning shouldBe Beslutningstype.ENDRING
                 it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
 
-                it.periodeListe shouldHaveSize 7
+                it.periodeListe shouldHaveSize 8
                 it.grunnlagReferanseListe shouldHaveSize 8
                 opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                     Grunnlagstype.NOTAT,
