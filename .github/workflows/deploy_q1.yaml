@@ -3,8 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'q1/**'
-      - 'Q1/**'
+      - '**'
+      - '!main'
+      - '!dependabot/**'
 
 jobs:
   build_and_deploy:
