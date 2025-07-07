@@ -56,7 +56,7 @@ open class Underholdskostnad(
         "(SELECT r.id FROM rolle r WHERE r.person_id = person_id AND r.behandling_id = behandling_id)",
         referencedColumnName = "id",
     )
-    open val barnetsRolleIBehandlingen: Rolle? = null,
+    open var barnetsRolleIBehandlingen: Rolle? = null,
 ) {
     val opphørsdato get() = barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
 
