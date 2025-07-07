@@ -228,6 +228,7 @@ class NotatOpplysningerService(
 
         return VedtakNotatDto(
             saksnummer = behandling.saksnummer,
+            stønadstype = behandling.stonadstype,
             medInnkreving = behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
             type =
                 when (behandling.tilType()) {
@@ -628,6 +629,15 @@ private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
         gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
+private fun Behandling.tilNotatVurderingAvSkolegang() =
+    NotatBegrunnelseDto(
+        innhold =
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first()).ifEmpty {
+                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG)
+            },
+        gjelder = this.bidragsmottaker!!.tilNotatRolle(),
+    )
+
 private fun Behandling.tilNotatVirkningstidspunkt() =
     NotatBegrunnelseDto(
         innhold =
@@ -807,6 +817,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         begrunnelse = tilNotatVirkningstidspunkt(),
+        begrunnelseVurderingAvSkolegang = tilNotatVurderingAvSkolegang(),
     )
 
 private fun RolleDto.tilNotatRolle() =

@@ -120,6 +120,16 @@ class VirkningstidspunktService(
                 request.rolleId?.let { rolleId ->
                     it.søknadsbarn.find { it.id == rolleId }
                 }
+            request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
+                gjelderBarnRolle?.let { rolle ->
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                        n.henteNyttNotat() ?: "",
+                        rolle,
+                    )
+                }
+            }
             request.henteOppdatereNotat()?.let { n ->
                 notatService.oppdatereNotat(
                     it,

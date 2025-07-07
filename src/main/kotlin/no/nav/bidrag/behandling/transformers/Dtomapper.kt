@@ -104,6 +104,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -776,6 +777,14 @@ class Dtomapper(
                                     )
                                 } else {
                                     BegrunnelseDto(notat)
+                                },
+                            begrunnelseVurderingAvSkolegang =
+                                if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                                    BegrunnelseDto(
+                                        henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it),
+                                    )
+                                } else {
+                                    null
                                 },
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                             eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),

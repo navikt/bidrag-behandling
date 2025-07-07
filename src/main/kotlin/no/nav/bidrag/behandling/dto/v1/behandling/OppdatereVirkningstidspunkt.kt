@@ -39,6 +39,12 @@ data class OppdatereVirkningstidspunkt(
     val virkningstidspunkt: LocalDate? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
+    @Schema(
+        description =
+            "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
+                " Dette kan bare settes hvis det er 18 års bidrag",
+    )
+    var oppdaterBegrunnelseVurderingAvSkolegang: OppdatereBegrunnelse? = null,
     @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
     val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse,
 ) {

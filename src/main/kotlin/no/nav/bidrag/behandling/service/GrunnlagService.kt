@@ -83,6 +83,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
@@ -109,6 +110,7 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.commons.lang3.Validate
@@ -248,8 +250,22 @@ class GrunnlagService(
                 ),
             )
 
-        return response.vedtakListe
+        val filtrertVedtaksliste = mutableListOf<VedtakForStønad>()
+
+        response.vedtakListe
             .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
+            .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
+            .sortedBy { it.vedtakstidspunkt }
+            .forEach { vedtak ->
+                if (vedtak.type == Vedtakstype.KLAGE) {
+                    // Fjern vedtak omgjort av klage fra listen da vedtaket er ugyldigjort av klagevedtaket
+                    val omgjortVedtak = response.vedtakListe.find { it.vedtaksid.toInt() == vedtak.stønadsendring.omgjørVedtakId }
+                    filtrertVedtaksliste.removeIf { it.vedtaksid == omgjortVedtak?.vedtaksid }
+                }
+
+                filtrertVedtaksliste.add(vedtak)
+            }
+        return filtrertVedtaksliste
             .mapNotNull {
                 val stønadsendring = it.stønadsendring
                 val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null

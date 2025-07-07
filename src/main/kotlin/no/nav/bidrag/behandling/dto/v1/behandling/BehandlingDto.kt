@@ -64,6 +64,7 @@ data class VirkningstidspunktDtoV2(
     val avslag: Resultatkode? = null,
     @Schema(description = "Saksbehandlers begrunnelse")
     val begrunnelse: BegrunnelseDto,
+    val begrunnelseVurderingAvSkolegang: BegrunnelseDto? = null,
     val harLøpendeBidrag: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val opphørsdato: LocalDate? = null,
