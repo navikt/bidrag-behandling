@@ -45,7 +45,7 @@ open class Husstandsmedlem(
     @JoinColumn(name = "rolle_id", nullable = true)
     open val rolle: Rolle? = null,
     @OneToMany(
-        fetch = FetchType.LAZY,
+        fetch = FetchType.EAGER,
         mappedBy = "husstandsmedlem",
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
