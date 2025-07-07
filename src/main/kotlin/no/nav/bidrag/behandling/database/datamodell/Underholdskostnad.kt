@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import org.hibernate.annotations.JoinFormula
 
 @Entity
 open class Underholdskostnad(
@@ -51,8 +52,10 @@ open class Underholdskostnad(
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde? = null,
 ) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinFormula("(SELECT r.id FROM rolle r WHERE r.person_id = person_id AND r.behandling_id = behandling_id)")
+    open val barnetsRolleIBehandlingen: Rolle? = null
     val opphørsdato get() = barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
-    val barnetsRolleIBehandlingen get() = person.rolle.find { behandling.id == it.behandling.id }
 
     override fun toString(): String =
         "Underholdskostnad(id=$id, behandling=${behandling.id}, person=${person.id}, harTilsynsordning=$harTilsynsordning, faktiskeTilsynsutgifter=$faktiskeTilsynsutgifter, barnetilsyn=$barnetilsyn, tilleggsstønad=$tilleggsstønad)"

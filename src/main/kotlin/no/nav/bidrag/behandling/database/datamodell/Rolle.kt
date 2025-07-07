@@ -89,7 +89,8 @@ open class Rolle(
         orphanRemoval = true,
     )
     open val husstandsmedlem: Husstandsmedlem? = null,
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
         name = "person_id",
         nullable = true,
     )
