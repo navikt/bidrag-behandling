@@ -86,12 +86,17 @@ data class BehandlingDetaljerDtoV2(
     val opprettetAv: SaksbehandlerDto,
 )
 
+data class LesemodusVedtak(
+    val erAvvist: Boolean,
+    val opprettetAvBatch: Boolean,
+)
+
 data class BehandlingDtoV2(
     val id: Long,
     val type: TypeBehandling,
+    val lesemodus: LesemodusVedtak? = null,
     val erBisysVedtak: Boolean,
     val erVedtakUtenBeregning: Boolean = false,
-    val erAvvistAldersjustering: Boolean = false,
     val grunnlagFraVedtaksid: Long? = null,
     val medInnkreving: Boolean,
     val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
@@ -498,6 +503,7 @@ enum class Grunnlagsdatatype(
         ),
     ),
     TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
+    MANUELLE_VEDTAK(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_BIDRAG(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_FORSKUDD(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_BIDRAG_18_ÅR(mapOf(), erGjeldende = false),

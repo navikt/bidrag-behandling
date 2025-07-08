@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
@@ -14,11 +13,13 @@ import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
 import no.nav.bidrag.transport.behandling.vedtak.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.søknadId
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -88,15 +89,16 @@ class VedtakHendelseListener(
         vedtak: VedtakHendelse,
         behandling: Behandling,
     ) {
+        if (vedtak.type == Vedtakstype.ALDERSJUSTERING) return
         forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = vedtak.saksnummer!!,
                 enhet = vedtak.enhetsnummer?.verdi,
                 behandlingInfo =
                     BehandlingInfoDto(
-                        soknadId = vedtak.søknadId ?: behandling.soknadsid,
-                        vedtakId = vedtak.id.toLong(),
-                        behandlingId = behandling.id!!,
+                        soknadId = (vedtak.søknadId ?: behandling.soknadsid).toString(),
+                        vedtakId = vedtak.id.toString(),
+                        behandlingId = behandling.id!!.toString(),
                         soknadFra = behandling.soknadFra,
                         stonadType = vedtak.stønadstype,
                         engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,

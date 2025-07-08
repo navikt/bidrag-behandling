@@ -96,6 +96,7 @@ import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriod
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
@@ -122,12 +123,13 @@ import java.math.BigDecimal
 import java.nio.charset.Charset
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
 val SAKSNUMMER = "1233333"
-val SOKNAD_ID = 12412421414L
+val SOKNAD_ID = "12412421414"
 val SOKNAD_ID_2 = 1241552421414L
 val SOKNAD_ID_3 = 124152421414L
 val SAKSBEHANDLER_IDENT = "Z999999"
@@ -254,6 +256,7 @@ fun oppretteBehandling(
     id: Long? = null,
     vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
     virkningstidspunkt: LocalDate = LocalDate.parse("2023-02-01"),
+    stønadstype: Stønadstype = Stønadstype.FORSKUDD,
 ): Behandling =
     Behandling(
         vedtakstype,
@@ -262,14 +265,14 @@ fun oppretteBehandling(
         mottattdato = LocalDate.parse("2023-03-15"),
         klageMottattdato = null,
         SAKSNUMMER,
-        SOKNAD_ID,
+        SOKNAD_ID.toLong(),
         null,
         "4806",
         "Z9999",
         "Navn Navnesen",
         "bisys",
         SøktAvType.BIDRAGSMOTTAKER,
-        Stønadstype.FORSKUDD,
+        stønadstype,
         null,
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
         virkningstidspunkt = virkningstidspunkt,
@@ -505,6 +508,43 @@ fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDt
                 )
             },
     )
+
+fun opprettGyldigBehandlingAldersjustering(generateId: Boolean): Behandling {
+    val behandling =
+        oppretteBehandling(
+            if (generateId) 1 else null,
+            vedtakstype = Vedtakstype.ALDERSJUSTERING,
+            virkningstidspunkt = LocalDate.parse("2025-07-01"),
+            stønadstype = Stønadstype.BIDRAG,
+        )
+    behandling.roller =
+        mutableSetOf(
+            Rolle(
+                ident = testdataBM.ident,
+                rolletype = Rolletype.BIDRAGSMOTTAKER,
+                behandling = behandling,
+                fødselsdato = testdataBM.fødselsdato,
+                id = if (generateId) (1).toLong() else null,
+                harGebyrsøknad = false,
+            ),
+            Rolle(
+                ident = testdataBP.ident,
+                rolletype = Rolletype.BIDRAGSPLIKTIG,
+                behandling = behandling,
+                fødselsdato = testdataBP.fødselsdato,
+                id = if (generateId) (2).toLong() else null,
+                harGebyrsøknad = false,
+            ),
+            Rolle(
+                ident = testdataBarn1.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn1.fødselsdato,
+                id = if (generateId) (3).toLong() else null,
+            ),
+        )
+    return behandling
+}
 
 fun opprettGyldigBehandlingForBeregningOgVedtak(
     generateId: Boolean = false,
@@ -1265,12 +1305,14 @@ fun oppretteTestbehandling(
         // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
         behandling.søknadsbarn.forEach {
             val personSøknadsbarn = Person(ident = it.ident, fødselsdato = it.fødselsdato, rolle = mutableSetOf(it))
-            behandling.underholdskostnader.add(
+            val u =
                 Underholdskostnad(
                     id = idUnderholdskostnad?.toLong(),
                     behandling = behandling,
                     person = personSøknadsbarn,
-                ),
+                )
+            behandling.underholdskostnader.add(
+                u,
             )
             it.person = personSøknadsbarn
             idUnderholdskostnad?.let { idUnderholdskostnad = it + 1 }
@@ -1457,7 +1499,7 @@ private fun oppretteBoforhold(
         val periodisertVoksneIBpsHusstand =
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                grunnlagHusstandsmedlemmer.tilBoforholdVoksneRequest(),
+                grunnlagHusstandsmedlemmer.tilBoforholdVoksneRequest(behandling),
             )
 
         behandling.grunnlag.add(
@@ -1529,7 +1571,7 @@ private fun leggeTilAndreVoksneIBpsHusstand(
     val andreVoksneIBpsHusstand =
         BoforholdApi.beregnBoforholdAndreVoksne(
             behandling.virkningstidspunktEllerSøktFomDato,
-            grunnlag.tilBoforholdVoksneRequest(),
+            grunnlag.tilBoforholdVoksneRequest(behandling),
         )
 
     husstandsmedlemBp.perioder.addAll(andreVoksneIBpsHusstand.toSet().tilBostatusperiode(husstandsmedlemBp))
@@ -1852,6 +1894,38 @@ fun Behandling.leggTilTillegsstønad(
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
             dagsats = BigDecimal(50),
+        ),
+    )
+}
+
+fun Behandling.leggTilGrunnlagManuelleVedtak(
+    søknadsbarn: Rolle = this.søknadsbarn.first(),
+) {
+    grunnlag.add(
+        Grunnlag(
+            type = Grunnlagsdatatype.MANUELLE_VEDTAK,
+            rolle = bidragspliktig!!,
+            behandling = this,
+            innhentet = LocalDateTime.now(),
+            aktiv = LocalDateTime.now(),
+            gjelder = søknadsbarn.ident,
+            data =
+                commonObjectmapper.writeValueAsString(
+                    listOf(
+                        ManuellVedtakGrunnlag(
+                            1,
+                            LocalDateTime.of(LocalDate.parse("2024-01-01"), LocalTime.of(1, 0)),
+                            LocalDate.parse("2024-01-01"),
+                            Vedtakstype.FASTSETTELSE,
+                            Stønadstype.BIDRAG,
+                            false,
+                            false,
+                            false,
+                            "",
+                            "",
+                        ),
+                    ),
+                ),
         ),
     )
 }

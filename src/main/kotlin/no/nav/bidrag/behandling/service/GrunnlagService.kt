@@ -1,10 +1,10 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -16,7 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
-import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -61,6 +62,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
+import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
@@ -71,6 +73,7 @@ import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
@@ -80,13 +83,23 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.SMÅBARNSTILLEGG
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering.UTVIDET_BARNETRYGD
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Formål
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
@@ -96,6 +109,9 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
+import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
+import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
@@ -118,7 +134,7 @@ class GrunnlagService(
     private val mapper: Dtomapper,
     private val underholdService: UnderholdService,
     private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
-    private val unleashInstance: Unleash,
+    private val vedtakConsumer: BidragVedtakConsumer,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
@@ -127,22 +143,24 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             sjekkOgOppdaterIdenter(behandling)
-            val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
-            val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
-                tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
-            behandling.grunnlagsinnhentingFeilet = null
+            if (behandling.vedtakstype.kreverGrunnlag()) {
+                val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+                val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
+                    tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
+                behandling.grunnlagsinnhentingFeilet = null
 
-            grunnlagRequestobjekter.forEach {
-                feilrapporteringer +=
-                    henteOglagreGrunnlag(
-                        behandling,
-                        it,
-                        tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
-                    )
+                grunnlagRequestobjekter.forEach {
+                    feilrapporteringer +=
+                        henteOglagreGrunnlag(
+                            behandling,
+                            it,
+                            tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
+                        )
+                }
             }
-
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
+            feilrapporteringer += lagreManuelleVedtakGrunnlag(behandling)
 
             behandling.grunnlagSistInnhentet = LocalDateTime.now()
 
@@ -173,6 +191,130 @@ class GrunnlagService(
                     "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
+    }
+
+    fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyMap()
+
+        val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+        val søknadsbarn = behandling.søknadsbarn.first()
+
+        try {
+            val eksisterendeGrunnlag =
+                behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(søknadsbarn.personident!!.verdi, Grunnlagsdatatype.MANUELLE_VEDTAK)
+            val manuelleVedtakRespons = hentManuelleVedtakForBehandling(behandling, søknadsbarn)
+            if (eksisterendeGrunnlag == null ||
+                eksisterendeGrunnlag.konvertereData<List<ManuellVedtakGrunnlag>>()?.toSet() != manuelleVedtakRespons.toSet()
+            ) {
+                secureLogger.info {
+                    "Lagrer ny grunnlag manuelle vedtak for type ${Grunnlagsdatatype.MANUELLE_VEDTAK} med respons $manuelleVedtakRespons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+                }
+                val nyGrunnlag =
+                    Grunnlag(
+                        behandling = behandling,
+                        type = Grunnlagsdatatype.MANUELLE_VEDTAK,
+                        data = commonObjectmapper.writeValueAsString(manuelleVedtakRespons),
+                        gjelder = søknadsbarn.personident!!.verdi,
+                        innhentet = LocalDateTime.now(),
+                        aktiv = LocalDateTime.now(),
+                        rolle = behandling.bidragspliktig!!,
+                        erBearbeidet = false,
+                    )
+                behandling.grunnlag.add(nyGrunnlag)
+            }
+        } catch (e: Exception) {
+            feilrapporteringer.put(
+                Grunnlagsdatatype.MANUELLE_VEDTAK,
+                GrunnlagFeilDto(
+                    personId = søknadsbarn.personident!!.verdi,
+                    feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                    feilmelding = e.message,
+                ),
+            )
+        }
+
+        return feilrapporteringer
+    }
+
+    fun hentManuelleVedtakForBehandling(
+        behandling: Behandling,
+        søknadsbarn: Rolle,
+    ): List<ManuellVedtakGrunnlag> {
+        val response =
+            vedtakConsumer.hentVedtakForStønad(
+                HentVedtakForStønadRequest(
+                    skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+                    sak = Saksnummer(behandling.saksnummer),
+                    kravhaver = Personident(søknadsbarn.ident!!),
+                    type = behandling.stonadstype!!,
+                ),
+            )
+
+        val filtrertVedtaksliste = mutableListOf<VedtakForStønad>()
+
+        response.vedtakListe
+            .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
+            .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
+            .sortedBy { it.vedtakstidspunkt }
+            .forEach { vedtak ->
+                if (vedtak.type == Vedtakstype.KLAGE) {
+                    // Fjern vedtak omgjort av klage fra listen da vedtaket er ugyldigjort av klagevedtaket
+                    val omgjortVedtak = response.vedtakListe.find { it.vedtaksid.toInt() == vedtak.stønadsendring.omgjørVedtakId }
+                    filtrertVedtaksliste.removeIf { it.vedtaksid == omgjortVedtak?.vedtaksid }
+                }
+
+                filtrertVedtaksliste.add(vedtak)
+            }
+        return filtrertVedtaksliste
+            .mapNotNull {
+                val stønadsendring = it.stønadsendring
+                val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null
+                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid.toInt())!!
+                val søknad =
+                    vedtak.grunnlagListe
+                        .filtrerBasertPåEgenReferanse(
+                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.SØKNAD,
+                        ).firstOrNull()
+                        ?.innholdTilObjekt<SøknadGrunnlag>()
+                val virkningstidspunkt = stønadsendring.periodeListe.minBy { it.periode.fom }
+                val sluttberegningSistePeriode =
+                    vedtak
+                        .grunnlagListe
+                        .finnSluttberegningIReferanser(sistePeriode.grunnlagReferanseListe)
+                        ?.innholdTilObjekt<SluttberegningBarnebidrag>()
+                val resultatSistePeriode =
+                    when (Resultatkode.fraKode(sistePeriode.resultatkode)) {
+                        Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BEGGE_PARTER,
+                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSPLIKTIG,
+                        Resultatkode.LAVERE_ENN_INNTEKTSEVNE_BIDRAGSMOTTAKER,
+                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BEGGE_PARTER,
+                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSMOTTAKER,
+                        Resultatkode.MANGLER_DOKUMENTASJON_AV_INNTEKT_BIDRAGSPLIKTIG,
+                        Resultatkode.INNTIL_1_ÅR_TILBAKE,
+                        Resultatkode.PRIVAT_AVTALE,
+                        Resultatkode.MANGLER_BIDRAGSEVNE,
+                        Resultatkode.INNVILGET_VEDTAK,
+                        -> Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
+                        else ->
+                            sluttberegningSistePeriode?.resultatVisningsnavn?.intern
+                                ?: Resultatkode.fraKode(sistePeriode.resultatkode)?.visningsnavn?.intern
+                                ?: sistePeriode.resultatkode
+                    }
+                ManuellVedtakGrunnlag(
+                    it.vedtaksid,
+                    it.vedtakstidspunkt,
+                    virkningstidspunkt.periode.fom.atDay(1),
+                    vedtak.type,
+                    stønadsendring.type,
+                    søknad?.egetTiltak == true,
+                    søknad?.begrensetRevurdering == true,
+                    søknad?.privatAvtale == true || Resultatkode.fraKode(sistePeriode.resultatkode) == Resultatkode.PRIVAT_AVTALE,
+                    sistePeriode.resultatkode,
+                    resultatSistePeriode,
+                    vedtak.grunnlagListe.isEmpty(),
+                )
+            }.sortedByDescending { it.fattetTidspunkt }
     }
 
     fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
@@ -206,7 +348,7 @@ class GrunnlagService(
         behandling.søknadsbarn.forEach { sb ->
             try {
                 val eksisterendeGrunnlag =
-                    behandling.grunnlag.hentSisteBeløpshistorikkGrunnlag(sb.personident!!.verdi, type)
+                    behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type)
                 val respons =
                     barnebidragGrunnlagInnhenting
                         .hentBeløpshistorikk(behandling, sb, stønadstype)
@@ -529,7 +671,7 @@ class GrunnlagService(
         val andreVoksneIHusstandenPeriodisert =
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                boforhold.tilBoforholdVoksneRequest(),
+                boforhold.tilBoforholdVoksneRequest(behandling),
             )
 
         overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
@@ -1112,7 +1254,7 @@ class GrunnlagService(
             BoforholdApi
                 .beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(),
+                    husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(behandling),
                 ).toSet()
 
         val bpsNyesteBearbeidaBoforholdFørLagring =

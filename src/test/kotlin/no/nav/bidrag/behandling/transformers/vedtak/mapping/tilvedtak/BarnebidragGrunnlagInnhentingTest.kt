@@ -96,7 +96,7 @@ class BarnebidragGrunnlagInnhentingTest {
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
-            innhold.nesteIndeksreguleringsår shouldBe 2025
+            innhold.nesteIndeksreguleringsår shouldBe 2026
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             innhold.beløpshistorikk shouldHaveSize 2

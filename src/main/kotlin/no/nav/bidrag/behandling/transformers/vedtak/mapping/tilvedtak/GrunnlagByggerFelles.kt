@@ -6,7 +6,10 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
@@ -14,6 +17,7 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnota
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
@@ -34,12 +38,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -145,14 +151,41 @@ fun Behandling.byggGrunnlagSøknad() =
         ),
     )
 
-fun Behandling.byggGrunnlagVirkningsttidspunkt() =
+fun Behandling.byggGrunnlagManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto>): Set<GrunnlagDto> =
+    søknadsbarn
+        .map {
+            val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(it.ident) ?: it.tilGrunnlagPerson()
+
+            val grunnlag =
+                grunnlag
+                    .hentSisteGrunnlagSomGjelderBarn(
+                        it.personident!!.verdi,
+                        Grunnlagsdatatype.MANUELLE_VEDTAK,
+                    )
+            val innhold = grunnlag?.konvertereData<List<ManuellVedtakGrunnlag>>()
+            val gjelderReferanse =
+                grunnlagFraBeregning.hentPerson(grunnlag!!.rolle.ident)?.referanse ?: grunnlag.rolle.tilGrunnlagsreferanse()
+            GrunnlagDto(
+                referanse = "${Grunnlagstype.MANUELLE_VEDTAK}_${søknadsbarnGrunnlag.referanse}",
+                type = Grunnlagstype.MANUELLE_VEDTAK,
+                innhold =
+                    POJONode(
+                        innhold,
+                    ),
+                gjelderReferanse = gjelderReferanse,
+                gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
+            )
+        }.toSet()
+
+fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<GrunnlagDto> = emptyList()) =
     if (tilType() == TypeBehandling.BIDRAG) {
         søknadsbarn
             .map {
+                val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(it.ident) ?: it.tilGrunnlagPerson()
                 GrunnlagDto(
                     referanse = opprettGrunnlagsreferanseVirkningstidspunkt(it),
                     type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
-                    gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
+                    gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
                     innhold =
                         POJONode(
                             VirkningstidspunktGrunnlag(
@@ -385,37 +418,39 @@ fun opprettPeriodeOpphør(
     periodeliste: List<OpprettPeriodeRequestDto>,
     type: TypeBehandling = TypeBehandling.BIDRAG,
 ): OpprettPeriodeRequestDto? =
-    søknadsbarn.opphørsdato?.let {
-        val opphørsmåned = YearMonth.from(it)
-        val sistePeriode = periodeliste.maxBy { it.periode.fom }
-        if (sistePeriode.periode.til != opphørsmåned) {
-            ugyldigForespørsel("Siste periode i beregningen $sistePeriode er ikke lik opphørsdato $opphørsmåned")
+    periodeliste.takeIfNotNullOrEmpty {
+        søknadsbarn.opphørsdato?.let {
+            val opphørsmåned = YearMonth.from(it)
+            val sistePeriode = periodeliste.maxBy { it.periode.fom }
+            if (sistePeriode.periode.til != opphørsmåned) {
+                ugyldigForespørsel("Siste periode i beregningen $sistePeriode er ikke lik opphørsdato $opphørsmåned")
+            }
+            OpprettPeriodeRequestDto(
+                periode = ÅrMånedsperiode(it, null),
+                resultatkode = Resultatkode.OPPHØR.name,
+                beløp = null,
+                grunnlagReferanseListe =
+                    listOf(
+                        if (type == TypeBehandling.BIDRAG) {
+                            opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
+                        } else {
+                            opprettGrunnlagsreferanseVirkningstidspunkt()
+                        },
+                    ),
+            )
+        } ?: periodeliste.maxBy { it.periode.fom }.periode.til?.let {
+            OpprettPeriodeRequestDto(
+                periode = ÅrMånedsperiode(it, null),
+                resultatkode = Resultatkode.OPPHØR.name,
+                beløp = null,
+                grunnlagReferanseListe =
+                    listOf(
+                        if (type == TypeBehandling.BIDRAG) {
+                            opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
+                        } else {
+                            opprettGrunnlagsreferanseVirkningstidspunkt()
+                        },
+                    ),
+            )
         }
-        OpprettPeriodeRequestDto(
-            periode = ÅrMånedsperiode(it, null),
-            resultatkode = Resultatkode.OPPHØR.name,
-            beløp = null,
-            grunnlagReferanseListe =
-                listOf(
-                    if (type == TypeBehandling.BIDRAG) {
-                        opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
-                    } else {
-                        opprettGrunnlagsreferanseVirkningstidspunkt()
-                    },
-                ),
-        )
-    } ?: periodeliste.maxBy { it.periode.fom }.periode.til?.let {
-        OpprettPeriodeRequestDto(
-            periode = ÅrMånedsperiode(it, null),
-            resultatkode = Resultatkode.OPPHØR.name,
-            beløp = null,
-            grunnlagReferanseListe =
-                listOf(
-                    if (type == TypeBehandling.BIDRAG) {
-                        opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn)
-                    } else {
-                        opprettGrunnlagsreferanseVirkningstidspunkt()
-                    },
-                ),
-        )
     }

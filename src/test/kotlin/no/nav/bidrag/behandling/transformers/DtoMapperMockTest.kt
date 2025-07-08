@@ -681,7 +681,7 @@ class DtoMapperMockTest {
 
             assertSoftly(pa1) {
                 it.beregnetPrivatAvtale.shouldNotBeNull()
-                it.beregnetPrivatAvtale!!.perioder.shouldHaveSize(2)
+                it.beregnetPrivatAvtale!!.perioder.shouldHaveSize(3)
                 it.avtaleDato shouldBe LocalDate.parse("2024-01-01")
                 it.skalIndeksreguleres shouldBe true
                 it.perioder shouldHaveSize 2

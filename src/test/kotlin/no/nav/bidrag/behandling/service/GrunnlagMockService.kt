@@ -13,6 +13,7 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Person
@@ -122,6 +123,9 @@ class GrunnlagMockService {
     @MockkBean
     lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
+    @MockkBean
+    lateinit var vedtakConsumer: BidragVedtakConsumer
+
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
 
     lateinit var personRepository: PersonRepository
@@ -167,7 +171,7 @@ class GrunnlagMockService {
         val unleash = FakeUnleash()
         unleash.enableAll()
         grunnlagService =
-            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, unleash)
+            GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, vedtakConsumer)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         stubHusstandrepository(husstandsmedlemRepository)

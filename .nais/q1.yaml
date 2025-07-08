@@ -10,6 +10,8 @@ env:
   BIDRAG_GRUNNLAG_SCOPE: dev-gcp.bidrag.bidrag-grunnlag-feature
   BIDRAG_FORSENDELSE_URL: http://bidrag-dokument-forsendelse-feature
   BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
+  BIDRAG_SAMHANDLER_URL: http://bidrag-samhandler-q1
+  BIDRAG_SAMHANDLER_SCOPE: dev-gcp.bidrag.bidrag-samhandler-q1
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll-feature
   BIDRAG_TILGANGGSKONTROLL_SCOPE: dev-gcp.bidrag.bidrag-tilgangskontroll-feature
   BIDRAG_BELOPSHISTORIKK_URL: http://bidrag-stonad-q1
@@ -25,6 +27,7 @@ env:
   BIDRAG_SAK_URL: https://bidrag-sak-q1.dev-fss-pub.nais.io/bidrag-sak
   BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-q1
   TOPIC_VEDTAK: bidrag.vedtak-q1
+  TOPIC_JOURNALPOST: bidrag.journalpost-feature
   BIDRAG_ORGANISASJON_SCOPE: dev-fss.bidrag.bidrag-organisasjon-feature
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon-feature.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
@@ -57,6 +60,7 @@ database:
 outbound-access-apps:
   - bidrag-stonad-q1
   - bidrag-vedtak-q1
+  - bidrag-samhandler-q1
   - bidrag-dokument-produksjon
   - bidrag-grunnlag-feature
   - bidrag-dokument-forsendelse-feature

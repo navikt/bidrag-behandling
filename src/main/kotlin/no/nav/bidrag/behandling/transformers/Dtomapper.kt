@@ -14,15 +14,18 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
@@ -53,11 +56,13 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
@@ -84,6 +89,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
@@ -98,12 +104,15 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -118,6 +127,7 @@ import no.nav.bidrag.transport.notat.NotatVoksenIHusstandenDetaljerDto
 import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -130,12 +140,41 @@ class Dtomapper(
     val validerBehandlingService: ValiderBehandlingService,
     val vedtakGrunnlagMapper: VedtakGrunnlagMapper,
     val beregnBarnebidragApi: BeregnBarnebidragApi,
+    @Lazy
+    val beregningService: BeregningService? = null,
+    val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping? = null,
 ) {
     fun tilDto(
         behandling: Behandling,
         inkluderHistoriskeInntekter: Boolean = false,
         lesemodus: Boolean = false,
     ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter, lesemodus)
+
+    fun hentManuelleVedtakForBehandling(
+        behandling: Behandling,
+        søknadsbarn: Rolle,
+    ): List<ManuellVedtakDto> {
+        val grunnlag =
+            behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(
+                søknadsbarn.personident!!.verdi,
+                Grunnlagsdatatype.MANUELLE_VEDTAK,
+            )
+        return grunnlag
+            .konvertereData<List<ManuellVedtakGrunnlag>>()
+            ?.map {
+                ManuellVedtakDto(
+                    it.vedtaksid,
+                    søknadsbarn.id!!,
+                    it.fattetTidspunkt,
+                    it.virkningsDato,
+                    it.vedtakstype,
+                    it.privatAvtale,
+                    it.begrensetRevurdering,
+                    it.resultatSistePeriode,
+                    it.manglerGrunnlag,
+                )
+            }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
+    }
 
     fun tilUnderholdDto(underholdskostnad: Underholdskostnad) = underholdskostnad.tilDto()
 
@@ -237,7 +276,7 @@ class Dtomapper(
 
     fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Person): BeregnetPrivatAvtaleDto {
         val privatAvtaleBeregning =
-            if (grunnlagFraVedtak.isNullOrEmpty()) {
+            if (grunnlagslisteFraVedtak.isNullOrEmpty()) {
                 val grunnlag =
                     vedtakGrunnlagMapper
                         .byggGrunnlagForBeregningPrivatAvtale(
@@ -251,7 +290,7 @@ class Dtomapper(
                     ) + grunnlag.grunnlagListe
                 ).toSet().toList()
             } else {
-                grunnlagFraVedtak!!
+                grunnlagslisteFraVedtak!!
             }
 
         val rolle = roller.find { it.ident == gjelderBarn.ident }
@@ -272,7 +311,7 @@ class Dtomapper(
         this.søknadsbarn
             .map {
                 val underholdBeregning =
-                    if (grunnlagFraVedtak.isNullOrEmpty()) {
+                    if (grunnlagslisteFraVedtak.isNullOrEmpty()) {
                         val grunnlag =
                             vedtakGrunnlagMapper
                                 .byggGrunnlagForBeregning(
@@ -284,7 +323,7 @@ class Dtomapper(
 
                         beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
                     } else {
-                        grunnlagFraVedtak!!
+                        grunnlagslisteFraVedtak!!
                     }
 
                 BeregnetUnderholdskostnad(
@@ -660,6 +699,15 @@ class Dtomapper(
         return null
     }
 
+    private fun Behandling.hentAldersjusteringBeregning(): List<ResultatBidragsberegningBarn> {
+        if (vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyList()
+        return try {
+            beregningService!!.beregneBidrag(this)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
     @Suppress("ktlint:standard:value-argument-comment")
     private fun Behandling.tilDto(
@@ -670,14 +718,25 @@ class Dtomapper(
         val kanIkkeBehandlesBegrunnelse =
             if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
-        val aldersjusteringGrunnlag = grunnlagFraVedtak?.finnAldersjusteringDetaljerGrunnlag()
+        val aldersjusteringGrunnlag = grunnlagslisteFraVedtak?.finnAldersjusteringDetaljerGrunnlag()
+        val aldersjusteringBeregning = hentAldersjusteringBeregning()
+        val erAldersjusteringOgErAldersjustert =
+            vedtakstype == Vedtakstype.ALDERSJUSTERING &&
+                (
+                    hentAldersjusteringBeregning()
+                        .any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
+                        aldersjusteringGrunnlag != null &&
+                        aldersjusteringGrunnlag.aldersjustert
+                )
         val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
+        this.grunnlagslisteFraVedtak = this.grunnlagslisteFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),
+            lesemodus = lesemodusVedtak,
             erBisysVedtak = erBisysVedtak,
-            erVedtakUtenBeregning = aldersjusteringGrunnlag != null && !aldersjusteringGrunnlag.aldersjustert || erVedtakUtenBeregning,
-            erAvvistAldersjustering = aldersjusteringGrunnlag != null && !aldersjusteringGrunnlag.aldersjustert,
+            erVedtakUtenBeregning =
+                vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
             grunnlagFraVedtaksid = grunnlagFraVedtak,
             medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
             innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
@@ -707,8 +766,10 @@ class Dtomapper(
                             rolle = it.tilDto(),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
                             opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
+                            manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
+                            grunnlagFraVedtak = it.grunnlagFraVedtak,
                             begrunnelse =
                                 if (notat.isEmpty()) {
                                     BegrunnelseDto(
@@ -716,6 +777,14 @@ class Dtomapper(
                                     )
                                 } else {
                                     BegrunnelseDto(notat)
+                                },
+                            begrunnelseVurderingAvSkolegang =
+                                if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                                    BegrunnelseDto(
+                                        henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it),
+                                    )
+                                } else {
+                                    null
                                 },
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                             eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
@@ -785,7 +854,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                     inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
                 ),
-            underholdskostnader = underholdskostnader.tilDtos(),
+            underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
@@ -802,6 +871,47 @@ class Dtomapper(
             privatAvtale = privatAvtale.map { it.tilDto() },
         )
     }
+
+    fun tilUnderholdskostnadDto(
+        behandling: Behandling,
+        beregning: List<ResultatBidragsberegningBarn> = emptyList(),
+        lesemodus: Boolean = false,
+    ): Set<UnderholdDto> =
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING && !lesemodus) {
+            vedtakTilBehandlingMapping!!
+                .run {
+                    behandling.søknadsbarn.mapIndexed { index, rolle ->
+                        val beregningBarn = beregning.find { it.barn.ident!!.verdi == rolle.ident } ?: return@mapIndexed null
+                        if (beregningBarn.resultat.beregnetBarnebidragPeriodeListe.isEmpty()) {
+                            return@mapIndexed null
+                        }
+                        val grunnlagFraVedtak = hentVedtak(rolle.grunnlagFraVedtak)!!
+                        val underholdskostnad =
+                            Underholdskostnad(
+                                id = index.toLong(),
+                                behandling = behandling,
+                                person =
+                                    Person(
+                                        id = index.toLong(),
+                                        ident = rolle.ident!!,
+                                        fødselsdato = rolle.fødselsdato,
+                                        rolle = mutableSetOf(rolle),
+                                    ),
+                            )
+                        grunnlagFraVedtak.grunnlagListe.hentUnderholdskostnadPerioder(
+                            underholdskostnad,
+                            true,
+                            rolle,
+                            ÅrMånedsperiode(behandling.virkningstidspunkt!!, rolle.opphørsdato),
+                        )
+                        underholdskostnad
+                    }
+                }.filterNotNull()
+                .toSet()
+                .tilDtos()
+        } else {
+            behandling.underholdskostnader.tilDtos()
+        }
 
     fun Behandling.mapGebyr() =
         if (roller.any { it.harGebyrsøknad }) {

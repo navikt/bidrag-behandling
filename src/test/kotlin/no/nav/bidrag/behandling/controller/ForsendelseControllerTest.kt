@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.controller
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
-import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
@@ -14,6 +13,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.dokument.BidragEnhet
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpEntity
@@ -58,29 +58,35 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val expectedRequest =
             """
             {
-                "mottaker": {
-                    "ident": "${testdataBM.ident}"
-                },
                 "gjelderIdent": "${testdataBM.ident}",
+                "mottaker": {
+                    "ident": "${testdataBM.ident}",
+                    "språk":null,
+                    "navn":null,
+                    "identType":null,
+                    "adresse":null
+                },
+                "dokumenter":[],
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
-                "språk": "NB",
-                "tema": "FAR",
                 "behandlingInfo": {
                     "vedtakId": null,
                     "behandlingId": null,
-                    "soknadId": $SOKNAD_ID,
+                    "soknadId": "$SOKNAD_ID",
+                    "engangsBelopType": null,
+                    "stonadType": "FORSKUDD",
+                    "behandlingType": null,
+                    "vedtakType": null,
+                    "soknadType": null,
                     "erFattetBeregnet": null,
                     "erVedtakIkkeTilbakekreving": false,
-                    "stonadType": "FORSKUDD",
-                    "engangsBelopType": null,
-                    "behandlingType": null,
-                    "soknadType": null,
                     "soknadFra": null,
-                    "vedtakType": null,
                     "barnIBehandling":["${testdataBarn1.ident}"]
                 },
-                "opprettTittel": true
+                "tema": "FAR",
+                "språk": "NB",
+                "opprettTittel": true,
+                "distribuerAutomatiskEtterFerdigstilling":false
             }
             """.trimIndent().replace("\n", "").replace(" ", "")
         stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
@@ -147,29 +153,35 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
         val expectedRequest =
             """
             {
-                "mottaker": {
-                    "ident": "${testdataBM.ident}"
-                },
                 "gjelderIdent": "${testdataBM.ident}",
+                "mottaker": {
+                    "ident": "${testdataBM.ident}",
+                    "språk":null,
+                    "navn":null,
+                    "identType":null,
+                    "adresse":null
+                },
+                "dokumenter":[],
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
-                "språk": "NB",
-                "tema": "FAR",
                 "behandlingInfo": {
                     "vedtakId": null,
                     "behandlingId": null,
-                    "soknadId": $SOKNAD_ID,
+                    "soknadId": "$SOKNAD_ID",
+                    "engangsBelopType": null,
+                    "stonadType": "FORSKUDD",
+                    "behandlingType": null,
+                    "vedtakType": null,
+                    "soknadType": null,
                     "erFattetBeregnet": null,
                     "erVedtakIkkeTilbakekreving": false,
-                    "stonadType": "FORSKUDD",
-                    "engangsBelopType": null,
-                    "behandlingType": null,
-                    "soknadType": null,
                     "soknadFra": null,
-                    "vedtakType": null,
                     "barnIBehandling":["${testdataBarn1.ident}"]
                 },
-                "opprettTittel": true
+                "tema": "FAR",
+                "språk": "NB",
+                "opprettTittel": true,
+                "distribuerAutomatiskEtterFerdigstilling":false
             }
             """.trimIndent().replace("\n", "").replace(" ", "")
         stubUtils.Verify().opprettForsendelseKaltMed(expectedRequest)
@@ -204,7 +216,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             BehandlingInfoDto(
                                 soknadId = SOKNAD_ID,
                                 stonadType = Stønadstype.FORSKUDD,
-                                vedtakId = 1,
+                                vedtakId = "1",
                             ),
                         roller =
                             listOf(
@@ -253,7 +265,7 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
                             BehandlingInfoDto(
                                 soknadId = SOKNAD_ID,
                                 stonadType = Stønadstype.FORSKUDD,
-                                vedtakId = 1,
+                                vedtakId = "1",
                             ),
                         roller =
                             listOf(

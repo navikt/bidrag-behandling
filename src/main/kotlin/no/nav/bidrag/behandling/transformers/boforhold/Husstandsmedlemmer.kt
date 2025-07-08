@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.opprettDefaultPeriodeForAndreVoksneIHusstand
+import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -36,18 +37,22 @@ fun Set<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
     leggeTilManglendeSøknadsbarn: Boolean = false,
 ) = this.toList().tilBoforholdBarnRequest(behandling, leggeTilManglendeSøknadsbarn)
 
-fun Set<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(): BoforholdVoksneRequest =
+fun Set<RelatertPersonGrunnlagDto>.tilBoforholdVoksneRequest(behandling: Behandling): BoforholdVoksneRequest =
     BoforholdVoksneRequest(
         behandledeBostatusopplysninger = emptyList(),
         endreBostatus = null,
-        innhentedeOffentligeOpplysninger = this.filter { !it.erBarn }.tilHusstandsmedlemmer(),
+        innhentedeOffentligeOpplysninger =
+            this
+                .filter { !it.erBarn }
+                .tilHusstandsmedlemmer()
+                .filtrerUtUrelevantePerioder(behandling),
     )
 
 fun List<RelatertPersonGrunnlagDto>.tilHusstandsmedlemmer() =
     this.map {
         Husstandsmedlemmer(
             gjelderPersonId = it.gjelderPersonId,
-            fødselsdato = it.fødselsdato!!,
+            fødselsdato = it.fødselsdato ?: LocalDate.parse("9999-12-01"),
             relasjon = it.relasjon,
             borISammeHusstandListe = it.borISammeHusstandDtoListe.tilBostatus(it.relasjon, it.fødselsdato ?: LocalDate.now()),
         )
@@ -152,10 +157,32 @@ fun Husstandsmedlem.tilBoforholdVoksneRequest(
     gjelderRolle: Rolle,
     endreBostatus: EndreBostatus? = null,
 ) = BoforholdVoksneRequest(
-    innhentedeOffentligeOpplysninger = henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gjelderRolle).tilHusstandsmedlemmer(),
+    innhentedeOffentligeOpplysninger =
+        henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(
+            gjelderRolle,
+        ).tilHusstandsmedlemmer().filtrerUtUrelevantePerioder(behandling),
     behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
     endreBostatus = endreBostatus,
 )
+
+fun List<Husstandsmedlemmer>.filtrerUtUrelevantePerioder(behandling: Behandling): List<Husstandsmedlemmer> =
+    this.map { hm ->
+        if (behandling.erSærbidrag()) {
+            hm
+//            hm.copy(
+//                borISammeHusstandListe =
+//                    hm.borISammeHusstandListe.filter {
+//                        it.periodeFom == null ||
+//                            // Ønsker ikke å ta med perioder som kommer etter virkningstidspunkt i særbidrag pga at det gjelder bare for en måned. Det som kommer senere er ikke relevant.
+//                            // Dette er relevant i klagesaker hvor virkningstidspunkt kan være tilbake i tid enn inneværende måned
+//                            it.periodeFom!! <
+//                            behandling.virkningstidspunktEllerSøktFomDato.plusMonths(1).withDayOfMonth(1)
+//                    },
+//            )
+        } else {
+            hm
+        }
+    }
 
 fun Husstandsmedlem.henteOffentligePerioder(): Set<Bostatusperiode> =
     hentSisteBearbeidetBoforhold()?.tilPerioder(this) ?: if (kilde == Kilde.OFFENTLIG) {

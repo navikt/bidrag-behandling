@@ -96,7 +96,7 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
         ?.map { Personident(it.key) }
         ?.toSet()
 
-fun Set<Grunnlag>.hentSisteBeløpshistorikkGrunnlag(
+fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
     gjelderBarnIdent: String,
     type: Grunnlagsdatatype,
 ) = hentSisteAktiv()

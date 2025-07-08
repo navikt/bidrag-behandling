@@ -4,6 +4,7 @@
     "vedtakstidspunkt" : "2018-01-03T09:09:08.000658",
     "type" : "FASTSETTELSE",
     "kilde" : "MANUELT",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",
@@ -77,6 +78,7 @@
     "vedtakstidspunkt" : "2019-05-17T22:00:00",
     "type" : "INDEKSREGULERING",
     "kilde" : "AUTOMATISK",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",
@@ -109,6 +111,7 @@
     "vedtaksid" : 7749981,
     "vedtakstidspunkt" : "2019-07-04T08:48:56.00059",
     "type" : "ENDRING",
+    "kildeapplikasjon": "",
     "kilde" : "MANUELT",
     "stønadsendring" : {
       "type" : "BIDRAG",
@@ -173,6 +176,7 @@
     "vedtakstidspunkt" : "2020-05-15T22:00:00",
     "type" : "INDEKSREGULERING",
     "kilde" : "AUTOMATISK",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",
@@ -206,6 +210,7 @@
     "vedtakstidspunkt" : "2021-05-15T22:00:00",
     "type" : "INDEKSREGULERING",
     "kilde" : "AUTOMATISK",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",
@@ -239,6 +244,7 @@
     "vedtakstidspunkt" : "2022-05-15T22:00:00",
     "type" : "INDEKSREGULERING",
     "kilde" : "AUTOMATISK",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",
@@ -272,6 +278,7 @@
     "vedtakstidspunkt" : "2022-09-30T06:45:05.000809",
     "type" : "ENDRING",
     "kilde" : "MANUELT",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",
@@ -305,6 +312,7 @@
     "vedtakstidspunkt" : "2023-05-13T20:08:41.000045",
     "type" : "ALDERSJUSTERING",
     "kilde" : "AUTOMATISK",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",
@@ -338,6 +346,7 @@
     "vedtakstidspunkt" : "2023-09-06T14:35:14.00043",
     "type" : "ENDRING",
     "kilde" : "MANUELT",
+    "kildeapplikasjon": "",
     "stønadsendring" : {
       "type" : "BIDRAG",
       "sak" : "{saksnummer}",

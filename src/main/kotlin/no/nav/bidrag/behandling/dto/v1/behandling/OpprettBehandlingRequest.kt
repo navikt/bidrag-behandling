@@ -40,6 +40,7 @@ data class OpprettBehandlingRequest(
     var engangsbeløpstype: Engangsbeløptype? = null,
     @Schema(required = true)
     val søknadsid: Long,
+    val vedtaksid: Int? = null,
     val søknadsreferanseid: Long? = null,
     val kategori: OpprettKategoriRequestDto? = null,
     val innkrevingstype: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,

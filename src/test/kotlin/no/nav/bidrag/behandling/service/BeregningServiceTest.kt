@@ -34,6 +34,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -77,6 +78,9 @@ import java.time.YearMonth
 class BeregningServiceTest {
     @MockkBean
     lateinit var behandlingService: BehandlingService
+
+    @MockkBean
+    lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
@@ -131,7 +135,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnForskuddApi::class)
         every { BeregnForskuddApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneForskudd(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneForskudd(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 2) {
@@ -208,7 +212,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -216,9 +220,9 @@ class BeregningServiceTest {
         resultat shouldHaveSize 1
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldBe null
-            it.resultat.grunnlagListe shouldHaveSize 50
+            it.resultat.grunnlagListe shouldHaveSize 53
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(4410)
         }
@@ -267,7 +271,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -323,7 +327,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -332,9 +336,9 @@ class BeregningServiceTest {
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldNotBe null
             it.ugyldigBeregning!!.begrunnelse shouldContain "er lik eller lavere enn løpende bidrag"
-            it.ugyldigBeregning!!.perioder shouldHaveSize 1
+            it.ugyldigBeregning!!.perioder shouldHaveSize 2
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG
-            it.resultat.grunnlagListe shouldHaveSize 48
+            it.resultat.grunnlagListe shouldHaveSize 50
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1
@@ -343,7 +347,7 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(2600)
         }
@@ -382,7 +386,7 @@ class BeregningServiceTest {
         val beregnCapture = mutableListOf<BeregnGrunnlag>()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneBidrag(1)
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -393,7 +397,7 @@ class BeregningServiceTest {
             it.ugyldigBeregning!!.begrunnelse shouldContain "har ingen løpende forskudd"
             it.ugyldigBeregning!!.perioder shouldHaveSize 1
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD
-            it.resultat.grunnlagListe shouldHaveSize 49
+            it.resultat.grunnlagListe shouldHaveSize 51
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
                 .size shouldBe 1
@@ -402,7 +406,7 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 3
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(0)
         }
@@ -438,7 +442,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 1) {
@@ -519,7 +523,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1)
         val beregnGrunnlagList: List<BeregnGrunnlag> = beregnCapture
 
         verify(exactly = 1) {
@@ -553,7 +557,7 @@ class BeregningServiceTest {
         val vedtaksTypeCapture = CapturingSlot<Vedtakstype>()
         mockkConstructor(BeregnSærbidragApi::class)
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1)
 
         verify(exactly = 1) {
             BeregnSærbidragApi().beregn(any(), any())
@@ -582,7 +586,7 @@ class BeregningServiceTest {
         every { BeregnSærbidragApi().beregn(capture(beregnCapture), capture(vedtaksTypeCapture)) } answers { callOriginal() }
 
         val exception =
-            assertThrows<HttpClientErrorException> { BeregningService(behandlingService, vedtakGrunnlagMapper).beregneSærbidrag(1) }
+            assertThrows<HttpClientErrorException> { BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator).beregneSærbidrag(1) }
         verify(exactly = 0) {
             BeregnSærbidragApi().beregn(any(), any())
         }

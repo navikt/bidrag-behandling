@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 fun hentVedtak(vedtaksid: Long?): VedtakDto? =
     try {
         vedtaksid.takeIfNotNullOrEmpty {
-            AppContext.getBean(BidragVedtakConsumer::class.java).hentVedtak(it)
+            AppContext.getBean(BidragVedtakConsumer::class.java).hentVedtak(it.toInt())
         }
     } catch (e: Exception) {
         secureLogger.debug(e) { "Feil ved henting av vedtak $vedtaksid" }

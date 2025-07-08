@@ -11,10 +11,16 @@ import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
+import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDetaljerGrunnlag
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
+import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
 import no.nav.bidrag.beregn.core.bo.SjablonInnhold
@@ -34,7 +40,10 @@ import no.nav.bidrag.beregn.særbidrag.core.felles.bo.SjablonListe
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -46,6 +55,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBidrag
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBidrag
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatBeregning as ResultatBeregningSærbidrag
@@ -61,6 +71,7 @@ private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNav
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val mapper: VedtakGrunnlagMapper,
+    private val aldersjusteringOrchestrator: AldersjusteringOrchestrator,
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
@@ -122,7 +133,9 @@ class BeregningService(
             behandling.validerForBeregningBidrag()
         }
 
-        return if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
+        return if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            beregnBidragAldersjustering(behandling)
+        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
             behandling.søknadsbarn.map { søknasdbarn ->
@@ -177,6 +190,93 @@ class BeregningService(
                     throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
                 }
             }
+        }
+    }
+
+    private fun beregnBidragAldersjustering(behandling: Behandling): List<ResultatBidragsberegningBarn> {
+        val søknadsbarn = behandling.søknadsbarn.first()
+        val stønadsid =
+            Stønadsid(
+                behandling.stonadstype!!,
+                Personident(søknadsbarn.ident!!),
+                Personident(behandling.bidragspliktig!!.ident!!),
+                Saksnummer(behandling.saksnummer),
+            )
+        try {
+            if (søknadsbarn.grunnlagFraVedtak == null) return emptyList()
+            val beregning =
+                aldersjusteringOrchestrator.utførAldersjustering(
+                    stønadsid,
+                    behandling.virkningstidspunkt!!.year,
+                    søknadsbarn.grunnlagFraVedtak!!.toInt(),
+                    søknadsbarn.opphørsdato?.let { YearMonth.from(it) },
+                )
+
+            val søknadsbarnGrunnlag = beregning.beregning.grunnlagListe.hentPersonNyesteIdent(søknadsbarn.ident)!!
+            return listOf(
+                ResultatBidragsberegningBarn(
+                    barn = søknadsbarn.mapTilResultatBarn(),
+                    vedtakstype = behandling.vedtakstype,
+                    resultat =
+                        beregning.beregning.copy(
+                            grunnlagListe =
+                                beregning.beregning.grunnlagListe +
+                                    listOf(
+                                        behandling.opprettAldersjusteringDetaljerGrunnlag(
+                                            søknadsbarnGrunnlag.referanse,
+                                            søknadsbarn = søknadsbarn,
+                                            vedtaksidBeregning = søknadsbarn.grunnlagFraVedtak,
+                                        ),
+                                    ),
+                        ),
+                ),
+            )
+        } catch (e: SkalIkkeAldersjusteresException) {
+            val søknadsbarnGrunnlag = søknadsbarn.tilGrunnlagPerson()
+            val aldersjusteringGrunnlag =
+                behandling.opprettAldersjusteringDetaljerGrunnlag(
+                    søknadsbarnGrunnlag.referanse,
+                    søknadsbarn = søknadsbarn,
+                    aldersjustert = false,
+                    begrunnelser = e.begrunnelser.map { it.name },
+                    vedtaksidBeregning = søknadsbarn.grunnlagFraVedtak,
+                )
+            return listOf(
+                ResultatBidragsberegningBarn(
+                    barn = søknadsbarn.mapTilResultatBarn(),
+                    vedtakstype = behandling.vedtakstype,
+                    resultat =
+                        BeregnetBarnebidragResultat(
+                            grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
+                            beregnetBarnebidragPeriodeListe = emptyList(),
+                        ),
+                ),
+            )
+        } catch (e: AldersjusteresManueltException) {
+            val søknadsbarnGrunnlag = søknadsbarn.tilGrunnlagPerson()
+            val aldersjusteringGrunnlag =
+                behandling.opprettAldersjusteringDetaljerGrunnlag(
+                    søknadsbarnGrunnlag.referanse,
+                    søknadsbarn = søknadsbarn,
+                    aldersjustert = false,
+                    aldersjusteresManuelt = true,
+                    vedtaksidBeregning = søknadsbarn.grunnlagFraVedtak,
+                    begrunnelser = listOf(e.begrunnelse.name),
+                )
+            return listOf(
+                ResultatBidragsberegningBarn(
+                    barn = søknadsbarn.mapTilResultatBarn(),
+                    vedtakstype = behandling.vedtakstype,
+                    resultat =
+                        BeregnetBarnebidragResultat(
+                            grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
+                            beregnetBarnebidragPeriodeListe = emptyList(),
+                        ),
+                ),
+            )
+        } catch (e: Exception) {
+            LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
         }
     }
 

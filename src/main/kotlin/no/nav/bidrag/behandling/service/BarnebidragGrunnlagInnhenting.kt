@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.hentSisteBeløpshistorikkGrunnlag
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -44,7 +44,7 @@ class BarnebidragGrunnlagInnhenting(
         if (søknadstyperSomKreverBeløpshistorikkForskudd.contains(behandling.søknadstype)) {
             val grunnlag =
                 behandling.grunnlag
-                    .hentSisteBeløpshistorikkGrunnlag(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
+                    .hentSisteGrunnlagSomGjelderBarn(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
                     .konvertereData<StønadDto>()
                     .tilGrunnlag(
                         kravhaver = søknadsbarn.ident!!,
@@ -59,7 +59,7 @@ class BarnebidragGrunnlagInnhenting(
         if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
             val grunnlag =
                 behandling.grunnlag
-                    .hentSisteBeløpshistorikkGrunnlag(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+                    .hentSisteGrunnlagSomGjelderBarn(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
                     .konvertereData<StønadDto>()
                     .tilGrunnlag(
                         kravhaver = søknadsbarn.ident!!,
@@ -73,7 +73,7 @@ class BarnebidragGrunnlagInnhenting(
 
         val grunnlag =
             behandling.grunnlag
-                .hentSisteBeløpshistorikkGrunnlag(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+                .hentSisteGrunnlagSomGjelderBarn(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
                 .konvertereData<StønadDto>()
                 .tilGrunnlag(
                     kravhaver = søknadsbarn.ident!!,

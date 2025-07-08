@@ -7,11 +7,16 @@ import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.BeregningService
+import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
+import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerReferanse
 import no.nav.bidrag.behandling.transformers.finnIndeksår
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
@@ -24,12 +29,15 @@ import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
@@ -44,6 +52,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 @Service
 @Import(BeregnGebyrApi::class)
@@ -52,8 +61,104 @@ class BehandlingTilVedtakMapping(
     private val mapper: VedtakGrunnlagMapper,
     private val beregningService: BeregningService,
     private val vedtaksconsumer: BidragVedtakConsumer,
+    private val vedtakService: no.nav.bidrag.beregn.barnebidrag.service.VedtakService,
 ) {
-    fun Behandling.byggOpprettVedtakRequestBidrag(enhet: String? = null): OpprettVedtakRequestDto {
+    fun Behandling.byggOpprettVedtakRequestBidragAldersjustering(enhet: String? = null): OpprettVedtakRequestDto {
+        val sak = sakConsumer.hentSak(saksnummer)
+        val beregning = beregningService.beregneBidrag(id!!)
+        if (beregning.any { it.ugyldigBeregning != null }) {
+            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke fatte vedtak: $begrunnelse",
+            )
+        }
+        // Ønsker ikke virkningstidspunkt grunnlag fra aldersjusteringen
+        val beregningGrunnlagsliste =
+            beregning
+                .first()
+                .resultat.grunnlagListe
+                .filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
+
+        val bidragspliktigGrunnlag = beregningGrunnlagsliste.bidragspliktig ?: bidragspliktig!!.tilGrunnlagPerson()
+        val bidragsmottakerGrunnlag = beregningGrunnlagsliste.bidragsmottaker ?: bidragsmottaker!!.tilGrunnlagPerson()
+        val grunnlagPersoner =
+            setOf(
+                bidragspliktigGrunnlag,
+                bidragsmottakerGrunnlag,
+            ).map { it.tilOpprettRequestDto() }
+        val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak(beregningGrunnlagsliste).map { it.tilOpprettRequestDto() }
+        val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt(beregningGrunnlagsliste).map { it.tilOpprettRequestDto() }
+        val grunnlagsliste =
+            beregningGrunnlagsliste.map { it.tilOpprettRequestDto() } + stønadsendringGrunnlag + grunnlagManuelleVedtak + grunnlagPersoner
+
+        val aldersjusteringGrunnlag = beregningGrunnlagsliste.finnAldersjusteringDetaljerGrunnlag()
+
+        val erAldersjustert = aldersjusteringGrunnlag?.aldersjustert ?: false
+
+        return byggOpprettVedtakRequestObjekt(enhet)
+            .copy(
+                grunnlagListe = grunnlagsliste.toHashSet().toList(),
+                stønadsendringListe =
+                    beregning.map {
+                        val søknadsbarnRolle = søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!
+                        val søknadsbarnGrunnlag =
+                            grunnlagsliste.toSet().hentPersonMedIdent(søknadsbarnRolle.ident) ?: søknadsbarnRolle.tilGrunnlagPerson()
+                        val stønad = tilStønadsid(søknadsbarnRolle)
+                        val perioder =
+                            it.resultat.beregnetBarnebidragPeriodeListe.map {
+                                OpprettPeriodeRequestDto(
+                                    periode = it.periode,
+                                    beløp = it.resultat.beløp,
+                                    valutakode = "NOK",
+                                    resultatkode = Resultatkode.BEREGNET_BIDRAG.name,
+                                    grunnlagReferanseListe = it.grunnlagsreferanseListe,
+                                )
+                            }
+                        val opphørPeriode =
+                            listOfNotNull(opprettPeriodeOpphør(søknadsbarnRolle, perioder, TypeBehandling.BIDRAG))
+                        val grunnlagManuelleVedtakBarn =
+                            grunnlagManuelleVedtak.filter {
+                                it.gjelderBarnReferanse ==
+                                    søknadsbarnGrunnlag.referanse
+                            }
+                        OpprettStønadsendringRequestDto(
+                            type = stønad.type,
+                            sak = stønad.sak,
+                            kravhaver = stønad.kravhaver,
+                            skyldner = stønad.skyldner,
+                            mottaker =
+                                roller
+                                    .reelMottakerEllerBidragsmottaker(
+                                        sak.hentRolleMedFnr(søknadsbarnRolle.ident!!),
+                                    ),
+                            beslutning = if (erAldersjustert) Beslutningstype.ENDRING else Beslutningstype.AVVIST,
+                            grunnlagReferanseListe =
+                                listOfNotNull(beregningGrunnlagsliste.finnAldersjusteringDetaljerReferanse()) +
+                                    stønadsendringGrunnlag.map { it.referanse } + grunnlagManuelleVedtakBarn.map { it.referanse },
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            sisteVedtaksid = vedtakService.finnSisteVedtaksid(stønad),
+                            førsteIndeksreguleringsår =
+                                if (erAldersjustert) {
+                                    YearMonth.now().year + 1
+                                } else {
+                                    null
+                                },
+                            periodeListe = perioder + opphørPeriode,
+                        )
+                    },
+            )
+    }
+
+    fun Behandling.byggOpprettVedtakRequestBidragAlle(enhet: String? = null): OpprettVedtakRequestDto {
+        return if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            return byggOpprettVedtakRequestBidragAldersjustering(enhet)
+        } else {
+            byggOpprettVedtakRequestBidrag(enhet)
+        }
+    }
+
+    private fun Behandling.byggOpprettVedtakRequestBidrag(enhet: String? = null): OpprettVedtakRequestDto {
         val behandling = this
         val sak = sakConsumer.hentSak(saksnummer)
         val beregning = beregningService.beregneBidrag(id!!)
@@ -308,7 +413,7 @@ class BehandlingTilVedtakMapping(
         type: Engangsbeløptype,
         skyldner: Personident? = null,
     ) = if (refVedtaksid != null) {
-        val vedtak = vedtaksconsumer.hentVedtak(refVedtaksid!!.toLong())!!
+        val vedtak = vedtaksconsumer.hentVedtak(refVedtaksid!!.toInt())!!
         val engangsbeløp =
             vedtak.engangsbeløpListe.find {
                 it.type == type &&
@@ -489,7 +594,7 @@ class BehandlingTilVedtakMapping(
                         if (avslag != null) {
                             byggOpprettVedtakRequestAvslagForBidrag()
                         } else {
-                            byggOpprettVedtakRequestBidrag()
+                            byggOpprettVedtakRequestBidragAlle()
                         }
 
                     else -> throw HttpClientErrorException(

@@ -42,11 +42,13 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
+import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -59,6 +61,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -201,7 +204,8 @@ internal fun List<GrunnlagDto>.mapRoller(
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
             val virkningstidspunkt = hentVirkningstidspunkt(rolle.referanse)
-            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunkt)
+            val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
+            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunkt, aldersjustering)
         }.toMutableSet()
 
 internal fun VedtakDto.oppdaterDirekteOppgjørBeløp(
@@ -348,6 +352,21 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                     ),
                 )
             }
+        },
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
+        .groupBy { it.gjelderBarnReferanse }
+        .map { (gjelderBarn, grunnlagListe) ->
+            val grunnlag = grunnlagListe.first()
+            val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
+            val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.MANUELLE_VEDTAK,
+                grunnlag.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>(),
+                gjelder = gjelderBarnGrunnlag.personIdent!!,
+                rolleIdent = gjelderGrunnlag.personIdent!!,
+                innhentetTidspunkt = LocalDateTime.now(),
+                lesemodus = lesemodus,
+            )
         },
     hentGrunnlagArbeidsforhold()
         .groupBy { it.partPersonId }
@@ -648,6 +667,11 @@ internal fun VedtakDto.avslagskode(): Resultatkode? {
 internal fun VedtakDto.hentVirkningstidspunkt(gjelderBarnReferanse: String? = null): VirkningstidspunktGrunnlag? =
     grunnlagListe.hentVirkningstidspunkt(gjelderBarnReferanse)
 
+internal fun List<GrunnlagDto>.hentAldersjusteringDetaljerForBarn(gjelderBarnReferanse: String? = null): AldersjusteringDetaljerGrunnlag? =
+    filtrerBasertPåEgenReferanse(Grunnlagstype.ALDERSJUSTERING_DETALJER)
+        .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
+        ?.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
+
 internal fun List<GrunnlagDto>.hentVirkningstidspunkt(gjelderBarnReferanse: String? = null): VirkningstidspunktGrunnlag? =
     filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
@@ -812,6 +836,7 @@ private fun GrunnlagDto.tilRolle(
     behandling: Behandling,
     id: Long? = null,
     virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
+    aldersjustering: AldersjusteringDetaljerGrunnlag?,
 ) = Rolle(
     behandling,
     id = id,
@@ -832,6 +857,7 @@ private fun GrunnlagDto.tilRolle(
     avslag = virkningstidspunktGrunnlag?.avslag,
     opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
     fødselsdato = personObjekt.fødselsdato,
+    grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
 )
 
 private fun Inntekt.copy(

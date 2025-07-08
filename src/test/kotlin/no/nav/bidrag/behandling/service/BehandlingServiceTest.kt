@@ -1827,7 +1827,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val beregnetGrunnlag =
                 BoforholdApi.beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(),
+                    nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(behandling),
                 )
             behandling.grunnlag.add(
                 Grunnlag(
@@ -1919,7 +1919,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val beregnetGrunnlag =
                 BoforholdApi.beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(),
+                    nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(behandling),
                 )
             behandling.grunnlag.add(
                 Grunnlag(

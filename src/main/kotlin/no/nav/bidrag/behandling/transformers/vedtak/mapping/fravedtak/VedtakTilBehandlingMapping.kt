@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
@@ -44,9 +45,12 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
@@ -177,7 +181,12 @@ class VedtakTilBehandlingMapping(
         behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
         behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
-            behandling.grunnlagFraVedtak = grunnlagListe
+            behandling.lesemodusVedtak =
+                LesemodusVedtak(
+                    erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
+                    opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
+                )
+            behandling.grunnlagslisteFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
             behandling.erVedtakUtenBeregning =
                 stønadsendringListe.all { it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" }
@@ -500,17 +509,19 @@ class VedtakTilBehandlingMapping(
         return (underholdskostnadAndreBarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
     }
 
-    private fun List<GrunnlagDto>.hentUnderholdskostnadPerioder(
+    fun List<GrunnlagDto>.hentUnderholdskostnadPerioder(
         underholdskostnad: Underholdskostnad,
         lesemodus: Boolean,
         rolle: Rolle,
+        filtrerEtterPeriode: ÅrMånedsperiode? = null,
     ) {
         underholdskostnad.tilleggsstønad.addAll(
             filtrerBasertPåEgenReferanse(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)
                 .filter {
                     hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
                 }.map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
-                .mapTillegsstønad(underholdskostnad, lesemodus),
+                .mapTillegsstønad(underholdskostnad, lesemodus)
+                .filter { filtrerEtterPeriode == null || ÅrMånedsperiode(it.fom, it.tom).overlapper(filtrerEtterPeriode) },
         )
 
         underholdskostnad.faktiskeTilsynsutgifter.addAll(
@@ -518,7 +529,8 @@ class VedtakTilBehandlingMapping(
                 .filter {
                     hentPersonMedReferanse(it.gjelderBarnReferanse)!!.personIdent == rolle.ident
                 }.map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
-                .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus),
+                .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus)
+                .filter { filtrerEtterPeriode == null || ÅrMånedsperiode(it.fom, it.tom).overlapper(filtrerEtterPeriode) },
         )
 
         underholdskostnad.barnetilsyn.addAll(
@@ -526,7 +538,8 @@ class VedtakTilBehandlingMapping(
                 .filter { ts ->
                     hentPersonMedReferanse(ts.gjelderBarnReferanse)!!.personIdent == rolle.ident
                 }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
-                .mapBarnetilsyn(underholdskostnad, lesemodus),
+                .mapBarnetilsyn(underholdskostnad, lesemodus)
+                .filter { filtrerEtterPeriode == null || ÅrMånedsperiode(it.fom, it.tom).overlapper(filtrerEtterPeriode) },
         )
         underholdskostnad.harTilsynsordning =
             underholdskostnad.barnetilsyn.isNotEmpty() ||

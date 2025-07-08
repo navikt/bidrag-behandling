@@ -3,19 +3,28 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
+val vedtakstyperIkkeBeregning =
+    listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
 
 @Service
 class VirkningstidspunktService(
@@ -28,6 +37,59 @@ class VirkningstidspunktService(
     private val underholdService: UnderholdService,
     private val gebyrService: GebyrService,
 ) {
+    fun hentManuelleVedtakForBehandling(behandlingsid: Long): List<ManuellVedtakDto> {
+        log.info { "Henter manuelle vedtak for behandling $behandlingsid" }
+        secureLogger.info { "Henter manuelle vedtak for behandling $behandlingsid" }
+
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        val søknadsbarn = behandling.søknadsbarn.first()
+        val grunnlag =
+            behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(
+                søknadsbarn.personident!!.verdi,
+                Grunnlagsdatatype.MANUELLE_VEDTAK,
+            )
+        return grunnlag
+            .konvertereData<List<ManuellVedtakGrunnlag>>()
+            ?.map {
+                ManuellVedtakDto(
+                    it.vedtaksid,
+                    søknadsbarn.id!!,
+                    it.fattetTidspunkt,
+                    it.virkningsDato,
+                    it.vedtakstype,
+                    it.privatAvtale,
+                    it.begrensetRevurdering,
+                    it.resultatSistePeriode,
+                    it.manglerGrunnlag,
+                )
+            }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
+    }
+
+    @Transactional
+    fun oppdaterBeregnManuellVedtak(
+        behandlingsid: Long,
+        request: OppdaterManuellVedtakRequest,
+    ) {
+        secureLogger.info { "Oppdaterer manuell vedtak for behandling $behandlingsid, forespørsel=$request" }
+
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        behandling.søknadsbarn
+            .find {
+                it.id == request.barnId
+            }!!
+            .let {
+                it.grunnlagFraVedtak = request.vedtaksid
+            }
+    }
+
     @Transactional
     fun oppdaterOpphørsdato(
         behandlingsid: Long,
@@ -58,6 +120,16 @@ class VirkningstidspunktService(
                 request.rolleId?.let { rolleId ->
                     it.søknadsbarn.find { it.id == rolleId }
                 }
+            request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
+                gjelderBarnRolle?.let { rolle ->
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                        n.henteNyttNotat() ?: "",
+                        rolle,
+                    )
+                }
+            }
             request.henteOppdatereNotat()?.let { n ->
                 notatService.oppdatereNotat(
                     it,

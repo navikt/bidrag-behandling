@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -20,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
@@ -39,16 +39,16 @@ class VedtakService(
     private val notatOpplysningerService: NotatOpplysningerService,
     private val tilgangskontrollService: TilgangskontrollService,
     private val vedtakConsumer: BidragVedtakConsumer,
-    private val unleashInstance: Unleash,
     private val validering: ValiderBeregning,
     private val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping,
     private val behandlingTilVedtakMapping: BehandlingTilVedtakMapping,
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
+    private val forsendelseService: ForsendelseService,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
         try {
             LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
-            val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+            val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return null
             tilgangskontrollService.sjekkTilgangVedtak(vedtak)
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
@@ -64,7 +64,7 @@ class VedtakService(
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
         if (refererTilVedtakId.isNotEmpty()) {
-            val opprinneligVedtak = vedtakConsumer.hentVedtak(refererTilVedtakId.first().toLong())!!
+            val opprinneligVedtak = vedtakConsumer.hentVedtak(refererTilVedtakId.first())!!
             return hentOpprinneligVedtakstype(opprinneligVedtak)
         }
         return vedtak.type
@@ -77,7 +77,7 @@ class VedtakService(
         if (refererTilVedtakId.isNotEmpty()) {
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
-                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid.toLong())!!
+                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
                 }.toSet() + setOf(vedtak.vedtakstidspunkt!!)
         }
@@ -119,7 +119,7 @@ class VedtakService(
     ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(refVedtaksid) ?: return null
+            vedtakConsumer.hentVedtak(refVedtaksid.toInt()) ?: return null
         if (vedtak.behandlingId == null) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -145,17 +145,17 @@ class VedtakService(
     }
 
     fun konverterVedtakTilBeregningResultatBidrag(vedtakId: Long): ResultatBidragberegningDto? {
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return null
         return vedtak.tilBeregningResultatBidrag()
     }
 
     fun konverterVedtakTilBeregningResultatForskudd(vedtakId: Long): List<ResultatBeregningBarnDto> {
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return emptyList()
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return emptyList()
         return vedtak.tilBeregningResultatForskudd()
     }
 
     fun konverterVedtakTilBeregningResultatSærbidrag(vedtakId: Long): ResultatSærbidragsberegningDto? {
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return null
         return vedtakTilBehandlingMapping.run { vedtak.tilBeregningResultatSærbidrag() }
     }
 
@@ -258,12 +258,16 @@ class VedtakService(
                     if (behandling.avslag != null) {
                         behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
                     } else {
-                        behandling.byggOpprettVedtakRequestBidrag(request?.enhet)
+                        behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
                     }
                 }.copy(
                     innkrevingUtsattTilDato =
-                        request?.innkrevingUtsattAntallDager?.let {
-                            LocalDate.now().plusDays(it)
+                        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+                            null
+                        } else {
+                            request?.innkrevingUtsattAntallDager?.let {
+                                LocalDate.now().plusDays(it)
+                            }
                         },
                 )
 
@@ -275,7 +279,26 @@ class VedtakService(
             vedtaksid = response.vedtaksid.toLong(),
             request?.enhet ?: behandling.behandlerEnhet,
         )
-        opprettNotat(behandling)
+
+        val aldersjusteringBeregnet =
+            vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
+                vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
+        if (aldersjusteringBeregnet) {
+            forsendelseService.opprettForsendelseForAldersjustering(behandling)
+        } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
+            opprettNotat(behandling)
+        }
+
+        if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING) {
+            try {
+                // Venter i 2 sekunder for å sikre at vedtaksbro har lest inn vedtaket og har oppdatert saksloggen
+                Thread.sleep(2000)
+            } catch (ie: InterruptedException) {
+                Thread.currentThread().interrupt()
+                LOGGER.warn(ie) { "Tråd avbrutt under venting" }
+            }
+        }
+
         LOGGER.info {
             "Fattet vedtak for behandling ${behandling.id} med ${
                 behandling.årsak?.let { "årsakstype $it" }

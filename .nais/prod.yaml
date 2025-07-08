@@ -33,6 +33,9 @@ env:
   OPPGAVE_URL: https://oppgave.prod-fss-pub.nais.io
   OPPGAVE_SCOPE: prod-fss.oppgavehandtering.oppgave
   TOPIC_VEDTAK: bidrag.vedtak
+  TOPIC_JOURNALPOST: bidrag.journalpost
+  BIDRAG_SAMHANDLER_URL: http://bidrag-samhandler
+  BIDRAG_SAMHANDLER_SCOPE: prod-gcp.bidrag.bidrag-samhandler-q1
 kafka:
   pool: nav-prod
 azure_access_inbound:
@@ -56,6 +59,7 @@ database:
 outbound-access-apps:
   - bidrag-grunnlag
   - bidrag-stonad
+  - bidrag-samhandler
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll
   - bidrag-vedtak

@@ -162,30 +162,47 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
         resultatBarn =
             map { resultat ->
                 val grunnlagsListe = resultat.resultat.grunnlagListe.toList()
-                val sistePeriode =
-                    resultat.resultat.beregnetBarnebidragPeriodeListe
-                        .maxBy { it.periode.fom }
-                        .periode
+                val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag()
+
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
+                    forsendelseDistribueresAutomatisk = aldersjusteringDetaljer?.aldersjustert == true,
+                    resultatUtenBeregning = aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert,
                     indeksår =
-                        if (resultat.avslaskode == null) {
+                        if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {
+                            Year.of(aldersjusteringDetaljer.periode.fom.year).plusYears(1).value
+                        } else if (aldersjusteringDetaljer == null && resultat.avslaskode == null) {
+                            val sistePeriode =
+                                resultat.resultat.beregnetBarnebidragPeriodeListe
+                                    .maxBy { it.periode.fom }
+                                    .periode
                             grunnlagsListe.finnIndeksår(resultat.barn.referanse, sistePeriode)
                         } else {
                             null
                         },
                     perioder =
-                        resultat.resultat.beregnetBarnebidragPeriodeListe.map {
-                            grunnlagsListe.byggResultatBidragsberegning(
-                                it.periode,
-                                it.resultat.beløp,
-                                resultat.avslaskode,
-                                it.grunnlagsreferanseListe,
-                                resultat.ugyldigBeregning,
-                                grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
-                                resultat.vedtakstype,
+                        if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
+                            listOf(
+                                ResultatBarnebidragsberegningPeriodeDto(
+                                    periode = aldersjusteringDetaljer.periode,
+                                    vedtakstype = Vedtakstype.ALDERSJUSTERING,
+                                    resultatKode = null,
+                                    aldersjusteringDetaljer = aldersjusteringDetaljer,
+                                ),
                             )
+                        } else {
+                            resultat.resultat.beregnetBarnebidragPeriodeListe.map {
+                                grunnlagsListe.byggResultatBidragsberegning(
+                                    it.periode,
+                                    it.resultat.beløp,
+                                    resultat.avslaskode,
+                                    it.grunnlagsreferanseListe,
+                                    resultat.ugyldigBeregning,
+                                    grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
+                                    resultat.vedtakstype,
+                                )
+                            }
                         },
                 )
             },
@@ -292,6 +309,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
 ): ResultatBarnebidragsberegningPeriodeDto {
     if (vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringBisysVedtak()) {
         val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel()!!
+        val aldersjusteringDetaljer = finnAldersjusteringDetaljerGrunnlag()
         val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
         val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
         val sluttberegning =
@@ -321,6 +339,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             samværsfradrag = finnSamværsfradrag(grunnlagsreferanseListe),
             bpsAndelU = bpsAndel.endeligAndelFaktor,
             bpsAndelBeløp = sluttberegning.bpAndelBeløp,
+            aldersjusteringDetaljer = aldersjusteringDetaljer,
             beregningsdetaljer =
                 run {
                     BidragPeriodeBeregningsdetaljer(
@@ -517,6 +536,14 @@ fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
 fun List<GrunnlagDto>.erAldersjusteringBisysVedtak(): Boolean = finnAldersjusteringDetaljerGrunnlag() == null
 
 fun List<GrunnlagDto>.erAldersjusteringNyLøsning(): Boolean = finnAldersjusteringDetaljerGrunnlag() != null
+
+fun List<GrunnlagDto>.finnAldersjusteringDetaljerReferanse(): String? {
+    val grunnlag =
+        find {
+            it.type == Grunnlagstype.ALDERSJUSTERING_DETALJER
+        } ?: return null
+    return grunnlag.referanse
+}
 
 fun List<GrunnlagDto>.finnAldersjusteringDetaljerGrunnlag(): AldersjusteringDetaljerGrunnlag? {
     val grunnlag =

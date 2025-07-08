@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.MåBekrefteNyeOpplysninger
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
@@ -29,6 +30,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -159,85 +161,14 @@ class ValiderBeregning(
     }
 
     fun Behandling.validerForBeregningBidrag() {
-        val gebyrValideringsfeil = validerGebyr()
-        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
         val feil =
-            if (avslag == null) {
-                val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
-                val andreVoksneIHusstandenFeil =
-                    (husstandsmedlem.voksneIHusstanden ?: Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = bidragspliktig))
-                        .validereAndreVoksneIHusstanden(
-                            virkningstidspunktEllerSøktFomDato,
-                        ).takeIf {
-                            it.harFeil
-                        }
-                val privatAvtaleValideringsfeil = privatAvtale.map { it.validerePrivatAvtale() }.filter { it.harFeil }
-                val husstandsmedlemsfeil =
-                    husstandsmedlem.barn
-                        .toSet()
-                        .validerBoforhold(
-                            virkningstidspunktEllerSøktFomDato,
-                        ).filter { it.harFeil }
-                        .toMutableList()
-
-                if (søknadsbarn.none { sb -> husstandsmedlem.any { it.ident == sb.ident } }) {
-                    husstandsmedlemsfeil.add(
-                        BoforholdPeriodeseringsfeil(
-                            manglerPerioder = true,
-                            husstandsmedlem =
-                                Husstandsmedlem(
-                                    this,
-                                    ident = søknadsbarn.first().ident,
-                                    kilde = Kilde.OFFENTLIG,
-                                    navn = søknadsbarn.first().navn ?: "",
-                                    fødselsdato = søknadsbarn.first().fødselsdato,
-                                ),
-                        ),
-                    )
-                }
-                val måBekrefteOpplysninger =
-                    grunnlag
-                        .hentAlleSomMåBekreftes()
-                        .map { grunnlagSomMåBekreftes ->
-                            MåBekrefteNyeOpplysninger(
-                                grunnlagSomMåBekreftes.type,
-                                rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
-                                underholdskostnad =
-                                    (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BARNETILSYN).ifTrue {
-                                        underholdskostnader.find { u -> u.barnetsRolleIBehandlingen != null }
-                                    },
-                                husstandsmedlem =
-                                    (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                        husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
-                                    },
-                            )
-                        }.toSet()
-                val samværValideringsfeil = samvær.mapValideringsfeil()
-                val underholdValideringsfeil = underholdskostnader.valider()
-                val harFeil =
-                    inntekterFeil != null ||
-                        husstandsmedlemsfeil.isNotEmpty() ||
-                        privatAvtaleValideringsfeil.isNotEmpty() ||
-                        virkningstidspunktFeil != null ||
-                        andreVoksneIHusstandenFeil != null ||
-                        samværValideringsfeil.isNotEmpty() ||
-                        gebyrValideringsfeil.isNotEmpty() ||
-                        underholdValideringsfeil.isNotEmpty() ||
-                        måBekrefteOpplysninger.isNotEmpty()
-                harFeil.ifTrue {
-                    BeregningValideringsfeil(
-                        inntekter = inntekterFeil,
-                        privatAvtale = privatAvtaleValideringsfeil.takeIf { it.isNotEmpty() },
-                        husstandsmedlem = husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
-                        andreVoksneIHusstanden = andreVoksneIHusstandenFeil,
-                        måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
-                        virkningstidspunkt = virkningstidspunktFeil,
-                        gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
-                        samvær = samværValideringsfeil.takeIf { it.isNotEmpty() },
-                        underholdskostnad = underholdValideringsfeil.takeIf { it.isNotEmpty() },
-                    )
-                }
+            if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+                validerForBeregningAldersjusteringBidrag()
+            } else if (avslag == null) {
+                validerForBeregningBidragIkkeAvslag()
             } else {
+                val gebyrValideringsfeil = validerGebyr()
+                val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
                 val harFeil = virkningstidspunktFeil != null || gebyrValideringsfeil.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
@@ -260,6 +191,98 @@ class ValiderBeregning(
             )
         }
     }
+
+    fun Behandling.validerForBeregningBidragIkkeAvslag(): BeregningValideringsfeil? {
+        val gebyrValideringsfeil = validerGebyr()
+        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
+        val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
+        val andreVoksneIHusstandenFeil =
+            (husstandsmedlem.voksneIHusstanden ?: Husstandsmedlem(this, kilde = Kilde.OFFENTLIG, rolle = bidragspliktig))
+                .validereAndreVoksneIHusstanden(
+                    virkningstidspunktEllerSøktFomDato,
+                ).takeIf {
+                    it.harFeil
+                }
+        val privatAvtaleValideringsfeil = privatAvtale.map { it.validerePrivatAvtale() }.filter { it.harFeil }
+        val husstandsmedlemsfeil =
+            husstandsmedlem.barn
+                .toSet()
+                .validerBoforhold(
+                    virkningstidspunktEllerSøktFomDato,
+                ).filter { it.harFeil }
+                .toMutableList()
+
+        if (søknadsbarn.none { sb -> husstandsmedlem.any { it.ident == sb.ident } }) {
+            husstandsmedlemsfeil.add(
+                BoforholdPeriodeseringsfeil(
+                    manglerPerioder = true,
+                    husstandsmedlem =
+                        Husstandsmedlem(
+                            this,
+                            ident = søknadsbarn.first().ident,
+                            kilde = Kilde.OFFENTLIG,
+                            navn = søknadsbarn.first().navn ?: "",
+                            fødselsdato = søknadsbarn.first().fødselsdato,
+                        ),
+                ),
+            )
+        }
+        val måBekrefteOpplysninger =
+            grunnlag
+                .hentAlleSomMåBekreftes()
+                .map { grunnlagSomMåBekreftes ->
+                    MåBekrefteNyeOpplysninger(
+                        grunnlagSomMåBekreftes.type,
+                        rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
+                        underholdskostnad =
+                            (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BARNETILSYN).ifTrue {
+                                underholdskostnader.find { u -> u.barnetsRolleIBehandlingen != null }
+                            },
+                        husstandsmedlem =
+                            (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
+                                husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                            },
+                    )
+                }.toSet()
+        val samværValideringsfeil = samvær.mapValideringsfeil()
+        val underholdValideringsfeil = underholdskostnader.valider()
+        val harFeil =
+            inntekterFeil != null ||
+                husstandsmedlemsfeil.isNotEmpty() ||
+                privatAvtaleValideringsfeil.isNotEmpty() ||
+                virkningstidspunktFeil != null ||
+                andreVoksneIHusstandenFeil != null ||
+                samværValideringsfeil.isNotEmpty() ||
+                gebyrValideringsfeil.isNotEmpty() ||
+                underholdValideringsfeil.isNotEmpty() ||
+                måBekrefteOpplysninger.isNotEmpty()
+        return harFeil.ifTrue {
+            BeregningValideringsfeil(
+                inntekter = inntekterFeil,
+                privatAvtale = privatAvtaleValideringsfeil.takeIf { it.isNotEmpty() },
+                husstandsmedlem = husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
+                andreVoksneIHusstanden = andreVoksneIHusstandenFeil,
+                måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
+                virkningstidspunkt = virkningstidspunktFeil,
+                gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
+                samvær = samværValideringsfeil.takeIf { it.isNotEmpty() },
+                underholdskostnad = underholdValideringsfeil.takeIf { it.isNotEmpty() },
+            )
+        }
+    }
+
+    fun Behandling.validerForBeregningAldersjusteringBidrag(): BeregningValideringsfeil? =
+        BeregningValideringsfeil(
+            virkningstidspunkt =
+                VirkningstidspunktFeilDto(
+                    måVelgeVedtakForBeregning =
+                        søknadsbarn
+                            .filter {
+                                it.grunnlagFraVedtak ==
+                                    null
+                            }.map { it.tilDto() },
+                ).takeIf { it.harFeil },
+        ).takeIf { it.virkningstidspunkt != null }
 
     fun Behandling.validerForBeregningSærbidrag() {
         val feil =
