@@ -1125,10 +1125,7 @@ class BoforholdService(
         val borMedAndreVoksneperioder =
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                periodiseringsrequest.copy(
-                    behandledeBostatusopplysninger = emptyList(),
-                    endreBostatus = null,
-                ),
+                periodiseringsrequest,
                 behandling.globalOpphørsdato,
             )
 
