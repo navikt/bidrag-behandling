@@ -128,9 +128,6 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
-// Denne metoden fungerer ikke i test så lager spørring som en getter for bruk i test
-val Underholdskostnad.barnetsRolleIBehandlingenITest get() = person.rolle.find { behandling.id == it.behandling.id }
-
 val SAKSNUMMER = "1233333"
 val SOKNAD_ID = "12412421414"
 val SOKNAD_ID_2 = 1241552421414L
@@ -1318,7 +1315,6 @@ fun oppretteTestbehandling(
                 u,
             )
             it.person = personSøknadsbarn
-            u.barnetsRolleIBehandlingen = u.barnetsRolleIBehandlingenITest
             idUnderholdskostnad?.let { idUnderholdskostnad = it + 1 }
         }
     }

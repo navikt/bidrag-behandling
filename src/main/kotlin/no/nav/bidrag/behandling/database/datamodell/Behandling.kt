@@ -197,7 +197,7 @@ open class Behandling(
     open var vedtakFattetAvEnhet: String? = null,
     @Type(BehandlingMetadataDoConverter::class)
     @Column(columnDefinition = "hstore", name = "metadata")
-    var metadata: BehandlingMetadataDo? = null,
+    open var metadata: BehandlingMetadataDo? = null,
     @Enumerated(EnumType.STRING)
     open var søknadstype: BisysSøknadstype? = null,
     @Transient

@@ -56,8 +56,9 @@ open class Underholdskostnad(
         "(SELECT r.id FROM rolle r WHERE r.person_id = person_id AND r.behandling_id = behandling_id)",
         referencedColumnName = "id",
     )
-    open var barnetsRolleIBehandlingen: Rolle? = null,
+    open var barnetsRolleIBehandlingenDB: Rolle? = null,
 ) {
+    val barnetsRolleIBehandlingen get() = barnetsRolleIBehandlingenDB ?: barnetsRolleIBehandlingenIEager
     val opphørsdato get() = barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
 
     @Deprecated("Ikke bruk dette direkte da det kan føre til uendelig loop. Er nødvendig for at tester skal fungere")
