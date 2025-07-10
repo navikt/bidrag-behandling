@@ -278,10 +278,17 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
             opprinneligVirkningstidspunkt != null &&
             virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
     val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
+    val begrunnelseVurderingAvSkolegang = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG)
 
     return VirkningstidspunktFeilDto(
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
+        manglerVurderingAvSkolegang =
+            if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                begrunnelseVurderingAvSkolegang.isEmpty()
+            } else {
+                false
+            },
         manglerOpphørsdato =
             if (stonadstype == Stønadstype.BIDRAG18AAR && avslag == null) {
                 søknadsbarn.filter { it.opphørsdato == null }.map { it.tilDto() }
