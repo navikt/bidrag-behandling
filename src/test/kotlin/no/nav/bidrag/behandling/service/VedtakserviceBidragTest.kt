@@ -170,7 +170,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         every { vedtakService2.finnSisteVedtaksid(any()) } returns 1
 //        every { vedtakService2.hentBeløpshistorikk(any(), any()) } returns 1
-        every { vedtakService2.hentLøpendeStønad(any()) } returns
+        every { vedtakService2.hentLøpendeStønadPeriode(any()) } returns
             StønadPeriodeDto(
                 periode = ÅrMånedsperiode(LocalDate.now().minusMonths(5).withDayOfMonth(1), null),
                 periodeid = 1,

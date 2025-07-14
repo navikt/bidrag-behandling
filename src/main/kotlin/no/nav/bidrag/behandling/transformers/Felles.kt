@@ -11,6 +11,9 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
@@ -90,6 +93,14 @@ fun bestemTypeBehandling(
 } else {
     TypeBehandling.BIDRAG
 }
+
+fun Behandling.tilStønadsid(søknadsbarn: Rolle) =
+    Stønadsid(
+        stonadstype!!,
+        Personident(søknadsbarn.ident!!),
+        Personident(bidragspliktig!!.ident!!),
+        Saksnummer(saksnummer),
+    )
 
 fun <T : Comparable<T>> minOfNullable(
     a: T?,

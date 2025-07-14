@@ -317,7 +317,8 @@ class Dtomapper(
                                 .byggGrunnlagForBeregning(
                                     this,
                                     it,
-                                ).copy(
+                                ).beregnGrunnlag!!
+                                .copy(
                                     opphørsdato = it.opphørsdatoYearMonth,
                                 )
 

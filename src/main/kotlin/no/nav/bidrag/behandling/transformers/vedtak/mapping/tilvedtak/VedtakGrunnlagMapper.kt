@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Beregningstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -28,6 +29,8 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequest
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
@@ -189,7 +192,8 @@ class VedtakGrunnlagMapper(
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
         søknadsbarnRolle: Rolle,
-    ): BeregnGrunnlag {
+        endeligBeregning: Boolean = true,
+    ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
                 val personobjekter = tilPersonobjekter(søknadsbarnRolle)
@@ -225,16 +229,40 @@ class VedtakGrunnlagMapper(
                 }
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling()
-                return BeregnGrunnlag(
-                    periode =
-                        ÅrMånedsperiode(
-                            beregnFraDato,
-                            beregningTilDato,
-                        ),
-                    stønadstype = stonadstype ?: Stønadstype.BIDRAG,
-                    opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
-                    søknadsbarnReferanse = søknadsbarn.referanse,
-                    grunnlagListe = grunnlagsliste.toSet().toList(),
+                val grunnlagBeregning =
+                    BeregnGrunnlag(
+                        periode =
+                            ÅrMånedsperiode(
+                                beregnFraDato,
+                                beregningTilDato,
+                            ),
+                        stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                        opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
+                        søknadsbarnReferanse = søknadsbarn.referanse,
+                        grunnlagListe = grunnlagsliste.toSet().toList(),
+                    )
+                val klageBeregning =
+                    if (behandling.erKlageEllerOmgjøring) {
+                        KlageOrkestratorGrunnlag(
+                            stønad = behandling.tilStønadsid(søknadsbarnRolle),
+                            klageperiode =
+                                ÅrMånedsperiode(
+                                    søknadsbarnRolle.virkningstidspunkt!!,
+                                    behandling.opprinneligVedtakstidspunkt.first().toLocalDate(),
+                                ),
+                            påklagetVedtakId = behandling.refVedtaksid!!.toInt(),
+                        )
+                    } else {
+                        null
+                    }
+                return BidragsberegningOrkestratorRequest(
+                    beregnGrunnlag = grunnlagBeregning,
+                    klageOrkestratorGrunnlag = klageBeregning,
+                    beregningstype =
+                        when {
+                            behandling.erKlageEllerOmgjøring -> if (endeligBeregning) Beregningstype.KLAGE_ENDELIG else Beregningstype.KLAGE
+                            else -> Beregningstype.BIDRAG
+                        },
                 )
             }
         }

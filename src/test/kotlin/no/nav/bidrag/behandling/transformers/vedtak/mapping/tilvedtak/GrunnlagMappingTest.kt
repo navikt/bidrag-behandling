@@ -424,7 +424,7 @@ class GrunnlagMappingTest {
                     )
                 val søknadsbarn1 = behandling.søknadsbarn.find { it.ident == testdataBarn1.ident }
                 val grunnlagForBeregning =
-                    byggGrunnlagForBeregning(behandling, søknadsbarn1!!)
+                    byggGrunnlagForBeregning(behandling, søknadsbarn1!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning) {
                     it.grunnlagListe shouldHaveSize 16
@@ -448,7 +448,7 @@ class GrunnlagMappingTest {
                 }
                 val søknadsbarn2 = behandling.søknadsbarn.find { it.ident == testdataBarn2.ident }
                 val grunnlagForBeregning2 =
-                    byggGrunnlagForBeregning(behandling, søknadsbarn2!!)
+                    byggGrunnlagForBeregning(behandling, søknadsbarn2!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning2) {
                     it.grunnlagListe shouldHaveSize 16

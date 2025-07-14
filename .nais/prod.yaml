@@ -12,8 +12,8 @@ env:
   BIDRAG_FORSENDELSE_SCOPE: prod-gcp.bidrag.bidrag-dokument-forsendelse
   BIDRAG_TILGANGSKONTROLL_URL: http://bidrag-tilgangskontroll
   BIDRAG_TILGANGGSKONTROLL_SCOPE: prod-gcp.bidrag.bidrag-tilgangskontroll
-  BIDRAG_BELOPSHISTORIKK_URL: http://bidrag-stonad
-  BIDRAG_BELOPSHISTORIKK_SCOPE: prod-gcp.bidrag.bidrag-stonad
+  BIDRAG_BELOPSHISTORIKK_URL: http://bidrag-belopshistorikk
+  BIDRAG_BELOPSHISTORIKK_SCOPE: prod-gcp.bidrag.bidrag-belopshistorikk
   BIDRAG_VEDTAK_URL: http://bidrag-vedtak
   BIDRAG_VEDTAK_SCOPE: prod-gcp.bidrag.bidrag-vedtak
   BIDRAG_BBM_URL: https://bidrag-bbm.prod-fss-pub.nais.io
@@ -58,7 +58,7 @@ database:
   auditlog: "on"
 outbound-access-apps:
   - bidrag-grunnlag
-  - bidrag-stonad
+  - bidrag-belopshistorikk
   - bidrag-samhandler
   - bidrag-dokument-forsendelse
   - bidrag-tilgangskontroll

@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidle
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
@@ -72,6 +73,7 @@ class BeregningService(
     private val behandlingService: BehandlingService,
     private val mapper: VedtakGrunnlagMapper,
     private val aldersjusteringOrchestrator: AldersjusteringOrchestrator,
+    private val beregnBarnebidrag: BidragsberegningOrkestrator,
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
@@ -87,12 +89,12 @@ class BeregningService(
                     }
                 } else {
                     søknadsbarn.map { rolle ->
-                        val beregnForskudd = byggGrunnlagForBeregning(behandling, rolle)
+                        val beregningRequest = byggGrunnlagForBeregning(behandling, rolle)
 
                         try {
                             ResultatForskuddsberegningBarn(
                                 rolle.mapTilResultatBarn(),
-                                beregnApi.beregn(beregnForskudd),
+                                beregnApi.beregn(beregningRequest.beregnGrunnlag!!),
                             )
                         } catch (e: Exception) {
                             LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
@@ -115,12 +117,16 @@ class BeregningService(
             behandling.tilResultatAvslagSærbidrag()
         } else {
             try {
-                val grunnlagBeregning =
+                val beregningRequest =
                     mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
-                beregnSærbidragApi.beregn(grunnlagBeregning, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let { resultat ->
-                    resultat.validerForSærbidrag()
-                    resultat
-                }
+                beregnSærbidragApi
+                    .beregn(
+                        beregningRequest.beregnGrunnlag!!,
+                        behandling.opprinneligVedtakstype ?: behandling.vedtakstype,
+                    ).let { resultat ->
+                        resultat.validerForSærbidrag()
+                        resultat
+                    }
             } catch (e: Exception) {
                 LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }
                 throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
@@ -128,7 +134,10 @@ class BeregningService(
         }
     }
 
-    fun beregneBidrag(behandling: Behandling): List<ResultatBidragsberegningBarn> {
+    fun beregneBidrag(
+        behandling: Behandling,
+        endeligBeregning: Boolean = true,
+    ): List<ResultatBidragsberegningBarn> {
         mapper.validering.run {
             behandling.validerForBeregningBidrag()
         }
@@ -140,22 +149,32 @@ class BeregningService(
         } else {
             behandling.søknadsbarn.map { søknasdbarn ->
                 val grunnlagBeregning =
-                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
+                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
                 try {
+                    val resultat =
+                        beregnBarnebidrag
+                            .utførBidragsberegning(grunnlagBeregning)
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
+                        resultatVedtak =
+                            beregnBarnebidrag
+                                .utførBidragsberegning(grunnlagBeregning),
                         resultat =
-                            beregnBarnebidragApi.beregn(grunnlagBeregning).let {
-                                it.copy(
-                                    grunnlagListe =
-                                        (it.grunnlagListe + grunnlagBeregning.grunnlagListe)
-                                            .toSet()
-                                            .toList()
-                                            .fjernMidlertidligPersonobjekterBMsbarn(),
-                                )
-                            },
+                            resultat.resultatVedtakListe
+                                .find {
+                                    behandling.erKlageEllerOmgjøring && it.klagevedtak || !behandling.erKlageEllerOmgjøring
+                                }?.resultat
+                                ?.let {
+                                    it.copy(
+                                        grunnlagListe =
+                                            (it.grunnlagListe + grunnlagBeregning.beregnGrunnlag!!.grunnlagListe)
+                                                .toSet()
+                                                .toList()
+                                                .fjernMidlertidligPersonobjekterBMsbarn(),
+                                    )
+                                } ?: BeregnetBarnebidragResultat(),
                     )
                 } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
                     ResultatBidragsberegningBarn(
@@ -165,7 +184,7 @@ class BeregningService(
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
-                                    (e.data.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                    (e.data.grunnlagListe + grunnlagBeregning.beregnGrunnlag!!.grunnlagListe)
                                         .toSet()
                                         .toList()
                                         .fjernMidlertidligPersonobjekterBMsbarn(),
@@ -179,7 +198,7 @@ class BeregningService(
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
-                                    (e.data.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                    (e.data.grunnlagListe + grunnlagBeregning.beregnGrunnlag!!.grunnlagListe)
                                         .toSet()
                                         .toList()
                                         .fjernMidlertidligPersonobjekterBMsbarn(),
@@ -290,9 +309,12 @@ class BeregningService(
         return beregneSærbidrag(behandling)
     }
 
-    fun beregneBidrag(behandlingsid: Long): List<ResultatBidragsberegningBarn> {
+    fun beregneBidrag(
+        behandlingsid: Long,
+        endeligBeregning: Boolean = true,
+    ): List<ResultatBidragsberegningBarn> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        return beregneBidrag(behandling)
+        return beregneBidrag(behandling, endeligBeregning)
     }
 
     private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =
