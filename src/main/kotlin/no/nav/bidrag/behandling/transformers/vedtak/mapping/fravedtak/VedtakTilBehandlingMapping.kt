@@ -500,7 +500,7 @@ class VedtakTilBehandlingMapping(
                             behandling,
                             BarnDto(
                                 personident = gjelderBarn.ident,
-                                navn = gjelderBarn.navn,
+                                navn = if (gjelderBarn.ident != null) null else gjelderBarn.navn,
                                 fødselsdato = gjelderBarn.fødselsdato,
                             ),
                         )

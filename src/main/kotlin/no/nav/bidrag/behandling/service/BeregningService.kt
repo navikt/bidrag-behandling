@@ -159,8 +159,18 @@ class BeregningService(
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
                         resultatVedtak =
-                            beregnBarnebidrag
-                                .utførBidragsberegning(grunnlagBeregning),
+                            resultat.copy(
+                                resultatVedtakListe =
+                                    resultat.resultatVedtakListe.sortedBy {
+                                        if (it.delvedtak || it.klagevedtak) {
+                                            it.resultat.beregnetBarnebidragPeriodeListe
+                                                .minBy { it.periode.fom }
+                                                .periode.fom
+                                        } else {
+                                            YearMonth.now()
+                                        }
+                                    },
+                            ),
                         resultat =
                             resultat.resultatVedtakListe
                                 .find {

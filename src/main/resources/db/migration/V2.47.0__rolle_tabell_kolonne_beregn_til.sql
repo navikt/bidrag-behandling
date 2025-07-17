@@ -1,0 +1,1 @@
+alter table rolle add column if not exists beregn_til_dato date;

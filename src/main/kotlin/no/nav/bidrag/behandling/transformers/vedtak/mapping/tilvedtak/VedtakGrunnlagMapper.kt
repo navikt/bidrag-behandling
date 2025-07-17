@@ -52,12 +52,20 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
-fun Behandling.finnBeregnTilDatoBehandling(opphørsdato: YearMonth? = null) =
-    if (tilType() == TypeBehandling.SÆRBIDRAG) {
-        virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-    } else {
-        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
-    }
+fun Behandling.finnBeregnTilDatoBehandling(
+    opphørsdato: YearMonth? = null,
+    søknadsbarnRolle: Rolle? = null,
+) = if (erKlageEllerOmgjøring) {
+    søknadsbarnRolle?.beregnTilDato ?: opprinneligVedtakstidspunkt
+        .first()
+        .plusMonths(1)
+        .withDayOfMonth(1)
+        .toLocalDate()
+} else if (tilType() == TypeBehandling.SÆRBIDRAG) {
+    virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+} else {
+    finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+}
 
 fun finnBeregnTilDato(
     virkningstidspunkt: LocalDate,
@@ -228,7 +236,7 @@ class VedtakGrunnlagMapper(
                     }
                 }
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
-                val beregningTilDato = finnBeregnTilDatoBehandling()
+                val beregningTilDato = finnBeregnTilDatoBehandling(null, søknadsbarnRolle)
                 val grunnlagBeregning =
                     BeregnGrunnlag(
                         periode =
@@ -245,11 +253,6 @@ class VedtakGrunnlagMapper(
                     if (behandling.erKlageEllerOmgjøring) {
                         KlageOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            klageperiode =
-                                ÅrMånedsperiode(
-                                    søknadsbarnRolle.virkningstidspunkt!!,
-                                    behandling.opprinneligVedtakstidspunkt.first().toLocalDate(),
-                                ),
                             påklagetVedtakId = behandling.refVedtaksid!!.toInt(),
                         )
                     } else {

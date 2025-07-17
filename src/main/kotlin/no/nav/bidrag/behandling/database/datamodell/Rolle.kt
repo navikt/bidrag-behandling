@@ -96,6 +96,7 @@ open class Rolle(
     )
     open var person: Person? = null,
     open var opphørsdato: LocalDate? = null,
+    open var beregnTilDato: LocalDate? = null,
     open var virkningstidspunkt: LocalDate? = null,
     open var opprinneligVirkningstidspunkt: LocalDate? = null,
     @Convert(converter = ÅrsakConverter::class)

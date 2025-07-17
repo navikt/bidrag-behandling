@@ -37,6 +37,7 @@ data class OppdatereVirkningstidspunkt(
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonSetter(nulls = Nulls.SKIP)
     val virkningstidspunkt: LocalDate? = null,
+    val beregnTilDato: LocalDate? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
     @Schema(

@@ -146,7 +146,8 @@ class VirkningstidspunktService(
                     )
                 }
             }
-            oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, it)
+
+            oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, request.beregnTilDato, it)
             it
         }
 
@@ -200,6 +201,7 @@ class VirkningstidspunktService(
     fun oppdaterVirkningstidspunkt(
         rolleId: Long?,
         nyVirkningstidspunkt: LocalDate?,
+        nyBeregnTilDato: LocalDate?,
         behandling: Behandling,
     ) {
         val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
@@ -246,6 +248,10 @@ class VirkningstidspunktService(
             grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
             grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
+        }
+
+        if (nyBeregnTilDato != null && gjelderBarn != null) {
+            gjelderBarn.beregnTilDato = nyBeregnTilDato
         }
 
         if (erVirkningstidspunktEndret) {
@@ -341,7 +347,7 @@ class VirkningstidspunktService(
                 "Virkningstidspunkt $virkningstidspunkt på særbidrag er ikke riktig som følge av ny kalendermåned." +
                     " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"
             }
-            oppdaterVirkningstidspunkt(null, nyVirkningstidspunkt, this)
+            oppdaterVirkningstidspunkt(null, nyVirkningstidspunkt, null, this)
         }
     }
 }
