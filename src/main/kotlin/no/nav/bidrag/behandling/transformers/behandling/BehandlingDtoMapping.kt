@@ -282,6 +282,19 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     return VirkningstidspunktFeilDto(
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
+        manglerVurderingAvSkolegang =
+            if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                søknadsbarn.any {
+                    NotatService
+                        .henteNotatinnhold(
+                            this,
+                            rolle = it,
+                            notattype = NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                        ).isEmpty()
+                }
+            } else {
+                false
+            },
         manglerOpphørsdato =
             if (stonadstype == Stønadstype.BIDRAG18AAR && avslag == null) {
                 søknadsbarn.filter { it.opphørsdato == null }.map { it.tilDto() }
