@@ -170,7 +170,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         every { vedtakService2.finnSisteVedtaksid(any()) } returns 1
 //        every { vedtakService2.hentBeløpshistorikk(any(), any()) } returns 1
-        every { vedtakService2.hentLøpendeStønad(any()) } returns
+        every { vedtakService2.hentLøpendeStønadPeriode(any()) } returns
             StønadPeriodeDto(
                 periode = ÅrMånedsperiode(LocalDate.now().minusMonths(5).withDayOfMonth(1), null),
                 periodeid = 1,
@@ -776,6 +776,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
         )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+        )
         behandling.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
         behandling.refVedtaksid = 553
@@ -964,6 +968,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             "Underhold andre barn",
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
         )
         behandling.refVedtaksid = 553
         behandling.grunnlag =

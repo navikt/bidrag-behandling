@@ -22,6 +22,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -47,6 +48,9 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
 
     @MockK
     lateinit var notatOpplysningerService: NotatOpplysningerService
+
+    @MockK
+    lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
 
     @MockK
     lateinit var forsendelseService: ForsendelseService
@@ -113,6 +117,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 behandlingService,
                 vedtakGrunnlagMapper,
                 aldersjusteringOrchestrator,
+                bidragsberegningOrkestrator,
             )
         val behandlingTilVedtakMapping =
             BehandlingTilVedtakMapping(

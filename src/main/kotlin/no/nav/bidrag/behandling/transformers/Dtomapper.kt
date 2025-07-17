@@ -317,7 +317,8 @@ class Dtomapper(
                                 .byggGrunnlagForBeregning(
                                     this,
                                     it,
-                                ).copy(
+                                ).beregnGrunnlag!!
+                                .copy(
                                     opphørsdato = it.opphørsdatoYearMonth,
                                 )
 
@@ -764,6 +765,7 @@ class Dtomapper(
                         val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                         VirkningstidspunktDtoV2(
                             rolle = it.tilDto(),
+                            beregnTilDato = it.beregnTilDato,
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
                             opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
                             manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
