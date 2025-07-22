@@ -257,7 +257,12 @@ class GrunnlagService(
             .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
             .sortedBy { it.vedtakstidspunkt }
             .forEach { vedtak ->
-                if (vedtak.type == Vedtakstype.KLAGE) {
+                val harResultatInnvilgetVedtak =
+                    vedtak.stønadsendring.periodeListe.all {
+                        Resultatkode.INNVILGET_VEDTAK ==
+                            Resultatkode.fraKode(it.resultatkode)
+                    }
+                if (vedtak.type == Vedtakstype.KLAGE && !harResultatInnvilgetVedtak) {
                     // Fjern vedtak omgjort av klage fra listen da vedtaket er ugyldigjort av klagevedtaket
                     val omgjortVedtak = response.vedtakListe.find { it.vedtaksid.toInt() == vedtak.stønadsendring.omgjørVedtakId }
                     filtrertVedtaksliste.removeIf { it.vedtaksid == omgjortVedtak?.vedtaksid }
