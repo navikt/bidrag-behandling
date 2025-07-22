@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
+import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningInntekterDto
@@ -175,12 +176,31 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                         } else if (aldersjusteringDetaljer == null && resultat.avslaskode == null) {
                             val sistePeriode =
                                 resultat.resultat.beregnetBarnebidragPeriodeListe
-                                    .maxBy { it.periode.fom }
-                                    .periode
+                                    .maxByOrNull { it.periode.fom }
+                                    ?.periode ?: ÅrMånedsperiode(YearMonth.now(), null)
                             grunnlagsListe.finnIndeksår(resultat.barn.referanse, sistePeriode)
                         } else {
                             null
                         },
+                    delvedtak =
+                        resultat.resultatVedtak?.resultatVedtakListe?.map {
+                            DelvedtakDto(
+                                delvedtak = it.delvedtak,
+                                klagevedtak = it.klagevedtak,
+                                perioder =
+                                    it.resultat.beregnetBarnebidragPeriodeListe.map {
+                                        grunnlagsListe.byggResultatBidragsberegning(
+                                            it.periode,
+                                            it.resultat.beløp,
+                                            resultat.avslaskode,
+                                            it.grunnlagsreferanseListe,
+                                            resultat.ugyldigBeregning,
+                                            grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
+                                            resultat.vedtakstype,
+                                        )
+                                    },
+                            )
+                        } ?: emptyList(),
                     perioder =
                         if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
                             listOf(

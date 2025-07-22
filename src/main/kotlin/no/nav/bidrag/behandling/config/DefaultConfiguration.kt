@@ -16,6 +16,7 @@ import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.commons.service.forsendelse.EnableForsendelseService
 import no.nav.bidrag.commons.util.EnableSjekkForNyIdent
 import no.nav.bidrag.commons.web.CorrelationIdFilter
@@ -59,6 +60,7 @@ import javax.sql.DataSource
     InntektApi::class,
     BeregnBarnebidragApi::class,
     AldersjusteringOrchestrator::class,
+    BidragsberegningOrkestrator::class,
 )
 @EnableSjekkForNyIdent
 @EnableScheduling

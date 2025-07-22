@@ -77,7 +77,8 @@ class BehandlingTilVedtakMapping(
         val beregningGrunnlagsliste =
             beregning
                 .first()
-                .resultat.grunnlagListe
+                .resultat!!
+                .grunnlagListe
                 .filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
 
         val bidragspliktigGrunnlag = beregningGrunnlagsliste.bidragspliktig ?: bidragspliktig!!.tilGrunnlagPerson()
@@ -106,7 +107,7 @@ class BehandlingTilVedtakMapping(
                             grunnlagsliste.toSet().hentPersonMedIdent(søknadsbarnRolle.ident) ?: søknadsbarnRolle.tilGrunnlagPerson()
                         val stønad = tilStønadsid(søknadsbarnRolle)
                         val perioder =
-                            it.resultat.beregnetBarnebidragPeriodeListe.map {
+                            it.resultat!!.beregnetBarnebidragPeriodeListe.map {
                                 OpprettPeriodeRequestDto(
                                     periode = it.periode,
                                     beløp = it.resultat.beløp,

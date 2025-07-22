@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.lastVisningsnavnFraFil
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
@@ -140,6 +141,7 @@ data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val vedtakstype: Vedtakstype,
     val resultat: BeregnetBarnebidragResultat,
+    val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
     val avslaskode: Resultatkode? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
 )
@@ -171,6 +173,13 @@ data class ResultatBidragsberegningBarnDto(
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val forsendelseDistribueresAutomatisk: Boolean = false,
+    val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
+    val delvedtak: List<DelvedtakDto> = emptyList(),
+)
+
+data class DelvedtakDto(
+    val klagevedtak: Boolean,
+    val delvedtak: Boolean,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
 )
 

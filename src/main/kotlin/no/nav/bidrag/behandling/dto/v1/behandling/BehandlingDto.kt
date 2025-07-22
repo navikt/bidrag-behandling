@@ -68,6 +68,7 @@ data class VirkningstidspunktDtoV2(
     val harLøpendeBidrag: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val opphørsdato: LocalDate? = null,
+    val beregnTilDato: LocalDate? = null,
     val globalOpphørsdato: LocalDate? = null,
     @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
