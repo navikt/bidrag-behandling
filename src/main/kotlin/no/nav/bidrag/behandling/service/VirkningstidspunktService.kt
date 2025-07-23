@@ -6,7 +6,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.BeregnTil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
@@ -91,6 +93,19 @@ class VirkningstidspunktService(
     }
 
     @Transactional
+    fun oppdaterBeregnTilDato(
+        behandlingsid: Long,
+        request: OppdaterBeregnTilDatoRequestDto,
+    ): Behandling =
+        behandlingRepository
+            .findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            .let { behandling ->
+                oppdaterBeregnTilDato(request, behandling)
+                behandling
+            }
+
+    @Transactional
     fun oppdaterOpphørsdato(
         behandlingsid: Long,
         request: OppdaterOpphørsdatoRequestDto,
@@ -147,7 +162,7 @@ class VirkningstidspunktService(
                 }
             }
 
-            oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, request.beregnTilDato, it)
+            oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, it)
             it
         }
 
@@ -201,7 +216,6 @@ class VirkningstidspunktService(
     fun oppdaterVirkningstidspunkt(
         rolleId: Long?,
         nyVirkningstidspunkt: LocalDate?,
-        nyBeregnTilDato: LocalDate?,
         behandling: Behandling,
     ) {
         val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
@@ -250,10 +264,6 @@ class VirkningstidspunktService(
             grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
         }
 
-        if (nyBeregnTilDato != null && gjelderBarn != null) {
-            gjelderBarn.beregnTilDato = nyBeregnTilDato
-        }
-
         if (erVirkningstidspunktEndret) {
             if (gjelderBarn != null) {
                 gjelderBarn.virkningstidspunkt = nyVirkningstidspunkt ?: gjelderBarn.virkningstidspunkt
@@ -287,6 +297,31 @@ class VirkningstidspunktService(
                     oppdaterSamvær()
                 }
             }
+        }
+    }
+
+    @Transactional
+    fun oppdaterBeregnTilDato(
+        request: OppdaterBeregnTilDatoRequestDto,
+        behandling: Behandling,
+    ) {
+        val requestBeregnTil = request.beregnTil
+        val rolle = behandling.roller.find { it.id == request.idRolle }!!
+        val nåværendeBeregnTil =
+            rolle.beregnTilDato?.let {
+                when (it) {
+                    behandling.opprinneligVirkningstidspunkt!!.plusMonths(1).withDayOfMonth(1) -> BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+                    else -> BeregnTil.INNEVÆRENDE_MÅNED
+                }
+            }
+        val erBeregnTilDatoEndret = requestBeregnTil != nåværendeBeregnTil
+
+        if (erBeregnTilDatoEndret) {
+            rolle.beregnTilDato =
+                when (request.beregnTil) {
+                    BeregnTil.INNEVÆRENDE_MÅNED -> LocalDate.now().plusMonths(1).withDayOfMonth(1)
+                    else -> behandling.opprinneligVirkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+                }
         }
     }
 
@@ -347,7 +382,7 @@ class VirkningstidspunktService(
                 "Virkningstidspunkt $virkningstidspunkt på særbidrag er ikke riktig som følge av ny kalendermåned." +
                     " Endrer virkningstidspunkt til starten av nåværende kalendermåned $nyVirkningstidspunkt"
             }
-            oppdaterVirkningstidspunkt(null, nyVirkningstidspunkt, null, this)
+            oppdaterVirkningstidspunkt(null, nyVirkningstidspunkt, this)
         }
     }
 }
