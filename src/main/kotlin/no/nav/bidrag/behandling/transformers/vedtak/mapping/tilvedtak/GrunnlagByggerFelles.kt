@@ -237,6 +237,13 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                 opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
             },
         ).filterNotNull()
+    val notatVurderingAvSkolegang =
+        roller
+            .mapNotNull { rolle ->
+                henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle).takeIfNotNullOrEmpty { innhold ->
+                    opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, false, innhold, rolle.tilGrunnlagsreferanse())
+                }
+            }
     val notatUnderhold =
         roller
             .mapNotNull { rolle ->
@@ -260,7 +267,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                 }
             }
 
-    return (notatGrunnlag + notatGrunnlagInntekter + notatSamvær + notatUnderhold).toSet()
+    return (notatGrunnlag + notatGrunnlagInntekter + notatSamvær + notatUnderhold + notatVurderingAvSkolegang).toSet()
 }
 
 fun Behandling.tilSkyldner() =

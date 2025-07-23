@@ -25,6 +25,7 @@ data class VirkningstidspunktFeilDto(
     val manglerÅrsakEllerAvslag: Boolean = false,
     val måVelgeVedtakForBeregning: List<RolleDto> = emptyList(),
     val manglerBegrunnelse: Boolean = false,
+    val manglerVurderingAvSkolegang: Boolean = false,
     val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean = false,
 ) {
     @get:JsonIgnore
@@ -33,6 +34,7 @@ data class VirkningstidspunktFeilDto(
             manglerBegrunnelse ||
                 måVelgeVedtakForBeregning.isNotEmpty() ||
                 manglerOpphørsdato.isNotEmpty() ||
+                manglerVurderingAvSkolegang ||
                 manglerVirkningstidspunkt ||
                 manglerÅrsakEllerAvslag ||
                 virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig

@@ -202,6 +202,13 @@ class VedtakTilBehandlingMapping(
             behandling.notater.add(behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, delAvBehandling = lesemodus))
         }
         behandling.roller.forEach { r ->
+            notatMedType(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                behandling.notater.add(
+                    behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, r, delAvBehandling = lesemodus),
+                )
+            }
+        }
+        behandling.roller.forEach { r ->
             notatMedType(NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                 behandling.notater.add(behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = lesemodus))
             }
