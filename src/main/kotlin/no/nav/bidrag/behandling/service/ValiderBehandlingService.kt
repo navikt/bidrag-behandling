@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
-import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
@@ -31,11 +31,10 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 class ValiderBehandlingService(
     private val bidragBeløpshistorikkConsumer: BidragBeløpshistorikkConsumer,
     private val bidragSakConsumer: BidragSakConsumer,
-    private val unleash: Unleash,
 ) {
     fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         val sak = bidragSakConsumer.hentSak(request.saksnummer)
-        if (sak.vedtakssperre || unleash.isEnabled("vedtakssperre", false)) {
+        if (sak.vedtakssperre || UnleashFeatures.VEDTAKSSPERRE.isEnabled) {
             return "Denne saken er midlertidig stengt for vedtak"
         }
         return when (request.tilType()) {
@@ -67,7 +66,7 @@ class ValiderBehandlingService(
         /*if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
             return "Kan ikke behandle klage eller omgjøring"
         }*/
-        if (request.erBegrensetRevurdering() && !unleash.isEnabled("behandling.begrenset_revurdering", false)) {
+        if (request.erBegrensetRevurdering() && !UnleashFeatures.BEGRENSET_REVURDERING.isEnabled) {
             return "Kan ikke behandle begrenset revurdering"
         }
         if (!kanBehandleBegrensetRevurdering(request)) {
@@ -76,7 +75,7 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.ALDERSJUSTERING) return null
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
-        if (!unleash.isEnabled("behandling.v2_endring", false)) {
+        if (!UnleashFeatures.BIDRAG_V2_ENDRING.isEnabled) {
             val harBPMinstEnBidragsstønad =
                 bidragBeløpshistorikkConsumer
                     .hentAlleStønaderForBidragspliktig(bp.ident)

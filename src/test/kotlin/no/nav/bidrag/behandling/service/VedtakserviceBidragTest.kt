@@ -779,6 +779,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+            behandling.søknadsbarn.first(),
         )
         behandling.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
@@ -972,6 +973,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+            behandling.søknadsbarn.first(),
         )
         behandling.refVedtaksid = 553
         behandling.grunnlag =
