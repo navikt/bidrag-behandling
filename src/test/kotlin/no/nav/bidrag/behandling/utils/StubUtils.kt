@@ -19,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockkClass
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.dto.OppgaveDto
@@ -56,6 +57,7 @@ import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.KodeverkKoderBetydningerResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.util.IdentConsumer
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -82,6 +84,18 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Arrays
+
+fun enableUnleashFeature(feature: UnleashFeatures) =
+    every {
+        UnleashFeaturesProvider
+            .isEnabled(feature = eq(feature.featureName), defaultValue = any())
+    } returns true
+
+fun disableUnleashFeature(feature: UnleashFeatures) =
+    every {
+        UnleashFeaturesProvider
+            .isEnabled(feature = eq(feature.featureName), defaultValue = any())
+    } returns false
 
 fun stubSaksbehandlernavnProvider() {
     mockkObject(SaksbehandlernavnProvider)

@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
+import disableUnleashFeature
+import enableUnleashFeature
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
@@ -13,6 +15,7 @@ import io.mockk.slot
 import io.mockk.verify
 import jakarta.persistence.EntityManager
 import no.nav.bidrag.behandling.TestContainerRunner
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
@@ -152,9 +155,9 @@ class VedtakserviceTest : TestContainerRunner() {
     fun initMocks() {
         clearAllMocks()
         stubTokenUtils()
-        unleash.enable("behandling.v2_endring")
-        unleash.enable("behandling.begrenset_revurdering")
-        unleash.disable("vedtakssperre")
+        enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
+        enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
+        disableUnleashFeature(UnleashFeatures.VEDTAKSSPERRE)
         bidragPersonConsumer = stubPersonConsumer()
         every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()

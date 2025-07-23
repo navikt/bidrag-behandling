@@ -1,13 +1,18 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import disableUnleashFeature
+import enableUnleashFeature
 import io.getunleash.FakeUnleash
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
+import io.mockk.junit5.MockKExtension
 import io.mockk.mockkClass
+import io.mockk.mockkObject
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
@@ -18,6 +23,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -34,20 +40,22 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
 
+@ExtendWith(MockKExtension::class)
 class ValiderBehandlingServiceTest {
     val bidragStønadConsumer: BidragBeløpshistorikkConsumer = mockkClass(BidragBeløpshistorikkConsumer::class)
     val bidragSakConsumer: BidragSakConsumer = mockkClass(BidragSakConsumer::class)
 
-    val unleash = FakeUnleash()
-    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, bidragSakConsumer, unleash)
+    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, bidragSakConsumer)
 
     @BeforeEach
     fun initMock() {
+        mockkObject(UnleashFeaturesProvider)
         every { bidragSakConsumer.hentSak(any()) } returns opprettSakForBehandling(oppretteBehandling())
         every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns
             LøpendeBidragssakerResponse(
@@ -107,7 +115,7 @@ class ValiderBehandlingServiceTest {
 
         @Test
         fun `skal ikke validere gyldig BIDRAG hvis begrenset revurdering hvis feature toggle av`() {
-            unleash.disable("behandling.begrenset_revurdering")
+            disableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
                     stønader = listOf(opprettSkyldnerStønad()),
@@ -137,7 +145,7 @@ class ValiderBehandlingServiceTest {
 
         @Test
         fun `skal validere gyldig BIDRAG hvis begrenset revurdering og har historisk bidrag med norsk valuta`() {
-            unleash.enable("behandling.begrenset_revurdering")
+            enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
                     stønader = listOf(opprettSkyldnerStønad()),
@@ -167,7 +175,7 @@ class ValiderBehandlingServiceTest {
 
         @Test
         fun `skal ikke validere gyldig BIDRAG hvis begrenset revurdering men har historisk bidrag med utenlandsk valuta`() {
-            unleash.enable("behandling.begrenset_revurdering")
+            enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
 
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
@@ -326,7 +334,8 @@ class ValiderBehandlingServiceTest {
 
         @Test
         fun `skal ikke validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for flere barn`() {
-            unleash.enable("behandling.v2_endring")
+            enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
+            enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
                     stønader =
@@ -359,7 +368,8 @@ class ValiderBehandlingServiceTest {
 
         @Test
         fun `skal validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for ett barn`() {
-            unleash.enable("behandling.v2_endring")
+            enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
+            enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
                     stønader =

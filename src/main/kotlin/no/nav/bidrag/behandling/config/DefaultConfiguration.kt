@@ -17,6 +17,7 @@ import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.commons.service.forsendelse.EnableForsendelseService
+import no.nav.bidrag.commons.unleash.EnableUnleashFeatures
 import no.nav.bidrag.commons.util.EnableSjekkForNyIdent
 import no.nav.bidrag.commons.web.CorrelationIdFilter
 import no.nav.bidrag.commons.web.DefaultCorsFilter
@@ -76,41 +77,10 @@ class DefaultConfiguration {
         )
 
     @Bean
-    fun unleashConfig(
-        @Value("\${NAIS_APP_NAME}") appName: String,
-        @Value("\${UNLEASH_INSTANCE_ID}") instanceId: String,
-        @Value("\${UNLEASH_SERVER_API_URL}") apiUrl: String,
-        @Value("\${UNLEASH_SERVER_API_TOKEN}") apiToken: String,
-        @Value("\${UNLEASH_SERVER_API_ENV}") environment: String,
-        @Value("\${UNLEASH_FETCH_SYNC:true}") fetchInSync: Boolean,
-    ) = UnleashConfig
-        .builder()
-        .appName(appName)
-        .unleashAPI("$apiUrl/api/")
-        .instanceId(instanceId)
-        .environment(environment)
-        .synchronousFetchOnInitialisation(true)
-        .apiKey(apiToken)
-        .unleashContextProvider(DefaultUnleashContextProvider())
-        .build()
-
-    @Bean
-    @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
-    @Profile("nais")
-    fun unleashInstance(unleashConfig: UnleashConfig) = DefaultUnleash(unleashConfig)
-
-    @Bean
     fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)
 }
 
-class DefaultUnleashContextProvider : UnleashContextProvider {
-    override fun getContext(): UnleashContext {
-        val userId = MDC.get("user")
-        return UnleashContext
-            .builder()
-            .userId(userId)
-            .addProperty("enhet", MDC.get(MDC_ENHET))
-            .appName(MDC.get("applicationKey"))
-            .build()
-    }
-}
+@EnableUnleashFeatures
+@Profile("nais")
+@Configuration
+class UnleashConfiguration
