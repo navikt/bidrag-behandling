@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import com.fasterxml.jackson.module.kotlin.readValue
 import disableUnleashFeature
 import enableUnleashFeature
-import io.getunleash.FakeUnleash
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe

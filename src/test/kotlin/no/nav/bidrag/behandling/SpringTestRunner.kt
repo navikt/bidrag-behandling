@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling
 
 import StubUtils
 import com.github.tomakehurst.wiremock.WireMockServer
-import io.getunleash.FakeUnleash
 import io.mockk.mockkObject
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.security.token.support.spring.test.EnableMockOAuth2Server
