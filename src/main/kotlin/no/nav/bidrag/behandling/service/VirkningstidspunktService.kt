@@ -165,7 +165,6 @@ class VirkningstidspunktService(
                     )
                 }
             }
-
             oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, it)
             it
         }
@@ -311,10 +310,16 @@ class VirkningstidspunktService(
     ) {
         val requestBeregnTil = request.beregnTil
         val rolle = behandling.roller.find { it.id == request.idRolle }!!
+        val opprinneligVedtakstidspunkt =
+            behandling.opprinneligVedtakstidspunkt
+                .min()
+                .plusMonths(1)
+                .withDayOfMonth(1)
+                .toLocalDate()
         val nåværendeBeregnTil =
             rolle.beregnTilDato?.let {
                 when (it) {
-                    behandling.opprinneligVirkningstidspunkt!!.plusMonths(1).withDayOfMonth(1) -> BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+                    opprinneligVedtakstidspunkt -> BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
                     else -> BeregnTil.INNEVÆRENDE_MÅNED
                 }
             }
@@ -324,7 +329,7 @@ class VirkningstidspunktService(
             rolle.beregnTilDato =
                 when (request.beregnTil) {
                     BeregnTil.INNEVÆRENDE_MÅNED -> LocalDate.now().plusMonths(1).withDayOfMonth(1)
-                    else -> behandling.opprinneligVirkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+                    else -> opprinneligVedtakstidspunkt
                 }
         }
     }
