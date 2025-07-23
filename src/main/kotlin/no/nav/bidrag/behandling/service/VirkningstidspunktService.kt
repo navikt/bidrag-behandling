@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
@@ -120,16 +121,19 @@ class VirkningstidspunktService(
                 request.rolleId?.let { rolleId ->
                     it.søknadsbarn.find { it.id == rolleId }
                 }
-            request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
-                gjelderBarnRolle?.let { rolle ->
-                    notatService.oppdatereNotat(
-                        it,
-                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                        n.henteNyttNotat() ?: "",
-                        rolle,
-                    )
+            if (it.stonadstype == Stønadstype.BIDRAG18AAR) {
+                request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
+                    gjelderBarnRolle?.let { rolle ->
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                            n.henteNyttNotat() ?: "",
+                            rolle,
+                        )
+                    }
                 }
             }
+
             request.henteOppdatereNotat()?.let { n ->
                 notatService.oppdatereNotat(
                     it,

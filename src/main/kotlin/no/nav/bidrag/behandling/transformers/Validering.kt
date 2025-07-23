@@ -284,9 +284,9 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     if (rolleId != null && behandling.roller.none { it.id == rolleId }) {
         feilliste.add("Barn med id $rolleId finnes ikke i behandling ${behandling.id}")
     }
-    if (oppdaterBegrunnelseVurderingAvSkolegang != null && behandling.stonadstype != Stønadstype.BIDRAG18AAR) {
-        feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
-    }
+//    if (oppdaterBegrunnelseVurderingAvSkolegang != null && behandling.stonadstype != Stønadstype.BIDRAG18AAR) {
+//        feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
+//    }
     val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
     if (gjelderBarn != null) {
         if (gjelderBarn.opphørsdato != null && virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
