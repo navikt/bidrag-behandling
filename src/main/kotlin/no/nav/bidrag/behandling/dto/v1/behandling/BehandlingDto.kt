@@ -73,7 +73,7 @@ data class VirkningstidspunktDtoV2(
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
     @Schema(description = "Manuell vedtak valgt for beregning av aldersjustering")
     val grunnlagFraVedtak: Long? = null,
-    val erVurderingAvSkolegangPåkrevd: Boolean = false,
+    val kanSkriveVurderingAvSkolegang: Boolean = false,
     val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
 ) {
     @Deprecated("Bruk begrunnelse")
