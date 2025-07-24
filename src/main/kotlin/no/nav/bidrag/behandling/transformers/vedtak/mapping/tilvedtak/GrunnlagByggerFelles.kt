@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
+import no.nav.bidrag.behandling.transformers.erVurderingAvSkolegangPåkrevdAlle
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
@@ -238,12 +239,21 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
             },
         ).filterNotNull()
     val notatVurderingAvSkolegang =
-        roller
-            .mapNotNull { rolle ->
-                henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle).takeIfNotNullOrEmpty { innhold ->
-                    opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, false, innhold, rolle.tilGrunnlagsreferanse())
+        if (erVurderingAvSkolegangPåkrevdAlle()) {
+            roller
+                .mapNotNull { rolle ->
+                    henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle).takeIfNotNullOrEmpty { innhold ->
+                        opprettGrunnlagNotat(
+                            Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                            false,
+                            innhold,
+                            rolle.tilGrunnlagsreferanse(),
+                        )
+                    }
                 }
-            }
+        } else {
+            emptyList()
+        }
     val notatUnderhold =
         roller
             .mapNotNull { rolle ->
@@ -279,7 +289,7 @@ fun Behandling.tilSkyldner() =
     }
 
 fun Behandling.tilBehandlingreferanseListe() =
-    listOf(
+    listOfNotNull(
         OpprettBehandlingsreferanseRequestDto(
             kilde = BehandlingsrefKilde.BEHANDLING_ID,
             referanse = id.toString(),
@@ -294,7 +304,7 @@ fun Behandling.tilBehandlingreferanseListe() =
                 referanse = it.toString(),
             )
         },
-    ).filterNotNull()
+    )
 
 internal fun Inntekt.tilGrunnlagreferanse(
     gjelder: GrunnlagDto,

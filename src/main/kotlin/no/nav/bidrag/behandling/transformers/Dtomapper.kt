@@ -770,6 +770,7 @@ class Dtomapper(
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
                             grunnlagFraVedtak = it.grunnlagFraVedtak,
+                            erVurderingAvSkolegangPåkrevd = erVurderingAvSkolegangPåkrevd(it),
                             begrunnelse =
                                 if (notat.isEmpty()) {
                                     BegrunnelseDto(

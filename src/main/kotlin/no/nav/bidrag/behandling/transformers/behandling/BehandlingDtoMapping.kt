@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.erVurderingAvSkolegangPåkrevdAlle
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
@@ -282,19 +283,19 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     return VirkningstidspunktFeilDto(
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
-//        manglerVurderingAvSkolegang =
-//            if (stonadstype == Stønadstype.BIDRAG18AAR) {
-//                søknadsbarn.any {
-//                    NotatService
-//                        .henteNotatinnhold(
-//                            this,
-//                            rolle = it,
-//                            notattype = NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-//                        ).isEmpty()
-//                }
-//            } else {
-//                false
-//            },
+        manglerVurderingAvSkolegang =
+            if (erVurderingAvSkolegangPåkrevdAlle()) {
+                søknadsbarn.any {
+                    NotatService
+                        .henteNotatinnhold(
+                            this,
+                            rolle = it,
+                            notattype = NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                        ).isEmpty()
+                }
+            } else {
+                false
+            },
         manglerOpphørsdato =
             if (stonadstype == Stønadstype.BIDRAG18AAR && avslag == null) {
                 søknadsbarn.filter { it.opphørsdato == null }.map { it.tilDto() }

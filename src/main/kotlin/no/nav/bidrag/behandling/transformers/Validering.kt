@@ -53,6 +53,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.ifTrue
@@ -64,6 +65,13 @@ import java.time.LocalDate
 private val log = KotlinLogging.logger {}
 
 val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PARTEN_BER_OM_OPPHØR)
+
+fun Behandling.erVurderingAvSkolegangPåkrevdAlle() = søknadsbarn.any { erVurderingAvSkolegangPåkrevd(it) }
+
+fun Behandling.erVurderingAvSkolegangPåkrevd(rolle: Rolle) =
+    stonadstype == Stønadstype.BIDRAG18AAR &&
+        vedtakstype != Vedtakstype.OPPHØR &&
+        rolle.avslag != null && !listOf(Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG).contains(rolle.avslag)
 
 fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (opphørsdato == null) return
@@ -284,9 +292,9 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     if (rolleId != null && behandling.roller.none { it.id == rolleId }) {
         feilliste.add("Barn med id $rolleId finnes ikke i behandling ${behandling.id}")
     }
-//    if (oppdaterBegrunnelseVurderingAvSkolegang != null && behandling.stonadstype != Stønadstype.BIDRAG18AAR) {
-//        feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
-//    }
+    if (oppdaterBegrunnelseVurderingAvSkolegang != null && behandling.stonadstype != Stønadstype.BIDRAG18AAR) {
+        feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
+    }
     val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
     if (gjelderBarn != null) {
         if (gjelderBarn.opphørsdato != null && virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
