@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.erVurderingAvSkolegangPåkrevdAlle
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
@@ -283,7 +284,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerVurderingAvSkolegang =
-            if (stonadstype == Stønadstype.BIDRAG18AAR) {
+            if (erVurderingAvSkolegangPåkrevdAlle()) {
                 søknadsbarn.any {
                     NotatService
                         .henteNotatinnhold(

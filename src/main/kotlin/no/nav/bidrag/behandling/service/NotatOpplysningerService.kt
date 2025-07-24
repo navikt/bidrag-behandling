@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.erHistorisk
+import no.nav.bidrag.behandling.transformers.erVurderingAvSkolegangPåkrevdAlle
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
@@ -817,7 +818,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         begrunnelse = tilNotatVirkningstidspunkt(),
-        begrunnelseVurderingAvSkolegang = tilNotatVurderingAvSkolegang(),
+        begrunnelseVurderingAvSkolegang = if (erVurderingAvSkolegangPåkrevdAlle()) tilNotatVurderingAvSkolegang() else null,
     )
 
 private fun RolleDto.tilNotatRolle() =
