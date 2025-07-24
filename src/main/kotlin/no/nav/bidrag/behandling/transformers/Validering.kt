@@ -71,7 +71,7 @@ fun Behandling.erVurderingAvSkolegangPåkrevdAlle() = søknadsbarn.any { erVurde
 fun Behandling.erVurderingAvSkolegangPåkrevd(rolle: Rolle) =
     stonadstype == Stønadstype.BIDRAG18AAR &&
         vedtakstype != Vedtakstype.OPPHØR &&
-        rolle.avslag != null && !listOf(Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG).contains(rolle.avslag)
+        rolle.avslag != null && listOf(Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG).contains(rolle.avslag)
 
 fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (opphørsdato == null) return
