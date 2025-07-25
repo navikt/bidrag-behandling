@@ -1,2 +1,3 @@
 [**/test/**/*.{kt,kts}]
 ktlint_standard_max-line-length = disabled
+ktlint_standard_no-unused-imports = enabled
