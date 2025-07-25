@@ -178,6 +178,7 @@ data class ResultatBidragsberegningBarnDto(
 )
 
 data class DelvedtakDto(
+    val type: Vedtakstype?,
     val klagevedtak: Boolean,
     val delvedtak: Boolean,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,

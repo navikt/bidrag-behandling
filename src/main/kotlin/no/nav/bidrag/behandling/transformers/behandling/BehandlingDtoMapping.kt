@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erVurderingAvSkolegangPåkrevdAlle
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
@@ -308,7 +309,14 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
             } else {
                 false
             },
-        virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
+        virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig =
+            if (vedtakstype == Vedtakstype.KLAGE &&
+                erBidrag()
+            ) {
+                false
+            } else {
+                erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt
+            },
     )
 }
 
