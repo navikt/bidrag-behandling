@@ -3,10 +3,10 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.BeregnTil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
@@ -89,7 +89,18 @@ class VirkningstidspunktService(
                 it.id == request.barnId
             }!!
             .let {
-                it.grunnlagFraVedtak = request.vedtaksid
+                it.grunnlagFraVedtak = request.vedtaksid?.toLong()
+                val grunnlagFraVedtakListe =
+                    it.grunnlagFraVedtakListe
+                        .filter { it.aldersjusteringForÅr != request.aldersjusteringForÅr }
+                it.grunnlagFraVedtakListe =
+                    grunnlagFraVedtakListe +
+                    listOf(
+                        GrunnlagFraVedtak(
+                            aldersjusteringForÅr = request.aldersjusteringForÅr,
+                            vedtak = request.vedtaksid,
+                        ),
+                    )
             }
     }
 
@@ -310,27 +321,11 @@ class VirkningstidspunktService(
     ) {
         val requestBeregnTil = request.beregnTil
         val rolle = behandling.roller.find { it.id == request.idRolle }!!
-        val opprinneligVedtakstidspunkt =
-            behandling.opprinneligVedtakstidspunkt
-                .min()
-                .plusMonths(1)
-                .withDayOfMonth(1)
-                .toLocalDate()
-        val nåværendeBeregnTil =
-            rolle.beregnTilDato?.let {
-                when (it) {
-                    opprinneligVedtakstidspunkt -> BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
-                    else -> BeregnTil.INNEVÆRENDE_MÅNED
-                }
-            }
+        val nåværendeBeregnTil = rolle.beregnTil
         val erBeregnTilDatoEndret = requestBeregnTil != nåværendeBeregnTil
 
         if (erBeregnTilDatoEndret) {
-            rolle.beregnTilDato =
-                when (request.beregnTil) {
-                    BeregnTil.INNEVÆRENDE_MÅNED -> LocalDate.now().plusMonths(1).withDayOfMonth(1)
-                    else -> opprinneligVedtakstidspunkt
-                }
+            rolle.beregnTil = request.beregnTil
         }
     }
 

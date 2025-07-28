@@ -194,7 +194,8 @@ class GrunnlagService(
     }
 
     fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-        if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyMap()
+        // Klage er pga at det skal være mulig å velge vedtak for aldersjustering hvis klagebehandling endrer resultat for aldersjusteringen
+        if (!listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.KLAGE).contains(behandling.vedtakstype)) return emptyMap()
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
         val søknadsbarn = behandling.søknadsbarn.first()

@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BeregnTil
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.fantIkkeRolleISak
@@ -31,6 +32,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequest
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorGrunnlag
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorManuellAldersjustering
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
@@ -56,11 +58,24 @@ fun Behandling.finnBeregnTilDatoBehandling(
     opphørsdato: YearMonth? = null,
     søknadsbarnRolle: Rolle? = null,
 ) = if (erKlageEllerOmgjøring) {
-    søknadsbarnRolle?.beregnTilDato ?: opprinneligVedtakstidspunkt
-        .first()
-        .plusMonths(1)
-        .withDayOfMonth(1)
-        .toLocalDate()
+    when {
+        søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
+            finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        else -> {
+            val beregnTilDato =
+                opprinneligVedtakstidspunkt
+                    .first()
+                    .plusMonths(1)
+                    .withDayOfMonth(1)
+                    .toLocalDate()
+
+            if (virkningstidspunkt!! >= beregnTilDato) {
+                virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+            } else {
+                beregnTilDato
+            }
+        }
+    }
 } else if (tilType() == TypeBehandling.SÆRBIDRAG) {
     virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
 } else {
@@ -208,7 +223,9 @@ class VedtakGrunnlagMapper(
                 val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
                 val bostatusBarn = tilGrunnlagBostatus(personobjekter)
                 val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
-                val grunnlagsliste = (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad()).toMutableSet()
+                val grunnlagsliste =
+                    (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad() + byggGrunnlagVirkningsttidspunkt())
+                        .toMutableSet()
 
                 when (tilType()) {
                     TypeBehandling.FORSKUDD ->
@@ -254,6 +271,15 @@ class VedtakGrunnlagMapper(
                         KlageOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
                             påklagetVedtakId = behandling.refVedtaksid!!.toInt(),
+                            manuellAldersjustering =
+                                søknadsbarnRolle.grunnlagFraVedtakListe
+                                    .filter { it.aldersjusteringForÅr != null && it.vedtak != null }
+                                    .map {
+                                        KlageOrkestratorManuellAldersjustering(
+                                            it.aldersjusteringForÅr!!,
+                                            it.vedtak!!,
+                                        )
+                                    },
                         )
                     } else {
                         null

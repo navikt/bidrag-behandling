@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.database.datamodell.BeregnTil
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodeseringsfeil
@@ -22,7 +23,8 @@ data class OppdaterManuellVedtakResponse(
 
 data class OppdaterManuellVedtakRequest(
     val barnId: Long,
-    val vedtaksid: Long?,
+    val vedtaksid: Int?,
+    val aldersjusteringForÅr: Int? = null,
 )
 
 data class ManuellVedtakResponse(
@@ -68,6 +70,7 @@ data class VirkningstidspunktDtoV2(
     val harLøpendeBidrag: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val opphørsdato: LocalDate? = null,
+    val beregnTil: BeregnTil? = null,
     val beregnTilDato: LocalDate? = null,
     val globalOpphørsdato: LocalDate? = null,
     @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")

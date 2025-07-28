@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
@@ -96,7 +97,7 @@ open class Rolle(
     )
     open var person: Person? = null,
     open var opphørsdato: LocalDate? = null,
-    open var beregnTilDato: LocalDate? = null,
+    open var beregnTil: BeregnTil? = null,
     open var virkningstidspunkt: LocalDate? = null,
     open var opprinneligVirkningstidspunkt: LocalDate? = null,
     @Convert(converter = ÅrsakConverter::class)
@@ -105,6 +106,9 @@ open class Rolle(
     open var avslag: Resultatkode? = null,
     // Vedtaksid beregning av aldersjustering skal basere seg på. Dette velges manuelt av saksbehandler
     open var grunnlagFraVedtak: Long? = null,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
+    open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
@@ -116,6 +120,22 @@ open class Rolle(
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 }
+
+@Schema(enumAsRef = true)
+enum class BeregnTil {
+    OPPRINNELIG_VEDTAKSTIDSPUNKT,
+    INNEVÆRENDE_MÅNED,
+}
+
+data class GrunnlagFraVedtak(
+    @Schema(
+        description =
+            "Årstall for aldersjustering av grunnlag. " +
+                "Brukes hvis det er et vedtak som skal brukes for aldersjustering av grunnlag.",
+    )
+    val aldersjusteringForÅr: Int? = null,
+    val vedtak: Int? = null,
+)
 
 data class RolleManueltOverstyrtGebyr(
     val overstyrGebyr: Boolean = true,

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -182,6 +183,7 @@ data class DelvedtakDto(
     val klagevedtak: Boolean,
     val delvedtak: Boolean,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
+    val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
 )
 
 data class ResultatBarnebidragsberegningPeriodeDto(
@@ -210,6 +212,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                 beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
                     ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
             }
+        } else if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
+            "Indeksregulering"
         } else if (resultatKode?.erDirekteAvslag() == true ||
             resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
             resultatKode == Resultatkode.INNVILGET_VEDTAK
