@@ -375,21 +375,25 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus = lesemodus,
             )
         },
-    behandling.stonadstype?.let {
-        filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
-            grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
-        ).groupBy { it.gjelderBarnReferanse }
-            .map { (gjelderBarnReferanse, grunnlagsliste) ->
-                val gjelder = hentPersonMedReferanse(gjelderBarnReferanse)!!
-                val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelder.personIdent }!!
-                behandling.opprettGrunnlag(
-                    it.tilGrunnlagsdatatypeBeløpshistorikk(),
-                    grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
-                    gjelder.personIdent!!,
-                    behandling.opprinneligVedtakstidspunkt.min(),
-                    lesemodus,
-                )
-            }
+    if (behandling.vedtakstype == Vedtakstype.KLAGE) {
+        behandling.stonadstype?.let {
+            filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
+                grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
+            ).groupBy { it.gjelderBarnReferanse }
+                .map { (gjelderBarnReferanse, grunnlagsliste) ->
+                    val gjelder = hentPersonMedReferanse(gjelderBarnReferanse)!!
+                    val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelder.personIdent }!!
+                    behandling.opprettGrunnlag(
+                        it.tilGrunnlagsdatatypeBeløpshistorikk(),
+                        grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
+                        gjelder.personIdent!!,
+                        behandling.opprinneligVedtakstidspunkt.min(),
+                        lesemodus,
+                    )
+                }
+        }
+    } else {
+        null
     },
     hentGrunnlagArbeidsforhold()
         .groupBy { it.partPersonId }
