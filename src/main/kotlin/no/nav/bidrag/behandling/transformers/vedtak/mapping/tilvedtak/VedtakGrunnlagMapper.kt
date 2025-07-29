@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -57,10 +58,13 @@ import java.time.YearMonth
 fun Behandling.finnBeregnTilDatoBehandling(
     opphørsdato: YearMonth? = null,
     søknadsbarnRolle: Rolle? = null,
-) = if (erKlageEllerOmgjøring) {
+) = if (tilType() == TypeBehandling.SÆRBIDRAG) {
+    virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+} else if (erKlageEllerOmgjøring) {
     when {
         søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
             finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+
         else -> {
             val beregnTilDato =
                 opprinneligVedtakstidspunkt
@@ -76,8 +80,6 @@ fun Behandling.finnBeregnTilDatoBehandling(
             }
         }
     }
-} else if (tilType() == TypeBehandling.SÆRBIDRAG) {
-    virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
 } else {
     finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
 }
@@ -243,6 +245,7 @@ class VedtakGrunnlagMapper(
                                 .tilGrunnlagDto(grunnlagsliste)
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
+
                     TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
                         grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
@@ -267,7 +270,7 @@ class VedtakGrunnlagMapper(
                         grunnlagListe = grunnlagsliste.toSet().toList(),
                     )
                 val klageBeregning =
-                    if (behandling.erKlageEllerOmgjøring) {
+                    if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
                         KlageOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
                             påklagetVedtakId = behandling.refVedtaksid!!.toInt(),
@@ -319,9 +322,11 @@ class VedtakGrunnlagMapper(
                     grunnlagListe.addAll(
                         byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     )
+
                 TypeBehandling.BIDRAG -> {
                     grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true))
                 }
+
                 else -> {}
             }
             return grunnlagListe.toSet()

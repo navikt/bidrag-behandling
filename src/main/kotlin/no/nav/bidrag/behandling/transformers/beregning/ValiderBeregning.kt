@@ -249,7 +249,7 @@ class ValiderBeregning(
         val harFeil =
             inntekterFeil != null ||
                 husstandsmedlemsfeil.isNotEmpty() ||
-                privatAvtaleValideringsfeil.isNotEmpty() ||
+//                privatAvtaleValideringsfeil.isNotEmpty() ||
                 virkningstidspunktFeil != null ||
                 andreVoksneIHusstandenFeil != null ||
                 samværValideringsfeil.isNotEmpty() ||

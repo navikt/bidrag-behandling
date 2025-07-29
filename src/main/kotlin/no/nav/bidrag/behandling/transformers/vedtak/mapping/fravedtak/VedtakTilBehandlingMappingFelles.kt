@@ -27,6 +27,9 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.opprettStønadDto
+import no.nav.bidrag.behandling.transformers.tilGrunnlagsdatatypeBeløpshistorikk
+import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -41,9 +44,12 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.sivilstand.SivilstandApi
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
@@ -57,6 +63,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -366,6 +373,33 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 rolleIdent = gjelderGrunnlag.personIdent!!,
                 innhentetTidspunkt = LocalDateTime.now(),
                 lesemodus = lesemodus,
+            )
+        },
+    behandling.stonadstype?.let {
+        filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
+            grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
+        ).groupBy { it.gjelderBarnReferanse }
+            .map { (gjelderBarnReferanse, grunnlagsliste) ->
+                val gjelder = hentPersonMedReferanse(gjelderBarnReferanse)!!
+                val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelder.personIdent }!!
+                behandling.opprettGrunnlag(
+                    it.tilGrunnlagsdatatypeBeløpshistorikk(),
+                    grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
+                    gjelder.personIdent!!,
+                    behandling.opprinneligVedtakstidspunkt.min(),
+                    lesemodus,
+                )
+            }
+    },
+    hentGrunnlagArbeidsforhold()
+        .groupBy { it.partPersonId }
+        .map { (gjelderIdent, grunnlag) ->
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.ARBEIDSFORHOLD,
+                grunnlag,
+                gjelderIdent,
+                innhentetTidspunkt(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD),
+                lesemodus,
             )
         },
     hentGrunnlagArbeidsforhold()

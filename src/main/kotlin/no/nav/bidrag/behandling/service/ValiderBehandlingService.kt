@@ -39,7 +39,7 @@ class ValiderBehandlingService(
         }
         return when (request.tilType()) {
             TypeBehandling.SÆRBIDRAG -> kanSærbidragBehandlesINyLøsning(request)
-            TypeBehandling.BIDRAG -> null // kanBidragBehandlesINyLøsning(request)
+            TypeBehandling.BIDRAG -> kanBidragBehandlesINyLøsning(request)
             else -> null
         }
     }

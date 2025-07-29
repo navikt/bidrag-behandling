@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
@@ -167,6 +168,6 @@ class BarnebidragGrunnlagInnhenting(
         sak = Saksnummer(saksnummer),
         skyldner = skyldner ?: Personident(bidragspliktig!!.ident!!),
         kravhaver = Personident(søknadsbarn.ident!!),
-        gyldigTidspunkt = LocalDateTime.now(),
+        gyldigTidspunkt = if (vedtakstype == Vedtakstype.KLAGE) opprinneligVedtakstidspunkt.min().minusMinutes(1) else LocalDateTime.now(),
     )
 }

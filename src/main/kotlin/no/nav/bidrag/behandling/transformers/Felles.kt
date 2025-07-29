@@ -6,9 +6,12 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderB
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -21,6 +24,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Period
+import java.time.Year
 import java.time.YearMonth
 
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
@@ -139,6 +143,22 @@ fun LocalDate?.erUnder12År(basertPåDato: LocalDate = LocalDate.now()) =
 
 fun Behandling.finnesLøpendeBidragForRolle(rolle: Rolle): Boolean = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) != null
 
+fun Stønadstype.tilGrunnlagsdatatypeBeløpshistorikk() =
+    when (this) {
+        Stønadstype.BIDRAG -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG
+        Stønadstype.BIDRAG18AAR -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR
+        Stønadstype.FORSKUDD -> Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD
+        else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
+    }
+
+fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
+    when (this) {
+        Stønadstype.BIDRAG -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG
+        Stønadstype.BIDRAG18AAR -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR
+        Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
+        else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
+    }
+
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
     val eksisterendeVedtak =
         grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
@@ -200,3 +220,21 @@ fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpph�
         vedtaksdato = opphørPeriode.gyldigFra.toLocalDate(),
     )
 }
+
+fun Behandling.opprettStønadDto(søknadsbarn: Rolle) =
+    StønadDto(
+        sak = Saksnummer(saksnummer),
+        skyldner = if (stonadstype == Stønadstype.FORSKUDD) personIdentNav else Personident(bidragspliktig!!.ident!!),
+        kravhaver = Personident(søknadsbarn.ident!!),
+        mottaker = Personident(bidragsmottaker!!.ident!!),
+        førsteIndeksreguleringsår = Year.now().value + 1,
+        nesteIndeksreguleringsår = Year.now().value + 1,
+        innkreving = Innkrevingstype.MED_INNKREVING,
+        opprettetAv = "",
+        opprettetTidspunkt = opprettetTidspunkt,
+        endretAv = null,
+        endretTidspunkt = null,
+        stønadsid = 1,
+        type = stonadstype!!,
+        periodeListe = emptyList(),
+    )
