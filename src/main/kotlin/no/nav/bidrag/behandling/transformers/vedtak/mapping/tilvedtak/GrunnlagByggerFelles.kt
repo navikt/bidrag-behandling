@@ -14,7 +14,6 @@ import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
-import no.nav.bidrag.behandling.transformers.erVurderingAvSkolegangPåkrevdAlle
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn

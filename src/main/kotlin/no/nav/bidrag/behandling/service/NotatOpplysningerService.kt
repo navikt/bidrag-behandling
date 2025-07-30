@@ -35,7 +35,6 @@ import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.erHistorisk
-import no.nav.bidrag.behandling.transformers.erVurderingAvSkolegangPåkrevdAlle
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle

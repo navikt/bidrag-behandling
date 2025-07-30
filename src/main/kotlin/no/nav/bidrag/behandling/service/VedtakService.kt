@@ -32,6 +32,11 @@ import java.time.LocalDateTime
 
 private val LOGGER = KotlinLogging.logger {}
 
+internal data class PåklagetVedtak(
+    val vedtaksid: Int,
+    val vedtakstidspunkt: LocalDateTime,
+)
+
 @Service
 class VedtakService(
     private val behandlingService: BehandlingService,
@@ -52,7 +57,7 @@ class VedtakService(
             tilgangskontrollService.sjekkTilgangVedtak(vedtak)
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
-            return vedtakTilBehandlingMapping.run { vedtak.tilBehandling(vedtakId, lesemodus = true) }
+            return vedtakTilBehandlingMapping.run { vedtak.tilBehandling(vedtakId.toInt(), lesemodus = true) }
         } catch (e: Exception) {
             LOGGER.error(e) { "Det skjedde en feil ved konvertering av vedtak $vedtakId for lesemodus" }
             throw e
@@ -70,7 +75,7 @@ class VedtakService(
         return vedtak.type
     }
 
-    private fun hentOpprinneligVedtakstidspunkt(vedtak: VedtakDto): Set<LocalDateTime> {
+    private fun hentOpprinneligVedtakstidspunkt(vedtak: VedtakDto): Set<PåklagetVedtak> {
         val vedtaksiderStønadsendring = vedtak.stønadsendringListe.mapNotNull { it.omgjørVedtakId }
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
@@ -79,9 +84,9 @@ class VedtakService(
                 .flatMap { vedtaksid ->
                     val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
-                }.toSet() + setOf(vedtak.vedtakstidspunkt!!)
+                }.toSet() + setOf(PåklagetVedtak(vedtak.vedtaksid.toInt(), vedtak.vedtakstidspunkt!!))
         }
-        return setOf(vedtak.vedtakstidspunkt!!)
+        return setOf(PåklagetVedtak(vedtak.vedtaksid.toInt(), vedtak.vedtakstidspunkt!!))
     }
 
     @Transactional
@@ -126,9 +131,11 @@ class VedtakService(
                 "Vedtak $refVedtaksid er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
             )
         }
+        val påklagetVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak)
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
-                vedtakId = refVedtaksid,
+                vedtakId = refVedtaksid.toInt(),
+                originalVedtaksid = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
                 søktFomDato = request.søktFomDato,
                 mottattdato = request.mottattdato,
                 soknadFra = request.søknadFra,
@@ -138,7 +145,7 @@ class VedtakService(
                 søknadId = request.søknadsid,
                 søknadstype = request.søknadstype,
                 lesemodus = false,
-                opprinneligVedtakstidspunkt = hentOpprinneligVedtakstidspunkt(vedtak).toSet(),
+                opprinneligVedtakstidspunkt = påklagetVedtakListe.map { it.vedtakstidspunkt }.toSet(),
                 opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
             )
         }

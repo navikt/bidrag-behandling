@@ -95,7 +95,8 @@ class VedtakTilBehandlingMapping(
     private val behandlingRepository: BehandlingRepository,
 ) {
     fun VedtakDto.tilBehandling(
-        vedtakId: Long,
+        vedtakId: Int,
+        originalVedtaksid: Int = vedtakId,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
@@ -155,7 +156,7 @@ class VedtakTilBehandlingMapping(
                 engangsbeloptype = if (stønadsendringstype == null) engangsbeløpListe.firstOrNull()?.type else null,
                 vedtaksid = null,
                 soknadRefId = søknadRefId,
-                refVedtaksid = vedtakId,
+                refVedtaksid = vedtakId.toLong(),
                 behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
