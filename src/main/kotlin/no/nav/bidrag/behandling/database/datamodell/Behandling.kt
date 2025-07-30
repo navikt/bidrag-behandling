@@ -82,8 +82,9 @@ open class Behandling(
     open var stonadstype: Stønadstype?,
     @Enumerated(EnumType.STRING)
     open var engangsbeloptype: Engangsbeløptype?,
-    open var vedtaksid: Long? = null,
-    open var refVedtaksid: Long? = null,
+    open var vedtaksid: Int? = null,
+    open var refVedtaksid: Int? = null,
+    open var påklagetVedtak: Int? = null,
     open var notatJournalpostId: String? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
@@ -104,14 +105,6 @@ open class Behandling(
     @Column(name = "avslag")
     @Enumerated(EnumType.STRING)
     open var avslag: Resultatkode? = null,
-    @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_KUN_NOTAT")
-    open var virkningstidspunktbegrunnelseKunINotat: String? = null,
-    @Column(name = "BOFORHOLDSBEGRUNNELSE_KUN_NOTAT")
-    open var boforholdsbegrunnelseKunINotat: String? = null,
-    @Column(name = "INNTEKTSBEGRUNNELSE_KUN_NOTAT")
-    open var inntektsbegrunnelseKunINotat: String? = null,
-    @Column(name = "UTGIFTSBEGRUNNELSE_KUN_NOTAT")
-    open var utgiftsbegrunnelseKunINotat: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,

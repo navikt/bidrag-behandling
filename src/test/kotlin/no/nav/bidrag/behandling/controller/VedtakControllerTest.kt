@@ -124,9 +124,6 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettJournalpost("12333")
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         save(behandling)
 
         stubUtils.stubHentSak(opprettSakForBehandling(behandling))
@@ -203,9 +200,6 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettJournalpost("12333")
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.utgiftsbegrunnelseKunINotat = "Utgifter kun i notat"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.husstandsmedlem = mutableSetOf()
         testdataManager.lagreBehandling(behandling)
 
@@ -247,7 +241,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Test
     fun `Skal ikke fatte vedtak hvis behandling har vedtakId for særbidrag`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.vedtaksid = 1L
+        behandling.vedtaksid = 1
         behandling.husstandsmedlem = mutableSetOf()
         testdataManager.lagreBehandling(behandling)
 
@@ -279,7 +273,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Test
     fun `Skal ikke fatte vedtak hvis behandling har vedtakId`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
-        behandling.vedtaksid = 1L
+        behandling.vedtaksid = 1
         save(behandling)
         stubUtils.stubHentSak(opprettSakForBehandling(behandling))
         stubUtils.stubFatteVedtak()

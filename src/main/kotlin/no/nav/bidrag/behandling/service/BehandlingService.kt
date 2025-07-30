@@ -276,7 +276,7 @@ class BehandlingService(
     @Transactional
     fun oppdaterVedtakFattetStatus(
         behandlingsid: Long,
-        vedtaksid: Long,
+        vedtaksid: Int,
         fattetAvEnhet: String,
     ) {
         behandlingRepository

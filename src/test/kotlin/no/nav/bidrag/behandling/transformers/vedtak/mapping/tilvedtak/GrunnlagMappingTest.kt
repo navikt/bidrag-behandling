@@ -1867,19 +1867,14 @@ class GrunnlagMappingTest {
         fun `skal opprette grunnlag for notat og ikke ta med notat hvis tomt eller null`(): Unit =
             mapper.run {
                 val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
-                behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-                behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-                behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
 
                 assertSoftly(behandling.byggGrunnlagNotater().toList()) {
                     shouldHaveSize(3)
                     assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-                        innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                         erMedIVedtaksdokumentet shouldBe false
                         type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
                     }
                     assertSoftly(it[1].innholdTilObjekt<NotatGrunnlag>()) {
-                        innhold shouldBe behandling.boforholdsbegrunnelseKunINotat
                         erMedIVedtaksdokumentet shouldBe false
                         type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
                     }
@@ -1894,14 +1889,10 @@ class GrunnlagMappingTest {
         fun `skal opprette grunnlag for notat`(): Unit =
             mapper.run {
                 val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
-                behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-                behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-                behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
 
                 assertSoftly(behandling.byggGrunnlagNotater().toList()) {
                     shouldHaveSize(3)
                     assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-                        innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                         erMedIVedtaksdokumentet shouldBe false
                         type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
                     }

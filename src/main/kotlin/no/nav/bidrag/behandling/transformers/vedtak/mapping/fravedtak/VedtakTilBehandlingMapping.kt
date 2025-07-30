@@ -96,7 +96,7 @@ class VedtakTilBehandlingMapping(
 ) {
     fun VedtakDto.tilBehandling(
         vedtakId: Int,
-        originalVedtaksid: Int = vedtakId,
+        påklagetVedtak: Int = vedtakId,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
@@ -156,7 +156,8 @@ class VedtakTilBehandlingMapping(
                 engangsbeloptype = if (stønadsendringstype == null) engangsbeløpListe.firstOrNull()?.type else null,
                 vedtaksid = null,
                 soknadRefId = søknadRefId,
-                refVedtaksid = vedtakId.toLong(),
+                refVedtaksid = vedtakId,
+                påklagetVedtak = påklagetVedtak,
                 behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,

@@ -10,10 +10,10 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.springframework.stereotype.Service
 
-fun hentVedtak(vedtaksid: Long?): VedtakDto? =
+fun hentVedtak(vedtaksid: Int?): VedtakDto? =
     try {
         vedtaksid.takeIfNotNullOrEmpty {
-            AppContext.getBean(BidragVedtakConsumer::class.java).hentVedtak(it.toInt())
+            AppContext.getBean(BidragVedtakConsumer::class.java).hentVedtak(it)
         }
     } catch (e: Exception) {
         secureLogger.debug(e) { "Feil ved henting av vedtak $vedtaksid" }

@@ -135,7 +135,7 @@ class VedtakService(
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
                 vedtakId = refVedtaksid.toInt(),
-                originalVedtaksid = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
+                påklagetVedtak = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
                 søktFomDato = request.søktFomDato,
                 mottattdato = request.mottattdato,
                 soknadFra = request.søknadFra,
@@ -209,7 +209,7 @@ class VedtakService(
         val response = vedtakConsumer.fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandlingId,
-            vedtaksid = response.vedtaksid.toLong(),
+            vedtaksid = response.vedtaksid,
             request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
@@ -239,7 +239,7 @@ class VedtakService(
         val response = vedtakConsumer.fatteVedtak(fatteVedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
-            vedtaksid = response.vedtaksid.toLong(),
+            vedtaksid = response.vedtaksid,
             request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
@@ -283,7 +283,7 @@ class VedtakService(
         val response = vedtakConsumer.fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
-            vedtaksid = response.vedtaksid.toLong(),
+            vedtaksid = response.vedtaksid,
             request?.enhet ?: behandling.behandlerEnhet,
         )
 

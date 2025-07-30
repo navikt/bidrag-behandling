@@ -105,7 +105,7 @@ open class Rolle(
     @Enumerated(EnumType.STRING)
     open var avslag: Resultatkode? = null,
     // Vedtaksid beregning av aldersjustering skal basere seg på. Dette velges manuelt av saksbehandler
-    open var grunnlagFraVedtak: Long? = null,
+    open var grunnlagFraVedtak: Int? = null,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
     open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),

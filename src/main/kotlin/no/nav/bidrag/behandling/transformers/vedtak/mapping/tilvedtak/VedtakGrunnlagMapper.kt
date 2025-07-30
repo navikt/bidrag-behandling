@@ -273,7 +273,7 @@ class VedtakGrunnlagMapper(
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
                         KlageOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            påklagetVedtakId = behandling.refVedtaksid!!.toInt(),
+                            påklagetVedtakId = behandling.påklagetVedtak!!,
                             manuellAldersjustering =
                                 søknadsbarnRolle.grunnlagFraVedtakListe
                                     .filter { it.aldersjusteringForÅr != null && it.vedtak != null }

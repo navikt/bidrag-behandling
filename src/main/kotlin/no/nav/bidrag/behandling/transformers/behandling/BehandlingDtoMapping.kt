@@ -715,7 +715,6 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
         vedtakstype = vedtakstype,
         søknadstype = søknadstype,
         harReferanseTilAnnenBehandling = soknadRefId != null,
-        skruddAvManuelt = virkningstidspunktbegrunnelseKunINotat,
         søktFomDato = søktFomDato,
         mottattdato = mottattdato,
         roller =

@@ -89,7 +89,7 @@ class VirkningstidspunktService(
                 it.id == request.barnId
             }!!
             .let {
-                it.grunnlagFraVedtak = request.vedtaksid?.toLong()
+                it.grunnlagFraVedtak = request.vedtaksid
                 val grunnlagFraVedtakListe =
                     it.grunnlagFraVedtakListe
                         .filter { it.aldersjusteringForÅr != request.aldersjusteringForÅr }

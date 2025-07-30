@@ -1277,8 +1277,6 @@ fun oppretteTestbehandling(
         else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
     }
 
-    behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
-
     val parterIBehandlingen = hashMapOf(1 to testdataBM, 2 to testdataBarn1, 3 to testdataBarn2)
 
     parterIBehandlingen.forEach {

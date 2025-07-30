@@ -79,7 +79,6 @@ class BeregningService(
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
-    private val beregnBarnebidragApi = BeregnBarnebidragApi()
 
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
         behandling.run {

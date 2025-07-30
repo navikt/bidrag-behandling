@@ -32,7 +32,7 @@ data class ManuellVedtakResponse(
 )
 
 data class ManuellVedtakDto(
-    val vedtaksid: Long,
+    val vedtaksid: Int,
     val barnId: Long,
     val fattetTidspunkt: LocalDateTime,
     val virkningsDato: LocalDate,
@@ -76,7 +76,7 @@ data class VirkningstidspunktDtoV2(
     @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
     @Schema(description = "Manuell vedtak valgt for beregning av aldersjustering")
-    val grunnlagFraVedtak: Long? = null,
+    val grunnlagFraVedtak: Int? = null,
     val kanSkriveVurderingAvSkolegang: Boolean = false,
     val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
 ) {
