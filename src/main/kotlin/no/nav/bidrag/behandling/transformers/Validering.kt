@@ -67,9 +67,9 @@ private val log = KotlinLogging.logger {}
 
 val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PARTEN_BER_OM_OPPHØR)
 
-fun Behandling.erVurderingAvSkolegangPåkrevdAlle() = søknadsbarn.any { erVurderingAvSkolegangPåkrevd(it) }
+fun Behandling.kanSkriveVurderingAvSkolegangAlle() = søknadsbarn.any { kanSkriveVurderingAvSkolegang(it) }
 
-fun Behandling.erVurderingAvSkolegangPåkrevd(rolle: Rolle) =
+fun Behandling.kanSkriveVurderingAvSkolegang(rolle: Rolle) =
     stonadstype == Stønadstype.BIDRAG18AAR &&
         vedtakstype != Vedtakstype.OPPHØR &&
         (rolle.avslag == null || listOf(Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG).contains(rolle.avslag))
@@ -293,7 +293,7 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     if (rolleId != null && behandling.roller.none { it.id == rolleId }) {
         feilliste.add("Barn med id $rolleId finnes ikke i behandling ${behandling.id}")
     }
-    if (oppdaterBegrunnelseVurderingAvSkolegang != null && behandling.stonadstype != Stønadstype.BIDRAG18AAR) {
+    if (oppdaterBegrunnelseVurderingAvSkolegang != null && !behandling.kanSkriveVurderingAvSkolegangAlle()) {
         feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
     }
     val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
