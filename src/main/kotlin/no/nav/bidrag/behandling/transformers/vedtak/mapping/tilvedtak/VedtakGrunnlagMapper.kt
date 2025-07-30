@@ -60,7 +60,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
     søknadsbarnRolle: Rolle? = null,
 ) = if (tilType() == TypeBehandling.SÆRBIDRAG) {
     virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-} else if (erKlageEllerOmgjøring) {
+} else if (erKlageEllerOmgjøring && opprinneligVedtakstidspunkt.isNotEmpty()) {
     when {
         søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
             finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
