@@ -27,7 +27,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.Underholds
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
-import no.nav.bidrag.behandling.transformers.finnResultatFraAnnenVedtak
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
@@ -199,7 +198,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 type = rv.vedtakstype,
                                 delvedtak = rv.delvedtak,
                                 klagevedtak = resultatFraVedtak?.klagevedtak ?: rv.klagevedtak,
-                                gjennopprettetBeløpshistorikk =
+                                gjenopprettetBeløpshistorikk =
                                     resultatFraVedtak?.gjenopprettetBeløpshistorikk ?: rv.gjenopprettetBeløpshistorikk,
                                 vedtaksid = resultatFraVedtak?.vedtaksid,
                                 grunnlagFraVedtak = if (rv.delvedtak) resultat.barn.grunnlagFraVedtak else emptyList(),
