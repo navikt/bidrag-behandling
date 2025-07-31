@@ -44,6 +44,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
@@ -55,6 +56,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.NotatService
@@ -733,6 +735,43 @@ class Dtomapper(
                 )
         val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
         this.grunnlagslisteFraVedtak = this.grunnlagslisteFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
+        if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
+            return BehandlingDtoV2(
+                id = id!!,
+                type = tilType(),
+                lesemodus = lesemodusVedtak,
+                erBisysVedtak = erBisysVedtak,
+                erVedtakUtenBeregning =
+                    vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
+                grunnlagFraVedtaksid = grunnlagFraVedtak,
+                medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
+                vedtakstype = vedtakstype,
+                opprinneligVedtakstype = opprinneligVedtakstype,
+                stønadstype = stonadstype,
+                engangsbeløptype = engangsbeloptype,
+                erKlageEllerOmgjøring = erKlageEllerOmgjøring,
+                opprettetTidspunkt = opprettetTidspunkt,
+                erVedtakFattet = vedtaksid != null,
+                søktFomDato = søktFomDato,
+                mottattdato = mottattdato,
+                klageMottattdato = klageMottattdato,
+                søktAv = soknadFra,
+                saksnummer = saksnummer,
+                søknadsid = soknadsid,
+                behandlerenhet = behandlerEnhet,
+                gebyr = mapGebyr(),
+                roller = roller.map { it.tilDto() }.toSet(),
+                søknadRefId = soknadRefId,
+                vedtakRefId = refVedtaksid,
+                virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
+                virkningstidspunktV2 = emptyList(),
+                inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
+                boforhold = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
+                aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
+                ikkeAktiverteEndringerIGrunnlagsdata = IkkeAktiveGrunnlagsdata(),
+            )
+        }
         return BehandlingDtoV2(
             id = id!!,
             type = tilType(),

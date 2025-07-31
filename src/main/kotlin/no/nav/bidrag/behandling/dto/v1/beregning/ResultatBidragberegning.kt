@@ -181,7 +181,9 @@ data class ResultatBidragsberegningBarnDto(
 data class DelvedtakDto(
     val type: Vedtakstype?,
     val klagevedtak: Boolean,
+    val vedtaksid: Int? = null,
     val delvedtak: Boolean,
+    val gjennopprettetBeløpshistorikk: Boolean,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
 )

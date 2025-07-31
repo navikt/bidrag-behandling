@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.Underholds
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.behandling.transformers.finnResultatFraAnnenVedtak
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
@@ -192,11 +193,15 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                         resultat.resultatVedtak?.resultatVedtakListe?.map { rv ->
                             val grunnlagslisteRV = rv.resultat.grunnlagListe
                             val aldersjusteringDetaljer = rv.resultat.grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
+                            val resultatFraVedtak = if (rv.delvedtak) grunnlagslisteRV.finnResultatFraAnnenVedtak() else null
                             DelvedtakDto(
                                 type = rv.vedtakstype,
                                 delvedtak = rv.delvedtak,
-                                klagevedtak = rv.klagevedtak,
-                                grunnlagFraVedtak = resultat.barn.grunnlagFraVedtak,
+                                klagevedtak = resultatFraVedtak?.klagevedtak ?: rv.klagevedtak,
+                                gjennopprettetBeløpshistorikk =
+                                    resultatFraVedtak?.gjenopprettetBeløpshistorikk ?: rv.gjenopprettetBeløpshistorikk,
+                                vedtaksid = resultatFraVedtak?.vedtaksid,
+                                grunnlagFraVedtak = if (rv.delvedtak) resultat.barn.grunnlagFraVedtak else emptyList(),
                                 perioder =
                                     if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert && rv.delvedtak) {
                                         listOf(
@@ -424,7 +429,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                         it.kravhaver == barnIdent
                     }!!
                     .periodeListe
-                    .find { it.periode.inneholder(periode) }!!
+                    .find { it.periode.fom == periode.fom }!!
             val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
             return vedtak.grunnlagListe.byggResultatBidragsberegning(
                 periode,
@@ -605,11 +610,17 @@ fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Gr
         ?: 0.0
 }
 
-fun List<GrunnlagDto>.finnResultatFraAnnenVedtak(grunnlagsreferanseListe: List<Grunnlagsreferanse>): ResultatFraVedtakGrunnlag? =
-    finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-        Grunnlagstype.RESULTAT_FRA_VEDTAK,
-        grunnlagsreferanseListe,
-    ).firstOrNull()?.innhold
+fun List<GrunnlagDto>.finnResultatFraAnnenVedtak(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse> = emptyList(),
+): ResultatFraVedtakGrunnlag? =
+    if (grunnlagsreferanseListe.isEmpty()) {
+        filtrerOgKonverterBasertPåEgenReferanse<ResultatFraVedtakGrunnlag>(Grunnlagstype.RESULTAT_FRA_VEDTAK).firstOrNull()?.innhold
+    } else {
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
+            Grunnlagstype.RESULTAT_FRA_VEDTAK,
+            grunnlagsreferanseListe,
+        ).firstOrNull()?.innhold
+    }
 
 fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,

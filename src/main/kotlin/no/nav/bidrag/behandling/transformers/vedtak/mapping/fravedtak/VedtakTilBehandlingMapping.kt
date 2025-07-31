@@ -181,7 +181,8 @@ class VedtakTilBehandlingMapping(
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
         behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
         behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
-        behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
+        behandling.grunnlag =
+            if (type == Vedtakstype.INDEKSREGULERING) mutableSetOf() else grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
             behandling.lesemodusVedtak =
                 LesemodusVedtak(

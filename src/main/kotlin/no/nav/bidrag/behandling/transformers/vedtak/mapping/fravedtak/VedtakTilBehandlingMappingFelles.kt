@@ -78,6 +78,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
@@ -133,8 +134,8 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         stønadsendringListe.map { stønadsendring ->
             val barnIdent = stønadsendring.kravhaver
-            val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi) ?: manglerPersonGrunnlag(barnIdent.verdi)
-            val barn = barnGrunnlag.innholdTilObjekt<Person>()
+            val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
+            val barn = barnGrunnlag?.innholdTilObjekt<Person>()
             val aldersjusteringDetaljer = grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
             val erResultatUtenBeregning =
                 stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV"
@@ -142,11 +143,11 @@ fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
                 resultatUtenBeregning = erResultatUtenBeregning,
                 barn =
                     ResultatRolle(
-                        barn.ident,
-                        barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
-                        barn.fødselsdato,
+                        barn?.ident,
+                        if (barn == null) "" else barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
+                        barn?.fødselsdato ?: LocalDate.now(),
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
-                        referanse = barnGrunnlag.referanse,
+                        referanse = barnGrunnlag?.referanse ?: "",
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 perioder =

@@ -260,9 +260,9 @@ data class UtgiftspostDto(
 }
 
 data class AktiveGrunnlagsdata(
-    val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
-    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto>,
-    val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
+    val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
+    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
+    val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
     val stønadTilBarnetilsyn: StønadTilBarnetilsynAktiveGrunnlagDto? = null,

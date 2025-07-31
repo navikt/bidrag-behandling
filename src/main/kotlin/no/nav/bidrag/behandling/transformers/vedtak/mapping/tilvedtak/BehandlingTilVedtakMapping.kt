@@ -194,7 +194,7 @@ class BehandlingTilVedtakMapping(
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
-                            omgjørVedtakId = refVedtaksid?.toInt(),
+                            omgjørVedtakId = påklagetVedtak,
                             kravhaver =
                                 it.barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),

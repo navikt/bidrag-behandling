@@ -58,12 +58,12 @@ data class MaksGodkjentBeløpValideringsfeil(
 }
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: Set<InntektValideringsfeil>?,
-    val utvidetBarnetrygd: InntektValideringsfeil?,
-    val kontantstøtte: Set<InntektValideringsfeil>?,
-    val småbarnstillegg: InntektValideringsfeil?,
+    val barnetillegg: Set<InntektValideringsfeil>? = emptySet(),
+    val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
+    val kontantstøtte: Set<InntektValideringsfeil>? = emptySet(),
+    val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
     @Schema(name = "årsinntekter")
-    val årsinntekter: Set<InntektValideringsfeil>?,
+    val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
 ) {
     @get:JsonIgnore
     val harFeil
@@ -78,8 +78,8 @@ data class InntektValideringsfeilDto(
 }
 
 data class InntektValideringsfeil(
-    val overlappendePerioder: Set<OverlappendePeriode>,
-    val fremtidigPeriode: Boolean,
+    val overlappendePerioder: Set<OverlappendePeriode> = emptySet(),
+    val fremtidigPeriode: Boolean = false,
     @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
     @Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter. Vil alltid være false hvis det er ytelse")
