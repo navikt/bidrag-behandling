@@ -200,6 +200,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val faktiskBidrag: BigDecimal = BigDecimal(0),
     val resultatKode: Resultatkode?,
     val erDirekteAvslag: Boolean = false,
+    val erOpphør: Boolean = false,
+    val endeligVedtak: Boolean = false,
     val erBeregnetAvslag: Boolean = false,
     val erEndringUnderGrense: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
@@ -207,8 +209,12 @@ data class ResultatBarnebidragsberegningPeriodeDto(
 ) {
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
-        if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            if (aldersjusteringDetaljer?.aldersjustert == false) {
+        if (erOpphør) {
+            "Opphør"
+        } else if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            if (endeligVedtak) {
+                "Aldersjustering"
+            } else if (aldersjusteringDetaljer?.aldersjustert == false) {
                 aldersjusteringDetaljer.begrunnelserVisningsnavn
             } else {
                 beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern

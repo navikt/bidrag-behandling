@@ -191,6 +191,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                         },
                     delvedtak =
                         resultat.resultatVedtak?.resultatVedtakListe?.map { rv ->
+                            val erEndeligVedtak = !rv.delvedtak && !rv.klagevedtak
                             val grunnlagslisteRV = rv.resultat.grunnlagListe
                             val aldersjusteringDetaljer = rv.resultat.grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
                             val resultatFraVedtak = if (rv.delvedtak) grunnlagslisteRV.finnResultatFraAnnenVedtak() else null
@@ -228,16 +229,29 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                             ),
                                         )
                                     } else {
-                                        rv.resultat.beregnetBarnebidragPeriodeListe.map {
+                                        rv.resultat.beregnetBarnebidragPeriodeListe.map { p ->
+                                            val delvedtak =
+                                                if (erEndeligVedtak) {
+                                                    resultat.resultatVedtak.resultatVedtakListe.find {
+                                                        it.resultat.beregnetBarnebidragPeriodeListe.any {
+                                                            it.periode.fom ==
+                                                                p.periode.fom
+                                                        }
+                                                    }
+                                                } else {
+                                                    null
+                                                }
+
                                             grunnlagslisteRV.byggResultatBidragsberegning(
-                                                it.periode,
-                                                it.resultat.beløp,
+                                                p.periode,
+                                                p.resultat.beløp,
                                                 resultat.avslaskode,
-                                                it.grunnlagsreferanseListe,
+                                                p.grunnlagsreferanseListe,
                                                 resultat.ugyldigBeregning,
                                                 grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse),
-                                                rv.vedtakstype,
+                                                delvedtak?.vedtakstype ?: rv.vedtakstype,
                                                 resultat.barn.ident,
+                                                erEndeligVedtak = erEndeligVedtak,
                                             )
                                         }
                                     },
@@ -370,6 +384,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     erResultatEndringUnderGrense: Boolean,
     vedtakstype: Vedtakstype,
     barnIdent: Personident? = null,
+    erEndeligVedtak: Boolean = false,
 ): ResultatBarnebidragsberegningPeriodeDto {
     if (vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringBisysVedtak()) {
         val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel()!!
@@ -404,6 +419,8 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             bpsAndelU = bpsAndel.endeligAndelFaktor,
             bpsAndelBeløp = sluttberegning.bpAndelBeløp,
             aldersjusteringDetaljer = aldersjusteringDetaljer,
+            endeligVedtak = erEndeligVedtak,
+            erOpphør = resultat == null,
             beregningsdetaljer =
                 run {
                     BidragPeriodeBeregningsdetaljer(
@@ -460,6 +477,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
             underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
             faktiskBidrag = resultat ?: BigDecimal.ZERO,
+            erOpphør = resultat == null,
             resultatKode =
                 if (erResultatEndringUnderGrense) {
                     Resultatkode.INGEN_ENDRING_UNDER_GRENSE
