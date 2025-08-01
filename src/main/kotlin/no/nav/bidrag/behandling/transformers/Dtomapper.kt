@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BeregnTil
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
@@ -806,7 +807,7 @@ class Dtomapper(
                         val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                         VirkningstidspunktDtoV2(
                             rolle = it.tilDto(),
-                            beregnTil = it.beregnTil,
+                            beregnTil = it.beregnTil ?: BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT,
                             beregnTilDato = finnBeregnTilDatoBehandling(it.opphørsdato?.toYearMonth(), it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
                             opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
