@@ -454,7 +454,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             return vedtak.grunnlagListe.byggResultatBidragsberegning(
                 periode,
                 vedtakPeriode.beløp,
-                Resultatkode.fraKode(vedtakPeriode.resultatkode)?.takeIf { it.erAvslag() },
+                Resultatkode.fraKode(vedtakPeriode.resultatkode),
                 vedtakPeriode.grunnlagReferanseListe,
                 null,
                 barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
