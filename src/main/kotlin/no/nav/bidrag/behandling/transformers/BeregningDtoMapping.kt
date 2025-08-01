@@ -175,7 +175,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                     forsendelseDistribueresAutomatisk = aldersjusteringDetaljer?.aldersjustert == true,
                     resultatUtenBeregning =
                         resultat.vedtakstype != Vedtakstype.KLAGE && aldersjusteringDetaljer != null &&
-                            !aldersjusteringDetaljer.aldersjustert,
+                            !aldersjusteringDetaljer.aldersjustert || resultat.vedtakstype == Vedtakstype.INNKREVING,
                     indeksår =
                         if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {
                             Year.of(aldersjusteringDetaljer.periode.fom.year).plusYears(1).value
