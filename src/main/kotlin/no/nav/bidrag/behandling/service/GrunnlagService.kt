@@ -918,22 +918,22 @@ class GrunnlagService(
             )
 
         // TOOD: Vurdere å trigge ny grunnlagsinnhenting
-        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
-            log.error {
-                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} i " +
-                    "nyeste boforholdsgrunnlag i behandling ${behandling.id}"
-            }
-            throw HttpClientErrorException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} " +
-                    "i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
-            )
-        }
+//        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
+//            log.error {
+//                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} i " +
+//                    "nyeste boforholdsgrunnlag i behandling ${behandling.id}"
+//            }
+//            throw HttpClientErrorException(
+//                HttpStatus.INTERNAL_SERVER_ERROR,
+//                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} " +
+//                    "i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
+//            )
+//        }
 
         boforholdService.oppdatereAutomatiskInnhentetBoforhold(
             behandling,
             jsonTilObjekt<List<BoforholdResponseV2>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem.data),
-            bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+            bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting ?: emptySet(),
             overskriveManuelleOpplysninger,
             gjelderHusstandsmedlem,
         )
