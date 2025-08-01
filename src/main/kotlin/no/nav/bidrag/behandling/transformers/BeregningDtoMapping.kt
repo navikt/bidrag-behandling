@@ -221,6 +221,10 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                                         .periode,
                                                 vedtakstype = Vedtakstype.INDEKSREGULERING,
                                                 resultatKode = null,
+                                                faktiskBidrag =
+                                                    rv.resultat.beregnetBarnebidragPeriodeListe
+                                                        .first()
+                                                        .resultat.beløp!!,
                                                 beregnetBidrag =
                                                     rv.resultat.beregnetBarnebidragPeriodeListe
                                                         .first()
@@ -319,7 +323,7 @@ fun List<GrunnlagDto>.finnIndeksår(
     søknadsbarnReferanse: String,
     sistePeriode: ÅrMånedsperiode,
 ): Int {
-    if (!erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.now().plusYears(1).value
+    if (!erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.of(sistePeriode.fom.year).plusYears(1).value
     val nesteKalkulertIndeksår =
         if (YearMonth.now().isAfter(YearMonth.now().withMonth(7))) {
             Year.now().plusYears(1).value
