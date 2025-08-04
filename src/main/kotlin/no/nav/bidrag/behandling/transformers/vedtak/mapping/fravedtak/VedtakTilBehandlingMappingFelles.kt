@@ -169,8 +169,8 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
 
     val delvedtak =
         stønadsendring.periodeListe
-            .mapNotNull { vedtakPeriode ->
-                grunnlagListe.finnResultatFraAnnenVedtak(vedtakPeriode.grunnlagReferanseListe)?.let {
+            .mapNotNull { periode ->
+                grunnlagListe.finnResultatFraAnnenVedtak(periode.grunnlagReferanseListe)?.let {
                     if (it.vedtaksid == null) {
                         return@let DelvedtakDto(
                             Vedtakstype.OPPHØR,
@@ -181,7 +181,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             perioder =
                                 listOf(
                                     ResultatBarnebidragsberegningPeriodeDto(
-                                        vedtakPeriode.periode,
+                                        periode.periode,
                                         vedtakstype = Vedtakstype.OPPHØR,
                                         resultatKode = Resultatkode.OPPHØR,
                                         erOpphør = true,
@@ -197,7 +197,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                 it.kravhaver == barnIdent
                             }!!
                             .periodeListe
-                            .find { it.periode.fom == vedtakPeriode.periode.fom }!!
+                            .find { it.periode.inneholder(periode.periode) }!!
                     DelvedtakDto(
                         vedtak.type,
                         it.klagevedtak,

@@ -458,7 +458,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                         it.kravhaver == barnIdent
                     }!!
                     .periodeListe
-                    .find { it.periode.fom == periode.fom }!!
+                    .find { it.periode.inneholder(periode) }!!
             val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
             return vedtak.grunnlagListe.byggResultatBidragsberegning(
                 periode,
