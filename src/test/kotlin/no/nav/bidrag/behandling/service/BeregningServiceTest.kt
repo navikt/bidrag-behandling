@@ -547,7 +547,7 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning med opprinnelig vedtakstype`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
-        behandling.opprinneligVedtakstype = Vedtakstype.ENDRING
+        behandling.klagedetaljer?.opprinneligVedtakstype = Vedtakstype.ENDRING
         behandling.vedtakstype = Vedtakstype.KLAGE
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.grunnlag =

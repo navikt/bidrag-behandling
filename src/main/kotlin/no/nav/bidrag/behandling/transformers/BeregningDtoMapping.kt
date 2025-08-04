@@ -174,9 +174,10 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
                     ugyldigBeregning = resultat.ugyldigBeregning,
-                    forsendelseDistribueresAutomatisk = aldersjusteringDetaljer?.aldersjustert == true,
+                    forsendelseDistribueresAutomatisk =
+                        resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,
                     resultatUtenBeregning =
-                        resultat.vedtakstype != Vedtakstype.KLAGE && aldersjusteringDetaljer != null &&
+                        resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer != null &&
                             !aldersjusteringDetaljer.aldersjustert || resultat.vedtakstype == Vedtakstype.INNKREVING,
                     indeksår =
                         if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {

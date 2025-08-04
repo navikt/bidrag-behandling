@@ -256,7 +256,8 @@ class BehandlingTilVedtakMapping(
         mapper.run {
             val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
 
-            val søknadsbarn = behandling.søknadsbarn.find { it.ident == barn.ident!!.verdi }!!.tilGrunnlagsreferanse()
+            val søknadsbarn = behandling.søknadsbarn.find { it.ident == barn.ident!!.verdi }!!
+            val søknadsbarnReferanse = søknadsbarn.tilGrunnlagsreferanse()
             val grunnlagListeVedtak =
                 behandling.byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
             val grunnlagsliste = mutableSetOf<GrunnlagDto>()
@@ -280,15 +281,20 @@ class BehandlingTilVedtakMapping(
 //                ),
 //            )
             if (resultatVedtak.klagevedtak) {
-                grunnlagsliste.addAll(
-                    behandling.byggGrunnlagForVedtak(
-                        stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
-                    ),
-                )
+                if (søknadsbarn.avslag != null) {
+                    grunnlagsliste.addAll(behandling.byggGrunnlagGenereltAvslag())
+                } else {
+                    grunnlagsliste.addAll(
+                        behandling.byggGrunnlagForVedtak(
+                            stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
+                        ),
+                    )
+                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
+                }
+
                 grunnlagsliste.addAll(behandling.byggGrunnlagVirkningsttidspunkt())
-                stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
             } else if (resultatVedtak.delvedtak) {
-                stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarn))
+                stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarnReferanse))
             } else {
                 grunnlagsliste.addAll(behandling.byggGrunnlagVirkningsttidspunkt())
                 stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagSøknad())

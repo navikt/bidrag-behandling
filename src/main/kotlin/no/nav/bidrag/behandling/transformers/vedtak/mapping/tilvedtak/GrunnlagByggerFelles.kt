@@ -151,7 +151,7 @@ fun Behandling.byggGrunnlagSøknad() =
                         søktAv = soknadFra,
                         begrensetRevurdering = søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING,
                         egetTiltak = listOf(BisysSøknadstype.BEGRENSET_REVURDERING, BisysSøknadstype.EGET_TILTAK).contains(søknadstype),
-                        opprinneligVedtakstype = opprinneligVedtakstype,
+                        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
                     ),
                 ),
         ),

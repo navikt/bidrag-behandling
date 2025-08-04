@@ -20,6 +20,8 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
+import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
@@ -117,6 +119,10 @@ open class Behandling(
     @Convert(converter = ForsendelseBestillingerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
     open var forsendelseBestillinger: ForsendelseBestillinger = ForsendelseBestillinger(),
+    @Column(name = "klagedetaljer", columnDefinition = "jsonb")
+    @Convert(converter = KlageDetaljerConverter::class)
+    @ColumnTransformer(write = "?::jsonb")
+    open var klagedetaljer: KlageDetaljer? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,

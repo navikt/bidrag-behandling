@@ -123,7 +123,7 @@ class BeregningService(
                 beregnSærbidragApi
                     .beregn(
                         beregningRequest.beregnGrunnlag!!,
-                        behandling.opprinneligVedtakstype ?: behandling.vedtakstype,
+                        behandling.klagedetaljer?.opprinneligVedtakstype ?: behandling.vedtakstype,
                     ).let { resultat ->
                         resultat.validerForSærbidrag()
                         resultat
