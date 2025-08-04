@@ -333,13 +333,13 @@ class VedtakService(
 //        val response = vedtakLocalConsumer.fatteVedtak(requestEndeligVedtak)
         val response = vedtakConsumer.fatteVedtak(requestEndeligVedtak)
 
-//        behandlingService.oppdaterVedtakFattetStatus(
-//            behandling.id!!,
-//            vedtaksid = response.vedtaksid,
-//            request?.enhet ?: behandling.behandlerEnhet,
-//        )
-//
-//        opprettNotat(behandling)
+        behandlingService.oppdaterVedtakFattetStatus(
+            behandling.id!!,
+            vedtaksid = response.vedtaksid,
+            request?.enhet ?: behandling.behandlerEnhet,
+        )
+
+        opprettNotat(behandling)
 
         LOGGER.info {
             "Fattet vedtak for behandling ${behandling.id} med ${
