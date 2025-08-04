@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
