@@ -7,9 +7,9 @@ import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseStatusTo
 import no.nav.bidrag.behandling.consumer.ForsendelseTypeTo
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.ForsendelseBestilling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.finnForGjelderOgMottaker
+import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestilling
+import no.nav.bidrag.behandling.database.datamodell.json.finnForGjelderOgMottaker
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.forsendelse.BehandlingStatus
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto

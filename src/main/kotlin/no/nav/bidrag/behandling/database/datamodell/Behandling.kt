@@ -18,6 +18,8 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
+import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
@@ -234,42 +236,6 @@ open class Behandling(
         )
 }
 
-@Converter
-class ForsendelseBestillingerConverter : AttributeConverter<ForsendelseBestillinger, String?> {
-    override fun convertToDatabaseColumn(attribute: ForsendelseBestillinger?): String? =
-        attribute?.let { commonObjectmapper.writeValueAsString(it) }
-
-    override fun convertToEntityAttribute(dbData: String?): ForsendelseBestillinger? =
-        dbData?.let {
-            commonObjectmapper.readValue(it, ForsendelseBestillinger::class.java)
-        }
-}
-
-fun ForsendelseBestillinger.finnForGjelderOgMottaker(
-    gjelder: String?,
-    mottaker: String?,
-    rolletype: Rolletype?,
-) = bestillinger.find { it.gjelder == gjelder && it.mottaker == mottaker && it.rolletype == rolletype }
-
-data class ForsendelseBestillinger(
-    val bestillinger: MutableSet<ForsendelseBestilling> = mutableSetOf(),
-)
-
-data class ForsendelseBestilling(
-    var forsendelseId: Long? = null,
-    var journalpostId: Long? = null,
-    val rolletype: Rolletype?,
-    val gjelder: String? = null,
-    val mottaker: String? = null,
-    val språkkode: Språk? = null,
-    val dokumentmal: String? = null,
-    val opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
-    var forsendelseOpprettetTidspunkt: LocalDateTime? = null,
-    var distribuertTidspunkt: LocalDateTime? = null,
-    var feilBegrunnelse: String? = null,
-    var antallForsøkOpprettEllerDistribuer: Int = 1,
-)
-
 val Behandling.særbidragKategori
     get() =
         kategori.isNullOrEmpty().ifFalse {
@@ -376,8 +342,13 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     }
 
     private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
+    private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
 
-    private val objectMapper = ObjectMapper().findAndRegisterModules()
+    fun setKlagePåBisysVedtak() {
+        update(klagePåBisysVedtak, "true")
+    }
+
+    fun erKlagePåBisysVedtak() = get(klagePåBisysVedtak)?.toBooleanStrictOrNull() == true
 
     fun setFølgerAutomatiskVedtak(vedtaksid: Int?) {
         vedtaksid?.let { update(følgerAutomatiskVedtak, it.toString()) }

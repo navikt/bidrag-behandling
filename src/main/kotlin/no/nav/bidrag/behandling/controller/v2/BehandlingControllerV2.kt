@@ -85,7 +85,7 @@ class BehandlingControllerV2(
         ],
     )
     fun vedtakLesemodus(
-        @PathVariable vedtakId: Long,
+        @PathVariable vedtakId: Int,
         @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
         val resultat =

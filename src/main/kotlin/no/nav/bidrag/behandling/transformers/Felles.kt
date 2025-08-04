@@ -20,6 +20,7 @@ import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
+import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -28,6 +29,14 @@ import java.time.Year
 import java.time.YearMonth
 
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
+
+fun StønadsendringDto.tilStønadsid() =
+    Stønadsid(
+        type = type,
+        kravhaver = kravhaver,
+        skyldner = skyldner,
+        sak = sak,
+    )
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =

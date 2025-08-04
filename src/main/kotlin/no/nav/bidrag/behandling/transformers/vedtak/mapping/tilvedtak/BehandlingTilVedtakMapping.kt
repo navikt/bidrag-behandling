@@ -5,6 +5,8 @@ import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
@@ -34,6 +36,8 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
@@ -44,7 +48,9 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.sak.BidragssakDto
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpStatus
@@ -53,6 +59,20 @@ import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.YearMonth
+
+data class ResultatDelvedtak(
+    val vedtaksid: Int?,
+    val klagevedtak: Boolean,
+    val gjenopprettetBeløpshistorikk: Boolean,
+    val request: OpprettVedtakRequestDto?,
+    val resultat: BeregnetBarnebidragResultat,
+)
+
+data class ResultatadBeregningOrkestrering(
+    val sak: BidragssakDto,
+    val delvedtak: List<ResultatDelvedtak> = emptyList(),
+    val beregning: List<ResultatBidragsberegningBarn>,
+)
 
 @Service
 @Import(BeregnGebyrApi::class)
@@ -159,6 +179,178 @@ class BehandlingTilVedtakMapping(
         }
     }
 
+    fun hentBeregningBarnebidrag(behandling: Behandling): ResultatadBeregningOrkestrering {
+        val sak = sakConsumer.hentSak(behandling.saksnummer)
+        val beregning = beregningService.beregneBidrag(behandling.id!!)
+
+        if (beregning.any { it.ugyldigBeregning != null }) {
+            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke fatte vedtak: $begrunnelse",
+            )
+        }
+        return ResultatadBeregningOrkestrering(sak, beregning = beregning)
+    }
+
+    fun byggOpprettVedtakRequestBidragEndeligKlage(
+        behandling: Behandling,
+        enhet: String?,
+        resultat: ResultatadBeregningOrkestrering,
+    ): OpprettVedtakRequestDto {
+        val beregningBarn = resultat.beregning.first()
+
+        val endeligVedtak =
+            beregningBarn
+                .resultatVedtak!!
+                .resultatVedtakListe
+                .find { it.endeligVedtak }!!
+        val stønadsendringPerioder =
+            listOf(
+                endeligVedtak.resultat,
+            ).map { it.byggStønadsendringerForEndeligVedtak(behandling, beregningBarn.barn, resultat.delvedtak) }
+        return byggVedtakForKlage(behandling, resultat.sak, endeligVedtak, enhet, stønadsendringPerioder, beregningBarn.barn)
+    }
+
+    fun opprettVedtakRequestDelvedtak(
+        behandling: Behandling,
+        sak: BidragssakDto,
+        enhet: String?,
+        beregningBarn: ResultatBidragsberegningBarn,
+    ): List<ResultatDelvedtak> {
+        return beregningBarn.resultatVedtak!!
+            .resultatVedtakListe
+            .filter { !it.endeligVedtak }
+            .mapIndexed { index, resultatVedtak ->
+                // Ikke fatte vedtak for gjenopprettet beløpshistorikk
+                if (resultatVedtak.gjenopprettetBeløpshistorikk) {
+                    val resultatFraVedtakGrunnlag = resultatVedtak.resultat.grunnlagListe.finnResultatFraAnnenVedtak(finnFørsteTreff = true)
+                    return@mapIndexed ResultatDelvedtak(
+                        vedtaksid = resultatFraVedtakGrunnlag?.vedtaksid,
+                        klagevedtak = false,
+                        gjenopprettetBeløpshistorikk = true,
+                        request = null,
+                        resultat = resultatVedtak.resultat,
+                    )
+                }
+                val stønadsendringPerioder =
+                    listOf(resultatVedtak.resultat).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn) }
+                ResultatDelvedtak(
+                    vedtaksid = null,
+                    klagevedtak = resultatVedtak.klagevedtak,
+                    gjenopprettetBeløpshistorikk = false,
+                    request = byggVedtakForKlage(behandling, sak, resultatVedtak, enhet, stønadsendringPerioder, beregningBarn.barn),
+                    resultat = resultatVedtak.resultat,
+                )
+            }
+    }
+
+    fun byggVedtakForKlage(
+        behandling: Behandling,
+        sak: BidragssakDto,
+        resultatVedtak: ResultatVedtak,
+        enhet: String?,
+        stønadsendringPerioder: List<StønadsendringPeriode> = emptyList(),
+        barn: ResultatRolle,
+    ): OpprettVedtakRequestDto {
+        mapper.run {
+            val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
+
+            val søknadsbarn = behandling.søknadsbarn.find { it.ident == barn.ident!!.verdi }!!.tilGrunnlagsreferanse()
+            val grunnlagListeVedtak =
+                behandling.byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
+            val grunnlagsliste = mutableSetOf<GrunnlagDto>()
+            if (!resultatVedtak.endeligVedtak) {
+                grunnlagsliste.addAll(grunnlagListeVedtak)
+                grunnlagsliste.addAll(resultatVedtak.resultat.grunnlagListe)
+            }
+            val stønadsendringGrunnlagListe = mutableSetOf<GrunnlagDto>()
+
+            grunnlagsliste.addAll(stønadsendringGrunnlag)
+//            val orkestrertVedtakGrunnlag =
+//                VedtakOrkestreringDetaljerGrunnlag(
+//                    klagevedtak = resultatVedtak.klagevedtak,
+//                    endeligVedtak = resultatVedtak.endeligVedtak,
+//                )
+//            grunnlagsliste.add(
+//                GrunnlagDto(
+//                    referanse = "orkestrert_grunnlag_detaljer",
+//                    type = Grunnlagstype.VEDTAK_ORKESTRERING_DETALJER,
+//                    innhold = POJONode(orkestrertVedtakGrunnlag),
+//                ),
+//            )
+            if (resultatVedtak.klagevedtak) {
+                grunnlagsliste.addAll(
+                    behandling.byggGrunnlagForVedtak(
+                        stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
+                    ),
+                )
+                grunnlagsliste.addAll(behandling.byggGrunnlagVirkningsttidspunkt())
+                stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
+            } else if (resultatVedtak.delvedtak) {
+                stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarn))
+            } else {
+                grunnlagsliste.addAll(behandling.byggGrunnlagVirkningsttidspunkt())
+                stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagSøknad())
+            }
+
+            val referansePostfix =
+                when {
+                    resultatVedtak.delvedtak || resultatVedtak.klagevedtak ->
+                        "Delvedtak_${resultatVedtak.vedtakstype}" +
+                            "_${resultatVedtak.beregnetFraDato.toCompactString()}"
+                    else -> null
+                }
+            return behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
+                unikReferanse = null, // behandling.opprettUnikReferanse(referansePostfix),
+                type = resultatVedtak.vedtakstype,
+                stønadsendringListe =
+                    stønadsendringPerioder.map {
+                        val sistePeriode = it.perioder.maxBy { it.periode.fom }.periode
+                        val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
+                        OpprettStønadsendringRequestDto(
+                            innkreving =
+                                when {
+                                    resultatVedtak.endeligVedtak -> Innkrevingstype.MED_INNKREVING
+                                    else -> Innkrevingstype.UTEN_INNKREVING
+                                },
+                            skyldner = behandling.tilSkyldner(),
+                            omgjørVedtakId =
+                                when {
+                                    resultatVedtak.endeligVedtak || resultatVedtak.klagevedtak -> behandling.påklagetVedtak
+                                    else -> null
+                                },
+                            kravhaver =
+                                it.barn.tilNyestePersonident()
+                                    ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!),
+                            mottaker =
+                                behandling.roller
+                                    .reelMottakerEllerBidragsmottaker(
+                                        sak.hentRolleMedFnr(it.barn.ident!!),
+                                    ),
+                            sak = Saksnummer(behandling.saksnummer),
+                            type = behandling.stonadstype!!,
+                            beslutning =
+                                when {
+                                    resultatVedtak.endeligVedtak -> Beslutningstype.ENDRING
+                                    else -> Beslutningstype.DELVEDTAK
+                                },
+                            grunnlagReferanseListe =
+                                stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
+                            periodeListe = it.perioder,
+                            førsteIndeksreguleringsår =
+                                grunnlagsliste.toList().finnIndeksår(søknadsbarnReferanse, sistePeriode),
+                        )
+                    },
+                engangsbeløpListe = emptyList(),
+                grunnlagListe =
+                    (grunnlagsliste + stønadsendringGrunnlagListe).toSet().map(
+                        BaseGrunnlag::tilOpprettRequestDto,
+                    ),
+            )
+        }
+    }
+
     private fun Behandling.byggOpprettVedtakRequestBidrag(enhet: String? = null): OpprettVedtakRequestDto {
         val behandling = this
         val sak = sakConsumer.hentSak(saksnummer)
@@ -174,7 +366,7 @@ class BehandlingTilVedtakMapping(
 
         mapper.run {
             val stønadsendringPerioder =
-                beregning.map { it.byggStønadsendringerForVedtak(behandling) }
+                beregning.map { it.resultat.byggStønadsendringerForVedtak(behandling, it.barn) }
             val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
 
             val grunnlagListeVedtak =

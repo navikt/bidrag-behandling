@@ -89,6 +89,7 @@ data class BehandlingDetaljerDtoV2(
 data class LesemodusVedtak(
     val erAvvist: Boolean,
     val opprettetAvBatch: Boolean,
+    val erOrkestrertVedtak: Boolean,
 )
 
 data class BehandlingDtoV2(

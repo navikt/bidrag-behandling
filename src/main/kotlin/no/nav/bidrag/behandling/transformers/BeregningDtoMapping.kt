@@ -88,6 +88,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.barn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
@@ -103,6 +104,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrensePeriode
+import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -193,7 +195,14 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                             val erEndeligVedtak = !rv.delvedtak && !rv.klagevedtak
                             val grunnlagslisteRV = rv.resultat.grunnlagListe
                             val aldersjusteringDetaljer = rv.resultat.grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
-                            val resultatFraVedtak = if (rv.delvedtak) grunnlagslisteRV.finnResultatFraAnnenVedtak() else null
+                            val resultatFraVedtak =
+                                if (rv.delvedtak) {
+                                    grunnlagslisteRV.finnResultatFraAnnenVedtak(
+                                        finnFørsteTreff = true,
+                                    )
+                                } else {
+                                    null
+                                }
                             DelvedtakDto(
                                 type = rv.vedtakstype,
                                 delvedtak = rv.delvedtak,
@@ -630,18 +639,6 @@ fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Gr
     return delberegningBarnIHusstanden?.innholdTilObjekt<DelberegningBarnIHusstand>()?.antallBarn
         ?: 0.0
 }
-
-fun List<GrunnlagDto>.finnResultatFraAnnenVedtak(
-    grunnlagsreferanseListe: List<Grunnlagsreferanse> = emptyList(),
-): ResultatFraVedtakGrunnlag? =
-    if (grunnlagsreferanseListe.isEmpty()) {
-        filtrerOgKonverterBasertPåEgenReferanse<ResultatFraVedtakGrunnlag>(Grunnlagstype.RESULTAT_FRA_VEDTAK).firstOrNull()?.innhold
-    } else {
-        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-            Grunnlagstype.RESULTAT_FRA_VEDTAK,
-            grunnlagsreferanseListe,
-        ).firstOrNull()?.innhold
-    }
 
 fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,

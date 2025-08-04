@@ -34,7 +34,9 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -50,6 +52,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilInnholdMedReferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
@@ -67,8 +70,10 @@ val grunnlagsreferanse_utgift_direkte_betalt = "utgift_direkte_betalt"
 val grunnlagsreferanse_utgift_maks_godkjent_beløp = "utgift_maks_godkjent_beløp"
 val grunnlagsreferanse_løpende_bidrag = "løpende_bidrag_bidragspliktig"
 
-fun opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn: Rolle? = null) =
-    "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" } ?: ""}"
+fun opprettGrunnlagsreferanseVirkningstidspunkt(
+    søknadsbarn: Rolle? = null,
+    referanse: String? = null,
+) = "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" } ?: referanse ?: ""}"
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
@@ -177,6 +182,28 @@ fun Behandling.byggGrunnlagManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto
                 gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
             )
         }.toSet()
+
+fun byggGrunnlagVirkningstidspunktResultatvedtak(
+    resultatVedtak: ResultatVedtak,
+    søknadsbarnreferanse: String,
+): GrunnlagDto =
+    GrunnlagDto(
+        referanse = opprettGrunnlagsreferanseVirkningstidspunkt(null, søknadsbarnreferanse),
+        type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+        gjelderBarnReferanse = søknadsbarnreferanse,
+        innhold =
+            POJONode(
+                VirkningstidspunktGrunnlag(
+                    virkningstidspunkt =
+                        resultatVedtak.resultat.beregnetBarnebidragPeriodeListe
+                            .minOf { it.periode.fom }
+                            .atDay(1),
+                    opphørsdato = null,
+                    årsak = VirkningstidspunktÅrsakstype.AUTOMATISK_JUSTERING,
+                    avslag = null,
+                ),
+            ),
+    )
 
 fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<GrunnlagDto> = emptyList()) =
     if (tilType() == TypeBehandling.BIDRAG) {

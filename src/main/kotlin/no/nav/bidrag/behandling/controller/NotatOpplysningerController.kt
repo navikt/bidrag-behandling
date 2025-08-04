@@ -27,7 +27,7 @@ class NotatOpplysningerController(
 
     @GetMapping("/notat/vedtak/{vedtaksid}")
     fun hentNotatOpplysningerForVedtak(
-        @PathVariable vedtaksid: Long,
+        @PathVariable vedtaksid: Int,
     ): VedtakNotatDto {
         val behandling =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtaksid)

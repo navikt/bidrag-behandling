@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
@@ -17,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
@@ -30,6 +32,7 @@ import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
 import no.nav.bidrag.behandling.transformers.tilGrunnlagsdatatypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
+import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -44,9 +47,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.sivilstand.SivilstandApi
-import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
@@ -72,9 +73,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
+import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import java.math.BigDecimal
@@ -130,67 +134,172 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
         )
     }
 
-fun VedtakDto.tilBeregningResultatBidrag(): ResultatBidragberegningDto =
+fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         stønadsendringListe.map { stønadsendring ->
             val barnIdent = stønadsendring.kravhaver
             val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
             val barn = barnGrunnlag?.innholdTilObjekt<Person>()
-            val aldersjusteringDetaljer = grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
             val erResultatUtenBeregning =
-                stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV"
+                stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
+                    type == Vedtakstype.INNKREVING
             ResultatBidragsberegningBarnDto(
                 resultatUtenBeregning = erResultatUtenBeregning,
                 barn =
                     ResultatRolle(
-                        barn?.ident,
-                        if (barn == null) "" else barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
+                        barn?.ident ?: stønadsendring.kravhaver,
+                        hentPersonVisningsnavn(stønadsendring.kravhaver.verdi)!!,
                         barn?.fødselsdato ?: LocalDate.now(),
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
                         referanse = barnGrunnlag?.referanse ?: "",
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
+                delvedtak = hentDelvedtak(stønadsendring),
                 perioder =
-                    if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
-                        listOf(
-                            ResultatBarnebidragsberegningPeriodeDto(
-                                periode = aldersjusteringDetaljer.periode,
-                                vedtakstype = Vedtakstype.ALDERSJUSTERING,
-                                resultatKode = null,
-                                aldersjusteringDetaljer = aldersjusteringDetaljer,
-                            ),
-                        )
-                    } else if (erResultatUtenBeregning) {
-                        stønadsendring.finnSistePeriode()?.let {
-                            listOf(
-                                ResultatBarnebidragsberegningPeriodeDto(
-                                    periode = it.periode,
-                                    vedtakstype = type,
-                                    resultatKode = Resultatkode.fraKode(it.resultatkode),
-                                    beregnetBidrag = it.beløp ?: BigDecimal.ZERO,
-                                ),
-                            )
-                        } ?: emptyList()
-                    } else {
-                        stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
-                            grunnlagListe.byggResultatBidragsberegning(
-                                it.periode,
-                                it.beløp,
-                                try {
-                                    Resultatkode.fraKode(it.resultatkode)!!
-                                } catch (_: Exception) {
-                                    Resultatkode.BEREGNET_BIDRAG
-                                },
-                                it.grunnlagReferanseListe,
-                                null,
-                                Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
-                                type,
-                            )
-                        }
-                    },
+                    vedtakBeregning?.let {
+                        val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
+                        it.hentBeregningsperioder(stønadsendringBeregning)
+                    } ?: hentBeregningsperioder(stønadsendring),
             )
         },
     )
+
+internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
+    val barnIdent = stønadsendring.kravhaver
+
+    val delvedtak =
+        stønadsendring.periodeListe
+            .mapNotNull { vedtakPeriode ->
+                grunnlagListe.finnResultatFraAnnenVedtak(vedtakPeriode.grunnlagReferanseListe)?.let {
+                    if (it.vedtaksid == null) {
+                        return@let DelvedtakDto(
+                            Vedtakstype.OPPHØR,
+                            false,
+                            it.vedtaksid,
+                            true,
+                            true,
+                            perioder =
+                                listOf(
+                                    ResultatBarnebidragsberegningPeriodeDto(
+                                        vedtakPeriode.periode,
+                                        vedtakstype = Vedtakstype.OPPHØR,
+                                        resultatKode = Resultatkode.OPPHØR,
+                                        erOpphør = true,
+                                    ),
+                                ),
+                        )
+                    }
+                    val vedtak = hentVedtak(it.vedtaksid)
+                    val vedtakPeriode =
+                        vedtak!!
+                            .stønadsendringListe
+                            .find {
+                                it.kravhaver == barnIdent
+                            }!!
+                            .periodeListe
+                            .find { it.periode.fom == vedtakPeriode.periode.fom }!!
+                    DelvedtakDto(
+                        vedtak.type,
+                        it.klagevedtak,
+                        it.vedtaksid,
+                        !it.klagevedtak,
+                        it.gjenopprettetBeløpshistorikk,
+                        perioder =
+                            listOf(
+                                vedtak.grunnlagListe.byggResultatBidragsberegning(
+                                    vedtakPeriode.periode,
+                                    vedtakPeriode.beløp,
+                                    try {
+                                        Resultatkode.fraKode(vedtakPeriode.resultatkode)!!
+                                    } catch (_: Exception) {
+                                        Resultatkode.BEREGNET_BIDRAG
+                                    },
+                                    vedtakPeriode.grunnlagReferanseListe,
+                                    null,
+                                    Resultatkode.fraKode(vedtakPeriode.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                                    vedtak.type,
+                                    barnIdent = stønadsendring.kravhaver,
+                                ),
+                            ),
+                    )
+                }
+            }.groupBy { it.vedtaksid }
+            .map { (_, delvedtakListe) ->
+                val første = delvedtakListe.first()
+                første.copy(
+                    perioder =
+                        delvedtakListe
+                            .flatMap { it.perioder }
+                            .map {
+                                it.copy(
+                                    periode =
+                                        stønadsendring.periodeListe
+                                            .find { st ->
+                                                st.periode.fom == it.periode.fom
+                                            }!!
+                                            .periode,
+                                )
+                            },
+                )
+            }
+
+    val endeligVedtak =
+        DelvedtakDto(
+            Vedtakstype.KLAGE,
+            false,
+            null,
+            false,
+            false,
+            perioder = delvedtak.flatMap { it.perioder },
+        )
+    return delvedtak + listOf(endeligVedtak)
+}
+
+internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDto): List<ResultatBarnebidragsberegningPeriodeDto> {
+    val grunnlagsliste = grunnlagListe
+    val aldersjusteringDetaljer = grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
+    val erResultatUtenBeregning =
+        stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
+            type == Vedtakstype.INNKREVING
+    return if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
+        listOf(
+            ResultatBarnebidragsberegningPeriodeDto(
+                periode = aldersjusteringDetaljer.periode,
+                vedtakstype = Vedtakstype.ALDERSJUSTERING,
+                resultatKode = null,
+                aldersjusteringDetaljer = aldersjusteringDetaljer,
+            ),
+        )
+    } else if (erResultatUtenBeregning) {
+        stønadsendring.finnSistePeriode()?.let {
+            listOf(
+                ResultatBarnebidragsberegningPeriodeDto(
+                    periode = it.periode,
+                    vedtakstype = type,
+                    resultatKode = Resultatkode.fraKode(it.resultatkode),
+                    beregnetBidrag = it.beløp ?: BigDecimal.ZERO,
+                ),
+            )
+        } ?: emptyList()
+    } else {
+        stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
+            grunnlagsliste.byggResultatBidragsberegning(
+                it.periode,
+                it.beløp,
+                try {
+                    Resultatkode.fraKode(it.resultatkode)!!
+                } catch (_: Exception) {
+                    Resultatkode.BEREGNET_BIDRAG
+                },
+                it.grunnlagReferanseListe,
+                null,
+                Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                type,
+                barnIdent = stønadsendring.kravhaver,
+            )
+        }
+    }
+}
 
 internal fun List<GrunnlagDto>.mapGrunnlag(
     behandling: Behandling,
@@ -376,7 +485,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus = lesemodus,
             )
         },
-    if (behandling.vedtakstype == Vedtakstype.KLAGE) {
+    if (behandling.vedtakstype == Vedtakstype.KLAGE && !lesemodus) {
         behandling.stonadstype?.let {
             filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),

@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
@@ -108,6 +109,8 @@ class VedtakTilBehandlingMapping(
         opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
         opprinneligVedtakstype: Vedtakstype? = null,
         søknadstype: BisysSøknadstype? = null,
+        erBisysVedtak: Boolean = false,
+        erOrkestrertVedtak: Boolean = false,
     ): Behandling {
         val opprettetAv =
             if (lesemodus) {
@@ -181,6 +184,10 @@ class VedtakTilBehandlingMapping(
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
         behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
         behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
+        behandling.metadata = BehandlingMetadataDo()
+        if (erBisysVedtak) {
+            behandling.metadata!!.setKlagePåBisysVedtak()
+        }
         behandling.grunnlag =
             if (type == Vedtakstype.INDEKSREGULERING) mutableSetOf() else grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
@@ -188,6 +195,7 @@ class VedtakTilBehandlingMapping(
                 LesemodusVedtak(
                     erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
                     opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
+                    erOrkestrertVedtak = erOrkestrertVedtak,
                 )
             behandling.grunnlagslisteFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null

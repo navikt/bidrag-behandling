@@ -993,7 +993,7 @@ class GrunnlagService(
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
-        !behandling.erVedtakFattet &&
+        !behandling.erVedtakFattet && behandling.metadata?.erKlagePåBisysVedtak() != true &&
             (
                 behandling.grunnlagSistInnhentet == null ||
                     LocalDateTime
