@@ -301,7 +301,7 @@ fun opprettTransformerInntekterRequest(
 ) = TransformerInntekterRequest(
     ainntektHentetDato = innhentetGrunnlag.hentetTidspunkt.toLocalDate(),
     vedtakstidspunktOpprinneligeVedtak =
-        behandling.opprinneligVedtakstidspunkt.map { it.toLocalDate() },
+        behandling.klagedetaljer?.opprinneligVedtakstidspunkt?.map { it.toLocalDate() } ?: emptyList(),
     ainntektsposter =
         innhentetGrunnlag.ainntektListe.flatMap {
             it.ainntektspostListe.tilAinntektsposter(

@@ -145,7 +145,7 @@ fun Behandling.byggGrunnlagSøknad() =
             innhold =
                 POJONode(
                     SøknadGrunnlag(
-                        klageMottattDato = klageMottattdato,
+                        klageMottattDato = klagedetaljer?.klageMottattdato,
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
@@ -325,7 +325,7 @@ fun Behandling.tilBehandlingreferanseListe() =
             kilde = BehandlingsrefKilde.BISYS_SØKNAD,
             referanse = soknadsid.toString(),
         ),
-        soknadRefId?.let {
+        klagedetaljer?.soknadRefId?.let {
             OpprettBehandlingsreferanseRequestDto(
                 kilde = BehandlingsrefKilde.BISYS_KLAGE_REF_SØKNAD,
                 referanse = it.toString(),

@@ -256,7 +256,7 @@ class GrunnlagService(
         response.vedtakListe
             .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
             .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
-            .filter { behandling.påklagetVedtak == null || it.vedtaksid != behandling.påklagetVedtak }
+            .filter { behandling.klagedetaljer?.påklagetVedtak == null || it.vedtaksid != behandling.klagedetaljer?.påklagetVedtak }
             .sortedBy { it.vedtakstidspunkt }
             .forEach { vedtak ->
                 val harResultatInnvilgetVedtak =

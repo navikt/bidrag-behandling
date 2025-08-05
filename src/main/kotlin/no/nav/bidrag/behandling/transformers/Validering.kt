@@ -309,9 +309,9 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
             feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
         }
     } else {
-        if (behandling.opprinneligVirkningstidspunkt != null &&
+        if (behandling.klagedetaljer?.opprinneligVirkningstidspunkt != null &&
             avslag == null &&
-            virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
+            virkningstidspunkt?.isAfter(behandling.klagedetaljer!!.opprinneligVirkningstidspunkt) == true
         ) {
             feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
         }

@@ -73,9 +73,9 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             inntekter shouldHaveSize 15
             grunnlag shouldHaveSize 37
             innkrevingstype shouldBe Innkrevingstype.MED_INNKREVING
-            opprinneligVedtakstidspunkt shouldHaveSize 1
-            opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
-            refVedtaksid shouldBe 12333
+            klagedetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 1
+            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
+            klagedetaljer?.refVedtaksid shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(9)
             sivilstand shouldHaveSize 2
             // TODO: Boforhold grunnlag inneholder sju unike husstandsmedlemmer - fikse stub-vedtaksdata slik at tallene stemmer
@@ -84,7 +84,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             vedtakstype shouldBe Vedtakstype.KLAGE
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             avslag shouldBe null
-            soknadRefId shouldBe 111
+            klagedetaljer?.soknadRefId shouldBe 111
             soknadsid shouldBe 12323
             notater shouldHaveSize 5
             notater.filter { it.erDelAvBehandlingen == false }.shouldHaveSize(5)

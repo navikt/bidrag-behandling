@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -170,14 +170,14 @@ class VedtakTilBehandlingMapping(
                 soknadsid = søknadId ?: this.søknadId,
             )
 
-        behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
+        behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus, virkningstidspunkt)
 
         behandling.klagedetaljer =
-            KlageDetaljer(
+            Klagedetaljer(
                 opprinneligVedtakstype = opprinneligVedtakstype,
                 påklagetVedtak = påklagetVedtak,
                 refVedtaksid = vedtakId,
-                klageMottattdato = mottattdato,
+                klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                 soknadRefId = søknadRefId,
                 opprinneligVirkningstidspunkt = virkningstidspunkt,
                 opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),

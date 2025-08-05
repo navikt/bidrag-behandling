@@ -319,6 +319,12 @@ class VedtakService(
                 secureLogger.info { "Fatter vedtak for delvedtak ${delvedtak.request!!.type} med forespørsel ${delvedtak.request}" }
                 val response = vedtakConsumer.fatteVedtak(delvedtak.request!!)
 //                val response = vedtakLocalConsumer.fatteVedtak(delvedtak.request!!)
+                behandlingService.oppdaterDelvedtakFattetStatus(
+                    behandlingsid = behandling.id!!,
+                    vedtaksid = response.vedtaksid,
+                    fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                    resultat = delvedtak,
+                )
                 delvedtak.copy(
                     vedtaksid = response.vedtaksid,
                 )
@@ -332,14 +338,14 @@ class VedtakService(
             )
 //        val response = vedtakLocalConsumer.fatteVedtak(requestEndeligVedtak)
         val response = vedtakConsumer.fatteVedtak(requestEndeligVedtak)
-
+//
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = response.vedtaksid,
             request?.enhet ?: behandling.behandlerEnhet,
         )
 
-        opprettNotat(behandling)
+//        opprettNotat(behandling)
 
         LOGGER.info {
             "Fattet vedtak for behandling ${behandling.id} med ${

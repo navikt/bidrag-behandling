@@ -317,12 +317,13 @@ internal fun List<GrunnlagDto>.mapGrunnlag(
 internal fun List<GrunnlagDto>.mapRoller(
     behandling: Behandling,
     lesemodus: Boolean,
+    virkningstidspunkt: LocalDate,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
-            val virkningstidspunkt = hentVirkningstidspunkt(rolle.referanse)
+            val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
-            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunkt, aldersjustering)
+            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunktGrunnlag, aldersjustering, virkningstidspunkt)
         }.toMutableSet()
 
 internal fun VedtakDto.oppdaterDirekteOppgjørBeløp(
@@ -497,7 +498,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         it.tilGrunnlagsdatatypeBeløpshistorikk(),
                         grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
                         gjelder.personIdent!!,
-                        behandling.opprinneligVedtakstidspunkt.min(),
+                        behandling.klagedetaljer?.opprinneligVedtakstidspunkt!!.min(),
                         lesemodus,
                     )
                 }
@@ -985,6 +986,7 @@ private fun GrunnlagDto.tilRolle(
     id: Long? = null,
     virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
     aldersjustering: AldersjusteringDetaljerGrunnlag?,
+    virkningstidspunkt: LocalDate,
 ) = Rolle(
     behandling,
     id = id,
@@ -1000,6 +1002,7 @@ private fun GrunnlagDto.tilRolle(
                 )
         },
     ident = personIdent,
+    opprinneligVirkningstidspunkt = virkningstidspunkt,
     virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
     årsak = virkningstidspunktGrunnlag?.årsak,
     avslag = virkningstidspunktGrunnlag?.avslag,

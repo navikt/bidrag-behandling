@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.hypersistence.utils.hibernate.type.ImmutableType
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.AttributeConverter
@@ -20,8 +19,10 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
-import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljerConverter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
@@ -31,7 +32,6 @@ import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
-import no.nav.bidrag.domene.enums.diverse.Språk
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -45,7 +45,6 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toCompactString
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
@@ -122,7 +121,11 @@ open class Behandling(
     @Column(name = "klagedetaljer", columnDefinition = "jsonb")
     @Convert(converter = KlageDetaljerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
-    open var klagedetaljer: KlageDetaljer? = null,
+    open var klagedetaljer: Klagedetaljer? = null,
+    @Column(name = "vedtak_detaljer", columnDefinition = "jsonb")
+    @Convert(converter = VedtakDetaljerConverter::class)
+    @ColumnTransformer(write = "?::jsonb")
+    open var vedtakDetaljer: VedtakDetaljer? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -219,7 +222,7 @@ open class Behandling(
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
-    val erKlageEllerOmgjøring get() = refVedtaksid != null
+    val erKlageEllerOmgjøring get() = klagedetaljer != null
     val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
     val globalVirkningstidspunkt get() =

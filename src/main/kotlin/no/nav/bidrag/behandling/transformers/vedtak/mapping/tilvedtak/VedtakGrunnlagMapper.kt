@@ -60,14 +60,15 @@ fun Behandling.finnBeregnTilDatoBehandling(
     søknadsbarnRolle: Rolle? = null,
 ) = if (tilType() == TypeBehandling.SÆRBIDRAG) {
     virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-} else if (erKlageEllerOmgjøring && opprinneligVedtakstidspunkt.isNotEmpty()) {
+} else if (erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
     when {
         søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
             finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
 
         else -> {
             val beregnTilDato =
-                opprinneligVedtakstidspunkt
+                klagedetaljer
+                    ?.opprinneligVedtakstidspunkt!!
                     .first()
                     .plusMonths(1)
                     .withDayOfMonth(1)
@@ -273,7 +274,7 @@ class VedtakGrunnlagMapper(
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
                         KlageOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            påklagetVedtakId = behandling.påklagetVedtak!!,
+                            påklagetVedtakId = behandling.klagedetaljer?.påklagetVedtak!!,
                             manuellAldersjustering =
                                 søknadsbarnRolle.grunnlagFraVedtakListe
                                     .filter { it.aldersjusteringForÅr != null && it.vedtak != null }

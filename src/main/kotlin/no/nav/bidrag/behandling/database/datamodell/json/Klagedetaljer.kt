@@ -6,20 +6,15 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Converter(autoApply = true) // Set to true if you want it to apply to all KlageDetaljer fields automatically
-class KlageDetaljerConverter : JsonColumnConverter<KlageDetaljer>(KlageDetaljer::class)
+class KlageDetaljerConverter : JsonColumnConverter<Klagedetaljer>(Klagedetaljer::class)
 
-data class KlageDetaljer(
+data class Klagedetaljer(
     val klageMottattdato: LocalDate? = null,
     val soknadRefId: Long? = null,
-    val refVedtaksid: Int? = null,
+    var refVedtaksid: Int? = null,
     val påklagetVedtak: Int? = null,
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,
     val fattetDelvedtak: List<FattetDelvedtak> = emptyList(),
-)
-
-data class FattetDelvedtak(
-    val beregnetFraDato: LocalDate,
-    val vedtaksid: Int,
 )

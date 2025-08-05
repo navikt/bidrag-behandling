@@ -254,18 +254,24 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                                 } else {
                                                     null
                                                 }
-
-                                            grunnlagslisteRV.byggResultatBidragsberegning(
-                                                p.periode,
-                                                p.resultat.beløp,
-                                                resultat.avslaskode,
-                                                p.grunnlagsreferanseListe,
-                                                resultat.ugyldigBeregning,
-                                                grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse),
-                                                delvedtak?.vedtakstype ?: rv.vedtakstype,
-                                                resultat.barn.ident,
-                                                erEndeligVedtak = erEndeligVedtak,
-                                            )
+                                            val resultatFraVedtak =
+                                                grunnlagslisteRV.finnResultatFraAnnenVedtak(
+                                                    p.grunnlagsreferanseListe,
+                                                )
+                                            grunnlagslisteRV
+                                                .byggResultatBidragsberegning(
+                                                    p.periode,
+                                                    p.resultat.beløp,
+                                                    resultat.avslaskode,
+                                                    p.grunnlagsreferanseListe,
+                                                    resultat.ugyldigBeregning,
+                                                    grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse),
+                                                    delvedtak?.vedtakstype ?: rv.vedtakstype,
+                                                    resultat.barn.ident,
+                                                    erEndeligVedtak = erEndeligVedtak,
+                                                ).copy(
+                                                    resultatFraVedtak = resultatFraVedtak?.vedtaksid,
+                                                )
                                         }
                                     },
                             )

@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
@@ -272,8 +273,11 @@ class BehandlingServiceTest : TestContainerRunner() {
                     behandlingstype = TypeBehandling.SÆRBIDRAG,
                 )
             behandling.virkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
-            behandling.opprinneligVirkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
-            behandling.refVedtaksid = 2
+            behandling.klagedetaljer =
+                Klagedetaljer(
+                    refVedtaksid = 2,
+                    opprinneligVirkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1),
+                )
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)

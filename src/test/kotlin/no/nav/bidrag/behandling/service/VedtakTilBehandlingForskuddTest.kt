@@ -65,7 +65,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2023-01-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            refVedtaksid shouldBe 1
+            klagedetaljer?.refVedtaksid shouldBe 1
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
@@ -125,7 +125,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_KRAVFREMSETTELSE
             avslag shouldBe null
             virkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
+            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
         }
     }
 
@@ -180,7 +180,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
                 12333,
             )!!
 
-        assertSoftly(behandling) {
+        assertSoftly(behandling.klagedetaljer!!) {
             opprinneligVedtakstidspunkt shouldHaveSize 3
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
@@ -239,11 +239,13 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
                 12333,
             )!!
 
-        assertSoftly(behandling) {
+        assertSoftly(behandling.klagedetaljer!!) {
             opprinneligVedtakstidspunkt shouldHaveSize 3
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+        }
+        assertSoftly(behandling) {
             inntekter.filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT } shouldHaveSize 2
             inntekter.filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_3MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT } shouldHaveSize 2
         }
@@ -272,7 +274,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             avslag shouldBe null
             virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
+            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             søktFomDato shouldBe LocalDate.parse("2021-01-01")
             soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
             stonadstype shouldBe Stønadstype.FORSKUDD
@@ -280,11 +282,11 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-01-01")
             vedtakstype shouldBe Vedtakstype.KLAGE
             vedtaksid shouldBe null
-            soknadRefId shouldBe 222
+            klagedetaljer?.soknadRefId shouldBe 222
             soknadsid shouldBe 100
             opprettetAv shouldBe SAKSBEHANDLER_IDENT
             opprettetAvNavn shouldBe "Fornavn Etternavn"
-            refVedtaksid shouldBe 12333
+            klagedetaljer?.refVedtaksid shouldBe 12333
 
             validerRoller()
         }
@@ -455,7 +457,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe null
             saksnummer shouldBe SAKSNUMMER
             virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
+            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             soknadFra shouldBe SøktAvType.BIDRAGSMOTTAKER
             stonadstype shouldBe Stønadstype.FORSKUDD
             behandlerEnhet shouldBe "4806"

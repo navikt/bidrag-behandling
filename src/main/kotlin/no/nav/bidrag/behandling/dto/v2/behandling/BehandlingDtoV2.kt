@@ -106,6 +106,7 @@ data class BehandlingDtoV2(
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
+    val erDelvedtakFattet: Boolean,
     val kanBehandlesINyLøsning: Boolean = true,
     val kanIkkeBehandlesBegrunnelse: String? = null,
     val erKlageEllerOmgjøring: Boolean,
