@@ -314,7 +314,8 @@ class VedtakService(
 
         val oppdatertDelvedtak =
             requestDelvedtak.delvedtak.map { delvedtak ->
-                if (delvedtak.gjenopprettetBeløpshistorikk) return@map delvedtak
+                // Ikke fatte vedtak for delvedtak som ikke er beregnet
+                if (!delvedtak.beregnet) return@map delvedtak
 //                delvedtak.request.validerGrunnlagsreferanser()
                 secureLogger.info { "Fatter vedtak for delvedtak ${delvedtak.request!!.type} med forespørsel ${delvedtak.request}" }
                 val response = vedtakConsumer.fatteVedtak(delvedtak.request!!)

@@ -63,7 +63,7 @@ import java.time.YearMonth
 data class ResultatDelvedtak(
     val vedtaksid: Int?,
     val klagevedtak: Boolean,
-    val gjenopprettetBeløpshistorikk: Boolean,
+    val beregnet: Boolean,
     val request: OpprettVedtakRequestDto?,
     val resultat: BeregnetBarnebidragResultat,
 )
@@ -223,12 +223,12 @@ class BehandlingTilVedtakMapping(
             .filter { !it.endeligVedtak }
             .mapIndexed { index, resultatVedtak ->
                 // Ikke fatte vedtak for gjenopprettet beløpshistorikk
-                if (resultatVedtak.gjenopprettetBeløpshistorikk) {
+                if (!resultatVedtak.beregnet) {
                     val resultatFraVedtakGrunnlag = resultatVedtak.resultat.grunnlagListe.finnResultatFraAnnenVedtak(finnFørsteTreff = true)
                     return@mapIndexed ResultatDelvedtak(
                         vedtaksid = resultatFraVedtakGrunnlag?.vedtaksid,
                         klagevedtak = false,
-                        gjenopprettetBeløpshistorikk = true,
+                        beregnet = false,
                         request = null,
                         resultat = resultatVedtak.resultat,
                     )
@@ -238,7 +238,7 @@ class BehandlingTilVedtakMapping(
                 ResultatDelvedtak(
                     vedtaksid = null,
                     klagevedtak = resultatVedtak.klagevedtak,
-                    gjenopprettetBeløpshistorikk = false,
+                    beregnet = true,
                     request = byggVedtakForKlage(behandling, sak, resultatVedtak, enhet, stønadsendringPerioder, beregningBarn.barn),
                     resultat = resultatVedtak.resultat,
                 )

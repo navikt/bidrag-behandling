@@ -183,7 +183,7 @@ data class DelvedtakDto(
     val klagevedtak: Boolean,
     val vedtaksid: Int? = null,
     val delvedtak: Boolean,
-    val gjenopprettetBeløpshistorikk: Boolean,
+    val beregnet: Boolean,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
 )

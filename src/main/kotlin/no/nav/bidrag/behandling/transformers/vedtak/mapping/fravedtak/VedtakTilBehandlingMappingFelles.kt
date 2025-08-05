@@ -203,7 +203,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                         it.klagevedtak,
                         it.vedtaksid,
                         !it.klagevedtak,
-                        it.gjenopprettetBeløpshistorikk,
+                        !it.beregnet,
                         perioder =
                             listOf(
                                 vedtak.grunnlagListe.byggResultatBidragsberegning(

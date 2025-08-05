@@ -208,8 +208,8 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 type = rv.vedtakstype,
                                 delvedtak = rv.delvedtak,
                                 klagevedtak = resultatFraVedtak?.klagevedtak ?: rv.klagevedtak,
-                                gjenopprettetBeløpshistorikk =
-                                    resultatFraVedtak?.gjenopprettetBeløpshistorikk ?: rv.gjenopprettetBeløpshistorikk,
+                                beregnet =
+                                    resultatFraVedtak?.beregnet ?: rv.beregnet,
                                 vedtaksid = resultatFraVedtak?.vedtaksid,
                                 grunnlagFraVedtak = if (rv.delvedtak) resultat.barn.grunnlagFraVedtak else emptyList(),
                                 perioder =
@@ -518,7 +518,9 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                 sluttberegning != null &&
                     (sluttberegning.barnetErSelvforsørget || sluttberegning.ikkeOmsorgForBarnet),
             beregningsdetaljer =
-                if (resultatkode?.erAvslag() == true) {
+                if (vedtakstype == Vedtakstype.INNKREVING) {
+                    null
+                } else if (resultatkode?.erAvslag() == true) {
                     BidragPeriodeBeregningsdetaljer(
                         forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
                         barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),

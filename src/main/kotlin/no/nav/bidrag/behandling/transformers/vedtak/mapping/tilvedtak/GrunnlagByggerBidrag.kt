@@ -176,7 +176,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                             ResultatFraVedtakGrunnlag(
                                 vedtaksid = vedtak.vedtaksid,
                                 klagevedtak = vedtak.klagevedtak,
-                                gjenopprettetBeløpshistorikk = vedtak.gjenopprettetBeløpshistorikk,
+                                beregnet = vedtak.beregnet,
                             ),
                         ),
                 )
