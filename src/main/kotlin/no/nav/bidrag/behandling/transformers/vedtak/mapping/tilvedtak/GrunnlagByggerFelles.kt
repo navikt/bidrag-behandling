@@ -73,7 +73,7 @@ val grunnlagsreferanse_løpende_bidrag = "løpende_bidrag_bidragspliktig"
 fun opprettGrunnlagsreferanseVirkningstidspunkt(
     søknadsbarn: Rolle? = null,
     referanse: String? = null,
-) = "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" } ?: referanse ?: ""}"
+) = "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" } ?: referanse?.let {"_$referanse"} ?: ""}"
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
