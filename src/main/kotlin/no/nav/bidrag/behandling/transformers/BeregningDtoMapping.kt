@@ -415,7 +415,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         val bpsAndel =
             DelberegningBidragspliktigesAndel(
                 periode = periode,
-                andelBeløp = sluttberegning!!.beregnetBeløp,
+                andelBeløp = sluttberegning!!.bpAndelBeløp,
                 endeligAndelFaktor =
                     if (sluttberegning.deltBosted) {
                         sluttberegning.bpAndelFaktorVedDeltBosted!!

@@ -261,13 +261,10 @@ fun oppretteBehandling(
 ): Behandling =
     Behandling(
         vedtakstype,
-        null,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
-        klageMottattdato = null,
         SAKSNUMMER,
         SOKNAD_ID.toLong(),
-        null,
         "4806",
         "Z9999",
         "Navn Navnesen",

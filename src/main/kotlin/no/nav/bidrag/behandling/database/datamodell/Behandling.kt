@@ -66,15 +66,11 @@ import java.time.YearMonth
 open class Behandling(
     @Enumerated(EnumType.STRING)
     open var vedtakstype: Vedtakstype,
-    @Enumerated(EnumType.STRING)
-    open var opprinneligVedtakstype: Vedtakstype? = null,
     @Column(name = "dato_fom")
     open var søktFomDato: LocalDate,
     open var mottattdato: LocalDate,
-    open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
     open var soknadsid: Long?,
-    open val soknadRefId: Long? = null,
     open var behandlerEnhet: String,
     open var opprettetAv: String,
     open val opprettetAvNavn: String? = null,
@@ -86,14 +82,9 @@ open class Behandling(
     @Enumerated(EnumType.STRING)
     open var engangsbeloptype: Engangsbeløptype?,
     open var vedtaksid: Int? = null,
-    open var refVedtaksid: Int? = null,
-    open var påklagetVedtak: Int? = null,
     open var notatJournalpostId: String? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
-    open var opprinneligVirkningstidspunkt: LocalDate? = null,
-    @Suppress("JpaAttributeTypeInspection")
-    open var opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
     open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),

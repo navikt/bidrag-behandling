@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -1781,13 +1782,10 @@ class GrunnlagMappingTest {
         ): Behandling =
             Behandling(
                 Vedtakstype.FASTSETTELSE,
-                null,
                 søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
                 mottattdato = LocalDate.parse("2023-03-15"),
-                klageMottattdato = null,
-                SAKSNUMMER,
+                saksnummer = SAKSNUMMER,
                 SOKNAD_ID.toLong(),
-                søknadRefId,
                 "4806",
                 "Z9999",
                 "Navn Navnesen",
@@ -1798,6 +1796,10 @@ class GrunnlagMappingTest {
                 årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                 virkningstidspunkt = LocalDate.parse("2023-02-01"),
                 id = id,
+                klagedetaljer =
+                    Klagedetaljer(
+                        soknadRefId = søknadRefId,
+                    ),
             )
 
         @Test

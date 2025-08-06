@@ -135,19 +135,15 @@ class VedtakTilBehandlingMapping(
                 id = if (lesemodus) 1 else null,
                 søknadstype = søknadstype,
                 vedtakstype = vedtakType ?: type,
-                opprinneligVedtakstype = opprinneligVedtakstype,
                 virkningstidspunkt = virkningstidspunkt,
                 kategori = grunnlagListe.særbidragskategori?.kategori?.name,
                 kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
-                opprinneligVirkningstidspunkt = virkningstidspunkt,
-                opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
                 innkrevingstype =
                     this.stønadsendringListe.firstOrNull()?.innkreving
                         ?: this.engangsbeløpListe.firstOrNull()?.innkreving
                         ?: Innkrevingstype.MED_INNKREVING,
                 årsak = hentVirkningstidspunkt()?.årsak,
                 avslag = avslagskode(),
-                klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                 søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
                 soknadFra = soknadFra ?: hentSøknad().søktAv,
                 mottattdato =
@@ -159,9 +155,6 @@ class VedtakTilBehandlingMapping(
                 stonadstype = stønadsendringstype,
                 engangsbeloptype = if (stønadsendringstype == null) engangsbeløpListe.firstOrNull()?.type else null,
                 vedtaksid = null,
-                soknadRefId = søknadRefId,
-                refVedtaksid = vedtakId,
-                påklagetVedtak = påklagetVedtak,
                 behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,

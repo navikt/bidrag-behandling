@@ -2129,20 +2129,17 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling =
                 Behandling(
                     Vedtakstype.FASTSETTELSE,
-                    null,
-                    YearMonth.now().atDay(1),
-                    YearMonth.now().atEndOfMonth(),
-                    LocalDate.now(),
-                    "1900000",
-                    søknadsid,
-                    null,
-                    "1234",
-                    "Z9999",
-                    "Navn Navnesen",
-                    "bisys",
-                    SøktAvType.BIDRAGSMOTTAKER,
-                    Stønadstype.FORSKUDD,
-                    null,
+                    søktFomDato = YearMonth.now().atDay(1),
+                    mottattdato = YearMonth.now().atEndOfMonth(),
+                    saksnummer = "1900000",
+                    soknadsid = søknadsid,
+                    behandlerEnhet = "1234",
+                    opprettetAv = "Z9999",
+                    opprettetAvNavn = "Navn Navnesen",
+                    kildeapplikasjon = "bisys",
+                    soknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                    stonadstype = Stønadstype.FORSKUDD,
+                    engangsbeloptype = null,
                 )
             val createRoller = prepareRoles(behandling)
             val roller =

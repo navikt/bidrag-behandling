@@ -171,7 +171,6 @@ class BehandlingService(
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
-                soknadRefId = opprettBehandling.søknadsreferanseid,
                 behandlerEnhet = opprettBehandling.behandlerenhet,
                 soknadFra = opprettBehandling.søknadFra,
                 stonadstype = opprettBehandling.stønadstype,
