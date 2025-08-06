@@ -203,23 +203,27 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                         it.klagevedtak,
                         it.vedtaksid,
                         !it.klagevedtak,
-                        !it.beregnet,
+                        it.beregnet,
                         perioder =
                             listOf(
-                                vedtak.grunnlagListe.byggResultatBidragsberegning(
-                                    vedtakPeriode.periode,
-                                    vedtakPeriode.beløp,
-                                    try {
-                                        Resultatkode.fraKode(vedtakPeriode.resultatkode)!!
-                                    } catch (_: Exception) {
-                                        Resultatkode.BEREGNET_BIDRAG
-                                    },
-                                    vedtakPeriode.grunnlagReferanseListe,
-                                    null,
-                                    Resultatkode.fraKode(vedtakPeriode.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
-                                    vedtak.type,
-                                    barnIdent = stønadsendring.kravhaver,
-                                ),
+                                vedtak.grunnlagListe
+                                    .byggResultatBidragsberegning(
+                                        vedtakPeriode.periode,
+                                        vedtakPeriode.beløp,
+                                        try {
+                                            Resultatkode.fraKode(vedtakPeriode.resultatkode)!!
+                                        } catch (_: Exception) {
+                                            Resultatkode.BEREGNET_BIDRAG
+                                        },
+                                        vedtakPeriode.grunnlagReferanseListe,
+                                        null,
+                                        Resultatkode.fraKode(vedtakPeriode.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                                        vedtak.type,
+                                        barnIdent = stønadsendring.kravhaver,
+                                    ).copy(
+                                        resultatFraVedtak = it.vedtaksid,
+                                        klagevedtak = it.klagevedtak,
+                                    ),
                             ),
                     )
                 }

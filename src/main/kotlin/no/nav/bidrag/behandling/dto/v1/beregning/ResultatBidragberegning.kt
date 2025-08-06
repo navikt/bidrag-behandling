@@ -207,6 +207,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
     val vedtakstype: Vedtakstype,
     val resultatFraVedtak: Int? = null,
+    val klagevedtak: Boolean = false,
 ) {
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
