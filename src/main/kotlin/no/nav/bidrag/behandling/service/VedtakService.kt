@@ -3,12 +3,15 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.OpprettParagraf35C
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
+import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.tilType
@@ -195,6 +198,26 @@ class VedtakService(
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
             )
         }
+    }
+
+    @Transactional
+    fun oppdaterParagrafP35c(
+        behandlingId: Long,
+        request: OppdaterParagraf35cDetaljerDto,
+    ) {
+        val behandling = behandlingService.hentBehandlingById(behandlingId)
+        val rolle = behandling.søknadsbarn.find { it.ident == request.ident }!!
+        val klagedetaljer = behandling.klagedetaljer ?: Klagedetaljer()
+        val paragraf35c =
+            klagedetaljer.paragraf35c.find { it.rolleid == rolle.id!! }?.copy(
+                opprettParagraf35c = request.opprettP35c,
+                vedtaksid = request.vedtaksid,
+                rolleid = rolle.id!!,
+            ) ?: OpprettParagraf35C(rolle.id!!, request.vedtaksid, request.opprettP35c)
+        behandling.klagedetaljer =
+            klagedetaljer.copy(
+                paragraf35c = klagedetaljer.paragraf35c.filter { it.rolleid != rolle.id } + paragraf35c,
+            )
     }
 
     fun konverterVedtakTilBeregningResultatBidrag(vedtakId: Long): ResultatBidragberegningDto? {

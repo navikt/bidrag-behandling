@@ -161,6 +161,7 @@ class BeregningService(
                         vedtakstype = behandling.vedtakstype,
                         resultatVedtak = resultat,
                         avslaskode = søknasdbarn.avslag,
+                        klagedetaljer = behandling.klagedetaljer,
                         resultat =
                             resultat.resultatVedtakListe
                                 .find {
@@ -181,6 +182,7 @@ class BeregningService(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
+                        klagedetaljer = behandling.klagedetaljer,
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -195,6 +197,7 @@ class BeregningService(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
+                        klagedetaljer = behandling.klagedetaljer,
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -227,7 +230,7 @@ class BeregningService(
                 aldersjusteringOrchestrator.utførAldersjustering(
                     stønadsid,
                     behandling.virkningstidspunkt!!.year,
-                    BeregnBasertPåVedtak(søknadsbarn.grunnlagFraVedtak!!.toInt()),
+                    BeregnBasertPåVedtak(søknadsbarn.grunnlagFraVedtak),
                     søknadsbarn.opphørsdato?.let { YearMonth.from(it) },
                 )
 
@@ -236,6 +239,7 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
+                    klagedetaljer = behandling.klagedetaljer,
                     resultat =
                         beregning.beregning.copy(
                             grunnlagListe =
@@ -264,6 +268,7 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
+                    klagedetaljer = behandling.klagedetaljer,
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
@@ -286,6 +291,7 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
+                    klagedetaljer = behandling.klagedetaljer,
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
@@ -322,6 +328,7 @@ class BeregningService(
             barn = barn.mapTilResultatBarn(),
             avslaskode = avslag,
             vedtakstype = vedtakstype,
+            klagedetaljer = klagedetaljer,
             resultat =
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =

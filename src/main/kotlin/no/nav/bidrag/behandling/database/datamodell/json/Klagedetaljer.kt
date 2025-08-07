@@ -5,7 +5,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Converter(autoApply = true) // Set to true if you want it to apply to all KlageDetaljer fields automatically
+@Converter(autoApply = true)
 class KlageDetaljerConverter : JsonColumnConverter<Klagedetaljer>(Klagedetaljer::class)
 
 data class Klagedetaljer(
@@ -17,4 +17,11 @@ data class Klagedetaljer(
     val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,
     val fattetDelvedtak: List<FattetDelvedtak> = emptyList(),
+    val paragraf35c: List<OpprettParagraf35C> = emptyList(),
+)
+
+data class OpprettParagraf35C(
+    val rolleid: Long,
+    val vedtaksid: Int,
+    val opprettParagraf35c: Boolean,
 )

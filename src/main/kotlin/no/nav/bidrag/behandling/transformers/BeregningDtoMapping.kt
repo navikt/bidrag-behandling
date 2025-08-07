@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
+import no.nav.bidrag.behandling.dto.v1.beregning.IndeksreguleringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
@@ -86,6 +87,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonMaksTilsynPerio
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
@@ -101,6 +103,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
+import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
@@ -309,6 +312,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                     val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.klagevedtak }
                     val kanOpprette35c =
                         delvedtak?.beregnet == false && klagevedtak != null &&
+                            !delvedtak.vedtakstype.erIndeksEllerAldersjustering &&
                             p.periode.fom.isAfter(
                                 klagevedtak.resultat.beregnetBarnebidragPeriodeListe.minOf { it.periode.fom },
                             )
@@ -347,8 +351,12 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                     KlageOmgjøringDetaljer(
                                         resultatFraVedtak = resultatFraVedtak?.vedtaksid,
                                         kanOpprette35c = kanOpprette35c,
+                                        skalOpprette35c =
+                                            resultat.klagedetaljer
+                                                ?.paragraf35c
+                                                ?.any { it.vedtaksid == resultatFraVedtak?.vedtaksid } == true,
                                         manuellAldersjustering =
-                                            p.periode.fom.month.value == 7 &&
+                                            delvedtak?.vedtakstype == Vedtakstype.ALDERSJUSTERING && p.periode.fom.month.value == 7 &&
                                                 resultat.barn.grunnlagFraVedtak.any {
                                                     it.aldersjusteringForÅr == p.periode.fom.year &&
                                                         it.vedtak != null
@@ -518,6 +526,28 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                         sluttberegningAldersjustering = sluttberegning,
                         bpHarEvne = false,
                         forskuddssats = BigDecimal.ZERO,
+                    )
+                },
+        )
+    } else if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
+        val sjablonIndeksfaktor =
+            finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<SjablonSjablontallPeriode>(
+                Grunnlagstype.SJABLON_SJABLONTALL,
+                grunnlagsreferanseListe,
+            ).find { it.innhold.sjablon == SjablonTallNavn.INDEKSREGULRERING_FAKTOR }
+        return ResultatBarnebidragsberegningPeriodeDto(
+            vedtakstype = vedtakstype,
+            periode = periode,
+            faktiskBidrag = resultat ?: BigDecimal.ZERO,
+            resultatKode = Resultatkode.BEREGNET_BIDRAG,
+            beregningsdetaljer =
+                run {
+                    BidragPeriodeBeregningsdetaljer(
+                        indeksreguleringDetaljer =
+                            IndeksreguleringDetaljer(
+                                finnIndeksreguleringSluttberegning(),
+                                sjablonIndeksfaktor?.innhold?.verdi ?: BigDecimal.ZERO,
+                            ),
                     )
                 },
         )
@@ -739,6 +769,14 @@ fun List<GrunnlagDto>.finnAldersjusteringDetaljerReferanse(): String? {
             it.type == Grunnlagstype.ALDERSJUSTERING_DETALJER
         } ?: return null
     return grunnlag.referanse
+}
+
+fun List<GrunnlagDto>.finnIndeksreguleringSluttberegning(): SluttberegningIndeksregulering? {
+    val grunnlag =
+        find {
+            it.type == Grunnlagstype.SLUTTBEREGNING_INDEKSREGULERING
+        } ?: return null
+    return grunnlag.innholdTilObjekt<SluttberegningIndeksregulering>()
 }
 
 fun List<GrunnlagDto>.finnAldersjusteringDetaljerGrunnlag(): AldersjusteringDetaljerGrunnlag? {

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.beregning
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
@@ -27,6 +28,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import java.math.BigDecimal
 import java.time.YearMonth
@@ -145,6 +147,7 @@ data class ResultatBidragsberegningBarn(
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
     val avslaskode: Resultatkode? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
+    val klagedetaljer: Klagedetaljer?,
 )
 
 data class UgyldigBeregningDto(
@@ -255,9 +258,9 @@ data class KlageOmgjøringDetaljer(
 )
 
 data class BidragPeriodeBeregningsdetaljer(
-    val bpHarEvne: Boolean,
+    val bpHarEvne: Boolean = false,
     val antallBarnIHusstanden: Double? = null,
-    val forskuddssats: BigDecimal,
+    val forskuddssats: BigDecimal = BigDecimal.ZERO,
     val barnetilleggBM: DelberegningBarnetilleggDto = DelberegningBarnetilleggDto(),
     val barnetilleggBP: DelberegningBarnetilleggDto = DelberegningBarnetilleggDto(),
     val voksenIHusstanden: Boolean? = null,
@@ -270,6 +273,7 @@ data class BidragPeriodeBeregningsdetaljer(
     val sluttberegning: SluttberegningBarnebidrag? = null,
     val sluttberegningAldersjustering: SluttberegningBarnebidragAldersjustering? = null,
     val delberegningUnderholdskostnad: DelberegningUnderholdskostnad? = null,
+    val indeksreguleringDetaljer: IndeksreguleringDetaljer? = null,
     val delberegningBidragspliktigesBeregnedeTotalBidrag: DelberegningBidragspliktigesBeregnedeTotalbidragDto? = null,
 ) {
     data class BeregningsdetaljerSamværsfradrag(
@@ -282,6 +286,11 @@ data class BidragPeriodeBeregningsdetaljer(
         sluttberegning?.bidragJustertForDeltBosted == true ||
             sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }
+
+data class IndeksreguleringDetaljer(
+    val sluttberegning: SluttberegningIndeksregulering?,
+    val faktor: BigDecimal,
+)
 
 fun List<GrunnlagDto>.finnSluttberegningIReferanser(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
     find {
