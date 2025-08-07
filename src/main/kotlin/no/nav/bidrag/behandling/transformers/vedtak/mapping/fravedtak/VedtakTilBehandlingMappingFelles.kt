@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
+import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
@@ -221,8 +222,11 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                         vedtak.type,
                                         barnIdent = stønadsendring.kravhaver,
                                     ).copy(
-                                        resultatFraVedtak = it.vedtaksid,
-                                        klagevedtak = it.klagevedtak,
+                                        klageOmgjøringDetaljer =
+                                            KlageOmgjøringDetaljer(
+                                                resultatFraVedtak = it.vedtaksid,
+                                                klagevedtak = it.klagevedtak,
+                                            ),
                                     ),
                             ),
                     )

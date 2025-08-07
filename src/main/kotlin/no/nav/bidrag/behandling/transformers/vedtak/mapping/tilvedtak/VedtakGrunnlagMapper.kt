@@ -74,8 +74,8 @@ fun Behandling.finnBeregnTilDatoBehandling(
                     .withDayOfMonth(1)
                     .toLocalDate()
 
-            if (virkningstidspunkt!! >= beregnTilDato) {
-                virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+            if (søknadsbarnRolle?.virkningstidspunkt!! >= beregnTilDato) {
+                søknadsbarnRolle.virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
             } else {
                 beregnTilDato
             }
@@ -256,7 +256,7 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
                     }
                 }
-                val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+                val beregnFraDato = søknadsbarnRolle.virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling(null, søknadsbarnRolle)
                 val grunnlagBeregning =
                     BeregnGrunnlag(

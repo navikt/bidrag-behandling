@@ -135,6 +135,7 @@ data class GrunnlagFraVedtak(
     )
     val aldersjusteringForÅr: Int? = null,
     val vedtak: Int? = null,
+    val skalAldersjusteres: Boolean = true,
 )
 
 data class RolleManueltOverstyrtGebyr(

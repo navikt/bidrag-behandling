@@ -206,15 +206,16 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val erEndringUnderGrense: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
     val vedtakstype: Vedtakstype,
-    val resultatFraVedtak: Int? = null,
-    val klagevedtak: Boolean = false,
+    val klageOmgjøringDetaljer: KlageOmgjøringDetaljer? = null,
 ) {
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
         if (erOpphør) {
             "Opphør"
         } else if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            if (endeligVedtak) {
+            if (klageOmgjøringDetaljer?.delAvVedtaket == false) {
+                "Manuell aldersjustering (ikke del av vedtaket)"
+            } else if (endeligVedtak) {
                 "Aldersjustering"
             } else if (aldersjusteringDetaljer?.aldersjustert == false) {
                 aldersjusteringDetaljer.begrunnelserVisningsnavn
@@ -243,6 +244,15 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                 ?.intern
         }
 }
+
+data class KlageOmgjøringDetaljer(
+    val resultatFraVedtak: Int? = null,
+    val klagevedtak: Boolean = false,
+    val manuellAldersjustering: Boolean = false,
+    val delAvVedtaket: Boolean = true,
+    val kanOpprette35c: Boolean = false,
+    val skalOpprette35c: Boolean = false,
+)
 
 data class BidragPeriodeBeregningsdetaljer(
     val bpHarEvne: Boolean,
