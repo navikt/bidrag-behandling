@@ -162,13 +162,20 @@ class VedtakService(
     ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(refVedtaksid.toInt()) ?: return null
+            vedtakConsumer.hentVedtak(refVedtaksid.toInt())?.let {
+                if (it.erOrkestrertVedtak) {
+                    vedtakConsumer.hentVedtak(it.referertVedtaksid!!)
+                } else {
+                    it
+                }
+            } ?: return null
         if (vedtak.behandlingId == null && vedtak.grunnlagListe.isEmpty()) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Vedtak $refVedtaksid er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
             )
         }
+
         val påklagetVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak)
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
