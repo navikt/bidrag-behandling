@@ -169,7 +169,7 @@ class VedtakTilBehandlingMapping(
             Klagedetaljer(
                 opprinneligVedtakstype = opprinneligVedtakstype,
                 påklagetVedtak = påklagetVedtak,
-                refVedtaksid = vedtakId,
+                refVedtaksid = if (!lesemodus) vedtakId else null,
                 klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                 soknadRefId = søknadRefId,
                 opprinneligVirkningstidspunkt = virkningstidspunkt,

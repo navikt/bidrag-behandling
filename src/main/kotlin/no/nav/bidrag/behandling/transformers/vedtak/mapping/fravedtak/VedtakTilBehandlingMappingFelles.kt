@@ -286,6 +286,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
                     vedtakstype = type,
                     resultatKode = Resultatkode.fraKode(it.resultatkode),
                     beregnetBidrag = it.beløp ?: BigDecimal.ZERO,
+                    faktiskBidrag = it.beløp ?: BigDecimal.ZERO,
                 ),
             )
         } ?: emptyList()
