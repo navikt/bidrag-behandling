@@ -144,7 +144,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
     søknadsbarn: ResultatRolle,
     resultatDelvedtak: List<ResultatDelvedtak>,
 ): StønadsendringPeriode {
-    val søknadsbarn =
+    val søknadsbarnRolle =
         behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
@@ -158,7 +158,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
             val resultatkode =
                 if (vedtak.request != null) {
                     vedtak.request.stønadsendringListe
-                        .find { it.kravhaver.verdi == søknadsbarn.ident!! }!!
+                        .find { it.kravhaver.verdi == søknadsbarnRolle.ident!! }!!
                         .periodeListe
                         .find { vp -> it.periode.fom == vp.periode.fom }!!
                         .resultatkode
@@ -177,6 +177,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                                 vedtaksid = vedtak.vedtaksid,
                                 klagevedtak = vedtak.klagevedtak,
                                 beregnet = vedtak.beregnet,
+                                opprettParagraf35c = behandling.klagedetaljer!!.paragraf35c.any { it.vedtaksid == vedtak.vedtaksid },
                             ),
                         ),
                 )
@@ -191,7 +192,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
         }
 
     return StønadsendringPeriode(
-        søknadsbarn,
+        søknadsbarnRolle,
         periodeliste,
         grunnlagListe,
     )

@@ -209,14 +209,14 @@ class VedtakService(
         val rolle = behandling.søknadsbarn.find { it.ident == request.ident }!!
         val klagedetaljer = behandling.klagedetaljer ?: Klagedetaljer()
         val paragraf35c =
-            klagedetaljer.paragraf35c.find { it.rolleid == rolle.id!! }?.copy(
+            klagedetaljer.paragraf35c.find { it.vedtaksid == request.vedtaksid }?.copy(
                 opprettParagraf35c = request.opprettP35c,
                 vedtaksid = request.vedtaksid,
                 rolleid = rolle.id!!,
             ) ?: OpprettParagraf35C(rolle.id!!, request.vedtaksid, request.opprettP35c)
         behandling.klagedetaljer =
             klagedetaljer.copy(
-                paragraf35c = klagedetaljer.paragraf35c.filter { it.rolleid != rolle.id } + paragraf35c,
+                paragraf35c = klagedetaljer.paragraf35c.filter { it.vedtaksid != request.vedtaksid } + paragraf35c,
             )
     }
 
