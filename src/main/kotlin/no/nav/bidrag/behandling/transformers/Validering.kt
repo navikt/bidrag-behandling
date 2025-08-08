@@ -302,12 +302,12 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
             feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
         }
 
-        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
-            avslag == null &&
-            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
-        ) {
-            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
-        }
+//        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
+//            avslag == null &&
+//            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
+//        ) {
+//            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+//        }
     } else {
         if (behandling.klagedetaljer?.opprinneligVirkningstidspunkt != null &&
             avslag == null &&
