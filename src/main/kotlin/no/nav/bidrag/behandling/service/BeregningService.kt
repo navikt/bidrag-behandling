@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
@@ -16,13 +17,15 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
-import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BeregnBasertPåVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
+import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
 import no.nav.bidrag.beregn.core.bo.SjablonInnhold
@@ -52,6 +55,7 @@ import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddRes
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
+import no.nav.bidrag.transport.felles.tilVisningsnavn
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -176,6 +180,25 @@ class BeregningService(
                                                 .fjernMidlertidligPersonobjekterBMsbarn(),
                                     )
                                 } ?: BeregnetBarnebidragResultat(),
+                    )
+                } catch (e: FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak) {
+                    val beregnTilDato =
+                        søknasdbarn
+                            .behandling
+                            .finnBeregnTilDatoBehandling(søknasdbarn.opphørsdato?.toYearMonth(), søknasdbarn)
+                    ResultatBidragsberegningBarn(
+                        ugyldigBeregning =
+                            UgyldigBeregningDto(
+                                tittel = "Ugyldig perioder",
+                                vedtaksliste = e.vedtak,
+                                begrunnelse =
+                                    "En eller flere etterfølgende vedtak har virkningstidpunkt " +
+                                        "som starter før beregningsperioden ${søknasdbarn.virkningstidspunkt.tilVisningsnavn()} - ${beregnTilDato.tilVisningsnavn()}",
+                            ),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        vedtakstype = behandling.vedtakstype,
+                        klagedetaljer = behandling.klagedetaljer,
+                        resultat = BeregnetBarnebidragResultat(),
                     )
                 } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
                     ResultatBidragsberegningBarn(

@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.beregn.barnebidrag.service.EtterfølgendeVedtakSomOverlapper
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
@@ -153,7 +154,8 @@ data class ResultatBidragsberegningBarn(
 data class UgyldigBeregningDto(
     val tittel: String,
     val begrunnelse: String,
-    val resultatPeriode: List<UgyldigResultatPeriode>,
+    val vedtaksliste: List<EtterfølgendeVedtakSomOverlapper> = emptyList(),
+    val resultatPeriode: List<UgyldigResultatPeriode> = emptyList(),
     val perioder: List<ÅrMånedsperiode> = emptyList(),
 ) {
     data class UgyldigResultatPeriode(
