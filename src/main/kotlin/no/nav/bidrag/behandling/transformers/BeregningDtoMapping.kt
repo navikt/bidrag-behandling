@@ -613,11 +613,15 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             }
         val sluttberegning =
             sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
-        val barn = hentPerson(barnIdent!!.verdi)!!
 
         val delberegningGrensePeriode =
-            finnDelberegningSjekkGrensePeriode(periode, barn.referanse)
-                ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), barn.referanse)
+            if (vedtakstype == Vedtakstype.OPPHØR) {
+                null
+            } else {
+                val barn = hentPerson(barnIdent!!.verdi)!!
+                finnDelberegningSjekkGrensePeriode(periode, barn.referanse)
+                    ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), barn.referanse)
+            }
         return ResultatBarnebidragsberegningPeriodeDto(
             vedtakstype = vedtakstype,
             periode = periode,

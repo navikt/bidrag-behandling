@@ -128,7 +128,12 @@ class VedtakTilBehandlingMapping(
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
             }
+        // TODO: Hvordan håndteres dette når vi begynner med flere stønadsendringer i samme vedtak?
         val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
+        val innkrevingstype =
+            this.stønadsendringListe.firstOrNull()?.innkreving
+                ?: this.engangsbeløpListe.firstOrNull()?.innkreving
+                ?: Innkrevingstype.MED_INNKREVING
         val virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
         val behandling =
             Behandling(
@@ -138,10 +143,7 @@ class VedtakTilBehandlingMapping(
                 virkningstidspunkt = virkningstidspunkt,
                 kategori = grunnlagListe.særbidragskategori?.kategori?.name,
                 kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
-                innkrevingstype =
-                    this.stønadsendringListe.firstOrNull()?.innkreving
-                        ?: this.engangsbeløpListe.firstOrNull()?.innkreving
-                        ?: Innkrevingstype.MED_INNKREVING,
+                innkrevingstype = innkrevingstype,
                 årsak = hentVirkningstidspunkt()?.årsak,
                 avslag = avslagskode(),
                 søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
@@ -169,6 +171,7 @@ class VedtakTilBehandlingMapping(
             Klagedetaljer(
                 opprinneligVedtakstype = opprinneligVedtakstype,
                 påklagetVedtak = påklagetVedtak,
+                innkrevingstype = innkrevingstype,
                 refVedtaksid = if (!lesemodus) vedtakId else null,
                 klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                 soknadRefId = søknadRefId,

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell.json
 
 import jakarta.persistence.Converter
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -16,6 +17,7 @@ data class Klagedetaljer(
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,
+    var innkrevingstype: Innkrevingstype? = null,
     val fattetDelvedtak: List<FattetDelvedtak> = emptyList(),
     val paragraf35c: List<OpprettParagraf35C> = emptyList(),
 )

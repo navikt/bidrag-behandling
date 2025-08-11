@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
+import no.nav.bidrag.behandling.service.hentSisteBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -17,8 +18,10 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
@@ -33,6 +36,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
+import java.time.LocalDate
+import java.time.YearMonth
 
 // Lager PERSON_BARN_BIDRAGSMOTTAKER objekter for at beregningen skal kunne hente ut riktig antall barn til BM
 // Kan hende barn til BM er husstandsmedlem
@@ -143,58 +148,82 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
     behandling: Behandling,
     søknadsbarn: ResultatRolle,
     resultatDelvedtak: List<ResultatDelvedtak>,
-): StønadsendringPeriode {
+): List<StønadsendringPeriode> {
     val søknadsbarnRolle =
         behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
     val grunnlagListe = mutableSetOf<GrunnlagDto>()
-    val periodeliste =
-        beregnetBarnebidragPeriodeListe.map {
-            val vedtak =
-                resultatDelvedtak.find { rv ->
-                    rv.resultat.beregnetBarnebidragPeriodeListe.any { vp -> it.periode.fom == vp.periode.fom }
-                }!!
-            val resultatkode =
-                if (vedtak.request != null) {
-                    vedtak.request.stønadsendringListe
-                        .find { it.kravhaver.verdi == søknadsbarnRolle.ident!! }!!
-                        .periodeListe
-                        .find { vp -> it.periode.fom == vp.periode.fom }!!
-                        .resultatkode
-                } else {
-                    val periode = vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp -> it.periode.fom == vp.periode.fom }!!
-                    if (periode.resultat.beløp == null) Resultatkode.OPPHØR.name else Resultatkode.BEREGNET_BIDRAG.name
-                }
-            val referanse = "resultatFraVedtak_${vedtak.vedtaksid ?: it.periode.fom.toCompactString()}"
-            val resultatFraGrunnlag =
-                GrunnlagDto(
-                    referanse = referanse,
-                    type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                    innhold =
-                        POJONode(
-                            ResultatFraVedtakGrunnlag(
-                                vedtaksid = vedtak.vedtaksid,
-                                klagevedtak = vedtak.klagevedtak,
-                                beregnet = vedtak.beregnet,
-                                opprettParagraf35c = behandling.klagedetaljer!!.paragraf35c.any { it.vedtaksid == vedtak.vedtaksid },
-                            ),
-                        ),
-                )
-            grunnlagListe.add(resultatFraGrunnlag)
-            OpprettPeriodeRequestDto(
-                periode = it.periode,
-                beløp = it.resultat.beløp,
-                valutakode = if (it.resultat.beløp == null) null else "NOK",
-                resultatkode = resultatkode,
-                grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
-            )
+    val innkrevFraPeriode =
+        if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
+            val beløpshistorikk = hentSisteBeløpshistorikk(behandling.tilStønadsid(søknadsbarnRolle))
+            beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom } ?: YearMonth.from(LocalDate.MAX)
+        } else {
+            beregnetBarnebidragPeriodeListe.minOf { it.periode.fom }
         }
 
-    return StønadsendringPeriode(
-        søknadsbarnRolle,
-        periodeliste,
-        grunnlagListe,
+    fun opprettPeriode(resultatPeriode: ResultatPeriode): OpprettPeriodeRequestDto {
+        val vedtak =
+            resultatDelvedtak.find { rv ->
+                rv.resultat.beregnetBarnebidragPeriodeListe.any { vp -> resultatPeriode.periode.fom == vp.periode.fom }
+            }!!
+        val resultatkode =
+            if (vedtak.request != null) {
+                vedtak.request.stønadsendringListe
+                    .find { it.kravhaver.verdi == søknadsbarnRolle.ident!! }!!
+                    .periodeListe
+                    .find { vp -> resultatPeriode.periode.fom == vp.periode.fom }!!
+                    .resultatkode
+            } else {
+                val periode = vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }!!
+                if (periode.resultat.beløp == null) Resultatkode.OPPHØR.name else Resultatkode.BEREGNET_BIDRAG.name
+            }
+        val referanse = "resultatFraVedtak_${vedtak.vedtaksid ?: resultatPeriode.periode.fom.toCompactString()}"
+        val resultatFraGrunnlag =
+            GrunnlagDto(
+                referanse = referanse,
+                type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                innhold =
+                    POJONode(
+                        ResultatFraVedtakGrunnlag(
+                            vedtaksid = vedtak.vedtaksid,
+                            klagevedtak = vedtak.klagevedtak,
+                            beregnet = vedtak.beregnet,
+                            opprettParagraf35c = behandling.klagedetaljer!!.paragraf35c.any { it.vedtaksid == vedtak.vedtaksid },
+                        ),
+                    ),
+            )
+        grunnlagListe.add(resultatFraGrunnlag)
+        return OpprettPeriodeRequestDto(
+            periode = resultatPeriode.periode,
+            beløp = resultatPeriode.resultat.beløp,
+            valutakode = if (resultatPeriode.resultat.beløp == null) null else "NOK",
+            resultatkode = resultatkode,
+            grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
+        )
+    }
+    val periodelisteUtenInnkreving =
+        beregnetBarnebidragPeriodeListe.filter { it.periode.fom < innkrevFraPeriode }.map {
+            opprettPeriode(it)
+        }
+    val periodeliste =
+        beregnetBarnebidragPeriodeListe.filter { it.periode.fom >= innkrevFraPeriode }.map {
+            opprettPeriode(it)
+        }
+
+    return listOf(
+        StønadsendringPeriode(
+            søknadsbarnRolle,
+            periodelisteUtenInnkreving,
+            grunnlagListe,
+            Innkrevingstype.UTEN_INNKREVING,
+        ),
+        StønadsendringPeriode(
+            søknadsbarnRolle,
+            periodeliste,
+            grunnlagListe,
+            Innkrevingstype.MED_INNKREVING,
+        ),
     )
 }
 
@@ -245,5 +274,6 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
         søknadsbarn,
         periodeliste + opphørPeriode,
         grunnlagListe,
+        Innkrevingstype.UTEN_INNKREVING,
     )
 }

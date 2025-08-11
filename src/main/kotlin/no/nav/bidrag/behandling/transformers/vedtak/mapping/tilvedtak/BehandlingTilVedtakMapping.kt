@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.rolleManglerIdent
+import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerReferanse
@@ -208,7 +209,7 @@ class BehandlingTilVedtakMapping(
         val stønadsendringPerioder =
             listOf(
                 endeligVedtak.resultat,
-            ).map { it.byggStønadsendringerForEndeligVedtak(behandling, beregningBarn.barn, resultat.delvedtak) }
+            ).flatMap { it.byggStønadsendringerForEndeligVedtak(behandling, beregningBarn.barn, resultat.delvedtak) }
         return byggVedtakForKlage(behandling, resultat.sak, endeligVedtak, enhet, stønadsendringPerioder, beregningBarn.barn)
     }
 
@@ -268,18 +269,7 @@ class BehandlingTilVedtakMapping(
             val stønadsendringGrunnlagListe = mutableSetOf<GrunnlagDto>()
 
             grunnlagsliste.addAll(stønadsendringGrunnlag)
-//            val orkestrertVedtakGrunnlag =
-//                VedtakOrkestreringDetaljerGrunnlag(
-//                    klagevedtak = resultatVedtak.klagevedtak,
-//                    endeligVedtak = resultatVedtak.endeligVedtak,
-//                )
-//            grunnlagsliste.add(
-//                GrunnlagDto(
-//                    referanse = "orkestrert_grunnlag_detaljer",
-//                    type = Grunnlagstype.VEDTAK_ORKESTRERING_DETALJER,
-//                    innhold = POJONode(orkestrertVedtakGrunnlag),
-//                ),
-//            )
+
             if (resultatVedtak.klagevedtak) {
                 if (søknadsbarn.avslag != null) {
                     grunnlagsliste.addAll(behandling.byggGrunnlagGenereltAvslag())
@@ -311,13 +301,14 @@ class BehandlingTilVedtakMapping(
                 unikReferanse = null, // behandling.opprettUnikReferanse(referansePostfix),
                 type = resultatVedtak.vedtakstype,
                 stønadsendringListe =
-                    stønadsendringPerioder.map {
-                        val sistePeriode = it.perioder.maxBy { it.periode.fom }
-                        val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
+                    stønadsendringPerioder.groupBy { it.innkrevingstype }.map { (innkreving, it) ->
+                        val stønadsendringperioder = it.first()
+                        val sistePeriode = stønadsendringperioder.perioder.maxBy { it.periode.fom }
+                        val søknadsbarnReferanse = stønadsendringperioder.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
                             innkreving =
                                 when {
-                                    resultatVedtak.endeligVedtak -> Innkrevingstype.MED_INNKREVING
+                                    resultatVedtak.endeligVedtak -> innkreving
                                     else -> Innkrevingstype.UTEN_INNKREVING
                                 },
                             skyldner = behandling.tilSkyldner(),
@@ -327,12 +318,12 @@ class BehandlingTilVedtakMapping(
                                     else -> null
                                 },
                             kravhaver =
-                                it.barn.tilNyestePersonident()
+                                stønadsendringperioder.barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!),
                             mottaker =
                                 behandling.roller
                                     .reelMottakerEllerBidragsmottaker(
-                                        sak.hentRolleMedFnr(it.barn.ident!!),
+                                        sak.hentRolleMedFnr(stønadsendringperioder.barn.ident!!),
                                     ),
                             sak = Saksnummer(behandling.saksnummer),
                             type = behandling.stonadstype!!,
@@ -343,7 +334,7 @@ class BehandlingTilVedtakMapping(
                                 },
                             grunnlagReferanseListe =
                                 stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
-                            periodeListe = it.perioder,
+                            periodeListe = stønadsendringperioder.perioder,
                             førsteIndeksreguleringsår =
                                 grunnlagsliste.toList().finnIndeksår(
                                     søknadsbarnReferanse,
