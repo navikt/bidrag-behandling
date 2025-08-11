@@ -108,7 +108,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
                     )
                 }.toSet(),
         søknadRefId = klagedetaljer?.soknadRefId,
-        vedtakRefId = klagedetaljer?.refVedtaksid,
+        vedtakRefId = klagedetaljer?.påklagetVedtak,
         virkningstidspunkt = virkningstidspunkt,
         årsak = årsak,
         avslag = avslag,

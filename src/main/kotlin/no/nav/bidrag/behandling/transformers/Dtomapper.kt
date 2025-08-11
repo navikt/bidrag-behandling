@@ -765,7 +765,7 @@ class Dtomapper(
                 gebyr = mapGebyr(),
                 roller = roller.map { it.tilDto() }.toSet(),
                 søknadRefId = klagedetaljer?.soknadRefId,
-                vedtakRefId = klagedetaljer?.refVedtaksid,
+                vedtakRefId = klagedetaljer?.påklagetVedtak,
                 virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
@@ -802,7 +802,7 @@ class Dtomapper(
             gebyr = mapGebyr(),
             roller = roller.map { it.tilDto() }.toSet(),
             søknadRefId = klagedetaljer?.soknadRefId,
-            vedtakRefId = klagedetaljer?.refVedtaksid,
+            vedtakRefId = klagedetaljer?.påklagetVedtak,
             virkningstidspunktV2 =
                 if (tilType() == TypeBehandling.BIDRAG) {
                     søknadsbarn.sortedBy { it.fødselsdato }.map {

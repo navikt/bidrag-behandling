@@ -216,7 +216,11 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
         if (erOpphør) {
-            "Opphør"
+            if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true) {
+                beregningsdetaljer.sluttberegning.resultatVisningsnavn!!.intern
+            } else {
+                "Opphør"
+            }
         } else if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             if (klageOmgjøringDetaljer?.delAvVedtaket == false) {
                 "Manuell aldersjustering (ikke del av vedtaket)"
