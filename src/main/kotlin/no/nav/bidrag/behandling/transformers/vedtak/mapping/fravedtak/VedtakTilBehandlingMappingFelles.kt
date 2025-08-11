@@ -174,11 +174,12 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                 grunnlagListe.finnResultatFraAnnenVedtak(periode.grunnlagReferanseListe)?.let {
                     if (it.vedtaksid == null) {
                         return@let DelvedtakDto(
-                            Vedtakstype.OPPHØR,
-                            false,
-                            it.vedtaksid,
-                            true,
-                            true,
+                            type = Vedtakstype.OPPHØR,
+                            klagevedtak = false,
+                            vedtaksid = it.vedtaksid,
+                            delvedtak = true,
+                            beregnet = true,
+                            indeksår = 1,
                             perioder =
                                 listOf(
                                     ResultatBarnebidragsberegningPeriodeDto(
@@ -200,11 +201,12 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             .periodeListe
                             .find { it.periode.inneholder(periode.periode) }!!
                     DelvedtakDto(
-                        vedtak.type,
-                        it.klagevedtak,
-                        it.vedtaksid,
-                        !it.klagevedtak,
-                        it.beregnet,
+                        type = vedtak.type,
+                        klagevedtak = it.klagevedtak,
+                        vedtaksid = it.vedtaksid,
+                        delvedtak = !it.klagevedtak,
+                        beregnet = it.beregnet,
+                        indeksår = 1,
                         perioder =
                             listOf(
                                 vedtak.grunnlagListe
@@ -253,11 +255,12 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
 
     val endeligVedtak =
         DelvedtakDto(
-            Vedtakstype.KLAGE,
-            false,
-            null,
-            false,
-            false,
+            type = Vedtakstype.KLAGE,
+            klagevedtak = false,
+            vedtaksid = null,
+            delvedtak = false,
+            beregnet = false,
+            indeksår = 1,
             perioder = delvedtak.flatMap { it.perioder },
         )
     return delvedtak + listOf(endeligVedtak)

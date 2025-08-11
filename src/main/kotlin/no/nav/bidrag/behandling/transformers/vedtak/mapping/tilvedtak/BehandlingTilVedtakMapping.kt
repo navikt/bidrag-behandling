@@ -312,7 +312,7 @@ class BehandlingTilVedtakMapping(
                 type = resultatVedtak.vedtakstype,
                 stønadsendringListe =
                     stønadsendringPerioder.map {
-                        val sistePeriode = it.perioder.maxBy { it.periode.fom }.periode
+                        val sistePeriode = it.perioder.maxBy { it.periode.fom }
                         val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
                             innkreving =
@@ -345,7 +345,11 @@ class BehandlingTilVedtakMapping(
                                 stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
                             periodeListe = it.perioder,
                             førsteIndeksreguleringsår =
-                                grunnlagsliste.toList().finnIndeksår(søknadsbarnReferanse, sistePeriode),
+                                grunnlagsliste.toList().finnIndeksår(
+                                    søknadsbarnReferanse,
+                                    sistePeriode.periode,
+                                    sistePeriode.grunnlagReferanseListe,
+                                ),
                         )
                     },
                 engangsbeløpListe = emptyList(),
@@ -387,7 +391,7 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
-                        val sistePeriode = it.perioder.maxBy { it.periode.fom }.periode
+                        val sistePeriode = it.perioder.maxBy { it.periode.fom }
                         val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
@@ -413,7 +417,11 @@ class BehandlingTilVedtakMapping(
                                         .referanse,
                             periodeListe = it.perioder,
                             førsteIndeksreguleringsår =
-                                grunnlagListe.toList().finnIndeksår(søknadsbarnReferanse, sistePeriode),
+                                grunnlagListe.toList().finnIndeksår(
+                                    søknadsbarnReferanse,
+                                    sistePeriode.periode,
+                                    sistePeriode.grunnlagReferanseListe,
+                                ),
                         )
                     },
                 engangsbeløpListe =

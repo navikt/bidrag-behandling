@@ -74,7 +74,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
                     .withDayOfMonth(1)
                     .toLocalDate()
 
-            if (søknadsbarnRolle?.virkningstidspunkt!! >= beregnTilDato) {
+            if (søknadsbarnRolle != null && søknadsbarnRolle.virkningstidspunkt!! >= beregnTilDato) {
                 søknadsbarnRolle.virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
             } else {
                 beregnTilDato

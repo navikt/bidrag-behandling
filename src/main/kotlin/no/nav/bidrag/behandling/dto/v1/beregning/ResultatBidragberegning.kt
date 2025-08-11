@@ -189,9 +189,12 @@ data class DelvedtakDto(
     val vedtaksid: Int? = null,
     val delvedtak: Boolean,
     val beregnet: Boolean,
+    val indeksår: Int,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
-)
+) {
+    val endeligVedtak get() = !klagevedtak && !delvedtak
+}
 
 data class ResultatBarnebidragsberegningPeriodeDto(
     val periode: ÅrMånedsperiode,
