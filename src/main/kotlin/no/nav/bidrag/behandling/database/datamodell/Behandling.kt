@@ -82,8 +82,8 @@ open class Behandling(
     open var stonadstype: Stønadstype?,
     @Enumerated(EnumType.STRING)
     open var engangsbeloptype: Engangsbeløptype?,
-    open var vedtaksid: Long? = null,
-    open var refVedtaksid: Long? = null,
+    open var vedtaksid: Int? = null,
+    open var refVedtaksid: Int? = null,
     open var notatJournalpostId: String? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,

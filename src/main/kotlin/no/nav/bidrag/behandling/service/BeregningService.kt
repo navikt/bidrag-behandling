@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidle
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.BeregnBasertPåVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
@@ -208,7 +209,7 @@ class BeregningService(
                 aldersjusteringOrchestrator.utførAldersjustering(
                     stønadsid,
                     behandling.virkningstidspunkt!!.year,
-                    søknadsbarn.grunnlagFraVedtak!!.toInt(),
+                    BeregnBasertPåVedtak(vedtaksid = søknadsbarn.grunnlagFraVedtak!!.toInt()),
                     søknadsbarn.opphørsdato?.let { YearMonth.from(it) },
                 )
 

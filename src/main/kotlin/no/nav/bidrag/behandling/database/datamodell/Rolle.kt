@@ -103,7 +103,7 @@ open class Rolle(
     @Enumerated(EnumType.STRING)
     open var avslag: Resultatkode? = null,
     // Vedtaksid beregning av aldersjustering skal basere seg på. Dette velges manuelt av saksbehandler
-    open var grunnlagFraVedtak: Long? = null,
+    open var grunnlagFraVedtak: Int? = null,
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 

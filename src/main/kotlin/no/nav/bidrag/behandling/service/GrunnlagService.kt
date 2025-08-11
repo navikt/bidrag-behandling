@@ -403,7 +403,7 @@ class GrunnlagService(
         return this?.copy(
             nesteIndeksreguleringsår =
                 løpendePeriode?.let {
-                    hentVedtak(løpendePeriode.vedtaksid.toLong())?.let { v ->
+                    hentVedtak(løpendePeriode.vedtaksid)?.let { v ->
                         v.stønadsendringListe.find { it.kravhaver == søknadsbarn.personident }?.førsteIndeksreguleringsår
                     }
                 } ?: førsteIndeksreguleringsår,
