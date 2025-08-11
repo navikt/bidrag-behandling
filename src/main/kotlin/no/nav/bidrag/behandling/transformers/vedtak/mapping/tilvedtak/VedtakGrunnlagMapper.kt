@@ -69,7 +69,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
             val beregnTilDato =
                 klagedetaljer
                     ?.opprinneligVedtakstidspunkt!!
-                    .first()
+                    .min()
                     .plusMonths(1)
                     .withDayOfMonth(1)
                     .toLocalDate()
