@@ -133,7 +133,7 @@ class VedtakService(
     @Transactional
     fun opprettBehandlingFraVedtak(
         request: OpprettBehandlingFraVedtakRequest,
-        refVedtaksid: Long,
+        refVedtaksid: Int,
     ): OpprettBehandlingResponse {
         try {
             LOGGER.info {
@@ -161,11 +161,11 @@ class VedtakService(
 
     fun konverterVedtakTilBehandling(
         request: OpprettBehandlingFraVedtakRequest,
-        refVedtaksid: Long,
+        refVedtaksid: Int,
     ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(refVedtaksid.toInt())?.let {
+            vedtakConsumer.hentVedtak(refVedtaksid)?.let {
                 if (it.erOrkestrertVedtak) {
                     vedtakConsumer.hentVedtak(it.referertVedtaksid!!)
                 } else {
@@ -182,7 +182,7 @@ class VedtakService(
         val påklagetVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak)
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
-                vedtakId = refVedtaksid.toInt(),
+                vedtakId = refVedtaksid,
                 påklagetVedtak = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
                 søktFomDato = request.søktFomDato,
                 mottattdato = request.mottattdato,
