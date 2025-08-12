@@ -85,7 +85,7 @@ class BehandlingControllerV2(
         ],
     )
     fun vedtakLesemodus(
-        @PathVariable vedtakId: Long,
+        @PathVariable vedtakId: Int,
         @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
         val resultat =
@@ -354,7 +354,7 @@ class BehandlingControllerV2(
         @Valid
         @RequestBody(required = true)
         opprettBehandling: OpprettBehandlingFraVedtakRequest,
-        @PathVariable refVedtaksId: Long,
+        @PathVariable refVedtaksId: Int,
     ): OpprettBehandlingResponse = vedtakService.opprettBehandlingFraVedtak(opprettBehandling, refVedtaksId)
 
     @Suppress("unused")

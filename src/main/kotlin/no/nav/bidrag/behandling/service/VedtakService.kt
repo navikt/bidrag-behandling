@@ -45,10 +45,10 @@ class VedtakService(
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
     private val forsendelseService: ForsendelseService,
 ) {
-    fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Long): Behandling? {
+    fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
         try {
             LOGGER.info { "Konverterer vedtak $vedtakId for lesemodus" }
-            val vedtak = vedtakConsumer.hentVedtak(vedtakId.toInt()) ?: return null
+            val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
             tilgangskontrollService.sjekkTilgangVedtak(vedtak)
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
@@ -87,7 +87,7 @@ class VedtakService(
     @Transactional
     fun opprettBehandlingFraVedtak(
         request: OpprettBehandlingFraVedtakRequest,
-        refVedtaksid: Long,
+        refVedtaksid: Int,
     ): OpprettBehandlingResponse {
         try {
             LOGGER.info {
@@ -115,11 +115,11 @@ class VedtakService(
 
     fun konverterVedtakTilBehandling(
         request: OpprettBehandlingFraVedtakRequest,
-        refVedtaksid: Long,
+        refVedtaksid: Int,
     ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(refVedtaksid.toInt()) ?: return null
+            vedtakConsumer.hentVedtak(refVedtaksid) ?: return null
         if (vedtak.behandlingId == null) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -202,7 +202,7 @@ class VedtakService(
         val response = vedtakConsumer.fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandlingId,
-            vedtaksid = response.vedtaksid.toLong(),
+            vedtaksid = response.vedtaksid,
             request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
@@ -232,7 +232,7 @@ class VedtakService(
         val response = vedtakConsumer.fatteVedtak(fatteVedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
-            vedtaksid = response.vedtaksid.toLong(),
+            vedtaksid = response.vedtaksid,
             request?.enhet ?: behandling.behandlerEnhet,
         )
         opprettNotat(behandling)
@@ -276,7 +276,7 @@ class VedtakService(
         val response = vedtakConsumer.fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
-            vedtaksid = response.vedtaksid.toLong(),
+            vedtaksid = response.vedtaksid,
             request?.enhet ?: behandling.behandlerEnhet,
         )
 

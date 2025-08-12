@@ -81,7 +81,6 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
@@ -115,7 +114,6 @@ import org.springframework.web.client.HttpStatusCodeException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.YearMonth
 import java.util.Optional
 
@@ -170,19 +168,19 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         every { vedtakService2.finnSisteVedtaksid(any()) } returns 1
 //        every { vedtakService2.hentBeløpshistorikk(any(), any()) } returns 1
-        every { vedtakService2.hentLøpendeStønad(any()) } returns
-            StønadPeriodeDto(
-                periode = ÅrMånedsperiode(LocalDate.now().minusMonths(5).withDayOfMonth(1), null),
-                periodeid = 1,
-                stønadsid = 1,
-                vedtaksid = 1,
-                gyldigFra = LocalDateTime.now(),
-                gyldigTil = null,
-                beløp = BigDecimal("2600"),
-                valutakode = "",
-                resultatkode = "KBB",
-                periodeGjortUgyldigAvVedtaksid = null,
-            )
+//        every { vedtakService2.hentLøpendeStønad(any()) } returns
+//            StønadDto(
+//                periode = ÅrMånedsperiode(LocalDate.now().minusMonths(5).withDayOfMonth(1), null),
+//                periodeid = 1,
+//                stønadsid = 1,
+//                vedtaksid = 1,
+//                gyldigFra = LocalDateTime.now(),
+//                gyldigTil = null,
+//                beløp = BigDecimal("2600"),
+//                valutakode = "",
+//                resultatkode = "KBB",
+//                periodeGjortUgyldigAvVedtaksid = null,
+//            )
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
             OpprettVedtakResponseDto(

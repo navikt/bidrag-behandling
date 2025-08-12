@@ -35,6 +35,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -87,8 +88,10 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertAv
@@ -98,8 +101,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
-import no.nav.bidrag.transport.behandling.vedtak.response.erResultatEndringUnderGrense
-import no.nav.bidrag.transport.behandling.vedtak.response.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -148,7 +149,12 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                 .filter { !it.inntektsposter.mapNotNull { it.inntektstype }.any { ikkeBeregnForBarnetillegg.contains(it) } }
                 .map {
                     InntektsgrunnlagPeriode(
-                        periode = ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1)),
+                        periode =
+                            if (it.kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(it.type)) {
+                                ÅrMånedsperiode(it.opprinneligFom!!, it.opprinneligTom?.plusDays(1))
+                            } else {
+                                ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1))
+                            },
                         beløp = it.belop,
                         inntektsrapportering = it.type,
                         inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },
@@ -362,7 +368,8 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         val sluttberegning =
             sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
         val delberegningGrensePeriode =
-            finnDelberegningSjekkGrensePeriode(periode) ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null))
+            finnDelberegningSjekkGrensePeriode(periode, null)
+                ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), null)
         return ResultatBarnebidragsberegningPeriodeDto(
             vedtakstype = vedtakstype,
             periode = periode,

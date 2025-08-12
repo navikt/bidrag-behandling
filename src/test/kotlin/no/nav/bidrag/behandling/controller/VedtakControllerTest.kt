@@ -247,7 +247,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Test
     fun `Skal ikke fatte vedtak hvis behandling har vedtakId for særbidrag`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.vedtaksid = 1L
+        behandling.vedtaksid = 1
         behandling.husstandsmedlem = mutableSetOf()
         testdataManager.lagreBehandling(behandling)
 
@@ -279,7 +279,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Test
     fun `Skal ikke fatte vedtak hvis behandling har vedtakId`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
-        behandling.vedtaksid = 1L
+        behandling.vedtaksid = 1
         save(behandling)
         stubUtils.stubHentSak(opprettSakForBehandling(behandling))
         stubUtils.stubFatteVedtak()

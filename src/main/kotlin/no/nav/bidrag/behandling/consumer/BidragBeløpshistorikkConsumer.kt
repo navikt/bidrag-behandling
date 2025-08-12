@@ -6,6 +6,7 @@ import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.SkyldnerStønaderRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssakerResponse
@@ -62,5 +63,11 @@ class BidragBeløpshistorikkConsumer(
         postForEntity(
             bidragBeløpshistorikkUri.pathSegment("hent-stonad-historisk/").build().toUri(),
             request,
+        )
+
+    override fun hentLøpendeStønad(hentStønadRequest: HentStønadRequest): StønadDto? =
+        postForEntity(
+            bidragBeløpshistorikkUri.pathSegment("hent-stonad-historisk/").build().toUri(),
+            hentStønadRequest,
         )
 }

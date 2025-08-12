@@ -95,7 +95,7 @@ class VedtakTilBehandlingMapping(
     private val behandlingRepository: BehandlingRepository,
 ) {
     fun VedtakDto.tilBehandling(
-        vedtakId: Long,
+        vedtakId: Int,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
