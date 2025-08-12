@@ -420,9 +420,6 @@ class BoforholdServiceTest : TestContainerRunner() {
                     testdataBarn2.tilPersonDto().ident,
                 )
 
-                // så
-                entityManager.refresh(behandling)
-
                 assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
                     husstandsmedlem.size shouldBe 2
                 }
@@ -528,9 +525,6 @@ class BoforholdServiceTest : TestContainerRunner() {
                     testdataBarn2.tilPersonDto().ident,
                 )
 
-                // så
-                entityManager.refresh(behandling)
-
                 assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
                     husstandsmedlem.size shouldBe 2
                 }
@@ -619,7 +613,6 @@ class BoforholdServiceTest : TestContainerRunner() {
                 )
 
                 // så
-                entityManager.refresh(behandling)
 
                 assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
                     husstandsmedlem.size shouldBe 2
@@ -702,9 +695,6 @@ class BoforholdServiceTest : TestContainerRunner() {
                     true,
                     testdataBarn2.tilPersonDto().ident,
                 )
-
-                // så
-                entityManager.refresh(behandling)
 
                 assertSoftly(behandling.husstandsmedlem) { husstandsmedlem ->
                     husstandsmedlem.size shouldBe 1
