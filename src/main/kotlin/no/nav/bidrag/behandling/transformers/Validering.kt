@@ -654,6 +654,21 @@ fun OppdatereInntekterRequestV2.valider() {
     }
 }
 
+fun Inntekt.validerPerioder() {
+    val feilliste = mutableListOf<String>()
+
+    if (opphørsdato != null && datoFom != null && datoFom!! > opphørsdato) {
+        feilliste.add("Kan ikke sette datoFom etter opphørsdato")
+    }
+
+    if (feilliste.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig data ved oppdatering av inntekter: ${feilliste.joinToString(", ")}",
+        )
+    }
+}
+
 fun OppdatereInntektRequest.valider() {
     val feilliste = mutableListOf<String>()
     if (inntekstrapporteringerSomKreverGjelderBarn.contains(this.oppdatereManuellInntekt?.type)) {

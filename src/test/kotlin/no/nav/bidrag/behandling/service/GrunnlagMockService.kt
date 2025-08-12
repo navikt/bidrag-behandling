@@ -99,7 +99,7 @@ class GrunnlagMockService {
     @MockkBean
     lateinit var behandlingService: BehandlingService
 
-    @MockkBean
+    @MockkBean(relaxed = true)
     lateinit var grunnlagService: GrunnlagService
 
     @MockkBean

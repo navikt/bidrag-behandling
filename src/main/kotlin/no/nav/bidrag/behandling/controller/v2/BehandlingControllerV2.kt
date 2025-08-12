@@ -354,7 +354,7 @@ class BehandlingControllerV2(
         @Valid
         @RequestBody(required = true)
         opprettBehandling: OpprettBehandlingFraVedtakRequest,
-        @PathVariable refVedtaksId: Long,
+        @PathVariable refVedtaksId: Int,
     ): OpprettBehandlingResponse = vedtakService.opprettBehandlingFraVedtak(opprettBehandling, refVedtaksId)
 
     @Suppress("unused")

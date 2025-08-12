@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
@@ -425,7 +426,12 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
             InntektsrapporteringPeriode(
                 beløp = belop,
                 versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
-                periode = ÅrMånedsperiode(datoFomEllerOpprinneligFom!!, datoTom?.plusDays(1)),
+                periode =
+                    if (kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type)) {
+                        ÅrMånedsperiode(opprinneligFom!!, opprinneligTom?.plusDays(1))
+                    } else {
+                        ÅrMånedsperiode(datoFomEllerOpprinneligFom!!, datoTom?.plusDays(1))
+                    },
                 opprinneligPeriode =
                     if (kilde == Kilde.OFFENTLIG) {
                         ÅrMånedsperiode(
