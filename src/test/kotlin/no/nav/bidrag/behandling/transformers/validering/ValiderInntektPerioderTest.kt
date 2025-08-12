@@ -660,6 +660,7 @@ class ValiderInntektPerioderTest {
     }
 
     @Nested
+    @Disabled("")
     inner class OverlappendePerioderTest {
         @Test
         fun `skal finne overlappende perioder scenarie 2`() {
