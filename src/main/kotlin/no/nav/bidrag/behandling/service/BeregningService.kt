@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
@@ -56,6 +57,7 @@ import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
 import no.nav.bidrag.transport.felles.tilVisningsnavn
+import org.checkerframework.checker.units.qual.s
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -166,6 +168,7 @@ class BeregningService(
                         resultatVedtak = resultat,
                         avslaskode = søknasdbarn.avslag,
                         klagedetaljer = behandling.klagedetaljer,
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             resultat.resultatVedtakListe
                                 .find {
@@ -198,6 +201,7 @@ class BeregningService(
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
                         klagedetaljer = behandling.klagedetaljer,
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat = BeregnetBarnebidragResultat(),
                     )
                 } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
@@ -206,6 +210,7 @@ class BeregningService(
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
                         klagedetaljer = behandling.klagedetaljer,
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -221,6 +226,7 @@ class BeregningService(
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
                         klagedetaljer = behandling.klagedetaljer,
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -263,6 +269,7 @@ class BeregningService(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
                     klagedetaljer = behandling.klagedetaljer,
+                    innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         beregning.beregning.copy(
                             grunnlagListe =
@@ -292,6 +299,7 @@ class BeregningService(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
                     klagedetaljer = behandling.klagedetaljer,
+                    innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
@@ -315,6 +323,7 @@ class BeregningService(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
                     klagedetaljer = behandling.klagedetaljer,
+                    innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),

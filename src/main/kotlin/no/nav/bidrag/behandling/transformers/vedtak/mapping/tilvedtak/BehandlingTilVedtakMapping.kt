@@ -234,6 +234,7 @@ class BehandlingTilVedtakMapping(
                         resultat = resultatVedtak.resultat,
                     )
                 }
+
                 val stønadsendringPerioder =
                     listOf(resultatVedtak.resultat).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn) }
                 ResultatDelvedtak(
@@ -306,11 +307,7 @@ class BehandlingTilVedtakMapping(
                         val sistePeriode = stønadsendringperioder.perioder.maxBy { it.periode.fom }
                         val søknadsbarnReferanse = stønadsendringperioder.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
-                            innkreving =
-                                when {
-                                    resultatVedtak.endeligVedtak -> innkreving
-                                    else -> Innkrevingstype.UTEN_INNKREVING
-                                },
+                            innkreving = innkreving,
                             skyldner = behandling.tilSkyldner(),
                             omgjørVedtakId =
                                 when {

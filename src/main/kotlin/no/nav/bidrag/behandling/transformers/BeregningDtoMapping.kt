@@ -49,7 +49,6 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
-import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
@@ -95,7 +94,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrensePeriode
@@ -112,6 +110,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -212,6 +211,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
 
                 ResultatBidragsberegningBarnDto(
                     barn = resultat.barn,
+                    innkrevesFraDato = resultat.innkrevesFraDato,
                     ugyldigBeregning = resultat.ugyldigBeregning,
                     forsendelseDistribueresAutomatisk =
                         resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,
@@ -326,6 +326,8 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                             p.grunnlagsreferanseListe,
                         )
                     val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.klagevedtak }
+                    val erKlagevedtak =
+                        klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any { it.periode.fom == p.periode.fom } == true
                     val kanOpprette35c =
                         delvedtak?.beregnet == false && klagevedtak != null &&
                             !delvedtak.vedtakstype.erIndeksEllerAldersjustering &&
@@ -347,6 +349,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                             klageOmgjøringDetaljer =
                                 KlageOmgjøringDetaljer(
                                     resultatFraVedtak = resultatFraVedtak?.vedtaksid,
+                                    resultatFraVedtakVedtakstidspunkt = resultatFraVedtak?.vedtakstidspunkt,
                                     manuellAldersjustering = true,
                                 ),
                         )
@@ -366,6 +369,9 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 klageOmgjøringDetaljer =
                                     KlageOmgjøringDetaljer(
                                         resultatFraVedtak = resultatFraVedtak?.vedtaksid,
+                                        klagevedtak = erKlagevedtak,
+                                        resultatFraVedtakVedtakstidspunkt = resultatFraVedtak?.vedtakstidspunkt,
+                                        innkrevesFraDato = resultat.innkrevesFraDato,
                                         kanOpprette35c = kanOpprette35c,
                                         skalOpprette35c =
                                             resultat.klagedetaljer

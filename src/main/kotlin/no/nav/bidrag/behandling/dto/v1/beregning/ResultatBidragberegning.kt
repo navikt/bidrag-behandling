@@ -27,11 +27,15 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSje
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.felles.tilVisningsnavn
 import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
@@ -148,7 +152,8 @@ data class ResultatBidragsberegningBarn(
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
     val avslaskode: Resultatkode? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
-    val klagedetaljer: Klagedetaljer?,
+    val klagedetaljer: Klagedetaljer? = null,
+    val innkrevesFraDato: YearMonth? = null,
 )
 
 data class UgyldigBeregningDto(
@@ -175,6 +180,7 @@ data class ResultatBidragberegningDto(
 
 data class ResultatBidragsberegningBarnDto(
     val barn: ResultatRolle,
+    val innkrevesFraDato: YearMonth? = null,
     val resultatUtenBeregning: Boolean = false,
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
@@ -215,7 +221,23 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
     val vedtakstype: Vedtakstype,
     val klageOmgjøringDetaljer: KlageOmgjøringDetaljer? = null,
+    val resultatFraVedtak: ResultatFraVedtakGrunnlag? = null,
 ) {
+    val delvedtakstypeVisningsnavn
+        get(): String {
+            if (klageOmgjøringDetaljer == null) return ""
+            return when {
+                klageOmgjøringDetaljer.klagevedtak -> "Klagevedtak"
+                klageOmgjøringDetaljer.resultatFraVedtak == null &&
+                    vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
+                klageOmgjøringDetaljer.resultatFraVedtak == null &&
+                    vedtakstype == Vedtakstype.INDEKSREGULERING -> "Beregnet indeksregulering"
+                klageOmgjøringDetaljer.innkrevesFraDato != null && periode.fom >= klageOmgjøringDetaljer.innkrevesFraDato
+                -> "Vedtak (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"
+                else -> "Gjenopprettet av beløpshistorikk"
+            }
+        }
+
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
         if (erOpphør) {
@@ -259,6 +281,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
 
 data class KlageOmgjøringDetaljer(
     val resultatFraVedtak: Int? = null,
+    val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
+    val innkrevesFraDato: YearMonth? = null,
     val klagevedtak: Boolean = false,
     val manuellAldersjustering: Boolean = false,
     val delAvVedtaket: Boolean = true,

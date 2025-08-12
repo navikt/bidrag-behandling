@@ -27,6 +27,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -48,12 +49,24 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
+
+fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
+    if (innkrevingstype == Innkrevingstype.MED_INNKREVING) {
+        søknadsbarnRolle.virkningstidspunkt!!.toYearMonth()
+    } else {
+        YearMonth.from(
+            finnBeregnTilDatoBehandling(søknadsbarnRolle.opphørsdato?.toYearMonth(), søknadsbarnRolle)
+                .plusMonths(1)
+                .withDayOfMonth(1),
+        )
+    }
 
 fun Behandling.finnBeregnTilDatoBehandling(
     opphørsdato: YearMonth? = null,

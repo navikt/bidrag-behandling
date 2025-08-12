@@ -228,6 +228,8 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                             KlageOmgjøringDetaljer(
                                                 resultatFraVedtak = it.vedtaksid,
                                                 klagevedtak = it.klagevedtak,
+                                                resultatFraVedtakVedtakstidspunkt = it.vedtakstidspunkt,
+                                                innkrevesFraDato = stønadsendring.periodeListe.minOf { it.periode.fom },
                                             ),
                                     ),
                             ),
