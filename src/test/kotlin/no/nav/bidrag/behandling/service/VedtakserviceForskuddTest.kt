@@ -218,8 +218,8 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 85 grunnlag") {
-                request.grunnlagListe shouldHaveSize 85
+            withClue("Grunnlagliste skal inneholde 86 grunnlag") {
+                request.grunnlagListe shouldHaveSize 86
             }
         }
         opprettVedtakRequest.validerVedtaksdetaljer(behandling)
@@ -766,8 +766,8 @@ private fun OpprettVedtakRequestDto.validerInntektrapportering() {
             }
         }
         assertSoftly(it[3].innholdTilObjekt<InntektsrapporteringPeriode>()) {
-            periode.fom shouldBe YearMonth.parse("2022-01")
-            periode.til shouldBe null
+            periode.fom shouldBe YearMonth.parse("2023-01")
+            periode.til shouldBe YearMonth.parse("2024-01")
             inntektspostListe shouldHaveSize 0
             beløp shouldBe 60000.toBigDecimal()
             inntektsrapportering shouldBe Inntektsrapportering.BARNETILLEGG

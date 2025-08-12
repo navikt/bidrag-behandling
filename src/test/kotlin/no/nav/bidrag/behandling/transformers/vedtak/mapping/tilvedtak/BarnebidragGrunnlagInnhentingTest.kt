@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Year
 import java.time.YearMonth
 import kotlin.test.Test
 
@@ -186,7 +187,7 @@ class BarnebidragGrunnlagInnhentingTest {
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.beløpshistorikk shouldHaveSize 2
-            innhold.nesteIndeksreguleringsår shouldBe null
+            innhold.nesteIndeksreguleringsår shouldBe Year.now().value
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             val periode1 =
                 innhold.beløpshistorikk.first()
