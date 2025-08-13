@@ -60,6 +60,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
@@ -206,7 +207,8 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                         vedtaksid = it.vedtaksid,
                         delvedtak = !it.klagevedtak,
                         beregnet = it.beregnet,
-                        indeksår = 1,
+                        resultatFraVedtakVedtakstidspunkt = vedtak.vedtakstidspunkt,
+                        indeksår = vedtak.stønadsendringListe.first().førsteIndeksreguleringsår ?: 1,
                         perioder =
                             listOf(
                                 vedtak.grunnlagListe
@@ -263,7 +265,27 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
             delvedtak = false,
             beregnet = false,
             indeksår = 1,
-            perioder = delvedtak.flatMap { it.perioder },
+            perioder =
+                delvedtak
+                    .flatMap { it.perioder }
+                    .map { p ->
+                        val periodeVedtak = delvedtak.find { it.perioder.any { it.periode.inneholder(p.periode) } }
+                        p.copy(
+                            vedtakstype = periodeVedtak?.type ?: p.vedtakstype,
+                            resultatFraVedtak =
+                                ResultatFraVedtakGrunnlag(
+                                    vedtaksid = periodeVedtak?.vedtaksid,
+                                    beregnet = periodeVedtak?.beregnet ?: false,
+                                ),
+                            klageOmgjøringDetaljer =
+                                KlageOmgjøringDetaljer(
+                                    resultatFraVedtak = periodeVedtak?.vedtaksid,
+                                    klagevedtak = periodeVedtak?.klagevedtak ?: false,
+                                    resultatFraVedtakVedtakstidspunkt = periodeVedtak?.resultatFraVedtakVedtakstidspunkt,
+                                    innkrevesFraDato = stønadsendring.periodeListe.minOf { it.periode.fom },
+                                ),
+                        )
+                    },
         )
     return delvedtak + listOf(endeligVedtak)
 }

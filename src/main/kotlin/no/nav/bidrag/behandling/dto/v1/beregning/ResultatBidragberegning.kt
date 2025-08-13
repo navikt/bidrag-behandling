@@ -196,6 +196,7 @@ data class DelvedtakDto(
     val delvedtak: Boolean,
     val beregnet: Boolean,
     val indeksår: Int,
+    val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
 ) {
@@ -228,9 +229,9 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             if (klageOmgjøringDetaljer == null) return ""
             return when {
                 klageOmgjøringDetaljer.klagevedtak -> "Klagevedtak"
-                klageOmgjøringDetaljer.resultatFraVedtak == null &&
+                resultatFraVedtak?.beregnet == true &&
                     vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
-                klageOmgjøringDetaljer.resultatFraVedtak == null &&
+                resultatFraVedtak?.beregnet == true &&
                     vedtakstype == Vedtakstype.INDEKSREGULERING -> "Beregnet indeksregulering"
                 klageOmgjøringDetaljer.innkrevesFraDato != null && periode.fom >= klageOmgjøringDetaljer.innkrevesFraDato
                 -> "Vedtak (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"
