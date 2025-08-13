@@ -64,7 +64,7 @@ fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
         val beløpshistorikk = hentSisteBeløpshistorikk(tilStønadsid(søknadsbarnRolle))
         beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom } ?: YearMonth.from(LocalDate.MAX)
     } else {
-        søknadsbarnRolle.opprinneligVirkningstidspunkt
+        søknadsbarnRolle.opprinneligVirkningstidspunkt!!.toYearMonth()
     }
 
 fun Behandling.finnBeregnTilDatoBehandling(
