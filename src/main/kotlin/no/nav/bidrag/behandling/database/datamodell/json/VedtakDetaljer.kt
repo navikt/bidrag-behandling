@@ -21,6 +21,6 @@ data class VedtakDetaljer(
 data class FattetDelvedtak(
     val fattetTidspunkt: ZonedDateTime = ZonedDateTime.now(ZoneId.of("Europe/Oslo")),
     val vedtaksid: Int,
-    val vedtakstype: Vedtakstype,
+    val vedtakstype: Vedtakstype? = null,
     val referanse: String,
 )
