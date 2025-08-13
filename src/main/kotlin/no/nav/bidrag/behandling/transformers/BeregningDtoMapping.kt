@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.Underholds
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
@@ -151,7 +152,7 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                     InntektsgrunnlagPeriode(
                         periode =
                             if (it.kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(it.type)) {
-                                ÅrMånedsperiode(it.opprinneligFom!!, it.opprinneligTom?.plusDays(1))
+                                ÅrMånedsperiode(it.opprinneligFom!!, it.bestemDatoTomForOffentligInntekt()?.plusDays(1))
                             } else {
                                 ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1))
                             },
