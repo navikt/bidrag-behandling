@@ -233,6 +233,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                                 resultatFraVedtakVedtakstidspunkt = it.vedtakstidspunkt,
                                                 kanOpprette35c = !it.beregnet,
                                                 skalOpprette35c = it.opprettParagraf35c,
+                                                beregnTilDato = stønadsendring.periodeListe.minOf { it.periode.fom },
                                                 innkrevesFraDato = stønadsendring.periodeListe.minOf { it.periode.fom },
                                             ),
                                     ),
@@ -272,6 +273,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                     .flatMap { it.perioder }
                     .map { p ->
                         val periodeVedtak = delvedtak.find { it.perioder.any { it.periode.inneholder(p.periode) } }
+                        val klagevedtak = delvedtak.find { it.klagevedtak }
                         p.copy(
                             vedtakstype = periodeVedtak?.type ?: p.vedtakstype,
                             resultatFraVedtak =
@@ -288,7 +290,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                     skalOpprette35c =
                                         periodeVedtak?.perioder?.any { it.klageOmgjøringDetaljer?.skalOpprette35c == true } == true,
                                     resultatFraVedtakVedtakstidspunkt = periodeVedtak?.resultatFraVedtakVedtakstidspunkt,
-                                    innkrevesFraDato = stønadsendring.periodeListe.minOf { it.periode.fom },
+                                    beregnTilDato = klagevedtak?.perioder?.maxOf { it.periode.til ?: it.periode.fom },
                                 ),
                         )
                     },

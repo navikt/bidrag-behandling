@@ -154,6 +154,7 @@ data class ResultatBidragsberegningBarn(
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val klagedetaljer: Klagedetaljer? = null,
     val innkrevesFraDato: YearMonth? = null,
+    val beregnTilDato: YearMonth? = null,
 )
 
 data class UgyldigBeregningDto(
@@ -233,9 +234,9 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                     vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
                     vedtakstype == Vedtakstype.INDEKSREGULERING -> "Beregnet indeksregulering"
-                klageOmgjøringDetaljer.innkrevesFraDato != null && periode.fom >= klageOmgjøringDetaljer.innkrevesFraDato
+                klageOmgjøringDetaljer.beregnTilDato != null && periode.fom >= klageOmgjøringDetaljer.beregnTilDato
                 -> "Vedtak (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"
-                else -> "Gjenopprettet av beløpshistorikk"
+                else -> "Gjenopprettet beløpshistorikk"
             }
         }
 
@@ -284,6 +285,7 @@ data class KlageOmgjøringDetaljer(
     val resultatFraVedtak: Int? = null,
     val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
     val innkrevesFraDato: YearMonth? = null,
+    val beregnTilDato: YearMonth? = null,
     val klagevedtak: Boolean = false,
     val manuellAldersjustering: Boolean = false,
     val delAvVedtaket: Boolean = true,

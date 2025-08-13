@@ -168,6 +168,12 @@ class BeregningService(
                         resultatVedtak = resultat,
                         avslaskode = søknasdbarn.avslag,
                         klagedetaljer = behandling.klagedetaljer,
+                        beregnTilDato =
+                            behandling
+                                .finnBeregnTilDatoBehandling(
+                                    søknasdbarn.opphørsdato?.toYearMonth(),
+                                    søknasdbarn,
+                                )?.toYearMonth(),
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             resultat.resultatVedtakListe
