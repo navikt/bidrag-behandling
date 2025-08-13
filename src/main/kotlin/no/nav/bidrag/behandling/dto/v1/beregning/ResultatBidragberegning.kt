@@ -229,9 +229,9 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             if (klageOmgjøringDetaljer == null) return ""
             return when {
                 klageOmgjøringDetaljer.klagevedtak -> "Klagevedtak"
-                resultatFraVedtak?.beregnet == true &&
+                (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
                     vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
-                resultatFraVedtak?.beregnet == true &&
+                (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
                     vedtakstype == Vedtakstype.INDEKSREGULERING -> "Beregnet indeksregulering"
                 klageOmgjøringDetaljer.innkrevesFraDato != null && periode.fom >= klageOmgjøringDetaljer.innkrevesFraDato
                 -> "Vedtak (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"

@@ -366,12 +366,14 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 resultat.barn.ident,
                                 erEndeligVedtak = erEndeligVedtak,
                             ).copy(
+                                resultatFraVedtak = resultatFraVedtak,
                                 klageOmgjøringDetaljer =
                                     KlageOmgjøringDetaljer(
                                         resultatFraVedtak = resultatFraVedtak?.vedtaksid,
                                         klagevedtak = erKlagevedtak,
                                         resultatFraVedtakVedtakstidspunkt = resultatFraVedtak?.vedtakstidspunkt,
                                         kanOpprette35c = kanOpprette35c,
+                                        innkrevesFraDato = resultat.innkrevesFraDato,
                                         skalOpprette35c =
                                             resultat.klagedetaljer
                                                 ?.paragraf35c
