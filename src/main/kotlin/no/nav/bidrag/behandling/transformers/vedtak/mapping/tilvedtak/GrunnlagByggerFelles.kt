@@ -402,7 +402,7 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                 versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
                 periode =
                     if (kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type)) {
-                        ÅrMånedsperiode(opprinneligFom!!, bestemDatoTomForOffentligInntekt())
+                        ÅrMånedsperiode(opprinneligFom!!, bestemDatoTomForOffentligInntekt()?.plusDays(1))
                     } else {
                         ÅrMånedsperiode(datoFomEllerOpprinneligFom!!, datoTom?.plusDays(1))
                     },
