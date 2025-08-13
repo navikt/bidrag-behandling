@@ -371,7 +371,6 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                         resultatFraVedtak = resultatFraVedtak?.vedtaksid,
                                         klagevedtak = erKlagevedtak,
                                         resultatFraVedtakVedtakstidspunkt = resultatFraVedtak?.vedtakstidspunkt,
-                                        innkrevesFraDato = resultat.innkrevesFraDato,
                                         kanOpprette35c = kanOpprette35c,
                                         skalOpprette35c =
                                             resultat.klagedetaljer
