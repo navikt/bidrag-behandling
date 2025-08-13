@@ -27,6 +27,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -36,6 +37,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -187,6 +189,28 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                     ),
             )
         grunnlagListe.add(resultatFraGrunnlag)
+        val klagevedtak =
+            resultatDelvedtak
+                .find { it.klagevedtak }!!
+        val orkestrertVedtakGrunnlag =
+            VedtakOrkestreringDetaljerGrunnlag(
+                klagevedtakId = klagevedtak.vedtaksid!!,
+                innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarnRolle),
+                beregnTilDato =
+                    behandling
+                        .finnBeregnTilDatoBehandling(
+                            søknadsbarnRolle.opphørsdato?.toYearMonth(),
+                            søknadsbarnRolle,
+                        ).toYearMonth(),
+            )
+        grunnlagListe.add(
+            GrunnlagDto(
+                referanse = "${Grunnlagstype.VEDTAK_ORKESTRERING_DETALJER}_${søknadsbarn.referanse}",
+                type = Grunnlagstype.VEDTAK_ORKESTRERING_DETALJER,
+                innhold = POJONode(orkestrertVedtakGrunnlag),
+                gjelderBarnReferanse = søknadsbarn.referanse,
+            ),
+        )
         return OpprettPeriodeRequestDto(
             periode = resultatPeriode.periode,
             beløp = resultatPeriode.resultat.beløp,

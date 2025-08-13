@@ -43,6 +43,7 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
@@ -267,6 +268,7 @@ class BehandlingTilVedtakMapping(
             listOf(
                 endeligVedtak.resultat,
             ).map { it.byggStønadsendringerForEndeligVedtak(behandling, beregningBarn.barn, resultat.delvedtak) }
+
         return byggVedtakForKlage(
             behandling,
             resultat.sak,
@@ -350,6 +352,7 @@ class BehandlingTilVedtakMapping(
             val stønadsendringGrunnlagListe = mutableSetOf<GrunnlagDto>()
 
             grunnlagsliste.addAll(stønadsendringGrunnlag)
+            stønadsendringGrunnlagListe.addAll(stønadsendringGrunnlag)
 
             if (resultatVedtak.klagevedtak) {
                 if (søknadsbarn.avslag != null) {

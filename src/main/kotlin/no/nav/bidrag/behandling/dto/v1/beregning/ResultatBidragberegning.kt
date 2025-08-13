@@ -284,7 +284,6 @@ data class ResultatBarnebidragsberegningPeriodeDto(
 data class KlageOmgjøringDetaljer(
     val resultatFraVedtak: Int? = null,
     val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
-    val innkrevesFraDato: YearMonth? = null,
     val beregnTilDato: YearMonth? = null,
     val klagevedtak: Boolean = false,
     val manuellAldersjustering: Boolean = false,

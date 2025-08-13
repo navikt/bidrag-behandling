@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
 import no.nav.bidrag.behandling.transformers.tilGrunnlagsdatatypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
@@ -48,6 +49,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
@@ -78,14 +80,18 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
+import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
 
@@ -145,6 +151,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
             val erResultatUtenBeregning =
                 stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
                     type == Vedtakstype.INNKREVING
+            val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
             ResultatBidragsberegningBarnDto(
                 resultatUtenBeregning = erResultatUtenBeregning,
                 barn =
@@ -157,6 +164,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                     ),
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 delvedtak = hentDelvedtak(stønadsendring),
+                innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
                 perioder =
                     vedtakBeregning?.let {
                         val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
@@ -169,6 +177,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
 
+    val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
     val delvedtak =
         stønadsendring.periodeListe
             .mapNotNull { periode ->
@@ -231,10 +240,13 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                                 resultatFraVedtak = it.vedtaksid,
                                                 klagevedtak = it.klagevedtak,
                                                 resultatFraVedtakVedtakstidspunkt = it.vedtakstidspunkt,
-                                                kanOpprette35c = !it.beregnet,
+                                                kanOpprette35c =
+                                                    kanOpprette35C(
+                                                        periode.periode,
+                                                        orkestreringDetaljer!!.beregnTilDato,
+                                                        vedtak.type,
+                                                    ),
                                                 skalOpprette35c = it.opprettParagraf35c,
-                                                beregnTilDato = stønadsendring.periodeListe.minOf { it.periode.fom },
-                                                innkrevesFraDato = stønadsendring.periodeListe.minOf { it.periode.fom },
                                             ),
                                     ),
                             ),
@@ -273,7 +285,6 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                     .flatMap { it.perioder }
                     .map { p ->
                         val periodeVedtak = delvedtak.find { it.perioder.any { it.periode.inneholder(p.periode) } }
-                        val klagevedtak = delvedtak.find { it.klagevedtak }
                         p.copy(
                             vedtakstype = periodeVedtak?.type ?: p.vedtakstype,
                             resultatFraVedtak =
@@ -290,7 +301,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                     skalOpprette35c =
                                         periodeVedtak?.perioder?.any { it.klageOmgjøringDetaljer?.skalOpprette35c == true } == true,
                                     resultatFraVedtakVedtakstidspunkt = periodeVedtak?.resultatFraVedtakVedtakstidspunkt,
-                                    beregnTilDato = klagevedtak?.perioder?.maxOf { it.periode.til ?: it.periode.fom },
+                                    beregnTilDato = orkestreringDetaljer?.beregnTilDato,
                                 ),
                         )
                     },
