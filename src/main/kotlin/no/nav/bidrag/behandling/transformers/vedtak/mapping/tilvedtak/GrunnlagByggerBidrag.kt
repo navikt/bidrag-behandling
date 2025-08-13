@@ -148,19 +148,12 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
     behandling: Behandling,
     søknadsbarn: ResultatRolle,
     resultatDelvedtak: List<ResultatDelvedtak>,
-): List<StønadsendringPeriode> {
+): StønadsendringPeriode {
     val søknadsbarnRolle =
         behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
     val grunnlagListe = mutableSetOf<GrunnlagDto>()
-    val innkrevFraPeriode =
-        if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-            val beløpshistorikk = hentSisteBeløpshistorikk(behandling.tilStønadsid(søknadsbarnRolle))
-            beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom } ?: YearMonth.from(LocalDate.MAX)
-        } else {
-            beregnetBarnebidragPeriodeListe.minOf { it.periode.fom }
-        }
 
     fun opprettPeriode(resultatPeriode: ResultatPeriode): OpprettPeriodeRequestDto {
         val vedtak =
@@ -202,28 +195,15 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
             grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
         )
     }
-    val periodelisteUtenInnkreving =
-        beregnetBarnebidragPeriodeListe.filter { it.periode.fom < innkrevFraPeriode }.map {
-            opprettPeriode(it)
-        }
     val periodeliste =
-        beregnetBarnebidragPeriodeListe.filter { it.periode.fom >= innkrevFraPeriode }.map {
+        beregnetBarnebidragPeriodeListe.map {
             opprettPeriode(it)
         }
 
-    return listOf(
-        StønadsendringPeriode(
-            søknadsbarnRolle,
-            periodelisteUtenInnkreving,
-            grunnlagListe,
-            Innkrevingstype.UTEN_INNKREVING,
-        ),
-        StønadsendringPeriode(
-            søknadsbarnRolle,
-            periodeliste,
-            grunnlagListe,
-            Innkrevingstype.MED_INNKREVING,
-        ),
+    return StønadsendringPeriode(
+        søknadsbarnRolle,
+        periodeliste,
+        grunnlagListe,
     )
 }
 
@@ -274,6 +254,5 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
         søknadsbarn,
         periodeliste + opphørPeriode,
         grunnlagListe,
-        Innkrevingstype.UTEN_INNKREVING,
     )
 }

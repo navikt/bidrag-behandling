@@ -51,7 +51,6 @@ data class StønadsendringPeriode(
     val barn: Rolle,
     val perioder: List<OpprettPeriodeRequestDto>,
     val grunnlag: Set<GrunnlagDto>,
-    val innkrevingstype: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
 )
 
 fun Collection<BaseGrunnlag>.hentPersonMedIdent(ident: String?) = hentAllePersoner().find { it.personIdent == ident }

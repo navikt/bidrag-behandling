@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.service.hentSisteBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
@@ -18,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -58,14 +60,11 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
-    if (innkrevingstype == Innkrevingstype.MED_INNKREVING) {
-        søknadsbarnRolle.virkningstidspunkt!!.toYearMonth()
+    if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
+        val beløpshistorikk = hentSisteBeløpshistorikk(tilStønadsid(søknadsbarnRolle))
+        beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom } ?: YearMonth.from(LocalDate.MAX)
     } else {
-        YearMonth.from(
-            finnBeregnTilDatoBehandling(søknadsbarnRolle.opphørsdato?.toYearMonth(), søknadsbarnRolle)
-                .plusMonths(1)
-                .withDayOfMonth(1),
-        )
+        søknadsbarnRolle.virkningstidspunkt!!.toYearMonth()
     }
 
 fun Behandling.finnBeregnTilDatoBehandling(

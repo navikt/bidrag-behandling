@@ -289,28 +289,23 @@ class BehandlingService(
         behandlingsid: Long,
         vedtaksid: Int,
         fattetAvEnhet: String,
-        resultat: ResultatDelvedtak,
+        resultat: FattetDelvedtak,
     ) {
         behandlingRepository
             .findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }
             .let {
-                log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
+                log.info { "Oppdaterer resultat delvedtak $vedtaksid til $resultat for behandling $behandlingsid" }
 
                 val eksisterendeDetaljer = it.vedtakDetaljer ?: VedtakDetaljer()
                 it.vedtakDetaljer =
                     eksisterendeDetaljer
                         .copy(
-                            vedtaksid = vedtaksid,
                             vedtakFattetAvEnhet = fattetAvEnhet,
                             fattetDelvedtak =
                                 eksisterendeDetaljer.fattetDelvedtak +
                                     listOf(
-                                        FattetDelvedtak(
-                                            vedtaksid = vedtaksid,
-                                            beregnetFraDato = resultat.resultat.beregnetFraDato,
-                                            referanse = resultat.request?.unikReferanse ?: "ukjent",
-                                        ),
+                                        resultat,
                                     ),
                         )
             }

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.OpprettParagraf35C
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
@@ -19,10 +20,13 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilB
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatBidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatForskudd
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatDelvedtak
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
+import no.nav.bidrag.beregn.barnebidrag.utils.beregnetFraDato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
@@ -331,6 +335,7 @@ class VedtakService(
 
         val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling)
 
+        val klagevedtakErEnesteVedtak = beregning.beregning.all { it.resultatVedtak?.resultatVedtakListe?.all { it.klagevedtak } == true }
         val requestDelvedtak =
             beregning.copy(
                 delvedtak =
@@ -339,37 +344,75 @@ class VedtakService(
                         beregning.sak,
                         request?.enhet,
                         beregning.beregning.first(),
+                        klagevedtakErEnesteVedtak,
                     ),
             )
 
-        val oppdatertDelvedtak =
-            requestDelvedtak.delvedtak.map { delvedtak ->
-                // Ikke fatte vedtak for delvedtak som ikke er beregnet
-                if (!delvedtak.beregnet) return@map delvedtak
+        val response =
+            if (klagevedtakErEnesteVedtak) {
+                val klagevedtak = requestDelvedtak.delvedtak.find { it.klagevedtak }!!
+                secureLogger.info { "Fatter vedtak for klagevedtak ${klagevedtak.request}" }
+//                vedtakLocalConsumer.fatteVedtak(klagevedtak.request!!)
+                vedtakConsumer.fatteVedtak(klagevedtak.request!!)
+            } else {
+                val oppdatertDelvedtak =
+                    requestDelvedtak.delvedtak.map { delvedtak ->
+                        // Ikke fatte vedtak for delvedtak som ikke er beregnet
+                        if (!delvedtak.beregnet) return@map delvedtak
 //                delvedtak.request.validerGrunnlagsreferanser()
-                secureLogger.info { "Fatter vedtak for delvedtak ${delvedtak.request!!.type} med forespørsel ${delvedtak.request}" }
-                val response = vedtakConsumer.fatteVedtak(delvedtak.request!!)
-//                val response = vedtakLocalConsumer.fatteVedtak(delvedtak.request!!)
-                behandlingService.oppdaterDelvedtakFattetStatus(
-                    behandlingsid = behandling.id!!,
-                    vedtaksid = response.vedtaksid,
-                    fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-                    resultat = delvedtak,
-                )
-                delvedtak.copy(
-                    vedtaksid = response.vedtaksid,
-                )
+                        secureLogger.info { "Fatter vedtak for delvedtak ${delvedtak.request!!.type} med forespørsel ${delvedtak.request}" }
+                        val response = vedtakConsumer.fatteVedtak(delvedtak.request!!)
+//                        val response = vedtakLocalConsumer.fatteVedtak(delvedtak.request!!)
+                        behandlingService.oppdaterDelvedtakFattetStatus(
+                            behandlingsid = behandling.id!!,
+                            vedtaksid = response.vedtaksid,
+                            fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                            resultat =
+                                FattetDelvedtak(
+                                    vedtaksid = response.vedtaksid,
+                                    vedtakstype = delvedtak.request.type,
+                                    referanse = delvedtak.request.unikReferanse ?: "ukjent",
+                                ),
+                        )
+                        delvedtak.copy(
+                            vedtaksid = response.vedtaksid,
+                        )
+                    }
+
+                val requestEndeligVedtak =
+                    behandlingTilVedtakMapping.byggOpprettVedtakRequestBidragEndeligKlage(
+                        behandling,
+                        request?.enhet,
+                        requestDelvedtak.copy(delvedtak = oppdatertDelvedtak),
+                    )
+
+//                val response = vedtakLocalConsumer.fatteVedtak(requestEndeligVedtak)
+                val response = vedtakConsumer.fatteVedtak(requestEndeligVedtak)
+                if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
+                    val innkrevingRequest =
+                        behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
+                            behandling,
+                            request?.enhet,
+                            response.vedtaksid,
+                            requestEndeligVedtak.stønadsendringListe,
+                        )
+//                    val response = vedtakLocalConsumer.fatteVedtak(innkrevingRequest)
+                    val response = vedtakConsumer.fatteVedtak(innkrevingRequest)
+                    behandlingService.oppdaterDelvedtakFattetStatus(
+                        behandlingsid = behandling.id!!,
+                        vedtaksid = response.vedtaksid,
+                        fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                        resultat =
+                            FattetDelvedtak(
+                                vedtaksid = response.vedtaksid,
+                                vedtakstype = innkrevingRequest.type,
+                                referanse = innkrevingRequest.unikReferanse ?: "ukjent",
+                            ),
+                    )
+                }
+                response
             }
 
-        val requestEndeligVedtak =
-            behandlingTilVedtakMapping.byggOpprettVedtakRequestBidragEndeligKlage(
-                behandling,
-                request?.enhet,
-                requestDelvedtak.copy(delvedtak = oppdatertDelvedtak),
-            )
-//        val response = vedtakLocalConsumer.fatteVedtak(requestEndeligVedtak)
-        val response = vedtakConsumer.fatteVedtak(requestEndeligVedtak)
-//
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = response.vedtaksid,

@@ -60,6 +60,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestD
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.YearMonth
@@ -221,6 +222,7 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                                 virkningstidspunkt = virkningstidspunkt!!,
                                 opphørsdato = it.opphørsdato,
                                 årsak = årsak,
+                                beregnTilDato = finnBeregnTilDatoBehandling(it.opphørsdato?.toYearMonth(), it)?.toYearMonth(),
                                 avslag = (årsak == null).ifTrue { avslag },
                             ),
                         ),
