@@ -275,6 +275,7 @@ class BehandlingTilVedtakMapping(
             stønadsendringPerioder,
             beregningBarn.barn,
             behandling.innkrevingstype!!,
+            Beslutningstype.ENDRING,
         )
     }
 
@@ -317,6 +318,7 @@ class BehandlingTilVedtakMapping(
                             stønadsendringPerioder,
                             beregningBarn.barn,
                             innkreving,
+                            if (klagevedtakErEnesteVedtak) Beslutningstype.ENDRING else Beslutningstype.DELVEDTAK,
                         ),
                     resultat = resultatVedtak.resultat,
                 )
@@ -331,6 +333,7 @@ class BehandlingTilVedtakMapping(
         stønadsendringPerioder: List<StønadsendringPeriode> = emptyList(),
         barn: ResultatRolle,
         innkreving: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
+        beslutningstype: Beslutningstype = Beslutningstype.ENDRING,
     ): OpprettVedtakRequestDto {
         mapper.run {
             val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
@@ -400,11 +403,7 @@ class BehandlingTilVedtakMapping(
                                     ),
                             sak = Saksnummer(behandling.saksnummer),
                             type = behandling.stonadstype!!,
-                            beslutning =
-                                when {
-                                    resultatVedtak.endeligVedtak -> Beslutningstype.ENDRING
-                                    else -> Beslutningstype.DELVEDTAK
-                                },
+                            beslutning = beslutningstype,
                             grunnlagReferanseListe =
                                 stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
                             periodeListe = it.perioder,
