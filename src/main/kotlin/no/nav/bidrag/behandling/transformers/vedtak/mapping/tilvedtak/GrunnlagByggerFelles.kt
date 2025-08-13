@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
@@ -401,7 +402,7 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                 versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
                 periode =
                     if (kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type)) {
-                        ÅrMånedsperiode(opprinneligFom!!, opprinneligTom?.plusDays(1))
+                        ÅrMånedsperiode(opprinneligFom!!, bestemDatoTomForOffentligInntekt())
                     } else {
                         ÅrMånedsperiode(datoFomEllerOpprinneligFom!!, datoTom?.plusDays(1))
                     },
