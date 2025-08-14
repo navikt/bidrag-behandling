@@ -95,6 +95,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrensePeriode
@@ -329,12 +330,6 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                     val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.klagevedtak }
                     val erKlagevedtak =
                         klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any { it.periode.fom == p.periode.fom } == true
-//                    val kanOpprette35c =
-//                        delvedtak?.beregnet == false && klagevedtak != null &&
-//                            !delvedtak.vedtakstype.erIndeksEllerAldersjustering &&
-//                            p.periode.fom.isAfter(
-//                                klagevedtak.resultat.beregnetBarnebidragPeriodeListe.minOf { it.periode.fom },
-//                            )
 
                     val aldersjusteringsdetaljer =
                         delvedtak
@@ -604,7 +599,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     BidragPeriodeBeregningsdetaljer(
                         indeksreguleringDetaljer =
                             IndeksreguleringDetaljer(
-                                finnIndeksreguleringSluttberegning(),
+                                finnIndeksreguleringSluttberegning(grunnlagsreferanseListe),
                                 sjablonIndeksfaktor?.innhold?.verdi ?: BigDecimal.ZERO,
                             ),
                     )
@@ -837,11 +832,11 @@ fun List<GrunnlagDto>.finnAldersjusteringDetaljerReferanse(): String? {
     return grunnlag.referanse
 }
 
-fun List<GrunnlagDto>.finnIndeksreguleringSluttberegning(): SluttberegningIndeksregulering? {
+fun List<GrunnlagDto>.finnIndeksreguleringSluttberegning(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+): SluttberegningIndeksregulering? {
     val grunnlag =
-        find {
-            it.type == Grunnlagstype.SLUTTBEREGNING_INDEKSREGULERING
-        } ?: return null
+        filtrerBasertPåEgenReferanser(Grunnlagstype.SLUTTBEREGNING_INDEKSREGULERING, grunnlagsreferanseListe).firstOrNull() ?: return null
     return grunnlag.innholdTilObjekt<SluttberegningIndeksregulering>()
 }
 

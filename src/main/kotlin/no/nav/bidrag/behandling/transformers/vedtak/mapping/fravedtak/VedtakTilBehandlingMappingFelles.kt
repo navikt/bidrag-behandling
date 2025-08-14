@@ -248,6 +248,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                             KlageOmgjøringDetaljer(
                                                 resultatFraVedtak = it.vedtaksid,
                                                 klagevedtak = it.klagevedtak,
+                                                beregnTilDato = orkestreringDetaljer?.beregnTilDato,
                                                 resultatFraVedtakVedtakstidspunkt = it.vedtakstidspunkt,
                                                 kanOpprette35c =
                                                     orkestreringDetaljer?.let {
