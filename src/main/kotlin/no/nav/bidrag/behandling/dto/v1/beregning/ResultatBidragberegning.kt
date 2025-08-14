@@ -271,7 +271,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
 
             ugyldigBeregning != null ->
                 when (ugyldigBeregning.type) {
-                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG -> "Lavere enn løpende bidrag"
+                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
+                    -> "Lavere enn løpende bidrag"
                     UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD -> "Ingen løpende forskudd"
                 }
 
