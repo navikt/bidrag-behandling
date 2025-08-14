@@ -219,12 +219,12 @@ class BehandlingTilVedtakMapping(
                                 ),
                             ),
                     )
-                val grunnlagliste =
+                val stønadsendringGrunnlag =
                     behandling
                         .byggGrunnlagVirkningsttidspunkt()
                         .map(GrunnlagDto::tilOpprettRequestDto) +
-                        behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
-                        listOf(resultatFraGrunnlag)
+                        behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto)
+                val grunnlagliste = stønadsendringGrunnlag + listOf(resultatFraGrunnlag)
                 behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                     type = Vedtakstype.INNKREVING,
                     grunnlagListe = grunnlagliste,
@@ -235,6 +235,7 @@ class BehandlingTilVedtakMapping(
                             val innkrevFraDato = behandling.finnInnkrevesFraDato(søknadsbarn)
                             it.copy(
                                 innkreving = Innkrevingstype.MED_INNKREVING,
+                                grunnlagReferanseListe = stønadsendringGrunnlag.map(OpprettGrunnlagRequestDto::referanse),
                                 periodeListe =
                                     it.periodeListe.filter { it.periode.fom >= innkrevFraDato }.map {
                                         it.copy(
