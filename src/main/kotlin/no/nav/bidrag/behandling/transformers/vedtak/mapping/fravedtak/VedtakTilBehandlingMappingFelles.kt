@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 
+import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -18,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
@@ -81,6 +83,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
+import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
@@ -174,6 +177,12 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
         },
     )
 
+fun VedtakDto.erVedtakUtenBeregning() =
+    stønadsendringListe.all {
+        it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
+            erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+    }
+
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
 
@@ -241,11 +250,13 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                                 klagevedtak = it.klagevedtak,
                                                 resultatFraVedtakVedtakstidspunkt = it.vedtakstidspunkt,
                                                 kanOpprette35c =
-                                                    kanOpprette35C(
-                                                        periode.periode,
-                                                        orkestreringDetaljer!!.beregnTilDato,
-                                                        vedtak.type,
-                                                    ),
+                                                    orkestreringDetaljer?.let {
+                                                        kanOpprette35C(
+                                                            periode.periode,
+                                                            orkestreringDetaljer.beregnTilDato,
+                                                            vedtak.type,
+                                                        )
+                                                    } ?: false,
                                                 skalOpprette35c = it.opprettParagraf35c,
                                             ),
                                     ),
@@ -325,17 +336,15 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
             ),
         )
     } else if (erResultatUtenBeregning) {
-        stønadsendring.finnSistePeriode()?.let {
-            listOf(
-                ResultatBarnebidragsberegningPeriodeDto(
-                    periode = it.periode,
-                    vedtakstype = type,
-                    resultatKode = Resultatkode.fraKode(it.resultatkode),
-                    beregnetBidrag = it.beløp ?: BigDecimal.ZERO,
-                    faktiskBidrag = it.beløp ?: BigDecimal.ZERO,
-                ),
+        stønadsendring.periodeListe.map {
+            ResultatBarnebidragsberegningPeriodeDto(
+                periode = it.periode,
+                vedtakstype = type,
+                resultatKode = Resultatkode.fraKode(it.resultatkode),
+                beregnetBidrag = it.beløp ?: BigDecimal.ZERO,
+                faktiskBidrag = it.beløp ?: BigDecimal.ZERO,
             )
-        } ?: emptyList()
+        }
     } else {
         stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
             grunnlagsliste.byggResultatBidragsberegning(
@@ -370,6 +379,7 @@ internal fun List<GrunnlagDto>.mapGrunnlag(
     ).toMutableSet()
 
 internal fun List<GrunnlagDto>.mapRoller(
+    vedtak: VedtakDto,
     behandling: Behandling,
     lesemodus: Boolean,
     virkningstidspunkt: LocalDate,
@@ -380,6 +390,66 @@ internal fun List<GrunnlagDto>.mapRoller(
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
             rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunktGrunnlag, aldersjustering, virkningstidspunkt)
         }.toMutableSet()
+        .ifEmpty {
+            val roller = mutableSetOf<Rolle>()
+            val bpIdent = vedtak.stønadsendringListe.firstOrNull()?.skyldner ?: vedtak.engangsbeløpListe.first().skyldner
+            val bpGrunnlag =
+                GrunnlagDto(
+                    type = Grunnlagstype.PERSON_BIDRAGSPLIKTIG,
+                    referanse = "",
+                    innhold =
+                        POJONode(
+                            Person(
+                                ident = bpIdent,
+                                fødselsdato = hentPersonFødselsdato(bpIdent.verdi)!!,
+                            ),
+                        ),
+                )
+            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, virkningstidspunkt))
+
+            val bmIdent = vedtak.stønadsendringListe.firstOrNull()?.mottaker ?: vedtak.engangsbeløpListe.first().mottaker
+            val bmGrunnlag =
+                GrunnlagDto(
+                    type = Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
+                    referanse = "",
+                    innhold =
+                        POJONode(
+                            Person(
+                                ident = bmIdent,
+                                fødselsdato = hentPersonFødselsdato(bmIdent.verdi)!!,
+                            ),
+                        ),
+                )
+            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, virkningstidspunkt))
+            roller.addAll(
+                vedtak.stønadsendringListe.mapIndexed { i, it ->
+                    val baIdent = it.kravhaver
+                    val baGrunnlag =
+                        GrunnlagDto(
+                            type = Grunnlagstype.PERSON_SØKNADSBARN,
+                            referanse = "",
+                            innhold =
+                                POJONode(
+                                    Person(
+                                        ident = baIdent,
+                                        fødselsdato = hentPersonFødselsdato(baIdent.verdi)!!,
+                                    ),
+                                ),
+                        )
+
+                    val virkningstidspunktGrunnlag = hentVirkningstidspunkt(baGrunnlag.referanse)
+                    val aldersjustering = hentAldersjusteringDetaljerForBarn(baGrunnlag.referanse)
+                    baGrunnlag.tilRolle(
+                        behandling,
+                        if (lesemodus) (i + 2).toLong() else null,
+                        virkningstidspunktGrunnlag,
+                        aldersjustering,
+                        virkningstidspunkt,
+                    )
+                },
+            )
+            roller
+        }
 
 internal fun VedtakDto.oppdaterDirekteOppgjørBeløp(
     behandling: Behandling,
@@ -624,23 +694,25 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         endreBostatus = null,
                     ),
                 )
-            listOf(
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
-                    emptyList<RelatertPersonGrunnlagDto>(),
-                    behandling.bidragspliktig!!.ident!!,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN),
-                    lesemodus,
-                ),
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
-                    andreVoksneIHusstandPeriodisert,
-                    behandling.bidragspliktig!!.ident!!,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                    lesemodus,
-                    true,
-                ),
-            )
+            behandling.bidragspliktig?.let {
+                listOf(
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        emptyList<RelatertPersonGrunnlagDto>(),
+                        it.ident!!,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN),
+                        lesemodus,
+                    ),
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                        andreVoksneIHusstandPeriodisert,
+                        it.ident!!,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                        lesemodus,
+                        true,
+                    ),
+                )
+            }
         } else {
             it.groupBy { it.partPersonId }.flatMap { (gjelderRolle, grunnlag) ->
 

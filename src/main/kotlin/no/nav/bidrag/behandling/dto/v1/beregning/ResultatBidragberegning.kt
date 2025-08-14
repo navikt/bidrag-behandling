@@ -38,6 +38,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlin.text.get
+import kotlin.text.intern
 
 val YearMonth.formatterDatoFom get() = this.atDay(1).format(DateTimeFormatter.ofPattern("MM.YYYY"))
 val YearMonth.formatterDatoTom get() = this.atEndOfMonth().format(DateTimeFormatter.ofPattern("MM.YYYY"))
@@ -242,42 +244,38 @@ data class ResultatBarnebidragsberegningPeriodeDto(
 
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
-        if (erOpphør) {
-            if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true) {
-                beregningsdetaljer.sluttberegning.resultatVisningsnavn!!.intern
-            } else {
-                "Opphør"
-            }
-        } else if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            if (klageOmgjøringDetaljer?.delAvVedtaket == false) {
-                "Manuell aldersjustering (ikke del av vedtaket)"
-            } else if (endeligVedtak) {
-                "Aldersjustering"
-            } else if (aldersjusteringDetaljer?.aldersjustert == false) {
-                aldersjusteringDetaljer.begrunnelserVisningsnavn
-            } else {
-                beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
-                    ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
-            }
-        } else if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
-            "Indeksregulering"
-        } else if (resultatKode?.erDirekteAvslag() == true ||
-            resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
-            resultatKode == Resultatkode.INNVILGET_VEDTAK
-        ) {
-            resultatKode.visningsnavnIntern(vedtakstype)
-        } else if (ugyldigBeregning != null) {
-            when (ugyldigBeregning.type) {
-                UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
-                -> "Lavere enn løpende bidrag"
-                UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
-                -> "Ingen løpende forskudd"
-            }
-        } else {
-            beregningsdetaljer
-                ?.sluttberegning
-                ?.resultatVisningsnavn
-                ?.intern
+        when {
+            vedtakstype == Vedtakstype.INNKREVING -> "Innkreving"
+            erOpphør ->
+                if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true) {
+                    beregningsdetaljer.sluttberegning.resultatVisningsnavn!!.intern
+                } else {
+                    "Opphør"
+                }
+
+            vedtakstype == Vedtakstype.ALDERSJUSTERING ->
+                when {
+                    klageOmgjøringDetaljer?.delAvVedtaket == false -> "Manuell aldersjustering (ikke del av vedtaket)"
+                    endeligVedtak -> "Aldersjustering"
+                    aldersjusteringDetaljer?.aldersjustert == false -> aldersjusteringDetaljer.begrunnelserVisningsnavn
+                    else ->
+                        beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
+                            ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
+                }
+
+            vedtakstype == Vedtakstype.INDEKSREGULERING -> "Indeksregulering"
+
+            resultatKode?.erDirekteAvslag() == true ||
+                resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
+                resultatKode == Resultatkode.INNVILGET_VEDTAK -> resultatKode.visningsnavnIntern(vedtakstype)
+
+            ugyldigBeregning != null ->
+                when (ugyldigBeregning.type) {
+                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG -> "Lavere enn løpende bidrag"
+                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD -> "Ingen løpende forskudd"
+                }
+
+            else -> beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern
         }
 }
 

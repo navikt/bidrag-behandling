@@ -295,7 +295,9 @@ class BehandlingService(
             .findBehandlingById(behandlingsid)
             .orElseThrow { behandlingNotFoundException(behandlingsid) }
             .let {
-                log.info { "Oppdaterer resultat delvedtak $vedtaksid til $resultat for behandling $behandlingsid" }
+                log.info {
+                    "Oppdaterer behandling $behandlingsid med fattet delvedtak $vedtaksid - $resultat"
+                }
 
                 val eksisterendeDetaljer = it.vedtakDetaljer ?: VedtakDetaljer()
                 it.vedtakDetaljer =

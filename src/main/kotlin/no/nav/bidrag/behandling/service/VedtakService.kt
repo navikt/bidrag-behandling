@@ -20,9 +20,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilB
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatBidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatForskudd
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatDelvedtak
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
-import no.nav.bidrag.beregn.barnebidrag.utils.beregnetFraDato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
@@ -93,11 +91,12 @@ class VedtakService(
     }
 
     private fun hentOrkestrertVedtak(vedtakId: Int): OrkestrertVedtak? {
-        var erOrkestrertVedtak = false
         val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
-        erOrkestrertVedtak = vedtak.erOrkestrertVedtak
+        val erOrkestrertVedtak = vedtak.erOrkestrertVedtak && vedtak.type != Vedtakstype.INNKREVING
         val referertVedtak =
-            if (vedtak.harResultatFraAnnenVedtak && (vedtak.erOrkestrertVedtak || vedtak.erDelvedtak)) {
+            if (vedtak.harResultatFraAnnenVedtak && (vedtak.erOrkestrertVedtak || vedtak.erDelvedtak) &&
+                vedtak.type != Vedtakstype.INNKREVING
+            ) {
                 hentVedtak(vedtak.referertVedtaksid!!)
             } else {
                 null
@@ -335,7 +334,14 @@ class VedtakService(
 
         val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling)
 
-        val klagevedtakErEnesteVedtak = beregning.beregning.all { it.resultatVedtak?.resultatVedtakListe?.all { it.klagevedtak } == true }
+        val klagevedtakErEnesteVedtak =
+            beregning.beregning.all {
+                it.resultatVedtak
+                    ?.resultatVedtakListe
+                    ?.filter { !it.endeligVedtak }
+                    ?.all { it.klagevedtak } ==
+                    true
+            }
         val requestDelvedtak =
             beregning.copy(
                 delvedtak =

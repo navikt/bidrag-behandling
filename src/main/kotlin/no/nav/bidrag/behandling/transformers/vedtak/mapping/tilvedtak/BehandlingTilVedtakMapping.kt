@@ -64,6 +64,7 @@ import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.YearMonth
+import kotlin.text.compareTo
 
 data class ResultatDelvedtak(
     val vedtaksid: Int?,
@@ -233,15 +234,25 @@ class BehandlingTilVedtakMapping(
                         stønadsendringListe.map {
                             val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.kravhaver.verdi }!!
                             val innkrevFraDato = behandling.finnInnkrevesFraDato(søknadsbarn)
+
                             it.copy(
                                 innkreving = Innkrevingstype.MED_INNKREVING,
                                 grunnlagReferanseListe = stønadsendringGrunnlag.map(OpprettGrunnlagRequestDto::referanse),
                                 periodeListe =
-                                    it.periodeListe.filter { it.periode.fom >= innkrevFraDato }.map {
-                                        it.copy(
-                                            grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
-                                        )
-                                    },
+                                    it.periodeListe
+                                        .filter { p -> p.periode.til == null || p.periode.til!! >= innkrevFraDato }
+                                        .map { periode ->
+                                            if (periode.periode.fom < innkrevFraDato) {
+                                                periode.copy(
+                                                    periode = periode.periode.copy(fom = innkrevFraDato!!),
+                                                    grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
+                                                )
+                                            } else {
+                                                periode.copy(
+                                                    grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
+                                                )
+                                            }
+                                        },
                             )
                         },
                 )

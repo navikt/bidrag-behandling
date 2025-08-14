@@ -165,7 +165,7 @@ class VedtakTilBehandlingMapping(
                 soknadsid = søknadId ?: this.søknadId,
             )
 
-        behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus, virkningstidspunkt)
+        behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, virkningstidspunkt)
 
         behandling.klagedetaljer =
             Klagedetaljer(
@@ -207,8 +207,7 @@ class VedtakTilBehandlingMapping(
                 )
             behandling.grunnlagslisteFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
-            behandling.erVedtakUtenBeregning =
-                stønadsendringListe.all { it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" }
+            behandling.erVedtakUtenBeregning = erVedtakUtenBeregning()
         }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {
