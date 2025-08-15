@@ -442,7 +442,7 @@ fun kanOpprette35C(
     beregnTilDato: YearMonth,
     vedtakstype: Vedtakstype,
 ) = !vedtakstype.erIndeksEllerAldersjustering &&
-    periode.fom.isAfter(beregnTilDato)
+    periode.fom >= beregnTilDato
 
 fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int? {
     val delberegningPrivatAvtale =
