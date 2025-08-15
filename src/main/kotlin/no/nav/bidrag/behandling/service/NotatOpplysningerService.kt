@@ -797,10 +797,10 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
     NotatBehandlingDetaljerDto(
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
-        opprinneligVedtakstype = opprinneligVedtakstype,
+        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
         søktAv = soknadFra,
         mottattDato = mottattdato,
-        klageMottattDato = klageMottattdato,
+        klageMottattDato = klagedetaljer?.klageMottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         avslag = avslag,

@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -52,6 +53,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -87,6 +89,9 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @MockkBean
     lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
+
+    @MockkBean
+    lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
 
     @MockkBean
     lateinit var notatOpplysningerService: NotatOpplysningerService
@@ -178,6 +183,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 behandlingService,
                 vedtakGrunnlagMapper,
                 aldersjusteringOrchestrator,
+                bidragsberegningOrkestrator,
             )
         val dtomapper =
             Dtomapper(
@@ -322,7 +328,6 @@ class VedtakserviceTest : TestContainerRunner() {
             "Boforhold",
             NotatGrunnlag.NotatType.BOFORHOLD,
         )
-        behandling.klageMottattdato = LocalDate.now()
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.søktFomDato = LocalDate.parse("2023-03-01")
@@ -336,7 +341,10 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null))
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!)
-        behandling.refVedtaksid = null
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                klageMottattdato = LocalDate.now(),
+            )
 
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)

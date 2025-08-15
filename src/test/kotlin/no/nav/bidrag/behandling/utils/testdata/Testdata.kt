@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -260,13 +261,10 @@ fun oppretteBehandling(
 ): Behandling =
     Behandling(
         vedtakstype,
-        null,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
-        klageMottattdato = null,
         SAKSNUMMER,
         SOKNAD_ID.toLong(),
-        null,
         "4806",
         "Z9999",
         "Navn Navnesen",
@@ -277,6 +275,7 @@ fun oppretteBehandling(
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
         virkningstidspunkt = virkningstidspunkt,
         id = id,
+        klagedetaljer = Klagedetaljer(),
     )
 
 fun opprettInntekter(
@@ -1276,8 +1275,6 @@ fun oppretteTestbehandling(
 
         else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
     }
-
-    behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
 
     val parterIBehandlingen = hashMapOf(1 to testdataBM, 2 to testdataBarn1, 3 to testdataBarn2)
 

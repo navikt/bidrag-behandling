@@ -124,9 +124,6 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettJournalpost("12333")
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         save(behandling)
 
         stubUtils.stubHentSak(opprettSakForBehandling(behandling))
@@ -203,9 +200,6 @@ class VedtakControllerTest : KontrollerTestRunner() {
         stubUtils.stubOpprettJournalpost("12333")
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-        behandling.utgiftsbegrunnelseKunINotat = "Utgifter kun i notat"
-        behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
         behandling.husstandsmedlem = mutableSetOf()
         testdataManager.lagreBehandling(behandling)
 
@@ -331,7 +325,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Test
     fun `Skal ikke fatte vedtak hvis nyeste opplysninger ikke er aktivert for klage`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, Vedtakstype.KLAGE)
-        behandling.refVedtaksid = 1
+        behandling.klagedetaljer?.refVedtaksid = 1
         behandlingRepository.save(behandling)
         val grunnlag =
             opprettAlleAktiveGrunnlagFraFil(

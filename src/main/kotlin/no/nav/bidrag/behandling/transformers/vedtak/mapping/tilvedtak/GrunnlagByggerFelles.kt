@@ -36,7 +36,9 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -52,12 +54,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilInnholdMedReferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.YearMonth
@@ -69,8 +73,10 @@ val grunnlagsreferanse_utgift_direkte_betalt = "utgift_direkte_betalt"
 val grunnlagsreferanse_utgift_maks_godkjent_beløp = "utgift_maks_godkjent_beløp"
 val grunnlagsreferanse_løpende_bidrag = "løpende_bidrag_bidragspliktig"
 
-fun opprettGrunnlagsreferanseVirkningstidspunkt(søknadsbarn: Rolle? = null) =
-    "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" } ?: ""}"
+fun opprettGrunnlagsreferanseVirkningstidspunkt(
+    søknadsbarn: Rolle? = null,
+    referanse: String? = null,
+) = "virkningstidspunkt${søknadsbarn?.let { "_${it.tilGrunnlagsreferanse()}" } ?: referanse?.let {"_$referanse"} ?: ""}"
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
@@ -142,13 +148,13 @@ fun Behandling.byggGrunnlagSøknad() =
             innhold =
                 POJONode(
                     SøknadGrunnlag(
-                        klageMottattDato = klageMottattdato,
+                        klageMottattDato = klagedetaljer?.klageMottattdato,
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
                         begrensetRevurdering = søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING,
                         egetTiltak = listOf(BisysSøknadstype.BEGRENSET_REVURDERING, BisysSøknadstype.EGET_TILTAK).contains(søknadstype),
-                        opprinneligVedtakstype = opprinneligVedtakstype,
+                        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
                     ),
                 ),
         ),
@@ -180,6 +186,28 @@ fun Behandling.byggGrunnlagManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto
             )
         }.toSet()
 
+fun byggGrunnlagVirkningstidspunktResultatvedtak(
+    resultatVedtak: ResultatVedtak,
+    søknadsbarnreferanse: String,
+): GrunnlagDto =
+    GrunnlagDto(
+        referanse = opprettGrunnlagsreferanseVirkningstidspunkt(null, søknadsbarnreferanse),
+        type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+        gjelderBarnReferanse = søknadsbarnreferanse,
+        innhold =
+            POJONode(
+                VirkningstidspunktGrunnlag(
+                    virkningstidspunkt =
+                        resultatVedtak.resultat.beregnetBarnebidragPeriodeListe
+                            .minOf { it.periode.fom }
+                            .atDay(1),
+                    opphørsdato = null,
+                    årsak = VirkningstidspunktÅrsakstype.AUTOMATISK_JUSTERING,
+                    avslag = null,
+                ),
+            ),
+    )
+
 fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<GrunnlagDto> = emptyList()) =
     if (tilType() == TypeBehandling.BIDRAG) {
         søknadsbarn
@@ -195,6 +223,7 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                                 virkningstidspunkt = virkningstidspunkt!!,
                                 opphørsdato = it.opphørsdato,
                                 årsak = årsak,
+                                beregnTilDato = finnBeregnTilDatoBehandling(it.opphørsdato?.toYearMonth(), it)?.toYearMonth(),
                                 avslag = (årsak == null).ifTrue { avslag },
                             ),
                         ),
@@ -290,23 +319,28 @@ fun Behandling.tilSkyldner() =
                 ?: rolleManglerIdent(Rolletype.BIDRAGSPLIKTIG, id!!)
     }
 
-fun Behandling.tilBehandlingreferanseListe() =
+fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
     listOfNotNull(
         OpprettBehandlingsreferanseRequestDto(
             kilde = BehandlingsrefKilde.BEHANDLING_ID,
             referanse = id.toString(),
         ),
-        OpprettBehandlingsreferanseRequestDto(
-            kilde = BehandlingsrefKilde.BISYS_SØKNAD,
-            referanse = soknadsid.toString(),
-        ),
-        soknadRefId?.let {
+        klagedetaljer?.soknadRefId?.let {
             OpprettBehandlingsreferanseRequestDto(
                 kilde = BehandlingsrefKilde.BISYS_KLAGE_REF_SØKNAD,
                 referanse = it.toString(),
             )
         },
     )
+
+fun Behandling.tilBehandlingreferanseListe() =
+    tilBehandlingreferanseListeUtenSøknad() +
+        listOfNotNull(
+            OpprettBehandlingsreferanseRequestDto(
+                kilde = BehandlingsrefKilde.BISYS_SØKNAD,
+                referanse = soknadsid.toString(),
+            ),
+        )
 
 internal fun Inntekt.tilGrunnlagreferanse(
     gjelder: GrunnlagDto,

@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -295,23 +296,22 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     if (oppdaterBegrunnelseVurderingAvSkolegang != null && !behandling.kanSkriveVurderingAvSkolegangAlle()) {
         feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
     }
-
     val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
     if (gjelderBarn != null) {
         if (gjelderBarn.opphørsdato != null && virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
             feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
         }
 
-        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
-            avslag == null &&
-            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
-        ) {
-            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
-        }
+//        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
+//            avslag == null &&
+//            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
+//        ) {
+//            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+//        }
     } else {
-        if (behandling.opprinneligVirkningstidspunkt != null &&
+        if (behandling.klagedetaljer?.opprinneligVirkningstidspunkt != null &&
             avslag == null &&
-            virkningstidspunkt?.isAfter(behandling.opprinneligVirkningstidspunkt) == true
+            virkningstidspunkt?.isAfter(behandling.klagedetaljer!!.opprinneligVirkningstidspunkt) == true
         ) {
             feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
         }

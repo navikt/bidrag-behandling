@@ -6,6 +6,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.datatype.jsr310.deser.YearMonthDeserializer
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import io.swagger.v3.oas.annotations.info.Info
+import io.swagger.v3.oas.models.Components
+import io.swagger.v3.oas.models.OpenAPI
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.commons.security.api.EnableSecurityConfiguration
 import no.nav.bidrag.commons.service.AppContext
@@ -31,6 +34,18 @@ import java.time.temporal.ChronoUnit
 @EnableRetry
 @Import(RestOperationsAzure::class, AppContext::class, BeregnForskuddApi::class)
 class RestConfig {
+    @Bean
+    fun customOpenAPI(): OpenAPI =
+        OpenAPI()
+            .components(Components())
+            .info(
+                io.swagger.v3.oas.models.info
+                    .Info()
+                    .title("Bidrag Behandling API")
+                    .version("1.0")
+                    .description("API documentation for bidrag-behandling"),
+            )
+
     @Bean
     fun clientRequestObservationConvention() = DefaultClientRequestObservationConvention()
 

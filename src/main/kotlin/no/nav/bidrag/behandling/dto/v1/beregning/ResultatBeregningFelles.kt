@@ -3,6 +3,7 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
 import net.minidev.json.annotate.JsonIgnore
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -14,4 +15,5 @@ data class ResultatRolle(
     val innbetaltBeløp: BigDecimal? = null,
     @JsonIgnore
     val referanse: String,
+    val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
 )

@@ -23,13 +23,13 @@ val Behandling.egetBarnErEnesteVoksenIHusstanden get() =
     }
 
 data class BoforholdDtoV2(
-    val husstandsmedlem: Set<HusstandsmedlemDtoV2>,
+    val husstandsmedlem: Set<HusstandsmedlemDtoV2> = emptySet(),
     val andreVoksneIHusstanden: Set<BostatusperiodeDto> = emptySet(),
-    val sivilstand: Set<SivilstandDto>,
+    val sivilstand: Set<SivilstandDto> = emptySet(),
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
     val begrunnelse: BegrunnelseDto,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
-    val valideringsfeil: BoforholdValideringsfeil,
+    val valideringsfeil: BoforholdValideringsfeil = BoforholdValideringsfeil(),
     @Schema(
         description =
             "Er sann hvis status på andre voksne i husstanden er 'BOR_IKKE_MED_ANDRE_VOKSNE'," +

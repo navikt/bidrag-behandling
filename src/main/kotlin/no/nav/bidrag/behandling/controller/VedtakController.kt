@@ -2,8 +2,14 @@ package no.nav.bidrag.behandling.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.controller.v2.BehandlingRestControllerV2
+import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
+import no.nav.bidrag.behandling.dto.v2.validering.FatteVedtakFeil
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.service.VedtakService
 import org.springframework.web.bind.annotation.PathVariable
@@ -21,6 +27,22 @@ class VedtakController(
     @Operation(
         description = "Fatte vedtak for behandling",
         security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Fatte vedtak feilet",
+                content = [
+                    Content(
+                        schema = Schema(implementation = FatteVedtakFeil::class),
+                    ),
+                ],
+            ),
+        ],
     )
     fun fatteVedtak(
         @PathVariable behandlingsid: Long,

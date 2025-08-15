@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
@@ -13,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -96,6 +98,7 @@ class VedtakTilBehandlingMapping(
 ) {
     fun VedtakDto.tilBehandling(
         vedtakId: Int,
+        påklagetVedtak: Int = vedtakId,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
@@ -107,6 +110,8 @@ class VedtakTilBehandlingMapping(
         opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
         opprinneligVedtakstype: Vedtakstype? = null,
         søknadstype: BisysSøknadstype? = null,
+        erBisysVedtak: Boolean = false,
+        erOrkestrertVedtak: Boolean = false,
     ): Behandling {
         val opprettetAv =
             if (lesemodus) {
@@ -123,26 +128,24 @@ class VedtakTilBehandlingMapping(
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
             }
+        // TODO: Hvordan håndteres dette når vi begynner med flere stønadsendringer i samme vedtak?
         val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
+        val innkrevingstype =
+            this.stønadsendringListe.firstOrNull()?.innkreving
+                ?: this.engangsbeløpListe.firstOrNull()?.innkreving
+                ?: Innkrevingstype.MED_INNKREVING
         val virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
                 søknadstype = søknadstype,
                 vedtakstype = vedtakType ?: type,
-                opprinneligVedtakstype = opprinneligVedtakstype,
                 virkningstidspunkt = virkningstidspunkt,
                 kategori = grunnlagListe.særbidragskategori?.kategori?.name,
                 kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
-                opprinneligVirkningstidspunkt = virkningstidspunkt,
-                opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
-                innkrevingstype =
-                    this.stønadsendringListe.firstOrNull()?.innkreving
-                        ?: this.engangsbeløpListe.firstOrNull()?.innkreving
-                        ?: Innkrevingstype.MED_INNKREVING,
+                innkrevingstype = innkrevingstype,
                 årsak = hentVirkningstidspunkt()?.årsak,
                 avslag = avslagskode(),
-                klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                 søktFomDato = søktFomDato ?: hentSøknad().søktFraDato,
                 soknadFra = soknadFra ?: hentSøknad().søktAv,
                 mottattdato =
@@ -154,8 +157,6 @@ class VedtakTilBehandlingMapping(
                 stonadstype = stønadsendringstype,
                 engangsbeloptype = if (stønadsendringstype == null) engangsbeløpListe.firstOrNull()?.type else null,
                 vedtaksid = null,
-                soknadRefId = søknadRefId,
-                refVedtaksid = vedtakId,
                 behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,
@@ -164,7 +165,19 @@ class VedtakTilBehandlingMapping(
                 soknadsid = søknadId ?: this.søknadId,
             )
 
-        behandling.roller = grunnlagListe.mapRoller(behandling, lesemodus)
+        behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, virkningstidspunkt)
+
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                opprinneligVedtakstype = opprinneligVedtakstype,
+                påklagetVedtak = påklagetVedtak,
+                innkrevingstype = innkrevingstype,
+                refVedtaksid = if (!lesemodus) vedtakId else null,
+                klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
+                soknadRefId = søknadRefId,
+                opprinneligVirkningstidspunkt = virkningstidspunkt,
+                opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
+            )
 
         if (!lesemodus) {
             behandlingRepository.save(behandling)
@@ -179,17 +192,22 @@ class VedtakTilBehandlingMapping(
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
         behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
         behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
-        behandling.grunnlag = grunnlagListe.mapGrunnlag(behandling, lesemodus)
+        behandling.metadata = BehandlingMetadataDo()
+        if (erBisysVedtak) {
+            behandling.metadata!!.setKlagePåBisysVedtak()
+        }
+        behandling.grunnlag =
+            if (type == Vedtakstype.INDEKSREGULERING) mutableSetOf() else grunnlagListe.mapGrunnlag(behandling, lesemodus)
         if (lesemodus) {
             behandling.lesemodusVedtak =
                 LesemodusVedtak(
                     erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
                     opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
+                    erOrkestrertVedtak = erOrkestrertVedtak,
                 )
             behandling.grunnlagslisteFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
-            behandling.erVedtakUtenBeregning =
-                stønadsendringListe.all { it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" }
+            behandling.erVedtakUtenBeregning = erVedtakUtenBeregning()
         }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {
@@ -507,7 +525,7 @@ class VedtakTilBehandlingMapping(
                             behandling,
                             BarnDto(
                                 personident = gjelderBarn.ident,
-                                navn = gjelderBarn.navn,
+                                navn = if (gjelderBarn.ident != null) null else gjelderBarn.navn,
                                 fødselsdato = gjelderBarn.fødselsdato,
                             ),
                         )

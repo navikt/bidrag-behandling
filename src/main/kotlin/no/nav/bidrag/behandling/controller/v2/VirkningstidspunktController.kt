@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
@@ -41,6 +42,22 @@ class VirkningstidspunktController(
         secureLogger.info { "Oppdaterer virkningstidspunkt for behandling $behandlingsid med forespørsel $request" }
 
         val behandling = virkningstidspunktService.oppdaterOpphørsdato(behandlingsid, request)
+
+        return dtomapper.tilDto(behandling)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/beregntildato")
+    @Operation(
+        description = "Oppdatere opphørsdato for behandling.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun oppdatereBeregnTilDato(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdaterBeregnTilDatoRequestDto,
+    ): BehandlingDtoV2 {
+        secureLogger.info { "Oppdaterer beregnTilDato for behandling $behandlingsid med forespørsel $request" }
+
+        val behandling = virkningstidspunktService.oppdaterBeregnTilDato(behandlingsid, request)
 
         return dtomapper.tilDto(behandling)
     }

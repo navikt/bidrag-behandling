@@ -194,7 +194,8 @@ class GrunnlagService(
     }
 
     fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-        if (behandling.vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyMap()
+        // Klage er pga at det skal være mulig å velge vedtak for aldersjustering hvis klagebehandling endrer resultat for aldersjusteringen
+        if (!listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.KLAGE).contains(behandling.vedtakstype)) return emptyMap()
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
         val søknadsbarn = behandling.søknadsbarn.first()
@@ -255,6 +256,7 @@ class GrunnlagService(
         response.vedtakListe
             .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
             .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
+            .filter { behandling.klagedetaljer?.påklagetVedtak == null || it.vedtaksid != behandling.klagedetaljer?.påklagetVedtak }
             .sortedBy { it.vedtakstidspunkt }
             .forEach { vedtak ->
                 val harResultatInnvilgetVedtak =
@@ -916,22 +918,22 @@ class GrunnlagService(
             )
 
         // TOOD: Vurdere å trigge ny grunnlagsinnhenting
-        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
-            log.error {
-                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} i " +
-                    "nyeste boforholdsgrunnlag i behandling ${behandling.id}"
-            }
-            throw HttpClientErrorException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} " +
-                    "i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
-            )
-        }
+//        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
+//            log.error {
+//                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} i " +
+//                    "nyeste boforholdsgrunnlag i behandling ${behandling.id}"
+//            }
+//            throw HttpClientErrorException(
+//                HttpStatus.INTERNAL_SERVER_ERROR,
+//                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} " +
+//                    "i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
+//            )
+//        }
 
         boforholdService.oppdatereAutomatiskInnhentetBoforhold(
             behandling,
             jsonTilObjekt<List<BoforholdResponseV2>>(nyesteIkkeAktiverteBoforholdForHusstandsmedlem.data),
-            bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting,
+            bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting ?: emptySet(),
             overskriveManuelleOpplysninger,
             gjelderHusstandsmedlem,
         )

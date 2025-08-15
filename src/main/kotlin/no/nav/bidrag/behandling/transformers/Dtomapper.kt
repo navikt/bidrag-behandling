@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.BeregnTil
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
@@ -44,6 +45,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
@@ -55,6 +57,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.NotatService
@@ -91,10 +94,12 @@ import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
+import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -317,7 +322,8 @@ class Dtomapper(
                                 .byggGrunnlagForBeregning(
                                     this,
                                     it,
-                                ).copy(
+                                ).beregnGrunnlag!!
+                                .copy(
                                     opphørsdato = it.opphørsdatoYearMonth,
                                 )
 
@@ -730,42 +736,59 @@ class Dtomapper(
                 )
         val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
         this.grunnlagslisteFraVedtak = this.grunnlagslisteFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
-        return BehandlingDtoV2(
-            id = id!!,
-            type = tilType(),
-            lesemodus = lesemodusVedtak,
-            erBisysVedtak = erBisysVedtak,
-            erVedtakUtenBeregning =
-                vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
-            grunnlagFraVedtaksid = grunnlagFraVedtak,
-            medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
-            innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
-            vedtakstype = vedtakstype,
-            opprinneligVedtakstype = opprinneligVedtakstype,
-            stønadstype = stonadstype,
-            engangsbeløptype = engangsbeloptype,
-            erKlageEllerOmgjøring = erKlageEllerOmgjøring,
-            opprettetTidspunkt = opprettetTidspunkt,
-            erVedtakFattet = vedtaksid != null,
-            søktFomDato = søktFomDato,
-            mottattdato = mottattdato,
-            klageMottattdato = klageMottattdato,
-            søktAv = soknadFra,
-            saksnummer = saksnummer,
-            søknadsid = soknadsid,
-            behandlerenhet = behandlerEnhet,
-            gebyr = mapGebyr(),
-            roller = roller.map { it.tilDto() }.toSet(),
-            søknadRefId = soknadRefId,
-            vedtakRefId = refVedtaksid,
+        val behandlingDto =
+            BehandlingDtoV2(
+                id = id!!,
+                type = tilType(),
+                lesemodus = lesemodusVedtak,
+                erBisysVedtak = erBisysVedtak,
+                erVedtakUtenBeregning =
+                    vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
+                grunnlagFraVedtaksid = grunnlagFraVedtak,
+                medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
+                vedtakstype = vedtakstype,
+                opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+                stønadstype = stonadstype,
+                engangsbeløptype = engangsbeloptype,
+                erKlageEllerOmgjøring = erKlageEllerOmgjøring,
+                opprettetTidspunkt = opprettetTidspunkt,
+                erVedtakFattet = vedtaksid != null,
+                erDelvedtakFattet = vedtakDetaljer?.fattetDelvedtak?.isNotEmpty() == true,
+                søktFomDato = søktFomDato,
+                mottattdato = mottattdato,
+                klageMottattdato = klagedetaljer?.klageMottattdato,
+                søktAv = soknadFra,
+                saksnummer = saksnummer,
+                søknadsid = soknadsid,
+                behandlerenhet = behandlerEnhet,
+                gebyr = mapGebyr(),
+                roller = roller.map { it.tilDto() }.toSet(),
+                søknadRefId = klagedetaljer?.soknadRefId,
+                vedtakRefId = klagedetaljer?.påklagetVedtak,
+                virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
+                virkningstidspunktV2 = emptyList(),
+                inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
+                boforhold = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
+                aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
+                ikkeAktiverteEndringerIGrunnlagsdata = IkkeAktiveGrunnlagsdata(),
+            )
+        if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
+            return behandlingDto
+        }
+        return behandlingDto.copy(
             virkningstidspunktV2 =
                 if (tilType() == TypeBehandling.BIDRAG) {
                     søknadsbarn.sortedBy { it.fødselsdato }.map {
                         val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                         VirkningstidspunktDtoV2(
                             rolle = it.tilDto(),
+                            beregnTil = it.beregnTil ?: BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                            beregnTilDato = finnBeregnTilDatoBehandling(it.opphørsdato?.toYearMonth(), it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                            opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt ?: opprinneligVirkningstidspunkt,
+                            opprinneligVirkningstidspunkt =
+                                it.opprinneligVirkningstidspunkt
+                                    ?: klagedetaljer?.opprinneligVirkningstidspunkt,
                             manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
@@ -805,7 +828,7 @@ class Dtomapper(
                         VirkningstidspunktDtoV2(
                             rolle = bidragsmottaker!!.tilDto(),
                             virkningstidspunkt = virkningstidspunkt,
-                            opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                            opprinneligVirkningstidspunkt = klagedetaljer?.opprinneligVirkningstidspunkt,
                             årsak = årsak,
                             avslag = avslag,
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
@@ -824,7 +847,7 @@ class Dtomapper(
             virkningstidspunkt =
                 VirkningstidspunktDto(
                     virkningstidspunkt = virkningstidspunkt,
-                    opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                    opprinneligVirkningstidspunkt = klagedetaljer?.opprinneligVirkningstidspunkt,
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
