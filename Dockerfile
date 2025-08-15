@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 as locales
+FROM debian:bookworm-slim AS locales
 RUN apt-get update && apt-get install -y locales
 RUN locale-gen nb_NO.UTF-8 && \
     update-locale LANG=nb_NO.UTF-8 LANGUAGE="nb_NO:nb" LC_ALL=nb_NO.UTF-8
@@ -7,11 +7,13 @@ FROM gcr.io/distroless/java21
 LABEL maintainer="Team Bidrag" \
       email="bidrag@nav.no"
 
-COPY --from=busybox /bin/sh /bin/sh
-COPY --from=busybox /bin/printenv /bin/printenv
+COPY --from=debian:bookworm-slim /bin/sh /bin/sh
+COPY --from=debian:bookworm-slim /usr/bin/printenv /usr/bin/printenv
 
 # Copy locale files from the locales stage
 COPY --from=locales /usr/lib/locale/ /usr/lib/locale/
+COPY --from=locales /etc/locale.gen /etc/locale.gen
+COPY --from=locales /etc/default/locale /etc/default/locale
 
 WORKDIR /app
 
