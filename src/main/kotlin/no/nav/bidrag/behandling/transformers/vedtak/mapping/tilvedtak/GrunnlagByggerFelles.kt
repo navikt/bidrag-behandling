@@ -319,15 +319,11 @@ fun Behandling.tilSkyldner() =
                 ?: rolleManglerIdent(Rolletype.BIDRAGSPLIKTIG, id!!)
     }
 
-fun Behandling.tilBehandlingreferanseListe() =
+fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
     listOfNotNull(
         OpprettBehandlingsreferanseRequestDto(
             kilde = BehandlingsrefKilde.BEHANDLING_ID,
             referanse = id.toString(),
-        ),
-        OpprettBehandlingsreferanseRequestDto(
-            kilde = BehandlingsrefKilde.BISYS_SØKNAD,
-            referanse = soknadsid.toString(),
         ),
         klagedetaljer?.soknadRefId?.let {
             OpprettBehandlingsreferanseRequestDto(
@@ -336,6 +332,15 @@ fun Behandling.tilBehandlingreferanseListe() =
             )
         },
     )
+
+fun Behandling.tilBehandlingreferanseListe() =
+    tilBehandlingreferanseListeUtenSøknad() +
+        listOfNotNull(
+            OpprettBehandlingsreferanseRequestDto(
+                kilde = BehandlingsrefKilde.BISYS_SØKNAD,
+                referanse = soknadsid.toString(),
+            ),
+        )
 
 internal fun Inntekt.tilGrunnlagreferanse(
     gjelder: GrunnlagDto,

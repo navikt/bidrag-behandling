@@ -239,7 +239,8 @@ class BehandlingTilVedtakMapping(
                 behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                     type = Vedtakstype.INNKREVING,
                     grunnlagListe = grunnlagliste,
-                    unikReferanse = null,
+                    unikReferanse = behandling.opprettUnikReferanse("innkreving"),
+                    behandlingsreferanseListe = behandling.tilBehandlingreferanseListeUtenSøknad(),
                     stønadsendringListe =
                         stønadsendringListe.map {
                             val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.kravhaver.verdi }!!
@@ -401,10 +402,10 @@ class BehandlingTilVedtakMapping(
                     resultatVedtak.delvedtak || resultatVedtak.klagevedtak ->
                         "Delvedtak_${resultatVedtak.vedtakstype}" +
                             "_${resultatVedtak.beregnetFraDato.toCompactString()}"
-                    else -> null
+                    else -> "endeligvedtak"
                 }
             return behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
-                unikReferanse = null, // behandling.opprettUnikReferanse(referansePostfix),
+                unikReferanse = behandling.opprettUnikReferanse(referansePostfix),
                 type = resultatVedtak.vedtakstype,
                 stønadsendringListe =
                     stønadsendringPerioder.map { it ->

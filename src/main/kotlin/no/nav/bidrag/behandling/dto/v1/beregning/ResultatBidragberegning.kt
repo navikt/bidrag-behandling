@@ -245,13 +245,13 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
         when {
-            vedtakstype == Vedtakstype.INNKREVING -> "Innkreving"
             erOpphør ->
                 if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true) {
                     beregningsdetaljer.sluttberegning.resultatVisningsnavn!!.intern
                 } else {
                     "Opphør"
                 }
+            vedtakstype == Vedtakstype.INNKREVING -> "Innkreving"
 
             vedtakstype == Vedtakstype.ALDERSJUSTERING ->
                 when {

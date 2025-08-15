@@ -344,6 +344,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
                 resultatKode = Resultatkode.fraKode(it.resultatkode),
                 beregnetBidrag = it.beløp ?: BigDecimal.ZERO,
                 faktiskBidrag = it.beløp ?: BigDecimal.ZERO,
+                erOpphør = it.beløp == null,
             )
         }
     } else {
