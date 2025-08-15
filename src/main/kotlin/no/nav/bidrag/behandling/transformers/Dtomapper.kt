@@ -736,8 +736,8 @@ class Dtomapper(
                 )
         val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
         this.grunnlagslisteFraVedtak = this.grunnlagslisteFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
-        if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
-            return BehandlingDtoV2(
+        val behandlingDto =
+            BehandlingDtoV2(
                 id = id!!,
                 type = tilType(),
                 lesemodus = lesemodusVedtak,
@@ -754,7 +754,7 @@ class Dtomapper(
                 erKlageEllerOmgjøring = erKlageEllerOmgjøring,
                 opprettetTidspunkt = opprettetTidspunkt,
                 erVedtakFattet = vedtaksid != null,
-                erDelvedtakFattet = vedtakDetaljer?.fattetDelvedtak?.isNotEmpty() ?: false,
+                erDelvedtakFattet = vedtakDetaljer?.fattetDelvedtak?.isNotEmpty() == true,
                 søktFomDato = søktFomDato,
                 mottattdato = mottattdato,
                 klageMottattdato = klagedetaljer?.klageMottattdato,
@@ -773,36 +773,10 @@ class Dtomapper(
                 aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
                 ikkeAktiverteEndringerIGrunnlagsdata = IkkeAktiveGrunnlagsdata(),
             )
+        if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
+            return behandlingDto
         }
-        return BehandlingDtoV2(
-            id = id!!,
-            type = tilType(),
-            lesemodus = lesemodusVedtak,
-            erBisysVedtak = erBisysVedtak,
-            erVedtakUtenBeregning =
-                vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
-            grunnlagFraVedtaksid = grunnlagFraVedtak,
-            medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
-            innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
-            vedtakstype = vedtakstype,
-            opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
-            stønadstype = stonadstype,
-            engangsbeløptype = engangsbeloptype,
-            erKlageEllerOmgjøring = erKlageEllerOmgjøring,
-            opprettetTidspunkt = opprettetTidspunkt,
-            erVedtakFattet = vedtaksid != null,
-            erDelvedtakFattet = vedtakDetaljer?.fattetDelvedtak?.isNotEmpty() ?: false,
-            søktFomDato = søktFomDato,
-            mottattdato = mottattdato,
-            klageMottattdato = klagedetaljer?.klageMottattdato,
-            søktAv = soknadFra,
-            saksnummer = saksnummer,
-            søknadsid = soknadsid,
-            behandlerenhet = behandlerEnhet,
-            gebyr = mapGebyr(),
-            roller = roller.map { it.tilDto() }.toSet(),
-            søknadRefId = klagedetaljer?.soknadRefId,
-            vedtakRefId = klagedetaljer?.påklagetVedtak,
+        return behandlingDto.copy(
             virkningstidspunktV2 =
                 if (tilType() == TypeBehandling.BIDRAG) {
                     søknadsbarn.sortedBy { it.fødselsdato }.map {

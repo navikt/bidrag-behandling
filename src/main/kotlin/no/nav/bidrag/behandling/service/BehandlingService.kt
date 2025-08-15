@@ -32,8 +32,6 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.valider
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatDelvedtak
-import no.nav.bidrag.beregn.barnebidrag.utils.beregnetFraDato
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
@@ -305,10 +303,7 @@ class BehandlingService(
                         .copy(
                             vedtakFattetAvEnhet = fattetAvEnhet,
                             fattetDelvedtak =
-                                eksisterendeDetaljer.fattetDelvedtak +
-                                    listOf(
-                                        resultat,
-                                    ),
+                                (eksisterendeDetaljer.fattetDelvedtak + setOf(resultat)).toSet(),
                         )
             }
     }

@@ -11,15 +11,18 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
+import no.nav.bidrag.behandling.dto.v2.validering.FatteVedtakFeil
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatBidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatForskudd
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatadBeregningOrkestrering
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -334,14 +337,8 @@ class VedtakService(
 
         val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling)
 
-        val klagevedtakErEnesteVedtak =
-            beregning.beregning.all {
-                it.resultatVedtak
-                    ?.resultatVedtakListe
-                    ?.filter { !it.endeligVedtak }
-                    ?.all { it.klagevedtak } ==
-                    true
-            }
+        beregning.validerManuelAldersjustering(behandling)
+
         val requestDelvedtak =
             beregning.copy(
                 delvedtak =
@@ -350,14 +347,16 @@ class VedtakService(
                         beregning.sak,
                         request?.enhet,
                         beregning.beregning.first(),
-                        klagevedtakErEnesteVedtak,
+                        beregning.klagevedtakErEnesteVedtak,
                     ),
             )
 
         val response =
-            if (klagevedtakErEnesteVedtak) {
+            if (beregning.klagevedtakErEnesteVedtak) {
                 val klagevedtak = requestDelvedtak.delvedtak.find { it.klagevedtak }!!
-                secureLogger.info { "Fatter vedtak for klagevedtak ${klagevedtak.request}" }
+                secureLogger.info {
+                    "Klagevedtak er eneste vedtak i orkestrering. Fatter bare vedtak for klagevedtak ${klagevedtak.request}"
+                }
 //                vedtakLocalConsumer.fatteVedtak(klagevedtak.request!!)
                 vedtakConsumer.fatteVedtak(klagevedtak.request!!)
             } else {
@@ -394,6 +393,8 @@ class VedtakService(
 
 //                val response = vedtakLocalConsumer.fatteVedtak(requestEndeligVedtak)
                 val response = vedtakConsumer.fatteVedtak(requestEndeligVedtak)
+                secureLogger.info { "Fattet endelig vedtak med forespørsel $requestEndeligVedtak og vedtaksid ${response.vedtaksid}" }
+
                 if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
                     val innkrevingRequest =
                         behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
@@ -434,6 +435,36 @@ class VedtakService(
             } med vedtaksid ${response.vedtaksid}"
         }
         return response.vedtaksid
+    }
+
+    fun ResultatadBeregningOrkestrering.validerManuelAldersjustering(behandling: Behandling) {
+        val beregning = this.beregning.first()
+        val manuellAldersjusteringSomMåVelges =
+            beregning
+                .resultatVedtak!!
+                .resultatVedtakListe
+                .filter { it.vedtakstype == Vedtakstype.ALDERSJUSTERING }
+                .filter { delberegning ->
+                    val søknadsbarn = behandling.søknadsbarn.find { it.ident == beregning.barn.ident!!.verdi }!!
+                    val aldersjusteringDetaljer =
+                        delberegning.resultat.grunnlagListe.finnAldersjusteringDetaljerGrunnlag() ?: return@filter false
+                    val barnVedtak =
+                        søknadsbarn.grunnlagFraVedtakListe.find {
+                            it.aldersjusteringForÅr ==
+                                aldersjusteringDetaljer.periode.fom.year
+                        }
+                    aldersjusteringDetaljer.aldersjusteresManuelt && barnVedtak?.vedtak == null
+                }
+        if (manuellAldersjusteringSomMåVelges.isNotEmpty()) {
+            FatteVedtakFeil(
+                "Et eller flere aldersjusteringer må behandles manuelt",
+                manuellAldersjusteringSomMåVelges.map {
+                    it.resultat.beregnetBarnebidragPeriodeListe
+                        .first()
+                        .periode
+                },
+            ).kastFeil()
+        }
     }
 
     fun fatteVedtakBidrag(

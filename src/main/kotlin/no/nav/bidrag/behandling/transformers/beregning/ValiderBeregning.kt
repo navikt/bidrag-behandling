@@ -178,6 +178,9 @@ class ValiderBeregning(
                 }
             }
 
+        if (vedtakstype == Vedtakstype.KLAGE) {
+        }
+
         if (feil != null) {
             secureLogger.warn {
                 "Feil ved validering av behandling for beregning av bidrag" +

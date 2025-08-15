@@ -617,16 +617,22 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     .periodeListe
                     .find { it.periode.inneholder(periode) }!!
             val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
-            return vedtak.grunnlagListe.byggResultatBidragsberegning(
-                periode,
-                vedtakPeriode.beløp,
-                Resultatkode.fraKode(vedtakPeriode.resultatkode),
-                vedtakPeriode.grunnlagReferanseListe,
-                null,
-                barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
-                vedtak.type,
-                barnIdent,
-            )
+            return vedtak.grunnlagListe
+                .byggResultatBidragsberegning(
+                    periode,
+                    vedtakPeriode.beløp,
+                    Resultatkode.fraKode(vedtakPeriode.resultatkode),
+                    vedtakPeriode.grunnlagReferanseListe,
+                    null,
+                    barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
+                    vedtak.type,
+                    barnIdent,
+                ).copy(
+                    klageOmgjøringDetaljer =
+                        KlageOmgjøringDetaljer(
+                            klagevedtak = it.klagevedtak,
+                        ),
+                )
         }
 
         val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)

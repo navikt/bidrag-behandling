@@ -64,6 +64,7 @@ import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.YearMonth
+import kotlin.collections.all
 import kotlin.text.compareTo
 
 data class ResultatDelvedtak(
@@ -79,7 +80,16 @@ data class ResultatadBeregningOrkestrering(
     val sak: BidragssakDto,
     val delvedtak: List<ResultatDelvedtak> = emptyList(),
     val beregning: List<ResultatBidragsberegningBarn>,
-)
+) {
+    val klagevedtakErEnesteVedtak get() =
+        beregning.all {
+            it.resultatVedtak
+                ?.resultatVedtakListe
+                ?.filter { !it.endeligVedtak }
+                ?.all { it.klagevedtak } ==
+                true
+        }
+}
 
 @Service
 @Import(BeregnGebyrApi::class)

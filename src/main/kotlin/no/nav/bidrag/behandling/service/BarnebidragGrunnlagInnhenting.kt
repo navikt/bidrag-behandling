@@ -168,11 +168,6 @@ class BarnebidragGrunnlagInnhenting(
         sak = Saksnummer(saksnummer),
         skyldner = skyldner ?: Personident(bidragspliktig!!.ident!!),
         kravhaver = Personident(søknadsbarn.ident!!),
-        gyldigTidspunkt =
-            if (vedtakstype == Vedtakstype.KLAGE) {
-                klagedetaljer!!.opprinneligVedtakstidspunkt.min().minusMinutes(1)
-            } else {
-                LocalDateTime.now()
-            },
+        gyldigTidspunkt = LocalDateTime.now(),
     )
 }
