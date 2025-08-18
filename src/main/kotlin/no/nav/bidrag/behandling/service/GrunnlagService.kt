@@ -63,10 +63,12 @@ import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
+import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -113,6 +115,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadReq
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.hentSisteLøpendePeriode
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -135,13 +138,14 @@ class GrunnlagService(
     private val underholdService: UnderholdService,
     private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
     private val vedtakConsumer: BidragVedtakConsumer,
+    private val vedtakService: VedtakService? = null,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
     private lateinit var grenseInnhenting: String
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
-        if (foretaNyGrunnlagsinnhenting(behandling)) {
+        if (true) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
             if (behandling.vedtakstype.kreverGrunnlag()) {
@@ -159,6 +163,7 @@ class GrunnlagService(
                         )
                 }
             }
+            feilrapporteringer += hentOgLagreBEtterfølgendeVedtak(behandling)
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
             feilrapporteringer += lagreManuelleVedtakGrunnlag(behandling)
 
@@ -195,7 +200,14 @@ class GrunnlagService(
 
     fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         // Klage er pga at det skal være mulig å velge vedtak for aldersjustering hvis klagebehandling endrer resultat for aldersjusteringen
-        if (!listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.KLAGE).contains(behandling.vedtakstype)) return emptyMap()
+        if (!listOf(
+                Vedtakstype.ALDERSJUSTERING,
+                Vedtakstype.KLAGE,
+                Vedtakstype.INNKREVING,
+            ).contains(behandling.vedtakstype)
+        ) {
+            return emptyMap()
+        }
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
         val søknadsbarn = behandling.søknadsbarn.first()
@@ -336,6 +348,55 @@ class GrunnlagService(
         }
         if (behandling.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
             feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling))
+        }
+        return feilrapporteringer
+    }
+
+    fun hentOgLagreBEtterfølgendeVedtak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        if (behandling.vedtakstype != Vedtakstype.KLAGE && !behandling.erBidrag()) return emptyMap()
+        val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+        val type = Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK
+        behandling.søknadsbarn.forEach { sb ->
+            try {
+                val eksisterendeGrunnlag =
+                    behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type)
+                val respons =
+                    vedtakService!!
+                        .hentAlleVedtakForStønad(
+                            behandling.tilStønadsid(sb),
+                            sb.virkningstidspunkt!!.toYearMonth(),
+                            behandling.klagedetaljer?.påklagetVedtak,
+                        )
+                if (eksisterendeGrunnlag == null &&
+                    eksisterendeGrunnlag.konvertereData<List<VedtakForStønad>>() != respons
+                ) {
+                    log.info { "Lagrer ny grunnlag etterfølgende vedtak for type $type" }
+                    secureLogger.info {
+                        "Lagrer ny grunnlag etterfølgende vedtak for type $type med respons $respons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+                    }
+                    val nyGrunnlag =
+                        Grunnlag(
+                            behandling = behandling,
+                            type = type,
+                            data = commonObjectmapper.writeValueAsString(respons),
+                            gjelder = sb.personident!!.verdi,
+                            innhentet = LocalDateTime.now(),
+                            aktiv = LocalDateTime.now(),
+                            rolle = behandling.bidragspliktig!!,
+                            erBearbeidet = false,
+                        )
+                    behandling.grunnlag.add(nyGrunnlag)
+                }
+            } catch (e: HttpClientErrorException) {
+                feilrapporteringer.put(
+                    type,
+                    GrunnlagFeilDto(
+                        personId = sb.personident!!.verdi,
+                        feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                        feilmelding = e.message,
+                    ),
+                )
+            }
         }
         return feilrapporteringer
     }
@@ -1976,13 +2037,12 @@ class GrunnlagService(
                 ).contains(it)
             }.forEach {
                 val feilrapportering = feilrapporteringer[it]
-                if (feilrapportering == null || HentGrunnlagFeiltype.FUNKSJONELL_FEIL == feilrapportering.feiltype) {
-                    lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
-                } else {
+                lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
+                feilrapportering?.let {
                     log.warn {
-                        "Innhenting av $it for rolle ${rolleInhentetFor.rolletype} " + "i behandling ${behandling.id} " +
-                            "feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
-                            "${feilrapportering.feilmelding}. Lagrer ikke grunnlag"
+                        "Innhenting av $it for rolle ${rolleInhentetFor.rolletype} i behandling ${behandling.id}" +
+                            " feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
+                            "${feilrapportering.feilmelding}. "
                     }
                 }
             }
