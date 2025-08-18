@@ -145,7 +145,7 @@ class GrunnlagService(
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
-        if (true) {
+        if (foretaNyGrunnlagsinnhenting(behandling)) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
             if (behandling.vedtakstype.kreverGrunnlag()) {
