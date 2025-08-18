@@ -353,7 +353,7 @@ class GrunnlagService(
     }
 
     fun hentOgLagreBEtterfølgendeVedtak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-        if (behandling.vedtakstype != Vedtakstype.KLAGE && !behandling.erBidrag()) return emptyMap()
+        if (!(behandling.erKlageEllerOmgjøring && behandling.erBidrag())) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
         val type = Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK
         behandling.søknadsbarn.forEach { sb ->
