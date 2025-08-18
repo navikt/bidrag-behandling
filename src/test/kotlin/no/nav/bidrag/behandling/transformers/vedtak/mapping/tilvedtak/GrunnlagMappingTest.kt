@@ -428,7 +428,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn1!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning) {
-                    it.grunnlagListe shouldHaveSize 16
+                    it.grunnlagListe shouldHaveSize 17
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -452,7 +452,7 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn2!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning2) {
-                    it.grunnlagListe shouldHaveSize 16
+                    it.grunnlagListe shouldHaveSize 17
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -1870,6 +1870,9 @@ class GrunnlagMappingTest {
             mapper.run {
                 val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
 
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.INNTEKT, behandling.bidragsmottaker)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.BOFORHOLD, behandling.bidragsmottaker)
                 assertSoftly(behandling.byggGrunnlagNotater().toList()) {
                     shouldHaveSize(3)
                     assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
@@ -1891,7 +1894,9 @@ class GrunnlagMappingTest {
         fun `skal opprette grunnlag for notat`(): Unit =
             mapper.run {
                 val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
-
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.INNTEKT, behandling.bidragsmottaker)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.BOFORHOLD, behandling.bidragsmottaker)
                 assertSoftly(behandling.byggGrunnlagNotater().toList()) {
                     shouldHaveSize(3)
                     assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {

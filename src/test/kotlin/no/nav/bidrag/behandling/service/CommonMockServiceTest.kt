@@ -49,6 +49,9 @@ abstract class CommonMockServiceTest {
     @MockK
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
+//    @MockK
+//    lateinit var vedtakLocalConsumer: BidragVedtakConsumerLocal
+
     lateinit var boforholdService: BoforholdService
 
     @MockK

@@ -268,6 +268,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                 opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
             },
         ).filterNotNull()
+
     val notatVurderingAvSkolegang =
         if (kanSkriveVurderingAvSkolegangAlle()) {
             roller
@@ -307,7 +308,8 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                 }
             }
 
-    return (notatGrunnlag + notatGrunnlagInntekter + notatSamvær + notatUnderhold + notatVurderingAvSkolegang).toSet()
+    return (notatGrunnlag + notatGrunnlagInntekter + notatSamvær + notatUnderhold + notatVurderingAvSkolegang)
+        .toSet()
 }
 
 fun Behandling.tilSkyldner() =

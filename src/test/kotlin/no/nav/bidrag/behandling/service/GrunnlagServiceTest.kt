@@ -4481,7 +4481,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
             behandling.grunnlagsinnhentingFeilet shouldNotBe null
 
             assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.ARBEIDSFORHOLD == it.type && !it.erBearbeidet }) { si ->
-                si shouldHaveSize 1
+                si shouldHaveSize 2
                 si[0]
                     .konvertereData<Set<ArbeidsforholdGrunnlagDto>>()
                     ?.filter { it.arbeidsgiverNavn == navnNyArbeidsgiver }

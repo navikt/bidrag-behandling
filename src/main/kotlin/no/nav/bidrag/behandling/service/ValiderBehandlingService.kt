@@ -39,7 +39,7 @@ class ValiderBehandlingService(
         }
         return when (request.tilType()) {
             TypeBehandling.SÆRBIDRAG -> kanSærbidragBehandlesINyLøsning(request)
-            TypeBehandling.BIDRAG -> null // kanBidragBehandlesINyLøsning(request)
+            TypeBehandling.BIDRAG -> kanBidragBehandlesINyLøsning(request)
             else -> null
         }
     }
@@ -63,9 +63,11 @@ class ValiderBehandlingService(
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
-        /*if (request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) {
+        if ((request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) &&
+            !UnleashFeatures.BIDRAG_KLAGE.isEnabled
+        ) {
             return "Kan ikke behandle klage eller omgjøring"
-        }*/
+        }
         if (request.erBegrensetRevurdering() && !UnleashFeatures.BEGRENSET_REVURDERING.isEnabled) {
             return "Kan ikke behandle begrenset revurdering"
         }

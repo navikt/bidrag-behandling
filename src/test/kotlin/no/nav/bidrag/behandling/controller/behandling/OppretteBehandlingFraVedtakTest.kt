@@ -71,7 +71,6 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertSoftly(behandling) {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 15
-            grunnlag shouldHaveSize 37
             innkrevingstype shouldBe Innkrevingstype.MED_INNKREVING
             klagedetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 1
             klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")

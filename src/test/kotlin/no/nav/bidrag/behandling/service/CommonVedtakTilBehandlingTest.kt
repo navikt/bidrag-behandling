@@ -23,6 +23,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -50,33 +51,41 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var notatOpplysningerService: NotatOpplysningerService
 
     @MockK
-    lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
-
-    @MockK
     lateinit var forsendelseService: ForsendelseService
 
     @MockK
     lateinit var sakConsumer: BidragSakConsumer
 
     @MockK
-    lateinit var vedtakService2: no.nav.bidrag.beregn.barnebidrag.service.VedtakService
+    lateinit var vedtakServiceBeregning: no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 
     lateinit var beregningService: BeregningService
+    lateinit var vedtakTilBehandlingMapping: VedtakTilBehandlingMapping
+    lateinit var behandlingTilVedtakMapping: BehandlingTilVedtakMapping
+    lateinit var validerBeregning: ValiderBeregning
+    lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
+    lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
     val unleash = FakeUnleash()
+
+    @MockK
+    lateinit var klageOrkestrator: KlageOrkestrator
+
+    open lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
 
     @BeforeEach
     fun initMocks() {
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)
 
-        val validerBeregning = ValiderBeregning()
+        validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
         barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
         every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         val personService = PersonService(personConsumer)
         val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
-        val vedtakGrunnlagMapper =
+        vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 behandlingTilGrunnlagMappingV2,
                 validerBeregning,
@@ -93,17 +102,17 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
-        val underholdService =
+        underholdService =
             UnderholdService(
                 underholdskostnadRepository,
                 personRepository,
                 notatService,
                 personService,
             )
-        val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService, personRepository, behandlingRepository)
+        vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService, personRepository, behandlingRepository)
         val identConsumer = stubIdentConsumer()
         val identUtils = IdentUtils(identConsumer)
-        val aldersjusteringOrchestrator =
+        aldersjusteringOrchestrator =
             AldersjusteringOrchestrator(
                 no.nav.bidrag.beregn.barnebidrag.service
                     .VedtakService(vedtakConsumer, bidragStønadConsumer, Vedtaksfiltrering(), identUtils),
@@ -119,13 +128,13 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 aldersjusteringOrchestrator,
                 bidragsberegningOrkestrator,
             )
-        val behandlingTilVedtakMapping =
+        behandlingTilVedtakMapping =
             BehandlingTilVedtakMapping(
                 sakConsumer,
                 vedtakGrunnlagMapper,
                 beregningService,
                 vedtakConsumer,
-                vedtakService2,
+                vedtakServiceBeregning,
             )
 
         vedtakService =
@@ -135,6 +144,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
+//                vedtakLocalConsumer,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
@@ -149,6 +159,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
         every { notatOpplysningerService.opprettNotat(any()) } returns "213"
         every { behandlingService.oppdaterVedtakFattetStatus(any(), any(), any()) } returns Unit
+        every { behandlingService.oppdaterDelvedtakFattetStatus(any(), any(), any()) } returns Unit
         every { forsendelseService.opprettForsendelseForAldersjustering(any()) } returns Unit
         every { validerBehandlingService.validerKanBehandlesINyLøsning(any()) } returns Unit
         every { vedtakConsumer.fatteVedtak(any()) } returns OpprettVedtakResponseDto(1, emptyList())

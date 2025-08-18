@@ -213,7 +213,7 @@ open class Behandling(
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
-    val erKlageEllerOmgjøring get() = klagedetaljer != null
+    val erKlageEllerOmgjøring get() = klagedetaljer?.påklagetVedtak != null
     val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
     val globalVirkningstidspunkt get() =

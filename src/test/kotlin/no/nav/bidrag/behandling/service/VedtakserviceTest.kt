@@ -54,6 +54,8 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
+import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -101,6 +103,9 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @SpykBean
     lateinit var vedtakConsumer: BidragVedtakConsumer
+
+//    @SpykBean
+//    lateinit var vedtakLocalConsumer: BidragVedtakConsumerLocal
 
     @MockkBean
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
@@ -154,16 +159,23 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockK
     lateinit var forsendelseService: ForsendelseService
 
+    @MockK
+    lateinit var unleashFeaturesProvider: UnleashFeaturesProvider
+
+    @MockkBean
+    lateinit var klageOrkestrator: KlageOrkestrator
     val notatService = NotatService()
 
     @BeforeEach
     fun initMocks() {
         clearAllMocks()
         stubTokenUtils()
+        enableUnleashFeature(UnleashFeatures.BIDRAG_KLAGE)
         enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
         enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
         disableUnleashFeature(UnleashFeatures.VEDTAKSSPERRE)
         bidragPersonConsumer = stubPersonConsumer()
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)
         every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)
@@ -217,6 +229,7 @@ class VedtakserviceTest : TestContainerRunner() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
+//                vedtakLocalConsumer,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
@@ -227,6 +240,7 @@ class VedtakserviceTest : TestContainerRunner() {
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangBehandling(any()) } returns Unit
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
+        every { vedtakService2.hentAlleVedtakForStønad(any(), any(), any()) } returns emptyList()
         stubSjablonProvider()
         stubKodeverkProvider()
         stubPersonConsumer()
@@ -333,6 +347,7 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.søktFomDato = LocalDate.parse("2023-03-01")
         behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.søknadsbarn.first().innbetaltBeløp = BigDecimal(500)
+        behandling.søknadsbarn.first().virkningstidspunkt = behandling.virkningstidspunkt
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null))
         behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null))

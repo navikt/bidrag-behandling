@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
+import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -56,6 +57,7 @@ import java.util.Optional
 class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
     @BeforeEach
     fun initMocksKlage() {
+        bidragsberegningOrkestrator = mockkClass(BidragsberegningOrkestrator::class)
         behandlingService =
             BehandlingService(
                 behandlingRepository,
@@ -90,7 +92,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-                vedtakLocalConsumer,
+//                vedtakLocalConsumer,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,

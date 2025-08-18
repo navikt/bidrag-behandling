@@ -68,7 +68,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             klagedetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.refVedtaksid shouldBe 1
+            klagedetaljer?.påklagetVedtak shouldBe 1
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
@@ -178,7 +178,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.refVedtaksid shouldBe 1
+            klagedetaljer?.påklagetVedtak shouldBe 1
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
@@ -505,7 +505,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 16
+            size shouldBe 17
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.ANDRE_BARN,
                 testdataBM.ident,
@@ -537,7 +537,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.ARBEIDSFORHOLD,
                 testdataBM.ident,
-            ) shouldHaveSize 1
+            ) shouldHaveSize 2
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.BOFORHOLD,
                 testdataBP.ident,
