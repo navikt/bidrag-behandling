@@ -6,7 +6,7 @@ UPDATE behandling SET klagedetaljer = jsonb_build_object(
         'klageMottattdato', klage_mottattdato,
         'soknadRefId', soknad_ref_id,
         'refVedtaksid', ref_vedtaksid,
-        'påklagetVedtak', påklaget_vedtak,
+        'påklagetVedtak', ref_vedtaksid,
         'opprinneligVirkningstidspunkt', opprinnelig_virkningstidspunkt,
         'opprinneligVedtakstidspunkt', opprinnelig_vedtakstidspunkt,
         'opprinneligVedtakstype', opprinnelig_vedtakstype
