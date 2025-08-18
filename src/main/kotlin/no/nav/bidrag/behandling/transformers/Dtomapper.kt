@@ -811,6 +811,7 @@ class Dtomapper(
                             beregnTil = it.beregnTil ?: BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT,
                             beregnTilDato = finnBeregnTilDatoBehandling(it.opphørsdato?.toYearMonth(), it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
+                            opprinneligVedtakstidspunkt = klagedetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
                             opprinneligVirkningstidspunkt =
                                 it.opprinneligVirkningstidspunkt
                                     ?: klagedetaljer?.opprinneligVirkningstidspunkt,
@@ -855,6 +856,7 @@ class Dtomapper(
                             rolle = bidragsmottaker!!.tilDto(),
                             virkningstidspunkt = virkningstidspunkt,
                             opprinneligVirkningstidspunkt = klagedetaljer?.opprinneligVirkningstidspunkt,
+                            opprinneligVedtakstidspunkt = klagedetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
                             årsak = årsak,
                             avslag = avslag,
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
