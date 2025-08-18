@@ -178,9 +178,6 @@ class ValiderBeregning(
                 }
             }
 
-        if (vedtakstype == Vedtakstype.KLAGE) {
-        }
-
         if (feil != null) {
             secureLogger.warn {
                 "Feil ved validering av behandling for beregning av bidrag" +
@@ -252,7 +249,7 @@ class ValiderBeregning(
         val harFeil =
             inntekterFeil != null ||
                 husstandsmedlemsfeil.isNotEmpty() ||
-//                privatAvtaleValideringsfeil.isNotEmpty() ||
+                privatAvtaleValideringsfeil.isNotEmpty() ||
                 virkningstidspunktFeil != null ||
                 andreVoksneIHusstandenFeil != null ||
                 samværValideringsfeil.isNotEmpty() ||

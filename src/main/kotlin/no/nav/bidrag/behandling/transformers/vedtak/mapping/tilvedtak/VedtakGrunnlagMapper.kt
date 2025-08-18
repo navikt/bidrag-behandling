@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.service.hentSisteBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
@@ -21,10 +20,10 @@ import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.hentBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.core.BeregnApi
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Beregningstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -54,7 +53,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.felles.toCompactString
-import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
 import org.springframework.stereotype.Component
@@ -294,6 +292,12 @@ class VedtakGrunnlagMapper(
                         KlageOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
                             påklagetVedtakId = behandling.klagedetaljer?.påklagetVedtak!!,
+                            innkrevingstype = behandling.innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
+                            gjelderParagraf35c =
+                                listOf(
+                                    BisysSøknadstype.PARAGRAF_35_C,
+                                    BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                ).contains(behandling.søknadstype),
                             manuellAldersjustering =
                                 søknadsbarnRolle.grunnlagFraVedtakListe
                                     .filter { it.aldersjusteringForÅr != null && it.vedtak != null }

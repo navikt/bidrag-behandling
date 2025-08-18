@@ -310,9 +310,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
                 false
             },
         virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig =
-            if (vedtakstype == Vedtakstype.KLAGE &&
-                erBidrag()
-            ) {
+            if (erKlageEllerOmgjøring && erBidrag()) {
                 false
             } else {
                 erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt

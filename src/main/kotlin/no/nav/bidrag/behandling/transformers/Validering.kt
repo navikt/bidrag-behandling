@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
-import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -302,12 +301,14 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
             feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
         }
 
-//        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
-//            avslag == null &&
-//            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
-//        ) {
-//            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
-//        }
+        if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
+            avslag == null &&
+            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
+        ) {
+            if (!(behandling.erBidrag() && behandling.erKlageEllerOmgjøring)) {
+                feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+            }
+        }
     } else {
         if (behandling.klagedetaljer?.opprinneligVirkningstidspunkt != null &&
             avslag == null &&

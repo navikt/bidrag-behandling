@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.rolleManglerIdent
-import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerReferanse
@@ -43,7 +42,6 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
@@ -64,8 +62,6 @@ import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.YearMonth
-import kotlin.collections.all
-import kotlin.text.compareTo
 
 data class ResultatDelvedtak(
     val vedtaksid: Int?,
@@ -144,7 +140,7 @@ class BehandlingTilVedtakMapping(
                             grunnlagsliste.toSet().hentPersonMedIdent(søknadsbarnRolle.ident) ?: søknadsbarnRolle.tilGrunnlagPerson()
                         val stønad = tilStønadsid(søknadsbarnRolle)
                         val perioder =
-                            it.resultat!!.beregnetBarnebidragPeriodeListe.map {
+                            it.resultat.beregnetBarnebidragPeriodeListe.map {
                                 OpprettPeriodeRequestDto(
                                     periode = it.periode,
                                     beløp = it.resultat.beløp,
