@@ -207,6 +207,9 @@ fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
     return mergedPeriods
 }
 
+fun Behandling.hentEtterfølgendeVedtak(rolle: Rolle) =
+    grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK)
+
 fun Behandling.hentBeløpshistorikk(rolle: Rolle) =
     grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
         ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)

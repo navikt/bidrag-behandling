@@ -15,6 +15,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.util.visningsnavn
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 data class OppdaterManuellVedtakResponse(
     val erVedtakUtenBeregning: Boolean,
@@ -29,6 +30,12 @@ data class OppdaterManuellVedtakRequest(
 
 data class ManuellVedtakResponse(
     val manuelleVedtak: List<ManuellVedtakDto>,
+)
+
+data class EtterfølgendeVedtakDto(
+    val virkningstidspunkt: YearMonth,
+    val opphørsdato: YearMonth? = null,
+    val vedtaksid: Int,
 )
 
 data class ManuellVedtakDto(
@@ -79,6 +86,7 @@ data class VirkningstidspunktDtoV2(
     val grunnlagFraVedtak: Int? = null,
     val kanSkriveVurderingAvSkolegang: Boolean = false,
     val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
+    val etterfølgendeVedtak: List<EtterfølgendeVedtakDto> = emptyList(),
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)

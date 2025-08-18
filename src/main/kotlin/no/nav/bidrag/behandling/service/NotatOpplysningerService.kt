@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspu
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
+import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -56,6 +57,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.DatoperiodeDto
@@ -73,6 +75,7 @@ import no.nav.bidrag.transport.dokument.OpprettDokumentDto
 import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.Arbeidsforhold
+import no.nav.bidrag.transport.notat.EndeligOrkestrertVedtak
 import no.nav.bidrag.transport.notat.InntekterPerRolle
 import no.nav.bidrag.transport.notat.NotatBegrunnelseDto
 import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
@@ -100,6 +103,7 @@ import no.nav.bidrag.transport.notat.NotatResultatBeregningInntekterDto
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer
+import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.IndeksreguleringDetaljer
 import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.NotatBeregningsdetaljerSamværsfradrag
 import no.nav.bidrag.transport.notat.NotatResultatForskuddBeregningBarnDto
 import no.nav.bidrag.transport.notat.NotatResultatSærbidragsberegningDto
@@ -401,6 +405,7 @@ class NotatOpplysningerService(
                         },
                 ),
             vedtak = behandling.hentBeregning(),
+            erOrkestrertVedtak = behandling.vedtakstype == Vedtakstype.KLAGE,
             privatavtale =
                 mapper.run {
                     behandling.privatAvtale.map { it.tilDto() }.map {
@@ -539,57 +544,20 @@ class NotatOpplysningerService(
                                 NotatResultatBidragsberegningBarnDto(
                                     barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
                                     indeksår = beregning.indeksår ?: Year.now().value,
-                                    perioder =
-                                        beregning.perioder.map {
-                                            ResultatBarnebidragsberegningPeriodeDto(
-                                                periode = it.periode,
-                                                underholdskostnad = it.underholdskostnad,
-                                                bpsAndelU = it.bpsAndelU,
-                                                bpsAndelBeløp = it.bpsAndelBeløp,
-                                                samværsfradrag = it.samværsfradrag,
-                                                beregnetBidrag = it.beregnetBidrag,
-                                                faktiskBidrag = it.faktiskBidrag,
-                                                resultatKode = it.resultatKode,
-                                                erDirekteAvslag = it.erDirekteAvslag,
-                                                beregningsdetaljer =
-                                                    it.beregningsdetaljer?.let {
-                                                        BidragPeriodeBeregningsdetaljer(
-                                                            bpHarEvne = it.bpHarEvne,
-                                                            antallBarnIHusstanden = it.antallBarnIHusstanden,
-                                                            forskuddssats = it.forskuddssats,
-                                                            barnetilleggBM = it.barnetilleggBM.tilNotatDto(),
-                                                            barnetilleggBP = it.barnetilleggBP.tilNotatDto(),
-                                                            voksenIHusstanden = it.voksenIHusstanden,
-                                                            endringUnderGrense = it.endringUnderGrense,
-                                                            enesteVoksenIHusstandenErEgetBarn = it.enesteVoksenIHusstandenErEgetBarn,
-                                                            bpsAndel = it.bpsAndel,
-                                                            inntekter =
-                                                                it.inntekter?.let {
-                                                                    NotatResultatBeregningInntekterDto(
-                                                                        inntektBM = it.inntektBM,
-                                                                        inntektBP = it.inntektBP,
-                                                                        inntektBarn = it.inntektBarn,
-                                                                        barnEndeligInntekt = it.barnEndeligInntekt,
-                                                                    )
-                                                                },
-                                                            delberegningBidragsevne =
-                                                                it.delberegningBidragsevne?.tilNotatDto(),
-                                                            samværsfradrag =
-                                                                it.samværsfradrag?.let {
-                                                                    NotatBeregningsdetaljerSamværsfradrag(
-                                                                        samværsfradrag = it.samværsfradrag,
-                                                                        samværsklasse = it.samværsklasse,
-                                                                        gjennomsnittligSamværPerMåned = it.gjennomsnittligSamværPerMåned,
-                                                                    )
-                                                                },
-                                                            sluttberegning = it.sluttberegning,
-                                                            delberegningUnderholdskostnad = it.delberegningUnderholdskostnad,
-                                                            delberegningBidragspliktigesBeregnedeTotalBidrag =
-                                                                it.delberegningBidragspliktigesBeregnedeTotalBidrag
-                                                                    ?.tilNotatDto(),
-                                                        )
+                                    innkrevesFraDato = beregning.innkrevesFraDato,
+                                    orkestrertVedtak =
+                                        beregning.delvedtak.find { it.endeligVedtak }?.let {
+                                            EndeligOrkestrertVedtak(
+                                                type = it.type,
+                                                perioder =
+                                                    it.perioder.map {
+                                                        it.mapTilNotat()
                                                     },
                                             )
+                                        },
+                                    perioder =
+                                        beregning.perioder.map {
+                                            it.mapTilNotat()
                                         },
                                 )
                             }
@@ -607,6 +575,76 @@ class NotatOpplysningerService(
         )
     }
 }
+
+private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto.mapTilNotat() =
+    ResultatBarnebidragsberegningPeriodeDto(
+        periode = periode,
+        underholdskostnad = underholdskostnad,
+        bpsAndelU = bpsAndelU,
+        bpsAndelBeløp = bpsAndelBeløp,
+        samværsfradrag = samværsfradrag,
+        beregnetBidrag = beregnetBidrag,
+        faktiskBidrag = faktiskBidrag,
+        resultatKode = resultatKode,
+        erDirekteAvslag = erDirekteAvslag,
+        erOpphør = erOpphør,
+        delvedtakstypeVisningsnavn = delvedtakstypeVisningsnavn,
+        resultatkodeVisningsnavn = resultatkodeVisningsnavn ?: "",
+        klageOmgjøringDetaljer =
+            klageOmgjøringDetaljer?.let {
+                ResultatBarnebidragsberegningPeriodeDto.KlageOmgjøringDetaljer(
+                    kanOpprette35c = it.kanOpprette35c,
+                    skalOpprette35c = it.skalOpprette35c,
+                )
+            },
+        vedtakstype = vedtakstype,
+        beregningsdetaljer =
+            beregningsdetaljer?.let {
+                BidragPeriodeBeregningsdetaljer(
+                    bpHarEvne = it.bpHarEvne,
+                    antallBarnIHusstanden = it.antallBarnIHusstanden,
+                    forskuddssats = it.forskuddssats,
+                    barnetilleggBM = it.barnetilleggBM.tilNotatDto(),
+                    indeksreguleringDetaljer =
+                        it.indeksreguleringDetaljer?.let {
+                            IndeksreguleringDetaljer(
+                                it.sluttberegning,
+                                it.faktor,
+                            )
+                        },
+                    barnetilleggBP = it.barnetilleggBP.tilNotatDto(),
+                    voksenIHusstanden = it.voksenIHusstanden,
+                    endringUnderGrense = it.endringUnderGrense,
+                    sluttberegningAldersjustering = it.sluttberegningAldersjustering,
+                    enesteVoksenIHusstandenErEgetBarn = it.enesteVoksenIHusstandenErEgetBarn,
+                    bpsAndel = it.bpsAndel,
+                    inntekter =
+                        it.inntekter?.let {
+                            NotatResultatBeregningInntekterDto(
+                                inntektBM = it.inntektBM,
+                                inntektBP = it.inntektBP,
+                                inntektBarn = it.inntektBarn,
+                                barnEndeligInntekt = it.barnEndeligInntekt,
+                            )
+                        },
+                    delberegningBidragsevne =
+                        it.delberegningBidragsevne?.tilNotatDto(),
+                    samværsfradrag =
+                        it.samværsfradrag?.let {
+                            NotatBeregningsdetaljerSamværsfradrag(
+                                samværsfradrag = it.samværsfradrag,
+                                samværsklasse = it.samværsklasse,
+                                gjennomsnittligSamværPerMåned = it.gjennomsnittligSamværPerMåned,
+                            )
+                        },
+                    sluttberegning = it.sluttberegning,
+                    delberegningUnderholdskostnad = it.delberegningUnderholdskostnad,
+                    delberegningBidragspliktigesBeregnedeTotalBidrag =
+                        it.delberegningBidragspliktigesBeregnedeTotalBidrag
+                            ?.tilNotatDto(),
+                )
+            },
+    )
 
 private fun DelberegningBarnetilleggDto.tilNotatDto() =
     NotatDelberegningBarnetilleggDto(

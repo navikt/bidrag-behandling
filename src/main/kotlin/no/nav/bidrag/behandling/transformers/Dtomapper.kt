@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
@@ -123,6 +124,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
+import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
@@ -154,6 +157,28 @@ class Dtomapper(
         inkluderHistoriskeInntekter: Boolean = false,
         lesemodus: Boolean = false,
     ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter, lesemodus)
+
+    fun hentEtterfølgendeVedtakDto(
+        behandling: Behandling,
+        søknadsbarn: Rolle,
+    ): List<EtterfølgendeVedtakDto> {
+        val grunnlag =
+            behandling.hentEtterfølgendeVedtak(søknadsbarn)
+        return grunnlag
+            .konvertereData<List<VedtakForStønad>>()
+            ?.groupBy { it.virkningstidspunkt }
+            ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
+            ?.map {
+                EtterfølgendeVedtakDto(
+                    virkningstidspunkt = it.virkningstidspunkt!!,
+                    opphørsdato =
+                        it.stønadsendring.periodeListe
+                            .filter { it.beløp == null }
+                            .maxOfOrNull { it.periode.fom },
+                    vedtaksid = it.vedtaksid,
+                )
+            } ?: emptyList()
+    }
 
     fun hentManuelleVedtakForBehandling(
         behandling: Behandling,
@@ -790,6 +815,7 @@ class Dtomapper(
                                 it.opprinneligVirkningstidspunkt
                                     ?: klagedetaljer?.opprinneligVirkningstidspunkt,
                             manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
+                            etterfølgendeVedtak = hentEtterfølgendeVedtakDto(this, it),
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
                             grunnlagFraVedtak = it.grunnlagFraVedtak,

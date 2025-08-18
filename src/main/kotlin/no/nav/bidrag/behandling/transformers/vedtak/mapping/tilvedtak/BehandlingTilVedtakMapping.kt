@@ -329,7 +329,7 @@ class BehandlingTilVedtakMapping(
 
                 val stønadsendringPerioder =
                     listOf(resultatVedtak.resultat).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn) }
-                val innkreving = if (klagevedtakErEnesteVedtak) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
+                val innkreving = if (klagevedtakErEnesteVedtak) behandling.innkrevingstype!! else Innkrevingstype.UTEN_INNKREVING
                 ResultatDelvedtak(
                     vedtaksid = null,
                     klagevedtak = resultatVedtak.klagevedtak,

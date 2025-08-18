@@ -285,7 +285,6 @@ class BehandlingService(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun oppdaterDelvedtakFattetStatus(
         behandlingsid: Long,
-        vedtaksid: Int,
         fattetAvEnhet: String,
         resultat: FattetDelvedtak,
     ) {
@@ -294,7 +293,7 @@ class BehandlingService(
             .orElseThrow { behandlingNotFoundException(behandlingsid) }
             .let {
                 log.info {
-                    "Oppdaterer behandling $behandlingsid med fattet delvedtak $vedtaksid - $resultat"
+                    "Oppdaterer behandling $behandlingsid med fattet delvedtak ${resultat.vedtaksid} - $resultat"
                 }
 
                 val eksisterendeDetaljer = it.vedtakDetaljer ?: VedtakDetaljer()
