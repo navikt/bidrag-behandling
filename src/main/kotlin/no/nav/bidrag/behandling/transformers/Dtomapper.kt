@@ -170,7 +170,10 @@ class Dtomapper(
             ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
             ?.map {
                 EtterfølgendeVedtakDto(
+                    vedtaksttidspunkt = it.vedtakstidspunkt,
+                    vedtakstype = it.type,
                     virkningstidspunkt = it.virkningstidspunkt!!,
+                    sistePeriodeDatoFom = it.stønadsendring.periodeListe.maxOf { it.periode.fom },
                     opphørsdato =
                         it.stønadsendring.periodeListe
                             .filter { it.beløp == null }

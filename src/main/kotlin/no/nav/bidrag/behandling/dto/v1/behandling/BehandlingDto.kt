@@ -33,7 +33,10 @@ data class ManuellVedtakResponse(
 )
 
 data class EtterfølgendeVedtakDto(
+    val vedtaksttidspunkt: LocalDateTime,
+    val vedtakstype: Vedtakstype,
     val virkningstidspunkt: YearMonth,
+    val sistePeriodeDatoFom: YearMonth,
     val opphørsdato: YearMonth? = null,
     val vedtaksid: Int,
 )

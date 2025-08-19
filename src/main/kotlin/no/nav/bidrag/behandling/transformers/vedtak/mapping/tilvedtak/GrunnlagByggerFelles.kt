@@ -151,9 +151,21 @@ fun Behandling.byggGrunnlagSøknad() =
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
-                        begrensetRevurdering = søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING,
-                        egetTiltak = listOf(BisysSøknadstype.BEGRENSET_REVURDERING, BisysSøknadstype.EGET_TILTAK).contains(søknadstype),
+                        begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
+                        egetTiltak =
+                            listOf(
+                                BisysSøknadstype.BEGRENSET_REVURDERING,
+                                BisysSøknadstype.EGET_TILTAK,
+                                BisysSøknadstype.PARAGRAF_35_C,
+                                BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                            ).contains(søknadstype),
                         opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+                        privatAvtale = søknadstype == BisysSøknadstype.PRIVAT_AVTALE,
+                        paragraf35c =
+                            listOf(
+                                BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                BisysSøknadstype.PARAGRAF_35_C,
+                            ).contains(søknadstype),
                     ),
                 ),
         ),

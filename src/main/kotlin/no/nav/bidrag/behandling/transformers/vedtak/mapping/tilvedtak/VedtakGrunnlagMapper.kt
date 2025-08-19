@@ -89,8 +89,9 @@ fun Behandling.finnBeregnTilDatoBehandling(
                     .withDayOfMonth(1)
                     .toLocalDate()
 
-            if (søknadsbarnRolle != null && søknadsbarnRolle.virkningstidspunkt!! >= beregnTilDato) {
-                søknadsbarnRolle.virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+            val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
+            if (virkningstidspunkt >= beregnTilDato) {
+                virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
             } else {
                 beregnTilDato
             }
