@@ -11,6 +11,7 @@ import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFrekvens
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -36,5 +37,6 @@ class VisningsnavnController {
             SamværskalkulatorNetterFrekvens.entries.associate { it.name to it.visningsnavn.intern } +
             Engangsbeløptype.entries.associate { it.name to it.visningsnavn.intern } +
             Utgiftstype.entries.associate { it.name to it.visningsnavn.intern } +
-            PrivatAvtaleType.entries.associate { it.name to it.visningsnavn.intern }
+            PrivatAvtaleType.entries.associate { it.name to it.visningsnavn.intern } +
+            BeregnTil.entries.associate { it.name to it.visningsnavn.intern }
 }

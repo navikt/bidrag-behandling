@@ -24,6 +24,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -119,12 +120,6 @@ open class Rolle(
 
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
-}
-
-@Schema(enumAsRef = true)
-enum class BeregnTil {
-    OPPRINNELIG_VEDTAKSTIDSPUNKT,
-    INNEVÆRENDE_MÅNED,
 }
 
 data class GrunnlagFraVedtak(
