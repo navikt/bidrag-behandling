@@ -63,6 +63,9 @@ class ValiderBehandlingService(
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
+        if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE) {
+            return "Kan ikke behandle privat avtale"
+        }
         if ((request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) &&
             !UnleashFeatures.BIDRAG_KLAGE.isEnabled
         ) {
