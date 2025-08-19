@@ -8,6 +8,7 @@ enum class UnleashFeatures(
     defaultValue: Boolean,
 ) {
     BIDRAG_V2_ENDRING("behandling.v2_endring", false),
+    BIDRAG_KLAGE("behandling.bidrag_klage", false),
     BEGRENSET_REVURDERING("behandling.begrenset_revurdering", false),
     VEDTAKSSPERRE("vedtakssperre", false),
     ;
