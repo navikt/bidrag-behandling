@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
@@ -24,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregni
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatadBeregningOrkestrering
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
+import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
@@ -335,6 +337,9 @@ class VedtakService(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
     ): Int {
+        if (!UnleashFeatures.FATTE_VEDTAK.isEnabled) {
+            ugyldigForespørsel("Kan ikke fatte vedtak for klage")
+        }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 

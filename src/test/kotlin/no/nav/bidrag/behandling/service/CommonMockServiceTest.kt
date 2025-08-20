@@ -4,6 +4,7 @@ import io.getunleash.FakeUnleash
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockkClass
+import io.mockk.mockkObject
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
@@ -23,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrun
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.inntekt.InntektApi
@@ -107,6 +109,7 @@ abstract class CommonMockServiceTest {
 
     @BeforeEach
     fun init() {
+        mockkObject(UnleashFeaturesProvider)
         inntektRepository = stubInntektRepository()
         personConsumer = stubPersonConsumer()
         personRepository = stubPersonRepository()

@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.databind.node.POJONode
+import disableUnleashFeature
+import enableUnleashFeature
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
@@ -9,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockkClass
 import io.mockk.verify
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
@@ -45,8 +48,10 @@ import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseD
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.web.client.HttpClientErrorException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -57,6 +62,7 @@ import java.util.Optional
 class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
     @BeforeEach
     fun initMocksKlage() {
+        enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK)
         bidragsberegningOrkestrator = mockkClass(BidragsberegningOrkestrator::class)
         behandlingService =
             BehandlingService(
@@ -99,6 +105,87 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 validerBehandlingService,
                 forsendelseService,
             )
+    }
+
+    @Test
+    fun `Skal ikke fatte vedtak for klage hvis feature skrudd av`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        behandling.vedtakstype = Vedtakstype.KLAGE
+        søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
+        søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
+        behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                klageMottattdato = LocalDate.parse("2025-01-10"),
+                påklagetVedtak = 2,
+                opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
+                opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
+            )
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilGrunnlagManuelleVedtak(
+            behandling.søknadsbarn.first(),
+        )
+        val originalVedtak = lagVedtaksdata("fattetvedtak/bidrag-innvilget")
+
+        behandling.søknadsbarn.first().grunnlagFraVedtak = 1
+        every { vedtakConsumer.hentVedtak(any()) } returns originalVedtak
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = mutableListOf<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+        every { bidragsberegningOrkestrator.utførBidragsberegning(any()) } returns
+            BidragsberegningOrkestratorResponse(
+                listOf(
+                    ResultatVedtak(
+                        vedtakstype = Vedtakstype.KLAGE,
+                        klagevedtak = true,
+                        beregnet = true,
+                        resultat =
+                            BeregnetBarnebidragResultat(
+                                listOf(
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                ),
+                            ),
+                    ),
+                    ResultatVedtak(
+                        vedtakstype = Vedtakstype.KLAGE,
+                        klagevedtak = false,
+                        beregnet = true,
+                        resultat =
+                            BeregnetBarnebidragResultat(
+                                listOf(
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                ),
+                            ),
+                    ),
+                ),
+            )
+        every { vedtakServiceBeregning.finnSisteVedtaksid(any()) } returns 1
+
+        disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK)
+        assertThrows<HttpClientErrorException> { vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = null)) }
     }
 
     @Test
@@ -203,7 +290,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
         }
-        verify(exactly = 0) { notatOpplysningerService.opprettNotat(any()) }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 
     @Test
@@ -354,7 +441,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         verify(exactly = 2) {
             vedtakConsumer.fatteVedtak(any())
         }
-        verify(exactly = 0) { notatOpplysningerService.opprettNotat(any()) }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 
     @Test
@@ -613,7 +700,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         verify(exactly = 3) {
             vedtakConsumer.fatteVedtak(any())
         }
-        verify(exactly = 0) { notatOpplysningerService.opprettNotat(any()) }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 
     @Test
@@ -880,6 +967,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         verify(exactly = 3) {
             vedtakConsumer.fatteVedtak(any())
         }
-        verify(exactly = 0) { notatOpplysningerService.opprettNotat(any()) }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
     }
 }
