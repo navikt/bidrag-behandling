@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
@@ -559,16 +560,16 @@ class VedtakService(
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Virkningstidspunkt må settes")
         }
 
-//        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-//            erKlageEllerOmgjøring &&
-//                opprinneligVirkningstidspunkt != null &&
-//                virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
-//        if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
-//            throw HttpClientErrorException(
-//                HttpStatus.BAD_REQUEST,
-//                "Virkningstidspunkt ikke være senere enn opprinnelig virkningstidspunkt",
-//            )
-//        }
+        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+            erKlageEllerOmgjøring && !erBidrag()
+        klagedetaljer?.opprinneligVirkningstidspunkt != null &&
+            virkningstidspunkt?.isAfter(klagedetaljer?.opprinneligVirkningstidspunkt) == true
+        if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Virkningstidspunkt ikke være senere enn opprinnelig virkningstidspunkt",
+            )
+        }
 
         if (saksnummer.isEmpty()) {
             throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Saksnummer mangler")
