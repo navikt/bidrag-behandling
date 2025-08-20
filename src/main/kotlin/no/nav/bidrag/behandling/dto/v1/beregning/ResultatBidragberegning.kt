@@ -246,7 +246,9 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val resultatkodeVisningsnavn get() =
         when {
             erOpphør ->
-                if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true) {
+                if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true ||
+                    beregningsdetaljer?.sluttberegning?.barnetErSelvforsørget == true
+                ) {
                     beregningsdetaljer.sluttberegning.resultatVisningsnavn!!.intern
                 } else {
                     "Opphør"
