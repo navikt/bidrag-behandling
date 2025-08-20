@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
@@ -21,6 +22,9 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
+import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
+import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -209,6 +213,29 @@ fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
 
 fun Behandling.hentEtterfølgendeVedtak(rolle: Rolle) =
     grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK)
+
+fun Behandling.hentNesteEtterfølgendeVedtak(rolle: Rolle): EtterfølgendeVedtakDto? {
+    val grunnlag =
+        hentEtterfølgendeVedtak(rolle)
+    return grunnlag
+        .konvertereData<List<VedtakForStønad>>()
+        ?.groupBy { it.virkningstidspunkt }
+        ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
+        ?.filter { !it.type.erIndeksEllerAldersjustering }
+        ?.map {
+            EtterfølgendeVedtakDto(
+                vedtaksttidspunkt = it.vedtakstidspunkt,
+                vedtakstype = it.type,
+                virkningstidspunkt = it.virkningstidspunkt!!,
+                sistePeriodeDatoFom = it.stønadsendring.periodeListe.maxOf { it.periode.fom },
+                opphørsdato =
+                    it.stønadsendring.periodeListe
+                        .filter { it.beløp == null }
+                        .maxOfOrNull { it.periode.fom },
+                vedtaksid = it.vedtaksid,
+            )
+        }?.minByOrNull { it.vedtaksttidspunkt }
+}
 
 fun Behandling.hentBeløpshistorikk(rolle: Rolle) =
     grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)

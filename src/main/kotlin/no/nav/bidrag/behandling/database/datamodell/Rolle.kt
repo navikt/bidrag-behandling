@@ -98,6 +98,7 @@ open class Rolle(
     )
     open var person: Person? = null,
     open var opphørsdato: LocalDate? = null,
+    @Enumerated(EnumType.STRING)
     open var beregnTil: BeregnTil? = null,
     open var virkningstidspunkt: LocalDate? = null,
     open var opprinneligVirkningstidspunkt: LocalDate? = null,

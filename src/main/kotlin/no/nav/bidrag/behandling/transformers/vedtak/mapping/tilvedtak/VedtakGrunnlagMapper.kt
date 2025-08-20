@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.hentBeløpshistorikk
+import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -79,6 +80,14 @@ fun Behandling.finnBeregnTilDatoBehandling(
     when {
         søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
             finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        søknadsbarnRolle?.beregnTil == BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
+            val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
+            if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
+                finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+            } else {
+                nesteVirkningstidspunkt
+            }
+        }
 
         else -> {
             val beregnTilDato =
@@ -93,7 +102,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
             if (virkningstidspunkt >= beregnTilDato) {
                 virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
             } else {
-                beregnTilDato
+                finnBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth)
             }
         }
     }
