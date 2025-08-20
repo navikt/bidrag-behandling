@@ -125,6 +125,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
+import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
@@ -161,13 +162,14 @@ class Dtomapper(
     fun hentEtterfølgendeVedtakDto(
         behandling: Behandling,
         søknadsbarn: Rolle,
-    ): List<EtterfølgendeVedtakDto> {
+    ): EtterfølgendeVedtakDto? {
         val grunnlag =
             behandling.hentEtterfølgendeVedtak(søknadsbarn)
         return grunnlag
             .konvertereData<List<VedtakForStønad>>()
             ?.groupBy { it.virkningstidspunkt }
             ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
+            ?.filter { !it.type.erIndeksEllerAldersjustering }
             ?.map {
                 EtterfølgendeVedtakDto(
                     vedtaksttidspunkt = it.vedtakstidspunkt,
@@ -180,7 +182,7 @@ class Dtomapper(
                             .maxOfOrNull { it.periode.fom },
                     vedtaksid = it.vedtaksid,
                 )
-            } ?: emptyList()
+            }?.minByOrNull { it.vedtaksttidspunkt }
     }
 
     fun hentManuelleVedtakForBehandling(
