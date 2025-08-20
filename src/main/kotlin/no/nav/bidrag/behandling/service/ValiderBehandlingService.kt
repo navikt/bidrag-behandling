@@ -11,9 +11,11 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -36,6 +38,9 @@ class ValiderBehandlingService(
         val sak = bidragSakConsumer.hentSak(request.saksnummer)
         if (sak.vedtakssperre || UnleashFeatures.VEDTAKSSPERRE.isEnabled) {
             return "Denne saken er midlertidig stengt for vedtak"
+        }
+        if (request.engangsbeløpstype != null && request.engangsbeløpstype != Engangsbeløptype.SÆRBIDRAG) {
+            return "Kan ikke behandle ${request.engangsbeløpstype?.visningsnavn} i ny løsning"
         }
         return when (request.tilType()) {
             TypeBehandling.SÆRBIDRAG -> kanSærbidragBehandlesINyLøsning(request)
@@ -63,6 +68,7 @@ class ValiderBehandlingService(
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
+
         if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE) {
             return "Kan ikke behandle privat avtale"
         }
