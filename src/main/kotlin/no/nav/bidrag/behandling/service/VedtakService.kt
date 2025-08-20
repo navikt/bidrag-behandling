@@ -406,7 +406,7 @@ class VedtakService(
             request?.enhet ?: behandling.behandlerEnhet,
         )
 
-//        opprettNotat(behandling)
+        opprettNotat(behandling)
 
         LOGGER.info {
             "Fattet vedtak for behandling ${behandling.id} med ${
