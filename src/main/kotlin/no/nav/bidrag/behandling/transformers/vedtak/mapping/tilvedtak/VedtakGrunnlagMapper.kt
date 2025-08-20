@@ -77,32 +77,31 @@ fun Behandling.finnBeregnTilDatoBehandling(
 ) = if (tilType() == TypeBehandling.SÆRBIDRAG) {
     virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
 } else if (erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
+    val beregnTilDato =
+        klagedetaljer
+            ?.opprinneligVedtakstidspunkt!!
+            .min()
+            .plusMonths(1)
+            .withDayOfMonth(1)
+            .toLocalDate()
     when {
         søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
             finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
         søknadsbarnRolle?.beregnTil == BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
             val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
             if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
-                finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+                beregnTilDato
             } else {
                 nesteVirkningstidspunkt
             }
         }
 
         else -> {
-            val beregnTilDato =
-                klagedetaljer
-                    ?.opprinneligVedtakstidspunkt!!
-                    .min()
-                    .plusMonths(1)
-                    .withDayOfMonth(1)
-                    .toLocalDate()
-
             val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
             if (virkningstidspunkt >= beregnTilDato) {
                 virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
             } else {
-                finnBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth)
+                beregnTilDato
             }
         }
     }

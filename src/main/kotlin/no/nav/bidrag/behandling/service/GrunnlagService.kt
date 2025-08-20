@@ -63,12 +63,12 @@ import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
-import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
+import no.nav.bidrag.beregn.core.util.justerVedtakstidspunkt
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -163,7 +163,7 @@ class GrunnlagService(
                         )
                 }
             }
-            feilrapporteringer += hentOgLagreBEtterfølgendeVedtak(behandling)
+            feilrapporteringer += hentOgLagreEtterfølgendeVedtak(behandling)
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
             feilrapporteringer += lagreManuelleVedtakGrunnlag(behandling)
 
@@ -352,7 +352,7 @@ class GrunnlagService(
         return feilrapporteringer
     }
 
-    fun hentOgLagreBEtterfølgendeVedtak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    fun hentOgLagreEtterfølgendeVedtak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (!(behandling.erKlageEllerOmgjøring && behandling.erBidrag())) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
         val type = Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK
@@ -360,14 +360,18 @@ class GrunnlagService(
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type)
+                val opprinneligVedtakstidspunkt = behandling.klagedetaljer!!.opprinneligVedtakstidspunkt.minOrNull()
                 val respons =
                     vedtakService!!
                         .hentAlleVedtakForStønad(
                             behandling.tilStønadsid(sb),
-                            sb.virkningstidspunkt!!.toYearMonth(),
+                            sb.opprinneligVirkningstidspunkt!!.toYearMonth(),
                             behandling.klagedetaljer?.påklagetVedtak,
-                        )
-                if (eksisterendeGrunnlag == null &&
+                        ).filter {
+                            opprinneligVedtakstidspunkt == null ||
+                                it.justerVedtakstidspunkt().vedtakstidspunkt.isAfter(opprinneligVedtakstidspunkt)
+                        }
+                if (eksisterendeGrunnlag == null ||
                     eksisterendeGrunnlag.konvertereData<List<VedtakForStønad>>() != respons
                 ) {
                     log.info { "Lagrer ny grunnlag etterfølgende vedtak for type $type" }
