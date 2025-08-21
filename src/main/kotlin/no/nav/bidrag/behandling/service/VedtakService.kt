@@ -70,7 +70,7 @@ class VedtakService(
     private val notatOpplysningerService: NotatOpplysningerService,
     private val tilgangskontrollService: TilgangskontrollService,
     private val vedtakConsumer: BidragVedtakConsumer,
-//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal,
+//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal?,
     private val validering: ValiderBeregning,
     private val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping,
     private val behandlingTilVedtakMapping: BehandlingTilVedtakMapping,
@@ -563,7 +563,7 @@ class VedtakService(
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
             erKlageEllerOmgjøring && !erBidrag()
         klagedetaljer?.opprinneligVirkningstidspunkt != null &&
-            virkningstidspunkt?.isAfter(klagedetaljer?.opprinneligVirkningstidspunkt) == true
+            virkningstidspunkt!! > klagedetaljer!!.opprinneligVirkningstidspunkt
         if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -593,6 +593,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-
-//    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer.fatteVedtak(request)
+//
+//    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }
