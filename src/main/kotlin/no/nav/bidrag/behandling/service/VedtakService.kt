@@ -362,7 +362,7 @@ class VedtakService(
 
         val response =
             if (beregning.klagevedtakErEnesteVedtak) {
-                val klagevedtak = requestDelvedtak.delvedtak.find { it.klagevedtak }!!
+                val klagevedtak = requestDelvedtak.delvedtak.find { it.omgjøringsvedtak }!!
                 secureLogger.info {
                     "Klagevedtak er eneste vedtak i orkestrering. Fatter bare vedtak for klagevedtak ${klagevedtak.request}"
                 }
@@ -593,6 +593,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-//
+
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }

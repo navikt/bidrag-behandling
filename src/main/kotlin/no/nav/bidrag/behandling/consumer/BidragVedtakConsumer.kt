@@ -1,6 +1,9 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.VEDTAK_CACHE
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.VEDTAK_FOR_STØNAD_CACHE
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningVedtakConsumer
+import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
@@ -10,6 +13,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseD
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
@@ -32,6 +36,7 @@ class BidragVedtakConsumer(
     private val bidragVedtakUri
         get() = UriComponentsBuilder.fromUri(bidragVedtakUrl).pathSegment("vedtak")
 
+    @BrukerCacheable(VEDTAK_CACHE)
     fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto =
         try {
             postForNonNullEntity(
@@ -56,7 +61,7 @@ class BidragVedtakConsumer(
             bidragVedtakUri.pathSegment(vedtaksid.toString()).build().toUri(),
         )
 
-    //    @BrukerCacheable(VEDTAK_FOR_STØNAD_CACHE)
+    @BrukerCacheable(VEDTAK_FOR_STØNAD_CACHE)
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,
@@ -68,3 +73,49 @@ class BidragVedtakConsumer(
             request,
         )
 }
+
+// @Component
+// class BidragVedtakConsumerLocal(
+//    @Value("\${BIDRAG_VEDTAK_LOCAL_URL}") private val bidragVedtakUrl: URI,
+//    @Qualifier("azure") restTemplate: RestTemplate,
+// ) : AbstractRestClient(restTemplate, "bidrag-vedtak") {
+//    private val bidragVedtakUri
+//        get() = UriComponentsBuilder.fromUri(bidragVedtakUrl).pathSegment("vedtak")
+//
+//    fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto =
+//        try {
+//            postForNonNullEntity(
+//                bidragVedtakUri.build().toUri(),
+//                request,
+//            )
+//            //            OpprettVedtakResponseDto((Math.random() * 10000).toInt(), emptyList())
+//        } catch (e: HttpStatusCodeException) {
+//            if (e.statusCode == HttpStatus.CONFLICT) {
+//                val resultat = e.getResponseBodyAs(OpprettVedtakConflictResponse::class.java)!!
+//                secureLogger.info {
+//                    "Vedtak med referanse ${request.unikReferanse} finnes allerede med vedtaksid ${resultat.vedtaksid}."
+//                }
+//                OpprettVedtakResponseDto(resultat.vedtaksid, emptyList())
+//            } else {
+//                secureLogger.error(e) { "Feil ved oppretting av vedtak med referanse ${request.unikReferanse}" }
+//                throw e
+//            }
+//        }
+//
+//    fun hentVedtak(vedtaksid: Int): VedtakDto? =
+//        getForEntity(
+//            bidragVedtakUri.pathSegment(vedtaksid.toString()).build().toUri(),
+//        )
+//
+//    @BrukerCacheable(VEDTAK_FOR_STØNAD_CACHE)
+//    @Retryable(
+//        value = [Exception::class],
+//        maxAttempts = 3,
+//        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+//    )
+//    fun hentVedtakForStønad(request: HentVedtakForStønadRequest): HentVedtakForStønadResponse =
+//        postForNonNullEntity(
+//            bidragVedtakUri.pathSegment("hent-vedtak").build().toUri(),
+//            request,
+//        )
+// }

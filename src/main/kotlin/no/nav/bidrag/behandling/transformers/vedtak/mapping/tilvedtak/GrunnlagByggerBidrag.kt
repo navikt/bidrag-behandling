@@ -178,7 +178,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                     POJONode(
                         ResultatFraVedtakGrunnlag(
                             vedtaksid = vedtak.vedtaksid,
-                            klagevedtak = vedtak.klagevedtak,
+                            omgjøringsvedtak = vedtak.omgjøringsvedtak,
                             beregnet = vedtak.beregnet,
                             opprettParagraf35c = behandling.klagedetaljer!!.paragraf35c.any { it.vedtaksid == vedtak.vedtaksid },
                         ),
@@ -187,10 +187,10 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
         grunnlagListe.add(resultatFraGrunnlag)
         val klagevedtak =
             resultatDelvedtak
-                .find { it.klagevedtak }!!
+                .find { it.omgjøringsvedtak }!!
         val orkestrertVedtakGrunnlag =
             VedtakOrkestreringDetaljerGrunnlag(
-                klagevedtakId = klagevedtak.vedtaksid!!,
+                omgjøringsvedtakId = klagevedtak.vedtaksid!!,
                 innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarnRolle),
                 beregnTilDato =
                     behandling

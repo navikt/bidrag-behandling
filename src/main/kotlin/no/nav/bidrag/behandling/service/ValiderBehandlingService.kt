@@ -40,7 +40,7 @@ class ValiderBehandlingService(
             return "Denne saken er midlertidig stengt for vedtak"
         }
         if (request.engangsbeløpstype != null && request.engangsbeløpstype != Engangsbeløptype.SÆRBIDRAG) {
-            return "Kan ikke behandle ${request.engangsbeløpstype?.visningsnavn} i ny løsning"
+            return "Kan ikke behandle ${request.engangsbeløpstype?.visningsnavn?.intern} i ny løsning"
         }
         return when (request.tilType()) {
             TypeBehandling.SÆRBIDRAG -> kanSærbidragBehandlesINyLøsning(request)
@@ -86,28 +86,16 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.ALDERSJUSTERING) return null
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
-        if (!UnleashFeatures.BIDRAG_V2_ENDRING.isEnabled) {
-            val harBPMinstEnBidragsstønad =
-                bidragBeløpshistorikkConsumer
-                    .hentAlleStønaderForBidragspliktig(bp.ident)
-                    .stønader
-                    .any { it.type != Stønadstype.FORSKUDD }
-            if (harBPMinstEnBidragsstønad &&
-                !request.erBegrensetRevurdering()
-            ) {
-                return "Bidragspliktig har en eller flere historiske eller løpende bidrag"
-            }
-        } else {
-            val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
-            val harBPStønadForFlereBarn =
-                bidragBeløpshistorikkConsumer
-                    .hentAlleStønaderForBidragspliktig(bp.ident)
-                    .stønader
-                    .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
-                    .any { it.type != Stønadstype.FORSKUDD }
-            if (harBPStønadForFlereBarn) {
-                return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
-            }
+
+        val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
+        val harBPStønadForFlereBarn =
+            bidragBeløpshistorikkConsumer
+                .hentAlleStønaderForBidragspliktig(bp.ident)
+                .stønader
+                .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
+                .any { it.type != Stønadstype.FORSKUDD }
+        if (harBPStønadForFlereBarn) {
+            return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
         }
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {

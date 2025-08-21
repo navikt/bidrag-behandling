@@ -580,7 +580,7 @@ class GrunnlagService(
                 request.overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.ARBEIDSFORHOLD == request.grunnlagstype) {
-            log.info { "Aktiverer arbeidsforhold for rolleid ${rolleGrunnlagErInnhentetFor?.id} i behandling med id ${behandling.id}." }
+            log.debug { "Aktiverer arbeidsforhold for rolleid ${rolleGrunnlagErInnhentetFor?.id} i behandling med id ${behandling.id}." }
             behandling.grunnlag
                 .hentAlleIkkeAktiv()
                 .hentGrunnlagForType(Grunnlagsdatatype.ARBEIDSFORHOLD, request.personident!!.verdi)
@@ -898,7 +898,7 @@ class GrunnlagService(
         behandling: Behandling,
         overskriveManuelleOpplysninger: Boolean = false,
     ) {
-        log.info {
+        log.debug {
             "Aktiverer boforhold for andre voksne i husstanden for behandling ${behandling.id}. overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
         }
         val nyesteIkkeaktiverteBoforhold =
@@ -1295,14 +1295,14 @@ class GrunnlagService(
 
         andreBarnIkkeIBehandling.forEach { barn ->
             behandling.underholdskostnader.find { u -> u.person.ident == barn.gjelderPersonId }?.let {
-                secureLogger.info { "$barn er annen barn til BM. Oppdaterer underholdskostnad til kilde OFFENTLIG" }
+                secureLogger.debug { "$barn er annen barn til BM. Oppdaterer underholdskostnad til kilde OFFENTLIG" }
                 it.kilde = Kilde.OFFENTLIG
             }
         }
 
         andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunkt!!) }.forEach { barn ->
             if (behandling.underholdskostnader.none { u -> u.person.ident == barn.gjelderPersonId }) {
-                secureLogger.info { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
+                secureLogger.debug { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
                 underholdService.oppretteUnderholdskostnad(
                     behandling,
                     BarnDto(personident = Personident(barn.gjelderPersonId!!), fødselsdato = barn.fødselsdato),
@@ -1316,7 +1316,7 @@ class GrunnlagService(
             .filter { it.barnetsRolleIBehandlingen == null }
             .filter { !andreBarnIdenter.contains(it.person.ident) }
             .forEach {
-                secureLogger.info { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }
+                secureLogger.debug { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }
                 it.kilde = Kilde.MANUELL
             }
     }
@@ -1403,7 +1403,7 @@ class GrunnlagService(
         val endringerSomMåBekreftes = mapper.endringerIAndreVoksneIBpsHusstand(ikkeAktiveGrunnlag, aktiveGrunnlag)
 
         if (endringerSomMåBekreftes == null || endringerSomMåBekreftes.perioder.isEmpty()) {
-            log.info {
+            log.debug {
                 "Bps ikke aktive boforholdsgrunnlag med type " +
                     "${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN} i behandling ${behandling.id} har " +
                     "ingen endringer som må bekreftes av saksbehandler. Automatisk aktiverer ny innhentet " +
@@ -1439,7 +1439,7 @@ class GrunnlagService(
                         false -> "ikke-bearbeida"
                     }
 
-                log.info {
+                log.debug {
                     "Ikke-aktivert $type boforhold til bidragsmottaker med søknadsbarn med id ${it.id} i behandling ${behandling.id},"
                     "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
                 }
@@ -1464,7 +1464,7 @@ class GrunnlagService(
                     ikkeAktiveGrunnlag
                         .hentGrunnlagForType(Grunnlagsdatatype.BOFORHOLD, rolleInhentetFor.ident!!)
                         .find { it.gjelder != null && it.gjelder == hb.ident } ?: return@forEach
-                log.info {
+                log.debug {
                     "Ikke aktive boforhold grunnlag ${ikkeAktivGrunnlag.id} med type ${Grunnlagsdatatype.BOFORHOLD}" +
                         " for rolle ${rolleInhentetFor.rolletype}" +
                         " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
@@ -1495,7 +1495,7 @@ class GrunnlagService(
                         false -> "ikke-bearbeida"
                     }
 
-                log.info {
+                log.debug {
                     "Ikke-aktivert $type sivilstandsgrunnlag med id ${it.id} i behandling ${behandling.id},"
                     "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
                 }
@@ -1546,7 +1546,7 @@ class GrunnlagService(
                     }
                     return@forEach
                 }
-                log.info {
+                log.debug {
                     "Ignorerer funksjonell feil ved grunnlagsinnhenting av grunnlag $type for rolle " +
                         "${rolleInhentetFor.rolletype} i behandling ${behandling.id}. Feilmelding: " +
                         feilrapportering.feilmelding
@@ -1601,7 +1601,7 @@ class GrunnlagService(
                     type,
                 ).isNotEmpty()
         if (!inneholderEndringerSomMåBekreftes) {
-            log.info {
+            log.debug {
                 "Ikke aktive grunnlag med type $type for rolle ${rolleInhentetFor.rolletype}" +
                     " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
                     "Automatisk aktiverer ny innhentet grunnlag."
@@ -1670,8 +1670,9 @@ class GrunnlagService(
         aktiv: LocalDateTime? = null,
         gjelder: Personident? = null,
     ) {
-        log.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id ${behandling.id}" }
-        secureLogger.info { "Lagrer inntentet grunnlag $grunnlagstype for behandling med id ${behandling.id} og gjelder ${gjelder?.verdi}" }
+        secureLogger.debug {
+            "Lagrer inntentet grunnlag $grunnlagstype for behandling med id ${behandling.id} og gjelder ${gjelder?.verdi}"
+        }
 
         behandling.grunnlag.add(
             Grunnlag(
@@ -1737,7 +1738,7 @@ class GrunnlagService(
         aktiveringstidspunkt: LocalDateTime? = null,
         gjelderPerson: Personident? = null,
     ) {
-        log.info { "Lagrer grunnlag $grunnlagstype, $innhentetGrunnlag hvis endret" }
+        log.debug { "Lagrer grunnlag $grunnlagstype, $innhentetGrunnlag hvis endret" }
         val sistInnhentedeGrunnlagAvTypeForRolle: Set<T> =
             nyesteGrunnlag(behandling, innhentetForRolle, grunnlagstype, gjelderPerson)
 
@@ -1789,7 +1790,7 @@ class GrunnlagService(
                     .filter { gjelderPerson == null || it.gjelder == gjelderPerson.verdi }
             val grunnlagSomSkalOppdateres = uaktiverteGrunnlag.maxBy { it.innhentet }
 
-            log.info {
+            log.debug {
                 "Oppdaterer uaktivert grunnlag ${grunnlagSomSkalOppdateres.id} " +
                     "i behandling ${behandling.id} med ny innhentet grunnlagsdata"
             }
@@ -1798,11 +1799,7 @@ class GrunnlagService(
             grunnlagSomSkalOppdateres.aktiv = aktiveringstidspunkt
 
             uaktiverteGrunnlag.filter { it.id != grunnlagSomSkalOppdateres.id }.forEach {
-                log.info {
-                    "Sletter grunnlag ${it.id} fra behandling ${behandling.id} " +
-                        "fordi den er duplikat av grunnlag ${grunnlagSomSkalOppdateres.id}"
-                }
-                secureLogger.info {
+                secureLogger.debug {
                     "Sletter grunnlag ${it.id} fra behandling ${behandling.id} " +
                         "fordi den er duplikat av grunnlag ${grunnlagSomSkalOppdateres.id}: $it"
                 }
@@ -1810,7 +1807,7 @@ class GrunnlagService(
                 grunnlagRepository.deleteById(it.id!!)
             }
         } else {
-            log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandling." }
+            log.debug { "Ingen endringer i grunnlag $grunnlagstype for behandling med id $behandling." }
         }
     }
 
@@ -1988,7 +1985,7 @@ class GrunnlagService(
                 }
             }
         } else {
-            log.info { "Ingen endringer i grunnlag $grunnlagstype for behandling med id ${behandling.id!!}." }
+            log.debug { "Ingen endringer i grunnlag $grunnlagstype for behandling med id ${behandling.id!!}." }
         }
     }
 

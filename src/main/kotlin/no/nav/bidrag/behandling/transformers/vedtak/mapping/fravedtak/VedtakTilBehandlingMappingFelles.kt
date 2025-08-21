@@ -51,7 +51,6 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
@@ -82,7 +81,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
-import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
@@ -90,11 +88,9 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
-import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.YearMonth
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
 
@@ -194,7 +190,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                     if (it.vedtaksid == null) {
                         return@let DelvedtakDto(
                             type = Vedtakstype.OPPHØR,
-                            klagevedtak = false,
+                            omgjøringsvedtak = false,
                             vedtaksid = it.vedtaksid,
                             delvedtak = true,
                             beregnet = true,
@@ -221,9 +217,9 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             .find { it.periode.inneholder(periode.periode) }!!
                     DelvedtakDto(
                         type = vedtak.type,
-                        klagevedtak = it.klagevedtak,
+                        omgjøringsvedtak = it.omgjøringsvedtak,
                         vedtaksid = it.vedtaksid,
-                        delvedtak = !it.klagevedtak,
+                        delvedtak = !it.omgjøringsvedtak,
                         beregnet = it.beregnet,
                         resultatFraVedtakVedtakstidspunkt = vedtak.vedtakstidspunkt,
                         indeksår = vedtak.stønadsendringListe.first().førsteIndeksreguleringsår ?: 1,
@@ -247,7 +243,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                         klageOmgjøringDetaljer =
                                             KlageOmgjøringDetaljer(
                                                 resultatFraVedtak = it.vedtaksid,
-                                                klagevedtak = it.klagevedtak,
+                                                omgjøringsvedtak = it.omgjøringsvedtak,
                                                 beregnTilDato = orkestreringDetaljer?.beregnTilDato,
                                                 resultatFraVedtakVedtakstidspunkt = it.vedtakstidspunkt,
                                                 kanOpprette35c =
@@ -287,7 +283,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
     val endeligVedtak =
         DelvedtakDto(
             type = Vedtakstype.KLAGE,
-            klagevedtak = false,
+            omgjøringsvedtak = false,
             vedtaksid = null,
             delvedtak = false,
             beregnet = false,
@@ -307,7 +303,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             klageOmgjøringDetaljer =
                                 KlageOmgjøringDetaljer(
                                     resultatFraVedtak = periodeVedtak?.vedtaksid,
-                                    klagevedtak = periodeVedtak?.klagevedtak ?: false,
+                                    omgjøringsvedtak = periodeVedtak?.omgjøringsvedtak ?: false,
                                     kanOpprette35c =
                                         periodeVedtak?.perioder?.any { it.klageOmgjøringDetaljer?.kanOpprette35c == true } == true,
                                     skalOpprette35c =

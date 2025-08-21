@@ -65,7 +65,7 @@ import java.time.YearMonth
 
 data class ResultatDelvedtak(
     val vedtaksid: Int?,
-    val klagevedtak: Boolean = false,
+    val omgjøringsvedtak: Boolean = false,
     val innkreving: Boolean = false,
     val beregnet: Boolean = false,
     val request: OpprettVedtakRequestDto?,
@@ -82,7 +82,7 @@ data class ResultatadBeregningOrkestrering(
             it.resultatVedtak
                 ?.resultatVedtakListe
                 ?.filter { !it.endeligVedtak }
-                ?.all { it.klagevedtak } ==
+                ?.all { it.omgjøringsvedtak } ==
                 true
         }
 }
@@ -316,7 +316,7 @@ class BehandlingTilVedtakMapping(
                     val resultatFraVedtakGrunnlag = resultatVedtak.resultat.grunnlagListe.finnResultatFraAnnenVedtak(finnFørsteTreff = true)
                     return@mapIndexed ResultatDelvedtak(
                         vedtaksid = resultatFraVedtakGrunnlag?.vedtaksid,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         beregnet = false,
                         request = null,
                         resultat = resultatVedtak.resultat,
@@ -328,7 +328,7 @@ class BehandlingTilVedtakMapping(
                 val innkreving = if (klagevedtakErEnesteVedtak) behandling.innkrevingstype!! else Innkrevingstype.UTEN_INNKREVING
                 ResultatDelvedtak(
                     vedtaksid = null,
-                    klagevedtak = resultatVedtak.klagevedtak,
+                    omgjøringsvedtak = resultatVedtak.omgjøringsvedtak,
                     beregnet = true,
                     request =
                         byggVedtakForKlage(
@@ -373,7 +373,7 @@ class BehandlingTilVedtakMapping(
             grunnlagsliste.addAll(stønadsendringGrunnlag)
             stønadsendringGrunnlagListe.addAll(stønadsendringGrunnlag)
 
-            if (resultatVedtak.klagevedtak) {
+            if (resultatVedtak.omgjøringsvedtak) {
                 if (søknadsbarn.avslag != null) {
                     grunnlagsliste.addAll(behandling.byggGrunnlagGenereltAvslag())
                 } else {
@@ -395,7 +395,7 @@ class BehandlingTilVedtakMapping(
 
             val referansePostfix =
                 when {
-                    resultatVedtak.delvedtak || resultatVedtak.klagevedtak ->
+                    resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak ->
                         "Delvedtak_${resultatVedtak.vedtakstype}" +
                             "_${resultatVedtak.beregnetFraDato.toCompactString()}"
                     else -> "endeligvedtak"
@@ -412,7 +412,9 @@ class BehandlingTilVedtakMapping(
                             skyldner = behandling.tilSkyldner(),
                             omgjørVedtakId =
                                 when {
-                                    resultatVedtak.endeligVedtak || resultatVedtak.klagevedtak -> behandling.klagedetaljer?.påklagetVedtak
+                                    resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak ->
+                                        behandling.klagedetaljer
+                                            ?.påklagetVedtak
                                     else -> null
                                 },
                             kravhaver =

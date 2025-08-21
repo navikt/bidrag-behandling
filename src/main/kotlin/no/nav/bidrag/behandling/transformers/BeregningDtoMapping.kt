@@ -112,7 +112,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.felles.ifTrue
-import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -268,7 +267,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
 
 private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<DelvedtakDto> =
     resultat.resultatVedtak?.resultatVedtakListe?.map { rv ->
-        val erEndeligVedtak = !rv.delvedtak && !rv.klagevedtak
+        val erEndeligVedtak = !rv.delvedtak && !rv.omgjøringsvedtak
         val grunnlagslisteRV = rv.resultat.grunnlagListe
         val aldersjusteringDetaljer = rv.resultat.grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
         val resultatFraVedtak =
@@ -327,7 +326,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                         grunnlagslisteRV.finnResultatFraAnnenVedtak(
                             p.grunnlagsreferanseListe,
                         )
-                    val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.klagevedtak }
+                    val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.omgjøringsvedtak }
                     val erKlagevedtak =
                         klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any { it.periode.fom == p.periode.fom } == true
 
@@ -367,7 +366,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 klageOmgjøringDetaljer =
                                     KlageOmgjøringDetaljer(
                                         resultatFraVedtak = resultatFraVedtak?.vedtaksid,
-                                        klagevedtak = erKlagevedtak,
+                                        omgjøringsvedtak = erKlagevedtak,
                                         resultatFraVedtakVedtakstidspunkt = resultatFraVedtak?.vedtakstidspunkt,
                                         kanOpprette35c =
                                             delvedtak?.let {
@@ -406,7 +405,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
         DelvedtakDto(
             type = rv.vedtakstype,
             delvedtak = rv.delvedtak,
-            klagevedtak = resultatFraVedtak?.klagevedtak ?: rv.klagevedtak,
+            omgjøringsvedtak = resultatFraVedtak?.omgjøringsvedtak ?: rv.omgjøringsvedtak,
             beregnet =
                 resultatFraVedtak?.beregnet ?: rv.beregnet,
             vedtaksid = resultatFraVedtak?.vedtaksid,
@@ -630,7 +629,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                 ).copy(
                     klageOmgjøringDetaljer =
                         KlageOmgjøringDetaljer(
-                            klagevedtak = it.klagevedtak,
+                            omgjøringsvedtak = it.omgjøringsvedtak,
                         ),
                 )
         }
