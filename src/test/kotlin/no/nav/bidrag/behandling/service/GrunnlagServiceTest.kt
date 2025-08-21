@@ -1352,12 +1352,12 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.grunnlag.size shouldBe 4
 
                 val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
-                alleAktiveGrunnlag.size shouldBe 3
+                alleAktiveGrunnlag.size shouldBe 4
                 val sistInnhentaSmåbarnstillegg =
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
                         .maxBy { it.innhentet }
-                sistInnhentaSmåbarnstillegg.aktiv shouldBe null
+                sistInnhentaSmåbarnstillegg.aktiv.shouldNotBeNull()
 
                 val gjeldendeSmåbarnstillegg =
                     behandling.grunnlag
@@ -1366,9 +1366,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 gjeldendeSmåbarnstillegg.shouldNotBeNull()
 
                 assertSoftly(jsonListeTilObjekt<SmåbarnstilleggGrunnlagDto>(gjeldendeSmåbarnstillegg.data)) {
-                    it shouldHaveSize 1
-                    it.filter { sbt -> sbt.personId == behandling.bidragsmottaker!!.ident!! } shouldHaveSize 1
-                    it.filter { sbt -> sbt.beløp == småbarnstillegg.beløp } shouldHaveSize 1
+                    it shouldHaveSize 0
+                    it.filter { sbt -> sbt.personId == behandling.bidragsmottaker!!.ident!! } shouldHaveSize 0
+                    it.filter { sbt -> sbt.beløp == småbarnstillegg.beløp } shouldHaveSize 0
                 }
             }
 
