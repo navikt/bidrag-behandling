@@ -191,7 +191,7 @@ class GrunnlagService(
         } else {
             val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
-            log.info {
+            log.debug {
                 "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
                     "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
@@ -219,7 +219,7 @@ class GrunnlagService(
             if (eksisterendeGrunnlag == null ||
                 eksisterendeGrunnlag.konvertereData<List<ManuellVedtakGrunnlag>>()?.toSet() != manuelleVedtakRespons.toSet()
             ) {
-                secureLogger.info {
+                secureLogger.debug {
                     "Lagrer ny grunnlag manuelle vedtak for type ${Grunnlagsdatatype.MANUELLE_VEDTAK} med respons $manuelleVedtakRespons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
                 }
                 val nyGrunnlag =
@@ -374,8 +374,8 @@ class GrunnlagService(
                 if (eksisterendeGrunnlag == null ||
                     eksisterendeGrunnlag.konvertereData<List<VedtakForStønad>>() != respons
                 ) {
-                    log.info { "Lagrer ny grunnlag etterfølgende vedtak for type $type" }
-                    secureLogger.info {
+                    log.debug { "Lagrer ny grunnlag etterfølgende vedtak for type $type" }
+                    secureLogger.debug {
                         "Lagrer ny grunnlag etterfølgende vedtak for type $type med respons $respons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
                     }
                     val nyGrunnlag =
@@ -421,6 +421,12 @@ class GrunnlagService(
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type)
+                val grunnlagEksistererFraKlage = eksisterendeGrunnlag != null && behandling.erKlageEllerOmgjøring
+                if (grunnlagEksistererFraKlage) {
+                    // Hvis grunnlag allerede eksisterer fra klage, så skal det ikke hentes på nytt.
+                    // Da brukes beløpshistorikken hentet fra påklaget vedtak
+                    return@forEach
+                }
                 val respons =
                     barnebidragGrunnlagInnhenting
                         .hentBeløpshistorikk(behandling, sb, stønadstype)
@@ -430,8 +436,7 @@ class GrunnlagService(
                     respons != null &&
                     eksisterendeGrunnlag.konvertereData<StønadDto>() != respons
                 ) {
-                    log.info { "Lagrer ny grunnlag beløpshistorikk for type $type" }
-                    secureLogger.info {
+                    secureLogger.debug {
                         "Lagrer ny grunnlag beløpshistorikk for type $type med respons $respons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
                     }
                     val nyGrunnlag =
@@ -478,7 +483,7 @@ class GrunnlagService(
     }
 
     fun sjekkOgOppdaterIdenter(behandling: Behandling) {
-        log.info { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
+        secureLogger.debug { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
         }
@@ -1117,15 +1122,13 @@ class GrunnlagService(
 
         // Oppdatere inntektstabell med sammenstilte inntekter
         innhentetGrunnlag.hentGrunnlagDto?.let {
-            if (innhentetGrunnlagInneholderInntekterEllerYtelser(it)) {
-                sammenstilleOgLagreInntekter(
-                    behandling,
-                    it,
-                    rolleInnhentetFor,
-                    feilrapporteringer,
-                    (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
-                )
-            }
+            sammenstilleOgLagreInntekter(
+                behandling,
+                it,
+                rolleInnhentetFor,
+                feilrapporteringer,
+                (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+            )
         }
 
         val innhentingAvBoforholdBMFeilet =

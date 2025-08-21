@@ -314,7 +314,7 @@ class InntektService(
             val inntektSomSkalSlettes =
                 behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.first { i -> it == i.id }
             behandling.inntekter.remove(inntektSomSkalSlettes)
-            log.info { "Slettet inntekt med id $it fra behandling ${behandling.id}." }
+            log.debug { "Slettet inntekt med id $it fra behandling ${behandling.id}." }
             return inntektSomSkalSlettes.tilInntektDtoV2()
         }
 

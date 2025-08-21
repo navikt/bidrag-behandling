@@ -59,7 +59,7 @@ class BehandlingBeregnController(
     fun beregnForskudd(
         @PathVariable behandlingsid: Long,
     ): List<ResultatBeregningBarnDto> {
-        LOGGER.info { "Beregner forskudd for behandling med id $behandlingsid" }
+        LOGGER.debug { "Beregner forskudd for behandling med id $behandlingsid" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         if (behandling.stonadstype != Stønadstype.FORSKUDD) {
@@ -96,7 +96,7 @@ class BehandlingBeregnController(
     fun beregnBPsLavesteInntektForEvne(
         @PathVariable behandlingsid: Long,
     ): BigDecimal {
-        LOGGER.info { "Beregner BPs laveste inntekt for evne for behandling id $behandlingsid" }
+        LOGGER.debug { "Beregner BPs laveste inntekt for evne for behandling id $behandlingsid" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
@@ -135,7 +135,7 @@ class BehandlingBeregnController(
     fun beregnSærbidrag(
         @PathVariable behandlingsid: Long,
     ): ResultatSærbidragsberegningDto {
-        LOGGER.info { "Beregner særbidrag for behandling med id $behandlingsid" }
+        LOGGER.debug { "Beregner særbidrag for behandling med id $behandlingsid" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
@@ -175,7 +175,7 @@ class BehandlingBeregnController(
         @PathVariable behandlingsid: Long,
         @RequestParam("endeligBeregning") endeligBeregning: Boolean = true,
     ): ResultatBidragberegningDto {
-        LOGGER.info { "Beregner barnebidrag for behandling med id $behandlingsid, endeligBeregning=$endeligBeregning" }
+        LOGGER.debug { "Beregner barnebidrag for behandling med id $behandlingsid, endeligBeregning=$endeligBeregning" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
@@ -198,7 +198,7 @@ class BehandlingBeregnController(
     fun hentVedtakBeregningResultat(
         @PathVariable vedtaksId: Long,
     ): List<ResultatBeregningBarnDto> {
-        LOGGER.info { "Henter resultat for $vedtaksId" }
+        LOGGER.debug { "Henter resultat for $vedtaksId" }
 
         return vedtakService.konverterVedtakTilBeregningResultatForskudd(vedtaksId)
     }
@@ -212,7 +212,7 @@ class BehandlingBeregnController(
     fun hentVedtakBeregningResultatSærbidrag(
         @PathVariable vedtaksId: Long,
     ): ResultatSærbidragsberegningDto? {
-        LOGGER.info { "Henter resultat for $vedtaksId" }
+        LOGGER.debug { "Henter resultat for $vedtaksId" }
 
         return vedtakService.konverterVedtakTilBeregningResultatSærbidrag(vedtaksId)
     }
@@ -226,7 +226,7 @@ class BehandlingBeregnController(
     fun hentVedtakBeregningResultatBidrag(
         @PathVariable vedtaksId: Long,
     ): ResultatBidragberegningDto? {
-        LOGGER.info { "Henter resultat for $vedtaksId" }
+        LOGGER.debug { "Henter resultat for $vedtaksId" }
 
         return vedtakService.konverterVedtakTilBeregningResultatBidrag(vedtaksId)
     }
@@ -241,7 +241,7 @@ class BehandlingBeregnController(
         @PathVariable behandlingsid: Long,
         @RequestBody request: OppdaterParagraf35cDetaljerDto,
     ) {
-        LOGGER.info { "Oppdaterer Paragraf 35c $request" }
+        LOGGER.debug { "Oppdaterer Paragraf 35c $request" }
 
         return vedtakService.oppdaterParagrafP35c(behandlingsid, request)
     }
