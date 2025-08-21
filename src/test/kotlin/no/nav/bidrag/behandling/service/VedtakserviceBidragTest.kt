@@ -637,9 +637,9 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
-            stønadsendring.periodeListe shouldHaveSize 9
+            stønadsendring.periodeListe shouldHaveSize 8
             val resultatIkkeOmsorgPerioder = stønadsendring.periodeListe.filter { it.resultatkode == Resultatkode.IKKE_OMSORG_FOR_BARNET.name }
-            resultatIkkeOmsorgPerioder.shouldHaveSize(2)
+            resultatIkkeOmsorgPerioder.shouldHaveSize(1)
             assertSoftly(resultatIkkeOmsorgPerioder[0]) {
                 it.beløp shouldBe null
                 it.valutakode shouldBe null
