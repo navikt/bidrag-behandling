@@ -130,6 +130,9 @@ class ValiderBehandlingService(
 
     private fun KanBehandlesINyLøsningRequest.erBegrensetRevurdering() =
         this.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING ||
+            this.søknadstype == BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS ||
+            this.søknadstype == BisysSøknadstype.KLAGE_BEGRENSET_SATS ||
+            this.søknadstype == BisysSøknadstype.OMGJØRING_BEGRENSET_SATS ||
             this.søknadstype == BisysSøknadstype.REVURDERING
 
     private fun harIngenHistoriskePerioderMedUtenlandskValuta(

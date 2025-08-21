@@ -97,7 +97,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
         else -> {
             val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
             if (virkningstidspunkt >= opprinneligVedtakstidspunkt) {
-                finnBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth)
+                virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
             } else {
                 finnBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunkt)
             }

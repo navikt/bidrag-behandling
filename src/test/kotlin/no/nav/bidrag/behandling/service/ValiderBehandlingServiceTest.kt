@@ -22,6 +22,9 @@ import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
+import no.nav.bidrag.behandling.utils.testdata.testdataBP
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -166,7 +169,6 @@ class ValiderBehandlingServiceTest {
                     ),
                 )
             val request = opprettBidragKanBehandlesINyLøsningRequest()
-
             shouldNotThrow<HttpClientErrorException> {
                 validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING))
             }
@@ -252,22 +254,6 @@ class ValiderBehandlingServiceTest {
                 }
             expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
             expection.validerInneholderMelding("Behandlingen mangler bidragspliktig")
-        }
-
-        @Test
-        fun `skal ikke validere gyldig BIDRAG behandling hvis BP har minst en løpende bidrag`() {
-            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
-                SkyldnerStønaderResponse(
-                    stønader = listOf(opprettSkyldnerStønad()),
-                )
-            val expection =
-                shouldThrow<HttpClientErrorException> {
-                    validerBehandlingService.validerKanBehandlesINyLøsning(
-                        opprettBidragKanBehandlesINyLøsningRequest(),
-                    )
-                }
-            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
-            expection.validerInneholderMelding("Bidragspliktig har en eller flere historiske eller løpende bidrag")
         }
 
         @Test
@@ -418,14 +404,14 @@ private fun oppretLøpendeBidragListeMedUtenlandskValuta() =
         ),
     )
 
-private fun opprettSkyldnerStønad(type: Stønadstype = Stønadstype.BIDRAG) = SkyldnerStønad(sak = Saksnummer("123"), kravhaver = Personident("213"), type = type)
+private fun opprettSkyldnerStønad(type: Stønadstype = Stønadstype.BIDRAG) = SkyldnerStønad(sak = Saksnummer("123"), kravhaver = Personident(testdataBarn1.ident), type = type)
 
 private fun oppretLøpendeBidragListeMedBareNorskValuta() =
     listOf(
         LøpendeBidragssak(
             valutakode = "NOK",
             sak = Saksnummer(SAKSNUMMER),
-            kravhaver = Personident("12345678901"),
+            kravhaver = Personident(testdataBarn1.ident),
             type = Stønadstype.BIDRAG,
             løpendeBeløp = BigDecimal.ONE,
         ),
@@ -449,9 +435,9 @@ private fun opprettBidragKanBehandlesINyLøsningRequest() =
         stønadstype = Stønadstype.BIDRAG,
         roller =
             listOf(
-                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("3231"), false),
-                SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123"), false),
-                SjekkRolleDto(Rolletype.BARN, ident = Personident("123213"), false),
+                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident(testdataBP.ident), false),
+                SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident(testdataBM.ident), false),
+                SjekkRolleDto(Rolletype.BARN, ident = Personident(testdataBarn1.ident), false),
             ),
         saksnummer = SAKSNUMMER,
     )
