@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -81,6 +82,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
@@ -114,6 +116,7 @@ import org.springframework.web.client.HttpStatusCodeException
 import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.util.Optional
 
@@ -166,21 +169,21 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     ),
             )
 
-        every { vedtakService2.finnSisteVedtaksid(any()) } returns 1
+        every { vedtakServiceBeregning.finnSisteVedtaksid(any()) } returns 1
 //        every { vedtakService2.hentBeløpshistorikk(any(), any()) } returns 1
-//        every { vedtakService2.hentLøpendeStønad(any()) } returns
-//            StønadDto(
-//                periode = ÅrMånedsperiode(LocalDate.now().minusMonths(5).withDayOfMonth(1), null),
-//                periodeid = 1,
-//                stønadsid = 1,
-//                vedtaksid = 1,
-//                gyldigFra = LocalDateTime.now(),
-//                gyldigTil = null,
-//                beløp = BigDecimal("2600"),
-//                valutakode = "",
-//                resultatkode = "KBB",
-//                periodeGjortUgyldigAvVedtaksid = null,
-//            )
+        every { vedtakServiceBeregning.hentBeløpshistorikkSistePeriode(any()) } returns
+            StønadPeriodeDto(
+                periode = ÅrMånedsperiode(LocalDate.now().minusMonths(5).withDayOfMonth(1), null),
+                periodeid = 1,
+                stønadsid = 1,
+                vedtaksid = 1,
+                gyldigFra = LocalDateTime.now(),
+                gyldigTil = null,
+                beløp = BigDecimal("2600"),
+                valutakode = "",
+                resultatkode = "KBB",
+                periodeGjortUgyldigAvVedtaksid = null,
+            )
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
             OpprettVedtakResponseDto(
@@ -314,7 +317,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -602,7 +608,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -628,9 +637,9 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
-            stønadsendring.periodeListe shouldHaveSize 9
+            stønadsendring.periodeListe shouldHaveSize 8
             val resultatIkkeOmsorgPerioder = stønadsendring.periodeListe.filter { it.resultatkode == Resultatkode.IKKE_OMSORG_FOR_BARNET.name }
-            resultatIkkeOmsorgPerioder.shouldHaveSize(2)
+            resultatIkkeOmsorgPerioder.shouldHaveSize(1)
             assertSoftly(resultatIkkeOmsorgPerioder[0]) {
                 it.beløp shouldBe null
                 it.valutakode shouldBe null
@@ -698,7 +707,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -781,7 +793,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -973,7 +988,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
             behandling.søknadsbarn.first(),
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 2,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1097,7 +1115,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.PRIVAT_AVTALE,
             behandling.søknadsbarn.first(),
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1204,7 +1225,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.PRIVAT_AVTALE,
             behandling.søknadsbarn.first(),
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 2,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1340,7 +1364,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1469,7 +1496,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1718,7 +1748,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.bidragsmottaker,
             erDelAvBehandlingen = false,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1800,7 +1833,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1917,7 +1953,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1988,7 +2027,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2062,7 +2104,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2150,7 +2195,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
         behandling.grunnlag =
@@ -2211,7 +2259,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.årsak = null
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2353,7 +2404,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2435,7 +2489,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,

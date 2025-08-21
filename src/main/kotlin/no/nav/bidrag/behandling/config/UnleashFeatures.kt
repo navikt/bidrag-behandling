@@ -7,6 +7,7 @@ enum class UnleashFeatures(
     val featureName: String,
     defaultValue: Boolean,
 ) {
+    FATTE_VEDTAK("behandling.fattevedtak_klage", false),
     BIDRAG_V2_ENDRING("behandling.v2_endring", false),
     BIDRAG_KLAGE("behandling.bidrag_klage", false),
     BEGRENSET_REVURDERING("behandling.begrenset_revurdering", false),

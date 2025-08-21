@@ -6,6 +6,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
+import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
@@ -45,6 +48,7 @@ import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
@@ -165,7 +169,6 @@ class BehandlingService(
                 mottattdato = opprettBehandling.mottattdato,
                 saksnummer = opprettBehandling.saksnummer,
                 soknadsid = opprettBehandling.søknadsid,
-                soknadRefId = opprettBehandling.søknadsreferanseid,
                 behandlerEnhet = opprettBehandling.behandlerenhet,
                 soknadFra = opprettBehandling.søknadFra,
                 stonadstype = opprettBehandling.stønadstype,
@@ -177,6 +180,12 @@ class BehandlingService(
                 kategoriBeskrivelse = opprettBehandling.kategori?.beskrivelse,
             )
 
+        opprettBehandling.søknadsreferanseid?.let {
+            behandling.klagedetaljer =
+                Klagedetaljer(
+                    soknadRefId = it,
+                )
+        }
         if (opprettBehandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             val metadata = BehandlingMetadataDo()
             metadata.setFølgerAutomatiskVedtak(opprettBehandling.vedtaksid)
@@ -273,6 +282,31 @@ class BehandlingService(
             }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun oppdaterDelvedtakFattetStatus(
+        behandlingsid: Long,
+        fattetAvEnhet: String,
+        resultat: FattetDelvedtak,
+    ) {
+        behandlingRepository
+            .findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            .let {
+                log.info {
+                    "Oppdaterer behandling $behandlingsid med fattet delvedtak ${resultat.vedtaksid} - $resultat"
+                }
+
+                val eksisterendeDetaljer = it.vedtakDetaljer ?: VedtakDetaljer()
+                it.vedtakDetaljer =
+                    eksisterendeDetaljer
+                        .copy(
+                            vedtakFattetAvEnhet = fattetAvEnhet,
+                            fattetDelvedtak =
+                                (eksisterendeDetaljer.fattetDelvedtak + setOf(resultat)).toSet(),
+                        )
+            }
+    }
+
     @Transactional
     fun oppdaterVedtakFattetStatus(
         behandlingsid: Long,
@@ -284,6 +318,19 @@ class BehandlingService(
             .orElseThrow { behandlingNotFoundException(behandlingsid) }
             .let {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
+
+                val eksisterendeDetaljer = it.vedtakDetaljer ?: VedtakDetaljer()
+                it.vedtakDetaljer =
+                    eksisterendeDetaljer
+                        .copy(
+                            vedtaksid = vedtaksid,
+                            vedtakFattetAvEnhet = fattetAvEnhet,
+                            vedtakstidspunkt = it.vedtakDetaljer?.vedtakstidspunkt ?: LocalDateTime.now(),
+                            vedtakFattetAv =
+                                it.vedtakDetaljer?.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
+                                    ?: TokenUtils.hentApplikasjonsnavn(),
+                        )
+
                 it.vedtaksid = vedtaksid
                 it.vedtakFattetAvEnhet = fattetAvEnhet
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()

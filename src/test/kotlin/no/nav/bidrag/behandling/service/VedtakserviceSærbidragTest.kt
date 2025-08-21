@@ -13,6 +13,7 @@ import io.mockk.slot
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.validering.virkningstidspunkt
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
@@ -118,8 +119,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
-        behandling.klageMottattdato = LocalDate.now()
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+                klageMottattdato = LocalDate.now(),
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -361,8 +365,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
-        behandling.klageMottattdato = LocalDate.now()
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+                klageMottattdato = LocalDate.now(),
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -455,8 +462,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         stubUtils.stubBidragBeløpshistorikkLøpendeSaker("løpende-bidragssaker-bp_annen_barn")
         stubUtils.stubBidraBBMHentBeregning("bbm-beregning_annen_barn")
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.refVedtaksid = 553
-        behandling.klageMottattdato = LocalDate.now()
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+                klageMottattdato = LocalDate.now(),
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -549,8 +559,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         stubUtils.stubBidragBeløpshistorikkLøpendeSaker("løpende-bidragssaker-bp_2")
         stubUtils.stubBidraBBMHentBeregning("bbm-beregning_2")
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
-        behandling.refVedtaksid = 553
-        behandling.klageMottattdato = LocalDate.now()
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+                klageMottattdato = LocalDate.now(),
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -684,8 +697,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
-        behandling.klageMottattdato = LocalDate.now()
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+                klageMottattdato = LocalDate.now(),
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -825,8 +841,11 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
-        behandling.klageMottattdato = LocalDate.now()
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+                klageMottattdato = LocalDate.now(),
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -1038,7 +1057,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.avslag = Resultatkode.IKKE_NØDVENDIGE_UTGIFTER
@@ -1194,7 +1216,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -1389,7 +1414,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.refVedtaksid = 553
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                refVedtaksid = 553,
+            )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
@@ -1749,7 +1777,10 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         behandling.kategori = Særbidragskategori.KONFIRMASJON.name
         behandling.avslag = Resultatkode.PRIVAT_AVTALE
-        behandling.klageMottattdato = LocalDate.now()
+        behandling.klagedetaljer =
+            Klagedetaljer(
+                klageMottattdato = LocalDate.now(),
+            )
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
         behandling.utgift!!.beløpDirekteBetaltAvBp = BigDecimal(500)

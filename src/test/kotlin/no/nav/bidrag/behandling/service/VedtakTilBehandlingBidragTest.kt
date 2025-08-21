@@ -65,10 +65,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-11-18")
-            klageMottattdato shouldBe null
+            klagedetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            refVedtaksid shouldBe 1
+            klagedetaljer?.påklagetVedtak shouldBe 1
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
@@ -175,10 +175,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            refVedtaksid shouldBe 1
+            klagedetaljer?.påklagetVedtak shouldBe 1
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
@@ -262,10 +262,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             )!!
 
         assertSoftly(behandling) {
-            opprinneligVedtakstidspunkt shouldHaveSize 3
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+            klagedetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 3
+            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
         }
     }
 
@@ -287,7 +287,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             avslag shouldBe Resultatkode.IKKE_OMSORG_FOR_BARNET
             notater shouldHaveSize 0
             virkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
-            opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
+            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
         }
     }
 
@@ -505,7 +505,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 16
+            size shouldBe 17
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.ANDRE_BARN,
                 testdataBM.ident,
@@ -537,7 +537,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.ARBEIDSFORHOLD,
                 testdataBM.ident,
-            ) shouldHaveSize 1
+            ) shouldHaveSize 2
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.BOFORHOLD,
                 testdataBP.ident,

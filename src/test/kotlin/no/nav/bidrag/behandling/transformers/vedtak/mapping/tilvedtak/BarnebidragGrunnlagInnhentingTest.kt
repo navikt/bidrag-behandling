@@ -204,7 +204,7 @@ class BarnebidragGrunnlagInnhentingTest {
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.beløpshistorikk shouldHaveSize 1
-            innhold.nesteIndeksreguleringsår shouldBe 2025
+            innhold.nesteIndeksreguleringsår shouldBe YearMonth.now().year + 1
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             val periode1 =
                 innhold.beløpshistorikk.first()

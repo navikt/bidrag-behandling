@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
@@ -70,9 +71,7 @@ class NotatService {
             notattype: Notattype,
             rolleid: Long,
             begrunnelseDelAvBehandlingen: Boolean = true,
-        ): String =
-            hentNotatRolleId(behandling, notattype, rolleid, begrunnelseDelAvBehandlingen)?.innhold
-                ?: henteNotatFraGammelStruktur(behandling, notattype) ?: ""
+        ): String = hentNotatRolleId(behandling, notattype, rolleid, begrunnelseDelAvBehandlingen)?.innhold ?: ""
 
         fun hentNotat(
             behandling: Behandling,
@@ -118,21 +117,5 @@ class NotatService {
             rolleid: Long,
             begrunnelseDelAvBehandlingen: Boolean = true,
         ): String? = henteNotatinnholdRolleId(behandling, Notattype.INNTEKT, rolleid, begrunnelseDelAvBehandlingen)
-
-        // TODO: (202408707) Metoden slettes når alle notater har blitt mirgrert til ny datastruktur
-        @Deprecated("Brukes kun i en overgangsperiode frem til notater i behandlingstabellen er migrert til notattabellen")
-        private fun henteNotatFraGammelStruktur(
-            behandling: Behandling,
-            notattype: Notattype,
-        ): String? {
-            log.debug { "Henter notat av type $notattype fra gammel datastruktur i behandling ${behandling.id}" }
-            return when (notattype) {
-                Notattype.BOFORHOLD -> behandling.boforholdsbegrunnelseKunINotat
-                Notattype.INNTEKT -> behandling.inntektsbegrunnelseKunINotat
-                Notattype.VIRKNINGSTIDSPUNKT -> behandling.virkningstidspunktbegrunnelseKunINotat
-                Notattype.UTGIFTER -> behandling.utgiftsbegrunnelseKunINotat
-                else -> null
-            }
-        }
     }
 }

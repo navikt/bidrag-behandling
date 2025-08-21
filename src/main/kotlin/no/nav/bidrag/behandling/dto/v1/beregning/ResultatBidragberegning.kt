@@ -1,9 +1,12 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.beregn.barnebidrag.service.EtterfølgendeVedtakSomOverlapper
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
@@ -17,18 +20,26 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.lastVisningsnavnFraFil
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.felles.tilVisningsnavn
 import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlin.text.get
+import kotlin.text.intern
 
 val YearMonth.formatterDatoFom get() = this.atDay(1).format(DateTimeFormatter.ofPattern("MM.YYYY"))
 val YearMonth.formatterDatoTom get() = this.atEndOfMonth().format(DateTimeFormatter.ofPattern("MM.YYYY"))
@@ -140,14 +151,19 @@ data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val vedtakstype: Vedtakstype,
     val resultat: BeregnetBarnebidragResultat,
+    val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
     val avslaskode: Resultatkode? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
+    val klagedetaljer: Klagedetaljer? = null,
+    val innkrevesFraDato: YearMonth? = null,
+    val beregnTilDato: YearMonth? = null,
 )
 
 data class UgyldigBeregningDto(
     val tittel: String,
     val begrunnelse: String,
-    val resultatPeriode: List<UgyldigResultatPeriode>,
+    val vedtaksliste: List<EtterfølgendeVedtakSomOverlapper> = emptyList(),
+    val resultatPeriode: List<UgyldigResultatPeriode> = emptyList(),
     val perioder: List<ÅrMånedsperiode> = emptyList(),
 ) {
     data class UgyldigResultatPeriode(
@@ -167,12 +183,28 @@ data class ResultatBidragberegningDto(
 
 data class ResultatBidragsberegningBarnDto(
     val barn: ResultatRolle,
+    val innkrevesFraDato: YearMonth? = null,
     val resultatUtenBeregning: Boolean = false,
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val forsendelseDistribueresAutomatisk: Boolean = false,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
+    val delvedtak: List<DelvedtakDto> = emptyList(),
 )
+
+data class DelvedtakDto(
+    val type: Vedtakstype?,
+    val klagevedtak: Boolean,
+    val vedtaksid: Int? = null,
+    val delvedtak: Boolean,
+    val beregnet: Boolean,
+    val indeksår: Int,
+    val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
+    val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
+    val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
+) {
+    val endeligVedtak get() = !klagevedtak && !delvedtak
+}
 
 data class ResultatBarnebidragsberegningPeriodeDto(
     val periode: ÅrMånedsperiode,
@@ -186,44 +218,85 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val faktiskBidrag: BigDecimal = BigDecimal(0),
     val resultatKode: Resultatkode?,
     val erDirekteAvslag: Boolean = false,
+    val erOpphør: Boolean = false,
+    val endeligVedtak: Boolean = false,
     val erBeregnetAvslag: Boolean = false,
     val erEndringUnderGrense: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
     val vedtakstype: Vedtakstype,
+    val klageOmgjøringDetaljer: KlageOmgjøringDetaljer? = null,
+    val resultatFraVedtak: ResultatFraVedtakGrunnlag? = null,
 ) {
+    val delvedtakstypeVisningsnavn
+        get(): String {
+            if (klageOmgjøringDetaljer == null) return ""
+            return when {
+                klageOmgjøringDetaljer.klagevedtak -> "Klagevedtak"
+                (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
+                    vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
+                (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
+                    vedtakstype == Vedtakstype.INDEKSREGULERING -> "Beregnet indeksregulering"
+                klageOmgjøringDetaljer.beregnTilDato != null && periode.fom >= klageOmgjøringDetaljer.beregnTilDato
+                -> "Vedtak (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"
+                else -> "Gjenopprettet beløpshistorikk"
+            }
+        }
+
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
-        if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            if (aldersjusteringDetaljer?.aldersjustert == false) {
-                aldersjusteringDetaljer.begrunnelserVisningsnavn
-            } else {
-                beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
-                    ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
-            }
-        } else if (resultatKode?.erDirekteAvslag() == true ||
-            resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
-            resultatKode == Resultatkode.INNVILGET_VEDTAK
-        ) {
-            resultatKode.visningsnavnIntern(vedtakstype)
-        } else if (ugyldigBeregning != null) {
-            when (ugyldigBeregning.type) {
-                UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
-                -> "Lavere enn løpende bidrag"
-                UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
-                -> "Ingen løpende forskudd"
-            }
-        } else {
-            beregningsdetaljer
-                ?.sluttberegning
-                ?.resultatVisningsnavn
-                ?.intern
+        when {
+            erOpphør ->
+                if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true ||
+                    beregningsdetaljer?.sluttberegning?.barnetErSelvforsørget == true
+                ) {
+                    beregningsdetaljer.sluttberegning.resultatVisningsnavn!!.intern
+                } else {
+                    "Opphør"
+                }
+            vedtakstype == Vedtakstype.INNKREVING -> "Innkreving"
+
+            vedtakstype == Vedtakstype.ALDERSJUSTERING ->
+                when {
+                    klageOmgjøringDetaljer?.delAvVedtaket == false -> "Manuell aldersjustering (ikke del av vedtaket)"
+                    endeligVedtak -> "Aldersjustering"
+                    aldersjusteringDetaljer?.aldersjustert == false -> aldersjusteringDetaljer.begrunnelserVisningsnavn
+                    else ->
+                        beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
+                            ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
+                }
+
+            vedtakstype == Vedtakstype.INDEKSREGULERING -> "Indeksregulering"
+
+            resultatKode?.erDirekteAvslag() == true ||
+                resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
+                resultatKode == Resultatkode.INNVILGET_VEDTAK -> resultatKode.visningsnavnIntern(vedtakstype)
+
+            ugyldigBeregning != null ->
+                when (ugyldigBeregning.type) {
+                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
+                    -> "Lavere enn løpende bidrag"
+                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD -> "Ingen løpende forskudd"
+                }
+
+            else -> beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern
         }
 }
 
+data class KlageOmgjøringDetaljer(
+    val resultatFraVedtak: Int? = null,
+    val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
+    val beregnTilDato: YearMonth? = null,
+    val klagevedtak: Boolean = false,
+    val manuellAldersjustering: Boolean = false,
+    val delAvVedtaket: Boolean = true,
+    val kanOpprette35c: Boolean = false,
+    val skalOpprette35c: Boolean = false,
+)
+
 data class BidragPeriodeBeregningsdetaljer(
-    val bpHarEvne: Boolean,
+    val bpHarEvne: Boolean = false,
     val antallBarnIHusstanden: Double? = null,
-    val forskuddssats: BigDecimal,
+    val forskuddssats: BigDecimal = BigDecimal.ZERO,
     val barnetilleggBM: DelberegningBarnetilleggDto = DelberegningBarnetilleggDto(),
     val barnetilleggBP: DelberegningBarnetilleggDto = DelberegningBarnetilleggDto(),
     val voksenIHusstanden: Boolean? = null,
@@ -236,6 +309,7 @@ data class BidragPeriodeBeregningsdetaljer(
     val sluttberegning: SluttberegningBarnebidrag? = null,
     val sluttberegningAldersjustering: SluttberegningBarnebidragAldersjustering? = null,
     val delberegningUnderholdskostnad: DelberegningUnderholdskostnad? = null,
+    val indeksreguleringDetaljer: IndeksreguleringDetaljer? = null,
     val delberegningBidragspliktigesBeregnedeTotalBidrag: DelberegningBidragspliktigesBeregnedeTotalbidragDto? = null,
 ) {
     data class BeregningsdetaljerSamværsfradrag(
@@ -248,6 +322,11 @@ data class BidragPeriodeBeregningsdetaljer(
         sluttberegning?.bidragJustertForDeltBosted == true ||
             sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }
+
+data class IndeksreguleringDetaljer(
+    val sluttberegning: SluttberegningIndeksregulering?,
+    val faktor: BigDecimal,
+)
 
 fun List<GrunnlagDto>.finnSluttberegningIReferanser(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
     find {

@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -424,10 +425,10 @@ class GrunnlagMappingTest {
                     )
                 val søknadsbarn1 = behandling.søknadsbarn.find { it.ident == testdataBarn1.ident }
                 val grunnlagForBeregning =
-                    byggGrunnlagForBeregning(behandling, søknadsbarn1!!)
+                    byggGrunnlagForBeregning(behandling, søknadsbarn1!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning) {
-                    it.grunnlagListe shouldHaveSize 16
+                    it.grunnlagListe shouldHaveSize 17
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -448,10 +449,10 @@ class GrunnlagMappingTest {
                 }
                 val søknadsbarn2 = behandling.søknadsbarn.find { it.ident == testdataBarn2.ident }
                 val grunnlagForBeregning2 =
-                    byggGrunnlagForBeregning(behandling, søknadsbarn2!!)
+                    byggGrunnlagForBeregning(behandling, søknadsbarn2!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning2) {
-                    it.grunnlagListe shouldHaveSize 16
+                    it.grunnlagListe shouldHaveSize 17
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
@@ -1781,13 +1782,10 @@ class GrunnlagMappingTest {
         ): Behandling =
             Behandling(
                 Vedtakstype.FASTSETTELSE,
-                null,
                 søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
                 mottattdato = LocalDate.parse("2023-03-15"),
-                klageMottattdato = null,
-                SAKSNUMMER,
+                saksnummer = SAKSNUMMER,
                 SOKNAD_ID.toLong(),
-                søknadRefId,
                 "4806",
                 "Z9999",
                 "Navn Navnesen",
@@ -1798,6 +1796,10 @@ class GrunnlagMappingTest {
                 årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                 virkningstidspunkt = LocalDate.parse("2023-02-01"),
                 id = id,
+                klagedetaljer =
+                    Klagedetaljer(
+                        soknadRefId = søknadRefId,
+                    ),
             )
 
         @Test
@@ -1867,19 +1869,17 @@ class GrunnlagMappingTest {
         fun `skal opprette grunnlag for notat og ikke ta med notat hvis tomt eller null`(): Unit =
             mapper.run {
                 val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
-                behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-                behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-                behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
 
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.INNTEKT, behandling.bidragsmottaker)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.BOFORHOLD, behandling.bidragsmottaker)
                 assertSoftly(behandling.byggGrunnlagNotater().toList()) {
                     shouldHaveSize(3)
                     assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-                        innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                         erMedIVedtaksdokumentet shouldBe false
                         type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
                     }
                     assertSoftly(it[1].innholdTilObjekt<NotatGrunnlag>()) {
-                        innhold shouldBe behandling.boforholdsbegrunnelseKunINotat
                         erMedIVedtaksdokumentet shouldBe false
                         type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.BOFORHOLD
                     }
@@ -1894,14 +1894,12 @@ class GrunnlagMappingTest {
         fun `skal opprette grunnlag for notat`(): Unit =
             mapper.run {
                 val behandling = oppretteTestbehandling(true, setteDatabaseider = true)
-                behandling.inntektsbegrunnelseKunINotat = "Inntektsbegrunnelse kun i notat"
-                behandling.virkningstidspunktbegrunnelseKunINotat = "Virkningstidspunkt kun i notat"
-                behandling.boforholdsbegrunnelseKunINotat = "Boforhold"
-
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.INNTEKT, behandling.bidragsmottaker)
+                behandling.leggTilNotat("asdasd", NotatGrunnlag.NotatType.BOFORHOLD, behandling.bidragsmottaker)
                 assertSoftly(behandling.byggGrunnlagNotater().toList()) {
                     shouldHaveSize(3)
                     assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-                        innhold shouldBe behandling.virkningstidspunktbegrunnelseKunINotat
                         erMedIVedtaksdokumentet shouldBe false
                         type shouldBe no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT
                     }

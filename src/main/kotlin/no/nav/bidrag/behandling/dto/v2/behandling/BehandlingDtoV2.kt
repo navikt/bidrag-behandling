@@ -89,6 +89,7 @@ data class BehandlingDetaljerDtoV2(
 data class LesemodusVedtak(
     val erAvvist: Boolean,
     val opprettetAvBatch: Boolean,
+    val erOrkestrertVedtak: Boolean,
 )
 
 data class BehandlingDtoV2(
@@ -105,6 +106,7 @@ data class BehandlingDtoV2(
     val stønadstype: Stønadstype? = null,
     val engangsbeløptype: Engangsbeløptype? = null,
     val erVedtakFattet: Boolean,
+    val erDelvedtakFattet: Boolean,
     val kanBehandlesINyLøsning: Boolean = true,
     val kanIkkeBehandlesBegrunnelse: String? = null,
     val erKlageEllerOmgjøring: Boolean,
@@ -260,9 +262,9 @@ data class UtgiftspostDto(
 }
 
 data class AktiveGrunnlagsdata(
-    val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto>,
-    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto>,
-    val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto>,
+    val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
+    val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
+    val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
     val stønadTilBarnetilsyn: StønadTilBarnetilsynAktiveGrunnlagDto? = null,
@@ -505,6 +507,7 @@ enum class Grunnlagsdatatype(
     TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
     MANUELLE_VEDTAK(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_BIDRAG(mapOf(), erGjeldende = false),
+    ETTERFØLGENDE_VEDTAK(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_FORSKUDD(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_BIDRAG_18_ÅR(mapOf(), erGjeldende = false),
 

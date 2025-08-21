@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.hypersistence.utils.hibernate.type.ImmutableType
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.AttributeConverter
@@ -18,6 +17,12 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
+import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
+import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljerConverter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
@@ -27,7 +32,6 @@ import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
-import no.nav.bidrag.domene.enums.diverse.Språk
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -41,7 +45,6 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
-import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toCompactString
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
@@ -63,15 +66,11 @@ import java.time.YearMonth
 open class Behandling(
     @Enumerated(EnumType.STRING)
     open var vedtakstype: Vedtakstype,
-    @Enumerated(EnumType.STRING)
-    open var opprinneligVedtakstype: Vedtakstype? = null,
     @Column(name = "dato_fom")
     open var søktFomDato: LocalDate,
     open var mottattdato: LocalDate,
-    open var klageMottattdato: LocalDate? = null,
     open val saksnummer: String,
     open var soknadsid: Long?,
-    open val soknadRefId: Long? = null,
     open var behandlerEnhet: String,
     open var opprettetAv: String,
     open val opprettetAvNavn: String? = null,
@@ -83,13 +82,9 @@ open class Behandling(
     @Enumerated(EnumType.STRING)
     open var engangsbeloptype: Engangsbeløptype?,
     open var vedtaksid: Int? = null,
-    open var refVedtaksid: Int? = null,
     open var notatJournalpostId: String? = null,
     @Column(name = "virkningsdato")
     open var virkningstidspunkt: LocalDate? = null,
-    open var opprinneligVirkningstidspunkt: LocalDate? = null,
-    @Suppress("JpaAttributeTypeInspection")
-    open var opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     open var vedtakstidspunkt: LocalDateTime? = null,
     open var slettetTidspunkt: LocalDateTime? = null,
     open var opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
@@ -104,14 +99,6 @@ open class Behandling(
     @Column(name = "avslag")
     @Enumerated(EnumType.STRING)
     open var avslag: Resultatkode? = null,
-    @Column(name = "VIRKNINGSTIDSPUNKTBEGRUNNELSE_KUN_NOTAT")
-    open var virkningstidspunktbegrunnelseKunINotat: String? = null,
-    @Column(name = "BOFORHOLDSBEGRUNNELSE_KUN_NOTAT")
-    open var boforholdsbegrunnelseKunINotat: String? = null,
-    @Column(name = "INNTEKTSBEGRUNNELSE_KUN_NOTAT")
-    open var inntektsbegrunnelseKunINotat: String? = null,
-    @Column(name = "UTGIFTSBEGRUNNELSE_KUN_NOTAT")
-    open var utgiftsbegrunnelseKunINotat: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
@@ -122,6 +109,14 @@ open class Behandling(
     @Convert(converter = ForsendelseBestillingerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
     open var forsendelseBestillinger: ForsendelseBestillinger = ForsendelseBestillinger(),
+    @Column(name = "klagedetaljer", columnDefinition = "jsonb")
+    @Convert(converter = KlageDetaljerConverter::class)
+    @ColumnTransformer(write = "?::jsonb")
+    open var klagedetaljer: Klagedetaljer? = null,
+    @Column(name = "vedtak_detaljer", columnDefinition = "jsonb")
+    @Convert(converter = VedtakDetaljerConverter::class)
+    @ColumnTransformer(write = "?::jsonb")
+    open var vedtakDetaljer: VedtakDetaljer? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -218,7 +213,7 @@ open class Behandling(
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
-    val erKlageEllerOmgjøring get() = refVedtaksid != null
+    val erKlageEllerOmgjøring get() = klagedetaljer?.påklagetVedtak != null
     val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
     val globalVirkningstidspunkt get() =
@@ -240,42 +235,6 @@ open class Behandling(
             Saksnummer(saksnummer),
         )
 }
-
-@Converter
-class ForsendelseBestillingerConverter : AttributeConverter<ForsendelseBestillinger, String?> {
-    override fun convertToDatabaseColumn(attribute: ForsendelseBestillinger?): String? =
-        attribute?.let { commonObjectmapper.writeValueAsString(it) }
-
-    override fun convertToEntityAttribute(dbData: String?): ForsendelseBestillinger? =
-        dbData?.let {
-            commonObjectmapper.readValue(it, ForsendelseBestillinger::class.java)
-        }
-}
-
-fun ForsendelseBestillinger.finnForGjelderOgMottaker(
-    gjelder: String?,
-    mottaker: String?,
-    rolletype: Rolletype?,
-) = bestillinger.find { it.gjelder == gjelder && it.mottaker == mottaker && it.rolletype == rolletype }
-
-data class ForsendelseBestillinger(
-    val bestillinger: MutableSet<ForsendelseBestilling> = mutableSetOf(),
-)
-
-data class ForsendelseBestilling(
-    var forsendelseId: Long? = null,
-    var journalpostId: Long? = null,
-    val rolletype: Rolletype?,
-    val gjelder: String? = null,
-    val mottaker: String? = null,
-    val språkkode: Språk? = null,
-    val dokumentmal: String? = null,
-    val opprettetTidspunkt: LocalDateTime = LocalDateTime.now(),
-    var forsendelseOpprettetTidspunkt: LocalDateTime? = null,
-    var distribuertTidspunkt: LocalDateTime? = null,
-    var feilBegrunnelse: String? = null,
-    var antallForsøkOpprettEllerDistribuer: Int = 1,
-)
 
 val Behandling.særbidragKategori
     get() =
@@ -383,8 +342,13 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     }
 
     private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
+    private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
 
-    private val objectMapper = ObjectMapper().findAndRegisterModules()
+    fun setKlagePåBisysVedtak() {
+        update(klagePåBisysVedtak, "true")
+    }
+
+    fun erKlagePåBisysVedtak() = get(klagePåBisysVedtak)?.toBooleanStrictOrNull() == true
 
     fun setFølgerAutomatiskVedtak(vedtaksid: Int?) {
         vedtaksid?.let { update(følgerAutomatiskVedtak, it.toString()) }

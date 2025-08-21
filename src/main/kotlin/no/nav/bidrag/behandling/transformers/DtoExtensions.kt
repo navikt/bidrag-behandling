@@ -10,7 +10,9 @@ import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import java.time.LocalDate
 import java.time.Period
@@ -44,6 +46,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         ident = ident?.verdi,
         fødselsdato = fødselsdatoPerson,
         navn = navn,
+        beregnTil = if (behandling.vedtakstype == Vedtakstype.KLAGE) BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT else null,
         opphørsdato =
             if (barnErOver18 && skalOpphørVed18År) {
                 fødselsdatoPerson.plusYears(18).plusMonths(1).withDayOfMonth(1)

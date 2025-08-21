@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -10,24 +11,35 @@ import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
+import no.nav.bidrag.behandling.transformers.hentBeløpshistorikk
+import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.core.BeregnApi
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Beregningstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequest
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorGrunnlag
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorManuellAldersjustering
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
@@ -49,12 +61,53 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
-fun Behandling.finnBeregnTilDatoBehandling(opphørsdato: YearMonth? = null) =
-    if (tilType() == TypeBehandling.SÆRBIDRAG) {
-        virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
+    if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
+//        val beløpshistorikk = hentSisteBeløpshistorikk(tilStønadsid(søknadsbarnRolle))
+        val beløpshistorikk = hentBeløpshistorikk(søknadsbarnRolle).konvertereData<StønadDto>()
+        beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom }
     } else {
-        finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        null
+        // (søknadsbarnRolle.opprinneligVirkningstidspunkt ?: søknadsbarnRolle.virkningstidspunkt)!!.toYearMonth()
     }
+
+fun Behandling.finnBeregnTilDatoBehandling(
+    opphørsdato: YearMonth? = null,
+    søknadsbarnRolle: Rolle? = null,
+) = if (tilType() == TypeBehandling.SÆRBIDRAG) {
+    virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+} else if (erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
+    val beregnTilDato =
+        klagedetaljer
+            ?.opprinneligVedtakstidspunkt!!
+            .min()
+            .plusMonths(1)
+            .withDayOfMonth(1)
+            .toLocalDate()
+    when {
+        søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
+            finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        søknadsbarnRolle?.beregnTil == BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
+            val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
+            if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
+                beregnTilDato
+            } else {
+                nesteVirkningstidspunkt
+            }
+        }
+
+        else -> {
+            val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
+            if (virkningstidspunkt >= beregnTilDato) {
+                virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
+            } else {
+                beregnTilDato
+            }
+        }
+    }
+} else {
+    finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+}
 
 fun finnBeregnTilDato(
     virkningstidspunkt: LocalDate,
@@ -189,14 +242,17 @@ class VedtakGrunnlagMapper(
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
         søknadsbarnRolle: Rolle,
-    ): BeregnGrunnlag {
+        endeligBeregning: Boolean = true,
+    ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
                 val personobjekter = tilPersonobjekter(søknadsbarnRolle)
                 val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
                 val bostatusBarn = tilGrunnlagBostatus(personobjekter)
                 val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
-                val grunnlagsliste = (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad()).toMutableSet()
+                val grunnlagsliste =
+                    (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad() + byggGrunnlagVirkningsttidspunkt())
+                        .toMutableSet()
 
                 when (tilType()) {
                     TypeBehandling.FORSKUDD ->
@@ -214,6 +270,7 @@ class VedtakGrunnlagMapper(
                                 .tilGrunnlagDto(grunnlagsliste)
                         grunnlagsliste.addAll(grunnlagLøpendeBidrag)
                     }
+
                     TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
                         grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste))
                         grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
@@ -223,18 +280,54 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
                     }
                 }
-                val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
-                val beregningTilDato = finnBeregnTilDatoBehandling()
-                return BeregnGrunnlag(
-                    periode =
-                        ÅrMånedsperiode(
-                            beregnFraDato,
-                            beregningTilDato,
-                        ),
-                    stønadstype = stonadstype ?: Stønadstype.BIDRAG,
-                    opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
-                    søknadsbarnReferanse = søknadsbarn.referanse,
-                    grunnlagListe = grunnlagsliste.toSet().toList(),
+                val beregnFraDato =
+                    søknadsbarnRolle.virkningstidspunkt ?: behandling.virkningstidspunkt
+                        ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+                val beregningTilDato = finnBeregnTilDatoBehandling(null, søknadsbarnRolle)
+                val grunnlagBeregning =
+                    BeregnGrunnlag(
+                        periode =
+                            ÅrMånedsperiode(
+                                beregnFraDato,
+                                beregningTilDato,
+                            ),
+                        stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                        opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
+                        søknadsbarnReferanse = søknadsbarn.referanse,
+                        grunnlagListe = grunnlagsliste.toSet().toList(),
+                    )
+                val klageBeregning =
+                    if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
+                        KlageOrkestratorGrunnlag(
+                            stønad = behandling.tilStønadsid(søknadsbarnRolle),
+                            påklagetVedtakId = behandling.klagedetaljer?.påklagetVedtak!!,
+                            innkrevingstype = behandling.innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
+                            gjelderParagraf35c =
+                                listOf(
+                                    BisysSøknadstype.PARAGRAF_35_C,
+                                    BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                ).contains(behandling.søknadstype),
+                            manuellAldersjustering =
+                                søknadsbarnRolle.grunnlagFraVedtakListe
+                                    .filter { it.aldersjusteringForÅr != null && it.vedtak != null }
+                                    .map {
+                                        KlageOrkestratorManuellAldersjustering(
+                                            it.aldersjusteringForÅr!!,
+                                            it.vedtak!!,
+                                        )
+                                    },
+                        )
+                    } else {
+                        null
+                    }
+                return BidragsberegningOrkestratorRequest(
+                    beregnGrunnlag = grunnlagBeregning,
+                    klageOrkestratorGrunnlag = klageBeregning,
+                    beregningstype =
+                        when {
+                            behandling.erKlageEllerOmgjøring -> if (endeligBeregning) Beregningstype.KLAGE_ENDELIG else Beregningstype.KLAGE
+                            else -> Beregningstype.BIDRAG
+                        },
                 )
             }
         }
@@ -262,9 +355,11 @@ class VedtakGrunnlagMapper(
                     grunnlagListe.addAll(
                         byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     )
+
                 TypeBehandling.BIDRAG -> {
                     grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true))
                 }
+
                 else -> {}
             }
             return grunnlagListe.toSet()

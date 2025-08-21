@@ -12,11 +12,17 @@ import no.nav.bidrag.behandling.dto.v2.samvær.SamværValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeil
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.erSøknadsbarn
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.tid.Datoperiode
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.felles.commonObjectmapper
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
+import java.nio.charset.Charset
 import java.time.LocalDate
 
 data class VirkningstidspunktFeilDto(
@@ -58,12 +64,12 @@ data class MaksGodkjentBeløpValideringsfeil(
 }
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: Set<InntektValideringsfeil>?,
-    val utvidetBarnetrygd: InntektValideringsfeil?,
-    val kontantstøtte: Set<InntektValideringsfeil>?,
-    val småbarnstillegg: InntektValideringsfeil?,
+    val barnetillegg: Set<InntektValideringsfeil>? = emptySet(),
+    val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
+    val kontantstøtte: Set<InntektValideringsfeil>? = emptySet(),
+    val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
     @Schema(name = "årsinntekter")
-    val årsinntekter: Set<InntektValideringsfeil>?,
+    val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
 ) {
     @get:JsonIgnore
     val harFeil
@@ -78,8 +84,8 @@ data class InntektValideringsfeilDto(
 }
 
 data class InntektValideringsfeil(
-    val overlappendePerioder: Set<OverlappendePeriode>,
-    val fremtidigPeriode: Boolean,
+    val overlappendePerioder: Set<OverlappendePeriode> = emptySet(),
+    val fremtidigPeriode: Boolean = false,
     @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
     @Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter. Vil alltid være false hvis det er ytelse")
@@ -221,6 +227,25 @@ data class SivilstandOverlappendePeriode(
     val periode: Datoperiode,
     val sivilstandskode: Set<Sivilstandskode>,
 )
+
+data class FatteVedtakFeil(
+    val feilmelding: String,
+    val ugyldigPerioder: List<ÅrMånedsperiode> = emptyList(),
+) {
+    @JsonIgnore
+    fun kastFeil(): Nothing {
+        secureLogger.warn {
+            "Feil ved fatting av vedtak " +
+                commonObjectmapper.writeValueAsString(this)
+        }
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Feil fatting av vedtak",
+            commonObjectmapper.writeValueAsBytes(this),
+            Charset.defaultCharset(),
+        )
+    }
+}
 
 data class BeregningValideringsfeil(
     val virkningstidspunkt: VirkningstidspunktFeilDto? = null,

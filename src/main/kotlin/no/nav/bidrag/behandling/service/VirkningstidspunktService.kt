@@ -3,10 +3,12 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
@@ -88,8 +90,32 @@ class VirkningstidspunktService(
             }!!
             .let {
                 it.grunnlagFraVedtak = request.vedtaksid
+                val grunnlagFraVedtakListe =
+                    it.grunnlagFraVedtakListe
+                        .filter { it.aldersjusteringForÅr != request.aldersjusteringForÅr }
+                it.grunnlagFraVedtakListe =
+                    grunnlagFraVedtakListe +
+                    listOf(
+                        GrunnlagFraVedtak(
+                            aldersjusteringForÅr = request.aldersjusteringForÅr,
+                            vedtak = request.vedtaksid,
+                        ),
+                    )
             }
     }
+
+    @Transactional
+    fun oppdaterBeregnTilDato(
+        behandlingsid: Long,
+        request: OppdaterBeregnTilDatoRequestDto,
+    ): Behandling =
+        behandlingRepository
+            .findBehandlingById(behandlingsid)
+            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+            .let { behandling ->
+                oppdaterBeregnTilDato(request, behandling)
+                behandling
+            }
 
     @Transactional
     fun oppdaterOpphørsdato(
@@ -289,6 +315,21 @@ class VirkningstidspunktService(
     }
 
     @Transactional
+    fun oppdaterBeregnTilDato(
+        request: OppdaterBeregnTilDatoRequestDto,
+        behandling: Behandling,
+    ) {
+        val requestBeregnTil = request.beregnTil
+        val rolle = behandling.roller.find { it.id == request.idRolle }!!
+        val nåværendeBeregnTil = rolle.beregnTil
+        val erBeregnTilDatoEndret = requestBeregnTil != nåværendeBeregnTil
+
+        if (erBeregnTilDatoEndret) {
+            rolle.beregnTil = request.beregnTil
+        }
+    }
+
+    @Transactional
     fun oppdaterOpphørsdato(
         request: OppdaterOpphørsdatoRequestDto,
         behandling: Behandling,
@@ -306,7 +347,13 @@ class VirkningstidspunktService(
 
         fun oppdaterBoforhold() {
             log.info { "Opphørsdato er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
+            grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+            grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+            grunnlagService.aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         }
 
         fun oppdaterSamvær() {

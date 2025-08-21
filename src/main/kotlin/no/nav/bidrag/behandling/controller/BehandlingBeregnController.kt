@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
+import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.VedtakService
@@ -20,6 +21,8 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 
@@ -170,8 +173,9 @@ class BehandlingBeregnController(
     )
     fun beregnBarnebidrag(
         @PathVariable behandlingsid: Long,
+        @RequestParam("endeligBeregning") endeligBeregning: Boolean = true,
     ): ResultatBidragberegningDto {
-        LOGGER.info { "Beregner barnebidrag for behandling med id $behandlingsid" }
+        LOGGER.info { "Beregner barnebidrag for behandling med id $behandlingsid, endeligBeregning=$endeligBeregning" }
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
 
@@ -182,7 +186,7 @@ class BehandlingBeregnController(
             )
         }
 
-        return beregningService.beregneBidrag(behandling.id!!).tilDto()
+        return beregningService.beregneBidrag(behandling.id!!, endeligBeregning).tilDto()
     }
 
     @Suppress("unused")
@@ -225,5 +229,20 @@ class BehandlingBeregnController(
         LOGGER.info { "Henter resultat for $vedtaksId" }
 
         return vedtakService.konverterVedtakTilBeregningResultatBidrag(vedtaksId)
+    }
+
+    @Suppress("unused")
+    @PostMapping("/behandling/{behandlingsid}/paragrafp35c")
+    @Operation(
+        description = "Beregn bidrag",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun oppdaterVedtakParagraf35c(
+        @PathVariable behandlingsid: Long,
+        @RequestBody request: OppdaterParagraf35cDetaljerDto,
+    ) {
+        LOGGER.info { "Oppdaterer Paragraf 35c $request" }
+
+        return vedtakService.oppdaterParagrafP35c(behandlingsid, request)
     }
 }

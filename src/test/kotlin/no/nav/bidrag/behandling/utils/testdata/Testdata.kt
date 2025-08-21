@@ -260,13 +260,10 @@ fun oppretteBehandling(
 ): Behandling =
     Behandling(
         vedtakstype,
-        null,
         søktFomDato = YearMonth.parse("2022-02").atEndOfMonth(),
         mottattdato = LocalDate.parse("2023-03-15"),
-        klageMottattdato = null,
         SAKSNUMMER,
         SOKNAD_ID.toLong(),
-        null,
         "4806",
         "Z9999",
         "Navn Navnesen",
@@ -277,6 +274,7 @@ fun oppretteBehandling(
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
         virkningstidspunkt = virkningstidspunkt,
         id = id,
+        klagedetaljer = null,
     )
 
 fun opprettInntekter(
@@ -1276,8 +1274,6 @@ fun oppretteTestbehandling(
 
         else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
     }
-
-    behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
 
     val parterIBehandlingen = hashMapOf(1 to testdataBM, 2 to testdataBarn1, 3 to testdataBarn2)
 

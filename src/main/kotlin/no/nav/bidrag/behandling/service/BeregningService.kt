@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
@@ -16,12 +17,16 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
-import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BeregnBasertPåVedtak
+import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
+import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
 import no.nav.bidrag.beregn.core.bo.SjablonInnhold
@@ -51,6 +56,8 @@ import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddRes
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
+import no.nav.bidrag.transport.felles.tilVisningsnavn
+import org.checkerframework.checker.units.qual.s
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -66,17 +73,18 @@ private val LOGGER = KotlinLogging.logger {}
 
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
-private fun Rolle.mapTilResultatBarn() = ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse())
+private fun Rolle.mapTilResultatBarn() =
+    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), grunnlagFraVedtakListe)
 
 @Service
 class BeregningService(
     private val behandlingService: BehandlingService,
     private val mapper: VedtakGrunnlagMapper,
     private val aldersjusteringOrchestrator: AldersjusteringOrchestrator,
+    private val beregnBarnebidrag: BidragsberegningOrkestrator,
 ) {
     private val beregnApi = BeregnForskuddApi()
     private val beregnSærbidragApi = BeregnSærbidragApi()
-    private val beregnBarnebidragApi = BeregnBarnebidragApi()
 
     fun beregneForskudd(behandling: Behandling): List<ResultatForskuddsberegningBarn> {
         behandling.run {
@@ -88,12 +96,12 @@ class BeregningService(
                     }
                 } else {
                     søknadsbarn.map { rolle ->
-                        val beregnForskudd = byggGrunnlagForBeregning(behandling, rolle)
+                        val beregningRequest = byggGrunnlagForBeregning(behandling, rolle)
 
                         try {
                             ResultatForskuddsberegningBarn(
                                 rolle.mapTilResultatBarn(),
-                                beregnApi.beregn(beregnForskudd),
+                                beregnApi.beregn(beregningRequest.beregnGrunnlag!!),
                             )
                         } catch (e: Exception) {
                             LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
@@ -116,12 +124,16 @@ class BeregningService(
             behandling.tilResultatAvslagSærbidrag()
         } else {
             try {
-                val grunnlagBeregning =
+                val beregningRequest =
                     mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
-                beregnSærbidragApi.beregn(grunnlagBeregning, behandling.opprinneligVedtakstype ?: behandling.vedtakstype).let { resultat ->
-                    resultat.validerForSærbidrag()
-                    resultat
-                }
+                beregnSærbidragApi
+                    .beregn(
+                        beregningRequest.beregnGrunnlag!!,
+                        behandling.klagedetaljer?.opprinneligVedtakstype ?: behandling.vedtakstype,
+                    ).let { resultat ->
+                        resultat.validerForSærbidrag()
+                        resultat
+                    }
             } catch (e: Exception) {
                 LOGGER.warn(e) { "Det skjedde en feil ved beregning av særbidrag: ${e.message}" }
                 throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
@@ -129,44 +141,86 @@ class BeregningService(
         }
     }
 
-    fun beregneBidrag(behandling: Behandling): List<ResultatBidragsberegningBarn> {
+    fun beregneBidrag(
+        behandling: Behandling,
+        endeligBeregning: Boolean = true,
+    ): List<ResultatBidragsberegningBarn> {
         mapper.validering.run {
             behandling.validerForBeregningBidrag()
         }
 
         return if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
-        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
+        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !endeligBeregning) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
             behandling.søknadsbarn.map { søknasdbarn ->
                 val grunnlagBeregning =
-                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn)
+                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
                 try {
+                    val resultat =
+                        beregnBarnebidrag
+                            .utførBidragsberegning(grunnlagBeregning)
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
+                        resultatVedtak = resultat,
+                        avslaskode = søknasdbarn.avslag,
+                        klagedetaljer = behandling.klagedetaljer,
+                        beregnTilDato =
+                            behandling
+                                .finnBeregnTilDatoBehandling(
+                                    søknasdbarn.opphørsdato?.toYearMonth(),
+                                    søknasdbarn,
+                                )?.toYearMonth(),
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
-                            beregnBarnebidragApi.beregn(grunnlagBeregning).let {
-                                it.copy(
-                                    grunnlagListe =
-                                        (it.grunnlagListe + grunnlagBeregning.grunnlagListe)
-                                            .toSet()
-                                            .toList()
-                                            .fjernMidlertidligPersonobjekterBMsbarn(),
-                                )
-                            },
+                            resultat.resultatVedtakListe
+                                .find {
+                                    behandling.erKlageEllerOmgjøring && it.klagevedtak || !behandling.erKlageEllerOmgjøring
+                                }?.resultat
+                                ?.let {
+                                    it.copy(
+                                        grunnlagListe =
+                                            (it.grunnlagListe + grunnlagBeregning.beregnGrunnlag!!.grunnlagListe)
+                                                .toSet()
+                                                .toList()
+                                                .fjernMidlertidligPersonobjekterBMsbarn(),
+                                    )
+                                } ?: BeregnetBarnebidragResultat(),
+                    )
+                } catch (e: FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak) {
+                    val beregnTilDato =
+                        søknasdbarn
+                            .behandling
+                            .finnBeregnTilDatoBehandling(søknasdbarn.opphørsdato?.toYearMonth(), søknasdbarn)
+                    ResultatBidragsberegningBarn(
+                        ugyldigBeregning =
+                            UgyldigBeregningDto(
+                                tittel = "Ugyldig perioder",
+                                vedtaksliste = e.vedtak,
+                                begrunnelse =
+                                    "En eller flere etterfølgende vedtak har virkningstidpunkt " +
+                                        "som starter før beregningsperioden ${søknasdbarn.virkningstidspunkt.tilVisningsnavn()} - ${beregnTilDato.tilVisningsnavn()}",
+                            ),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        vedtakstype = behandling.vedtakstype,
+                        klagedetaljer = behandling.klagedetaljer,
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
+                        resultat = BeregnetBarnebidragResultat(),
                     )
                 } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
+                        klagedetaljer = behandling.klagedetaljer,
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
-                                    (e.data.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                    (e.data.grunnlagListe + grunnlagBeregning.beregnGrunnlag!!.grunnlagListe)
                                         .toSet()
                                         .toList()
                                         .fjernMidlertidligPersonobjekterBMsbarn(),
@@ -177,10 +231,12 @@ class BeregningService(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
+                        klagedetaljer = behandling.klagedetaljer,
+                        innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
-                                    (e.data.grunnlagListe + grunnlagBeregning.grunnlagListe)
+                                    (e.data.grunnlagListe + grunnlagBeregning.beregnGrunnlag!!.grunnlagListe)
                                         .toSet()
                                         .toList()
                                         .fjernMidlertidligPersonobjekterBMsbarn(),
@@ -209,7 +265,7 @@ class BeregningService(
                 aldersjusteringOrchestrator.utførAldersjustering(
                     stønadsid,
                     behandling.virkningstidspunkt!!.year,
-                    BeregnBasertPåVedtak(vedtaksid = søknadsbarn.grunnlagFraVedtak!!.toInt()),
+                    BeregnBasertPåVedtak(søknadsbarn.grunnlagFraVedtak),
                     søknadsbarn.opphørsdato?.let { YearMonth.from(it) },
                 )
 
@@ -218,6 +274,8 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
+                    klagedetaljer = behandling.klagedetaljer,
+                    innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         beregning.beregning.copy(
                             grunnlagListe =
@@ -246,6 +304,8 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
+                    klagedetaljer = behandling.klagedetaljer,
+                    innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
@@ -268,6 +328,8 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
+                    klagedetaljer = behandling.klagedetaljer,
+                    innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
@@ -291,9 +353,12 @@ class BeregningService(
         return beregneSærbidrag(behandling)
     }
 
-    fun beregneBidrag(behandlingsid: Long): List<ResultatBidragsberegningBarn> {
+    fun beregneBidrag(
+        behandlingsid: Long,
+        endeligBeregning: Boolean = true,
+    ): List<ResultatBidragsberegningBarn> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        return beregneBidrag(behandling)
+        return beregneBidrag(behandling, endeligBeregning)
     }
 
     private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =
@@ -301,6 +366,7 @@ class BeregningService(
             barn = barn.mapTilResultatBarn(),
             avslaskode = avslag,
             vedtakstype = vedtakstype,
+            klagedetaljer = klagedetaljer,
             resultat =
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =

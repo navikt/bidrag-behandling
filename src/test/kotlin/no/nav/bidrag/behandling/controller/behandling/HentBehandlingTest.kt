@@ -279,7 +279,6 @@ class HentBehandlingTest : BehandlingControllerTest() {
 
     private fun opprettBehandling(): Behandling {
         val behandling = oppretteBehandling()
-        behandling.virkningstidspunktbegrunnelseKunINotat = "notat virkning"
         behandling.husstandsmedlem =
             mutableSetOf(
                 oppretteHusstandsmedlem(behandling, testdataBarn1),

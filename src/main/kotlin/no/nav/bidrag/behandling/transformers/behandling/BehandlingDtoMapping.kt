@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
@@ -83,7 +84,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         id = id!!,
         type = tilType(),
         vedtakstype = vedtakstype,
-        opprinneligVedtakstype = opprinneligVedtakstype,
+        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
         stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
         erKlageEllerOmgjøring = erKlageEllerOmgjøring,
@@ -106,8 +107,8 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
                         it.fødselsdato,
                     )
                 }.toSet(),
-        søknadRefId = soknadRefId,
-        vedtakRefId = refVedtaksid,
+        søknadRefId = klagedetaljer?.soknadRefId,
+        vedtakRefId = klagedetaljer?.påklagetVedtak,
         virkningstidspunkt = virkningstidspunkt,
         årsak = årsak,
         avslag = avslag,
@@ -276,8 +277,8 @@ fun Behandling.tilInntektDtoV2(
 fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDto {
     val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
         erKlageEllerOmgjøring &&
-            opprinneligVirkningstidspunkt != null &&
-            virkningstidspunkt?.isAfter(opprinneligVirkningstidspunkt) == true
+            klagedetaljer?.opprinneligVirkningstidspunkt != null &&
+            virkningstidspunkt?.isAfter(klagedetaljer!!.opprinneligVirkningstidspunkt) == true
     val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
 
     return VirkningstidspunktFeilDto(
@@ -308,7 +309,12 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
             } else {
                 false
             },
-        virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig = erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt,
+        virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig =
+            if (erKlageEllerOmgjøring && erBidrag()) {
+                false
+            } else {
+                erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt
+            },
     )
 }
 
@@ -706,8 +712,7 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
         saksnummer = saksnummer,
         vedtakstype = vedtakstype,
         søknadstype = søknadstype,
-        harReferanseTilAnnenBehandling = soknadRefId != null,
-        skruddAvManuelt = virkningstidspunktbegrunnelseKunINotat,
+        harReferanseTilAnnenBehandling = klagedetaljer != null,
         søktFomDato = søktFomDato,
         mottattdato = mottattdato,
         roller =

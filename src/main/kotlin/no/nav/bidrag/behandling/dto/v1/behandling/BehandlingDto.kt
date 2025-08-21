@@ -9,11 +9,13 @@ import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodes
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.util.visningsnavn
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 data class OppdaterManuellVedtakResponse(
     val erVedtakUtenBeregning: Boolean,
@@ -23,10 +25,20 @@ data class OppdaterManuellVedtakResponse(
 data class OppdaterManuellVedtakRequest(
     val barnId: Long,
     val vedtaksid: Int?,
+    val aldersjusteringForÅr: Int? = null,
 )
 
 data class ManuellVedtakResponse(
     val manuelleVedtak: List<ManuellVedtakDto>,
+)
+
+data class EtterfølgendeVedtakDto(
+    val vedtaksttidspunkt: LocalDateTime,
+    val vedtakstype: Vedtakstype,
+    val virkningstidspunkt: YearMonth,
+    val sistePeriodeDatoFom: YearMonth,
+    val opphørsdato: YearMonth? = null,
+    val vedtaksid: Int,
 )
 
 data class ManuellVedtakDto(
@@ -58,6 +70,7 @@ data class VirkningstidspunktDtoV2(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligVirkningstidspunkt: LocalDate? = null,
+    val opprinneligVedtakstidspunkt: LocalDate? = null,
     @Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
@@ -68,12 +81,15 @@ data class VirkningstidspunktDtoV2(
     val harLøpendeBidrag: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val opphørsdato: LocalDate? = null,
+    val beregnTil: BeregnTil? = null,
+    val beregnTilDato: LocalDate? = null,
     val globalOpphørsdato: LocalDate? = null,
     @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
     @Schema(description = "Manuell vedtak valgt for beregning av aldersjustering")
     val grunnlagFraVedtak: Int? = null,
     val kanSkriveVurderingAvSkolegang: Boolean = false,
+    val etterfølgendeVedtak: EtterfølgendeVedtakDto? = null,
     val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
 ) {
     @Deprecated("Bruk begrunnelse")

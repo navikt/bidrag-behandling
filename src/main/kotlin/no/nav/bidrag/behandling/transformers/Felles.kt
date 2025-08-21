@@ -4,23 +4,43 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
+import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
+import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
+import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Period
+import java.time.Year
 import java.time.YearMonth
 
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
+
+fun StønadsendringDto.tilStønadsid() =
+    Stønadsid(
+        type = type,
+        kravhaver = kravhaver,
+        skyldner = skyldner,
+        sak = sak,
+    )
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =
@@ -91,6 +111,14 @@ fun bestemTypeBehandling(
     TypeBehandling.BIDRAG
 }
 
+fun Behandling.tilStønadsid(søknadsbarn: Rolle) =
+    Stønadsid(
+        stonadstype!!,
+        Personident(søknadsbarn.ident!!),
+        Personident(bidragspliktig!!.ident!!),
+        Saksnummer(saksnummer),
+    )
+
 fun <T : Comparable<T>> minOfNullable(
     a: T?,
     b: T?,
@@ -127,6 +155,22 @@ fun LocalDate?.erUnder12År(basertPåDato: LocalDate = LocalDate.now()) =
         ).years < 13
 
 fun Behandling.finnesLøpendeBidragForRolle(rolle: Rolle): Boolean = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) != null
+
+fun Stønadstype.tilGrunnlagsdatatypeBeløpshistorikk() =
+    when (this) {
+        Stønadstype.BIDRAG -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG
+        Stønadstype.BIDRAG18AAR -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR
+        Stønadstype.FORSKUDD -> Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD
+        else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
+    }
+
+fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
+    when (this) {
+        Stønadstype.BIDRAG -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG
+        Stønadstype.BIDRAG18AAR -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR
+        Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
+        else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
+    }
 
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
     val eksisterendeVedtak =
@@ -167,6 +211,36 @@ fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
     return mergedPeriods
 }
 
+fun Behandling.hentEtterfølgendeVedtak(rolle: Rolle) =
+    grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK)
+
+fun Behandling.hentNesteEtterfølgendeVedtak(rolle: Rolle): EtterfølgendeVedtakDto? {
+    val grunnlag =
+        hentEtterfølgendeVedtak(rolle)
+    return grunnlag
+        .konvertereData<List<VedtakForStønad>>()
+        ?.groupBy { it.virkningstidspunkt }
+        ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
+        ?.filter { !it.type.erIndeksEllerAldersjustering }
+        ?.map {
+            EtterfølgendeVedtakDto(
+                vedtaksttidspunkt = it.vedtakstidspunkt,
+                vedtakstype = it.type,
+                virkningstidspunkt = it.virkningstidspunkt!!,
+                sistePeriodeDatoFom = it.stønadsendring.periodeListe.maxOf { it.periode.fom },
+                opphørsdato =
+                    it.stønadsendring.periodeListe
+                        .filter { it.beløp == null }
+                        .maxOfOrNull { it.periode.fom },
+                vedtaksid = it.vedtaksid,
+            )
+        }?.minByOrNull { it.vedtaksttidspunkt }
+}
+
+fun Behandling.hentBeløpshistorikk(rolle: Rolle) =
+    grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+        ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
         grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
@@ -189,3 +263,21 @@ fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpph�
         vedtaksdato = opphørPeriode.gyldigFra.toLocalDate(),
     )
 }
+
+fun Behandling.opprettStønadDto(søknadsbarn: Rolle) =
+    StønadDto(
+        sak = Saksnummer(saksnummer),
+        skyldner = if (stonadstype == Stønadstype.FORSKUDD) personIdentNav else Personident(bidragspliktig!!.ident!!),
+        kravhaver = Personident(søknadsbarn.ident!!),
+        mottaker = Personident(bidragsmottaker!!.ident!!),
+        førsteIndeksreguleringsår = Year.now().value + 1,
+        nesteIndeksreguleringsår = Year.now().value + 1,
+        innkreving = Innkrevingstype.MED_INNKREVING,
+        opprettetAv = "",
+        opprettetTidspunkt = opprettetTidspunkt,
+        endretAv = null,
+        endretTidspunkt = null,
+        stønadsid = 1,
+        type = stonadstype!!,
+        periodeListe = emptyList(),
+    )

@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
@@ -272,8 +273,11 @@ class BehandlingServiceTest : TestContainerRunner() {
                     behandlingstype = TypeBehandling.SÆRBIDRAG,
                 )
             behandling.virkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
-            behandling.opprinneligVirkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
-            behandling.refVedtaksid = 2
+            behandling.klagedetaljer =
+                Klagedetaljer(
+                    refVedtaksid = 2,
+                    opprinneligVirkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1),
+                )
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -2125,20 +2129,17 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling =
                 Behandling(
                     Vedtakstype.FASTSETTELSE,
-                    null,
-                    YearMonth.now().atDay(1),
-                    YearMonth.now().atEndOfMonth(),
-                    LocalDate.now(),
-                    "1900000",
-                    søknadsid,
-                    null,
-                    "1234",
-                    "Z9999",
-                    "Navn Navnesen",
-                    "bisys",
-                    SøktAvType.BIDRAGSMOTTAKER,
-                    Stønadstype.FORSKUDD,
-                    null,
+                    søktFomDato = YearMonth.now().atDay(1),
+                    mottattdato = YearMonth.now().atEndOfMonth(),
+                    saksnummer = "1900000",
+                    soknadsid = søknadsid,
+                    behandlerEnhet = "1234",
+                    opprettetAv = "Z9999",
+                    opprettetAvNavn = "Navn Navnesen",
+                    kildeapplikasjon = "bisys",
+                    soknadFra = SøktAvType.BIDRAGSMOTTAKER,
+                    stonadstype = Stønadstype.FORSKUDD,
+                    engangsbeloptype = null,
                 )
             val createRoller = prepareRoles(behandling)
             val roller =
