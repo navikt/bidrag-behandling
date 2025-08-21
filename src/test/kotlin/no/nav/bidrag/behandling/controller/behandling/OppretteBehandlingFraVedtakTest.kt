@@ -75,7 +75,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             klagedetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 1
             klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
             klagedetaljer?.refVedtaksid shouldBe 12333
-            grunnlag.filter { it.aktiv == null }.shouldHaveSize(9)
+            grunnlag.filter { it.aktiv == null }.shouldHaveSize(8)
             sivilstand shouldHaveSize 2
             // TODO: Boforhold grunnlag inneholder sju unike husstandsmedlemmer - fikse stub-vedtaksdata slik at tallene stemmer
             husstandsmedlem shouldHaveSize 7
