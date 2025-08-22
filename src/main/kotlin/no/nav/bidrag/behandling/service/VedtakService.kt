@@ -582,9 +582,8 @@ class VedtakService(
         }
 
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-            erKlageEllerOmgjøring && !erBidrag()
-        klagedetaljer?.opprinneligVirkningstidspunkt != null &&
-            virkningstidspunkt!! > klagedetaljer!!.opprinneligVirkningstidspunkt
+            erKlageEllerOmgjøring && !erBidrag() && klagedetaljer?.opprinneligVirkningstidspunkt != null &&
+                virkningstidspunkt!! > klagedetaljer!!.opprinneligVirkningstidspunkt
         if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
