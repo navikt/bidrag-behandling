@@ -44,7 +44,7 @@ class ValiderBehandlingService(
         }
         return when (request.tilType()) {
             TypeBehandling.SÆRBIDRAG -> kanSærbidragBehandlesINyLøsning(request)
-            TypeBehandling.BIDRAG -> kanBidragBehandlesINyLøsning(request)
+            TypeBehandling.BIDRAG -> null // kanBidragBehandlesINyLøsning(request)
             else -> null
         }
     }
@@ -62,7 +62,7 @@ class ValiderBehandlingService(
     private fun kanBidragBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? = kanBidragV1BehandlesINyLøsning(request)
 
     private fun kanBidragV1BehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
-        secureLogger.info { "Sjekker om bidrag kan behandles i ny løsning for request: $request" }
+        secureLogger.debug { "Sjekker om bidrag kan behandles i ny løsning for request: $request" }
         if (!request.skruddAvManuelt.isNullOrEmpty()) return request.skruddAvManuelt
         if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
@@ -107,10 +107,9 @@ class ValiderBehandlingService(
     fun validerKanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest) {
         val resultat = kanBehandlesINyLøsning(request)
         if (resultat != null) {
-            log.info {
-                "Behandling engangsbeløpstype=${request.engangsbeløpstype}, stønadstype=${request.stønadstype} kan ikke behandles i ny løsning: $resultat"
+            secureLogger.debug {
+                "Behandling engangsbeløpstype=${request.engangsbeløpstype}, stønadstype=${request.stønadstype} kan ikke behandles i ny løsning: $request med begrunnelse $resultat"
             }
-            secureLogger.info { "Behandling kan ikke behandles i ny løsning: $request med begrunnelse $resultat" }
             throw HttpClientErrorException(
                 HttpStatus.PRECONDITION_FAILED,
                 "Behandling kan ikke behandles i ny løsning",

@@ -39,8 +39,7 @@ class SamværService(
         request: OppdaterSamværDto,
     ): OppdaterSamværResponsDto {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        log.info { "Oppdaterer samvær for behandling $behandlingsid" }
-        secureLogger.info { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
+        secureLogger.debug { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
         val oppdaterSamvær = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
         request.valider(oppdaterSamvær.rolle.opphørsdato)
 
@@ -97,14 +96,13 @@ class SamværService(
         request: SletteSamværsperiodeElementDto,
     ): OppdaterSamværResponsDto {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        log.info { "Sletter samværsperiode $request for behandling $behandlingsid" }
         val oppdaterSamvær =
             behandling.samvær.finnSamværForBarn(request.gjelderBarn)
         val slettPeriode =
             oppdaterSamvær.hentPeriode(request.samværsperiodeId)
 
         oppdaterSamvær.perioder.remove(slettPeriode)
-        log.info { "Slettet samværsperiode ${slettPeriode.id} fra samvær ${oppdaterSamvær.id} i behandling $behandlingsid" }
+        secureLogger.debug { "Slettet samværsperiode ${slettPeriode.id} fra samvær ${oppdaterSamvær.id} i behandling $behandlingsid" }
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
 

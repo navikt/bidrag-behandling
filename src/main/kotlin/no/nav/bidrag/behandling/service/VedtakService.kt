@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
+import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatBidrag
@@ -39,20 +40,25 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erDelvedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
+import no.nav.bidrag.transport.behandling.vedtak.response.finnVirkningstidspunktForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.harResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.referertVedtaksid
+import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 private val LOGGER = KotlinLogging.logger {}
 
 internal data class PåklagetVedtak(
     val vedtaksid: Int,
     val vedtakstidspunkt: LocalDateTime,
+    val virkningstidspunkt: YearMonth?,
 )
 
 internal data class OrkestrertVedtak(
@@ -132,14 +138,25 @@ class VedtakService(
         val vedtaksiderStønadsendring = vedtak.stønadsendringListe.mapNotNull { it.omgjørVedtakId }
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
+        val virkningstidspunkt =
+            if (vedtak.stønadsendringListe.isNotEmpty()) {
+                vedtak.stønadsendringListe.minOfOrNull {
+                    vedtak.finnVirkningstidspunktForStønad(
+                        it.tilStønadsid(),
+                    )
+                }
+            } else {
+                vedtak.virkningstidspunkt?.toYearMonth()
+            }
         if (refererTilVedtakId.isNotEmpty()) {
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
                     val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
+
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
-                }.toSet() + setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.vedtakstidspunkt!!))
+                }.toSet() + setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.vedtakstidspunkt!!, virkningstidspunkt))
         }
-        return setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.vedtakstidspunkt!!))
+        return setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.vedtakstidspunkt!!, virkningstidspunkt))
     }
 
     @Transactional
@@ -205,6 +222,10 @@ class VedtakService(
                 søknadId = request.søknadsid,
                 søknadstype = request.søknadstype,
                 lesemodus = false,
+                minsteVirkningstidspunkt =
+                    påklagetVedtakListe
+                        .filter { it.virkningstidspunkt != null }
+                        .minOfOrNull { it.virkningstidspunkt!! },
                 opprinneligVedtakstidspunkt = påklagetVedtakListe.map { it.vedtakstidspunkt }.toSet(),
                 opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",

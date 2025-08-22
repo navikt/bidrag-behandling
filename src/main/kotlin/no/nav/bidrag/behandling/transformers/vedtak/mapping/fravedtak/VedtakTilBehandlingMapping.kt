@@ -87,6 +87,7 @@ import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @Component
@@ -107,6 +108,7 @@ class VedtakTilBehandlingMapping(
         søknadRefId: Long? = null,
         søknadId: Long? = null,
         enhet: String? = null,
+        minsteVirkningstidspunkt: YearMonth? = null,
         opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
         opprinneligVedtakstype: Vedtakstype? = null,
         søknadstype: BisysSøknadstype? = null,
@@ -134,7 +136,7 @@ class VedtakTilBehandlingMapping(
             this.stønadsendringListe.firstOrNull()?.innkreving
                 ?: this.engangsbeløpListe.firstOrNull()?.innkreving
                 ?: Innkrevingstype.MED_INNKREVING
-        val virkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
+        val virkningstidspunkt = minsteVirkningstidspunkt?.atDay(1) ?: virkningstidspunkt ?: hentSøknad().søktFraDato
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,

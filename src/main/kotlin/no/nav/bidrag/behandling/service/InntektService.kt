@@ -223,7 +223,7 @@ class InntektService(
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
         offentligeInntekterSomSkalSlettes.forEach {
-            log.info {
+            secureLogger.debug {
                 "Sletter offentlig inntekt med type ${it.type} " +
                     "og periode ${it.opprinneligFom.toCompactString()} - ${it.opprinneligTom.toCompactString()} fra behandling ${behandling.id}"
             }
@@ -237,7 +237,7 @@ class InntektService(
         oppdatereInntektRequest: OppdatereInntektRequest,
     ): InntektDtoV2? {
         oppdatereInntektRequest.valider()
-        secureLogger.info { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
+        secureLogger.debug { "Oppdaterer inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
@@ -432,7 +432,7 @@ class InntektService(
         } else if (inntekterSomSkalOppdateres.size == 1) {
             val inntektSomOppdateres = inntekterSomSkalOppdateres.first()
             oppdatereBeløpPeriodeOgPoster(nyInntekt, inntektSomOppdateres)
-            log.info {
+            secureLogger.debug {
                 "Eksisterende inntekt med id ${inntektSomOppdateres.id} for rolle " +
                     "${rolle.rolletype} i behandling ${behandling.id} ble oppdatert med nytt beløp og poster."
             }
@@ -448,7 +448,9 @@ class InntektService(
 
             idTilInntekterSomBleOppdatert.add(nyInntekt.id!!)
             behandling.inntekter.add(nyInntekt)
-            log.info { "Ny offisiell inntekt ${nyInntekt.id} ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}" }
+            secureLogger.debug {
+                "Ny offisiell inntekt ${nyInntekt.id} ble lagt til i behandling ${behandling.id} for rolle ${rolle.rolletype}"
+            }
         }
     }
 
