@@ -36,7 +36,6 @@ class BidragVedtakConsumer(
     private val bidragVedtakUri
         get() = UriComponentsBuilder.fromUri(bidragVedtakUrl).pathSegment("vedtak")
 
-    @BrukerCacheable(VEDTAK_CACHE)
     fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto =
         try {
             postForNonNullEntity(
@@ -56,6 +55,7 @@ class BidragVedtakConsumer(
             }
         }
 
+    @BrukerCacheable(VEDTAK_CACHE)
     override fun hentVedtak(vedtaksid: Int): VedtakDto? =
         getForEntity(
             bidragVedtakUri.pathSegment(vedtaksid.toString()).build().toUri(),
