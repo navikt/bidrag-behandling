@@ -16,7 +16,7 @@
   <properties>
     <java.version>21</java.version>
     <kotlin.version>2.2.10</kotlin.version>
-    <bidrag-felles.version>1.0-SNAPSHOT</bidrag-felles.version>
+    <bidrag-felles.version>2025.08.22.103314</bidrag-felles.version>
     <bidrag-beregn-felles.version>2025.08.21.164901</bidrag-beregn-felles.version>
     <h2.version>2.3.232</h2.version>
     <shedlock.version>6.6.1</shedlock.version>
@@ -491,7 +491,7 @@
     <dependency>
       <groupId>io.getunleash</groupId>
       <artifactId>unleash-client-java</artifactId>
-      <version>10.2.2</version>
+      <version>11.0.2</version>
     </dependency>
     <!--Logging-->
     <dependency>

@@ -347,7 +347,7 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                 },
                 barnetsRolleIBehandlingen!!,
             ),
-        ingenLøpendePeriode = behandling.manglerLøpendePeriode(perioder, barnetsRolleIBehandlingen!!),
+        ingenLøpendePeriode = perioder.isEmpty() || behandling.manglerLøpendePeriode(perioder, barnetsRolleIBehandlingen!!),
         manglerBegrunnelse = notatPrivatAvtale?.innhold.isNullOrEmpty(),
         overlappendePerioder =
             perioder
