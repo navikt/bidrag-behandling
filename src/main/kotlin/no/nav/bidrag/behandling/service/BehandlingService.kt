@@ -77,7 +77,7 @@ class BehandlingService(
             )
         }
 
-        log.info { "Logisk sletter behandling $behandlingId" }
+        log.debug { "Logisk sletter behandling $behandlingId" }
         behandlingRepository.logiskSlett(behandling.id!!)
     }
 

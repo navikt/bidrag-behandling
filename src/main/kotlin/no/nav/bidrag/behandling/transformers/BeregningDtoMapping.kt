@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
@@ -645,10 +646,10 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
 
         val delberegningGrensePeriode =
-            if (vedtakstype == Vedtakstype.OPPHØR) {
+            if (vedtakstype == Vedtakstype.OPPHØR || resultat == null) {
                 null
             } else {
-                val barn = hentPerson(barnIdent!!.verdi)!!
+                val barn = hentPersonNyesteIdent(barnIdent!!.verdi)!!
                 finnDelberegningSjekkGrensePeriode(periode, barn.referanse)
                     ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), barn.referanse)
             }

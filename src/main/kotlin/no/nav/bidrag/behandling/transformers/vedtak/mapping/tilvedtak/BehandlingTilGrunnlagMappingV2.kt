@@ -197,6 +197,7 @@ class BehandlingTilGrunnlagMappingV2(
         }
 
         return privatAvtale
+            .filter { it.perioder.isNotEmpty() }
             .flatMap { pa ->
                 val underholdRolle = pa.barnetsRolleIBehandlingen
                 val gjelderBarn =
@@ -233,7 +234,8 @@ class BehandlingTilGrunnlagMappingV2(
                                 ),
                             ),
                     )
-            }.toSet()
+            }.filterNotNull()
+            .toSet()
     }
 
     fun Behandling.tilGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto> = emptySet()) =

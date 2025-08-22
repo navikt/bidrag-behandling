@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,10 +25,12 @@ class NotatService {
         val eksisterendeNotat = hentNotat(behandling, notattype, rolle)
 
         eksisterendeNotat?.let {
-            log.info { "Oppdaterer eksisterende notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
+            secureLogger.debug {
+                "Oppdaterer eksisterende notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}"
+            }
             it.innhold = notattekst
         } ?: run {
-            log.info { "Legger til notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
+            secureLogger.debug { "Legger til notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
             behandling.notater.add(
                 Notat(
                     behandling = behandling,
@@ -47,11 +50,11 @@ class NotatService {
     ) {
         val notat = behandling.notater.find { it.rolle == rolle && it.type == notattype }
         notat?.let {
-            log.info { "Sletter notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
+            log.debug { "Sletter notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
             rolle.notat.remove(notat)
             behandling.notater.remove(notat)
         } ?: {
-            log.info { "Fant ingen notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
+            log.debug { "Fant ingen notat av type $notattype for rolle med id ${rolle.id} i behandling ${behandling.id}" }
         }
     }
 
