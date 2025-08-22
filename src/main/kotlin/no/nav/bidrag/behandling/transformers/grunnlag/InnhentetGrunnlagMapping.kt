@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -290,11 +291,13 @@ fun List<Grunnlag>.hentVersjonForInntekt(inntekt: Inntekt): String {
 fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
     gjelderIdent: String,
     inntekt: Inntekt,
+    sjekkAktive: Boolean = true,
 ): List<Grunnlagsreferanse> {
     if (inntekt.kilde == Kilde.MANUELL) return emptyList()
     val periode = ÅrMånedsperiode(inntekt.opprinneligFom!!, inntekt.opprinneligTom)
+    val grunnlag = if (sjekkAktive) hentAlleAktiv() else hentAlleIkkeAktiv()
     val inntekterGjelderGrunnlag =
-        hentAlleAktiv().find {
+        grunnlag.find {
             it.type == inntekt.type.tilGrunnlagsdataType() &&
                 it.erBearbeidet &&
                 hentNyesteIdent(
@@ -314,43 +317,20 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
         }
 
     return beregnetInntekt?.grunnlagsreferanseListe?.filter { it.isNotEmpty() }
-        ?: grunnlagByggingFeilet(
-            "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +
-                "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",
-        ) // ?: opprettGrunnlagsreferanserForInntekt2
-}
-
-private fun opprettGrunnlagsreferanserForInntekt2(
-    inntekt: Inntekt,
-    gjelderReferanse: Grunnlagsreferanse,
-): List<Grunnlagsreferanse> {
-    val referanse =
-        when (inntekt.type) {
-            Inntektsrapportering.AINNTEKT_BEREGNET_12MND, Inntektsrapportering.AINNTEKT_BEREGNET_3MND ->
-                opprettAinntektGrunnlagsreferanse(gjelderReferanse)
-
-            Inntektsrapportering.BARNETILLEGG ->
-                opprettBarnetilleggGrunnlagsreferanse(gjelderReferanse)
-
-            Inntektsrapportering.SMÅBARNSTILLEGG ->
-                opprettSmåbarnstilleggGrunnlagsreferanse(gjelderReferanse)
-
-            Inntektsrapportering.UTVIDET_BARNETRYGD ->
-                opprettUtvidetbarnetrygGrunnlagsreferanse(gjelderReferanse)
-
-            Inntektsrapportering.KONTANTSTØTTE ->
-                opprettKontantstøtteGrunnlagsreferanse(gjelderReferanse)
-
-            Inntektsrapportering.KAPITALINNTEKT, Inntektsrapportering.LIGNINGSINNTEKT ->
-                opprettSkattegrunnlagGrunnlagsreferanse(
-                    gjelderReferanse,
-                    inntekt.opprinneligFom?.year!!,
+        ?: run {
+            if (sjekkAktive) {
+                return hentGrunnlagsreferanserForInntekt(
+                    gjelderIdent,
+                    inntekt,
+                    false,
                 )
-
-            else -> null
-        }
-
-    return listOfNotNull(referanse)
+            } else {
+                grunnlagByggingFeilet(
+                    "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +
+                        "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",
+                )
+            }
+        } // ?: opprettGrunnlagsreferanserForInntekt2
 }
 
 private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
