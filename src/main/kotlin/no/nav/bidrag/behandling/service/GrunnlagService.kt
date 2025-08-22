@@ -2,6 +2,11 @@ package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
@@ -72,6 +77,8 @@ import no.nav.bidrag.beregn.core.util.justerVedtakstidspunkt
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.commons.util.RequestContextAsyncContext
+import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -123,6 +130,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
+import kotlin.collections.flatten
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
@@ -154,14 +162,25 @@ class GrunnlagService(
                     tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
                 behandling.grunnlagsinnhentingFeilet = null
 
-                grunnlagRequestobjekter.forEach {
-                    feilrapporteringer +=
-                        henteOglagreGrunnlag(
-                            behandling,
-                            it,
-                            tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
-                        )
-                }
+                val scope =
+                    CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
+                val requests =
+                    grunnlagRequestobjekter.map {
+                        scope.async {
+                            henteOglagreGrunnlag(
+                                behandling,
+                                it,
+                                tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
+                            )
+                        }
+                    }
+                feilrapporteringer.putAll(
+                    runBlocking {
+                        awaitAll(*requests.toTypedArray())
+                            .flatMap { it.entries }
+                            .associate { it.toPair() }
+                    },
+                )
             }
             feilrapporteringer += hentOgLagreEtterfølgendeVedtak(behandling)
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)

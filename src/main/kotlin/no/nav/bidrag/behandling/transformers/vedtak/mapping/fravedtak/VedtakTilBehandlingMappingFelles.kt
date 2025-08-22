@@ -298,6 +298,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             resultatFraVedtak =
                                 ResultatFraVedtakGrunnlag(
                                     vedtaksid = periodeVedtak?.vedtaksid,
+                                    vedtakstype = periodeVedtak?.type,
                                     beregnet = periodeVedtak?.beregnet ?: false,
                                 ),
                             klageOmgjøringDetaljer =

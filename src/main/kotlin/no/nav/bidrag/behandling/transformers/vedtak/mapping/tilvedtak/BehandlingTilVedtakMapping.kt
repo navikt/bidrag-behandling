@@ -68,6 +68,7 @@ data class ResultatDelvedtak(
     val omgjøringsvedtak: Boolean = false,
     val innkreving: Boolean = false,
     val beregnet: Boolean = false,
+    val type: Vedtakstype?,
     val request: OpprettVedtakRequestDto?,
     val resultat: BeregnetBarnebidragResultat,
 )
@@ -223,6 +224,7 @@ class BehandlingTilVedtakMapping(
                             POJONode(
                                 ResultatFraVedtakGrunnlag(
                                     vedtaksid = vedtaksid,
+                                    vedtakstype = Vedtakstype.KLAGE,
                                 ),
                             ),
                     )
@@ -319,6 +321,7 @@ class BehandlingTilVedtakMapping(
                         omgjøringsvedtak = false,
                         beregnet = false,
                         request = null,
+                        type = resultatVedtak.vedtakstype,
                         resultat = resultatVedtak.resultat,
                     )
                 }
@@ -330,6 +333,7 @@ class BehandlingTilVedtakMapping(
                     vedtaksid = null,
                     omgjøringsvedtak = resultatVedtak.omgjøringsvedtak,
                     beregnet = true,
+                    type = resultatVedtak.vedtakstype,
                     request =
                         byggVedtakForKlage(
                             behandling,
