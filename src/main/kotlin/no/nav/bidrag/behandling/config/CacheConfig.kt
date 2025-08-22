@@ -20,6 +20,7 @@ class CacheConfig {
         const val SAMHANDLER_CACHE = "SAMHANDLER_CACHE"
         const val PERSON_CACHE = "PERSON_CACHE"
         const val PERSON_FØDSELSDATO_CACHE = "PERSON_FØDSELSDATO_CACHE"
+        const val STØNAD_HISTORIKK_CACHE_2 = "STØNAD_HISTORIKK_CACHE_2"
         const val STØNAD_HISTORIKK_CACHE = "STØNAD_HISTORIKK_CACHE"
         const val BBM_BEREGNING_CACHE = "BBM_BEREGNING_CACHE"
         const val VEDTAK_FOR_STØNAD_CACHE = "VEDTAK_FOR_STØNAD_CACHE"
@@ -46,7 +47,14 @@ class CacheConfig {
             PERSON_CACHE,
             Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
         )
-        caffeineCacheManager.registerCustomCache(STØNAD_HISTORIKK_CACHE, Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build())
+        caffeineCacheManager.registerCustomCache(
+            STØNAD_HISTORIKK_CACHE,
+            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
+        )
+        caffeineCacheManager.registerCustomCache(
+            STØNAD_HISTORIKK_CACHE_2,
+            Caffeine.newBuilder().expireAfterAccess(1, TimeUnit.SECONDS).build(),
+        )
         caffeineCacheManager.registerCustomCache(TILGANG_TEMA_CACHE, Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build())
         caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build())
         caffeineCacheManager.registerCustomCache(
@@ -55,7 +63,7 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_FOR_STØNAD_CACHE,
-            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build(),
+            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             TILGANG_PERSON_I_SAK_CACHE,
@@ -63,7 +71,7 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             SAK_CACHE,
-            Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
+            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             PERSON_HAR_BESKYTTELSE,
@@ -71,7 +79,7 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_CACHE,
-            Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
+            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
         )
 
         return caffeineCacheManager

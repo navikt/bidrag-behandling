@@ -83,7 +83,7 @@ class BehandlingService(
 
     fun opprettBehandling(behandling: Behandling): Behandling =
         behandlingRepository.findFirstBySoknadsid(behandling.soknadsid!!)?.let {
-            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${behandling.soknadsid}. Oppretter ikke ny behandling" }
+            log.debug { "Fant eksisterende behandling ${it.id} for søknadsId ${behandling.soknadsid}. Oppretter ikke ny behandling" }
             return it
         } ?: run {
             behandlingRepository.save(behandling).let {
@@ -235,7 +235,7 @@ class BehandlingService(
             }
         }
         behandlingRepository.save(behandling)
-        log.info {
+        log.debug {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
                 "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
                 "og søknadFra ${opprettBehandling.søknadFra} med id ${behandlingDo.id} "
@@ -273,7 +273,7 @@ class BehandlingService(
             .orElseThrow { behandlingNotFoundException(behandlingsid) }
             .let {
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
-                secureLogger.info {
+                secureLogger.debug {
                     "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype} " +
                         "for person ${request.personident}: $request"
                 }
@@ -346,7 +346,7 @@ class BehandlingService(
     }
 
     fun henteBehandlingDetaljerForSøknadsid(søknadsid: Long): BehandlingDetaljerDtoV2 {
-        log.info { "Henter behandling for søknadsId $søknadsid." }
+        log.debug { "Henter behandling for søknadsId $søknadsid." }
         return behandlingRepository.findFirstBySoknadsid(søknadsid)?.let {
             log.info { "Fant behandling ${it.id} for søknadsId $søknadsid med type ${it.tilType()}." }
             tilgangskontrollService.sjekkTilgangBehandling(it)
@@ -394,8 +394,7 @@ class BehandlingService(
             )
         }
 
-        log.info { "Oppdater roller i behandling $behandlingId" }
-        secureLogger.info { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
+        secureLogger.debug { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
         val eksisterendeRoller = behandling.roller
         val oppdaterRollerNyesteIdent =
             oppdaterRollerListe.map { rolle ->
@@ -413,7 +412,7 @@ class BehandlingService(
 
         val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
         identerSomSkalLeggesTil.isNotEmpty().ifTrue {
-            secureLogger.info {
+            secureLogger.debug {
                 "Legger til søknadsbarn ${
                     identerSomSkalLeggesTil.joinToString(",")
                 } til behandling $behandlingId"
@@ -424,12 +423,12 @@ class BehandlingService(
         val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         identerSomSkalSlettes.isNotEmpty().ifTrue {
-            secureLogger.info { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
+            secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
         behandling.roller.removeIf { r ->
             val skalSlettes = identerSomSkalSlettes.contains(r.ident)
             skalSlettes.ifTrue {
-                log.info { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+                log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
             }
             skalSlettes
         }
@@ -442,7 +441,7 @@ class BehandlingService(
         behandlingRepository.save(behandling)
 
         if (behandling.søknadsbarn.isEmpty()) {
-            log.info { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
+            log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
             behandlingRepository.logiskSlett(behandling.id!!)
             return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
@@ -493,7 +492,7 @@ class BehandlingService(
             rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
         behandling.husstandsmedlem.addAll(
             nyeRollerSomIkkeHarHusstandsmedlemmer.map {
-                secureLogger.info { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
+                secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
                 it.toHusstandsmedlem(behandling)
             },
         )

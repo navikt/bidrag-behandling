@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   <appender name="stdout_json" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="no.nav.bidrag.commons.logging.BidragDebugLogFilter"/>
     <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
       <providers>
         <mdc/>
@@ -20,6 +21,7 @@
   </appender>
 
   <appender name="secureLog" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="no.nav.bidrag.commons.logging.BidragDebugLogFilter"/>
     <layout class="ch.qos.logback.classic.PatternLayout">
       <Pattern>
         SECURE_LOG -- %d{yyyy-MM-dd HH:mm:ss} %X{correlationId} [%thread] %-5level %logger{70} - %msg%n
@@ -29,6 +31,7 @@
 
   <springProfile name="nais">
     <appender name="secureLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <filter class="no.nav.bidrag.commons.logging.BidragDebugLogFilter"/>
       <file>/secure-logs/secure.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
         <fileNamePattern>/secure-logs/secure.log.%i</fileNamePattern>
@@ -43,6 +46,7 @@
   </springProfile>
   <springProfile name="nais">
     <appender name="team-logs" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+      <filter class="no.nav.bidrag.commons.logging.BidragDebugLogFilter"/>
       <destination>team-logs.nais-system:5170</destination>
       <encoder class="net.logstash.logback.encoder.LogstashEncoder">
         <customFields>{"google_cloud_project":"${GOOGLE_CLOUD_PROJECT}","nais_namespace_name":"${NAIS_NAMESPACE}","nais_pod_name":"${HOSTNAME}","nais_container_name":"${NAIS_APP_NAME}"}</customFields>

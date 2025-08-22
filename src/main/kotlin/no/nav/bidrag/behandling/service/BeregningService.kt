@@ -178,7 +178,7 @@ class BeregningService(
                         resultat =
                             resultat.resultatVedtakListe
                                 .find {
-                                    behandling.erKlageEllerOmgjøring && it.klagevedtak || !behandling.erKlageEllerOmgjøring
+                                    behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak || !behandling.erKlageEllerOmgjøring
                                 }?.resultat
                                 ?.let {
                                     it.copy(

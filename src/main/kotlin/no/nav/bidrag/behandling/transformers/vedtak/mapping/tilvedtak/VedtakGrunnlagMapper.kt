@@ -77,31 +77,29 @@ fun Behandling.finnBeregnTilDatoBehandling(
 ) = if (tilType() == TypeBehandling.SÆRBIDRAG) {
     virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
 } else if (erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
-    val beregnTilDato =
+    val opprinneligVedtakstidspunkt =
         klagedetaljer
             ?.opprinneligVedtakstidspunkt!!
             .min()
             .plusMonths(1)
             .withDayOfMonth(1)
             .toLocalDate()
-    when {
-        søknadsbarnRolle?.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED ->
-            finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
-        søknadsbarnRolle?.beregnTil == BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
+    when (søknadsbarnRolle?.beregnTil) {
+        BeregnTil.INNEVÆRENDE_MÅNED -> finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
             val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
             if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
-                beregnTilDato
+                finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunkt)
             } else {
-                nesteVirkningstidspunkt
+                finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth, nesteVirkningstidspunkt)
             }
         }
-
         else -> {
             val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
-            if (virkningstidspunkt >= beregnTilDato) {
+            if (virkningstidspunkt >= opprinneligVedtakstidspunkt) {
                 virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
             } else {
-                beregnTilDato
+                finnBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunkt)
             }
         }
     }
@@ -112,9 +110,10 @@ fun Behandling.finnBeregnTilDatoBehandling(
 fun finnBeregnTilDato(
     virkningstidspunkt: LocalDate,
     opphørsdato: YearMonth? = null,
+    opprinneligVedtakstidspunkt: LocalDate? = null,
 ): LocalDate =
     if (opphørsdato == null || opphørsdato.isAfter(YearMonth.now().plusMonths(1))) {
-        maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+        opprinneligVedtakstidspunkt ?: maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
     } else {
         opphørsdato.atDay(1)
     }

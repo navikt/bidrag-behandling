@@ -34,12 +34,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksre
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.felles.tilVisningsnavn
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import kotlin.text.get
-import kotlin.text.intern
 
 val YearMonth.formatterDatoFom get() = this.atDay(1).format(DateTimeFormatter.ofPattern("MM.YYYY"))
 val YearMonth.formatterDatoTom get() = this.atEndOfMonth().format(DateTimeFormatter.ofPattern("MM.YYYY"))
@@ -194,7 +191,7 @@ data class ResultatBidragsberegningBarnDto(
 
 data class DelvedtakDto(
     val type: Vedtakstype?,
-    val klagevedtak: Boolean,
+    val omgjøringsvedtak: Boolean,
     val vedtaksid: Int? = null,
     val delvedtak: Boolean,
     val beregnet: Boolean,
@@ -203,7 +200,7 @@ data class DelvedtakDto(
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
 ) {
-    val endeligVedtak get() = !klagevedtak && !delvedtak
+    val endeligVedtak get() = !omgjøringsvedtak && !delvedtak
 }
 
 data class ResultatBarnebidragsberegningPeriodeDto(
@@ -231,7 +228,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
         get(): String {
             if (klageOmgjøringDetaljer == null) return ""
             return when {
-                klageOmgjøringDetaljer.klagevedtak -> "Klagevedtak"
+                klageOmgjøringDetaljer.omgjøringsvedtak -> "Klagevedtak"
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
                     vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
@@ -286,7 +283,7 @@ data class KlageOmgjøringDetaljer(
     val resultatFraVedtak: Int? = null,
     val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
     val beregnTilDato: YearMonth? = null,
-    val klagevedtak: Boolean = false,
+    val omgjøringsvedtak: Boolean = false,
     val manuellAldersjustering: Boolean = false,
     val delAvVedtaket: Boolean = true,
     val kanOpprette35c: Boolean = false,

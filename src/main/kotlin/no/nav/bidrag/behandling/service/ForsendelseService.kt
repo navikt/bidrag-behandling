@@ -171,7 +171,7 @@ class ForsendelseService(
             )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
-        log.info {
+        secureLogger.debug {
             "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
                 "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
         }
@@ -187,8 +187,7 @@ class ForsendelseService(
                             ),
                         ).forsendelseId
                 opprettetForsendelser.add(forsendelseId.toString())
-                log.info { "Opprettet forsendelse med id $forsendelseId for rolle $it" }
-                SECURE_LOGGER.info("Opprettet forsendelse med id $forsendelseId for rolle $it, fnr: ${it.fødselsnummer.verdi}")
+                secureLogger.debug { "Opprettet forsendelse med id $forsendelseId for rolle $it, fnr: ${it.fødselsnummer.verdi}" }
             } catch (e: Exception) {
                 log.error(
                     e,

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_CACHE
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_CACHE_2
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningBeløpshistorikkConsumer
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
@@ -65,6 +66,7 @@ class BidragBeløpshistorikkConsumer(
             request,
         )
 
+    @BrukerCacheable(STØNAD_HISTORIKK_CACHE_2)
     override fun hentLøpendeStønad(hentStønadRequest: HentStønadRequest): StønadDto? =
         postForEntity(
             bidragBeløpshistorikkUri.pathSegment("hent-stonad-historisk/").build().toUri(),

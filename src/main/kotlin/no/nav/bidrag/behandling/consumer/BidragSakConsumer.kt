@@ -1,7 +1,9 @@
 package no.nav.bidrag.behandling.consumer
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.VEDTAK_CACHE
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningSakConsumer
+import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.service.consumers.FellesSakConsumer
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.sak.BidragssakDto
@@ -31,6 +33,7 @@ class BidragSakConsumer(
             .build()
             .toUri()
 
+    @BrukerCacheable(VEDTAK_CACHE)
     @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
     override fun hentSak(saksnr: String): BidragssakDto {
         try {

@@ -98,7 +98,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-//                vedtakLocalConsumer,
+//                null,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
@@ -152,7 +152,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 listOf(
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = true,
+                        omgjøringsvedtak = true,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -167,7 +167,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -233,7 +233,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 listOf(
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = true,
+                        omgjøringsvedtak = true,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -248,7 +248,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -351,7 +351,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 listOf(
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = true,
+                        omgjøringsvedtak = true,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -366,7 +366,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -498,7 +498,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 listOf(
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = true,
+                        omgjøringsvedtak = true,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -513,7 +513,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.INDEKSREGULERING,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         delvedtak = true,
                         beregnet = true,
                         resultat =
@@ -529,7 +529,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.ENDRING,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         delvedtak = true,
                         beregnet = false,
                         resultat =
@@ -548,7 +548,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                             POJONode(
                                                 ResultatFraVedtakGrunnlag(
                                                     vedtaksid = vedtakidsEtterfølgende,
-                                                    klagevedtak = false,
+                                                    omgjøringsvedtak = false,
                                                     beregnet = false,
                                                     opprettParagraf35c = false,
                                                 ),
@@ -560,7 +560,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -632,7 +632,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val orkestreringsdetaljer = it.grunnlagListe.map { it.tilDto() }.finnOrkestreringDetaljer(it.stønadsendringListe.first().grunnlagReferanseListe)
             orkestreringsdetaljer.shouldNotBeNull()
             orkestreringsdetaljer.beregnTilDato shouldBe YearMonth.parse("2025-03")
-            orkestreringsdetaljer.klagevedtakId shouldBe vedtaksidKlage
+            orkestreringsdetaljer.omgjøringsvedtakId shouldBe vedtaksidKlage
 
             assertSoftly(it.stønadsendringListe) { sh ->
                 sh.shouldHaveSize(1)
@@ -653,7 +653,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                         ).firstOrNull()
                 resultatFraVedtakKlage.shouldNotBeNull()
                 resultatFraVedtakKlage.innhold.vedtaksid shouldBe vedtaksidKlage
-                resultatFraVedtakKlage.innhold.klagevedtak shouldBe true
+                resultatFraVedtakKlage.innhold.omgjøringsvedtak shouldBe true
                 resultatFraVedtakKlage.innhold.beregnet shouldBe true
 
                 val periodeIndeks = stønadsendring.periodeListe[1]
@@ -665,7 +665,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                         ).firstOrNull()
                 resultatFraVedtakIndeks.shouldNotBeNull()
                 resultatFraVedtakIndeks.innhold.vedtaksid shouldBe vedtaksidIndeks
-                resultatFraVedtakIndeks.innhold.klagevedtak shouldBe false
+                resultatFraVedtakIndeks.innhold.omgjøringsvedtak shouldBe false
                 resultatFraVedtakIndeks.innhold.beregnet shouldBe true
 
                 val periodeEtterfølgende = stønadsendring.periodeListe[2]
@@ -677,7 +677,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                         ).firstOrNull()
                 resultatFraVedtakEtterfølgende.shouldNotBeNull()
                 resultatFraVedtakEtterfølgende.innhold.vedtaksid shouldBe vedtakidsEtterfølgende
-                resultatFraVedtakEtterfølgende.innhold.klagevedtak shouldBe false
+                resultatFraVedtakEtterfølgende.innhold.omgjøringsvedtak shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.beregnet shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.opprettParagraf35c shouldBe true
             }
@@ -773,7 +773,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 listOf(
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = true,
+                        omgjøringsvedtak = true,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -788,7 +788,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.ENDRING,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         delvedtak = true,
                         beregnet = false,
                         resultat =
@@ -807,7 +807,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                             POJONode(
                                                 ResultatFraVedtakGrunnlag(
                                                     vedtaksid = vedtakidsEtterfølgende,
-                                                    klagevedtak = false,
+                                                    omgjøringsvedtak = false,
                                                     beregnet = false,
                                                     opprettParagraf35c = false,
                                                 ),
@@ -819,7 +819,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     ),
                     ResultatVedtak(
                         vedtakstype = Vedtakstype.KLAGE,
-                        klagevedtak = false,
+                        omgjøringsvedtak = false,
                         beregnet = true,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -882,7 +882,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val orkestreringsdetaljer = it.grunnlagListe.map { it.tilDto() }.finnOrkestreringDetaljer(it.stønadsendringListe.first().grunnlagReferanseListe)
             orkestreringsdetaljer.shouldNotBeNull()
             orkestreringsdetaljer.beregnTilDato shouldBe YearMonth.parse("2024-03")
-            orkestreringsdetaljer.klagevedtakId shouldBe vedtaksidKlage
+            orkestreringsdetaljer.omgjøringsvedtakId shouldBe vedtaksidKlage
 
             assertSoftly(it.stønadsendringListe) { sh ->
                 sh.shouldHaveSize(1)
@@ -903,7 +903,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                         ).firstOrNull()
                 resultatFraVedtakKlage.shouldNotBeNull()
                 resultatFraVedtakKlage.innhold.vedtaksid shouldBe vedtaksidKlage
-                resultatFraVedtakKlage.innhold.klagevedtak shouldBe true
+                resultatFraVedtakKlage.innhold.omgjøringsvedtak shouldBe true
                 resultatFraVedtakKlage.innhold.beregnet shouldBe true
 
                 val periodeEtterfølgende = stønadsendring.periodeListe[1]
@@ -915,7 +915,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                         ).firstOrNull()
                 resultatFraVedtakEtterfølgende.shouldNotBeNull()
                 resultatFraVedtakEtterfølgende.innhold.vedtaksid shouldBe vedtakidsEtterfølgende
-                resultatFraVedtakEtterfølgende.innhold.klagevedtak shouldBe false
+                resultatFraVedtakEtterfølgende.innhold.omgjøringsvedtak shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.beregnet shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.opprettParagraf35c shouldBe true
             }
