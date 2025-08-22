@@ -646,7 +646,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
 
         val delberegningGrensePeriode =
-            if (vedtakstype == Vedtakstype.OPPHØR) {
+            if (vedtakstype == Vedtakstype.OPPHØR || resultat == null) {
                 null
             } else {
                 val barn = hentPersonNyesteIdent(barnIdent!!.verdi)!!
