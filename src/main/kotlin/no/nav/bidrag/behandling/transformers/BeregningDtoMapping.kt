@@ -646,12 +646,13 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>()
 
         val delberegningGrensePeriode =
-            if (vedtakstype == Vedtakstype.OPPHØR || resultatkode?.erDirekteAvslag() == true) {
+            if (vedtakstype == Vedtakstype.OPPHØR || resultatkode?.erDirekteAvslag() == true || barnIdent == null) {
                 null
             } else {
-                val barn = hentPersonNyesteIdent(barnIdent!!.verdi)!!
-                finnDelberegningSjekkGrensePeriode(periode, barn.referanse)
-                    ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), barn.referanse)
+                hentPersonNyesteIdent(barnIdent.verdi)?.let { barn ->
+                    finnDelberegningSjekkGrensePeriode(periode, barn.referanse)
+                        ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), barn.referanse)
+                }
             }
         return ResultatBarnebidragsberegningPeriodeDto(
             vedtakstype = vedtakstype,
