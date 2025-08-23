@@ -550,6 +550,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                                     vedtaksid = vedtakidsEtterfølgende,
                                                     omgjøringsvedtak = false,
                                                     beregnet = false,
+                                                    vedtakstype = Vedtakstype.ENDRING,
                                                     opprettParagraf35c = false,
                                                 ),
                                             ),
@@ -655,6 +656,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 resultatFraVedtakKlage.innhold.vedtaksid shouldBe vedtaksidKlage
                 resultatFraVedtakKlage.innhold.omgjøringsvedtak shouldBe true
                 resultatFraVedtakKlage.innhold.beregnet shouldBe true
+                resultatFraVedtakKlage.innhold.vedtakstype shouldBe Vedtakstype.KLAGE
 
                 val periodeIndeks = stønadsendring.periodeListe[1]
                 val resultatFraVedtakIndeks =
@@ -667,6 +669,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 resultatFraVedtakIndeks.innhold.vedtaksid shouldBe vedtaksidIndeks
                 resultatFraVedtakIndeks.innhold.omgjøringsvedtak shouldBe false
                 resultatFraVedtakIndeks.innhold.beregnet shouldBe true
+                resultatFraVedtakIndeks.innhold.vedtakstype shouldBe Vedtakstype.INDEKSREGULERING
 
                 val periodeEtterfølgende = stønadsendring.periodeListe[2]
                 val resultatFraVedtakEtterfølgende =
@@ -680,6 +683,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 resultatFraVedtakEtterfølgende.innhold.omgjøringsvedtak shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.beregnet shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.opprettParagraf35c shouldBe true
+                resultatFraVedtakEtterfølgende.innhold.vedtakstype shouldBe Vedtakstype.ENDRING
             }
         }
 
@@ -810,6 +814,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                                     omgjøringsvedtak = false,
                                                     beregnet = false,
                                                     opprettParagraf35c = false,
+                                                    vedtakstype = Vedtakstype.ENDRING,
                                                 ),
                                             ),
                                         referanse = "",
@@ -905,6 +910,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 resultatFraVedtakKlage.innhold.vedtaksid shouldBe vedtaksidKlage
                 resultatFraVedtakKlage.innhold.omgjøringsvedtak shouldBe true
                 resultatFraVedtakKlage.innhold.beregnet shouldBe true
+                resultatFraVedtakKlage.innhold.vedtakstype shouldBe Vedtakstype.KLAGE
 
                 val periodeEtterfølgende = stønadsendring.periodeListe[1]
                 val resultatFraVedtakEtterfølgende =
@@ -918,6 +924,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 resultatFraVedtakEtterfølgende.innhold.omgjøringsvedtak shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.beregnet shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.opprettParagraf35c shouldBe true
+                resultatFraVedtakEtterfølgende.innhold.vedtakstype shouldBe Vedtakstype.ENDRING
             }
         }
         assertSoftly(opprettVedtakSlot[2]) {
