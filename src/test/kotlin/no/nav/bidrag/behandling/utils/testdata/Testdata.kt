@@ -1528,6 +1528,7 @@ private fun oppretteBoforhold(
         BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
             behandling.globalOpphørsdato,
+            beregnTilDato = null,
             behandling.tilTypeBoforhold(),
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )

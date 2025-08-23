@@ -75,7 +75,7 @@ fun Inntekt.skalAutomatiskSettePeriode(): Boolean =
 
 fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør(): Boolean =
     opprinneligFom?.let { fom ->
-        if (opphørsdato != null && fom > opphørsdato) return@let false
+        if (beregnTilDato != null && fom > beregnTilDato) return@let false
         (opprinneligTom ?: LocalDate.MAX).let { tom ->
             behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->
                 val virkningstidspunktEllerStartenAvNesteMåned =

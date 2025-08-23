@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -692,6 +693,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         behandledeBostatusopplysninger = emptyList(),
                         endreBostatus = null,
                     ),
+                    beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                 )
             behandling.bidragspliktig?.let {
                 listOf(
@@ -723,6 +725,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                             behandledeBostatusopplysninger = emptyList(),
                             endreBostatus = null,
                         ),
+                        beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                     )
                 listOf(
                     behandling.opprettGrunnlag(
@@ -760,6 +763,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.globalOpphørsdato,
+                    behandling.finnBeregnTilDatoBehandling(),
                     behandling.tilTypeBoforhold(),
                     grunnlag.tilBoforholdBarnRequest(behandling, true),
                 )

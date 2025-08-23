@@ -2799,6 +2799,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
+                        null,
                         behandling.tilTypeBoforhold(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
@@ -2930,6 +2931,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
+                        null,
                         behandling.tilTypeBoforhold(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling, true),
                     )
@@ -4027,6 +4029,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
+                        null,
                         behandling.tilTypeBoforhold(),
                         endretBoforhold.toMutableList().tilBoforholdBarnRequest(behandling),
                     )
@@ -4111,6 +4114,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         behandling.virkningstidspunktEllerSøktFomDato,
                         behandling.globalOpphørsdato,
+                        beregnTilDato = null,
                         behandling.tilTypeBoforhold(),
                         jsonListeTilObjekt<RelatertPersonGrunnlagDto>(
                             rådataBoforhold.data,

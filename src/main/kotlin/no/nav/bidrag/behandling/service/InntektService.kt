@@ -106,10 +106,10 @@ class InntektService(
                 it.datoTom = it.bestemDatoTomForOffentligInntekt()
             }
 
-        if (behandling.minstEnRolleHarOpphørsdato) {
+        if (behandling.minstEnRolleHarBegrensetBeregnTilDato) {
             behandling.inntekter
                 .filter { it.taMed && it.datoFom != null }
-                .filter { it.opphørsdato != null && it.datoFom!! >= it.opphørsdato }
+                .filter { it.beregnTilDato != null && it.datoFom!! >= it.beregnTilDato }
                 .forEach {
                     it.taMed = false
                     it.datoFom = null
@@ -135,7 +135,7 @@ class InntektService(
                 }
         }
 
-        if (opphørSlettet || behandling.minstEnRolleHarOpphørsdato) {
+        if (opphørSlettet || behandling.minstEnRolleHarBegrensetBeregnTilDato) {
             behandling.inntekter
                 .filter { !eksplisitteYtelser.contains(it.type) }
                 .groupBy { Pair(it.type, it.ident) }
@@ -151,9 +151,9 @@ class InntektService(
     private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato: LocalDate?) {
         filter { it.taMed }
             .filter {
-                it.opphørsdato == null ||
+                it.beregnTilDato == null ||
                     it.datoTom == null ||
-                    it.datoTom!!.isAfter(it.opphørsdato) ||
+                    it.datoTom!!.isAfter(it.beregnTilDato) ||
                     it.datoTom == forrigeOpphørsdato?.opphørSisteTilDato()
             }.sortedBy { it.datoFom }
             .lastOrNull()
@@ -271,7 +271,7 @@ class InntektService(
                         inntekt.bestemDatoTomForOffentligInntekt()
                     } else {
                         periode.angittPeriode?.til
-                            ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
+                            ?: justerPeriodeTomOpphørsdato(inntekt.beregnTilDato)
                     }
                 forrigeInntektMedSammeType?.let {
                     if (inntekt.datoFom!! > it.datoFom) {

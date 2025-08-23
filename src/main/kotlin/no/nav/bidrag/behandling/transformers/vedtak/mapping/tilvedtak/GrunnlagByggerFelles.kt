@@ -234,7 +234,7 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                                 virkningstidspunkt = virkningstidspunkt!!,
                                 opphørsdato = it.opphørsdato,
                                 årsak = årsak,
-                                beregnTilDato = finnBeregnTilDatoBehandling(it.opphørsdato?.toYearMonth(), it)?.toYearMonth(),
+                                beregnTilDato = finnBeregnTilDatoBehandling(it)?.toYearMonth(),
                                 avslag = (årsak == null).ifTrue { avslag },
                             ),
                         ),

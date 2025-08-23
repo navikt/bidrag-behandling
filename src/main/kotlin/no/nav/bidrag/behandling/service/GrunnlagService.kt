@@ -72,6 +72,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.beregn.core.util.justerVedtakstidspunkt
 import no.nav.bidrag.boforhold.BoforholdApi
@@ -130,7 +131,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
-import kotlin.collections.flatten
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
 private val log = KotlinLogging.logger {}
@@ -768,6 +768,8 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 boforhold.tilBoforholdVoksneRequest(behandling),
+                opphørsdato = behandling.globalOpphørsdato,
+                beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
             )
 
         overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
@@ -784,6 +786,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -802,6 +805,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -1349,6 +1353,8 @@ class GrunnlagService(
                 .beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(behandling),
+                    behandling.globalOpphørsdato,
+                    behandling.finnBeregnTilDatoBehandling(),
                 ).toSet()
 
         val bpsNyesteBearbeidaBoforholdFørLagring =
@@ -1388,6 +1394,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )

@@ -195,10 +195,8 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                 innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarnRolle),
                 beregnTilDato =
                     behandling
-                        .finnBeregnTilDatoBehandling(
-                            søknadsbarnRolle.opphørsdato?.toYearMonth(),
-                            søknadsbarnRolle,
-                        ).toYearMonth(),
+                        .finnBeregnTilDatoBehandling(søknadsbarnRolle)
+                        .toYearMonth(),
             )
         grunnlagListe.add(
             GrunnlagDto(

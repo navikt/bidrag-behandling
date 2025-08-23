@@ -54,6 +54,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
 import org.springframework.stereotype.Component
@@ -71,43 +72,51 @@ fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
         // (søknadsbarnRolle.opprinneligVirkningstidspunkt ?: søknadsbarnRolle.virkningstidspunkt)!!.toYearMonth()
     }
 
-fun Behandling.finnBeregnTilDatoBehandling(
-    opphørsdato: YearMonth? = null,
-    søknadsbarnRolle: Rolle? = null,
-) = if (tilType() == TypeBehandling.SÆRBIDRAG) {
-    virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-} else if (erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
-    val opprinneligVedtakstidspunkt =
-        klagedetaljer
-            ?.opprinneligVedtakstidspunkt!!
-            .min()
-            .plusMonths(1)
-            .withDayOfMonth(1)
-            .toLocalDate()
-    when (søknadsbarnRolle?.beregnTil) {
-        BeregnTil.INNEVÆRENDE_MÅNED -> finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
-        BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
-            val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
-            if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
-                finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunkt)
-            } else {
-                finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth, nesteVirkningstidspunkt)
-            }
-        }
-        else -> {
-            val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
-            if (virkningstidspunkt >= opprinneligVedtakstidspunkt) {
-                virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
-            } else {
-                finnBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunkt)
-            }
-        }
+fun Behandling.finnBeregnTilDato() =
+    if (erBidrag()) {
+        søknadsbarn.minOf { finnBeregnTilDatoBehandling(it) }
+    } else {
+        finnBeregnTilDatoBehandling()
     }
-} else {
-    finnBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+
+fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): LocalDate {
+    val opphørsdato = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
+    return if (tilType() == TypeBehandling.SÆRBIDRAG) {
+        virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
+    } else if (erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
+        val opprinneligVedtakstidspunkt =
+            klagedetaljer
+                ?.opprinneligVedtakstidspunkt!!
+                .min()
+                .plusMonths(1)
+                .withDayOfMonth(1)
+                .toLocalDate()
+        when (søknadsbarnRolle?.beregnTil) {
+            BeregnTil.INNEVÆRENDE_MÅNED -> utledBeregnTilDato(virkningstidspunkt!!, opphørsdato)
+            BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
+                val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
+                if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
+                    utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, opprinneligVedtakstidspunkt)
+                } else {
+                    utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, nesteVirkningstidspunkt)
+                }
+            }
+
+            else -> {
+                val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
+                if (virkningstidspunkt >= opprinneligVedtakstidspunkt) {
+                    virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
+                } else {
+                    utledBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunkt)
+                }
+            }
+        }
+    } else {
+        utledBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+    }
 }
 
-fun finnBeregnTilDato(
+private fun utledBeregnTilDato(
     virkningstidspunkt: LocalDate,
     opphørsdato: YearMonth? = null,
     opprinneligVedtakstidspunkt: LocalDate? = null,
@@ -222,7 +231,7 @@ class VedtakGrunnlagMapper(
                 val personObjekt = personobjekter.hentPerson(person.ident)!!
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val opphørsdato = person.opphørsdatoForRolle(behandling)
-                val beregningTilDato = finnBeregnTilDatoBehandling(opphørsdato)
+                val beregningTilDato = finnBeregnTilDatoBehandling(person.finnRolle(behandling))
                 return BeregnGrunnlag(
                     periode =
                         ÅrMånedsperiode(
@@ -282,7 +291,7 @@ class VedtakGrunnlagMapper(
                 val beregnFraDato =
                     søknadsbarnRolle.virkningstidspunkt ?: behandling.virkningstidspunkt
                         ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
-                val beregningTilDato = finnBeregnTilDatoBehandling(null, søknadsbarnRolle)
+                val beregningTilDato = finnBeregnTilDatoBehandling(søknadsbarnRolle)
                 val grunnlagBeregning =
                     BeregnGrunnlag(
                         periode =

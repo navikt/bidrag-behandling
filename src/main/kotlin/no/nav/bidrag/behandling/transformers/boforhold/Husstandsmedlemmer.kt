@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.opprettDefaultPeriodeForAndreVoksneIHusstand
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -313,7 +314,13 @@ fun List<BoforholdResponseV2>.tilHusstandsmedlem(behandling: Behandling): Set<Hu
 
 fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdResponseV2>) {
     perioder.clear()
-    perioder.addAll(nyePerioder.justerBoforholdPerioderForOpphørsdato(rolle?.opphørsdato ?: behandling.globalOpphørsdato).tilPerioder(this))
+    perioder.addAll(
+        nyePerioder
+            .justerBoforholdPerioderForOpphørsdato(
+                rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(rolle),
+            ).tilPerioder(this),
+    )
     if (perioder.isEmpty()) {
         perioder.add(opprettDefaultPeriodeForOffentligHusstandsmedlem())
     }
@@ -321,7 +328,13 @@ fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdRe
 
 fun Husstandsmedlem.overskriveAndreVoksneIHusstandMedBearbeidaPerioder(nyePerioder: List<Bostatus>) {
     perioder.clear()
-    perioder.addAll(nyePerioder.justerBostatusPerioderForOpphørsdato(behandling.globalOpphørsdato).tilPerioder(this))
+    perioder.addAll(
+        nyePerioder
+            .justerBostatusPerioderForOpphørsdato(
+                behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(),
+            ).tilPerioder(this),
+    )
     if (perioder.isEmpty()) {
         perioder.add(opprettDefaultPeriodeForAndreVoksneIHusstand())
     }

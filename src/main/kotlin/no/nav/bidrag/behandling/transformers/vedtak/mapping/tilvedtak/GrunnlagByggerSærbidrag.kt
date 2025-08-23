@@ -26,7 +26,7 @@ fun Behandling.tilGrunnlagUtgift(): GrunnlagDto {
                     periode =
                         ÅrMånedsperiode(
                             virkningstidspunkt!!,
-                            finnBeregnTilDato(virkningstidspunkt!!),
+                            finnBeregnTilDatoBehandling(),
                         ),
                     sumBetaltAvBp = beregningUtgifter.totalBeløpBetaltAvBp,
                     sumGodkjent =
