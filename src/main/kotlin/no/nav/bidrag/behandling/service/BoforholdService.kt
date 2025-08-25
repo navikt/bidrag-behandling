@@ -60,6 +60,7 @@ import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.validerBoforhold
 import no.nav.bidrag.behandling.transformers.validere
 import no.nav.bidrag.behandling.transformers.validereSivilstand
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -76,6 +77,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -253,6 +255,8 @@ class BoforholdService(
                                 behandling,
                             ),
                     ),
+                    behandling.globalOpphørsdato,
+                    beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                 )
 
             husstandsmedlemBp.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)
@@ -330,6 +334,7 @@ class BoforholdService(
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             behandling.globalOpphørsdato,
+                            behandling.finnBeregnTilDatoBehandling(),
                             behandling.tilTypeBoforhold(),
                             behandling
                                 .henteGrunnlagHusstandsmedlemMedHarkodetBmBpRelasjon(it)
@@ -709,6 +714,7 @@ class BoforholdService(
                         .beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            behandling.finnBeregnTilDatoBehandling(eksisterendeHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(
                                 eksisterendeHusstandsmedlem
@@ -772,6 +778,7 @@ class BoforholdService(
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(request),
                         )
@@ -779,6 +786,7 @@ class BoforholdService(
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.virkningstidspunktEllerSøktFomDato,
                             offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(
                                 request.copy(
@@ -1108,6 +1116,7 @@ class BoforholdService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(rolle),
                 behandling.tilTypeBoforhold(),
                 listOf(periodiseringsrequest),
             ),
@@ -1127,6 +1136,7 @@ class BoforholdService(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 periodiseringsrequest,
                 behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(),
             )
 
         this.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)

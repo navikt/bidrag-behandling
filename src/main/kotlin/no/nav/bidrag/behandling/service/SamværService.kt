@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværsperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
@@ -129,6 +130,7 @@ class SamværService(
 
         behandling.samvær.forEach {
             // Antar at opphørsdato er måneden perioden skal opphøre
+            val beregnTil = behandling.finnBeregnTilDatoBehandling(it.rolle)
             val opphørsdato = it.rolle.opphørsdato
             it.perioder
                 .filter { it.fom < virkningstidspunkt }
@@ -142,12 +144,12 @@ class SamværService(
             it.perioder.filter { it.fom == forrigeVirkningstidspunkt }.forEach { periode ->
                 periode.fom = virkningstidspunkt
             }
+            it.perioder
+                .filter { it.fom > beregnTil }
+                .forEach { periode ->
+                    it.perioder.remove(periode)
+                }
             if (opphørsdato != null) {
-                it.perioder
-                    .filter { it.fom > opphørsdato }
-                    .forEach { periode ->
-                        it.perioder.remove(periode)
-                    }
                 it.perioder
                     .maxByOrNull { it.fom }
                     ?.let {

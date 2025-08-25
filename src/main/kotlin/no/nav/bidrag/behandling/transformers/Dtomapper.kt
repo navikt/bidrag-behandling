@@ -814,7 +814,7 @@ class Dtomapper(
                         VirkningstidspunktDtoV2(
                             rolle = it.tilDto(),
                             beregnTil = it.beregnTil ?: BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT,
-                            beregnTilDato = finnBeregnTilDatoBehandling(it.opphørsdato?.toYearMonth(), it),
+                            beregnTilDato = finnBeregnTilDatoBehandling(it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
                             opprinneligVedtakstidspunkt = klagedetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
                             opprinneligVirkningstidspunkt =
@@ -1122,7 +1122,7 @@ class Dtomapper(
                                 .run {
                                     tilGrunnlagBostatus() + tilPersonobjekter()
                                 }.toList(),
-                        periode = ÅrMånedsperiode(virkningstidspunkt!!, finnBeregnTilDatoBehandling(globalOpphørsdatoYearMonth)),
+                        periode = ÅrMånedsperiode(virkningstidspunkt!!, finnBeregnTilDatoBehandling()),
                         opphørsdato = globalOpphørsdatoYearMonth,
                         søknadsbarnReferanse = "",
                     ),

@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -148,7 +149,7 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
         periode =
             ÅrMånedsperiode(
                 virkningstidspunktEllerSøktFomDato,
-                finnBeregnTilDato(virkningstidspunktEllerSøktFomDato, globalOpphørsdatoYearMonth),
+                finnBeregnTilDatoBehandling(),
             ),
         opphørsdato = rolle.opphørsdatoYearMonth ?: globalOpphørsdatoYearMonth,
         barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
@@ -503,6 +504,7 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
                 ?.sorter()
                 ?.map { it.tilDto() } ?: emptyList(),
             behandling.utgift?.maksGodkjentBeløpTaMed?.ifTrue { behandling.utgift?.maksGodkjentBeløp },
+            beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
         )
     }
 
@@ -733,11 +735,12 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     beregning: UtgiftBeregningDto,
     utgiftsposter: List<UtgiftspostDto>,
     maksGodkjentBeløp: BigDecimal?,
+    beregnTilDato: LocalDate,
 ) = ResultatSærbidragsberegningDto(
     periode =
         ÅrMånedsperiode(
             virkningstidspunkt,
-            finnBeregnTilDato(virkningstidspunkt),
+            beregnTilDato,
         ),
     resultat = resultat ?: BigDecimal.ZERO,
     resultatKode = resultatkode,

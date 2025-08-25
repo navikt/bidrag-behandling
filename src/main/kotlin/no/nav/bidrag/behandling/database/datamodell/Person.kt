@@ -37,6 +37,8 @@ open class Person(
 ) {
     fun opphørsdatoForRolle(behandling: Behandling) = behandling.roller.find { it.person?.id == id }?.opphørsdatoYearMonth
 
+    fun finnRolle(behandling: Behandling) = behandling.roller.find { it.person?.id == id }
+
     val personident get() = ident?.let { Personident(it) } ?: rolle.firstOrNull()?.ident?.let { Personident(it) }
 
     val henteFødselsdato get() = fødselsdato ?: rolle.firstOrNull()?.fødselsdato

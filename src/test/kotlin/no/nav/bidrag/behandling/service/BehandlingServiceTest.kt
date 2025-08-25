@@ -43,6 +43,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
@@ -1179,6 +1180,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     BoforholdApi.beregnBoforholdBarnV3(
                         b.virkningstidspunktEllerSøktFomDato,
                         b.globalOpphørsdato,
+                        b.finnBeregnTilDatoBehandling(),
                         b.tilTypeBoforhold(),
                         grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(b),
                     )
@@ -1832,6 +1834,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 BoforholdApi.beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(behandling),
+                    beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                 )
             behandling.grunnlag.add(
                 Grunnlag(
@@ -1924,6 +1927,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 BoforholdApi.beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     nyAndreVoksneIHusstandGrunnlag.tilBoforholdVoksneRequest(behandling),
+                    beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                 )
             behandling.grunnlag.add(
                 Grunnlag(

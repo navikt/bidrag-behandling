@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
@@ -179,41 +180,42 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
 ) {
     if (opphørsdato != null || opphørSlettet) {
         val opphørsdato = this.barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
+        val beregnTilDato = behandling.finnBeregnTilDatoBehandling(this.barnetsRolleIBehandlingen)
 
         barnetilsyn
-            .filter { opphørsdato == null || it.fom > opphørsdato }
+            .filter { opphørsdato == null || it.fom > beregnTilDato }
             .forEach { periode ->
                 barnetilsyn.remove(periode)
             }
         barnetilsyn
             .filter { periode ->
-                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato?.sluttenAvForrigeMåned
+                periode.tom == null || periode.tom!!.isAfter(beregnTilDato) || periode.tom == forrigeOpphørsdato?.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
                 it.tom = justerPeriodeTomOpphørsdato(opphørsdato)
             }
 
         faktiskeTilsynsutgifter
-            .filter { opphørsdato == null || it.fom > opphørsdato }
+            .filter { opphørsdato == null || it.fom > beregnTilDato }
             .forEach { periode ->
                 faktiskeTilsynsutgifter.remove(periode)
             }
         faktiskeTilsynsutgifter
             .filter { periode ->
-                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
+                periode.tom == null || periode.tom!!.isAfter(beregnTilDato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
                 it.tom = justerPeriodeTomOpphørsdato(opphørsdato)
             }
 
         tilleggsstønad
-            .filter { opphørsdato == null || it.fom > opphørsdato }
+            .filter { opphørsdato == null || it.fom > beregnTilDato }
             .forEach { periode ->
                 tilleggsstønad.remove(periode)
             }
         tilleggsstønad
             .filter { periode ->
-                periode.tom == null || periode.tom!!.isAfter(opphørsdato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
+                periode.tom == null || periode.tom!!.isAfter(beregnTilDato) || periode.tom == forrigeOpphørsdato.sluttenAvForrigeMåned
             }.maxByOrNull { it.fom }
             ?.let {
                 it.tom = justerPeriodeTomOpphørsdato(opphørsdato)

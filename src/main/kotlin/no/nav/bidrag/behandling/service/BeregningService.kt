@@ -170,10 +170,8 @@ class BeregningService(
                         klagedetaljer = behandling.klagedetaljer,
                         beregnTilDato =
                             behandling
-                                .finnBeregnTilDatoBehandling(
-                                    søknasdbarn.opphørsdato?.toYearMonth(),
-                                    søknasdbarn,
-                                )?.toYearMonth(),
+                                .finnBeregnTilDatoBehandling(søknasdbarn)
+                                ?.toYearMonth(),
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             resultat.resultatVedtakListe
@@ -194,7 +192,7 @@ class BeregningService(
                     val beregnTilDato =
                         søknasdbarn
                             .behandling
-                            .finnBeregnTilDatoBehandling(søknasdbarn.opphørsdato?.toYearMonth(), søknasdbarn)
+                            .finnBeregnTilDatoBehandling(søknasdbarn)
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning =
                             UgyldigBeregningDto(

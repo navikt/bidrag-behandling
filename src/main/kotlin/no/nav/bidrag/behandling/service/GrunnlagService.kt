@@ -2,6 +2,11 @@ package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
@@ -67,11 +72,14 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.beregn.core.util.justerVedtakstidspunkt
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.commons.util.RequestContextAsyncContext
+import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -154,14 +162,25 @@ class GrunnlagService(
                     tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
                 behandling.grunnlagsinnhentingFeilet = null
 
-                grunnlagRequestobjekter.forEach {
-                    feilrapporteringer +=
-                        henteOglagreGrunnlag(
-                            behandling,
-                            it,
-                            tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
-                        )
-                }
+                val scope =
+                    CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
+                val requests =
+                    grunnlagRequestobjekter.map {
+                        scope.async {
+                            henteOglagreGrunnlag(
+                                behandling,
+                                it,
+                                tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
+                            )
+                        }
+                    }
+                feilrapporteringer.putAll(
+                    runBlocking {
+                        awaitAll(*requests.toTypedArray())
+                            .flatMap { it.entries }
+                            .associate { it.toPair() }
+                    },
+                )
             }
             feilrapporteringer += hentOgLagreEtterfølgendeVedtak(behandling)
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
@@ -749,6 +768,8 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 boforhold.tilBoforholdVoksneRequest(behandling),
+                opphørsdato = behandling.globalOpphørsdato,
+                beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
             )
 
         overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
@@ -765,6 +786,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -783,6 +805,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -1330,6 +1353,8 @@ class GrunnlagService(
                 .beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(behandling),
+                    behandling.globalOpphørsdato,
+                    behandling.finnBeregnTilDatoBehandling(),
                 ).toSet()
 
         val bpsNyesteBearbeidaBoforholdFørLagring =
@@ -1369,6 +1394,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )

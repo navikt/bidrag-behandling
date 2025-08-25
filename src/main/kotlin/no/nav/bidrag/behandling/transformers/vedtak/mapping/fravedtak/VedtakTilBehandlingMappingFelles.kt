@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -174,10 +175,11 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
     )
 
 fun VedtakDto.erVedtakUtenBeregning() =
-    stønadsendringListe.all {
-        it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
-            erOrkestrertVedtak && type == Vedtakstype.INNKREVING
-    }
+    type == Vedtakstype.INDEKSREGULERING ||
+        stønadsendringListe.all {
+            it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
+                erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+        }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
@@ -298,6 +300,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             resultatFraVedtak =
                                 ResultatFraVedtakGrunnlag(
                                     vedtaksid = periodeVedtak?.vedtaksid,
+                                    vedtakstype = periodeVedtak?.type,
                                     beregnet = periodeVedtak?.beregnet ?: false,
                                 ),
                             klageOmgjøringDetaljer =
@@ -691,6 +694,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         behandledeBostatusopplysninger = emptyList(),
                         endreBostatus = null,
                     ),
+                    beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                 )
             behandling.bidragspliktig?.let {
                 listOf(
@@ -722,6 +726,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                             behandledeBostatusopplysninger = emptyList(),
                             endreBostatus = null,
                         ),
+                        beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                     )
                 listOf(
                     behandling.opprettGrunnlag(
@@ -759,6 +764,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.globalOpphørsdato,
+                    behandling.finnBeregnTilDatoBehandling(),
                     behandling.tilTypeBoforhold(),
                     grunnlag.tilBoforholdBarnRequest(behandling, true),
                 )
