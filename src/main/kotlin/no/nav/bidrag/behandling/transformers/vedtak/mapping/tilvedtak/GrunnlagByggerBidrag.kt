@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
@@ -28,12 +29,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
 
@@ -276,4 +279,30 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
         periodeliste + opphørPeriode,
         grunnlagListe,
     )
+}
+
+/*
+Legg til vedtaksid hvis aldersjustering er utført basert på klagevedtaket i klageorkestreringen
+Hvis aldersjustering er gjort basert på etterfølgende vedtak så legges det til i klageorkestreringen. Derfor det sjekkes om det er null eller ikke
+ */
+fun OpprettVedtakRequestDto.leggTilVedtaksidPåAldersjusteringGrunnlag(vedtaksidKlage: Int): OpprettVedtakRequestDto {
+    if (type != Vedtakstype.ALDERSJUSTERING) return this
+    val oppdatertGrunnlagsliste = grunnlagListe.toMutableList()
+    stønadsendringListe.forEach {
+        val aldersjusteringGrunnlag = grunnlagListe.hentAldersjusteringDetaljerGrunnlag(it.grunnlagReferanseListe)
+        if (aldersjusteringGrunnlag != null && aldersjusteringGrunnlag.innhold.grunnlagFraVedtak == null) {
+            val oppdatertInnhold =
+                aldersjusteringGrunnlag.innhold.copy(
+                    grunnlagFraVedtak = vedtaksidKlage,
+                )
+            val eksisterendeGrunnlag = grunnlagListe.find { it.referanse == aldersjusteringGrunnlag.referanse }!!
+            oppdatertGrunnlagsliste.remove(eksisterendeGrunnlag)
+            oppdatertGrunnlagsliste.add(
+                eksisterendeGrunnlag.copy(
+                    innhold = POJONode(oppdatertInnhold),
+                ),
+            )
+        }
+    }
+    return this.copy(grunnlagListe = oppdatertGrunnlagsliste)
 }
