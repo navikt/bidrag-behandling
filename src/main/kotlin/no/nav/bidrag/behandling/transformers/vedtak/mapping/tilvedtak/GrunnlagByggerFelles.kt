@@ -212,7 +212,11 @@ fun byggGrunnlagVirkningstidspunktResultatvedtak(
                         resultatVedtak.resultat.beregnetBarnebidragPeriodeListe
                             .minOf { it.periode.fom }
                             .atDay(1),
-                    opphørsdato = null,
+                    opphørsdato =
+                        resultatVedtak.resultat.beregnetBarnebidragPeriodeListe
+                            .maxBy { it.periode.fom }
+                            .periode.til
+                            ?.atDay(1),
                     årsak = VirkningstidspunktÅrsakstype.AUTOMATISK_JUSTERING,
                     avslag = null,
                 ),
@@ -222,20 +226,21 @@ fun byggGrunnlagVirkningstidspunktResultatvedtak(
 fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<GrunnlagDto> = emptyList()) =
     if (tilType() == TypeBehandling.BIDRAG) {
         søknadsbarn
-            .map {
-                val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(it.ident) ?: it.tilGrunnlagPerson()
+            .map { sb ->
+                val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(sb.ident) ?: sb.tilGrunnlagPerson()
                 GrunnlagDto(
-                    referanse = opprettGrunnlagsreferanseVirkningstidspunkt(it),
+                    referanse = opprettGrunnlagsreferanseVirkningstidspunkt(sb),
                     type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
                     gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
                     innhold =
                         POJONode(
                             VirkningstidspunktGrunnlag(
-                                virkningstidspunkt = virkningstidspunkt!!,
-                                opphørsdato = it.opphørsdato,
-                                årsak = årsak,
-                                beregnTilDato = finnBeregnTilDatoBehandling(it)?.toYearMonth(),
-                                avslag = (årsak == null).ifTrue { avslag },
+                                virkningstidspunkt = sb.virkningstidspunkt!!,
+                                opphørsdato = sb.opphørsdato,
+                                årsak = sb.årsak,
+                                beregnTil = sb.beregnTil,
+                                beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
+                                avslag = (sb.årsak == null).ifTrue { sb.avslag },
                             ),
                         ),
                 )

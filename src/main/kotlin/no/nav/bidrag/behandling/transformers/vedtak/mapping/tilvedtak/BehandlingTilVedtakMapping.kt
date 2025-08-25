@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
+import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -42,8 +43,11 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
@@ -54,6 +58,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpStatus
@@ -211,10 +216,10 @@ class BehandlingTilVedtakMapping(
         behandling: Behandling,
         enhet: String?,
         vedtaksid: Int,
-        stønadsendringListe: List<OpprettStønadsendringRequestDto>? = null,
+        vedtak: OpprettVedtakRequestDto?,
     ): OpprettVedtakRequestDto =
         mapper.run {
-            if (stønadsendringListe != null && behandling.vedtakstype == Vedtakstype.KLAGE) {
+            if (vedtak != null && behandling.vedtakstype == Vedtakstype.KLAGE) {
                 val referanse = "resultatFraVedtak_$vedtaksid"
                 val resultatFraGrunnlag =
                     OpprettGrunnlagRequestDto(
@@ -228,40 +233,68 @@ class BehandlingTilVedtakMapping(
                                 ),
                             ),
                     )
-                val stønadsendringGrunnlag =
+                val persongrunnlag = vedtak.grunnlagListe.hentAllePersoner()
+                val virkningstidspunktGrunnlag =
                     behandling
-                        .byggGrunnlagVirkningsttidspunkt()
-                        .map(GrunnlagDto::tilOpprettRequestDto) +
+                        .byggGrunnlagVirkningsttidspunkt(
+                            persongrunnlag.map { it.tilDto() },
+                        ).map(GrunnlagDto::tilOpprettRequestDto)
+                val stønadsendringGrunnlag =
+                    virkningstidspunktGrunnlag +
                         behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto)
-                val grunnlagliste = stønadsendringGrunnlag + listOf(resultatFraGrunnlag)
+                val grunnlagliste = (stønadsendringGrunnlag + listOf(resultatFraGrunnlag)).toMutableList()
                 behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                     type = Vedtakstype.INNKREVING,
                     grunnlagListe = grunnlagliste,
                     unikReferanse = behandling.opprettUnikReferanse("innkreving"),
                     behandlingsreferanseListe = behandling.tilBehandlingreferanseListeUtenSøknad(),
                     stønadsendringListe =
-                        stønadsendringListe.map {
+                        vedtak.stønadsendringListe.map {
                             val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.kravhaver.verdi }!!
                             val innkrevFraDato = behandling.finnInnkrevesFraDato(søknadsbarn)
+
+                            val periodeliste =
+                                it.periodeListe
+                                    .filter { p -> p.periode.til == null || p.periode.til!! > innkrevFraDato }
+                                    .map { periode ->
+                                        val periodeVirkningstidspunktGrunnlag =
+                                            vedtak.grunnlagListe
+                                                .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
+                                                    Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                                                    periode.grunnlagReferanseListe,
+                                                ).firstOrNull()
+                                        if (periode.periode.fom < innkrevFraDato) {
+                                            periode.copy(
+                                                periode = periode.periode.copy(fom = innkrevFraDato!!),
+                                                grunnlagReferanseListe =
+                                                    listOfNotNull(
+                                                        resultatFraGrunnlag.referanse,
+                                                        periodeVirkningstidspunktGrunnlag?.referanse,
+                                                    ),
+                                            )
+                                        } else {
+                                            periode.copy(
+                                                grunnlagReferanseListe =
+                                                    listOfNotNull(
+                                                        resultatFraGrunnlag.referanse,
+                                                        periodeVirkningstidspunktGrunnlag?.referanse,
+                                                    ),
+                                            )
+                                        }
+                                    }
+                            val opphørPeriode =
+                                if (søknadsbarn.opphørsdato != null &&
+                                    søknadsbarn.opphørsdato!!.toYearMonth() != periodeliste.last().periode.fom
+                                ) {
+                                    listOfNotNull(opprettPeriodeOpphør(søknadsbarn, periodeliste))
+                                } else {
+                                    emptyList()
+                                }
 
                             it.copy(
                                 innkreving = Innkrevingstype.MED_INNKREVING,
                                 grunnlagReferanseListe = stønadsendringGrunnlag.map(OpprettGrunnlagRequestDto::referanse),
-                                periodeListe =
-                                    it.periodeListe
-                                        .filter { p -> p.periode.til == null || p.periode.til!! >= innkrevFraDato }
-                                        .map { periode ->
-                                            if (periode.periode.fom < innkrevFraDato) {
-                                                periode.copy(
-                                                    periode = periode.periode.copy(fom = innkrevFraDato!!),
-                                                    grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
-                                                )
-                                            } else {
-                                                periode.copy(
-                                                    grunnlagReferanseListe = listOf(resultatFraGrunnlag.referanse),
-                                                )
-                                            }
-                                        },
+                                periodeListe = periodeliste + opphørPeriode,
                             )
                         },
                 )
@@ -327,7 +360,9 @@ class BehandlingTilVedtakMapping(
                 }
 
                 val stønadsendringPerioder =
-                    listOf(resultatVedtak.resultat).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn) }
+                    listOf(
+                        resultatVedtak.resultat,
+                    ).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn, klagevedtakErEnesteVedtak) }
                 val innkreving = if (klagevedtakErEnesteVedtak) behandling.innkrevingstype!! else Innkrevingstype.UTEN_INNKREVING
                 ResultatDelvedtak(
                     vedtaksid = null,
@@ -389,16 +424,25 @@ class BehandlingTilVedtakMapping(
                     stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
                 }
 
-                grunnlagsliste.addAll(behandling.byggGrunnlagVirkningsttidspunkt())
+                val virkningstidspunktGrunnlag = behandling.byggGrunnlagVirkningsttidspunkt()
+                grunnlagsliste.addAll(virkningstidspunktGrunnlag)
+                virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
+                    stønadsendringGrunnlagListe.add(it)
+                }
             } else if (resultatVedtak.delvedtak) {
                 stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarnReferanse))
             } else {
-                grunnlagsliste.addAll(behandling.byggGrunnlagVirkningsttidspunkt())
+                val virkningstidspunktGrunnlag = behandling.byggGrunnlagVirkningsttidspunkt()
+                grunnlagsliste.addAll(virkningstidspunktGrunnlag)
+                virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
+                    stønadsendringGrunnlagListe.add(it)
+                }
                 stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagSøknad())
             }
 
             val referansePostfix =
                 when {
+                    resultatVedtak.omgjøringsvedtak && beslutningstype == Beslutningstype.ENDRING -> "omgjøring"
                     resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak ->
                         "Delvedtak_${resultatVedtak.vedtakstype}" +
                             "_${resultatVedtak.beregnetFraDato.toCompactString()}"

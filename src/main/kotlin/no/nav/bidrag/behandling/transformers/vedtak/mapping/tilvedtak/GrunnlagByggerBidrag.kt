@@ -218,10 +218,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
         beregnetBarnebidragPeriodeListe.map {
             opprettPeriode(it)
         }
+    val opphørPeriode = listOfNotNull(opprettPeriodeOpphør(søknadsbarnRolle, periodeliste))
 
     return StønadsendringPeriode(
         søknadsbarnRolle,
-        periodeliste,
+        periodeliste + opphørPeriode,
         grunnlagListe,
     )
 }
@@ -229,6 +230,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
 fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
     behandling: Behandling,
     søknadsbarn: ResultatRolle,
+    erEndeligVedtak: Boolean = true,
 ): StønadsendringPeriode {
     val søknadsbarn =
         behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
@@ -267,7 +269,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
         }
 
     val opphørPeriode =
-        listOfNotNull(opprettPeriodeOpphør(søknadsbarn, periodeliste))
+        if (erEndeligVedtak) listOfNotNull(opprettPeriodeOpphør(søknadsbarn, periodeliste)) else emptyList()
 
     return StønadsendringPeriode(
         søknadsbarn,

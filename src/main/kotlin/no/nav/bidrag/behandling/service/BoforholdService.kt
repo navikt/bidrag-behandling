@@ -1136,7 +1136,7 @@ class BoforholdService(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 periodiseringsrequest,
                 behandling.globalOpphørsdato,
-                behandling.finnBeregnTilDatoBehandling(rolle),
+                behandling.finnBeregnTilDatoBehandling(),
             )
 
         this.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)

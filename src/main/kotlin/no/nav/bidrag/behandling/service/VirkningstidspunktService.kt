@@ -414,7 +414,10 @@ class VirkningstidspunktService(
 
         fun oppdaterAndreVoksneIHusstanden() {
             log.info { "Opphørsdato er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
+            grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
+            grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
         }
 
         if (erOpphørsdatoEndret) {

@@ -175,10 +175,11 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
     )
 
 fun VedtakDto.erVedtakUtenBeregning() =
-    stønadsendringListe.all {
-        it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
-            erOrkestrertVedtak && type == Vedtakstype.INNKREVING
-    }
+    type == Vedtakstype.INDEKSREGULERING ||
+        stønadsendringListe.all {
+            it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
+                erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+        }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver

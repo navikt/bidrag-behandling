@@ -185,6 +185,19 @@ class VedtakTilBehandlingMapping(
         if (!lesemodus) {
             behandlingRepository.save(behandling)
         }
+
+        if (lesemodus) {
+            behandling.lesemodusVedtak =
+                LesemodusVedtak(
+                    erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
+                    opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
+                    erOrkestrertVedtak = erOrkestrertVedtak,
+                )
+            behandling.grunnlagslisteFraVedtak = grunnlagListe
+            behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
+            behandling.erVedtakUtenBeregning = erVedtakUtenBeregning()
+        }
+
         oppdaterDirekteOppgjørBeløp(behandling, lesemodus)
         grunnlagListe.oppdaterRolleGebyr(behandling)
 
@@ -201,17 +214,6 @@ class VedtakTilBehandlingMapping(
         }
         behandling.grunnlag =
             if (type == Vedtakstype.INDEKSREGULERING) mutableSetOf() else grunnlagListe.mapGrunnlag(behandling, lesemodus)
-        if (lesemodus) {
-            behandling.lesemodusVedtak =
-                LesemodusVedtak(
-                    erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
-                    opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
-                    erOrkestrertVedtak = erOrkestrertVedtak,
-                )
-            behandling.grunnlagslisteFraVedtak = grunnlagListe
-            behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
-            behandling.erVedtakUtenBeregning = erVedtakUtenBeregning()
-        }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {
             behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))

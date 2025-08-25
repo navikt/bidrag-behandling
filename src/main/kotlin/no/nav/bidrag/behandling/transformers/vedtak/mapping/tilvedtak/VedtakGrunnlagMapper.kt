@@ -83,7 +83,7 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
     val opphørsdato = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
     return if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-    } else if (erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
+    } else if (erBidrag() && erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
         val opprinneligVedtakstidspunkt =
             klagedetaljer
                 ?.opprinneligVedtakstidspunkt!!
@@ -123,6 +123,8 @@ private fun utledBeregnTilDato(
 ): LocalDate =
     if (opphørsdato == null || opphørsdato.isAfter(YearMonth.now().plusMonths(1))) {
         opprinneligVedtakstidspunkt ?: maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+    } else if (opprinneligVedtakstidspunkt != null) {
+        minOf(opprinneligVedtakstidspunkt, opphørsdato.atDay(1))
     } else {
         opphørsdato.atDay(1)
     }

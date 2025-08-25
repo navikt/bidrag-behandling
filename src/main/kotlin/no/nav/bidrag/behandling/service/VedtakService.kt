@@ -33,7 +33,6 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -76,12 +75,12 @@ class VedtakService(
     private val notatOpplysningerService: NotatOpplysningerService,
     private val tilgangskontrollService: TilgangskontrollService,
     private val vedtakConsumer: BidragVedtakConsumer,
-//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal?,
     private val validering: ValiderBeregning,
     private val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping,
     private val behandlingTilVedtakMapping: BehandlingTilVedtakMapping,
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
     private val forsendelseService: ForsendelseService,
+//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
         try {
@@ -425,7 +424,7 @@ class VedtakService(
             }
 
         if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-            fatteInnkrevingsgrunnlag(behandling, request?.enhet, response.first.vedtaksid, response.second.stønadsendringListe)
+            fatteInnkrevingsgrunnlag(behandling, request?.enhet, response.first.vedtaksid, response.second)
         }
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
@@ -448,16 +447,15 @@ class VedtakService(
         behandling: Behandling,
         enhet: String?,
         vedtaksidOrkestrering: Int,
-        stønadsendringListeOrkestrering: List<OpprettStønadsendringRequestDto>,
+        vedtak: OpprettVedtakRequestDto,
     ) {
         val innkrevingRequest =
             behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
                 behandling,
                 enhet,
                 vedtaksidOrkestrering,
-                stønadsendringListeOrkestrering,
+                vedtak,
             )
-//                    val response = vedtakLocalConsumer.fatteVedtak(innkrevingRequest)
         val responseInnkreving = fatteVedtak(innkrevingRequest)
         secureLogger.info {
             "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
