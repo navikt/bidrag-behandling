@@ -270,7 +270,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 16
+                request.grunnlagListe shouldHaveSize 27
             }
             request.unikReferanse shouldBe behandling.opprettUnikReferanse("omgjøring")
         }
@@ -392,7 +392,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 15
+                request.grunnlagListe shouldHaveSize 26
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
         }
@@ -522,7 +522,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 15
+                it.grunnlagListe shouldHaveSize 26
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -673,7 +673,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 15
+                it.grunnlagListe shouldHaveSize 26
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -873,7 +873,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 16
+                it.grunnlagListe shouldHaveSize 27
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1213,7 +1213,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 15
+                it.grunnlagListe shouldHaveSize 26
             }
 
             assertSoftly(it.stønadsendringListe) {
@@ -1700,7 +1700,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 12
+                it.grunnlagListe shouldHaveSize 23
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
 
