@@ -162,25 +162,14 @@ class GrunnlagService(
                     tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
                 behandling.grunnlagsinnhentingFeilet = null
 
-                val scope =
-                    CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
-                val requests =
-                    grunnlagRequestobjekter.map {
-                        scope.async {
-                            henteOglagreGrunnlag(
-                                behandling,
-                                it,
-                                tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
-                            )
-                        }
-                    }
-                feilrapporteringer.putAll(
-                    runBlocking {
-                        awaitAll(*requests.toTypedArray())
-                            .flatMap { it.entries }
-                            .associate { it.toPair() }
-                    },
-                )
+                grunnlagRequestobjekter.forEach {
+                    feilrapporteringer +=
+                        henteOglagreGrunnlag(
+                            behandling,
+                            it,
+                            tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
+                        )
+                }
             }
             feilrapporteringer += hentOgLagreEtterfølgendeVedtak(behandling)
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
@@ -219,12 +208,14 @@ class GrunnlagService(
 
     fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         // Klage er pga at det skal være mulig å velge vedtak for aldersjustering hvis klagebehandling endrer resultat for aldersjusteringen
-        if (!listOf(
+        val erAldersjusteringEllerOmgjøring =
+            listOf(
                 Vedtakstype.ALDERSJUSTERING,
                 Vedtakstype.KLAGE,
                 Vedtakstype.INNKREVING,
             ).contains(behandling.vedtakstype)
-        ) {
+
+        if (!(erAldersjusteringEllerOmgjøring && behandling.erBidrag())) {
             return emptyMap()
         }
 
@@ -297,7 +288,7 @@ class GrunnlagService(
                     }
                 if (vedtak.type == Vedtakstype.KLAGE && !harResultatInnvilgetVedtak) {
                     // Fjern vedtak omgjort av klage fra listen da vedtaket er ugyldigjort av klagevedtaket
-                    val omgjortVedtak = response.vedtakListe.find { it.vedtaksid.toInt() == vedtak.stønadsendring.omgjørVedtakId }
+                    val omgjortVedtak = response.vedtakListe.find { it.vedtaksid == vedtak.stønadsendring.omgjørVedtakId }
                     filtrertVedtaksliste.removeIf { it.vedtaksid == omgjortVedtak?.vedtaksid }
                 }
 
@@ -307,7 +298,7 @@ class GrunnlagService(
             .mapNotNull {
                 val stønadsendring = it.stønadsendring
                 val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null
-                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid.toInt())!!
+                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid)!!
                 val søknad =
                     vedtak.grunnlagListe
                         .filtrerBasertPåEgenReferanse(
