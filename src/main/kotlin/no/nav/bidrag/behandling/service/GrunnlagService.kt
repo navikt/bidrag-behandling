@@ -148,8 +148,8 @@ class GrunnlagService(
     private val vedtakConsumer: BidragVedtakConsumer,
     private val vedtakService: VedtakService? = null,
 ) {
-    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
-    private lateinit var grenseInnhenting: String
+    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
+    lateinit var grenseInnhenting: String
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {

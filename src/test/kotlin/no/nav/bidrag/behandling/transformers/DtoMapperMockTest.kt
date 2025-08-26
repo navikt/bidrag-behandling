@@ -134,6 +134,8 @@ class DtoMapperMockTest {
                 fødselsdato = testdataBarn2.fødselsdato,
                 id = 4,
             )
+        barn2.virkningstidspunkt = behandling.virkningstidspunkt
+        barn2.årsak = behandling.årsak
         behandling.roller.add(barn2)
         behandling.leggTilNotat(
             "Notat BM",

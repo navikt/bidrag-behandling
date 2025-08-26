@@ -212,7 +212,7 @@ class BeregnTilTest {
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
-                opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
+                opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2024-12-01").atStartOfDay()),
             )
 
         behandling.leggTilGrunnlagEtterfølgendeVedtak(

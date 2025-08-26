@@ -41,6 +41,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
@@ -58,6 +59,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.tilInnholdMedReferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettBehandlingsreferanseRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -171,9 +173,37 @@ fun Behandling.byggGrunnlagSøknad() =
         ),
     )
 
+fun Behandling.byggGrunnlaggEtterfølgendeManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto>): Set<GrunnlagDto> =
+    søknadsbarn
+        .mapNotNull {
+            val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(it.ident) ?: it.tilGrunnlagPerson()
+
+            val grunnlag =
+                grunnlag
+                    .hentSisteGrunnlagSomGjelderBarn(
+                        it.personident!!.verdi,
+                        Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK,
+                    )
+            val innhold = grunnlag?.konvertereData<List<VedtakForStønad>>() ?: return@mapNotNull null
+            val gjelderReferanse =
+                grunnlagFraBeregning.hentPerson(grunnlag.rolle.ident)?.referanse ?: grunnlag.rolle.tilGrunnlagsreferanse()
+            GrunnlagDto(
+                referanse = "${Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK}_${søknadsbarnGrunnlag.referanse}",
+                type = Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
+                innhold =
+                    POJONode(
+                        EtterfølgendeManuelleVedtakGrunnlag(
+                            vedtaksliste = innhold,
+                        ),
+                    ),
+                gjelderReferanse = gjelderReferanse,
+                gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
+            )
+        }.toSet()
+
 fun Behandling.byggGrunnlagManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto>): Set<GrunnlagDto> =
     søknadsbarn
-        .map {
+        .mapNotNull {
             val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(it.ident) ?: it.tilGrunnlagPerson()
 
             val grunnlag =
@@ -182,7 +212,7 @@ fun Behandling.byggGrunnlagManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto
                         it.personident!!.verdi,
                         Grunnlagsdatatype.MANUELLE_VEDTAK,
                     )
-            val innhold = grunnlag?.konvertereData<List<ManuellVedtakGrunnlag>>()
+            val innhold = grunnlag?.konvertereData<List<ManuellVedtakGrunnlag>>() ?: return@mapNotNull null
             val gjelderReferanse =
                 grunnlagFraBeregning.hentPerson(grunnlag!!.rolle.ident)?.referanse ?: grunnlag.rolle.tilGrunnlagsreferanse()
             GrunnlagDto(
@@ -240,7 +270,7 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                                 årsak = sb.årsak,
                                 beregnTil = sb.beregnTil,
                                 beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
-                                avslag = (sb.årsak == null).ifTrue { sb.avslag },
+                                avslag = (sb.årsak == null).ifTrue { sb.avslag!! },
                             ),
                         ),
                 )

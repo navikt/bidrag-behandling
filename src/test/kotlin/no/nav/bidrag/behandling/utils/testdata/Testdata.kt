@@ -241,6 +241,13 @@ data class TestDataPerson(
     fun tilForsendelseRolleDto() = ForsendelseRolleDto(Personident(ident), type = rolletype)
 }
 
+fun Behandling.synkSøknadsbarnVirkningstidspunkt() {
+    søknadsbarn.forEach {
+        it.virkningstidspunkt = virkningstidspunkt
+        it.årsak = årsak
+    }
+}
+
 fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
     ForsendelseResponsTo(
         forsendelseId = forsendelseId,
@@ -565,6 +572,8 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
     behandling.innkrevingstype = Innkrevingstype.MED_INNKREVING
     behandling.roller =
         oppretteBehandlingRoller(behandling, generateId, typeBehandling != TypeBehandling.FORSKUDD, typeBehandling)
+    behandling.synkSøknadsbarnVirkningstidspunkt()
+
     val husstandsmedlem =
         mutableSetOf(
             behandling.oppretteHusstandsmedlem(
@@ -1284,6 +1293,12 @@ fun oppretteTestbehandling(
         behandling.roller.add(opprettRolle(behandling, it.value, dbid))
     }
 
+    behandling.søknadsbarn.forEach {
+        it.virkningstidspunkt = behandling.virkningstidspunkt
+        it.årsak = behandling.årsak
+        it.avslag = behandling.avslag
+    }
+
     if (inkludereBp) {
         val dbid = if (setteDatabaseider) 4.toLong() else null
         val rolleBp = opprettRolle(behandling, testdataBP, dbid)
@@ -1941,9 +1956,10 @@ fun Behandling.leggTilGrunnlagEtterfølgendeVedtak(
     val vedtakForStønad = opprettVedtakForStønad(bidragspliktig!!.ident!!, Stønadstype.BIDRAG)
     grunnlag.add(
         Grunnlag(
-            type = Grunnlagsdatatype.MANUELLE_VEDTAK,
+            type = Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK,
             rolle = bidragspliktig!!,
             behandling = this,
+            gjelder = søknadsbarn.first().ident,
             innhentet = LocalDateTime.now(),
             aktiv = LocalDateTime.now(),
             data =

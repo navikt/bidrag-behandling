@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
+import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagEtterfølgendeVedtak
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagManuelleVedtak
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
@@ -36,6 +37,7 @@ import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -46,11 +48,15 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.Bidragsberegning
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
+import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -206,6 +212,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilGrunnlagManuelleVedtak(
             behandling.søknadsbarn.first(),
         )
+        behandling.leggTilGrunnlagEtterfølgendeVedtak()
 
         val opprettVedtakSlot = mutableListOf<OpprettVedtakRequestDto>()
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
@@ -263,7 +270,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 14
+                request.grunnlagListe shouldHaveSize 16
             }
             request.unikReferanse shouldBe behandling.opprettUnikReferanse("omgjøring")
         }
@@ -284,6 +291,23 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             grunnlagVirkning.innhold.virkningstidspunkt shouldBe søknadsbarn.virkningstidspunkt
             grunnlagVirkning.innhold.beregnTil shouldBe søknadsbarn.beregnTil
             grunnlagVirkning.innhold.beregnTilDato shouldBe behandling.finnBeregnTilDatoBehandling(søknadsbarn).toYearMonth()
+
+            val grunnlagEtterfølgendeVedtak =
+                opprettVedtakRequest.grunnlagListe
+                    .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<EtterfølgendeManuelleVedtakGrunnlag>(
+                        no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
+                        stønadsendring.grunnlagReferanseListe,
+                    ).firstOrNull()
+            grunnlagEtterfølgendeVedtak.shouldNotBeNull()
+            grunnlagEtterfølgendeVedtak.innhold.vedtaksliste shouldHaveSize 1
+
+            val grunnlagManuelleVedtak =
+                opprettVedtakRequest.grunnlagListe
+                    .filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
+                    .firstOrNull()
+                    ?.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
+            grunnlagManuelleVedtak.shouldNotBeNull()
+            grunnlagManuelleVedtak.shouldHaveSize(1)
         }
 
         verify(exactly = 1) {
@@ -368,7 +392,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 14
+                request.grunnlagListe shouldHaveSize 15
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
         }
@@ -498,7 +522,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 14
+                it.grunnlagListe shouldHaveSize 15
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -649,7 +673,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 14
+                it.grunnlagListe shouldHaveSize 15
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -726,7 +750,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
         initBehandlingTestdata(behandling)
-
+        behandling.leggTilGrunnlagManuelleVedtak()
+        behandling.leggTilGrunnlagEtterfølgendeVedtak()
         val vedtaksidKlage = 1
         val vedtaksidIndeks = 2
         val vedtakidsEtterfølgende = 3
@@ -848,7 +873,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 12
+                it.grunnlagListe shouldHaveSize 16
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -868,12 +893,31 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 stønadsendring.innkreving shouldBe Innkrevingstype.UTEN_INNKREVING
                 stønadsendring.omgjørVedtakId shouldBe 2
                 stønadsendring.beslutning shouldBe Beslutningstype.DELVEDTAK
+
+                val grunnlagEtterfølgendeVedtak =
+                    opprettVedtakSlot[0]
+                        .grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<EtterfølgendeManuelleVedtakGrunnlag>(
+                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
+                            stønadsendring.grunnlagReferanseListe,
+                        ).firstOrNull()
+                grunnlagEtterfølgendeVedtak.shouldNotBeNull()
+                grunnlagEtterfølgendeVedtak.innhold.vedtaksliste shouldHaveSize 1
+
+                val grunnlagManuelleVedtak =
+                    opprettVedtakSlot[0]
+                        .grunnlagListe
+                        .filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
+                        .firstOrNull()
+                        ?.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
+                grunnlagManuelleVedtak.shouldNotBeNull()
+                grunnlagManuelleVedtak.shouldHaveSize(1)
             }
         }
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 10
+                it.grunnlagListe shouldHaveSize 11
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -899,7 +943,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 6
+                it.grunnlagListe shouldHaveSize 8
             }
 
             opprettVedtakSlot[2].unikReferanse shouldBe
@@ -921,7 +965,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     opprettVedtakSlot[2]
                         .grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                            Grunnlagstype.VIRKNINGSTIDSPUNKT,
                             stønadsendring.grunnlagReferanseListe,
                         ).firstOrNull()
                 grunnlagVirkning.shouldNotBeNull()
@@ -936,7 +980,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 val resultatFraVedtakKlage =
                     it.grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
                             periodeKlagevedtak.grunnlagReferanseListe,
                         ).firstOrNull()
                 resultatFraVedtakKlage.shouldNotBeNull()
@@ -949,7 +993,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 val resultatFraVedtakIndeks =
                     it.grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
                             periodeIndeks.grunnlagReferanseListe,
                         ).firstOrNull()
                 resultatFraVedtakIndeks.shouldNotBeNull()
@@ -962,7 +1006,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 val resultatFraVedtakEtterfølgende =
                     it.grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
                             periodeEtterfølgende.grunnlagReferanseListe,
                         ).firstOrNull()
                 resultatFraVedtakEtterfølgende.shouldNotBeNull()
@@ -971,6 +1015,25 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 resultatFraVedtakEtterfølgende.innhold.beregnet shouldBe false
                 resultatFraVedtakEtterfølgende.innhold.opprettParagraf35c shouldBe true
                 resultatFraVedtakEtterfølgende.innhold.vedtakstype shouldBe Vedtakstype.ENDRING
+
+                val grunnlagEtterfølgendeVedtak =
+                    opprettVedtakSlot[2]
+                        .grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<EtterfølgendeManuelleVedtakGrunnlag>(
+                            Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
+                            stønadsendring.grunnlagReferanseListe,
+                        ).firstOrNull()
+                grunnlagEtterfølgendeVedtak.shouldNotBeNull()
+                grunnlagEtterfølgendeVedtak.innhold.vedtaksliste shouldHaveSize 1
+
+                val grunnlagManuelleVedtak =
+                    opprettVedtakSlot[2]
+                        .grunnlagListe
+                        .filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
+                        .firstOrNull()
+                        ?.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
+                grunnlagManuelleVedtak.shouldNotBeNull()
+                grunnlagManuelleVedtak.shouldHaveSize(1)
             }
         }
 
@@ -1150,7 +1213,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 14
+                it.grunnlagListe shouldHaveSize 15
             }
 
             assertSoftly(it.stønadsendringListe) {
@@ -1165,7 +1228,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 5
+                it.grunnlagListe shouldHaveSize 6
             }
             val orkestreringsdetaljer = it.grunnlagListe.map { it.tilDto() }.finnOrkestreringDetaljer(it.stønadsendringListe.first().grunnlagReferanseListe)
             orkestreringsdetaljer.shouldNotBeNull()

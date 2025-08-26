@@ -57,6 +57,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetalje
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
@@ -81,6 +82,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -606,6 +608,21 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.MANUELLE_VEDTAK,
                 grunnlag.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>(),
+                gjelder = gjelderBarnGrunnlag.personIdent!!,
+                rolleIdent = gjelderGrunnlag.personIdent!!,
+                innhentetTidspunkt = LocalDateTime.now(),
+                lesemodus = lesemodus,
+            )
+        },
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK)
+        .groupBy { it.gjelderBarnReferanse }
+        .map { (gjelderBarn, grunnlagListe) ->
+            val grunnlag = grunnlagListe.first()
+            val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
+            val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK,
+                grunnlag.innholdTilObjekt<EtterfølgendeManuelleVedtakGrunnlag>().vedtaksliste,
                 gjelder = gjelderBarnGrunnlag.personIdent!!,
                 rolleIdent = gjelderGrunnlag.personIdent!!,
                 innhentetTidspunkt = LocalDateTime.now(),

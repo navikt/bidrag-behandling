@@ -423,21 +423,33 @@ class BehandlingTilVedtakMapping(
                     )
                     stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
                 }
-
-                val virkningstidspunktGrunnlag = behandling.byggGrunnlagVirkningsttidspunkt()
-                grunnlagsliste.addAll(virkningstidspunktGrunnlag)
-                virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
-                    stønadsendringGrunnlagListe.add(it)
-                }
             } else if (resultatVedtak.delvedtak) {
                 stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarnReferanse))
-            } else {
+            }
+
+            if (!resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak) {
                 val virkningstidspunktGrunnlag = behandling.byggGrunnlagVirkningsttidspunkt()
                 grunnlagsliste.addAll(virkningstidspunktGrunnlag)
                 virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
                     stønadsendringGrunnlagListe.add(it)
                 }
                 stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagSøknad())
+
+                val grunnlagManuelleVedtak =
+                    behandling
+                        .byggGrunnlagManuelleVedtak(grunnlagsliste.toList())
+                grunnlagsliste.addAll(grunnlagManuelleVedtak)
+                grunnlagManuelleVedtak.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
+                    stønadsendringGrunnlagListe.add(it)
+                }
+
+                val etterfølgendeManuelleVedtak =
+                    behandling
+                        .byggGrunnlaggEtterfølgendeManuelleVedtak(grunnlagsliste.toList())
+                grunnlagsliste.addAll(etterfølgendeManuelleVedtak)
+                etterfølgendeManuelleVedtak.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
+                    stønadsendringGrunnlagListe.add(it)
+                }
             }
 
             val referansePostfix =
