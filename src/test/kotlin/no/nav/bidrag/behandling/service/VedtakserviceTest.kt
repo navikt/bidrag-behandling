@@ -46,6 +46,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettEngangsbeløp
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettVedtakDto
+import no.nav.bidrag.behandling.utils.testdata.synkSøknadsbarnVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.testdata.taMedInntekt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
@@ -264,6 +265,7 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
         behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+        behandling.synkSøknadsbarnVirkningstidspunkt()
         behandling.engangsbeloptype = null
         behandling.stonadstype = Stønadstype.FORSKUDD
         testdataManager.lagreBehandling(behandling)

@@ -158,6 +158,8 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
             )
 
         behandling.roller.add(barn2)
+        barn1.virkningstidspunkt = null
+        barn1.årsak = null
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
         behandling.søktFomDato = LocalDate.parse("2024-02-01")
         behandling.virkningstidspunkt = LocalDate.parse("2024-02-01")

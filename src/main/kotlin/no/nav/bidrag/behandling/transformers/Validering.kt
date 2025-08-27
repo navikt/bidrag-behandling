@@ -658,8 +658,8 @@ fun OppdatereInntekterRequestV2.valider() {
 fun Inntekt.validerPerioder() {
     val feilliste = mutableListOf<String>()
 
-    if (opphørsdato != null && datoFom != null && datoFom!! > opphørsdato) {
-        feilliste.add("Kan ikke sette datoFom etter opphørsdato")
+    if (beregnTilDato != null && datoFom != null && datoFom!! > beregnTilDato) {
+        feilliste.add("Kan ikke sette datoFom etter beregn til dato")
     }
 
     if (feilliste.isNotEmpty()) {

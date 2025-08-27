@@ -127,6 +127,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingAldersjustering(true)
         behandling.virkningstidspunkt = YearMonth.now().withMonth(7).atDay(1)
+        behandling.søknadsbarn.first().virkningstidspunkt = behandling.virkningstidspunkt
+        behandling.søknadsbarn.first().årsak = behandling.årsak
 
         behandling.leggTilGrunnlagBeløpshistorikk(
             Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
@@ -778,8 +780,9 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         val opphørsdato = LocalDate.now().plusMonths(2).withDayOfMonth(1)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.stonadstype = Stønadstype.BIDRAG18AAR
-        behandling.søknadsbarn.first().fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
-        behandling.søknadsbarn.first().opphørsdato = opphørsdato
+        val søknadsbarn = behandling.søknadsbarn.first()
+        søknadsbarn.fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
+        søknadsbarn.opphørsdato = opphørsdato
         behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
         behandling.leggTilNotat(
@@ -792,7 +795,9 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.søknadsbarn.first(),
         )
         behandling.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
+        søknadsbarn.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
+        søknadsbarn.årsak = null
         behandling.klagedetaljer =
             Klagedetaljer(
                 refVedtaksid = 553,
@@ -1060,6 +1065,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
+        behandling.søknadsbarn.first().virkningstidspunkt = behandling.virkningstidspunkt
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
@@ -1171,6 +1177,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
+        behandling.søknadsbarn.first().virkningstidspunkt = behandling.virkningstidspunkt
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
@@ -2257,7 +2264,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
         )
+        val søknadsbarn = behandling.søknadsbarn.first()
+        søknadsbarn.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
+        søknadsbarn.årsak = null
         behandling.årsak = null
         behandling.klagedetaljer =
             Klagedetaljer(

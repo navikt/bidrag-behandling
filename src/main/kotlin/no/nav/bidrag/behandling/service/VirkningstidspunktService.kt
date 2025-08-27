@@ -15,8 +15,10 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
@@ -323,9 +325,53 @@ class VirkningstidspunktService(
         val rolle = behandling.roller.find { it.id == request.idRolle }!!
         val nåværendeBeregnTil = rolle.beregnTil
         val erBeregnTilDatoEndret = requestBeregnTil != nåværendeBeregnTil
+        val forrigeBeregnTilDato = behandling.finnBeregnTilDatoBehandling(rolle)
+
+        val erBeregnTilEndretTilInneværende =
+            rolle.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED && request.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED
+
+        fun oppdatereUnderhold() {
+            log.info { "Tilpasse perioder for underhold til ny opphørsdato i behandling ${behandling.id}" }
+            underholdService.oppdatereUnderholdsperioderEtterEndretOpphørsdato(
+                behandling,
+                erBeregnTilEndretTilInneværende,
+                forrigeBeregnTilDato,
+            )
+        }
+
+        fun oppdaterBoforhold() {
+            log.info { "Opphørsdato er endret. Beregner husstandsmedlemsperioder på ny for behandling ${behandling.id}" }
+            grunnlagService.oppdaterAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
+            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+            grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+            grunnlagService.aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
+        }
+
+        fun oppdaterSamvær() {
+            log.info { "Opphørsdato er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
+            samværService.rekalkulerPerioderSamvær(behandling.id!!, erBeregnTilEndretTilInneværende)
+        }
+
+        fun oppdaterInntekter() {
+            log.info { "Opphørsdato er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
+            inntektService.rekalkulerPerioderInntekter(behandling.id!!, erBeregnTilEndretTilInneværende, forrigeBeregnTilDato)
+        }
+
+        fun oppdaterAndreVoksneIHusstanden() {
+            log.info { "Opphørsdato er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
+            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
+        }
 
         if (erBeregnTilDatoEndret) {
             rolle.beregnTil = request.beregnTil
+            oppdaterBoforhold()
+            oppdaterAndreVoksneIHusstanden()
+            oppdaterInntekter()
+            oppdatereUnderhold()
+            oppdaterSamvær()
         }
     }
 
@@ -368,7 +414,10 @@ class VirkningstidspunktService(
 
         fun oppdaterAndreVoksneIHusstanden() {
             log.info { "Opphørsdato er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
+            grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
+            grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
             boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
+            grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
         }
 
         if (erOpphørsdatoEndret) {

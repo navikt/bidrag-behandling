@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
@@ -28,12 +29,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
 
@@ -180,6 +183,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                             vedtaksid = vedtak.vedtaksid,
                             omgjøringsvedtak = vedtak.omgjøringsvedtak,
                             beregnet = vedtak.beregnet,
+                            vedtakstype = vedtak.type,
                             opprettParagraf35c = behandling.klagedetaljer!!.paragraf35c.any { it.vedtaksid == vedtak.vedtaksid },
                         ),
                     ),
@@ -194,10 +198,8 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                 innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarnRolle),
                 beregnTilDato =
                     behandling
-                        .finnBeregnTilDatoBehandling(
-                            søknadsbarnRolle.opphørsdato?.toYearMonth(),
-                            søknadsbarnRolle,
-                        ).toYearMonth(),
+                        .finnBeregnTilDatoBehandling(søknadsbarnRolle)
+                        .toYearMonth(),
             )
         grunnlagListe.add(
             GrunnlagDto(
@@ -219,10 +221,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
         beregnetBarnebidragPeriodeListe.map {
             opprettPeriode(it)
         }
+    val opphørPeriode = listOfNotNull(opprettPeriodeOpphør(søknadsbarnRolle, periodeliste))
 
     return StønadsendringPeriode(
         søknadsbarnRolle,
-        periodeliste,
+        periodeliste + opphørPeriode,
         grunnlagListe,
     )
 }
@@ -230,6 +233,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
 fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
     behandling: Behandling,
     søknadsbarn: ResultatRolle,
+    erEndeligVedtak: Boolean = true,
 ): StønadsendringPeriode {
     val søknadsbarn =
         behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
@@ -268,11 +272,37 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
         }
 
     val opphørPeriode =
-        listOfNotNull(opprettPeriodeOpphør(søknadsbarn, periodeliste))
+        if (erEndeligVedtak) listOfNotNull(opprettPeriodeOpphør(søknadsbarn, periodeliste)) else emptyList()
 
     return StønadsendringPeriode(
         søknadsbarn,
         periodeliste + opphørPeriode,
         grunnlagListe,
     )
+}
+
+/*
+Legg til vedtaksid hvis aldersjustering er utført basert på klagevedtaket i klageorkestreringen
+Hvis aldersjustering er gjort basert på etterfølgende vedtak så legges det til i klageorkestreringen. Derfor det sjekkes om det er null eller ikke
+ */
+fun OpprettVedtakRequestDto.leggTilVedtaksidPåAldersjusteringGrunnlag(vedtaksidKlage: Int): OpprettVedtakRequestDto {
+    if (type != Vedtakstype.ALDERSJUSTERING) return this
+    val oppdatertGrunnlagsliste = grunnlagListe.toMutableList()
+    stønadsendringListe.forEach {
+        val aldersjusteringGrunnlag = grunnlagListe.hentAldersjusteringDetaljerGrunnlag(it.grunnlagReferanseListe)
+        if (aldersjusteringGrunnlag != null && aldersjusteringGrunnlag.innhold.grunnlagFraVedtak == null) {
+            val oppdatertInnhold =
+                aldersjusteringGrunnlag.innhold.copy(
+                    grunnlagFraVedtak = vedtaksidKlage,
+                )
+            val eksisterendeGrunnlag = grunnlagListe.find { it.referanse == aldersjusteringGrunnlag.referanse }!!
+            oppdatertGrunnlagsliste.remove(eksisterendeGrunnlag)
+            oppdatertGrunnlagsliste.add(
+                eksisterendeGrunnlag.copy(
+                    innhold = POJONode(oppdatertInnhold),
+                ),
+            )
+        }
+    }
+    return this.copy(grunnlagListe = oppdatertGrunnlagsliste)
 }

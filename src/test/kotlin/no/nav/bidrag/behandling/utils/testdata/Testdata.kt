@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.service.opprettVedtakForStønad
 import no.nav.bidrag.behandling.service.tilSummerteInntekter
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
@@ -114,6 +115,7 @@ import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.response.EngangsbeløpDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
@@ -237,6 +239,13 @@ data class TestDataPerson(
         )
 
     fun tilForsendelseRolleDto() = ForsendelseRolleDto(Personident(ident), type = rolletype)
+}
+
+fun Behandling.synkSøknadsbarnVirkningstidspunkt() {
+    søknadsbarn.forEach {
+        it.virkningstidspunkt = virkningstidspunkt
+        it.årsak = årsak
+    }
 }
 
 fun opprettForsendelseResponsUnderOpprettelse(forsendelseId: Long = 1) =
@@ -563,6 +572,8 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
     behandling.innkrevingstype = Innkrevingstype.MED_INNKREVING
     behandling.roller =
         oppretteBehandlingRoller(behandling, generateId, typeBehandling != TypeBehandling.FORSKUDD, typeBehandling)
+    behandling.synkSøknadsbarnVirkningstidspunkt()
+
     val husstandsmedlem =
         mutableSetOf(
             behandling.oppretteHusstandsmedlem(
@@ -1282,6 +1293,12 @@ fun oppretteTestbehandling(
         behandling.roller.add(opprettRolle(behandling, it.value, dbid))
     }
 
+    behandling.søknadsbarn.forEach {
+        it.virkningstidspunkt = behandling.virkningstidspunkt
+        it.årsak = behandling.årsak
+        it.avslag = behandling.avslag
+    }
+
     if (inkludereBp) {
         val dbid = if (setteDatabaseider) 4.toLong() else null
         val rolleBp = opprettRolle(behandling, testdataBP, dbid)
@@ -1528,6 +1545,7 @@ private fun oppretteBoforhold(
         BoforholdApi.beregnBoforholdBarnV3(
             behandling.virkningstidspunktEllerSøktFomDato,
             behandling.globalOpphørsdato,
+            beregnTilDato = null,
             behandling.tilTypeBoforhold(),
             grunnlagHusstandsmedlemmer.tilBoforholdBarnRequest(behandling),
         )
@@ -1926,6 +1944,37 @@ fun Behandling.leggTilGrunnlagManuelleVedtak(
     )
 }
 
+fun Behandling.leggTilGrunnlagEtterfølgendeVedtak(
+    periodeListe: List<VedtakPeriodeDto> =
+        listOf(
+            opprettPeriode(ÅrMånedsperiode(LocalDate.parse("2023-01-01"), LocalDate.parse("2023-12-31"))).copy(
+                valutakode = "NOK",
+            ),
+            opprettPeriode(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null)),
+        ),
+) {
+    val vedtakForStønad = opprettVedtakForStønad(bidragspliktig!!.ident!!, Stønadstype.BIDRAG)
+    grunnlag.add(
+        Grunnlag(
+            type = Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK,
+            rolle = bidragspliktig!!,
+            behandling = this,
+            gjelder = søknadsbarn.first().ident,
+            innhentet = LocalDateTime.now(),
+            aktiv = LocalDateTime.now(),
+            data =
+                commonObjectmapper.writeValueAsString(
+                    listOf(
+                        vedtakForStønad
+                            .copy(
+                                stønadsendring = vedtakForStønad.stønadsendring.copy(periodeListe = periodeListe),
+                            ),
+                    ),
+                ),
+        ),
+    )
+}
+
 fun Behandling.leggTilGrunnlagBeløpshistorikk(
     type: Grunnlagsdatatype,
     søknadsbarn: Rolle = this.søknadsbarn.first(),
@@ -2248,6 +2297,19 @@ fun opprettStønadDto(
     stønadsid = 1,
     type = stønadstype,
     periodeListe = periodeListe,
+)
+
+fun opprettPeriode(
+    periode: ÅrMånedsperiode = ÅrMånedsperiode(LocalDate.parse("2024-08-01"), null),
+    beløp: BigDecimal? = BigDecimal.ONE,
+    valutakode: String = "NOK",
+) = VedtakPeriodeDto(
+    periode = periode,
+    beløp = beløp,
+    valutakode = valutakode,
+    resultatkode = "KBB",
+    delytelseId = null,
+    grunnlagReferanseListe = emptyList(),
 )
 
 fun opprettStønadPeriodeDto(

@@ -101,7 +101,7 @@ class BeregningService(
                         try {
                             ResultatForskuddsberegningBarn(
                                 rolle.mapTilResultatBarn(),
-                                beregnApi.beregn(beregningRequest.beregnGrunnlag!!),
+                                beregnApi.beregn(beregningRequest.beregnGrunnlag),
                             )
                         } catch (e: Exception) {
                             LOGGER.warn(e) { "Det skjedde en feil ved beregning av forskudd: ${e.message}" }
@@ -165,15 +165,31 @@ class BeregningService(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
-                        resultatVedtak = resultat,
+                        resultatVedtak =
+                            resultat.copy(
+                                resultatVedtakListe =
+                                    resultat.resultatVedtakListe.map {
+                                        if (it.omgjøringsvedtak) {
+                                            it.copy(
+                                                resultat =
+                                                    it.resultat.copy(
+                                                        grunnlagListe =
+                                                            (it.resultat.grunnlagListe + grunnlagBeregning.beregnGrunnlag.grunnlagListe)
+                                                                .toSet()
+                                                                .toList(),
+                                                    ),
+                                            )
+                                        } else {
+                                            it
+                                        }
+                                    },
+                            ),
                         avslaskode = søknasdbarn.avslag,
                         klagedetaljer = behandling.klagedetaljer,
                         beregnTilDato =
                             behandling
-                                .finnBeregnTilDatoBehandling(
-                                    søknasdbarn.opphørsdato?.toYearMonth(),
-                                    søknasdbarn,
-                                )?.toYearMonth(),
+                                .finnBeregnTilDatoBehandling(søknasdbarn)
+                                ?.toYearMonth(),
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             resultat.resultatVedtakListe
@@ -194,7 +210,7 @@ class BeregningService(
                     val beregnTilDato =
                         søknasdbarn
                             .behandling
-                            .finnBeregnTilDatoBehandling(søknasdbarn.opphørsdato?.toYearMonth(), søknasdbarn)
+                            .finnBeregnTilDatoBehandling(søknasdbarn)
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning =
                             UgyldigBeregningDto(

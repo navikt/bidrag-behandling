@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
@@ -56,6 +57,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetalje
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
@@ -80,6 +82,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -156,7 +159,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                 barn =
                     ResultatRolle(
                         barn?.ident ?: stønadsendring.kravhaver,
-                        hentPersonVisningsnavn(stønadsendring.kravhaver.verdi)!!,
+                        hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
                         barn?.fødselsdato ?: LocalDate.now(),
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
                         referanse = barnGrunnlag?.referanse ?: "",
@@ -174,10 +177,11 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
     )
 
 fun VedtakDto.erVedtakUtenBeregning() =
-    stønadsendringListe.all {
-        it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
-            erOrkestrertVedtak && type == Vedtakstype.INNKREVING
-    }
+    type == Vedtakstype.INDEKSREGULERING ||
+        stønadsendringListe.all {
+            it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
+                erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+        }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
@@ -298,6 +302,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             resultatFraVedtak =
                                 ResultatFraVedtakGrunnlag(
                                     vedtaksid = periodeVedtak?.vedtaksid,
+                                    vedtakstype = periodeVedtak?.type,
                                     beregnet = periodeVedtak?.beregnet ?: false,
                                 ),
                             klageOmgjøringDetaljer =
@@ -609,6 +614,21 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus = lesemodus,
             )
         },
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK)
+        .groupBy { it.gjelderBarnReferanse }
+        .map { (gjelderBarn, grunnlagListe) ->
+            val grunnlag = grunnlagListe.first()
+            val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
+            val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK,
+                grunnlag.innholdTilObjekt<EtterfølgendeManuelleVedtakGrunnlag>().vedtaksliste,
+                gjelder = gjelderBarnGrunnlag.personIdent!!,
+                rolleIdent = gjelderGrunnlag.personIdent!!,
+                innhentetTidspunkt = LocalDateTime.now(),
+                lesemodus = lesemodus,
+            )
+        },
     if (behandling.vedtakstype == Vedtakstype.KLAGE && !lesemodus) {
         behandling.stonadstype?.let {
             filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
@@ -691,6 +711,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         behandledeBostatusopplysninger = emptyList(),
                         endreBostatus = null,
                     ),
+                    beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                 )
             behandling.bidragspliktig?.let {
                 listOf(
@@ -722,6 +743,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                             behandledeBostatusopplysninger = emptyList(),
                             endreBostatus = null,
                         ),
+                        beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
                     )
                 listOf(
                     behandling.opprettGrunnlag(
@@ -759,6 +781,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 BoforholdApi.beregnBoforholdBarnV3(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     behandling.globalOpphørsdato,
+                    behandling.finnBeregnTilDatoBehandling(),
                     behandling.tilTypeBoforhold(),
                     grunnlag.tilBoforholdBarnRequest(behandling, true),
                 )

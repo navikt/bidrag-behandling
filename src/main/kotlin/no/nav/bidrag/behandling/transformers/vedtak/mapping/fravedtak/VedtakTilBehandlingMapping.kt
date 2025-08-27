@@ -36,6 +36,7 @@ import no.nav.bidrag.behandling.transformers.sorter
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
@@ -184,6 +185,19 @@ class VedtakTilBehandlingMapping(
         if (!lesemodus) {
             behandlingRepository.save(behandling)
         }
+
+        if (lesemodus) {
+            behandling.lesemodusVedtak =
+                LesemodusVedtak(
+                    erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
+                    opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
+                    erOrkestrertVedtak = erOrkestrertVedtak,
+                )
+            behandling.grunnlagslisteFraVedtak = grunnlagListe
+            behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
+            behandling.erVedtakUtenBeregning = erVedtakUtenBeregning()
+        }
+
         oppdaterDirekteOppgjørBeløp(behandling, lesemodus)
         grunnlagListe.oppdaterRolleGebyr(behandling)
 
@@ -200,17 +214,6 @@ class VedtakTilBehandlingMapping(
         }
         behandling.grunnlag =
             if (type == Vedtakstype.INDEKSREGULERING) mutableSetOf() else grunnlagListe.mapGrunnlag(behandling, lesemodus)
-        if (lesemodus) {
-            behandling.lesemodusVedtak =
-                LesemodusVedtak(
-                    erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
-                    opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
-                    erOrkestrertVedtak = erOrkestrertVedtak,
-                )
-            behandling.grunnlagslisteFraVedtak = grunnlagListe
-            behandling.erBisysVedtak = behandlingId == null && this.søknadId != null
-            behandling.erVedtakUtenBeregning = erVedtakUtenBeregning()
-        }
 
         notatMedType(NotatType.BOFORHOLD, false)?.let {
             behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))
@@ -270,6 +273,7 @@ class VedtakTilBehandlingMapping(
                     ?.sorter()
                     ?.map { it.tilDto() } ?: emptyList(),
                 behandling.utgift?.maksGodkjentBeløpTaMed.ifTrue { behandling.utgift?.maksGodkjentBeløp },
+                behandling.finnBeregnTilDatoBehandling(),
             )
         }
 

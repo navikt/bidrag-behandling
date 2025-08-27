@@ -924,6 +924,7 @@ class GrunnlagMockService {
         every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } throws HttpClientErrorException(HttpStatus.BAD_REQUEST)
         every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG18AAR }) } throws HttpClientErrorException(HttpStatus.BAD_REQUEST)
         behandling.søknadstype = BisysSøknadstype.SØKNAD
+        grunnlagService.grenseInnhenting = "60"
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
         grunnlagsliste shouldHaveSize 0

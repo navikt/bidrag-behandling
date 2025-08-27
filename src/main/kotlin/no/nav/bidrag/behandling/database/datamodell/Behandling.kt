@@ -35,6 +35,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -214,7 +215,11 @@ open class Behandling(
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = klagedetaljer?.påklagetVedtak != null
-    val minstEnRolleHarOpphørsdato get() = søknadsbarn.any { it.opphørsdato != null }
+    val minstEnRolleHarBegrensetBeregnTilDato get() =
+        søknadsbarn.any {
+            it.opphørsdato != null ||
+                it.beregnTil != null && it.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED
+        }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
     val globalVirkningstidspunkt get() =
         søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt
@@ -224,6 +229,7 @@ open class Behandling(
         } else {
             søknadsbarn.maxByOrNull { it.opphørsdato!! }?.opphørsdato
         }
+
     val opphørTilDato get() = justerPeriodeTomOpphørsdato(globalOpphørsdato)
     val opphørSistePeriode get() = opphørTilDato != null
 

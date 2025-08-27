@@ -12,9 +12,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -49,6 +51,12 @@ open class Inntekt(
 ) {
     val gjelderSøknadsbarn get() = behandling?.søknadsbarn?.find { it.ident == gjelderBarn }
     val opphørsdato get() = if (gjelderSøknadsbarn != null) gjelderSøknadsbarn!!.opphørsdato else behandling?.globalOpphørsdato
+    val beregnTilDato get() =
+        if (gjelderSøknadsbarn != null) {
+            behandling?.finnBeregnTilDatoBehandling(gjelderSøknadsbarn)
+        } else {
+            behandling?.globalOpphørsdato
+        }
     val opphørTilDato get() = if (gjelderSøknadsbarn != null) gjelderSøknadsbarn!!.opphørTilDato else behandling?.opphørTilDato
     val datoFomEllerOpprinneligFom get() = datoFom ?: opprinneligFom
     val datoTomEllerOpprinneligFom get() = datoTom ?: opprinneligTom

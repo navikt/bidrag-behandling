@@ -2,6 +2,11 @@ package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
@@ -67,11 +72,14 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.beregn.core.util.justerVedtakstidspunkt
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.commons.util.RequestContextAsyncContext
+import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -140,8 +148,8 @@ class GrunnlagService(
     private val vedtakConsumer: BidragVedtakConsumer,
     private val vedtakService: VedtakService? = null,
 ) {
-    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting}")
-    private lateinit var grenseInnhenting: String
+    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
+    lateinit var grenseInnhenting: String
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
@@ -200,12 +208,14 @@ class GrunnlagService(
 
     fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         // Klage er pga at det skal være mulig å velge vedtak for aldersjustering hvis klagebehandling endrer resultat for aldersjusteringen
-        if (!listOf(
+        val erAldersjusteringEllerOmgjøring =
+            listOf(
                 Vedtakstype.ALDERSJUSTERING,
                 Vedtakstype.KLAGE,
                 Vedtakstype.INNKREVING,
             ).contains(behandling.vedtakstype)
-        ) {
+
+        if (!(erAldersjusteringEllerOmgjøring && behandling.erBidrag())) {
             return emptyMap()
         }
 
@@ -278,7 +288,7 @@ class GrunnlagService(
                     }
                 if (vedtak.type == Vedtakstype.KLAGE && !harResultatInnvilgetVedtak) {
                     // Fjern vedtak omgjort av klage fra listen da vedtaket er ugyldigjort av klagevedtaket
-                    val omgjortVedtak = response.vedtakListe.find { it.vedtaksid.toInt() == vedtak.stønadsendring.omgjørVedtakId }
+                    val omgjortVedtak = response.vedtakListe.find { it.vedtaksid == vedtak.stønadsendring.omgjørVedtakId }
                     filtrertVedtaksliste.removeIf { it.vedtaksid == omgjortVedtak?.vedtaksid }
                 }
 
@@ -288,7 +298,7 @@ class GrunnlagService(
             .mapNotNull {
                 val stønadsendring = it.stønadsendring
                 val sistePeriode = stønadsendring.hentSisteLøpendePeriode() ?: return@mapNotNull null
-                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid.toInt())!!
+                val vedtak = vedtakConsumer.hentVedtak(it.vedtaksid)!!
                 val søknad =
                     vedtak.grunnlagListe
                         .filtrerBasertPåEgenReferanse(
@@ -749,6 +759,8 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdAndreVoksne(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 boforhold.tilBoforholdVoksneRequest(behandling),
+                opphørsdato = behandling.globalOpphørsdato,
+                beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
             )
 
         overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
@@ -765,6 +777,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -783,6 +796,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -1330,6 +1344,8 @@ class GrunnlagService(
                 .beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
                     husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(behandling),
+                    behandling.globalOpphørsdato,
+                    behandling.finnBeregnTilDatoBehandling(),
                 ).toSet()
 
         val bpsNyesteBearbeidaBoforholdFørLagring =
@@ -1369,6 +1385,7 @@ class GrunnlagService(
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
             )

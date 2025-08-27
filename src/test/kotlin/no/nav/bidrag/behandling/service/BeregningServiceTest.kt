@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettEvnevurderingResultat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
+import no.nav.bidrag.behandling.utils.testdata.synkSøknadsbarnVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
@@ -213,6 +214,7 @@ class BeregningServiceTest {
             behandling.søknadsbarn.first(),
         )
         behandling.virkningstidspunkt = LocalDate.now().minusMonths(1)
+        behandling.synkSøknadsbarnVirkningstidspunkt()
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -248,6 +250,7 @@ class BeregningServiceTest {
             behandling.søknadsbarn.first(),
         )
         behandling.virkningstidspunkt = LocalDate.now().minusMonths(4)
+        behandling.synkSøknadsbarnVirkningstidspunkt()
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -302,6 +305,7 @@ class BeregningServiceTest {
             behandling.søknadsbarn.first(),
         )
         behandling.virkningstidspunkt = LocalDate.now().minusMonths(4)
+        behandling.synkSøknadsbarnVirkningstidspunkt()
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -367,6 +371,7 @@ class BeregningServiceTest {
             behandling.søknadsbarn.first(),
         )
         behandling.virkningstidspunkt = LocalDate.now().minusMonths(4)
+        behandling.synkSøknadsbarnVirkningstidspunkt()
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,

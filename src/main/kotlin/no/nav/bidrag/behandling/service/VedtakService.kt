@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregni
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatForskudd
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatadBeregningOrkestrering
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.leggTilVedtaksidPåAldersjusteringGrunnlag
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.util.secureLogger
@@ -33,7 +34,6 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.transport.behandling.vedtak.request.OpprettStønadsendringRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -76,12 +76,12 @@ class VedtakService(
     private val notatOpplysningerService: NotatOpplysningerService,
     private val tilgangskontrollService: TilgangskontrollService,
     private val vedtakConsumer: BidragVedtakConsumer,
-//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal?,
     private val validering: ValiderBeregning,
     private val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping,
     private val behandlingTilVedtakMapping: BehandlingTilVedtakMapping,
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
     private val forsendelseService: ForsendelseService,
+//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
         try {
@@ -390,13 +390,22 @@ class VedtakService(
                 val response = fatteVedtak(klagevedtak.request!!)
                 response to klagevedtak.request
             } else {
+                var klagevedtakId: Int? = null
                 val oppdatertDelvedtak =
                     requestDelvedtak.delvedtak.map { delvedtak ->
                         // Ikke fatte vedtak for delvedtak som ikke er beregnet
                         if (!delvedtak.beregnet) return@map delvedtak
+                        val opprettRequest =
+                            if (delvedtak.type == Vedtakstype.ALDERSJUSTERING) {
+                                requireNotNull(klagevedtakId) { "Klagevedtaksid er null. Kunne ikke oppdatere aldersjustering grunnlag" }
+                                delvedtak.request!!.leggTilVedtaksidPåAldersjusteringGrunnlag(klagevedtakId)
+                            } else {
+                                delvedtak.request!!
+                            }
+
 //                delvedtak.request.validerGrunnlagsreferanser()
-                        secureLogger.info { "Fatter vedtak for delvedtak ${delvedtak.request!!.type} med forespørsel ${delvedtak.request}" }
-                        val response = fatteVedtak(delvedtak.request!!)
+                        secureLogger.info { "Fatter vedtak for delvedtak ${opprettRequest.type} med forespørsel ${delvedtak.request}" }
+                        val response = fatteVedtak(opprettRequest)
                         behandlingService.oppdaterDelvedtakFattetStatus(
                             behandlingsid = behandling.id!!,
                             fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
@@ -407,6 +416,9 @@ class VedtakService(
                                     referanse = delvedtak.request.unikReferanse ?: "ukjent",
                                 ),
                         )
+                        if (delvedtak.omgjøringsvedtak) {
+                            klagevedtakId = response.vedtaksid
+                        }
                         delvedtak.copy(
                             vedtaksid = response.vedtaksid,
                         )
@@ -425,7 +437,7 @@ class VedtakService(
             }
 
         if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-            fatteInnkrevingsgrunnlag(behandling, request?.enhet, response.first.vedtaksid, response.second.stønadsendringListe)
+            fatteInnkrevingsgrunnlag(behandling, request?.enhet, response.first.vedtaksid, response.second)
         }
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
@@ -448,16 +460,15 @@ class VedtakService(
         behandling: Behandling,
         enhet: String?,
         vedtaksidOrkestrering: Int,
-        stønadsendringListeOrkestrering: List<OpprettStønadsendringRequestDto>,
+        vedtak: OpprettVedtakRequestDto,
     ) {
         val innkrevingRequest =
             behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
                 behandling,
                 enhet,
                 vedtaksidOrkestrering,
-                stønadsendringListeOrkestrering,
+                vedtak,
             )
-//                    val response = vedtakLocalConsumer.fatteVedtak(innkrevingRequest)
         val responseInnkreving = fatteVedtak(innkrevingRequest)
         secureLogger.info {
             "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
@@ -613,6 +624,5 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }

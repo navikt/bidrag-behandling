@@ -46,7 +46,12 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         ident = ident?.verdi,
         fødselsdato = fødselsdatoPerson,
         navn = navn,
-        beregnTil = if (behandling.vedtakstype == Vedtakstype.KLAGE) BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT else null,
+        beregnTil =
+            if (behandling.vedtakstype == Vedtakstype.KLAGE) {
+                BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+            } else {
+                BeregnTil.INNEVÆRENDE_MÅNED
+            },
         opphørsdato =
             if (barnErOver18 && skalOpphørVed18År) {
                 fødselsdatoPerson.plusYears(18).plusMonths(1).withDayOfMonth(1)
