@@ -5,7 +5,7 @@ import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.OpprettParagraf35C
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Resultatad
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.leggTilVedtaksidPåAldersjusteringGrunnlag
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.beregn.core.util.justerVedtakstidspunktVedtak
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
@@ -90,11 +91,13 @@ class VedtakService(
                 hentOrkestrertVedtak(vedtakId) ?: return null
 
             tilgangskontrollService.sjekkTilgangVedtak(vedtak.opprinneligVedtak)
+            val påklagetVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak.vedtak)
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
             return vedtakTilBehandlingMapping.run {
                 vedtak.opprinneligVedtak.tilBehandling(
                     vedtakId,
+                    påklagetVedtak = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
                     lesemodus = true,
                     erOrkestrertVedtak = vedtak.erOrkestrertVedtak,
                 )
@@ -154,9 +157,10 @@ class VedtakService(
                     val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
 
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
-                }.toSet() + setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.vedtakstidspunkt!!, virkningstidspunkt))
+                }.toSet() +
+                setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!, virkningstidspunkt))
         }
-        return setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.vedtakstidspunkt!!, virkningstidspunkt))
+        return setOf(PåklagetVedtak(vedtak.vedtaksid, vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!, virkningstidspunkt))
     }
 
     @Transactional
@@ -240,16 +244,16 @@ class VedtakService(
     ) {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val rolle = behandling.søknadsbarn.find { it.ident == request.ident }!!
-        val klagedetaljer = behandling.klagedetaljer ?: Klagedetaljer()
+        val omgjøringsdetaljer = behandling.omgjøringsdetaljer ?: Omgjøringsdetaljer()
         val paragraf35c =
-            klagedetaljer.paragraf35c.find { it.vedtaksid == request.vedtaksid }?.copy(
+            omgjøringsdetaljer.paragraf35c.find { it.vedtaksid == request.vedtaksid }?.copy(
                 opprettParagraf35c = request.opprettP35c,
                 vedtaksid = request.vedtaksid,
                 rolleid = rolle.id!!,
             ) ?: OpprettParagraf35C(rolle.id!!, request.vedtaksid, request.opprettP35c)
-        behandling.klagedetaljer =
-            klagedetaljer.copy(
-                paragraf35c = klagedetaljer.paragraf35c.filter { it.vedtaksid != request.vedtaksid } + paragraf35c,
+        behandling.omgjøringsdetaljer =
+            omgjøringsdetaljer.copy(
+                paragraf35c = omgjøringsdetaljer.paragraf35c.filter { it.vedtaksid != request.vedtaksid } + paragraf35c,
             )
     }
 
@@ -403,7 +407,7 @@ class VedtakService(
                                 delvedtak.request!!
                             }
 
-//                delvedtak.request.validerGrunnlagsreferanser()
+//                        delvedtak.request.validerGrunnlagsreferanser()
                         secureLogger.info { "Fatter vedtak for delvedtak ${opprettRequest.type} med forespørsel ${delvedtak.request}" }
                         val response = fatteVedtak(opprettRequest)
                         behandlingService.oppdaterDelvedtakFattetStatus(
@@ -593,8 +597,8 @@ class VedtakService(
         }
 
         val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-            erKlageEllerOmgjøring && !erBidrag() && klagedetaljer?.opprinneligVirkningstidspunkt != null &&
-                virkningstidspunkt!! > klagedetaljer!!.opprinneligVirkningstidspunkt
+            erKlageEllerOmgjøring && !erBidrag() && omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
+                virkningstidspunkt!! > omgjøringsdetaljer!!.opprinneligVirkningstidspunkt
         if (erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,

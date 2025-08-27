@@ -149,7 +149,7 @@ fun Behandling.byggGrunnlagSøknad() =
             innhold =
                 POJONode(
                     SøknadGrunnlag(
-                        klageMottattDato = klagedetaljer?.klageMottattdato,
+                        klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
@@ -161,7 +161,7 @@ fun Behandling.byggGrunnlagSøknad() =
                                 BisysSøknadstype.PARAGRAF_35_C,
                                 BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
                             ).contains(søknadstype),
-                        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+                        opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
                         privatAvtale = søknadstype == BisysSøknadstype.PRIVAT_AVTALE,
                         paragraf35c =
                             listOf(
@@ -373,7 +373,7 @@ fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
             kilde = BehandlingsrefKilde.BEHANDLING_ID,
             referanse = id.toString(),
         ),
-        klagedetaljer?.soknadRefId?.let {
+        omgjøringsdetaljer?.soknadRefId?.let {
             OpprettBehandlingsreferanseRequestDto(
                 kilde = BehandlingsrefKilde.BISYS_KLAGE_REF_SØKNAD,
                 referanse = it.toString(),

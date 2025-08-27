@@ -14,7 +14,7 @@ import io.mockk.mockkClass
 import io.mockk.verify
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
@@ -138,8 +138,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -208,8 +208,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -335,8 +335,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -448,8 +448,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -598,8 +598,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -750,8 +750,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -1074,8 +1074,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -1431,8 +1431,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01"),
@@ -1695,8 +1695,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01"),
@@ -1934,8 +1934,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.opphørsdato = LocalDate.parse("2025-09-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),

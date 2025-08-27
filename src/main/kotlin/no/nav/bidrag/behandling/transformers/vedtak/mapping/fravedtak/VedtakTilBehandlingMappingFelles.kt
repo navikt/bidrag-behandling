@@ -82,7 +82,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
-import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -641,7 +640,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         it.tilGrunnlagsdatatypeBeløpshistorikk(),
                         grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
                         gjelder.personIdent!!,
-                        behandling.klagedetaljer?.opprinneligVedtakstidspunkt!!.min(),
+                        behandling.omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min(),
                         lesemodus,
                     )
                 }

@@ -37,7 +37,6 @@ import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspu
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
-import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -835,10 +834,10 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
     NotatBehandlingDetaljerDto(
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
-        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+        opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
         søktAv = soknadFra,
         mottattDato = mottattdato,
-        klageMottattDato = klagedetaljer?.klageMottattdato,
+        klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         avslag = avslag,

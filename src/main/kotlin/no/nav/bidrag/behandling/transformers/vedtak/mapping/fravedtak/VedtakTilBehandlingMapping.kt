@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -78,7 +78,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBel�
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
-import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
@@ -170,17 +169,21 @@ class VedtakTilBehandlingMapping(
 
         behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, virkningstidspunkt)
 
-        behandling.klagedetaljer =
-            Klagedetaljer(
-                opprinneligVedtakstype = opprinneligVedtakstype,
-                påklagetVedtak = påklagetVedtak,
-                innkrevingstype = innkrevingstype,
-                refVedtaksid = if (!lesemodus) vedtakId else null,
-                klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
-                soknadRefId = søknadRefId,
-                opprinneligVirkningstidspunkt = virkningstidspunkt,
-                opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
-            )
+        behandling.omgjøringsdetaljer =
+            if (påklagetVedtak != vedtakId) {
+                Omgjøringsdetaljer(
+                    opprinneligVedtakstype = opprinneligVedtakstype,
+                    påklagetVedtak = påklagetVedtak,
+                    innkrevingstype = innkrevingstype,
+                    refVedtaksid = if (!lesemodus) vedtakId else null,
+                    klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
+                    soknadRefId = søknadRefId,
+                    opprinneligVirkningstidspunkt = virkningstidspunkt,
+                    opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
+                )
+            } else {
+                null
+            }
 
         if (!lesemodus) {
             behandlingRepository.save(behandling)

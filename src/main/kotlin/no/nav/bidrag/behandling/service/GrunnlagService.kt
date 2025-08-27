@@ -2,11 +2,6 @@ package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
@@ -78,8 +73,6 @@ import no.nav.bidrag.beregn.core.util.justerVedtakstidspunkt
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
-import no.nav.bidrag.commons.util.RequestContextAsyncContext
-import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -278,8 +271,9 @@ class GrunnlagService(
         response.vedtakListe
             .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
             .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
-            .filter { behandling.klagedetaljer?.påklagetVedtak == null || it.vedtaksid != behandling.klagedetaljer?.påklagetVedtak }
-            .sortedBy { it.vedtakstidspunkt }
+            .filter {
+                behandling.omgjøringsdetaljer?.påklagetVedtak == null || it.vedtaksid != behandling.omgjøringsdetaljer?.påklagetVedtak
+            }.sortedBy { it.vedtakstidspunkt }
             .forEach { vedtak ->
                 val harResultatInnvilgetVedtak =
                     vedtak.stønadsendring.periodeListe.all {
@@ -370,13 +364,13 @@ class GrunnlagService(
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type)
-                val opprinneligVedtakstidspunkt = behandling.klagedetaljer!!.opprinneligVedtakstidspunkt.minOrNull()
+                val opprinneligVedtakstidspunkt = behandling.omgjøringsdetaljer!!.opprinneligVedtakstidspunkt.minOrNull()
                 val respons =
                     vedtakService!!
                         .hentAlleVedtakForStønad(
                             behandling.tilStønadsid(sb),
                             sb.opprinneligVirkningstidspunkt!!.toYearMonth(),
-                            behandling.klagedetaljer?.påklagetVedtak,
+                            behandling.omgjøringsdetaljer?.påklagetVedtak,
                         ).filter {
                             opprinneligVedtakstidspunkt == null ||
                                 it.justerVedtakstidspunkt().vedtakstidspunkt.isAfter(opprinneligVedtakstidspunkt)
@@ -1169,8 +1163,7 @@ class GrunnlagService(
                 }
             }
             if (behandling.søknadsbarn.isNotEmpty() &&
-                Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi &&
-                !innhentingAvBoforholdBMFeilet
+                Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,

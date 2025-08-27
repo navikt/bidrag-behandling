@@ -83,9 +83,9 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
     val opphørsdato = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
     return if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-    } else if (erBidrag() && erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
+    } else if (erBidrag() && erKlageEllerOmgjøring && omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
         val opprinneligVedtakstidspunkt =
-            klagedetaljer
+            omgjøringsdetaljer
                 ?.opprinneligVedtakstidspunkt!!
                 .min()
                 .plusMonths(1)
@@ -309,7 +309,7 @@ class VedtakGrunnlagMapper(
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
                         KlageOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            påklagetVedtakId = behandling.klagedetaljer?.påklagetVedtak!!,
+                            påklagetVedtakId = behandling.omgjøringsdetaljer?.påklagetVedtak!!,
                             innkrevingstype = behandling.innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
                             gjelderParagraf35c =
                                 listOf(

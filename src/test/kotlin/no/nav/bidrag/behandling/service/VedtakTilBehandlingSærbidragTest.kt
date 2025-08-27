@@ -62,10 +62,10 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-01-15")
-            klagedetaljer?.klageMottattdato shouldBe null
+            omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -141,10 +141,10 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -228,16 +228,16 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe null
             avslag shouldBe null
             virkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
             soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
             stonadstype shouldBe null
             engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L
@@ -303,16 +303,16 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe null
             avslag shouldBe null
             virkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-08-01")
             soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
             stonadstype shouldBe null
             engangsbeloptype shouldBe Engangsbeløptype.SÆRBIDRAG
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L
@@ -395,7 +395,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
                 12333,
             )!!
 
-        assertSoftly(behandling.klagedetaljer!!) {
+        assertSoftly(behandling.omgjøringsdetaljer!!) {
             opprinneligVedtakstidspunkt shouldHaveSize 3
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
@@ -443,7 +443,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             )!!
 
         assertSoftly(behandling) {
-            klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-07-01")
+            omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-07-01")
             mottattdato shouldBe LocalDate.parse("2024-05-01")
         }
     }
@@ -464,7 +464,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             notater.find { Notattype.UTGIFTER == it.type }?.innhold shouldBe
                 "Dette er en begrunnelse på hvorfor utgifter ble beregnet slik"
             virkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-07-01")
         }
     }
 

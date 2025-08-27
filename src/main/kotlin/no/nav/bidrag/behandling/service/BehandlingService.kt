@@ -7,7 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -181,8 +181,8 @@ class BehandlingService(
             )
 
         opprettBehandling.søknadsreferanseid?.let {
-            behandling.klagedetaljer =
-                Klagedetaljer(
+            behandling.omgjøringsdetaljer =
+                Omgjøringsdetaljer(
                     soknadRefId = it,
                 )
         }

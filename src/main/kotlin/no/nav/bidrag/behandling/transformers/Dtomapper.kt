@@ -94,12 +94,10 @@ import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
-import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -778,7 +776,7 @@ class Dtomapper(
                 medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
                 innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
                 vedtakstype = vedtakstype,
-                opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+                opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
                 stønadstype = stonadstype,
                 engangsbeløptype = engangsbeloptype,
                 erKlageEllerOmgjøring = erKlageEllerOmgjøring,
@@ -787,15 +785,15 @@ class Dtomapper(
                 erDelvedtakFattet = vedtakDetaljer?.fattetDelvedtak?.isNotEmpty() == true,
                 søktFomDato = søktFomDato,
                 mottattdato = mottattdato,
-                klageMottattdato = klagedetaljer?.klageMottattdato,
+                klageMottattdato = omgjøringsdetaljer?.klageMottattdato,
                 søktAv = soknadFra,
                 saksnummer = saksnummer,
                 søknadsid = soknadsid,
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
                 roller = roller.map { it.tilDto() }.toSet(),
-                søknadRefId = klagedetaljer?.soknadRefId,
-                vedtakRefId = klagedetaljer?.påklagetVedtak,
+                søknadRefId = omgjøringsdetaljer?.soknadRefId,
+                vedtakRefId = omgjøringsdetaljer?.påklagetVedtak,
                 virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
@@ -816,10 +814,10 @@ class Dtomapper(
                             beregnTil = it.beregnTil ?: BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT,
                             beregnTilDato = finnBeregnTilDatoBehandling(it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                            opprinneligVedtakstidspunkt = klagedetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
+                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
                             opprinneligVirkningstidspunkt =
                                 it.opprinneligVirkningstidspunkt
-                                    ?: klagedetaljer?.opprinneligVirkningstidspunkt,
+                                    ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
                             manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
                             etterfølgendeVedtak = hentEtterfølgendeVedtakDto(this, it),
                             årsak = it.årsak ?: årsak,
@@ -860,8 +858,8 @@ class Dtomapper(
                         VirkningstidspunktDtoV2(
                             rolle = bidragsmottaker!!.tilDto(),
                             virkningstidspunkt = virkningstidspunkt,
-                            opprinneligVirkningstidspunkt = klagedetaljer?.opprinneligVirkningstidspunkt,
-                            opprinneligVedtakstidspunkt = klagedetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
+                            opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
+                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
                             årsak = årsak,
                             avslag = avslag,
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
@@ -880,7 +878,7 @@ class Dtomapper(
             virkningstidspunkt =
                 VirkningstidspunktDto(
                     virkningstidspunkt = virkningstidspunkt,
-                    opprinneligVirkningstidspunkt = klagedetaljer?.opprinneligVirkningstidspunkt,
+                    opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),

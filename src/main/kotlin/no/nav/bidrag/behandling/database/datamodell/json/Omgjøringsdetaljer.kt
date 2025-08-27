@@ -7,9 +7,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Converter(autoApply = true)
-class KlageDetaljerConverter : JsonColumnConverter<Klagedetaljer>(Klagedetaljer::class)
+class KlageDetaljerConverter : JsonColumnConverter<Omgjøringsdetaljer>(Omgjøringsdetaljer::class)
 
-data class Klagedetaljer(
+data class Omgjøringsdetaljer(
     val klageMottattdato: LocalDate? = null,
     val soknadRefId: Long? = null,
     var refVedtaksid: Int? = null,

@@ -46,7 +46,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
-import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
@@ -473,7 +472,7 @@ class BehandlingTilVedtakMapping(
                             omgjørVedtakId =
                                 when {
                                     resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak ->
-                                        behandling.klagedetaljer
+                                        behandling.omgjøringsdetaljer
                                             ?.påklagetVedtak
                                     else -> null
                                 },
@@ -543,7 +542,7 @@ class BehandlingTilVedtakMapping(
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
-                            omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                            omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                             kravhaver =
                                 it.barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -664,7 +663,7 @@ class BehandlingTilVedtakMapping(
                                     sak.hentRolleMedFnr(it.ident!!),
                                 ),
                         valutakode = "NOK",
-                        omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                        omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                         sak = Saksnummer(saksnummer),
                     )
                 }
@@ -686,7 +685,7 @@ class BehandlingTilVedtakMapping(
                             OpprettStønadsendringRequestDto(
                                 innkreving = innkrevingstype!!,
                                 skyldner = tilSkyldner(),
-                                omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                                omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                                 kravhaver =
                                     it.tilNyestePersonident()
                                         ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -745,7 +744,7 @@ class BehandlingTilVedtakMapping(
                                 referanse = hentUnikReferanseEngangsbeløp(kravhaver, engangsbeloptype!!),
                                 innkreving = innkrevingstype!!,
                                 skyldner = tilSkyldner(),
-                                omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                                omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                                 kravhaver = kravhaver,
                                 mottaker =
                                     roller
@@ -766,8 +765,8 @@ class BehandlingTilVedtakMapping(
         kravhaver: Personident,
         type: Engangsbeløptype,
         skyldner: Personident? = null,
-    ) = if (klagedetaljer?.refVedtaksid != null) {
-        val vedtak = vedtaksconsumer.hentVedtak(klagedetaljer?.refVedtaksid!!)!!
+    ) = if (omgjøringsdetaljer?.refVedtaksid != null) {
+        val vedtak = vedtaksconsumer.hentVedtak(omgjøringsdetaljer?.refVedtaksid!!)!!
         val engangsbeløp =
             vedtak.engangsbeløpListe.find {
                 it.type == type &&
@@ -813,7 +812,7 @@ class BehandlingTilVedtakMapping(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
                             referanse = hentUnikReferanseEngangsbeløp(kravhaver, engangsbeloptype!!),
-                            omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                            omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                             kravhaver =
                                 barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -863,7 +862,7 @@ class BehandlingTilVedtakMapping(
                         OpprettStønadsendringRequestDto(
                             innkreving = Innkrevingstype.MED_INNKREVING,
                             skyldner = tilSkyldner(),
-                            omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                            omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                             kravhaver =
                                 it.barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -898,7 +897,7 @@ class BehandlingTilVedtakMapping(
                             OpprettStønadsendringRequestDto(
                                 innkreving = Innkrevingstype.MED_INNKREVING,
                                 skyldner = tilSkyldner(),
-                                omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                                omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                                 kravhaver =
                                     it.tilNyestePersonident()
                                         ?: rolleManglerIdent(Rolletype.BARN, id!!),

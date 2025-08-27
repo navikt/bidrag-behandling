@@ -65,10 +65,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-11-18")
-            klagedetaljer?.klageMottattdato shouldBe null
+            omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
@@ -175,10 +175,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
@@ -262,10 +262,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             )!!
 
         assertSoftly(behandling) {
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 3
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 3
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
         }
     }
 
@@ -287,7 +287,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             avslag shouldBe Resultatkode.IKKE_OMSORG_FOR_BARNET
             notater shouldHaveSize 0
             virkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
         }
     }
 

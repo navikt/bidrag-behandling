@@ -20,7 +20,7 @@ import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
 import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljerConverter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -113,7 +113,7 @@ open class Behandling(
     @Column(name = "klagedetaljer", columnDefinition = "jsonb")
     @Convert(converter = KlageDetaljerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
-    open var klagedetaljer: Klagedetaljer? = null,
+    open var omgjøringsdetaljer: Omgjøringsdetaljer? = null,
     @Column(name = "vedtak_detaljer", columnDefinition = "jsonb")
     @Convert(converter = VedtakDetaljerConverter::class)
     @ColumnTransformer(write = "?::jsonb")
@@ -214,7 +214,7 @@ open class Behandling(
 
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
-    val erKlageEllerOmgjøring get() = klagedetaljer?.påklagetVedtak != null
+    val erKlageEllerOmgjøring get() = omgjøringsdetaljer?.påklagetVedtak != null
     val minstEnRolleHarBegrensetBeregnTilDato get() =
         søknadsbarn.any {
             it.opphørsdato != null ||

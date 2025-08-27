@@ -13,7 +13,7 @@ import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
@@ -131,8 +131,8 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -194,8 +194,8 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             "Boforhold",
             NotatType.BOFORHOLD,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -440,8 +440,8 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
         stubHentPersonNyIdent(testdataHusstandsmedlem1.ident, nyIdentHusstandsmedlem, mock)
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         behandling.avslag = Resultatkode.AVSLAG
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =

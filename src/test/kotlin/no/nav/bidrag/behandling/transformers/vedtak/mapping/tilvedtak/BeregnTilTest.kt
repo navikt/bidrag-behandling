@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import io.kotest.matchers.shouldBe
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagEtterfølgendeVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettPeriode
@@ -23,8 +23,8 @@ class BeregnTilTest {
         søknadsbarn.beregnTil = BeregnTil.INNEVÆRENDE_MÅNED
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -44,8 +44,8 @@ class BeregnTilTest {
         søknadsbarn.beregnTil = BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -64,8 +64,8 @@ class BeregnTilTest {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -85,8 +85,8 @@ class BeregnTilTest {
         søknadsbarn.opphørsdato = LocalDate.parse("2024-12-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -106,8 +106,8 @@ class BeregnTilTest {
         søknadsbarn.opphørsdato = LocalDate.parse("2025-12-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -126,8 +126,8 @@ class BeregnTilTest {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -146,8 +146,8 @@ class BeregnTilTest {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -166,8 +166,8 @@ class BeregnTilTest {
         søknadsbarn.beregnTil = BeregnTil.INNEVÆRENDE_MÅNED
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -187,8 +187,8 @@ class BeregnTilTest {
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opphørsdato = LocalDate.parse("2025-05-01")
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -207,8 +207,8 @@ class BeregnTilTest {
         søknadsbarn.beregnTil = BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
@@ -236,8 +236,8 @@ class BeregnTilTest {
         søknadsbarn.opphørsdato = LocalDate.parse("2025-05-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
                 påklagetVedtak = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),

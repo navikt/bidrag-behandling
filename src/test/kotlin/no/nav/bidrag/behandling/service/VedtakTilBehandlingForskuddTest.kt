@@ -65,7 +65,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2023-01-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe "F_Z994977 E_Z994977"
@@ -125,7 +125,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_KRAVFREMSETTELSE
             avslag shouldBe null
             virkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2024-02-01")
         }
     }
 
@@ -180,7 +180,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
                 12333,
             )!!
 
-        assertSoftly(behandling.klagedetaljer!!) {
+        assertSoftly(behandling.omgjøringsdetaljer!!) {
             opprinneligVedtakstidspunkt shouldHaveSize 3
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
@@ -239,7 +239,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
                 12333,
             )!!
 
-        assertSoftly(behandling.klagedetaljer!!) {
+        assertSoftly(behandling.omgjøringsdetaljer!!) {
             opprinneligVedtakstidspunkt shouldHaveSize 3
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
             opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
@@ -274,7 +274,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             avslag shouldBe null
             virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             søktFomDato shouldBe LocalDate.parse("2021-01-01")
             soknadFra shouldBe SøktAvType.BIDRAGSPLIKTIG
             stonadstype shouldBe Stønadstype.FORSKUDD
@@ -282,11 +282,11 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-01-01")
             vedtakstype shouldBe Vedtakstype.KLAGE
             vedtaksid shouldBe null
-            klagedetaljer?.soknadRefId shouldBe 222
+            omgjøringsdetaljer?.soknadRefId shouldBe 222
             soknadsid shouldBe 100
             opprettetAv shouldBe SAKSBEHANDLER_IDENT
             opprettetAvNavn shouldBe "Fornavn Etternavn"
-            klagedetaljer?.refVedtaksid shouldBe 12333
+            omgjøringsdetaljer?.refVedtaksid shouldBe 12333
 
             validerRoller()
         }
@@ -457,7 +457,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             årsak shouldBe null
             saksnummer shouldBe SAKSNUMMER
             virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             soknadFra shouldBe SøktAvType.BIDRAGSMOTTAKER
             stonadstype shouldBe Stønadstype.FORSKUDD
             behandlerEnhet shouldBe "4806"
