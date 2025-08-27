@@ -234,8 +234,7 @@ class BehandlingTilGrunnlagMappingV2(
                                 ),
                             ),
                     )
-            }.filterNotNull()
-            .toSet()
+            }.toSet()
     }
 
     fun Behandling.tilGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto> = emptySet()) =

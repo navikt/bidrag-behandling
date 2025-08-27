@@ -159,7 +159,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                 barn =
                     ResultatRolle(
                         barn?.ident ?: stønadsendring.kravhaver,
-                        hentPersonVisningsnavn(stønadsendring.kravhaver.verdi)!!,
+                        hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
                         barn?.fødselsdato ?: LocalDate.now(),
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
                         referanse = barnGrunnlag?.referanse ?: "",

@@ -65,6 +65,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var validerBeregning: ValiderBeregning
     lateinit var vedtakGrunnlagMapper: VedtakGrunnlagMapper
     lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
+    lateinit var behandlingTilGrunnlagMappingV2: BehandlingTilGrunnlagMappingV2
     val unleash = FakeUnleash()
 
     @MockK
@@ -84,7 +85,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
         every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         val personService = PersonService(personConsumer)
-        val behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
+        behandlingTilGrunnlagMappingV2 = BehandlingTilGrunnlagMappingV2(personService, BeregnSamværsklasseApi(stubSjablonService()))
         vedtakGrunnlagMapper =
             VedtakGrunnlagMapper(
                 behandlingTilGrunnlagMappingV2,
