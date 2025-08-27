@@ -359,7 +359,7 @@ class VedtakService(
         return response.vedtaksid
     }
 
-    fun fatteVedtakBidragKlage(
+    fun fatteVedtakBidragOmgjøring(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
     ): Int {
@@ -523,7 +523,7 @@ class VedtakService(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
     ): Int {
-        if (behandling.vedtakstype == Vedtakstype.KLAGE) return fatteVedtakBidragKlage(behandling, request)
+        if (behandling.erKlageEllerOmgjøring) return fatteVedtakBidragOmgjøring(behandling, request)
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 
