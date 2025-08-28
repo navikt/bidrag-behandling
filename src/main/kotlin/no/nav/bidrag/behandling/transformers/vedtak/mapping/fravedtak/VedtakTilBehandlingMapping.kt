@@ -170,7 +170,7 @@ class VedtakTilBehandlingMapping(
         behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, virkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
-            if (påklagetVedtak != vedtakId) {
+            if (!lesemodus || påklagetVedtak != vedtakId) {
                 Omgjøringsdetaljer(
                     opprinneligVedtakstype = opprinneligVedtakstype,
                     påklagetVedtak = påklagetVedtak,
