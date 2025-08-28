@@ -290,7 +290,12 @@ class VedtakGrunnlagMapper(
                         grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
                     }
                 }
-                val virkningstidspunkt = if (erBidrag()) søknadsbarnRolle.virkningstidspunkt else behandling.virkningstidspunkt
+                val virkningstidspunkt =
+                    if (erBidrag()) {
+                        søknadsbarnRolle.virkningstidspunkt ?: behandling.virkningstidspunkt
+                    } else {
+                        behandling.virkningstidspunkt
+                    }
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling(søknadsbarnRolle)
                 val grunnlagBeregning =
