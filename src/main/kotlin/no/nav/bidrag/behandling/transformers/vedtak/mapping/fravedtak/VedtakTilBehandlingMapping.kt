@@ -99,7 +99,7 @@ class VedtakTilBehandlingMapping(
 ) {
     fun VedtakDto.tilBehandling(
         vedtakId: Int,
-        påklagetVedtak: Int = vedtakId,
+        omgjørVedtak: Int = vedtakId,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
@@ -170,10 +170,10 @@ class VedtakTilBehandlingMapping(
         behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, virkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
-            if (!lesemodus || påklagetVedtak != vedtakId) {
+            if (!lesemodus || omgjørVedtak != vedtakId) {
                 Omgjøringsdetaljer(
                     opprinneligVedtakstype = opprinneligVedtakstype,
-                    påklagetVedtak = påklagetVedtak,
+                    omgjørVedtakId = omgjørVedtak,
                     innkrevingstype = innkrevingstype,
                     refVedtaksid = if (!lesemodus) vedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,

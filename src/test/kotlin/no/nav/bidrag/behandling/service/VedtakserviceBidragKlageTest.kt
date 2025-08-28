@@ -141,7 +141,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -211,7 +211,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -338,7 +338,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -451,7 +451,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -601,7 +601,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -753,7 +753,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -1077,7 +1077,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -1434,7 +1434,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2024-01-01").atStartOfDay()),
             )
@@ -1698,7 +1698,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2024-01-01").atStartOfDay()),
             )
@@ -1937,7 +1937,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )

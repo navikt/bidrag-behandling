@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
@@ -84,7 +83,7 @@ class VedtakService(
     private val behandlingTilVedtakMapping: BehandlingTilVedtakMapping,
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
     private val forsendelseService: ForsendelseService,
-    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
+//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
         try {
@@ -99,7 +98,7 @@ class VedtakService(
             return vedtakTilBehandlingMapping.run {
                 vedtak.opprinneligVedtak.tilBehandling(
                     vedtakId,
-                    påklagetVedtak = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
+                    omgjørVedtak = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
                     lesemodus = true,
                     erOrkestrertVedtak = vedtak.erOrkestrertVedtak,
                 )
@@ -214,11 +213,11 @@ class VedtakService(
             )
         }
 
-        val påklagetVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak)
+        val omgjørVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak)
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
                 vedtakId = refVedtaksid,
-                påklagetVedtak = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
+                omgjørVedtak = omgjørVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
                 søktFomDato = request.søktFomDato,
                 mottattdato = request.mottattdato,
                 soknadFra = request.søknadFra,
@@ -229,10 +228,10 @@ class VedtakService(
                 søknadstype = request.søknadstype,
                 lesemodus = false,
                 minsteVirkningstidspunkt =
-                    påklagetVedtakListe
+                    omgjørVedtakListe
                         .filter { it.virkningstidspunkt != null }
                         .minOfOrNull { it.virkningstidspunkt!! },
-                opprinneligVedtakstidspunkt = påklagetVedtakListe.map { it.vedtakstidspunkt }.toSet(),
+                opprinneligVedtakstidspunkt = omgjørVedtakListe.map { it.vedtakstidspunkt }.toSet(),
                 opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
             )

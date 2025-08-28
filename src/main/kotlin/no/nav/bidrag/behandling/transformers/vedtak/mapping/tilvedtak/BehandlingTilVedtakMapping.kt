@@ -473,7 +473,7 @@ class BehandlingTilVedtakMapping(
                                 when {
                                     resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak ->
                                         behandling.omgjøringsdetaljer
-                                            ?.påklagetVedtak
+                                            ?.omgjørVedtakId
                                     else -> null
                                 },
                             kravhaver =

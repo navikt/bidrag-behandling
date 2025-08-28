@@ -272,7 +272,7 @@ class GrunnlagService(
             .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
             .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
             .filter {
-                behandling.omgjøringsdetaljer?.påklagetVedtak == null || it.vedtaksid != behandling.omgjøringsdetaljer?.påklagetVedtak
+                behandling.omgjøringsdetaljer?.omgjørVedtakId == null || it.vedtaksid != behandling.omgjøringsdetaljer?.omgjørVedtakId
             }.sortedBy { it.vedtakstidspunkt }
             .forEach { vedtak ->
                 val harResultatInnvilgetVedtak =
@@ -370,7 +370,7 @@ class GrunnlagService(
                         .hentAlleVedtakForStønad(
                             behandling.tilStønadsid(sb),
                             sb.opprinneligVirkningstidspunkt!!.toYearMonth(),
-                            behandling.omgjøringsdetaljer?.påklagetVedtak,
+                            behandling.omgjøringsdetaljer?.omgjørVedtakId,
                         ).filter {
                             opprinneligVedtakstidspunkt == null ||
                                 it.justerVedtakstidspunkt().vedtakstidspunkt.isAfter(opprinneligVedtakstidspunkt)
@@ -1071,7 +1071,7 @@ class GrunnlagService(
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
-        !behandling.erVedtakFattet &&
+        !behandling.erVedtakFattet && (behandling.metadata == null || behandling.metadata?.erKlagePåBisysVedtak() == false) &&
             (
                 behandling.grunnlagSistInnhentet == null ||
                     LocalDateTime

@@ -65,7 +65,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -144,7 +144,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -237,7 +237,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L
@@ -312,7 +312,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L

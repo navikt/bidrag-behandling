@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell.json
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import jakarta.persistence.Converter
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -13,7 +14,8 @@ data class Omgjøringsdetaljer(
     val klageMottattdato: LocalDate? = null,
     val soknadRefId: Long? = null,
     var refVedtaksid: Int? = null,
-    val påklagetVedtak: Int? = null,
+    @JsonAlias("påklagetVedtak", "omgjørVedtak")
+    val omgjørVedtakId: Int? = null,
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,

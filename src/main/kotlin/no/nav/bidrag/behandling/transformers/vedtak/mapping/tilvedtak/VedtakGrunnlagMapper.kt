@@ -315,7 +315,7 @@ class VedtakGrunnlagMapper(
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
                         OmgjøringOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            omgjørVedtakId = behandling.omgjøringsdetaljer?.påklagetVedtak!!,
+                            omgjørVedtakId = behandling.omgjøringsdetaljer?.omgjørVedtakId!!,
                             gjelderKlage = behandling.vedtakstype == Vedtakstype.KLAGE,
                             innkrevingstype = behandling.innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
                             gjelderParagraf35c =
