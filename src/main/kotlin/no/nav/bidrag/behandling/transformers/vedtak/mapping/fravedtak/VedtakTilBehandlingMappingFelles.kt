@@ -285,7 +285,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
 
     val endeligVedtak =
         DelvedtakDto(
-            type = Vedtakstype.KLAGE,
+            type = type,
             omgjøringsvedtak = false,
             vedtaksid = null,
             delvedtak = false,

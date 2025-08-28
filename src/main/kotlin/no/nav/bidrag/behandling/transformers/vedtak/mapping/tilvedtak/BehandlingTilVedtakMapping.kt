@@ -218,7 +218,7 @@ class BehandlingTilVedtakMapping(
         vedtak: OpprettVedtakRequestDto?,
     ): OpprettVedtakRequestDto =
         mapper.run {
-            if (vedtak != null && behandling.vedtakstype == Vedtakstype.KLAGE) {
+            if (vedtak != null && behandling.erKlageEllerOmgjøring) {
                 val referanse = "resultatFraVedtak_$vedtaksid"
                 val resultatFraGrunnlag =
                     OpprettGrunnlagRequestDto(
@@ -228,7 +228,7 @@ class BehandlingTilVedtakMapping(
                             POJONode(
                                 ResultatFraVedtakGrunnlag(
                                     vedtaksid = vedtaksid,
-                                    vedtakstype = Vedtakstype.KLAGE,
+                                    vedtakstype = behandling.vedtakstype,
                                 ),
                             ),
                     )

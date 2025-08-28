@@ -33,13 +33,14 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequest
-import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorManuellAldersjustering
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.OmgjøringOrkestratorGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
@@ -307,9 +308,10 @@ class VedtakGrunnlagMapper(
                     )
                 val klageBeregning =
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
-                        KlageOrkestratorGrunnlag(
+                        OmgjøringOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            påklagetVedtakId = behandling.omgjøringsdetaljer?.påklagetVedtak!!,
+                            omgjørVedtakId = behandling.omgjøringsdetaljer?.påklagetVedtak!!,
+                            gjelderKlage = behandling.vedtakstype == Vedtakstype.KLAGE,
                             innkrevingstype = behandling.innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
                             gjelderParagraf35c =
                                 listOf(
@@ -331,10 +333,15 @@ class VedtakGrunnlagMapper(
                     }
                 return BidragsberegningOrkestratorRequest(
                     beregnGrunnlag = grunnlagBeregning,
-                    klageOrkestratorGrunnlag = klageBeregning,
+                    omgjøringOrkestratorGrunnlag = klageBeregning,
                     beregningstype =
                         when {
-                            behandling.erKlageEllerOmgjøring -> if (endeligBeregning) Beregningstype.KLAGE_ENDELIG else Beregningstype.KLAGE
+                            behandling.erKlageEllerOmgjøring ->
+                                if (endeligBeregning) {
+                                    Beregningstype.OMGJØRING_ENDELIG
+                                } else {
+                                    Beregningstype.OMGJØRING
+                                }
                             else -> Beregningstype.BIDRAG
                         },
                 )

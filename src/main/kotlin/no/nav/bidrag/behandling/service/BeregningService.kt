@@ -24,7 +24,7 @@ import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BeregnBasertPåVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak
+import no.nav.bidrag.beregn.barnebidrag.service.FinnesEtterfølgendeVedtakMedVirkningstidspunktFørOmgjortVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
 import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.beregn.core.bo.Periode
@@ -205,7 +205,7 @@ class BeregningService(
                                     )
                                 } ?: BeregnetBarnebidragResultat(),
                     )
-                } catch (e: FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak) {
+                } catch (e: FinnesEtterfølgendeVedtakMedVirkningstidspunktFørOmgjortVedtak) {
                     val beregnTilDato =
                         søknasdbarn
                             .behandling
