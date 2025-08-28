@@ -55,7 +55,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -164,7 +164,7 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var unleashFeaturesProvider: UnleashFeaturesProvider
 
     @MockkBean
-    lateinit var klageOrkestrator: KlageOrkestrator
+    lateinit var klageOrkestrator: OmgjøringOrkestrator
     val notatService = NotatService()
 
     @BeforeEach

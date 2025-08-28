@@ -23,7 +23,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -69,7 +69,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     val unleash = FakeUnleash()
 
     @MockK
-    lateinit var klageOrkestrator: KlageOrkestrator
+    lateinit var klageOrkestrator: OmgjøringOrkestrator
 
     open lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
 
