@@ -258,6 +258,8 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
         søknadsbarn
             .map { sb ->
                 val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(sb.ident) ?: sb.tilGrunnlagPerson()
+                val årsak = sb.årsak ?: årsak
+                val avslag = sb.avslag ?: avslag
                 GrunnlagDto(
                     referanse = opprettGrunnlagsreferanseVirkningstidspunkt(sb),
                     type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
@@ -265,12 +267,12 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                     innhold =
                         POJONode(
                             VirkningstidspunktGrunnlag(
-                                virkningstidspunkt = sb.virkningstidspunkt!!,
+                                virkningstidspunkt = sb.virkningstidspunkt ?: virkningstidspunkt!!,
                                 opphørsdato = sb.opphørsdato,
-                                årsak = sb.årsak,
+                                årsak = årsak,
                                 beregnTil = sb.beregnTil,
                                 beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
-                                avslag = (sb.årsak == null).ifTrue { sb.avslag!! },
+                                avslag = (årsak == null).ifTrue { avslag },
                             ),
                         ),
                 )
