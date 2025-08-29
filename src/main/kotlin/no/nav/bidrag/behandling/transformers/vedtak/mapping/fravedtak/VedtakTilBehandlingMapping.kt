@@ -182,9 +182,9 @@ class VedtakTilBehandlingMapping(
                 opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
             )
 
-        if (!lesemodus) {
-            behandlingRepository.save(behandling)
-        }
+//        if (!lesemodus) {
+//            behandling = behandlingRepository.save(behandling)
+//        }
 
         if (lesemodus) {
             behandling.lesemodusVedtak =
