@@ -170,12 +170,20 @@ class VedtakService(
                 "Oppretter behandling fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
                     "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
             }
+
+            behandlingService.hentEksisteredenBehandling(request.søknadsid)?.let {
+                secureLogger.warn {
+                    "Fant eksisterende behandling ${it.id} for søknadsId ${request.søknadsid}. Oppretter ikke ny behandling"
+                }
+                ugyldigForespørsel("Det finnes allerede en behandling for søknadsId ${request.søknadsid} med id ${it.id}")
+            }
+
             val konvertertBehandling =
                 konverterVedtakTilBehandling(request, refVedtaksid)
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
 
             tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
-            val behandlingDo = behandlingService.opprettBehandling(konvertertBehandling)
+            val behandlingDo = behandlingService.lagreBehandling(konvertertBehandling)
             grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
             LOGGER.info {
@@ -625,5 +633,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
+
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }
