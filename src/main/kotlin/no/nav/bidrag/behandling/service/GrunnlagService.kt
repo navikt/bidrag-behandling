@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
@@ -150,7 +151,7 @@ class GrunnlagService(
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
-            if (behandling.vedtakstype.kreverGrunnlag() && behandling.innhentGrunnlag()) {
+            if (behandling.vedtakstype.kreverGrunnlag()) {
                 val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
                 val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
                     tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
@@ -1192,7 +1193,10 @@ class GrunnlagService(
                 )
             }
             if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi) {
-                lagreAndreBarnTilBMGrunnlag(behandling, it.husstandsmedlemmerOgEgneBarnListe.toSet())
+                lagreAndreBarnTilBMGrunnlag(
+                    behandling,
+                    it.husstandsmedlemmerOgEgneBarnListe.toSet(),
+                )
             }
         }
 
@@ -1566,13 +1570,19 @@ class GrunnlagService(
             val feilrapportering = feilliste[type]
 
             if (feilrapportering != null) {
-                if (feilrapportering.feiltype != HentGrunnlagFeiltype.FUNKSJONELL_FEIL &&
+                if ((
+                        feilrapportering.feiltype != HentGrunnlagFeiltype.FUNKSJONELL_FEIL ||
+                            UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
+                    ) &&
                     årsbaserteInntekterEllerYtelser?.inntekter?.isEmpty() != false
                 ) {
                     log.warn {
                         "Feil ved innhenting av grunnlagstype $type for rolle ${rolleInhentetFor.rolletype} " +
                             "i behandling ${behandling.id}. Lagrer ikke sammenstilte inntekter. Feilmelding: " +
                             feilrapportering.feilmelding
+                    }
+                    if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled) {
+                        aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, type, rolleInhentetFor)
                     }
                     return@forEach
                 }
@@ -2316,6 +2326,52 @@ fun List<RelatertPersonGrunnlagDto>.filtrerSøknadsbarn(behandling: Behandling) 
             borISammeHusstandDtoListe = emptyList(),
         )
     }
+
+fun List<RelatertPersonGrunnlagDto>.leggTilBarnSomMangler(behandling: Behandling) =
+    behandling.husstandsmedlem.map { hm ->
+        this.find { hm2 -> hm2.gjelderPersonId == hm.ident && (hm.rolle == null || hm.rolle!!.rolletype != Rolletype.BIDRAGSPLIKTIG) }
+            ?: RelatertPersonGrunnlagDto(
+                gjelderPersonId = hm.ident,
+                partPersonId = behandling.bidragsmottaker!!.ident,
+                navn = hm.navn,
+                fødselsdato = hm.fødselsdato,
+                relasjon = Familierelasjon.BARN,
+                borISammeHusstandDtoListe = emptyList(),
+            )
+    }
+
+fun List<RelatertPersonGrunnlagDto>.leggTilRelaterPersonGrunnlagSomMangler(behandling: Behandling) =
+    behandling.søknadsbarn.map {
+        this.find { rolle -> rolle.gjelderPersonId == it.ident } ?: RelatertPersonGrunnlagDto(
+            gjelderPersonId = it.ident,
+            partPersonId = behandling.bidragsmottaker!!.ident,
+            navn = it.hentNavn(),
+            fødselsdato = it.fødselsdato,
+            relasjon = Familierelasjon.BARN,
+            borISammeHusstandDtoListe = emptyList(),
+        )
+    } +
+        behandling.husstandsmedlem.map { hm ->
+            this.find { hm2 -> hm2.gjelderPersonId == hm.ident && hm.rolle == null } ?: RelatertPersonGrunnlagDto(
+                gjelderPersonId = hm.ident,
+                partPersonId = behandling.bidragsmottaker!!.ident,
+                navn = hm.navn,
+                fødselsdato = hm.fødselsdato,
+                relasjon = Familierelasjon.BARN,
+                borISammeHusstandDtoListe = emptyList(),
+            )
+        } +
+        behandling.husstandsmedlem.map { hm ->
+            this.find { hm2 -> hm2.gjelderPersonId == hm.ident && hm.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
+                ?: RelatertPersonGrunnlagDto(
+                    gjelderPersonId = hm.ident,
+                    partPersonId = behandling.bidragsmottaker!!.ident,
+                    navn = hm.navn,
+                    fødselsdato = hm.fødselsdato,
+                    relasjon = Familierelasjon.INGEN,
+                    borISammeHusstandDtoListe = emptyList(),
+                )
+        }
 
 fun List<RelatertPersonGrunnlagDto>.filtrerBasertPåRolle(
     behandling: Behandling,

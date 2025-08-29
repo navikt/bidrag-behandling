@@ -110,7 +110,7 @@ class VedtakService(
     }
 
     private fun hentOrkestrertVedtak(vedtakId: Int): OrkestrertVedtak? {
-        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
+        val vedtak = hentVedtak(vedtakId) ?: return null
         val erOrkestrertVedtak = vedtak.erOrkestrertVedtak && vedtak.type != Vedtakstype.INNKREVING
         val referertVedtak =
             if (vedtak.harResultatFraAnnenVedtak && (vedtak.erOrkestrertVedtak || vedtak.erDelvedtak) &&
@@ -155,7 +155,7 @@ class VedtakService(
         if (refererTilVedtakId.isNotEmpty()) {
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
-                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
+                    val opprinneligVedtak = hentVedtak(vedtaksid)!!
 
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
                 }.toSet() +

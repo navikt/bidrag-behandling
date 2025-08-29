@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers.grunnlag
 
 import com.fasterxml.jackson.databind.node.POJONode
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
@@ -227,7 +228,7 @@ fun List<Grunnlag>.opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMan
             relasjon = Familierelasjon.BARN,
             borISammeHusstandDtoListe = emptyList(),
         ).tilGrunnlagsobjekt(
-            LocalDateTime.now(),
+            LocalDateTime.now().withSecond(0).withNano(0),
             personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident)!!.referanse,
             personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
         )
@@ -324,6 +325,8 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
                     inntekt,
                     false,
                 )
+            } else if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled) {
+                emptyList()
             } else {
                 grunnlagByggingFeilet(
                     "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +

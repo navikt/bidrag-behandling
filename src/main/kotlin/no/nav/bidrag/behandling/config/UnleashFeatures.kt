@@ -8,6 +8,10 @@ enum class UnleashFeatures(
     defaultValue: Boolean,
 ) {
     DEBUG_LOGGING("debug_logging", false),
+
+    // I Q1 ved opprettelse av klage så blir alle inntekter fjernet fordi de ikke finnes i testmiljøene.
+    // Dette er for å unngå de slettes ved grunnlagsinnhenting
+    GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK("behandling.grunnlag_behandle_funksjonell_feil_som_teknisk", true),
     FATTE_VEDTAK("behandling.fattevedtak_klage", false),
     BIDRAG_V2_ENDRING("behandling.v2_endring", false),
     BIDRAG_KLAGE("behandling.bidrag_klage", false),
