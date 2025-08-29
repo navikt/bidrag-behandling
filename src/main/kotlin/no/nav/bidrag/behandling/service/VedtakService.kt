@@ -19,7 +19,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
-import no.nav.bidrag.behandling.transformers.skalInnkrevingUtsettes
+import no.nav.bidrag.behandling.transformers.skalInnkrevingKunneUtsettes
 import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
@@ -538,7 +538,7 @@ class VedtakService(
                     }
                 }.copy(
                     innkrevingUtsattTilDato =
-                        if (behandling.vedtakstype.skalInnkrevingUtsettes()) {
+                        if (behandling.skalInnkrevingKunneUtsettes()) {
                             request?.innkrevingUtsattAntallDager?.let {
                                 LocalDate.now().plusDays(it)
                             }
