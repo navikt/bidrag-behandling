@@ -171,7 +171,7 @@ class ForsendelseService(
             )
 
         val opprettForRoller = opprettForRoller(request.roller, request.behandlingInfo)
-        secureLogger.debug {
+        secureLogger.info {
             "Oppretter forsendelse ${request.behandlingInfo.typeForsendelse()}brev " +
                 "for ${opprettForRoller.size} roller (${opprettForRoller.joinToString(",")}) og behandling ${request.behandlingInfo}"
         }
