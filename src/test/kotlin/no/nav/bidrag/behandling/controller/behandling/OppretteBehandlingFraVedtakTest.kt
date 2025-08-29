@@ -110,7 +110,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
                         behandlerenhet = "4444",
                         saksnummer = "1234567",
                         søknadsreferanseid = 111,
-                        søknadsid = 12323,
+                        søknadsid = 123233,
                     ),
                 ),
                 OpprettBehandlingResponse::class.java,
