@@ -81,17 +81,22 @@ class BehandlingService(
         behandlingRepository.logiskSlett(behandling.id!!)
     }
 
-    fun opprettBehandling(behandling: Behandling): Behandling =
-        behandlingRepository.findFirstBySoknadsid(behandling.soknadsid!!)?.let {
+    fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
+
+    fun lagreBehandling(behandling: Behandling): Behandling =
+        behandlingRepository.save(behandling).let {
+            if (behandling.vedtakstype.kreverGrunnlag()) {
+                opprettForsendelseForBehandling(it)
+            }
+            it
+        }
+
+    fun opprettBehandlingHvisIkkeEksisterer(behandling: Behandling) =
+        hentEksisteredenBehandling(behandling.soknadsid!!)?.let {
             log.debug { "Fant eksisterende behandling ${it.id} for søknadsId ${behandling.soknadsid}. Oppretter ikke ny behandling" }
             return it
         } ?: run {
-            behandlingRepository.save(behandling).let {
-                if (behandling.vedtakstype.kreverGrunnlag()) {
-                    opprettForsendelseForBehandling(it)
-                }
-                it
-            }
+            lagreBehandling(behandling)
         }
 
     @Transactional
@@ -207,7 +212,7 @@ class BehandlingService(
             behandling.samvær = behandling.søknadsbarn.map { Samvær(behandling, rolle = it) }.toMutableSet()
         }
 
-        val behandlingDo = opprettBehandling(behandling)
+        val behandlingDo = opprettBehandlingHvisIkkeEksisterer(behandling)
 
         if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype.kreverGrunnlag()) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
