@@ -202,6 +202,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
 
         val vedtak1 =
             originalVedtak.copy(
+                vedtaksid = 2,
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
                 grunnlagListe =
                     originalVedtak.grunnlagListe.map {
@@ -237,7 +238,8 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
+            omgjøringsdetaljer?.refVedtaksid shouldBe null
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L
