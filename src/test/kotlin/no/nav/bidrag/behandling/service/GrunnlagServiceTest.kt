@@ -4253,6 +4253,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandling = b,
                         type = Grunnlagsdatatype.BOFORHOLD,
                         erBearbeidet = erBearbeidet,
+                        grunnlagFraVedtakSomSkalOmgjøres = false,
                         "{\"test\": \"opp\"}",
                         innhentet = tidspunktInnhentet,
                         aktiv = tidspunktInnhentet,

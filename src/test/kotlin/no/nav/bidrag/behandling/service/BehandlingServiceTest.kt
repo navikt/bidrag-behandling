@@ -1249,6 +1249,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         b,
                         Grunnlagsdatatype.ARBEIDSFORHOLD,
                         false,
+                        false,
                         commonObjectmapper.writeValueAsString(setOf(nyttArbeidsforhold)),
                         LocalDateTime.now(),
                         null,

@@ -66,7 +66,7 @@ import java.time.YearMonth
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
     if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
 //        val beløpshistorikk = hentSisteBeløpshistorikk(tilStønadsid(søknadsbarnRolle))
-        val beløpshistorikk = hentBeløpshistorikk(søknadsbarnRolle).konvertereData<StønadDto>()
+        val beløpshistorikk = hentBeløpshistorikk(søknadsbarnRolle, false).konvertereData<StønadDto>()
         beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom }
     } else {
         null

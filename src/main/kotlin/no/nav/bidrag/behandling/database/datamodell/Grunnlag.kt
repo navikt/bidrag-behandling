@@ -35,6 +35,7 @@ open class Grunnlag(
     @Enumerated(EnumType.STRING)
     open val type: Grunnlagsdatatype,
     open val erBearbeidet: Boolean = false,
+    open val grunnlagFraVedtakSomSkalOmgjøres: Boolean = false,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var data: String,
@@ -99,8 +100,13 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
 fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
     gjelderBarnIdent: String,
     type: Grunnlagsdatatype,
+    grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
 ) = hentSisteAktiv()
-    .find { it.gjelder == gjelderBarnIdent && type == it.type }
+    .find {
+        it.gjelder == gjelderBarnIdent && type == it.type &&
+            // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres
+            if (grunnlagFraVedtakSomSkalOmgjøres == null) true else it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
+    }
 
 fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
     hentSisteAktiv()

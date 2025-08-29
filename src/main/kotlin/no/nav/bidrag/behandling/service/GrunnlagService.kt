@@ -61,6 +61,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
+import no.nav.bidrag.behandling.transformers.innhentGrunnlag
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.tilType
@@ -149,7 +150,7 @@ class GrunnlagService(
         if (foretaNyGrunnlagsinnhenting(behandling)) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
-            if (behandling.vedtakstype.kreverGrunnlag()) {
+            if (behandling.vedtakstype.kreverGrunnlag() && behandling.innhentGrunnlag()) {
                 val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
                 val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
                     tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
@@ -165,6 +166,7 @@ class GrunnlagService(
                 }
             }
             feilrapporteringer += hentOgLagreEtterfølgendeVedtak(behandling)
+            feilrapporteringer += lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
             feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
             feilrapporteringer += lagreManuelleVedtakGrunnlag(behandling)
 
@@ -340,18 +342,34 @@ class GrunnlagService(
             }.sortedByDescending { it.fattetTidspunkt }
     }
 
+    fun lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        if (behandling.tilType() != TypeBehandling.BIDRAG || !behandling.erKlageEllerOmgjøring) return emptyMap()
+
+        val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+
+        feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling, true))
+
+        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling, true))
+        }
+        if (behandling.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling, true))
+        }
+        return feilrapporteringer
+    }
+
     fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (behandling.tilType() != TypeBehandling.BIDRAG) return emptyMap()
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
 
-        feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling))
+        feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling, false))
 
         if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
-            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling))
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling, false))
         }
         if (behandling.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
-            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling))
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling, false))
         }
         return feilrapporteringer
     }
@@ -412,6 +430,7 @@ class GrunnlagService(
     fun hentOgLagreBeløpshistorikk(
         stønadstype: Stønadstype,
         behandling: Behandling,
+        fraOpprinneligVedtakstidspunkt: Boolean,
     ): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
         val type =
@@ -424,7 +443,7 @@ class GrunnlagService(
         behandling.søknadsbarn.forEach { sb ->
             try {
                 val eksisterendeGrunnlag =
-                    behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type)
+                    behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type, fraOpprinneligVedtakstidspunkt)
                 val grunnlagEksistererFraKlage = eksisterendeGrunnlag != null && behandling.erKlageEllerOmgjøring
                 if (grunnlagEksistererFraKlage) {
                     // Hvis grunnlag allerede eksisterer fra klage, så skal det ikke hentes på nytt.
@@ -433,7 +452,7 @@ class GrunnlagService(
                 }
                 val respons =
                     barnebidragGrunnlagInnhenting
-                        .hentBeløpshistorikk(behandling, sb, stønadstype)
+                        .hentBeløpshistorikk(behandling, sb, stønadstype, fraOpprinneligVedtakstidspunkt)
                         ?.korrigerIndeksår(sb)
                 if (eksisterendeGrunnlag == null &&
                     respons != null ||
@@ -450,6 +469,7 @@ class GrunnlagService(
                             data = commonObjectmapper.writeValueAsString(respons),
                             gjelder = sb.personident!!.verdi,
                             innhentet = LocalDateTime.now(),
+                            grunnlagFraVedtakSomSkalOmgjøres = fraOpprinneligVedtakstidspunkt,
                             aktiv = LocalDateTime.now(),
                             rolle =
                                 when (type) {
@@ -1071,8 +1091,7 @@ class GrunnlagService(
     }
 
     private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
-        !behandling.erVedtakFattet && (behandling.metadata == null || behandling.metadata?.erKlagePåBisysVedtak() == false) &&
-            !behandling.erKlageEllerOmgjøring &&
+        !behandling.erVedtakFattet &&
             (
                 behandling.grunnlagSistInnhentet == null ||
                     LocalDateTime

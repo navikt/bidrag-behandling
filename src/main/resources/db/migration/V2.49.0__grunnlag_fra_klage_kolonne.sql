@@ -1,0 +1,1 @@
+alter table grunnlag add column if not exists grunnlag_fra_vedtak_som_skal_omgjøres boolean default false;

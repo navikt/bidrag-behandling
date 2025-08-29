@@ -90,6 +90,7 @@ class BarnebidragGrunnlagInnhenting(
         behandling: Behandling,
         søknadsbarn: Rolle,
         stønadstype: Stønadstype,
+        fraOpprinneligVedtakstidspunkt: Boolean = true,
     ): StønadDto? {
         val request =
             if (stønadstype == Stønadstype.FORSKUDD) {
@@ -97,12 +98,14 @@ class BarnebidragGrunnlagInnhenting(
                     stønadstype = Stønadstype.FORSKUDD,
                     skyldner = personIdentNav,
                     søknadsbarn = søknadsbarn,
+                    fraOpprinneligVedtakstidspunkt = fraOpprinneligVedtakstidspunkt,
                 )
             } else {
                 behandling.createStønadHistoriskRequest(
                     stønadstype = stønadstype,
                     søknadsbarn = søknadsbarn,
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
+                    fraOpprinneligVedtakstidspunkt = fraOpprinneligVedtakstidspunkt,
                 )
             }
         return bidragBeløpshistorikkConsumer.hentHistoriskeStønader(request)
@@ -162,13 +165,14 @@ class BarnebidragGrunnlagInnhenting(
         stønadstype: Stønadstype,
         søknadsbarn: Rolle,
         skyldner: Personident?,
+        fraOpprinneligVedtakstidspunkt: Boolean,
     ) = HentStønadHistoriskRequest(
         type = stønadstype,
         sak = Saksnummer(saksnummer),
         skyldner = skyldner ?: Personident(bidragspliktig!!.ident!!),
         kravhaver = Personident(søknadsbarn.ident!!),
         gyldigTidspunkt =
-            if (erKlageEllerOmgjøring) {
+            if (erKlageEllerOmgjøring && fraOpprinneligVedtakstidspunkt) {
                 omgjøringsdetaljer!!.opprinneligVedtakstidspunkt.min().minusMinutes(1)
             } else {
                 LocalDateTime.now()

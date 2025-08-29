@@ -634,14 +634,17 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
             ).groupBy { it.gjelderBarnReferanse }
                 .map { (gjelderBarnReferanse, grunnlagsliste) ->
-                    val gjelder = hentPersonMedReferanse(gjelderBarnReferanse)!!
-                    val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelder.personIdent }!!
+                    val grunnlag = grunnlagsliste.firstOrNull()
+                    val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!
+                    val gjelder = grunnlag?.let { hentPersonMedReferanse(grunnlag.gjelderReferanse) }
+                    val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelderBarn.personIdent }!!
                     behandling.opprettGrunnlag(
                         it.tilGrunnlagsdatatypeBeløpshistorikk(),
-                        grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
-                        gjelder.personIdent!!,
-                        behandling.omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min(),
-                        lesemodus,
+                        behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
+                        rolleIdent = rolleBarn.ident!!,
+                        gjelder = gjelder?.personIdent,
+                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min(),
+                        lesemodus = lesemodus,
                     )
                 }
         }
@@ -928,6 +931,7 @@ fun Behandling.opprettGrunnlag(
     type = type,
     erBearbeidet = erBearbeidet,
     gjelder = gjelder,
+    grunnlagFraVedtakSomSkalOmgjøres = true,
     aktiv = innhentetTidspunkt,
     rolle = roller.find { it.ident == rolleIdent }!!,
 )
