@@ -290,8 +290,8 @@ fun hentEtterfølgendeVedtakDto(
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
         // TODO sjekke opphør fra opprinnelig eller nåværende historikk?
-        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
-            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, erKlageEllerOmgjøring)
+            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, erKlageEllerOmgjøring)
             ?: return null
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
     val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null

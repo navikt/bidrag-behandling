@@ -57,7 +57,7 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres
 }
 
 fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
