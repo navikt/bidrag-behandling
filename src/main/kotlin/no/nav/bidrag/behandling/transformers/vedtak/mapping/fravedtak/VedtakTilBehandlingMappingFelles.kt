@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
@@ -50,6 +51,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -938,13 +940,15 @@ fun Behandling.opprettGrunnlag(
 
 internal fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
-    medIVedtak: Boolean,
+    fraOpprinneligVedtak: Boolean,
     gjelderReferanse: Grunnlagsreferanse? = null,
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
-    .filter { gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse == gjelderReferanse }
-    .map { it.innholdTilObjekt<NotatGrunnlag>() }
-    .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
+    .filter {
+        gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty() ||
+            it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderReferanse
+    }.map { it.innholdTilObjekt<NotatGrunnlag>() }
+    .find { it.type == type && it.fraOpprinneligVedtak == fraOpprinneligVedtak }
     ?.innhold
 
 internal fun VedtakDto.avslagskode(): Resultatkode? {
@@ -1159,6 +1163,9 @@ private fun GrunnlagDto.tilRolle(
     avslag = virkningstidspunktGrunnlag?.avslag,
     opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
     fødselsdato = personObjekt.fødselsdato,
+    beregnTil =
+        virkningstidspunktGrunnlag?.beregnTil
+            ?: if (behandling.erBidrag()) BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT else BeregnTil.INNEVÆRENDE_MÅNED,
     grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
 )
 

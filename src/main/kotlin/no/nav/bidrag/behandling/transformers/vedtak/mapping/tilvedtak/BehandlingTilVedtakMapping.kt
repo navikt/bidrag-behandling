@@ -240,7 +240,8 @@ class BehandlingTilVedtakMapping(
                         ).map(GrunnlagDto::tilOpprettRequestDto)
                 val stønadsendringGrunnlag =
                     virkningstidspunktGrunnlag +
-                        behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto)
+                        behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
+                        behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
                 val grunnlagliste = (stønadsendringGrunnlag + listOf(resultatFraGrunnlag)).toMutableList()
                 behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                     type = Vedtakstype.INNKREVING,

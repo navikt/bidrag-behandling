@@ -482,10 +482,10 @@ fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.
 fun Behandling.tilNotat(
     notattype: Notattype,
     tekst: String,
-    rolleVedInntekt: Rolle? = null,
+    rolle: Rolle? = null,
     delAvBehandling: Boolean = true,
 ): Notat {
-    val gjelder = this.henteRolleForNotat(notattype, rolleVedInntekt)
+    val gjelder = this.henteRolleForNotat(notattype, rolle)
     return Notat(behandling = this, rolle = gjelder, type = notattype, innhold = tekst, erDelAvBehandlingen = delAvBehandling)
 }
 

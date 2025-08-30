@@ -261,6 +261,32 @@ fun Behandling.hentBeløpshistorikk(
         grunnlagFraVedtakSomSkalOmgjøres,
     )
 
+fun hentEtterfølgendeVedtakDto(
+    behandling: Behandling,
+    søknadsbarn: Rolle,
+): EtterfølgendeVedtakDto? {
+    val grunnlag =
+        behandling.hentEtterfølgendeVedtak(søknadsbarn)
+    return grunnlag
+        .konvertereData<List<VedtakForStønad>>()
+        ?.groupBy { it.virkningstidspunkt }
+        ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
+        ?.filter { !it.type.erIndeksEllerAldersjustering }
+        ?.map {
+            EtterfølgendeVedtakDto(
+                vedtaksttidspunkt = it.vedtakstidspunkt,
+                vedtakstype = it.type,
+                virkningstidspunkt = it.virkningstidspunkt!!,
+                sistePeriodeDatoFom = it.stønadsendring.periodeListe.maxOf { it.periode.fom },
+                opphørsdato =
+                    it.stønadsendring.periodeListe
+                        .filter { it.beløp == null }
+                        .maxOfOrNull { it.periode.fom },
+                vedtaksid = it.vedtaksid,
+            )
+        }?.minByOrNull { it.vedtaksttidspunkt }
+}
+
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
         // TODO sjekke opphør fra opprinnelig eller nåværende historikk?
