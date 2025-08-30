@@ -14,7 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -78,7 +78,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBel�
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
-import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
@@ -100,7 +99,7 @@ class VedtakTilBehandlingMapping(
 ) {
     fun VedtakDto.tilBehandling(
         vedtakId: Int,
-        påklagetVedtak: Int = vedtakId,
+        omgjørVedtak: Int = vedtakId,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
@@ -170,17 +169,21 @@ class VedtakTilBehandlingMapping(
 
         behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, virkningstidspunkt)
 
-        behandling.klagedetaljer =
-            Klagedetaljer(
-                opprinneligVedtakstype = opprinneligVedtakstype,
-                påklagetVedtak = påklagetVedtak,
-                innkrevingstype = innkrevingstype,
-                refVedtaksid = if (!lesemodus) vedtakId else null,
-                klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
-                soknadRefId = søknadRefId,
-                opprinneligVirkningstidspunkt = virkningstidspunkt,
-                opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
-            )
+        behandling.omgjøringsdetaljer =
+            if (!lesemodus || omgjørVedtak != vedtakId) {
+                Omgjøringsdetaljer(
+                    opprinneligVedtakstype = opprinneligVedtakstype,
+                    omgjørVedtakId = omgjørVedtak,
+                    innkrevingstype = innkrevingstype,
+                    refVedtaksid = if (!lesemodus) vedtakId else null,
+                    klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
+                    soknadRefId = søknadRefId,
+                    opprinneligVirkningstidspunkt = virkningstidspunkt,
+                    opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
+                )
+            } else {
+                null
+            }
 
 //        if (!lesemodus) {
 //            behandling = behandlingRepository.save(behandling)
@@ -215,35 +218,94 @@ class VedtakTilBehandlingMapping(
         behandling.grunnlag =
             if (type == Vedtakstype.INDEKSREGULERING) mutableSetOf() else grunnlagListe.mapGrunnlag(behandling, lesemodus)
 
+        mapBegrunnelser(behandling, lesemodus)
+        return behandling
+    }
+
+    private fun VedtakDto.mapBegrunnelser(
+        behandling: Behandling,
+        lesemodus: Boolean,
+    ) {
         notatMedType(NotatType.BOFORHOLD, false)?.let {
             behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))
         }
+
         notatMedType(Notattype.UTGIFTER, false)?.let {
             behandling.notater.add(behandling.tilNotat(NotatType.UTGIFTER, it, delAvBehandling = lesemodus))
         }
-        notatMedType(NotatType.VIRKNINGSTIDSPUNKT, false)?.let {
-            behandling.notater.add(behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, delAvBehandling = lesemodus))
+
+        if (lesemodus) {
+            notatMedType(NotatType.BOFORHOLD, true)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = false))
+            }
+            notatMedType(Notattype.UTGIFTER, true)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.UTGIFTER, it, delAvBehandling = false))
+            }
         }
+
+        behandling.roller.forEach { r ->
+            notatMedType(NotatType.VIRKNINGSTIDSPUNKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                behandling.notater.add(
+                    behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, r, delAvBehandling = lesemodus),
+                )
+            }
+            if (lesemodus) {
+                notatMedType(NotatType.VIRKNINGSTIDSPUNKT, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, r, delAvBehandling = false),
+                    )
+                }
+            }
+        }
+
         behandling.roller.forEach { r ->
             notatMedType(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                 behandling.notater.add(
                     behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, r, delAvBehandling = lesemodus),
                 )
             }
+            if (lesemodus) {
+                notatMedType(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, r, delAvBehandling = false),
+                    )
+                }
+            }
         }
         behandling.roller.forEach { r ->
             notatMedType(NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                 behandling.notater.add(behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = lesemodus))
+            }
+            if (lesemodus) {
+                notatMedType(NotatType.INNTEKT, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = false),
+                    )
+                }
             }
         }
         behandling.roller.forEach { r ->
             notatMedType(NotatType.SAMVÆR, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                 behandling.notater.add(behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = lesemodus))
             }
+            if (lesemodus) {
+                notatMedType(NotatType.SAMVÆR, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = false),
+                    )
+                }
+            }
         }
         behandling.roller.forEach { r ->
             notatMedType(NotatType.PRIVAT_AVTALE, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                 behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
+            }
+            if (lesemodus) {
+                notatMedType(NotatType.PRIVAT_AVTALE, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = false),
+                    )
+                }
             }
         }
         behandling.roller.forEach { r ->
@@ -254,9 +316,30 @@ class VedtakTilBehandlingMapping(
             )?.let {
                 behandling.notater.add(behandling.tilNotat(NotatType.UNDERHOLDSKOSTNAD, it, r, delAvBehandling = lesemodus))
             }
+            if (lesemodus) {
+                notatMedType(NotatType.UNDERHOLDSKOSTNAD, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.UNDERHOLDSKOSTNAD, it, r, delAvBehandling = false),
+                    )
+                }
+            }
         }
-
-        return behandling
+        behandling.roller.forEach { r ->
+            notatMedType(
+                NotatType.PRIVAT_AVTALE,
+                false,
+                grunnlagListe.hentPerson(r.ident)?.referanse,
+            )?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
+            }
+            if (lesemodus) {
+                notatMedType(NotatType.PRIVAT_AVTALE, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = false),
+                    )
+                }
+            }
+        }
     }
 
     fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto? =

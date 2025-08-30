@@ -358,6 +358,7 @@ class DtoMapperTest : TestContainerRunner() {
                     b,
                     Grunnlagsdatatype.ARBEIDSFORHOLD,
                     false,
+                    false,
                     commonObjectmapper.writeValueAsString(setOf(nyttArbeidsforhold)),
                     LocalDateTime.now(),
                     null,
@@ -533,6 +534,7 @@ class DtoMapperTest : TestContainerRunner() {
                 Grunnlag(
                     behandling,
                     Grunnlagsdatatype.TILLEGGSSTØNAD,
+                    false,
                     false,
                     commonObjectmapper.writeValueAsString(setOf(tilleggsstønadsgrunnlag)),
                     LocalDateTime.now(),

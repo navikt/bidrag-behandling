@@ -23,7 +23,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -1796,8 +1796,8 @@ class GrunnlagMappingTest {
                 årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                 virkningstidspunkt = LocalDate.parse("2023-02-01"),
                 id = id,
-                klagedetaljer =
-                    Klagedetaljer(
+                omgjøringsdetaljer =
+                    Omgjøringsdetaljer(
                         soknadRefId = søknadRefId,
                     ),
             )

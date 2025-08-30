@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell.json
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import jakarta.persistence.Converter
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -7,13 +8,14 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Converter(autoApply = true)
-class KlageDetaljerConverter : JsonColumnConverter<Klagedetaljer>(Klagedetaljer::class)
+class KlageDetaljerConverter : JsonColumnConverter<Omgjøringsdetaljer>(Omgjøringsdetaljer::class)
 
-data class Klagedetaljer(
+data class Omgjøringsdetaljer(
     val klageMottattdato: LocalDate? = null,
     val soknadRefId: Long? = null,
     var refVedtaksid: Int? = null,
-    val påklagetVedtak: Int? = null,
+    @JsonAlias("påklagetVedtak", "omgjørVedtak")
+    val omgjørVedtakId: Int? = null,
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,

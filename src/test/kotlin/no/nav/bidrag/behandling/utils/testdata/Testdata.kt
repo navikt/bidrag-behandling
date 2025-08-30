@@ -283,7 +283,7 @@ fun oppretteBehandling(
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
         virkningstidspunkt = virkningstidspunkt,
         id = id,
-        klagedetaljer = null,
+        omgjøringsdetaljer = null,
     )
 
 fun opprettInntekter(

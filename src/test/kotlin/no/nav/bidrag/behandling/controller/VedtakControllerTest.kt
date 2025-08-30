@@ -325,7 +325,7 @@ class VedtakControllerTest : KontrollerTestRunner() {
     @Test
     fun `Skal ikke fatte vedtak hvis nyeste opplysninger ikke er aktivert for klage`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, Vedtakstype.KLAGE)
-        behandling.klagedetaljer?.refVedtaksid = 1
+        behandling.omgjøringsdetaljer?.refVedtaksid = 1
         behandlingRepository.save(behandling)
         val grunnlag =
             opprettAlleAktiveGrunnlagFraFil(

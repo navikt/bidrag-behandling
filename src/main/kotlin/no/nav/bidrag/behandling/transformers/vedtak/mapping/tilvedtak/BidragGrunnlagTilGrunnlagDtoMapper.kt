@@ -61,9 +61,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(
     val personnavn = navn ?: hentPersonVisningsnavn(gjelderPersonId)
 
     return GrunnlagDto(
-        referanse =
-            referanse
-                ?: opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER, fødselsdato!!, gjelderPersonId, navn),
+        referanse = opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER, fødselsdato!!, gjelderPersonId, navn),
         grunnlagsreferanseListe = listOf(innhentetReferanse),
         type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
         innhold =

@@ -20,7 +20,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
@@ -55,7 +55,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -164,7 +164,7 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var unleashFeaturesProvider: UnleashFeaturesProvider
 
     @MockkBean
-    lateinit var klageOrkestrator: KlageOrkestrator
+    lateinit var klageOrkestrator: OmgjøringOrkestrator
     val notatService = NotatService()
 
     @BeforeEach
@@ -358,8 +358,8 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null))
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!)
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.now(),
             )
 

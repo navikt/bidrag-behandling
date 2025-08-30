@@ -14,7 +14,7 @@ import io.mockk.mockkClass
 import io.mockk.verify
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
@@ -38,6 +38,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
+import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -138,10 +139,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -208,10 +209,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -335,10 +336,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -448,10 +449,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -598,10 +599,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -750,10 +751,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -1074,10 +1075,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
@@ -1422,6 +1423,349 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
+    fun `Skal fatte vedtak for paragraf 35 c med orkestrering`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        behandling.vedtakstype = Vedtakstype.ENDRING
+        behandling.søknadstype = BisysSøknadstype.PARAGRAF_35_C
+        søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
+        søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+        søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
+                klageMottattdato = LocalDate.parse("2025-01-10"),
+                omgjørVedtakId = 2,
+                opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
+                opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
+            )
+        initBehandlingTestdata(behandling)
+        behandling.leggTilGrunnlagManuelleVedtak()
+        behandling.leggTilGrunnlagEtterfølgendeVedtak()
+        behandling.leggTilNotat("testtest", NotatType.PRIVAT_AVTALE, søknadsbarn)
+        val privatAvtale = opprettPrivatAvtale(behandling, testdataBarn1)
+        privatAvtale.skalIndeksreguleres = false
+        privatAvtale.perioder.addAll(
+            listOf(
+                opprettPrivatAvtalePeriode(
+                    privatAvtale,
+                    fom = YearMonth.from(behandling.virkningstidspunkt),
+                    tom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(7),
+                ),
+                opprettPrivatAvtalePeriode(
+                    privatAvtale,
+                    fom = YearMonth.from(behandling.virkningstidspunkt).plusMonths(8),
+                    tom = null,
+                ),
+            ),
+        )
+        behandling.privatAvtale.add(privatAvtale)
+        val privaavtaleGrunnlag = behandlingTilGrunnlagMappingV2.run { behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter()) }
+
+        val vedtaksidKlage = 1
+        val vedtaksidIndeks = 2
+        val vedtakidsEtterfølgende = 3
+        val vedtakidsOrkestrering = 4
+
+        val opprettVedtakSlot = mutableListOf<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } answers {
+            val arg = args.last() as OpprettVedtakRequestDto
+            val vedtaksid =
+                when {
+                    arg.type == Vedtakstype.INDEKSREGULERING -> vedtaksidIndeks
+                    arg.type == Vedtakstype.ENDRING && arg.stønadsendringListe.any { it.beslutning == Beslutningstype.DELVEDTAK } -> vedtaksidKlage
+                    else -> vedtakidsOrkestrering
+                }
+            OpprettVedtakResponseDto(
+                vedtaksid,
+                emptyList(),
+            )
+        }
+        every { bidragsberegningOrkestrator.utførBidragsberegning(any()) } returns
+            BidragsberegningOrkestratorResponse(
+                listOf(
+                    ResultatVedtak(
+                        vedtakstype = Vedtakstype.ENDRING,
+                        omgjøringsvedtak = true,
+                        beregnet = true,
+                        resultat =
+                            BeregnetBarnebidragResultat(
+                                listOf(
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                ),
+                            ),
+                    ),
+                    ResultatVedtak(
+                        vedtakstype = Vedtakstype.INDEKSREGULERING,
+                        omgjøringsvedtak = false,
+                        delvedtak = true,
+                        beregnet = true,
+                        resultat =
+                            BeregnetBarnebidragResultat(
+                                listOf(
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-07-01"), null),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                ),
+                            ),
+                    ),
+                    ResultatVedtak(
+                        vedtakstype = Vedtakstype.ENDRING,
+                        omgjøringsvedtak = false,
+                        delvedtak = true,
+                        beregnet = false,
+                        resultat =
+                            BeregnetBarnebidragResultat(
+                                listOf(
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-08-01"), null),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                ),
+                                listOf(
+                                    GrunnlagDto(
+                                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                        innhold =
+                                            POJONode(
+                                                ResultatFraVedtakGrunnlag(
+                                                    vedtaksid = vedtakidsEtterfølgende,
+                                                    omgjøringsvedtak = false,
+                                                    beregnet = false,
+                                                    vedtakstype = Vedtakstype.ENDRING,
+                                                    opprettParagraf35c = false,
+                                                ),
+                                            ),
+                                        referanse = "",
+                                    ),
+                                ),
+                            ),
+                    ),
+                    ResultatVedtak(
+                        vedtakstype = Vedtakstype.ENDRING,
+                        omgjøringsvedtak = false,
+                        beregnet = true,
+                        resultat =
+                            BeregnetBarnebidragResultat(
+                                listOf(
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, LocalDate.parse("2025-07-01")),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-07-01"), LocalDate.parse("2025-08-01")),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                    ResultatPeriode(
+                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-08-01"), null),
+                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                        grunnlagsreferanseListe = emptyList(),
+                                    ),
+                                ),
+                                grunnlagListe = privaavtaleGrunnlag.toList(),
+                            ),
+                    ),
+                ),
+            )
+        every { vedtakServiceBeregning.finnSisteVedtaksid(any()) } returns 1
+
+        vedtakService.oppdaterParagrafP35c(behandling.id!!, OppdaterParagraf35cDetaljerDto(søknadsbarn.ident!!, vedtakidsEtterfølgende, true))
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = null))
+
+        opprettVedtakSlot shouldHaveSize 3
+        assertSoftly(opprettVedtakSlot.first()) {
+            it.type shouldBe Vedtakstype.ENDRING
+            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
+                it.grunnlagListe shouldHaveSize 30
+            }
+            val beregnetFraDato =
+                it.stønadsendringListe
+                    .first()
+                    .periodeListe
+                    .minOf { it.periode.fom }
+                    .atDay(1)
+            opprettVedtakSlot[0].unikReferanse shouldBe
+                behandling.opprettUnikReferanse(
+                    "Delvedtak_${it.type}" +
+                        "_${beregnetFraDato.toCompactString()}",
+                )
+            val privatGrunnlag = it.grunnlagListe.first { it.type == Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG }
+            val innholdPrivat = privatGrunnlag.innholdTilObjekt<PrivatAvtaleGrunnlag>()
+            innholdPrivat.avtaleInngåttDato shouldBe LocalDate.parse("2024-01-01")
+            innholdPrivat.skalIndeksreguleres shouldBe false
+            privatGrunnlag.gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+            privatGrunnlag.gjelderBarnReferanse shouldBe søknadsbarn.tilGrunnlagsreferanse()
+
+            val privatPeriodeGrunnlag = it.grunnlagListe.filter { it.type == Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG }
+            val innholdPrivatPerioder = privatPeriodeGrunnlag.innholdTilObjekt<PrivatAvtalePeriodeGrunnlag>()
+            innholdPrivatPerioder.shouldHaveSize(2)
+            innholdPrivatPerioder.first().beløp shouldBe BigDecimal(1000)
+
+            assertSoftly(it.stønadsendringListe) {
+                shouldHaveSize(1)
+                val stønadsendring = first()
+                stønadsendring.innkreving shouldBe Innkrevingstype.UTEN_INNKREVING
+                stønadsendring.omgjørVedtakId shouldBe 2
+                stønadsendring.beslutning shouldBe Beslutningstype.DELVEDTAK
+
+                val grunnlagEtterfølgendeVedtak =
+                    opprettVedtakSlot[0]
+                        .grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<EtterfølgendeManuelleVedtakGrunnlag>(
+                            Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
+                            stønadsendring.grunnlagReferanseListe,
+                        ).firstOrNull()
+                grunnlagEtterfølgendeVedtak.shouldNotBeNull()
+                grunnlagEtterfølgendeVedtak.innhold.vedtaksliste shouldHaveSize 1
+
+                val grunnlagManuelleVedtak =
+                    opprettVedtakSlot[0]
+                        .grunnlagListe
+                        .filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
+                        .firstOrNull()
+                        ?.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
+                grunnlagManuelleVedtak.shouldNotBeNull()
+                grunnlagManuelleVedtak.shouldHaveSize(1)
+            }
+        }
+        assertSoftly(opprettVedtakSlot[1]) {
+            it.type shouldBe Vedtakstype.INDEKSREGULERING
+            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
+                it.grunnlagListe shouldHaveSize 11
+            }
+            val beregnetFraDato =
+                it.stønadsendringListe
+                    .first()
+                    .periodeListe
+                    .minOf { it.periode.fom }
+                    .atDay(1)
+            opprettVedtakSlot[1].unikReferanse shouldBe
+                behandling.opprettUnikReferanse(
+                    "Delvedtak_${it.type}" +
+                        "_${beregnetFraDato.toCompactString()}",
+                )
+
+            assertSoftly(it.stønadsendringListe) {
+                shouldHaveSize(1)
+                val stønadsendring = first()
+                stønadsendring.innkreving shouldBe Innkrevingstype.UTEN_INNKREVING
+                stønadsendring.omgjørVedtakId shouldBe null
+                stønadsendring.beslutning shouldBe Beslutningstype.DELVEDTAK
+            }
+        }
+
+        assertSoftly(opprettVedtakSlot[2]) {
+            it.type shouldBe Vedtakstype.ENDRING
+            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
+                it.grunnlagListe shouldHaveSize 8
+            }
+
+            opprettVedtakSlot[2].unikReferanse shouldBe
+                behandling.opprettUnikReferanse("endeligvedtak")
+
+            val orkestreringsdetaljer = it.grunnlagListe.map { it.tilDto() }.finnOrkestreringDetaljer(it.stønadsendringListe.first().grunnlagReferanseListe)
+            orkestreringsdetaljer.shouldNotBeNull()
+            orkestreringsdetaljer.beregnTilDato shouldBe YearMonth.parse("2025-03")
+            orkestreringsdetaljer.omgjøringsvedtakId shouldBe vedtaksidKlage
+            orkestreringsdetaljer.innkrevesFraDato.shouldBeNull()
+
+            assertSoftly(it.stønadsendringListe) { sh ->
+                sh.shouldHaveSize(1)
+                val stønadsendring = sh.first()
+                stønadsendring.innkreving shouldBe Innkrevingstype.MED_INNKREVING
+                stønadsendring.omgjørVedtakId shouldBe 2
+                stønadsendring.beslutning shouldBe Beslutningstype.ENDRING
+                val grunnlagVirkning =
+                    opprettVedtakSlot[2]
+                        .grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
+                            Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                            stønadsendring.grunnlagReferanseListe,
+                        ).firstOrNull()
+                grunnlagVirkning.shouldNotBeNull()
+                grunnlagVirkning.innhold.virkningstidspunkt shouldBe søknadsbarn.virkningstidspunkt
+                grunnlagVirkning.innhold.beregnTil shouldBe søknadsbarn.beregnTil
+                grunnlagVirkning.innhold.beregnTilDato shouldBe behandling.finnBeregnTilDatoBehandling(søknadsbarn).toYearMonth()
+
+                val perioder = stønadsendring.periodeListe
+                perioder.shouldHaveSize(3)
+
+                val periodeKlagevedtak = stønadsendring.periodeListe[0]
+                val resultatFraVedtakKlage =
+                    it.grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            periodeKlagevedtak.grunnlagReferanseListe,
+                        ).firstOrNull()
+                resultatFraVedtakKlage.shouldNotBeNull()
+                resultatFraVedtakKlage.innhold.vedtaksid shouldBe vedtaksidKlage
+                resultatFraVedtakKlage.innhold.omgjøringsvedtak shouldBe true
+                resultatFraVedtakKlage.innhold.beregnet shouldBe true
+                resultatFraVedtakKlage.innhold.vedtakstype shouldBe Vedtakstype.ENDRING
+
+                val periodeIndeks = stønadsendring.periodeListe[1]
+                val resultatFraVedtakIndeks =
+                    it.grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            periodeIndeks.grunnlagReferanseListe,
+                        ).firstOrNull()
+                resultatFraVedtakIndeks.shouldNotBeNull()
+                resultatFraVedtakIndeks.innhold.vedtaksid shouldBe vedtaksidIndeks
+                resultatFraVedtakIndeks.innhold.omgjøringsvedtak shouldBe false
+                resultatFraVedtakIndeks.innhold.beregnet shouldBe true
+                resultatFraVedtakIndeks.innhold.vedtakstype shouldBe Vedtakstype.INDEKSREGULERING
+
+                val periodeEtterfølgende = stønadsendring.periodeListe[2]
+                val resultatFraVedtakEtterfølgende =
+                    it.grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            periodeEtterfølgende.grunnlagReferanseListe,
+                        ).firstOrNull()
+                resultatFraVedtakEtterfølgende.shouldNotBeNull()
+                resultatFraVedtakEtterfølgende.innhold.vedtaksid shouldBe vedtakidsEtterfølgende
+                resultatFraVedtakEtterfølgende.innhold.omgjøringsvedtak shouldBe false
+                resultatFraVedtakEtterfølgende.innhold.beregnet shouldBe false
+                resultatFraVedtakEtterfølgende.innhold.opprettParagraf35c shouldBe true
+                resultatFraVedtakEtterfølgende.innhold.vedtakstype shouldBe Vedtakstype.ENDRING
+
+                val grunnlagEtterfølgendeVedtak =
+                    opprettVedtakSlot[2]
+                        .grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<EtterfølgendeManuelleVedtakGrunnlag>(
+                            Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
+                            stønadsendring.grunnlagReferanseListe,
+                        ).firstOrNull()
+                grunnlagEtterfølgendeVedtak.shouldNotBeNull()
+                grunnlagEtterfølgendeVedtak.innhold.vedtaksliste shouldHaveSize 1
+
+                val grunnlagManuelleVedtak =
+                    opprettVedtakSlot[2]
+                        .grunnlagListe
+                        .filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
+                        .firstOrNull()
+                        ?.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
+                grunnlagManuelleVedtak.shouldNotBeNull()
+                grunnlagManuelleVedtak.shouldHaveSize(1)
+            }
+        }
+
+        verify(exactly = 3) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
     fun `Skal fatte vedtak for klage uten innkreving med orkestrering`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
@@ -1431,10 +1775,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2024-01-01").atStartOfDay()),
             )
@@ -1695,10 +2039,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2024-01-01").atStartOfDay()),
             )
@@ -1934,10 +2278,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.opphørsdato = LocalDate.parse("2025-09-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 klageMottattdato = LocalDate.parse("2025-01-10"),
-                påklagetVedtak = 2,
+                omgjørVedtakId = 2,
                 opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )

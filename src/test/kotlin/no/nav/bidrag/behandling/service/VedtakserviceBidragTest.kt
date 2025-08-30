@@ -17,7 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -319,8 +319,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -610,8 +610,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -709,8 +709,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -798,8 +798,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
         søknadsbarn.årsak = null
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -929,8 +929,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
         søknadsbarn.årsak = null
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -1077,8 +1077,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
             behandling.søknadsbarn.first(),
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 2,
             )
         behandling.grunnlag =
@@ -1205,8 +1205,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.PRIVAT_AVTALE,
             behandling.søknadsbarn.first(),
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -1316,8 +1316,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.PRIVAT_AVTALE,
             behandling.søknadsbarn.first(),
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 2,
             )
         behandling.grunnlag =
@@ -1455,8 +1455,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -1587,8 +1587,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -1839,8 +1839,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.bidragsmottaker,
             erDelAvBehandlingen = false,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -1924,8 +1924,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -2044,8 +2044,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -2118,8 +2118,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -2195,8 +2195,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
@@ -2286,8 +2286,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
@@ -2353,8 +2353,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         søknadsbarn.årsak = null
         behandling.årsak = null
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -2498,8 +2498,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =
@@ -2583,8 +2583,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 refVedtaksid = 553,
             )
         behandling.grunnlag =

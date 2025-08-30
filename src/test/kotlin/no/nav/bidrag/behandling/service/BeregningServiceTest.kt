@@ -14,7 +14,7 @@ import io.mockk.mockkConstructor
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigBeregningType
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
@@ -38,7 +38,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -87,7 +87,7 @@ class BeregningServiceTest {
     lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
-    lateinit var klageOrkestrator: KlageOrkestrator
+    lateinit var klageOrkestrator: OmgjøringOrkestrator
 
     @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
@@ -543,8 +543,8 @@ class BeregningServiceTest {
     fun `skal bygge grunnlag for særbidrag beregning med opprinnelig vedtakstype`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name)
-        behandling.klagedetaljer =
-            Klagedetaljer(
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
                 opprinneligVedtakstype = Vedtakstype.ENDRING,
             )
         behandling.vedtakstype = Vedtakstype.KLAGE

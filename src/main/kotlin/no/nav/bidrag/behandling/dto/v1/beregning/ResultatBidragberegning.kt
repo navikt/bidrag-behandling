@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.beregning
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.beregn.barnebidrag.service.EtterfølgendeVedtakSomOverlapper
@@ -151,7 +151,7 @@ data class ResultatBidragsberegningBarn(
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
     val avslaskode: Resultatkode? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
-    val klagedetaljer: Klagedetaljer? = null,
+    val omgjøringsdetaljer: Omgjøringsdetaljer? = null,
     val innkrevesFraDato: YearMonth? = null,
     val beregnTilDato: YearMonth? = null,
 )
@@ -228,7 +228,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
         get(): String {
             if (klageOmgjøringDetaljer == null) return ""
             return when {
-                klageOmgjøringDetaljer.omgjøringsvedtak -> "Klagevedtak"
+                klageOmgjøringDetaljer.omgjøringsvedtak && vedtakstype == Vedtakstype.KLAGE -> "Klagevedtak"
+                klageOmgjøringDetaljer.omgjøringsvedtak -> "Omgjøringsvedtak"
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
                     vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&

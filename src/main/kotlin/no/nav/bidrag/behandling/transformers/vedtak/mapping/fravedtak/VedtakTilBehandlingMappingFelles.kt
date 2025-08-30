@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
@@ -50,6 +51,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -82,7 +84,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
-import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -286,7 +287,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
 
     val endeligVedtak =
         DelvedtakDto(
-            type = Vedtakstype.KLAGE,
+            type = type,
             omgjøringsvedtak = false,
             vedtaksid = null,
             delvedtak = false,
@@ -635,14 +636,17 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
             ).groupBy { it.gjelderBarnReferanse }
                 .map { (gjelderBarnReferanse, grunnlagsliste) ->
-                    val gjelder = hentPersonMedReferanse(gjelderBarnReferanse)!!
-                    val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelder.personIdent }!!
+                    val grunnlag = grunnlagsliste.firstOrNull()
+                    val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!
+                    val gjelder = grunnlag?.let { hentPersonMedReferanse(grunnlag.gjelderReferanse) }
+                    val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelderBarn.personIdent }!!
                     behandling.opprettGrunnlag(
                         it.tilGrunnlagsdatatypeBeløpshistorikk(),
-                        grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
-                        gjelder.personIdent!!,
-                        behandling.klagedetaljer?.opprinneligVedtakstidspunkt!!.min(),
-                        lesemodus,
+                        behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
+                        rolleIdent = rolleBarn.ident!!,
+                        gjelder = gjelder?.personIdent,
+                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min(),
+                        lesemodus = lesemodus,
                     )
                 }
         }
@@ -929,19 +933,22 @@ fun Behandling.opprettGrunnlag(
     type = type,
     erBearbeidet = erBearbeidet,
     gjelder = gjelder,
+    grunnlagFraVedtakSomSkalOmgjøres = true,
     aktiv = innhentetTidspunkt,
     rolle = roller.find { it.ident == rolleIdent }!!,
 )
 
 internal fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
-    medIVedtak: Boolean,
+    fraOpprinneligVedtak: Boolean,
     gjelderReferanse: Grunnlagsreferanse? = null,
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
-    .filter { gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse == gjelderReferanse }
-    .map { it.innholdTilObjekt<NotatGrunnlag>() }
-    .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
+    .filter {
+        gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty() ||
+            it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderReferanse
+    }.map { it.innholdTilObjekt<NotatGrunnlag>() }
+    .find { it.type == type && it.fraOpprinneligVedtak == fraOpprinneligVedtak }
     ?.innhold
 
 internal fun VedtakDto.avslagskode(): Resultatkode? {
@@ -1156,6 +1163,9 @@ private fun GrunnlagDto.tilRolle(
     avslag = virkningstidspunktGrunnlag?.avslag,
     opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
     fødselsdato = personObjekt.fødselsdato,
+    beregnTil =
+        virkningstidspunktGrunnlag?.beregnTil
+            ?: if (behandling.erBidrag()) BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT else BeregnTil.INNEVÆRENDE_MÅNED,
     grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
 )
 

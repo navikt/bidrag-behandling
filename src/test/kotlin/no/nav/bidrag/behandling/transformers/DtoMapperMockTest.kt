@@ -532,6 +532,7 @@ class DtoMapperMockTest {
                 behandling,
                 Grunnlagsdatatype.TILLEGGSSTØNAD,
                 false,
+                false,
                 commonObjectmapper.writeValueAsString(setOf(tilleggsstønadsgrunnlag)),
                 LocalDateTime.now(),
                 rolle = innhentetForRolle,
