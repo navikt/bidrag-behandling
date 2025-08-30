@@ -1270,6 +1270,19 @@ class GrunnlagService(
                 }
 
                 behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
+            } else if (grunnlag.barnetilsynListe.isEmpty() && !innhentingAvBarnetilsynFeilet) {
+                behandling.søknadsbarn.forEach {
+                    lagreGrunnlagHvisEndret<BarnetilsynGrunnlagDto>(
+                        behandling,
+                        rolleInnhentetFor,
+                        Grunnlagstype(Grunnlagsdatatype.BARNETILSYN, true),
+                        emptySet(),
+                        null,
+                        Personident(it.ident!!),
+                    )
+                }
+            } else {
+                behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
             }
         }
     }
