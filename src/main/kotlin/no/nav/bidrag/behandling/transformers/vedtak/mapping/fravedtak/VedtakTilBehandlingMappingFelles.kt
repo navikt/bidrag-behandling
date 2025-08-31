@@ -392,7 +392,14 @@ internal fun List<GrunnlagDto>.mapRoller(
         .mapIndexed { i, rolle ->
             val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
-            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunktGrunnlag, aldersjustering, virkningstidspunkt)
+            rolle.tilRolle(
+                behandling,
+                if (lesemodus) i.toLong() else null,
+                virkningstidspunktGrunnlag,
+                aldersjustering,
+                virkningstidspunkt,
+                lesemodus,
+            )
         }.toMutableSet()
         .ifEmpty {
             val roller = mutableSetOf<Rolle>()
@@ -409,7 +416,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, virkningstidspunkt))
+            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, virkningstidspunkt, lesemodus))
 
             val bmIdent = vedtak.stønadsendringListe.firstOrNull()?.mottaker ?: vedtak.engangsbeløpListe.first().mottaker
             val bmGrunnlag =
@@ -424,7 +431,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, virkningstidspunkt))
+            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, virkningstidspunkt, lesemodus))
             roller.addAll(
                 vedtak.stønadsendringListe.mapIndexed { i, it ->
                     val baIdent = it.kravhaver
@@ -449,6 +456,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                         virkningstidspunktGrunnlag,
                         aldersjustering,
                         virkningstidspunkt,
+                        lesemodus,
                     )
                 },
             )
@@ -1142,32 +1150,39 @@ private fun GrunnlagDto.tilRolle(
     virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
     aldersjustering: AldersjusteringDetaljerGrunnlag?,
     virkningstidspunkt: LocalDate,
-) = Rolle(
-    behandling,
-    id = id,
-    rolletype =
-        when (type) {
-            Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
-            Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-            Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-            Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-            else ->
-                vedtakmappingFeilet(
-                    "Ukjent rolletype $type",
-                )
-        },
-    ident = personIdent,
-    opprinneligVirkningstidspunkt = virkningstidspunkt,
-    virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
-    årsak = virkningstidspunktGrunnlag?.årsak,
-    avslag = virkningstidspunktGrunnlag?.avslag,
-    opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
-    fødselsdato = personObjekt.fødselsdato,
-    beregnTil =
-        virkningstidspunktGrunnlag?.beregnTil
-            ?: if (behandling.erBidrag()) BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT else BeregnTil.INNEVÆRENDE_MÅNED,
-    grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
-)
+    lesemodus: Boolean,
+): Rolle =
+    Rolle(
+        behandling,
+        id = id,
+        rolletype =
+            when (type) {
+                Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
+                Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+                Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+                Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+                else ->
+                    vedtakmappingFeilet(
+                        "Ukjent rolletype $type",
+                    )
+            },
+        ident = personIdent,
+        opprinneligVirkningstidspunkt = virkningstidspunkt,
+        virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
+        årsak = virkningstidspunktGrunnlag?.årsak,
+        avslag = virkningstidspunktGrunnlag?.avslag,
+        opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
+        fødselsdato = personObjekt.fødselsdato,
+        beregnTil =
+            if (lesemodus) {
+                virkningstidspunktGrunnlag?.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED
+            } else if (behandling.erBidrag()) {
+                BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+            } else {
+                BeregnTil.INNEVÆRENDE_MÅNED
+            },
+        grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
+    )
 
 private fun Inntekt.copy(
     type: Inntektsrapportering? = null,
