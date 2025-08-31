@@ -36,7 +36,7 @@ fun OpprettVedtakRequestDto.hentNotat(
     gjelderBarnReferanse: String? = null,
     fraOpprinneligVedtak: Boolean = false,
 ) = grunnlagListe.find {
-    it.type == Grunnlagstype.NOTAT && (gjelderReferanse == null && gjelderBarnReferanse == null || it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderBarnReferanse) &&
+    it.type == Grunnlagstype.NOTAT && (gjelderReferanse == null && gjelderBarnReferanse == null || gjelderReferanse != null && it.gjelderReferanse == gjelderReferanse || gjelderBarnReferanse != null && it.gjelderBarnReferanse == gjelderBarnReferanse) &&
         it.innholdTilObjekt<NotatGrunnlag>().type == notatType &&
         it.innholdTilObjekt<NotatGrunnlag>().fraOpprinneligVedtak == fraOpprinneligVedtak
 }

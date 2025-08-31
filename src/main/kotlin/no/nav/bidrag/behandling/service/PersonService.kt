@@ -13,6 +13,7 @@ import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpStatusCodeException
 import java.time.LocalDateTime
 
 fun hentSisteBeløpshistorikk(stønadsid: Stønadsid): StønadDto? =
@@ -38,6 +39,9 @@ fun hentVedtak(vedtaksid: Int?): VedtakDto? =
         }
     } catch (e: Exception) {
         secureLogger.debug(e) { "Feil ved henting av vedtak $vedtaksid" }
+        if (e is HttpStatusCodeException) {
+            throw e
+        }
         null
     }
 

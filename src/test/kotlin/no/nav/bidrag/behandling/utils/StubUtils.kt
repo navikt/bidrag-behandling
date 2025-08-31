@@ -21,6 +21,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.dto.OppgaveDto
 import no.nav.bidrag.behandling.consumer.dto.OppgaveSokResponse
@@ -228,9 +229,20 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
     }
     mockkObject(AppContext)
     every {
-        AppContext.getBean<BidragPersonConsumer>(any())
+        AppContext.getBean(eq(BidragPersonConsumer::class.java))
     } returns personConsumerMock
     return personConsumerMock
+}
+
+fun stubVedtakConsumer(
+    vedtakConsumer: BidragVedtakConsumer = mockkClass(BidragVedtakConsumer::class, relaxed = true),
+): BidragVedtakConsumer {
+    mockkObject(AppContext)
+    every {
+        AppContext.getBean(eq(BidragVedtakConsumer::class.java))
+    } returns vedtakConsumer
+
+    return vedtakConsumer
 }
 
 fun stubHentPersonNyIdent(
@@ -248,7 +260,11 @@ fun stubHentPersonNyIdent(
         )
     mockkObject(AppContext)
     every {
-        AppContext.getBean<BidragPersonConsumer>(any())
+        try {
+            AppContext.getBean(eq(BidragPersonConsumer::class.java))
+        } catch (e: Exception) {
+            TODO("Not yet implemented")
+        }
     } returns personConsumerMock
 
     return personConsumerMock
