@@ -110,13 +110,13 @@ class VedtakService(
     }
 
     private fun hentOrkestrertVedtak(vedtakId: Int): OrkestrertVedtak? {
-        val vedtak = hentVedtak(vedtakId) ?: return null
+        val vedtak = vedtakConsumer.hentVedtak(vedtakId) ?: return null
         val erOrkestrertVedtak = vedtak.erOrkestrertVedtak && vedtak.type != Vedtakstype.INNKREVING
         val referertVedtak =
             if (vedtak.harResultatFraAnnenVedtak && (vedtak.erOrkestrertVedtak || vedtak.erDelvedtak) &&
                 vedtak.type != Vedtakstype.INNKREVING
             ) {
-                hentVedtak(vedtak.referertVedtaksid!!)
+                vedtakConsumer.hentVedtak(vedtak.referertVedtaksid!!)
             } else {
                 null
             }

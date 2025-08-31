@@ -83,13 +83,18 @@ class BehandlingService(
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
 
-    fun lagreBehandling(behandling: Behandling): Behandling =
-        behandlingRepository.save(behandling).let {
-            if (behandling.vedtakstype.kreverGrunnlag()) {
-                opprettForsendelseForBehandling(it)
+    fun lagreBehandling(behandling: Behandling): Behandling {
+        val lagretBehandling =
+            if (behandling.id == null) {
+                behandlingRepository.save(behandling)
+            } else {
+                behandling
             }
-            it
+        if (behandling.vedtakstype.kreverGrunnlag()) {
+            opprettForsendelseForBehandling(lagretBehandling)
         }
+        return lagretBehandling
+    }
 
     fun opprettBehandlingHvisIkkeEksisterer(behandling: Behandling) =
         hentEksisteredenBehandling(behandling.soknadsid!!)?.let {
