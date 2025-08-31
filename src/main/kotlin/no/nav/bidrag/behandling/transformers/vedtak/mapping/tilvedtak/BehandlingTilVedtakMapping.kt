@@ -423,6 +423,8 @@ class BehandlingTilVedtakMapping(
                 }
             } else if (resultatVedtak.delvedtak) {
                 stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarnReferanse))
+            } else if (resultatVedtak.endeligVedtak) {
+                grunnlagsliste.addAll(behandling.tilPersonobjekter())
             }
 
             if (!resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak) {

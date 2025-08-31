@@ -179,7 +179,8 @@ class VedtakService(
                 secureLogger.warn {
                     "Fant eksisterende behandling ${it.id} for søknadsId ${request.søknadsid}. Oppretter ikke ny behandling"
                 }
-                ugyldigForespørsel("Det finnes allerede en behandling for søknadsId ${request.søknadsid} med id ${it.id}")
+                return OpprettBehandlingResponse(it.id!!)
+//                ugyldigForespørsel("Det finnes allerede en behandling for søknadsId ${request.søknadsid} med id ${it.id}")
             }
 
             val konvertertBehandling =
@@ -416,7 +417,7 @@ class VedtakService(
                                 delvedtak.request!!
                             }
 
-//                        delvedtak.request.validerGrunnlagsreferanser()
+                        delvedtak.request.validerGrunnlagsreferanser()
                         secureLogger.info { "Fatter vedtak for delvedtak ${opprettRequest.type} med forespørsel ${delvedtak.request}" }
                         val response = fatteVedtak(opprettRequest)
                         behandlingService.oppdaterDelvedtakFattetStatus(
@@ -444,6 +445,7 @@ class VedtakService(
                         requestDelvedtak.copy(delvedtak = oppdatertDelvedtak),
                     )
 
+                requestEndeligVedtak.validerGrunnlagsreferanser()
                 val response = fatteVedtak(requestEndeligVedtak)
                 secureLogger.info { "Fattet endelig vedtak med forespørsel $requestEndeligVedtak og vedtaksid ${response.vedtaksid}" }
                 response to requestEndeligVedtak
@@ -482,6 +484,7 @@ class VedtakService(
                 vedtaksidOrkestrering,
                 vedtak,
             )
+        innkrevingRequest.validerGrunnlagsreferanser()
         val responseInnkreving = fatteVedtak(innkrevingRequest)
         secureLogger.info {
             "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"

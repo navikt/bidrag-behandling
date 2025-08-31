@@ -213,26 +213,49 @@ fun List<Grunnlag>.opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMan
 ): List<GrunnlagDto> {
     val behandling = firstOrNull()?.behandling ?: return emptyList()
     val søknadsbarnSomManglerInnhentetGrunnlag =
-        behandling.søknadsbarn.filter { sb ->
-            innhentetHusstandsmedlemGrunnlagListe.none {
-                val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
-                personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
+        behandling.søknadsbarn
+            .filter { sb ->
+                innhentetHusstandsmedlemGrunnlagListe.none {
+                    val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
+                    personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
+                }
+            }.map {
+                RelatertPersonGrunnlagDto(
+                    fødselsdato = it.fødselsdato,
+                    gjelderPersonId = it.ident,
+                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
+                    navn = it.navn,
+                    relasjon = Familierelasjon.BARN,
+                    borISammeHusstandDtoListe = emptyList(),
+                ).tilGrunnlagsobjekt(
+                    LocalDateTime.now().withSecond(0).withNano(0),
+                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident)!!.referanse,
+                    personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
+                )
             }
-        }
-    return søknadsbarnSomManglerInnhentetGrunnlag.map {
-        RelatertPersonGrunnlagDto(
-            fødselsdato = it.fødselsdato,
-            gjelderPersonId = it.ident,
-            partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
-            navn = it.navn,
-            relasjon = Familierelasjon.BARN,
-            borISammeHusstandDtoListe = emptyList(),
-        ).tilGrunnlagsobjekt(
-            LocalDateTime.now().withSecond(0).withNano(0),
-            personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident)!!.referanse,
-            personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
-        )
-    }
+    val husstandsmedlemSomManglerInnhentetGrunnlag =
+        behandling.husstandsmedlem
+            .filter { it.rolle == null }
+            .filter { sb ->
+                innhentetHusstandsmedlemGrunnlagListe.none {
+                    val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
+                    personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
+                }
+            }.map {
+                RelatertPersonGrunnlagDto(
+                    fødselsdato = it.fødselsdato,
+                    gjelderPersonId = it.ident,
+                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
+                    navn = it.navn,
+                    relasjon = Familierelasjon.BARN,
+                    borISammeHusstandDtoListe = emptyList(),
+                ).tilGrunnlagsobjekt(
+                    LocalDateTime.now().withSecond(0).withNano(0),
+                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident)!!.referanse,
+                    personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
+                )
+            }
+    return søknadsbarnSomManglerInnhentetGrunnlag + husstandsmedlemSomManglerInnhentetGrunnlag
 }
 
 fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
