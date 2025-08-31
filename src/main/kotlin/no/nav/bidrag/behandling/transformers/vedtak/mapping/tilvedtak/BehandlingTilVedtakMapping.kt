@@ -232,17 +232,18 @@ class BehandlingTilVedtakMapping(
                                 ),
                             ),
                     )
-                val persongrunnlag = vedtak.grunnlagListe.hentAllePersoner()
+
+                val personobjekter = behandling.tilPersonobjekter().map { it.tilOpprettRequestDto() }
                 val virkningstidspunktGrunnlag =
                     behandling
                         .byggGrunnlagVirkningsttidspunkt(
-                            persongrunnlag.map { it.tilDto() },
+                            personobjekter.map { it.tilDto() },
                         ).map(GrunnlagDto::tilOpprettRequestDto)
                 val stønadsendringGrunnlag =
                     virkningstidspunktGrunnlag +
                         behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
                         behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
-                val grunnlagliste = (stønadsendringGrunnlag + listOf(resultatFraGrunnlag)).toMutableList()
+                val grunnlagliste = (stønadsendringGrunnlag + listOf(resultatFraGrunnlag) + personobjekter).toMutableList()
                 behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                     type = Vedtakstype.INNKREVING,
                     grunnlagListe = grunnlagliste,
@@ -257,12 +258,9 @@ class BehandlingTilVedtakMapping(
                                 it.periodeListe
                                     .filter { p -> p.periode.til == null || p.periode.til!! > innkrevFraDato }
                                     .map { periode ->
+                                        val referanseSøknadsbarn = søknadsbarn.tilGrunnlagsreferanse()
                                         val periodeVirkningstidspunktGrunnlag =
-                                            vedtak.grunnlagListe
-                                                .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
-                                                    Grunnlagstype.VIRKNINGSTIDSPUNKT,
-                                                    periode.grunnlagReferanseListe,
-                                                ).firstOrNull()
+                                            virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == referanseSøknadsbarn }
                                         if (periode.periode.fom < innkrevFraDato) {
                                             periode.copy(
                                                 periode = periode.periode.copy(fom = innkrevFraDato!!),

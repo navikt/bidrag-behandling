@@ -22,7 +22,6 @@ import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
-import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.opprettGrunnlagsreferanseVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
@@ -294,15 +293,17 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,
-            behandling.bidragsmottaker,
+            behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
+            behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Boforhold",
             NotatType.BOFORHOLD,
+            behandling.bidragspliktig,
         )
         behandling.leggTilNotat(
             "Samvær",
@@ -318,6 +319,55 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             "Underhold andre barn",
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Privat avtale",
+            NotatType.PRIVAT_AVTALE,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = true,
+        )
+
+        // Ikke med i behandlingen
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse BM - fra opprinnelig vedtak",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat - fra opprinnelig vedtak",
+            NotatType.VIRKNINGSTIDSPUNKT,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Boforhold - fra opprinnelig vedtak",
+            NotatType.BOFORHOLD,
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Samvær - fra opprinnelig vedtak",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Underhold barn - fra opprinnelig vedtak",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn - fra opprinnelig vedtak",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Privat avtale - fra opprinnelig vedtak",
+            NotatType.PRIVAT_AVTALE,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = false,
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
@@ -371,7 +421,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     Grunnlagstype.NOTAT,
                     it.grunnlagReferanseListe,
                 ) shouldHaveSize
-                    6
+                    12
                 opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                     Grunnlagstype.SØKNAD,
                     it.grunnlagReferanseListe,
@@ -1778,15 +1828,17 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,
-            behandling.bidragsmottaker,
+            behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
+            behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
             "Boforhold",
             NotatType.BOFORHOLD,
+            behandling.bidragspliktig,
         )
         behandling.leggTilNotat(
             "Samvær",
@@ -1803,40 +1855,53 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
+        behandling.leggTilNotat(
+            "Privat avtale",
+            NotatType.PRIVAT_AVTALE,
+            behandling.søknadsbarn.first(),
+            erDelAvBehandlingen = true,
+        )
 
         // Ikke med i behandlingen
         behandling.leggTilNotat(
-            "Skal ikke lagres i vedtaket - Inntektsbegrunnelse kun i notat",
+            "Inntektsbegrunnelse BM - fra opprinnelig vedtak",
             NotatType.INNTEKT,
             behandling.bidragsmottaker,
             erDelAvBehandlingen = false,
         )
         behandling.leggTilNotat(
-            "Skal ikke lagres i vedtaket - Virkningstidspunkt kun i notat",
+            "Virkningstidspunkt kun i notat - fra opprinnelig vedtak",
             NotatType.VIRKNINGSTIDSPUNKT,
+            behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
         behandling.leggTilNotat(
-            "Skal ikke lagres i vedtaket - Boforhold",
+            "Boforhold - fra opprinnelig vedtak",
             NotatType.BOFORHOLD,
             erDelAvBehandlingen = false,
         )
         behandling.leggTilNotat(
-            "Skal ikke lagres i vedtaket - Samvær",
+            "Samvær - fra opprinnelig vedtak",
             NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
         behandling.leggTilNotat(
-            "Skal ikke lagres i vedtaket - Underhold barn",
+            "Underhold barn - fra opprinnelig vedtak",
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
         behandling.leggTilNotat(
-            "Skal ikke lagres i vedtaket - Underhold andre barn",
+            "Underhold andre barn - fra opprinnelig vedtak",
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
+            erDelAvBehandlingen = false,
+        )
+        behandling.leggTilNotat(
+            "Privat avtale - fra opprinnelig vedtak",
+            NotatType.PRIVAT_AVTALE,
+            behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
         behandling.omgjøringsdetaljer =
@@ -2682,23 +2747,61 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
     val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
     val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-        shouldHaveSize(6)
-        assertSoftly(it[0].innholdTilObjekt<NotatGrunnlag>()) {
-            innhold shouldBe henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
-            erMedIVedtaksdokumentet shouldBe false
-            type shouldBe NotatType.VIRKNINGSTIDSPUNKT
+        shouldHaveSize(14)
+        assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Virkningstidspunkt kun i notat"
         }
 
-        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderReferanse = søknadsbarnGrunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Virkningstidspunkt kun i notat - fra opprinnelig vedtak"
+        }
+
+        assertSoftly(hentNotat(NotatType.PRIVAT_AVTALE, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Privat avtale"
+        }
+
+        assertSoftly(hentNotat(NotatType.PRIVAT_AVTALE, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Privat avtale - fra opprinnelig vedtak"
+        }
+        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Boforhold"
+        }
+        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Boforhold - fra opprinnelig vedtak"
+        }
+        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Samvær"
         }
 
-        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = søknadsbarnGrunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Samvær - fra opprinnelig vedtak"
+        }
+
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold barn"
+        }
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Underhold barn - fra opprinnelig vedtak"
         }
 
         assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse)) {
@@ -2706,11 +2809,21 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold andre barn"
         }
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Underhold andre barn - fra opprinnelig vedtak"
+        }
 
         assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Inntektsbegrunnelse kun i notat"
+        }
+        assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Inntektsbegrunnelse BM - fra opprinnelig vedtak"
         }
     }
 }

@@ -172,7 +172,6 @@ class VedtakserviceTest : TestContainerRunner() {
         clearAllMocks()
         stubTokenUtils()
         enableUnleashFeature(UnleashFeatures.BIDRAG_KLAGE)
-        enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
         enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
         disableUnleashFeature(UnleashFeatures.VEDTAKSSPERRE)
         bidragPersonConsumer = stubPersonConsumer()

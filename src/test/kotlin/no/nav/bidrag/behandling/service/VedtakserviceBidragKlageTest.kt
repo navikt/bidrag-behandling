@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.mockkClass
 import io.mockk.verify
@@ -22,6 +23,9 @@ import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
+import no.nav.bidrag.behandling.utils.hentNotat
+import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
@@ -34,6 +38,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtale
 import no.nav.bidrag.behandling.utils.testdata.opprettPrivatAvtalePeriode
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
@@ -56,6 +61,7 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
@@ -279,7 +285,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 27
+                request.grunnlagListe shouldHaveSize 26
             }
             request.unikReferanse shouldBe behandling.opprettUnikReferanse("omgjøring")
         }
@@ -401,7 +407,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 26
+                request.grunnlagListe shouldHaveSize 25
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
         }
@@ -457,6 +463,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
         initBehandlingTestdata(behandling)
+        behandling.leggTilNotat("Begrunnelse virkningstidspunkt", NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn, true)
+        behandling.leggTilNotat("Begrunnelse virkningstidspunkt fra opprinnelig vedtak", NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn, false)
 
         behandling.leggTilGrunnlagManuelleVedtak(
             behandling.søknadsbarn.first(),
@@ -531,7 +539,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 26
+                it.grunnlagListe shouldHaveSize 27
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -547,9 +555,29 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INNKREVING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 3
+                it.grunnlagListe shouldHaveSize 8
             }
+            val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
+                shouldHaveSize(2)
+                assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+                    it shouldNotBe null
+                    val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+                    innhold.innhold shouldBe "Begrunnelse virkningstidspunkt"
+                }
 
+                assertSoftly(
+                    hentNotat(
+                        NotatType.VIRKNINGSTIDSPUNKT,
+                        gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
+                        fraOpprinneligVedtak = true,
+                    ),
+                ) {
+                    it shouldNotBe null
+                    val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+                    innhold.innhold shouldBe "Begrunnelse virkningstidspunkt fra opprinnelig vedtak"
+                }
+            }
             assertSoftly(it.stønadsendringListe) { se ->
                 se.shouldHaveSize(1)
                 val stønadsendring = it.stønadsendringListe.first()
@@ -561,7 +589,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     opprettVedtakSlot[1]
                         .grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                            Grunnlagstype.VIRKNINGSTIDSPUNKT,
                             stønadsendring.grunnlagReferanseListe,
                         ).firstOrNull()
                 grunnlagVirkning.shouldNotBeNull()
@@ -682,7 +710,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 26
+                it.grunnlagListe shouldHaveSize 25
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -698,7 +726,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INNKREVING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 3
+                it.grunnlagListe shouldHaveSize 6
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -712,7 +740,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 val resultatFraVedtak1 =
                     it.grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
                             førstePeriode.grunnlagReferanseListe,
                         ).firstOrNull()
                 resultatFraVedtak1.shouldNotBeNull()
@@ -723,15 +751,15 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 periodeOpphør.periode.til.shouldBeNull()
                 periodeOpphør.beløp.shouldBeNull()
                 periodeOpphør.resultatkode shouldBe Resultatkode.OPPHØR.name
-//                val grunnlagVirkning =
-//                    it.grunnlagListe
-//                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
-//                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.VIRKNINGSTIDSPUNKT,
-//                            periodeOpphør.grunnlagReferanseListe,
-//                        ).firstOrNull()
-//
-//                grunnlagVirkning.shouldNotBeNull()
-//                grunnlagVirkning.innhold.opphørsdato shouldBe søknadsbarn.opphørsdato
+                val grunnlagVirkning =
+                    it.grunnlagListe
+                        .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
+                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                            periodeOpphør.grunnlagReferanseListe,
+                        ).firstOrNull()
+
+                grunnlagVirkning.shouldNotBeNull()
+                grunnlagVirkning.innhold.opphørsdato shouldBe søknadsbarn.opphørsdato
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
         }
@@ -759,6 +787,24 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
             )
         initBehandlingTestdata(behandling)
+        behandling.leggTilNotat("Begrunnelse virkningstidspunkt", NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn, true)
+        behandling.leggTilNotat("Begrunnelse inntekt BP", NotatType.INNTEKT, behandling.bidragspliktig, true)
+        behandling.leggTilNotat("Begrunnelse inntekt BM", NotatType.INNTEKT, behandling.bidragsmottaker, true)
+        behandling.leggTilNotat("Begrunnelse inntekt BA", NotatType.INNTEKT, søknadsbarn, true)
+        behandling.leggTilNotat("Begrunnelse underhold", NotatType.UNDERHOLDSKOSTNAD, søknadsbarn, true)
+        behandling.leggTilNotat("Begrunnelse underhold BM", NotatType.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker, true)
+        behandling.leggTilNotat("Begrunnelse samvær", NotatType.SAMVÆR, søknadsbarn, true)
+        behandling.leggTilNotat("Begrunnelse boforhold", NotatType.BOFORHOLD, behandling.bidragspliktig, true)
+        behandling.leggTilNotat("Begrunnelse privat avtale", NotatType.PRIVAT_AVTALE, søknadsbarn, true)
+
+        behandling.leggTilNotat("Begrunnelse virkningstidspunkt fra opprinnelig vedtak", NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn, false)
+        behandling.leggTilNotat("Begrunnelse inntekt BM fra opprinnelig vedtak", NotatType.INNTEKT, behandling.bidragspliktig, false)
+        behandling.leggTilNotat("Begrunnelse underhold fra opprinnelig vedtak", NotatType.UNDERHOLDSKOSTNAD, søknadsbarn, false)
+        behandling.leggTilNotat("Begrunnelse underhold BM fra opprinnelig vedtak", NotatType.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker, false)
+        behandling.leggTilNotat("Begrunnelse samvær fra opprinnelig vedtak", NotatType.SAMVÆR, søknadsbarn, false)
+        behandling.leggTilNotat("Begrunnelse boforhold fra opprinnelig vedtak", NotatType.BOFORHOLD, behandling.bidragspliktig, false)
+        behandling.leggTilNotat("Begrunnelse privat avtale fra opprinnelig vedtak", NotatType.PRIVAT_AVTALE, søknadsbarn, false)
+
         behandling.leggTilGrunnlagManuelleVedtak()
         behandling.leggTilGrunnlagEtterfølgendeVedtak()
         val vedtaksidKlage = 1
@@ -882,8 +928,10 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 27
+                it.grunnlagListe shouldHaveSize 41
             }
+            hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 16
+            validerNotater()
             val beregnetFraDato =
                 it.stønadsendringListe
                     .first()
@@ -907,7 +955,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                     opprettVedtakSlot[0]
                         .grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<EtterfølgendeManuelleVedtakGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
+                            Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK,
                             stønadsendring.grunnlagReferanseListe,
                         ).firstOrNull()
                 grunnlagEtterfølgendeVedtak.shouldNotBeNull()
@@ -1783,6 +1831,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2024-01-01").atStartOfDay()),
             )
         initBehandlingTestdata(behandling)
+        behandling.leggTilNotat("Begrunnelse virkningstidspunkt fra opprinnelig vedtak", NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn, false)
+        behandling.leggTilNotat("Begrunnelse virkningstidspunkt", NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn, true)
 
         behandling.leggTilGrunnlagManuelleVedtak(
             behandling.søknadsbarn.first(),
@@ -1921,9 +1971,29 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 26
+                it.grunnlagListe shouldHaveSize 27
             }
+            val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
+                shouldHaveSize(3)
+                assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+                    it shouldNotBe null
+                    val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+                    innhold.innhold shouldBe "Begrunnelse virkningstidspunkt"
+                }
 
+                assertSoftly(
+                    hentNotat(
+                        NotatType.VIRKNINGSTIDSPUNKT,
+                        gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
+                        fraOpprinneligVedtak = true,
+                    ),
+                ) {
+                    it shouldNotBe null
+                    val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+                    innhold.innhold shouldBe "Begrunnelse virkningstidspunkt fra opprinnelig vedtak"
+                }
+            }
             assertSoftly(it.stønadsendringListe) {
                 shouldHaveSize(1)
                 val stønadsendring = first()
@@ -1958,7 +2028,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 val resultatFraVedtakKlage =
                     it.grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
                             periodeKlagevedtak.grunnlagReferanseListe,
                         ).firstOrNull()
                 resultatFraVedtakKlage.shouldNotBeNull()
@@ -1971,7 +2041,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 val resultatFraVedtakEtterfølgende =
                     it.grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ResultatFraVedtakGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                            Grunnlagstype.RESULTAT_FRA_VEDTAK,
                             periodeEtterfølgende.grunnlagReferanseListe,
                         ).firstOrNull()
                 resultatFraVedtakEtterfølgende.shouldNotBeNull()
@@ -1984,9 +2054,29 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         }
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.INNKREVING
-            it.grunnlagListe shouldHaveSize 3
+            it.grunnlagListe shouldHaveSize 8
             it.unikReferanse shouldBe behandling.opprettUnikReferanse("innkreving")
+            val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+            assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
+                shouldHaveSize(2)
+                assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+                    it shouldNotBe null
+                    val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+                    innhold.innhold shouldBe "Begrunnelse virkningstidspunkt"
+                }
 
+                assertSoftly(
+                    hentNotat(
+                        NotatType.VIRKNINGSTIDSPUNKT,
+                        gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
+                        fraOpprinneligVedtak = true,
+                    ),
+                ) {
+                    it shouldNotBe null
+                    val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+                    innhold.innhold shouldBe "Begrunnelse virkningstidspunkt fra opprinnelig vedtak"
+                }
+            }
             assertSoftly(it.stønadsendringListe) { se ->
                 shouldHaveSize(1)
                 val stønadsendring = se.first()
@@ -2220,7 +2310,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         }
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.INNKREVING
-            it.grunnlagListe shouldHaveSize 3
+            it.grunnlagListe shouldHaveSize 6
             assertSoftly(it.stønadsendringListe) { se ->
                 shouldHaveSize(1)
                 val stønadsendring = se.first()
@@ -2240,7 +2330,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 val grunnlagVirkning =
                     it.grunnlagListe
                         .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
-                            no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                            Grunnlagstype.VIRKNINGSTIDSPUNKT,
                             periodeOpphør.grunnlagReferanseListe,
                         ).firstOrNull()
 
@@ -2499,7 +2589,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilNotat(
-            "Samvær",
+            "Begrunnelse samvær",
             NotatType.SAMVÆR,
             behandling.søknadsbarn.first(),
         )
@@ -2510,5 +2600,90 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+    }
+}
+
+private fun OpprettVedtakRequestDto.validerNotater() {
+    val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
+    assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
+        shouldHaveSize(16)
+        assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse virkningstidspunkt"
+        }
+
+        assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse virkningstidspunkt fra opprinnelig vedtak"
+        }
+
+        assertSoftly(hentNotat(NotatType.PRIVAT_AVTALE, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse privat avtale"
+        }
+
+        assertSoftly(hentNotat(NotatType.PRIVAT_AVTALE, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse privat avtale fra opprinnelig vedtak"
+        }
+        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse boforhold"
+        }
+        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse boforhold fra opprinnelig vedtak"
+        }
+        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse samvær"
+        }
+
+        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse samvær fra opprinnelig vedtak"
+        }
+
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse underhold"
+        }
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse underhold fra opprinnelig vedtak"
+        }
+
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse underhold BM"
+        }
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse underhold BM fra opprinnelig vedtak"
+        }
+
+        assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse inntekt BM"
+        }
+        assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+            it shouldNotBe null
+            val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
+            innhold.innhold shouldBe "Begrunnelse inntekt BM fra opprinnelig vedtak"
+        }
     }
 }

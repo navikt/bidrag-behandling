@@ -33,8 +33,12 @@ fun OpprettVedtakRequestDto.hentGrunnlagstype(
 fun OpprettVedtakRequestDto.hentNotat(
     notatType: NotatGrunnlag.NotatType,
     gjelderReferanse: String? = null,
+    gjelderBarnReferanse: String? = null,
+    fraOpprinneligVedtak: Boolean = false,
 ) = grunnlagListe.find {
-    it.type == Grunnlagstype.NOTAT && (gjelderReferanse == null || it.gjelderReferanse == gjelderReferanse) && it.innholdTilObjekt<NotatGrunnlag>().type == notatType
+    it.type == Grunnlagstype.NOTAT && (gjelderReferanse == null && gjelderBarnReferanse == null || it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderBarnReferanse) &&
+        it.innholdTilObjekt<NotatGrunnlag>().type == notatType &&
+        it.innholdTilObjekt<NotatGrunnlag>().fraOpprinneligVedtak == fraOpprinneligVedtak
 }
 
 fun List<OpprettGrunnlagRequestDto>.hentPerson(ident: String) =
