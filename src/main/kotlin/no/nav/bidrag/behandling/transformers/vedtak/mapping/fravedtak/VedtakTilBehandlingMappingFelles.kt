@@ -386,7 +386,7 @@ internal fun List<GrunnlagDto>.mapRoller(
     vedtak: VedtakDto,
     behandling: Behandling,
     lesemodus: Boolean,
-    virkningstidspunkt: LocalDate,
+    opprinneligVirkningstidspunkt: LocalDate,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
@@ -397,7 +397,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                 if (lesemodus) i.toLong() else null,
                 virkningstidspunktGrunnlag,
                 aldersjustering,
-                virkningstidspunkt,
+                opprinneligVirkningstidspunkt,
                 lesemodus,
             )
         }.toMutableSet()
@@ -416,7 +416,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, virkningstidspunkt, lesemodus))
+            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
 
             val bmIdent = vedtak.stønadsendringListe.firstOrNull()?.mottaker ?: vedtak.engangsbeløpListe.first().mottaker
             val bmGrunnlag =
@@ -431,7 +431,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, virkningstidspunkt, lesemodus))
+            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
             roller.addAll(
                 vedtak.stønadsendringListe.mapIndexed { i, it ->
                     val baIdent = it.kravhaver
@@ -455,7 +455,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                         if (lesemodus) (i + 2).toLong() else null,
                         virkningstidspunktGrunnlag,
                         aldersjustering,
-                        virkningstidspunkt,
+                        opprinneligVirkningstidspunkt,
                         lesemodus,
                     )
                 },
@@ -1149,7 +1149,7 @@ private fun GrunnlagDto.tilRolle(
     id: Long? = null,
     virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
     aldersjustering: AldersjusteringDetaljerGrunnlag?,
-    virkningstidspunkt: LocalDate,
+    opprinneligVirkningstidspunkt: LocalDate,
     lesemodus: Boolean,
 ): Rolle =
     Rolle(
@@ -1167,7 +1167,7 @@ private fun GrunnlagDto.tilRolle(
                     )
             },
         ident = personIdent,
-        opprinneligVirkningstidspunkt = virkningstidspunkt,
+        opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
         virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
         årsak = virkningstidspunktGrunnlag?.årsak,
         avslag = virkningstidspunktGrunnlag?.avslag,

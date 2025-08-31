@@ -75,7 +75,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 1
             omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
             omgjøringsdetaljer?.refVedtaksid shouldBe 12333
-            grunnlag.filter { it.aktiv == null }.shouldHaveSize(8)
+            grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
             sivilstand shouldHaveSize 2
             // TODO: Boforhold grunnlag inneholder sju unike husstandsmedlemmer - fikse stub-vedtaksdata slik at tallene stemmer
             husstandsmedlem shouldHaveSize 7
@@ -85,8 +85,8 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             avslag shouldBe null
             omgjøringsdetaljer?.soknadRefId shouldBe 111
             soknadsid shouldBe 12323
-            notater shouldHaveSize 5
-            notater.filter { it.erDelAvBehandlingen == false }.shouldHaveSize(5)
+            notater shouldHaveSize 7
+            notater.filter { it.erDelAvBehandlingen == false }.shouldHaveSize(7)
         }
 
         stubUtils.Verify().hentGrunnlagKalt(1, testdataBM.tilRolle(behandling))
@@ -110,7 +110,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
                         behandlerenhet = "4444",
                         saksnummer = "1234567",
                         søknadsreferanseid = 111,
-                        søknadsid = 12323,
+                        søknadsid = 12325553,
                     ),
                 ),
                 OpprettBehandlingResponse::class.java,

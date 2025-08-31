@@ -64,7 +64,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
@@ -136,7 +138,11 @@ class VedtakTilBehandlingMapping(
             this.stønadsendringListe.firstOrNull()?.innkreving
                 ?: this.engangsbeløpListe.firstOrNull()?.innkreving
                 ?: Innkrevingstype.MED_INNKREVING
-        val virkningstidspunkt = minsteVirkningstidspunkt?.atDay(1) ?: virkningstidspunkt ?: hentSøknad().søktFraDato
+        val opprinneligVirkningstidspunkt = minsteVirkningstidspunkt?.atDay(1) ?: virkningstidspunkt ?: hentSøknad().søktFraDato
+        val virkningstidspunkt =
+            grunnlagListe
+                .filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT)
+                .minOfOrNull { it.innhold.virkningstidspunkt } ?: opprinneligVirkningstidspunkt
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
@@ -167,7 +173,7 @@ class VedtakTilBehandlingMapping(
                 soknadsid = søknadId ?: this.søknadId,
             )
 
-        behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, virkningstidspunkt)
+        behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, opprinneligVirkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
             if (!lesemodus || omgjørVedtak != vedtakId) {
@@ -178,7 +184,7 @@ class VedtakTilBehandlingMapping(
                     refVedtaksid = if (!lesemodus) vedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,
-                    opprinneligVirkningstidspunkt = virkningstidspunkt,
+                    opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
                     opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
                 )
             } else {
@@ -209,7 +215,7 @@ class VedtakTilBehandlingMapping(
         behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
         behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
-        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, virkningstidspunkt)
+        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, opprinneligVirkningstidspunkt)
         behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
         behandling.metadata = BehandlingMetadataDo()
         if (erBisysVedtak) {
