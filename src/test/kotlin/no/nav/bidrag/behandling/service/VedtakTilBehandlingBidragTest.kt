@@ -43,6 +43,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.junit.jupiter.api.Test
+import stubVedtakConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
@@ -293,6 +294,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     @Test
     fun `Skal konvertere vedtak for beregning`() {
+        stubVedtakConsumer(vedtakConsumer)
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
         val resultat =
             vedtakService.konverterVedtakTilBeregningResultatBidrag(1)

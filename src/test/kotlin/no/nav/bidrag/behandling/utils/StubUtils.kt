@@ -60,6 +60,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.util.IdentConsumer
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -263,7 +264,7 @@ fun stubHentPersonNyIdent(
         try {
             AppContext.getBean(eq(BidragPersonConsumer::class.java))
         } catch (e: Exception) {
-            TODO("Not yet implemented")
+            secureLogger.error(e) { "asdsad" }
         }
     } returns personConsumerMock
 

@@ -41,6 +41,7 @@ import stubPersonRepository
 import stubSaksbehandlernavnProvider
 import stubTokenUtils
 import stubUnderholdskostnadRepository
+import stubVedtakConsumer
 
 @ExtendWith(MockKExtension::class)
 abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
@@ -75,6 +76,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
 
     @BeforeEach
     fun initMocks() {
+        stubVedtakConsumer(vedtakConsumer)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)

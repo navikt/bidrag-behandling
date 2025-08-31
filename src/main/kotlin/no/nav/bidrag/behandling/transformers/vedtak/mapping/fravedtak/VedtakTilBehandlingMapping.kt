@@ -191,9 +191,9 @@ class VedtakTilBehandlingMapping(
                 null
             }
 
-//        if (!lesemodus) {
-//            behandlingRepository.save(behandling)
-//        }
+        if (!lesemodus) {
+            behandlingRepository.save(behandling)
+        }
 
         if (lesemodus) {
             behandling.lesemodusVedtak =

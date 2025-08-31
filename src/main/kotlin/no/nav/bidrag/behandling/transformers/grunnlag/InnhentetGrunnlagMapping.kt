@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.grunnlag
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.config.UnleashFeatures
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
@@ -20,8 +21,8 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonG
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
-import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Familierelasjon
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.trimToNull
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetInntekt
@@ -32,14 +33,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetHusstandsmedl
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
@@ -125,7 +120,10 @@ fun List<Grunnlag>.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter: Set<G
     return grunnlag + personobjekterInnhentetAndreBarnTilBidragsmottaker
 }
 
-fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
+fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(
+    personobjekter: Set<GrunnlagDto>,
+    behandling: Behandling,
+): Set<GrunnlagDto> {
     val personobjekterInnhentetHusstandsmedlem = mutableSetOf<GrunnlagDto>()
 
     fun RelatertPersonGrunnlagDto.opprettPersonGrunnlag(): GrunnlagDto {
@@ -204,16 +202,15 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(personobjekter: Set<GrunnlagDt
         personobjekterInnhentetHusstandsmedlem +
         innhentetAndreVoksneIHusstandenGrunnlagListe +
         innhentetHusstandsmedlemBMGrunnlagListe +
-        opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMangler(innhentetHusstandsmedlemGrunnlagListe, personobjekter)
+        behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(innhentetHusstandsmedlemGrunnlagListe, personobjekter)
 }
 
-fun List<Grunnlag>.opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMangler(
+fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
     innhentetHusstandsmedlemGrunnlagListe: Set<GrunnlagDto>,
     personobjekter: Set<GrunnlagDto>,
 ): List<GrunnlagDto> {
-    val behandling = firstOrNull()?.behandling ?: return emptyList()
     val søknadsbarnSomManglerInnhentetGrunnlag =
-        behandling.søknadsbarn
+        søknadsbarn
             .filter { sb ->
                 innhentetHusstandsmedlemGrunnlagListe.none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
@@ -223,18 +220,18 @@ fun List<Grunnlag>.opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMan
                 RelatertPersonGrunnlagDto(
                     fødselsdato = it.fødselsdato,
                     gjelderPersonId = it.ident,
-                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
+                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident,
                     navn = it.navn,
                     relasjon = Familierelasjon.BARN,
                     borISammeHusstandDtoListe = emptyList(),
                 ).tilGrunnlagsobjekt(
                     LocalDateTime.now().withSecond(0).withNano(0),
-                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident)!!.referanse,
+                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident)!!.referanse,
                     personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
                 )
             }
     val husstandsmedlemSomManglerInnhentetGrunnlag =
-        behandling.husstandsmedlem
+        husstandsmedlem
             .filter { it.rolle == null }
             .filter { sb ->
                 innhentetHusstandsmedlemGrunnlagListe.none {
@@ -245,17 +242,52 @@ fun List<Grunnlag>.opprettInnhentetHusstandsmedlemGrunnlagForSøknadsbarnHvisMan
                 RelatertPersonGrunnlagDto(
                     fødselsdato = it.fødselsdato,
                     gjelderPersonId = it.ident,
-                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident,
+                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident,
                     navn = it.navn,
                     relasjon = Familierelasjon.BARN,
                     borISammeHusstandDtoListe = emptyList(),
                 ).tilGrunnlagsobjekt(
                     LocalDateTime.now().withSecond(0).withNano(0),
-                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!.ident)!!.referanse,
+                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident)!!.referanse,
                     personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
                 )
             }
-    return søknadsbarnSomManglerInnhentetGrunnlag + husstandsmedlemSomManglerInnhentetGrunnlag
+
+    val husstandsmedlemSomManglerInnhentetGrunnlagAndreVoksne =
+        if (innhentetHusstandsmedlemGrunnlagListe.none {
+                it.type == Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN
+            }
+        ) {
+            husstandsmedlem
+                .find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
+                ?.let {
+                    val gjelderReferanse =
+                        personobjekter
+                            .hentPersonNyesteIdent(
+                                Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN.innhentesForRolle(this)!!.ident,
+                            )!!
+                            .referanse
+                    setOf(
+                        GrunnlagDto(
+                            referanse =
+                                opprettInnhentetHusstandsmedlemGrunnlagsreferanse(
+                                    gjelderReferanse,
+                                    referanseRelatertTil = gjelderReferanse,
+                                ),
+                            type = Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN,
+                            gjelderReferanse = gjelderReferanse,
+                            innhold =
+                                POJONode(
+                                    emptyList<RelatertPersonGrunnlagDto>(),
+                                ),
+                        ),
+                    )
+                } ?: emptySet()
+        } else {
+            emptySet()
+        }
+    return søknadsbarnSomManglerInnhentetGrunnlag + husstandsmedlemSomManglerInnhentetGrunnlag +
+        husstandsmedlemSomManglerInnhentetGrunnlagAndreVoksne
 }
 
 fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =

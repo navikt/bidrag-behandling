@@ -230,7 +230,7 @@ class VedtakInnhentetGrunnlagTest {
                     "grunnlagresponse.json",
                 )
             assertSoftly(
-                grunnlagListe.toList().tilInnhentetHusstandsmedlemmer(personobjekter).toList(),
+                grunnlagListe.toList().tilInnhentetHusstandsmedlemmer(personobjekter, behandling).toList(),
             ) {
                 it.hentAllePersoner().shouldHaveSize(3)
                 val personGrunnlagHusstandsmedlemListe = it.hentGrunnlagPersonHusstandsmedlem()
@@ -334,7 +334,7 @@ class VedtakInnhentetGrunnlagTest {
                     ),
                 ).tilGrunnlagEntity(behandling)
             val grunnlagHusstandsmedlemmer =
-                grunnlagListe.tilInnhentetHusstandsmedlemmer(personobjekter).toList()
+                grunnlagListe.tilInnhentetHusstandsmedlemmer(personobjekter, behandling).toList()
             assertSoftly(grunnlagHusstandsmedlemmer) {
                 it.hentAllePersoner().shouldHaveSize(1)
                 val husstandGrunnlag = it.hentGrunnlagHusstand()
@@ -453,7 +453,7 @@ class VedtakInnhentetGrunnlagTest {
                     ),
                 ).tilGrunnlagEntity(behandling)
             val grunnlagHusstandsmedlemmer =
-                grunnlagListe.tilInnhentetHusstandsmedlemmer(personobjekter).toList()
+                grunnlagListe.tilInnhentetHusstandsmedlemmer(personobjekter, behandling).toList()
             assertSoftly(grunnlagHusstandsmedlemmer) {
                 it.hentAllePersoner().shouldHaveSize(1)
                 val personGrunnlagHusstandsmedlemListe = it.hentGrunnlagPersonHusstandsmedlem()
