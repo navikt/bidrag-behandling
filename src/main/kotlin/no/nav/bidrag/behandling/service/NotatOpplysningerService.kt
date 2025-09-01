@@ -702,7 +702,7 @@ private fun Behandling.tilNotatVirkningstidspunkt() =
 private fun Behandling.tilNotatInntekt(rolle: Rolle): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteInntektsnotat(this, rolle.id!!),
-        innholdFraOpprinneligVedtak = henteInntektsnotat(this, rolle.id!!, true),
+        innholdFraOpprinneligVedtak = henteInntektsnotat(this, rolle.id!!, false),
         gjelder = rolle.tilNotatRolle(),
     )
 
