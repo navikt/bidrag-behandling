@@ -514,7 +514,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             validerNotater(behandling)
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 6
+            hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 15
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 27
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2

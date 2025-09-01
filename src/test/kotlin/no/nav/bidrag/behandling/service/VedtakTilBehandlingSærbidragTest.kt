@@ -48,7 +48,17 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
+        val vedtakDto = lagVedtaksdata("vedtak_response-særbidrag")
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
+            vedtakDto.copy(
+                vedtaksid = 1,
+                engangsbeløpListe = vedtakDto.engangsbeløpListe.map { it.copy(omgjørVedtakId = 2) },
+            )
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            vedtakDto.copy(
+                vedtaksid = 2,
+                engangsbeløpListe = vedtakDto.engangsbeløpListe.map { it.copy(omgjørVedtakId = null) },
+            )
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
@@ -65,7 +75,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -107,8 +117,10 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med klage mottatt dato`() {
         val originalVedtak = lagVedtaksdata("vedtak_response-særbidrag")
-        val vedtak1 =
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
             originalVedtak.copy(
+                vedtaksid = 1,
+                engangsbeløpListe = originalVedtak.engangsbeløpListe.map { it.copy(omgjørVedtakId = 2) },
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
                 grunnlagListe =
                     originalVedtak.grunnlagListe.map {
@@ -127,8 +139,14 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
                         }
                     },
             )
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            originalVedtak.copy(
+                vedtaksid = 2,
+                vedtakstidspunkt = LocalDate.parse("2023-02-01").atStartOfDay(),
+                engangsbeløpListe = originalVedtak.engangsbeløpListe.map { it.copy(omgjørVedtakId = null) },
+            )
+
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
-        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -144,7 +162,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -276,8 +294,10 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for SÆRBIDRAG med avslag alle utgifter foreldet`() {
         val originalVedtak = lagVedtaksdata("vedtak_respons_avslag_særbidrag-foreldet")
-        val vedtak1 =
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
             originalVedtak.copy(
+                vedtaksid = 1,
+                engangsbeløpListe = originalVedtak.engangsbeløpListe.map { it.copy(omgjørVedtakId = 2) },
                 vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
                 grunnlagListe =
                     originalVedtak.grunnlagListe.map {
@@ -296,7 +316,13 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
                         }
                     },
             )
-        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            originalVedtak.copy(
+                vedtaksid = 2,
+                vedtakstidspunkt = LocalDate.parse("2023-02-01").atStartOfDay(),
+                engangsbeløpListe = originalVedtak.engangsbeløpListe.map { it.copy(omgjørVedtakId = null) },
+            )
+
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
@@ -314,7 +340,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L
@@ -452,7 +478,20 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis direkte avslag`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_respons_avslag-særbidrag")
+        val originalVedtak = lagVedtaksdata("vedtak_respons_avslag-særbidrag")
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
+            originalVedtak.copy(
+                vedtaksid = 1,
+                engangsbeløpListe = originalVedtak.engangsbeløpListe.map { it.copy(omgjørVedtakId = 2) },
+                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+            )
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            originalVedtak.copy(
+                vedtaksid = 2,
+                vedtakstidspunkt = LocalDate.parse("2023-02-01").atStartOfDay(),
+                engangsbeløpListe = originalVedtak.engangsbeløpListe.map { it.copy(omgjørVedtakId = null) },
+            )
+
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
 
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!

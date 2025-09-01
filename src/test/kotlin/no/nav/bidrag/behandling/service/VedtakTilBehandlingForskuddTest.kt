@@ -114,7 +114,18 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis resultat er avslag`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns filTilVedtakDto("vedtak_respons_resultat_avslag")
+        val originalVedtak = filTilVedtakDto("vedtak_respons_resultat_avslag")
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
+            originalVedtak.copy(
+                vedtaksid = 1,
+                stønadsendringListe = originalVedtak.stønadsendringListe.map { it.copy(omgjørVedtakId = 2) },
+            )
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            originalVedtak.copy(
+                vedtaksid = 2,
+                stønadsendringListe = originalVedtak.stønadsendringListe.map { it.copy(omgjørVedtakId = null) },
+            )
+
         every { behandlingService.hentBehandlingById(1) } returns oppretteBehandling()
         every { tilgangskontrollService.sjekkTilgangVedtak(any()) } returns Unit
 
