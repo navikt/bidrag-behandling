@@ -289,7 +289,11 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
-
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,
@@ -398,7 +402,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 177
+                request.grunnlagListe shouldHaveSize 186
             }
         }
 
@@ -416,12 +420,12 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
 
                 it.periodeListe shouldHaveSize 8
-                it.grunnlagReferanseListe shouldHaveSize 8
+                it.grunnlagReferanseListe shouldHaveSize 17
                 opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                     Grunnlagstype.NOTAT,
                     it.grunnlagReferanseListe,
                 ) shouldHaveSize
-                    12
+                    15
                 opprettVedtakRequest.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                     Grunnlagstype.SØKNAD,
                     it.grunnlagReferanseListe,
@@ -1824,7 +1828,11 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
-
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,
@@ -2745,9 +2753,10 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
 private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
     val bmGrunnlag = grunnlagListe.hentPerson(testdataBM.ident)!!
+    val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
     val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
-        shouldHaveSize(14)
+        shouldHaveSize(15)
         assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
@@ -2771,12 +2780,12 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Privat avtale - fra opprinnelig vedtak"
         }
-        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.BOFORHOLD)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Boforhold"
         }
-        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.BOFORHOLD, fraOpprinneligVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Boforhold - fra opprinnelig vedtak"

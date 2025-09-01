@@ -198,21 +198,25 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(
                 )
             }?.let { setOf(it) } ?: emptySet()
 
-    return innhentetHusstandsmedlemGrunnlagListe +
-        personobjekterInnhentetHusstandsmedlem +
-        innhentetAndreVoksneIHusstandenGrunnlagListe +
-        innhentetHusstandsmedlemBMGrunnlagListe +
-        behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(innhentetHusstandsmedlemGrunnlagListe, personobjekter)
+    val innhentetGrunnlagsliste =
+        innhentetHusstandsmedlemGrunnlagListe +
+            personobjekterInnhentetHusstandsmedlem +
+            innhentetAndreVoksneIHusstandenGrunnlagListe +
+            innhentetHusstandsmedlemBMGrunnlagListe
+
+    return innhentetGrunnlagsliste +
+        behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(innhentetGrunnlagsliste, personobjekter)
 }
 
 fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
-    innhentetHusstandsmedlemGrunnlagListe: Set<GrunnlagDto>,
+    grunnlagsliste: Set<GrunnlagDto>,
     personobjekter: Set<GrunnlagDto>,
 ): List<GrunnlagDto> {
+    val innhentetHusstandsmedlemGrunnlagsliste = grunnlagsliste.filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }
     val søknadsbarnSomManglerInnhentetGrunnlag =
         søknadsbarn
             .filter { sb ->
-                innhentetHusstandsmedlemGrunnlagListe.none {
+                innhentetHusstandsmedlemGrunnlagsliste.filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }.none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
                     personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
                 }
@@ -234,7 +238,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
         husstandsmedlem
             .filter { it.rolle == null }
             .filter { sb ->
-                innhentetHusstandsmedlemGrunnlagListe.none {
+                innhentetHusstandsmedlemGrunnlagsliste.none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
                     personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
                 }
@@ -254,7 +258,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
             }
 
     val husstandsmedlemSomManglerInnhentetGrunnlagAndreVoksne =
-        if (innhentetHusstandsmedlemGrunnlagListe.none {
+        if (grunnlagsliste.none {
                 it.type == Grunnlagstype.INNHENTET_ANDRE_VOKSNE_I_HUSSTANDEN
             }
         ) {

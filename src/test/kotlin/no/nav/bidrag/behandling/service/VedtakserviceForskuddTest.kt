@@ -403,7 +403,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             mottaker.verdi shouldBe nyIdentBm
         }
         opprettVedtakRequest.engangsbeløpListe.shouldBeEmpty()
-        opprettVedtakRequest.grunnlagListe.shouldHaveSize(86)
+        opprettVedtakRequest.grunnlagListe.shouldHaveSize(88)
 
         opprettVedtakRequest.grunnlagListe.hentAllePersoner() shouldHaveSize 7
         opprettVedtakRequest.grunnlagListe.søknadsbarn

@@ -806,7 +806,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.leggTilNotat("Begrunnelse privat avtale", NotatType.PRIVAT_AVTALE, søknadsbarn, true)
 
         behandling.leggTilNotat("Begrunnelse virkningstidspunkt fra opprinnelig vedtak", NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn, false)
-        behandling.leggTilNotat("Begrunnelse inntekt BM fra opprinnelig vedtak", NotatType.INNTEKT, behandling.bidragspliktig, false)
+        behandling.leggTilNotat("Begrunnelse inntekt BM fra opprinnelig vedtak", NotatType.INNTEKT, behandling.bidragsmottaker, false)
         behandling.leggTilNotat("Begrunnelse underhold fra opprinnelig vedtak", NotatType.UNDERHOLDSKOSTNAD, søknadsbarn, false)
         behandling.leggTilNotat("Begrunnelse underhold BM fra opprinnelig vedtak", NotatType.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker, false)
         behandling.leggTilNotat("Begrunnelse samvær fra opprinnelig vedtak", NotatType.SAMVÆR, søknadsbarn, false)
@@ -982,7 +982,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 11
+                it.grunnlagListe shouldHaveSize 14
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1008,7 +1008,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 8
+                it.grunnlagListe shouldHaveSize 11
             }
 
             opprettVedtakSlot[2].unikReferanse shouldBe
@@ -2644,12 +2644,12 @@ private fun OpprettVedtakRequestDto.validerNotater() {
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Begrunnelse privat avtale fra opprinnelig vedtak"
         }
-        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderReferanse = bpGunnlag.referanse)) {
+        assertSoftly(hentNotat(NotatType.BOFORHOLD)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Begrunnelse boforhold"
         }
-        assertSoftly(hentNotat(NotatType.BOFORHOLD, gjelderBarnReferanse = bpGunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.BOFORHOLD, fraOpprinneligVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Begrunnelse boforhold fra opprinnelig vedtak"
