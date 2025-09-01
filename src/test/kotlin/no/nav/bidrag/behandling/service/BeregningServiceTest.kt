@@ -408,7 +408,7 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 3
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(0)
         }

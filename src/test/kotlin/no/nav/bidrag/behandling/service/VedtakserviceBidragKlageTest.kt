@@ -346,7 +346,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         val søknadsbarn = behandling.søknadsbarn.first()
         behandling.vedtakstype = Vedtakstype.KLAGE
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
-        søknadsbarn.opphørsdato = LocalDate.parse("2025-09-01")
+        søknadsbarn.opphørsdato = LocalDate.parse("2999-08-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
@@ -631,7 +631,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.vedtakstype = Vedtakstype.KLAGE
         behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
-        søknadsbarn.opphørsdato = LocalDate.parse("2025-09-01")
+        søknadsbarn.opphørsdato = LocalDate.parse("2999-08-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
@@ -2133,7 +2133,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         behandling.vedtakstype = Vedtakstype.KLAGE
         behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
-        søknadsbarn.opphørsdato = LocalDate.parse("2025-09-01")
+        søknadsbarn.opphørsdato = LocalDate.parse("2999-08-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
@@ -2373,7 +2373,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         val søknadsbarn = behandling.søknadsbarn.first()
         behandling.vedtakstype = Vedtakstype.KLAGE
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
-        søknadsbarn.opphørsdato = LocalDate.parse("2025-09-01")
+        søknadsbarn.opphørsdato = LocalDate.parse("2999-08-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
         behandling.omgjøringsdetaljer =
@@ -2433,7 +2433,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                             BeregnetBarnebidragResultat(
                                 listOf(
                                     ResultatPeriode(
-                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-07-01"), null),
+                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-06-01"), null),
                                         resultat = ResultatBeregning(BigDecimal.ZERO),
                                         grunnlagsreferanseListe = emptyList(),
                                     ),
@@ -2449,7 +2449,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                             BeregnetBarnebidragResultat(
                                 listOf(
                                     ResultatPeriode(
-                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-08-01"), null),
+                                        periode = ÅrMånedsperiode(LocalDate.parse("2025-07-01"), null),
                                         resultat = ResultatBeregning(BigDecimal.ZERO),
                                         grunnlagsreferanseListe = emptyList(),
                                     ),
@@ -2482,17 +2482,17 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                 beregnetBarnebidragPeriodeListe =
                                     listOf(
                                         ResultatPeriode(
-                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, LocalDate.parse("2025-07-01")),
+                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, LocalDate.parse("2025-06-01")),
                                             resultat = ResultatBeregning(BigDecimal.ZERO),
                                             grunnlagsreferanseListe = emptyList(),
                                         ),
                                         ResultatPeriode(
-                                            periode = ÅrMånedsperiode(LocalDate.parse("2025-07-01"), LocalDate.parse("2025-08-01")),
+                                            periode = ÅrMånedsperiode(LocalDate.parse("2025-06-01"), LocalDate.parse("2025-07-01")),
                                             resultat = ResultatBeregning(BigDecimal.ZERO),
                                             grunnlagsreferanseListe = emptyList(),
                                         ),
                                         ResultatPeriode(
-                                            periode = ÅrMånedsperiode(LocalDate.parse("2025-08-01"), søknadsbarn.opphørsdato),
+                                            periode = ÅrMånedsperiode(LocalDate.parse("2025-07-01"), søknadsbarn.opphørsdato),
                                             resultat = ResultatBeregning(BigDecimal.ZERO),
                                             grunnlagsreferanseListe = emptyList(),
                                         ),
