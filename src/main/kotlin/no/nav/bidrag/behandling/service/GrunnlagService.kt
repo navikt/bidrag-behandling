@@ -1205,7 +1205,7 @@ class GrunnlagService(
 
         // Oppdatere sivilstandstabell med periodisert sivilstand
         innhentetGrunnlag.hentGrunnlagDto?.let {
-            if (it.sivilstandListe.isNotEmpty()) {
+            if (it.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
                 periodisereOgLagreSivilstand(behandling, it)
             }
         }
