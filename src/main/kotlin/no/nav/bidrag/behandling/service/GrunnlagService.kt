@@ -1205,7 +1205,7 @@ class GrunnlagService(
 
         // Oppdatere sivilstandstabell med periodisert sivilstand
         innhentetGrunnlag.hentGrunnlagDto?.let {
-            if (it.sivilstandListe.isNotEmpty() && !innhentingAvSivilstandFeilet) {
+            if (it.sivilstandListe.isNotEmpty()) {
                 periodisereOgLagreSivilstand(behandling, it)
             }
         }
@@ -2094,12 +2094,18 @@ class GrunnlagService(
                 ).contains(it)
             }.forEach {
                 val feilrapportering = feilrapporteringer[it]
-                lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
-                feilrapportering?.let {
+                if (feilrapportering == null ||
+                    (
+                        HentGrunnlagFeiltype.FUNKSJONELL_FEIL == feilrapportering.feiltype ||
+                            UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
+                    )
+                ) {
+                    lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
+                } else {
                     log.warn {
-                        "Innhenting av $it for rolle ${rolleInhentetFor.rolletype} i behandling ${behandling.id}" +
-                            " feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
-                            "${feilrapportering.feilmelding}. "
+                        "Innhenting av $it for rolle ${rolleInhentetFor.rolletype} " + "i behandling ${behandling.id} " +
+                            "feilet for type ${feilrapportering.grunnlagstype} med begrunnelse " +
+                            "${feilrapportering.feilmelding}. Lagrer ikke grunnlag"
                     }
                 }
             }

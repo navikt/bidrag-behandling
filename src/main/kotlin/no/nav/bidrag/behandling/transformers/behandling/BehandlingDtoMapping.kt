@@ -624,8 +624,12 @@ fun List<SivilstandGrunnlagDto>.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
 ): List<SivilstandGrunnlagDto> {
     val filtrertGrunnlag =
         sortedBy { it.gyldigFom }.slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
-    return filtrertGrunnlag.ifEmpty {
-        listOf(sortedBy { it.gyldigFom }.last())
+    return if (isEmpty()) {
+        emptyList()
+    } else {
+        filtrertGrunnlag.ifEmpty {
+            listOf(sortedBy { it.gyldigFom }.last())
+        }
     }
 }
 
