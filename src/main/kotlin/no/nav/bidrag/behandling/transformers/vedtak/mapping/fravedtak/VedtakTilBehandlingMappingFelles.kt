@@ -946,9 +946,14 @@ fun Behandling.opprettGrunnlag(
     rolle = roller.find { it.ident == rolleIdent }!!,
 )
 
+internal fun VedtakDto.notatMedTypeBegge(
+    type: NotatGrunnlag.NotatType,
+    gjelderReferanse: Grunnlagsreferanse? = null,
+) = notatMedType(type, false, gjelderReferanse) ?: notatMedType(type, true, gjelderReferanse)
+
 internal fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
-    fraOpprinneligVedtak: Boolean,
+    fraOmgjortVedtak: Boolean,
     gjelderReferanse: Grunnlagsreferanse? = null,
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
@@ -956,7 +961,7 @@ internal fun VedtakDto.notatMedType(
         gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty() ||
             it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderReferanse
     }.map { it.innholdTilObjekt<NotatGrunnlag>() }
-    .find { it.type == type && it.fraOpprinneligVedtak == fraOpprinneligVedtak }
+    .find { it.type == type && it.fraOpprinneligVedtak == fraOmgjortVedtak }
     ?.innhold
 
 internal fun VedtakDto.avslagskode(): Resultatkode? {

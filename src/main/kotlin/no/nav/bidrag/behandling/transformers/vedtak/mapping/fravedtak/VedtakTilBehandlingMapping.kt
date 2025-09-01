@@ -232,20 +232,27 @@ class VedtakTilBehandlingMapping(
         behandling: Behandling,
         lesemodus: Boolean,
     ) {
-        notatMedType(NotatType.BOFORHOLD, false)?.let {
-            behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))
-        }
-
-        notatMedType(Notattype.UTGIFTER, false)?.let {
-            behandling.notater.add(behandling.tilNotat(NotatType.UTGIFTER, it, delAvBehandling = lesemodus))
-        }
-
         if (lesemodus) {
+            notatMedType(NotatType.BOFORHOLD, false)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))
+            }
+
+            notatMedType(Notattype.UTGIFTER, false)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.UTGIFTER, it, delAvBehandling = lesemodus))
+            }
             notatMedType(NotatType.BOFORHOLD, true)?.let {
                 behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = false))
             }
             notatMedType(Notattype.UTGIFTER, true)?.let {
                 behandling.notater.add(behandling.tilNotat(NotatType.UTGIFTER, it, delAvBehandling = false))
+            }
+        } else {
+            notatMedTypeBegge(NotatType.BOFORHOLD)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.BOFORHOLD, it, delAvBehandling = lesemodus))
+            }
+
+            notatMedTypeBegge(Notattype.UTGIFTER)?.let {
+                behandling.notater.add(behandling.tilNotat(NotatType.UTGIFTER, it, delAvBehandling = lesemodus))
             }
         }
 
@@ -256,93 +263,133 @@ class VedtakTilBehandlingMapping(
                 )
             }
             if (lesemodus) {
+                notatMedType(NotatType.VIRKNINGSTIDSPUNKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, r, delAvBehandling = lesemodus),
+                    )
+                }
                 notatMedType(NotatType.VIRKNINGSTIDSPUNKT, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                     behandling.notater.add(
                         behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, r, delAvBehandling = false),
+                    )
+                }
+            } else {
+                notatMedTypeBegge(NotatType.VIRKNINGSTIDSPUNKT, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT, it, r, delAvBehandling = lesemodus),
                     )
                 }
             }
         }
 
         behandling.roller.forEach { r ->
-            notatMedType(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-                behandling.notater.add(
-                    behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, r, delAvBehandling = lesemodus),
-                )
-            }
+
             if (lesemodus) {
+                notatMedType(
+                    NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                    false,
+                    grunnlagListe.hentPerson(r.ident)?.referanse,
+                )?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, r, delAvBehandling = lesemodus),
+                    )
+                }
                 notatMedType(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                     behandling.notater.add(
                         behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, r, delAvBehandling = false),
                     )
                 }
+            } else {
+                notatMedTypeBegge(
+                    NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                    grunnlagListe.hentPerson(r.ident)?.referanse,
+                )?.let {
+                    behandling.notater.add(
+                        behandling.tilNotat(NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, r, delAvBehandling = lesemodus),
+                    )
+                }
             }
         }
         behandling.roller.forEach { r ->
-            notatMedType(NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-                behandling.notater.add(behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = lesemodus))
-            }
+
             if (lesemodus) {
+                notatMedType(NotatType.INNTEKT, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = lesemodus))
+                }
                 notatMedType(NotatType.INNTEKT, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                     behandling.notater.add(
                         behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = false),
                     )
                 }
+            } else {
+                notatMedTypeBegge(NotatType.INNTEKT, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.INNTEKT, it, r, delAvBehandling = lesemodus))
+                }
             }
         }
         behandling.roller.forEach { r ->
-            notatMedType(NotatType.SAMVÆR, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-                behandling.notater.add(behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = lesemodus))
-            }
+
             if (lesemodus) {
+                notatMedType(NotatType.SAMVÆR, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = lesemodus))
+                }
                 notatMedType(NotatType.SAMVÆR, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                     behandling.notater.add(
                         behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = false),
                     )
                 }
-            }
-        }
-        behandling.roller.forEach { r ->
-            notatMedType(NotatType.PRIVAT_AVTALE, false, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-                behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
-            }
-            if (lesemodus) {
-                notatMedType(NotatType.PRIVAT_AVTALE, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
-                    behandling.notater.add(
-                        behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = false),
-                    )
+            } else {
+                notatMedTypeBegge(NotatType.SAMVÆR, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.SAMVÆR, it, r, delAvBehandling = lesemodus))
                 }
             }
         }
+
         behandling.roller.forEach { r ->
-            notatMedType(
-                NotatType.UNDERHOLDSKOSTNAD,
-                false,
-                grunnlagListe.hentPerson(r.ident)?.referanse,
-            )?.let {
-                behandling.notater.add(behandling.tilNotat(NotatType.UNDERHOLDSKOSTNAD, it, r, delAvBehandling = lesemodus))
-            }
+
             if (lesemodus) {
+                notatMedType(
+                    NotatType.UNDERHOLDSKOSTNAD,
+                    false,
+                    grunnlagListe.hentPerson(r.ident)?.referanse,
+                )?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.UNDERHOLDSKOSTNAD, it, r, delAvBehandling = lesemodus))
+                }
                 notatMedType(NotatType.UNDERHOLDSKOSTNAD, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                     behandling.notater.add(
                         behandling.tilNotat(NotatType.UNDERHOLDSKOSTNAD, it, r, delAvBehandling = false),
                     )
                 }
+            } else {
+                notatMedTypeBegge(
+                    NotatType.UNDERHOLDSKOSTNAD,
+                    grunnlagListe.hentPerson(r.ident)?.referanse,
+                )?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.UNDERHOLDSKOSTNAD, it, r, delAvBehandling = lesemodus))
+                }
             }
         }
         behandling.roller.forEach { r ->
-            notatMedType(
-                NotatType.PRIVAT_AVTALE,
-                false,
-                grunnlagListe.hentPerson(r.ident)?.referanse,
-            )?.let {
-                behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
-            }
+
             if (lesemodus) {
+                notatMedType(
+                    NotatType.PRIVAT_AVTALE,
+                    false,
+                    grunnlagListe.hentPerson(r.ident)?.referanse,
+                )?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
+                }
                 notatMedType(NotatType.PRIVAT_AVTALE, true, grunnlagListe.hentPerson(r.ident)?.referanse)?.let {
                     behandling.notater.add(
                         behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = false),
                     )
+                }
+            } else {
+                notatMedTypeBegge(
+                    NotatType.PRIVAT_AVTALE,
+                    grunnlagListe.hentPerson(r.ident)?.referanse,
+                )?.let {
+                    behandling.notater.add(behandling.tilNotat(NotatType.PRIVAT_AVTALE, it, r, delAvBehandling = lesemodus))
                 }
             }
         }

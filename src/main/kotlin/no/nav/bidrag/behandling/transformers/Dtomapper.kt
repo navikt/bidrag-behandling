@@ -820,7 +820,7 @@ class Dtomapper(
                             globalOpphørsdato = globalOpphørsdato,
                             begrunnelseFraOpprinneligVedtak =
                                 if (erKlageEllerOmgjøring) {
-                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
+                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
                                         .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
                                 } else {
                                     null
