@@ -2095,10 +2095,8 @@ class GrunnlagService(
             }.forEach {
                 val feilrapportering = feilrapporteringer[it]
                 if (feilrapportering == null ||
-                    (
-                        HentGrunnlagFeiltype.FUNKSJONELL_FEIL == feilrapportering.feiltype ||
-                            UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
-                    )
+                    HentGrunnlagFeiltype.FUNKSJONELL_FEIL == feilrapportering.feiltype &&
+                    !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
                 ) {
                     lagreGrunnlagHvisEndret(it, behandling, rolleInhentetFor, innhentetGrunnlag)
                 } else {
