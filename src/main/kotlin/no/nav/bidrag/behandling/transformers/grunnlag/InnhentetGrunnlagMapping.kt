@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonG
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -33,8 +34,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetHusstandsmedl
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettAinntektGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilleggGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetHusstandsmedlemGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettKontantstøtteGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
@@ -375,24 +382,60 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
                 inntekt.type == it.inntektRapportering &&
                 (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId.trimToNull())
         }
+    return if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled) {
+        opprettGrunnlagsreferanserForInntekt2(inntekt, inntekterGjelderGrunnlag!!.rolle.tilGrunnlagsreferanse())
+    } else {
+        beregnetInntekt?.grunnlagsreferanseListe?.filter { it.isNotEmpty() }
+            ?: run {
+                if (sjekkAktive) {
+                    return hentGrunnlagsreferanserForInntekt(
+                        gjelderIdent,
+                        inntekt,
+                        false,
+                    )
+                } else if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled) {
+                    emptyList()
+                } else {
+                    grunnlagByggingFeilet(
+                        "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +
+                            "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",
+                    )
+                }
+            } // ?: opprettGrunnlagsreferanserForInntekt2
+    }
+}
 
-    return beregnetInntekt?.grunnlagsreferanseListe?.filter { it.isNotEmpty() }
-        ?: run {
-            if (sjekkAktive) {
-                return hentGrunnlagsreferanserForInntekt(
-                    gjelderIdent,
-                    inntekt,
-                    false,
+private fun opprettGrunnlagsreferanserForInntekt2(
+    inntekt: Inntekt,
+    gjelderReferanse: Grunnlagsreferanse,
+): List<Grunnlagsreferanse> {
+    val referanse =
+        when (inntekt.type) {
+            Inntektsrapportering.AINNTEKT_BEREGNET_12MND, Inntektsrapportering.AINNTEKT_BEREGNET_3MND ->
+                opprettAinntektGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.BARNETILLEGG ->
+                opprettBarnetilleggGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.SMÅBARNSTILLEGG ->
+                opprettSmåbarnstilleggGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.UTVIDET_BARNETRYGD ->
+                opprettUtvidetbarnetrygGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.KONTANTSTØTTE ->
+                opprettKontantstøtteGrunnlagsreferanse(gjelderReferanse)
+
+            Inntektsrapportering.KAPITALINNTEKT, Inntektsrapportering.LIGNINGSINNTEKT ->
+                opprettSkattegrunnlagGrunnlagsreferanse(
+                    gjelderReferanse,
+                    inntekt.opprinneligFom?.year!!,
                 )
-            } else if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled) {
-                emptyList()
-            } else {
-                grunnlagByggingFeilet(
-                    "Mangler grunnlagsreferanse for offentlig inntekt ${inntekt.type} " +
-                        "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",
-                )
-            }
-        } // ?: opprettGrunnlagsreferanserForInntekt2
+
+            else -> null
+        }
+
+    return listOfNotNull(referanse)
 }
 
 private fun List<Grunnlag>.mapBarnetillegg(personobjekter: Set<GrunnlagDto>) =
