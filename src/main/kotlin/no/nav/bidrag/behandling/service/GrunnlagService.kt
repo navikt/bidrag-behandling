@@ -1128,7 +1128,10 @@ class GrunnlagService(
 
         val feilVedHentingAvInntekter: GrunnlagFeilDto? =
             feilrapporteringer[Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER]
-        val tekniskFeilVedHentingAvInntekter = feilVedHentingAvInntekter?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL
+        val tekniskFeilVedHentingAvInntekter =
+            feilVedHentingAvInntekter?.feiltype == HentGrunnlagFeiltype.TEKNISK_FEIL ||
+                feilVedHentingAvInntekter?.feiltype == HentGrunnlagFeiltype.FUNKSJONELL_FEIL &&
+                UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
         innhentetGrunnlag.hentGrunnlagDto?.let {
             lagreInntektsgrunnlagHvisEndret(
                 behandling = behandling,

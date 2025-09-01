@@ -382,7 +382,7 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
                 inntekt.type == it.inntektRapportering &&
                 (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId.trimToNull())
         }
-    return if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled) {
+    return if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled && inntekterGjelderGrunnlag != null) {
         opprettGrunnlagsreferanserForInntekt2(inntekt, inntekterGjelderGrunnlag!!.rolle.tilGrunnlagsreferanse())
     } else {
         beregnetInntekt?.grunnlagsreferanseListe?.filter { it.isNotEmpty() }
@@ -401,7 +401,7 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
                             "for periode (${inntekt.opprinneligFom}-${inntekt.opprinneligTom}) og barn ${inntekt.gjelderBarn}",
                     )
                 }
-            } // ?: opprettGrunnlagsreferanserForInntekt2
+            }
     }
 }
 
@@ -411,9 +411,6 @@ private fun opprettGrunnlagsreferanserForInntekt2(
 ): List<Grunnlagsreferanse> {
     val referanse =
         when (inntekt.type) {
-            Inntektsrapportering.AINNTEKT_BEREGNET_12MND, Inntektsrapportering.AINNTEKT_BEREGNET_3MND ->
-                opprettAinntektGrunnlagsreferanse(gjelderReferanse)
-
             Inntektsrapportering.BARNETILLEGG ->
                 opprettBarnetilleggGrunnlagsreferanse(gjelderReferanse)
 
@@ -431,8 +428,7 @@ private fun opprettGrunnlagsreferanserForInntekt2(
                     gjelderReferanse,
                     inntekt.opprinneligFom?.year!!,
                 )
-
-            else -> null
+            else -> opprettAinntektGrunnlagsreferanse(gjelderReferanse)
         }
 
     return listOfNotNull(referanse)

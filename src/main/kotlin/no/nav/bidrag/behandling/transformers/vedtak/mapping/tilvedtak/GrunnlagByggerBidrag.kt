@@ -29,6 +29,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
@@ -255,6 +256,13 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
                     false
                 }
             val erResultatIngenEndringUnderGrense = grunnlagListe.toList().erResultatEndringUnderGrense(søknadsbarn.tilGrunnlagsreferanse())
+            val erIndeksregulering =
+                grunnlagListe
+                    .toList()
+                    .filtrerBasertPåEgenReferanser(
+                        Grunnlagstype.SLUTTBEREGNING_INDEKSREGULERING,
+                        it.grunnlagsreferanseListe,
+                    ).isNotEmpty()
             OpprettPeriodeRequestDto(
                 periode = it.periode,
                 beløp = it.resultat.beløp,
@@ -264,6 +272,8 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
                         Resultatkode.IKKE_OMSORG_FOR_BARNET.name
                     } else if (erResultatIngenEndringUnderGrense) {
                         Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
+                    } else if (erIndeksregulering) {
+                        Resultatkode.INDEKSREGULERING.name
                     } else {
                         Resultatkode.BEREGNET_BIDRAG.name
                     },
