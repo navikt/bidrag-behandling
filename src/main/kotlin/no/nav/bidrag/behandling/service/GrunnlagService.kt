@@ -62,7 +62,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
-import no.nav.bidrag.behandling.transformers.innhentGrunnlag
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.tilType
@@ -146,6 +145,9 @@ class GrunnlagService(
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
     lateinit var grenseInnhenting: String
 
+    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting-belophistorikk:5}")
+    lateinit var grenseInnhentingBeløpshistorikk: String
+
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
@@ -192,7 +194,7 @@ class GrunnlagService(
                         "${feilrapporteringer.map { it.key }}"
                 }
             }
-        } else if (foretaNyGrunnlagsinnhenting(behandling, 5)) {
+        } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
             hentOgLagreEtterfølgendeVedtak(behandling)
             lagreBeløpshistorikkGrunnlag(behandling)
         } else {
