@@ -148,7 +148,7 @@ class GrunnlagService(
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
-        if (foretaNyGrunnlagsinnhenting(behandling)) {
+        if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
             if (behandling.vedtakstype.kreverGrunnlag()) {
@@ -192,6 +192,9 @@ class GrunnlagService(
                         "${feilrapporteringer.map { it.key }}"
                 }
             }
+        } else if (foretaNyGrunnlagsinnhenting(behandling, 5)) {
+            hentOgLagreEtterfølgendeVedtak(behandling)
+            lagreBeløpshistorikkGrunnlag(behandling)
         } else {
             val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
@@ -1091,13 +1094,16 @@ class GrunnlagService(
         }
     }
 
-    private fun foretaNyGrunnlagsinnhenting(behandling: Behandling): Boolean =
+    private fun foretaNyGrunnlagsinnhenting(
+        behandling: Behandling,
+        antallMinutter: Long,
+    ): Boolean =
         !behandling.erVedtakFattet &&
             (
                 behandling.grunnlagSistInnhentet == null ||
                     LocalDateTime
                         .now()
-                        .minusMinutes(grenseInnhenting.toLong()) > behandling.grunnlagSistInnhentet
+                        .minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
             )
 
     private fun henteOglagreGrunnlag(
