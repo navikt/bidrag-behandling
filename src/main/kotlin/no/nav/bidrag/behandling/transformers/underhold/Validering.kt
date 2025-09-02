@@ -208,7 +208,7 @@ fun Underholdskostnad.valider(): UnderholdskostnadValideringsfeil =
 
 fun Underholdskostnad.manglerBegrunnelse(): Boolean {
     // Bisys vedtak har ingen begrunnelse. Er ikke påkrevd for å unngå at saksbehandler må skrive inn begrunnelse der det ikke er behov
-    if (behandling.metadata?.erKlagePåBisysVedtak() == true) return false
+    if (behandling.metadata?.erKlagePåBisysVedtak() == true || behandling.erKlageEllerOmgjøring) return false
     val begrunnelse =
         NotatService.henteUnderholdsnotat(
             this.behandling,
