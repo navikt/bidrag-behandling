@@ -608,6 +608,15 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         )
     } else {
         finnResultatFraAnnenVedtak(grunnlagsreferanseListe)?.let {
+            if (it.vedtakstype == Vedtakstype.OPPHØR && it.vedtaksid == null) {
+                return ResultatBarnebidragsberegningPeriodeDto(
+                    vedtakstype = Vedtakstype.OPPHØR,
+                    periode = periode,
+                    faktiskBidrag = BigDecimal.ZERO,
+                    erOpphør = true,
+                    resultatKode = Resultatkode.OPPHØR,
+                )
+            }
             val vedtak = hentVedtak(it.vedtaksid)
             val vedtakPeriode =
                 vedtak!!
