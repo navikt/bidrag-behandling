@@ -57,7 +57,8 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
+    val identifikatorAlle get() = type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres
 }
 
 fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
@@ -79,9 +80,9 @@ fun Set<Grunnlag>.hentSisteIkkeAktiv() =
         .values
         .filterNotNull()
 
-fun Set<Grunnlag>.hentSisteAktiv() =
+fun Set<Grunnlag>.hentSisteAktiv(inkluderGrunnlagFraVedtakSomSkalOmgjøres: Boolean = false) =
     hentAlleAktiv()
-        .groupBy { it.identifikator }
+        .groupBy { if (inkluderGrunnlagFraVedtakSomSkalOmgjøres) it.identifikatorAlle else it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
@@ -101,7 +102,7 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
     gjelderBarnIdent: String,
     type: Grunnlagsdatatype,
     grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
-) = hentSisteAktiv()
+) = hentSisteAktiv(true)
     .find {
         it.gjelder == gjelderBarnIdent && type == it.type &&
             // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres

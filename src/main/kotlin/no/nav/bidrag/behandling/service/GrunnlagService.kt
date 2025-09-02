@@ -181,7 +181,7 @@ class GrunnlagService(
                 behandling.grunnlagSistInnhentet =
                     LocalDateTime
                         .now()
-                        .minusMinutes(grenseInnhenting.toLong())
+                        .minusMinutes(maxOf(grenseInnhenting.toLong(), 11))
                         .plusMinutes(10)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
