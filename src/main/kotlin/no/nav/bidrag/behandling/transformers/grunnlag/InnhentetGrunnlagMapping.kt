@@ -219,7 +219,12 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
     grunnlagsliste: Set<GrunnlagDto>,
     personobjekter: Set<GrunnlagDto>,
 ): List<GrunnlagDto> {
-    val innhentetHusstandsmedlemGrunnlagsliste = grunnlagsliste.filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }
+    val gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)
+    val innhentetHusstandsmedlemGrunnlagsliste =
+        grunnlagsliste.filter {
+            it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM &&
+                it.gjelderReferanse == gjelder?.tilGrunnlagsreferanse()
+        }
     val søknadsbarnSomManglerInnhentetGrunnlag =
         søknadsbarn
             .filter { sb ->
