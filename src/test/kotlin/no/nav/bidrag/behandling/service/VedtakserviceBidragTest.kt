@@ -2763,7 +2763,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             innhold.innhold shouldBe "Virkningstidspunkt kun i notat"
         }
 
-        assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.VIRKNINGSTIDSPUNKT, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOmgjortVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Virkningstidspunkt kun i notat - fra opprinnelig vedtak"
@@ -2775,7 +2775,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             innhold.innhold shouldBe "Privat avtale"
         }
 
-        assertSoftly(hentNotat(NotatType.PRIVAT_AVTALE, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.PRIVAT_AVTALE, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOmgjortVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Privat avtale - fra opprinnelig vedtak"
@@ -2785,7 +2785,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Boforhold"
         }
-        assertSoftly(hentNotat(NotatType.BOFORHOLD, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.BOFORHOLD, fraOmgjortVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Boforhold - fra opprinnelig vedtak"
@@ -2796,7 +2796,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             innhold.innhold shouldBe "Samvær"
         }
 
-        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.SAMVÆR, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOmgjortVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Samvær - fra opprinnelig vedtak"
@@ -2807,7 +2807,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold barn"
         }
-        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderBarnReferanse = søknadsbarnGrunnlag.referanse, fraOmgjortVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold barn - fra opprinnelig vedtak"
@@ -2818,7 +2818,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold andre barn"
         }
-        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.UNDERHOLDSKOSTNAD, gjelderReferanse = bmGrunnlag.referanse, fraOmgjortVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Underhold andre barn - fra opprinnelig vedtak"
@@ -2829,7 +2829,7 @@ private fun OpprettVedtakRequestDto.validerNotater(behandling: Behandling) {
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Inntektsbegrunnelse kun i notat"
         }
-        assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse, fraOpprinneligVedtak = true)) {
+        assertSoftly(hentNotat(NotatType.INNTEKT, gjelderReferanse = bmGrunnlag.referanse, fraOmgjortVedtak = true)) {
             it shouldNotBe null
             val innhold = it!!.innholdTilObjekt<NotatGrunnlag>()
             innhold.innhold shouldBe "Inntektsbegrunnelse BM - fra opprinnelig vedtak"

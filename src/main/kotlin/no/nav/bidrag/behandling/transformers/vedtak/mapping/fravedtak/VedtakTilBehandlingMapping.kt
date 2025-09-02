@@ -112,6 +112,7 @@ class VedtakTilBehandlingMapping(
         enhet: String? = null,
         minsteVirkningstidspunkt: YearMonth? = null,
         opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
+        omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
         opprinneligVedtakstype: Vedtakstype? = null,
         søknadstype: BisysSøknadstype? = null,
         erBisysVedtak: Boolean = false,
@@ -184,6 +185,7 @@ class VedtakTilBehandlingMapping(
                     refVedtaksid = if (!lesemodus) vedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,
+                    omgjortVedtakVedtakstidspunkt = omgjortVedtakVedtakstidspunkt,
                     opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
                     opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
                 )
@@ -618,7 +620,7 @@ class VedtakTilBehandlingMapping(
                                 behandling,
                                 BarnDto(
                                     personident = gjelderBarn.ident,
-                                    navn = gjelderBarn.navn,
+                                    navn = if (gjelderBarn.ident == null) gjelderBarn.navn else null,
                                     fødselsdato = gjelderBarn.fødselsdato,
                                 ),
                                 kilde = kilde,

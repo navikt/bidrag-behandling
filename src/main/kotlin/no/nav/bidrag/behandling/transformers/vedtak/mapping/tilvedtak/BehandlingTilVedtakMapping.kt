@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmott
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -250,9 +251,15 @@ class BehandlingTilVedtakMapping(
                     unikReferanse = behandling.opprettUnikReferanse("innkreving"),
                     behandlingsreferanseListe = behandling.tilBehandlingreferanseListeUtenSøknad(),
                     stønadsendringListe =
-                        vedtak.stønadsendringListe.map {
+                        vedtak.stønadsendringListe.mapNotNull {
                             val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.kravhaver.verdi }!!
                             val innkrevFraDato = behandling.finnInnkrevesFraDato(søknadsbarn)
+                            if (innkrevFraDato == null) {
+                                secureLogger.info {
+                                    "Det er ingen innkreving av bidrag for søknadsbarn ${it.kravhaver.verdi}. Oppretter ikke innkrevingsgrunnlag"
+                                }
+                                return@mapNotNull null
+                            }
 
                             val periodeliste =
                                 it.periodeListe

@@ -669,7 +669,7 @@ private fun DelberegningBarnetilleggDto.tilNotatDto() =
 private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
-        innholdFraOpprinneligVedtak = henteNotatinnhold(this, NotatType.BOFORHOLD, null, false),
+        innholdFraOmgjortVedtak = henteNotatinnhold(this, NotatType.BOFORHOLD, null, false),
         gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
@@ -679,7 +679,7 @@ private fun Behandling.tilNotatVurderingAvSkolegang() =
             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG)
             },
-        innholdFraOpprinneligVedtak =
+        innholdFraOmgjortVedtak =
             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first(), false).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, null, false)
             },
@@ -692,7 +692,7 @@ private fun Behandling.tilNotatVirkningstidspunkt() =
             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
             },
-        innholdFraOpprinneligVedtak =
+        innholdFraOmgjortVedtak =
             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first(), false).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
             },
@@ -702,7 +702,7 @@ private fun Behandling.tilNotatVirkningstidspunkt() =
 private fun Behandling.tilNotatInntekt(rolle: Rolle): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteInntektsnotat(this, rolle.id!!),
-        innholdFraOpprinneligVedtak = henteInntektsnotat(this, rolle.id!!, false),
+        innholdFraOmgjortVedtak = henteInntektsnotat(this, rolle.id!!, false),
         gjelder = rolle.tilNotatRolle(),
     )
 
@@ -743,7 +743,7 @@ private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
         begrunnelse =
             NotatBegrunnelseDto(
                 innhold = begrunnelse.innhold,
-                innholdFraOpprinneligVedtak = begrunnelseFraOpprinneligVedtak?.innhold,
+                innholdFraOmgjortVedtak = begrunnelseFraOpprinneligVedtak?.innhold,
                 gjelder = behandling.bidragsmottaker!!.tilNotatRolle(),
             ),
         utgifter = utgifter.map { it.tilNotatDto() },
@@ -962,7 +962,7 @@ private fun List<SamværDto>.tilNotatSamværDto(behandling: Behandling) =
             begrunnelse =
                 NotatBegrunnelseDto(
                     innhold = samvær.begrunnelse?.innhold,
-                    innholdFraOpprinneligVedtak = samvær.begrunnelseFraOpprinneligVedtak?.innhold,
+                    innholdFraOmgjortVedtak = samvær.begrunnelseFraOpprinneligVedtak?.innhold,
                     gjelder = gjelderBarn.tilNotatRolle(),
                 ),
         )

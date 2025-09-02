@@ -173,7 +173,7 @@ class BarnebidragGrunnlagInnhenting(
         kravhaver = Personident(søknadsbarn.ident!!),
         gyldigTidspunkt =
             if (erKlageEllerOmgjøring && fraOpprinneligVedtakstidspunkt) {
-                omgjøringsdetaljer!!.opprinneligVedtakstidspunkt.min().minusMinutes(1)
+                omgjøringsdetaljer!!.minsteVedtakstidspunkt!!.minusMinutes(1)
             } else {
                 LocalDateTime.now()
             },

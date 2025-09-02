@@ -110,11 +110,11 @@ private fun opprettGrunnlagNotat(
     innhold: String,
     gjelderReferanse: String? = null,
     gjelderBarnReferanse: String? = null,
-    fraOpprinneligVedtak: Boolean = false,
+    fraOmgjortVedtak: Boolean = false,
 ) = GrunnlagDto(
     referanse =
         "notat_${notatType}_${if (medIVedtak) "med_i_vedtaket" else "kun_i_notat"}" +
-            (if (fraOpprinneligVedtak) "_fra_opprinnelig_vedtak" else "") +
+            (if (fraOmgjortVedtak) "_fra_opprinnelig_vedtak" else "") +
             "${gjelderReferanse?.let { "_$it" } ?: ""}${gjelderBarnReferanse?.let { "_$it" } ?: ""}",
     type = Grunnlagstype.NOTAT,
     gjelderReferanse = gjelderReferanse,
@@ -125,7 +125,7 @@ private fun opprettGrunnlagNotat(
                 innhold = innhold,
                 erMedIVedtaksdokumentet = medIVedtak,
                 type = notatType,
-                fraOpprinneligVedtak = fraOpprinneligVedtak,
+                fraOmgjortVedtak = fraOmgjortVedtak,
             ),
         ),
 )
@@ -330,7 +330,7 @@ fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
                             Notattype.VIRKNINGSTIDSPUNKT,
                             false,
                             it,
-                            fraOpprinneligVedtak = true,
+                            fraOmgjortVedtak = true,
                             gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
                         )
                     } ?: henteNotatinnhold(
@@ -342,7 +342,7 @@ fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
                             Notattype.VIRKNINGSTIDSPUNKT,
                             false,
                             it,
-                            fraOpprinneligVedtak = true,
+                            fraOmgjortVedtak = true,
                         )
                     },
                 )
@@ -358,7 +358,7 @@ fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
                     Notattype.VIRKNINGSTIDSPUNKT,
                     false,
                     it,
-                    fraOpprinneligVedtak = true,
+                    fraOmgjortVedtak = true,
                 )
             },
         ).filterNotNull().toSet()
@@ -372,13 +372,13 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                 opprettGrunnlagNotat(Notattype.BOFORHOLD, false, it)
             },
             henteNotatinnhold(this, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = false).takeIfNotNullOrEmpty {
-                opprettGrunnlagNotat(Notattype.BOFORHOLD, false, it, fraOpprinneligVedtak = true)
+                opprettGrunnlagNotat(Notattype.BOFORHOLD, false, it, fraOmgjortVedtak = true)
             },
             henteNotatinnhold(this, Notattype.UTGIFTER).takeIfNotNullOrEmpty {
                 opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
             },
             henteNotatinnhold(this, Notattype.UTGIFTER, begrunnelseDelAvBehandlingen = false).takeIfNotNullOrEmpty {
-                opprettGrunnlagNotat(Notattype.UTGIFTER, false, it, fraOpprinneligVedtak = true)
+                opprettGrunnlagNotat(Notattype.UTGIFTER, false, it, fraOmgjortVedtak = true)
             },
         ).filterNotNull()
 
@@ -407,7 +407,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                                 false,
                                 innhold,
                                 gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
-                                fraOpprinneligVedtak = true,
+                                fraOmgjortVedtak = true,
                             )
                         },
                     )
@@ -456,7 +456,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                                     } else {
                                         null
                                     },
-                                fraOpprinneligVedtak = true,
+                                fraOmgjortVedtak = true,
                             )
                         },
                 )
@@ -483,7 +483,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                             false,
                             innhold,
                             gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
-                            fraOpprinneligVedtak = true,
+                            fraOmgjortVedtak = true,
                         )
                     },
                 )
@@ -502,7 +502,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                             false,
                             innhold,
                             gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
-                            fraOpprinneligVedtak = true,
+                            fraOmgjortVedtak = true,
                         )
                     },
                 )
@@ -526,7 +526,7 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                             false,
                             it,
                             gjelderReferanse = rolle.tilGrunnlagsreferanse(),
-                            fraOpprinneligVedtak = true,
+                            fraOmgjortVedtak = true,
                         )
                     },
                 )

@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregni
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatForskudd
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatadBeregningOrkestrering
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.leggTilVedtaksidPåAldersjusteringGrunnlag
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -155,7 +156,7 @@ class VedtakService(
         if (refererTilVedtakId.isNotEmpty()) {
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
-                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
+                    val opprinneligVedtak = hentVedtak(vedtaksid)!!
 
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
                 }.toSet() +
@@ -236,6 +237,7 @@ class VedtakService(
                 søknadId = request.søknadsid,
                 søknadstype = request.søknadstype,
                 lesemodus = false,
+                omgjortVedtakVedtakstidspunkt = vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt,
                 minsteVirkningstidspunkt =
                     omgjørVedtakListe
                         .filter { it.virkningstidspunkt != null }
@@ -477,6 +479,12 @@ class VedtakService(
         vedtaksidOrkestrering: Int,
         vedtak: OpprettVedtakRequestDto,
     ) {
+        val erUtenInnkreving = behandling.søknadsbarn.all { behandling.finnInnkrevesFraDato(it) == null }
+        if (erUtenInnkreving) {
+            secureLogger.info { "Sak ${behandling.saksnummer} er uten innkreving. Fatter ikke innkrevingsgrunnlag" }
+            return
+        }
+
         val innkrevingRequest =
             behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
                 behandling,

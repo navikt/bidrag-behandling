@@ -16,13 +16,16 @@ data class Omgjøringsdetaljer(
     var refVedtaksid: Int? = null,
     @JsonAlias("påklagetVedtak", "omgjørVedtak")
     val omgjørVedtakId: Int? = null,
+    val omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,
     var innkrevingstype: Innkrevingstype? = null,
     val fattetDelvedtak: List<FattetDelvedtak> = emptyList(),
     val paragraf35c: List<OpprettParagraf35C> = emptyList(),
-)
+) {
+    val minsteVedtakstidspunkt get() = opprinneligVedtakstidspunkt.minOrNull()
+}
 
 data class OpprettParagraf35C(
     val rolleid: Long,

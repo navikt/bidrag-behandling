@@ -65,12 +65,10 @@ import java.time.YearMonth
 
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
     if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-//        val beløpshistorikk = hentSisteBeløpshistorikk(tilStønadsid(søknadsbarnRolle))
         val beløpshistorikk = hentBeløpshistorikk(søknadsbarnRolle, false).konvertereData<StønadDto>()
         beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom }
     } else {
         null
-        // (søknadsbarnRolle.opprinneligVirkningstidspunkt ?: søknadsbarnRolle.virkningstidspunkt)!!.toYearMonth()
     }
 
 fun Behandling.finnBeregnTilDato() =
@@ -86,9 +84,8 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
     } else if (erBidrag() && erKlageEllerOmgjøring && omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
         val opprinneligVedtakstidspunkt =
-            omgjøringsdetaljer
-                ?.opprinneligVedtakstidspunkt!!
-                .min()
+            omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate() ?: omgjøringsdetaljer
+                ?.minsteVedtakstidspunkt!!
                 .plusMonths(1)
                 .withDayOfMonth(1)
                 .toLocalDate()

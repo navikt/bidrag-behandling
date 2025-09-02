@@ -961,7 +961,7 @@ internal fun VedtakDto.notatMedType(
         gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty() ||
             it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderReferanse
     }.map { it.innholdTilObjekt<NotatGrunnlag>() }
-    .find { it.type == type && it.fraOpprinneligVedtak == fraOmgjortVedtak }
+    .find { it.type == type && it.fraOmgjortVedtak == fraOmgjortVedtak }
     ?.innhold
 
 internal fun VedtakDto.avslagskode(): Resultatkode? {
