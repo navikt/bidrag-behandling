@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
@@ -156,7 +157,7 @@ class VedtakService(
         if (refererTilVedtakId.isNotEmpty()) {
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
-                    val opprinneligVedtak = hentVedtak(vedtaksid)!!
+                    val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
 
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
                 }.toSet() +
@@ -648,6 +649,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-//
+
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }
