@@ -815,6 +815,14 @@ class Dtomapper(
                                 } else {
                                     null
                                 },
+                            begrunnelseVurderingAvSkolegangFraOpprinneligVedtak =
+                                if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                                    BegrunnelseDto(
+                                        henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, false),
+                                    )
+                                } else {
+                                    null
+                                },
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                             eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                             opphørsdato = it.opphørsdato,
