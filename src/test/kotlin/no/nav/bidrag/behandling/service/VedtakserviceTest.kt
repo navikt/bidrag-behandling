@@ -22,7 +22,10 @@ import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
+import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.database.repository.SamværRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -120,7 +123,16 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var behandlingRepository: BehandlingRepository
 
     @Autowired
+    lateinit var husstandsmedlemRepository: HusstandsmedlemRepository
+
+    @Autowired
     lateinit var grunnlagRepository: GrunnlagRepository
+
+    @Autowired
+    lateinit var inntektRepository: InntektRepository
+
+    @Autowired
+    lateinit var samværRepository: SamværRepository
 
     @Autowired
     lateinit var sivilstandRepository: SivilstandRepository
@@ -164,6 +176,9 @@ class VedtakserviceTest : TestContainerRunner() {
 
     @MockkBean
     lateinit var klageOrkestrator: OmgjøringOrkestrator
+
+    @MockkBean
+    lateinit var virkningstidspunktService: VirkningstidspunktService
     val notatService = NotatService()
 
     @BeforeEach
@@ -189,13 +204,6 @@ class VedtakserviceTest : TestContainerRunner() {
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
-        beregningService =
-            BeregningService(
-                behandlingService,
-                vedtakGrunnlagMapper,
-                aldersjusteringOrchestrator,
-                bidragsberegningOrkestrator,
-            )
         val dtomapper =
             Dtomapper(
                 tilgangskontrollService,
@@ -204,6 +212,10 @@ class VedtakserviceTest : TestContainerRunner() {
                 vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
+        val boforholdService = BoforholdService(behandlingRepository, husstandsmedlemRepository, notatService, sivilstandRepository, dtomapper)
+
+        val inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
+
         val underholdService =
             UnderholdService(
                 underholdskostnadRepository,
@@ -211,6 +223,26 @@ class VedtakserviceTest : TestContainerRunner() {
                 notatService,
                 personService,
             )
+        val samværService = SamværService(samværRepository, behandlingRepository, notatService, BeregnSamværsklasseApi(stubSjablonService()))
+        virkningstidspunktService =
+            VirkningstidspunktService(
+                behandlingRepository,
+                boforholdService,
+                notatService,
+                grunnlagService,
+                inntektService,
+                samværService,
+                underholdService,
+                GebyrService(vedtakGrunnlagMapper),
+            )
+        beregningService =
+            BeregningService(
+                behandlingService,
+                vedtakGrunnlagMapper,
+                aldersjusteringOrchestrator,
+                bidragsberegningOrkestrator,
+            )
+
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService, personRepository, behandlingRepository)
 
         val behandlingTilVedtakMapping =
@@ -228,12 +260,12 @@ class VedtakserviceTest : TestContainerRunner() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-//                null,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
                 forsendelseService,
+                virkningstidspunktService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit

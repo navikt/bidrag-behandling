@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.OpprettParagraf35C
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
@@ -19,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
+import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.skalInnkrevingKunneUtsettes
 import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
@@ -84,6 +86,7 @@ class VedtakService(
     private val behandlingTilVedtakMapping: BehandlingTilVedtakMapping,
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
     private val forsendelseService: ForsendelseService,
+    private val virkningstidspunktService: VirkningstidspunktService,
 //    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
@@ -191,7 +194,24 @@ class VedtakService(
             tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
             val behandlingDo = behandlingService.lagreBehandling(konvertertBehandling)
             grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
-
+            if (behandlingDo.erBidrag()) {
+                behandlingDo.søknadsbarn.forEach { rolle ->
+                    val opphørsdato = rolle.opphørsdato ?: behandlingDo.finnEksisterendeVedtakMedOpphør(rolle)?.opphørsdato
+                    opphørsdato?.let {
+                        val opphørsdato = if (it.isAfter(behandlingDo.virkningstidspunkt!!)) it else null
+                        if (opphørsdato != null) {
+                            virkningstidspunktService.oppdaterOpphørsdato(
+                                behandlingDo.id!!,
+                                OppdaterOpphørsdatoRequestDto(
+                                    rolle.id!!,
+                                    opphørsdato,
+                                    true,
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
             LOGGER.info {
                 "Opprettet behandling ${behandlingDo.id} fra vedtak $refVedtaksid med søktAv ${request.søknadFra}, " +
                     "søktFomDato ${request.søktFomDato}, mottatDato ${request.mottattdato}, søknadId ${request.søknadsid}: $request"
@@ -648,6 +668,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-
+//
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }

@@ -135,6 +135,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
                 forsendelseService,
+                virkningstidspunktService,
             )
     }
 

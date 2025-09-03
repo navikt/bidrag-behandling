@@ -153,6 +153,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
                 forsendelseService,
+                virkningstidspunktService,
             )
 
         unleash.enableAll()
