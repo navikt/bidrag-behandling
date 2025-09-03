@@ -219,11 +219,12 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
     grunnlagsliste: Set<GrunnlagDto>,
     personobjekter: Set<GrunnlagDto>,
 ): List<GrunnlagDto> {
-    val gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)
+    val innhentesForRolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
+    val personobjektInnhentesForRolle = personobjekter.hentPersonNyesteIdent(innhentesForRolle.ident)!!
     val innhentetHusstandsmedlemGrunnlagsliste =
         grunnlagsliste.filter {
             it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM &&
-                it.gjelderReferanse == gjelder?.tilGrunnlagsreferanse()
+                it.gjelderReferanse == personobjektInnhentesForRolle.referanse
         }
     val søknadsbarnSomManglerInnhentetGrunnlag =
         søknadsbarn
@@ -236,13 +237,13 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                 RelatertPersonGrunnlagDto(
                     fødselsdato = it.fødselsdato,
                     gjelderPersonId = it.ident,
-                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident,
+                    partPersonId = innhentesForRolle.ident,
                     navn = it.navn,
                     relasjon = Familierelasjon.BARN,
                     borISammeHusstandDtoListe = emptyList(),
                 ).tilGrunnlagsobjekt(
                     LocalDateTime.now().withSecond(0).withNano(0),
-                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident)!!.referanse,
+                    personobjektInnhentesForRolle.referanse,
                     personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
                 )
             }
@@ -258,13 +259,13 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                 RelatertPersonGrunnlagDto(
                     fødselsdato = it.fødselsdato,
                     gjelderPersonId = it.ident,
-                    partPersonId = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident,
+                    partPersonId = personobjektInnhentesForRolle.personIdent,
                     navn = it.navn,
                     relasjon = Familierelasjon.BARN,
                     borISammeHusstandDtoListe = emptyList(),
                 ).tilGrunnlagsobjekt(
                     LocalDateTime.now().withSecond(0).withNano(0),
-                    personobjekter.hentPersonNyesteIdent(Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.ident)!!.referanse,
+                    personobjektInnhentesForRolle.referanse,
                     personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
                 )
             }

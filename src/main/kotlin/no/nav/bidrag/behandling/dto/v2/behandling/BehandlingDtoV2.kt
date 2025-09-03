@@ -110,6 +110,7 @@ data class BehandlingDtoV2(
     val kanBehandlesINyLøsning: Boolean = true,
     val kanIkkeBehandlesBegrunnelse: String? = null,
     val erKlageEllerOmgjøring: Boolean,
+    val skalInnkrevingKunneUtsettes: Boolean,
     val opprettetTidspunkt: LocalDateTime,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")

@@ -774,6 +774,7 @@ class Dtomapper(
                 boforhold = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
                 aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
                 ikkeAktiverteEndringerIGrunnlagsdata = IkkeAktiveGrunnlagsdata(),
+                skalInnkrevingKunneUtsettes = skalInnkrevingKunneUtsettes(),
             )
         if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
             return behandlingDto

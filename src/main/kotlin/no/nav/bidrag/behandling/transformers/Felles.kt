@@ -35,10 +35,8 @@ import java.time.YearMonth
 
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
 
-// TODO: FIks meg
-fun Behandling.innhentGrunnlag() = (metadata == null || metadata?.erKlagePåBisysVedtak() == false) && !erKlageEllerOmgjøring
-
-fun Behandling.skalInnkrevingKunneUtsettes() = !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.OPPHØR).contains(vedtakstype) && erBidrag()
+fun Behandling.skalInnkrevingKunneUtsettes() =
+    erBidrag() && !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.OPPHØR).contains(vedtakstype) && !erKlageEllerOmgjøring
 
 fun StønadsendringDto.tilStønadsid() =
     Stønadsid(
