@@ -297,7 +297,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             soknadsid shouldBe 100
             opprettetAv shouldBe SAKSBEHANDLER_IDENT
             opprettetAvNavn shouldBe "Fornavn Etternavn"
-            omgjøringsdetaljer?.refVedtaksid shouldBe 12333
+            omgjøringsdetaljer?.opprinneligVedtaksid shouldBe 12333
 
             validerRoller()
         }

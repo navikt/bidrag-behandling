@@ -375,7 +375,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -666,7 +666,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -765,7 +765,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -854,7 +854,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.årsak = null
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -985,7 +985,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.årsak = null
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1133,7 +1133,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 2,
+                opprinneligVedtaksid = 2,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1261,7 +1261,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1372,7 +1372,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 2,
+                opprinneligVedtaksid = 2,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1511,7 +1511,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1643,7 +1643,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1914,7 +1914,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -1999,7 +1999,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2119,7 +2119,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2193,7 +2193,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2270,7 +2270,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
         behandling.grunnlag =
@@ -2361,7 +2361,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
@@ -2428,7 +2428,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.årsak = null
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2573,7 +2573,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2658,7 +2658,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                refVedtaksid = 553,
+                opprinneligVedtaksid = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(

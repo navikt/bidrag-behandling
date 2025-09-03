@@ -13,7 +13,8 @@ class KlageDetaljerConverter : JsonColumnConverter<Omgjøringsdetaljer>(Omgjøri
 data class Omgjøringsdetaljer(
     val klageMottattdato: LocalDate? = null,
     val soknadRefId: Long? = null,
-    var refVedtaksid: Int? = null,
+    @JsonAlias("refVedtaksid")
+    var opprinneligVedtaksid: Int? = null,
     @JsonAlias("påklagetVedtak", "omgjørVedtak")
     val omgjørVedtakId: Int? = null,
     val omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,

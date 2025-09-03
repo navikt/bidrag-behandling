@@ -276,7 +276,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandling.virkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
             behandling.omgjøringsdetaljer =
                 Omgjøringsdetaljer(
-                    refVedtaksid = 2,
+                    opprinneligVedtaksid = 2,
                     opprinneligVirkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1),
                 )
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)

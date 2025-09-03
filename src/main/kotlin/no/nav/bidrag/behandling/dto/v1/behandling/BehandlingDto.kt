@@ -71,6 +71,7 @@ data class VirkningstidspunktDtoV2(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: LocalDate? = null,
+    val omgjortVedtakVedtakstidspunkt: LocalDate? = null,
     @Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)

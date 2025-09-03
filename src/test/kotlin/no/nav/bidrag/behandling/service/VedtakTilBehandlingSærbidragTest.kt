@@ -256,7 +256,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.refVedtaksid shouldBe null
+            omgjøringsdetaljer?.opprinneligVedtaksid shouldBe null
             omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
