@@ -478,8 +478,7 @@ class BehandlingTilVedtakMapping(
                             omgjørVedtakId =
                                 when {
                                     resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak ->
-                                        behandling.omgjøringsdetaljer
-                                            ?.opprinneligVedtakId
+                                        behandling.omgjøringsdetaljer?.omgjørVedtakId
                                     else -> null
                                 },
                             kravhaver =
