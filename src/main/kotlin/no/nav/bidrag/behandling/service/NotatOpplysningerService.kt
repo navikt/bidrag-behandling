@@ -34,10 +34,12 @@ import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterFor
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
+import no.nav.bidrag.behandling.transformers.hentEtterfølgendeVedtak
+import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
-import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -46,7 +48,9 @@ import no.nav.bidrag.behandling.transformers.sortert
 import no.nav.bidrag.behandling.transformers.tilDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
+import no.nav.bidrag.beregn.barnebidrag.service.finnesEtterfølgendeVedtak
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -258,7 +262,7 @@ class NotatOpplysningerService(
                             NotatUnderholdBarnDto(
                                 gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
                                 harTilsynsordning = it.harTilsynsordning,
-                                begrunnelse = NotatBegrunnelseDto(it.begrunnelse),
+                                begrunnelse = NotatBegrunnelseDto(it.begrunnelse, it.begrunnelseFraOpprinneligVedtak),
                                 stønadTilBarnetilsyn =
                                     it.stønadTilBarnetilsyn.map {
                                         NotatUnderholdBarnDto.NotatStønadTilBarnetilsynDto(
@@ -405,13 +409,13 @@ class NotatOpplysningerService(
                         },
                 ),
             vedtak = behandling.hentBeregning(),
-            erOrkestrertVedtak = behandling.vedtakstype == Vedtakstype.KLAGE,
+            erOrkestrertVedtak = behandling.erKlageEllerOmgjøring && behandling.erBidrag(),
             privatavtale =
                 mapper.run {
                     behandling.privatAvtale.map { it.tilDto() }.map {
                         NotatPrivatAvtaleDto(
                             gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
-                            begrunnelse = NotatBegrunnelseDto(it.begrunnelse),
+                            begrunnelse = NotatBegrunnelseDto(it.begrunnelse, it.begrunnelseFraOpprinneligVedtak),
                             avtaleDato = it.avtaleDato,
                             avtaleType = it.avtaleType,
                             skalIndeksreguleres = it.skalIndeksreguleres,
@@ -665,6 +669,7 @@ private fun DelberegningBarnetilleggDto.tilNotatDto() =
 private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteNotatinnhold(this, NotatType.BOFORHOLD),
+        innholdFraOmgjortVedtak = henteNotatinnhold(this, NotatType.BOFORHOLD, null, false),
         gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
@@ -673,6 +678,10 @@ private fun Behandling.tilNotatVurderingAvSkolegang() =
         innhold =
             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG)
+            },
+        innholdFraOmgjortVedtak =
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first(), false).ifEmpty {
+                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, null, false)
             },
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
     )
@@ -683,12 +692,17 @@ private fun Behandling.tilNotatVirkningstidspunkt() =
             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
             },
+        innholdFraOmgjortVedtak =
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first(), false).ifEmpty {
+                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
+            },
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
     )
 
 private fun Behandling.tilNotatInntekt(rolle: Rolle): NotatBegrunnelseDto =
     NotatBegrunnelseDto(
         innhold = henteInntektsnotat(this, rolle.id!!),
+        innholdFraOmgjortVedtak = henteInntektsnotat(this, rolle.id!!, false),
         gjelder = rolle.tilNotatRolle(),
     )
 
@@ -729,6 +743,7 @@ private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
         begrunnelse =
             NotatBegrunnelseDto(
                 innhold = begrunnelse.innhold,
+                innholdFraOmgjortVedtak = begrunnelseFraOpprinneligVedtak?.innhold,
                 gjelder = behandling.bidragsmottaker!!.tilNotatRolle(),
             ),
         utgifter = utgifter.map { it.tilNotatDto() },
@@ -835,10 +850,10 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
     NotatBehandlingDetaljerDto(
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
-        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+        opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
         søktAv = soknadFra,
         mottattDato = mottattdato,
-        klageMottattDato = klagedetaljer?.klageMottattdato,
+        klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
         avslag = avslag,
@@ -857,6 +872,9 @@ private fun Behandling.tilVirkningstidspunkt() =
         virkningstidspunkt = virkningstidspunkt,
         begrunnelse = tilNotatVirkningstidspunkt(),
         begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegangAlle()) tilNotatVurderingAvSkolegang() else null,
+        beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(søknadsbarn.first())),
+        beregnTil = søknadsbarn.first().beregnTil,
+        etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarn.first())?.virkningstidspunkt,
     )
 
 private fun RolleDto.tilNotatRolle() =
@@ -944,6 +962,7 @@ private fun List<SamværDto>.tilNotatSamværDto(behandling: Behandling) =
             begrunnelse =
                 NotatBegrunnelseDto(
                     innhold = samvær.begrunnelse?.innhold,
+                    innholdFraOmgjortVedtak = samvær.begrunnelseFraOpprinneligVedtak?.innhold,
                     gjelder = gjelderBarn.tilNotatRolle(),
                 ),
         )

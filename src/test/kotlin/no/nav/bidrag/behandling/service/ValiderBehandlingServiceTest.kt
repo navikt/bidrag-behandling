@@ -320,7 +320,6 @@ class ValiderBehandlingServiceTest {
         @Test
         fun `skal ikke validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for flere barn`() {
             enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
-            enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
                     stønader =
@@ -354,7 +353,6 @@ class ValiderBehandlingServiceTest {
         @Test
         fun `skal validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for ett barn`() {
             enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
-            enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
             every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
                 SkyldnerStønaderResponse(
                     stønader =

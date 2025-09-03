@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
@@ -50,6 +51,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -82,7 +84,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
-import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -286,7 +287,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
 
     val endeligVedtak =
         DelvedtakDto(
-            type = Vedtakstype.KLAGE,
+            type = type,
             omgjøringsvedtak = false,
             vedtaksid = null,
             delvedtak = false,
@@ -385,13 +386,20 @@ internal fun List<GrunnlagDto>.mapRoller(
     vedtak: VedtakDto,
     behandling: Behandling,
     lesemodus: Boolean,
-    virkningstidspunkt: LocalDate,
+    opprinneligVirkningstidspunkt: LocalDate,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
             val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
-            rolle.tilRolle(behandling, if (lesemodus) i.toLong() else null, virkningstidspunktGrunnlag, aldersjustering, virkningstidspunkt)
+            rolle.tilRolle(
+                behandling,
+                if (lesemodus) i.toLong() else null,
+                virkningstidspunktGrunnlag,
+                aldersjustering,
+                opprinneligVirkningstidspunkt,
+                lesemodus,
+            )
         }.toMutableSet()
         .ifEmpty {
             val roller = mutableSetOf<Rolle>()
@@ -408,7 +416,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, virkningstidspunkt))
+            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
 
             val bmIdent = vedtak.stønadsendringListe.firstOrNull()?.mottaker ?: vedtak.engangsbeløpListe.first().mottaker
             val bmGrunnlag =
@@ -423,7 +431,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, virkningstidspunkt))
+            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
             roller.addAll(
                 vedtak.stønadsendringListe.mapIndexed { i, it ->
                     val baIdent = it.kravhaver
@@ -447,7 +455,8 @@ internal fun List<GrunnlagDto>.mapRoller(
                         if (lesemodus) (i + 2).toLong() else null,
                         virkningstidspunktGrunnlag,
                         aldersjustering,
-                        virkningstidspunkt,
+                        opprinneligVirkningstidspunkt,
+                        lesemodus,
                     )
                 },
             )
@@ -635,14 +644,17 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
             ).groupBy { it.gjelderBarnReferanse }
                 .map { (gjelderBarnReferanse, grunnlagsliste) ->
-                    val gjelder = hentPersonMedReferanse(gjelderBarnReferanse)!!
-                    val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelder.personIdent }!!
+                    val grunnlag = grunnlagsliste.firstOrNull()
+                    val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!
+                    val gjelder = grunnlag?.let { hentPersonMedReferanse(grunnlag.gjelderReferanse) }
+                    val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelderBarn.personIdent }!!
                     behandling.opprettGrunnlag(
                         it.tilGrunnlagsdatatypeBeløpshistorikk(),
-                        grunnlagsliste.firstOrNull()?.innhold ?: behandling.opprettStønadDto(rolleBarn),
-                        gjelder.personIdent!!,
-                        behandling.klagedetaljer?.opprinneligVedtakstidspunkt!!.min(),
-                        lesemodus,
+                        behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
+                        rolleIdent = rolleBarn.ident!!,
+                        gjelder = gjelder?.personIdent,
+                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min(),
+                        lesemodus = lesemodus,
                     )
                 }
         }
@@ -929,19 +941,27 @@ fun Behandling.opprettGrunnlag(
     type = type,
     erBearbeidet = erBearbeidet,
     gjelder = gjelder,
+    grunnlagFraVedtakSomSkalOmgjøres = true,
     aktiv = innhentetTidspunkt,
     rolle = roller.find { it.ident == rolleIdent }!!,
 )
 
+internal fun VedtakDto.notatMedTypeBegge(
+    type: NotatGrunnlag.NotatType,
+    gjelderReferanse: Grunnlagsreferanse? = null,
+) = notatMedType(type, false, gjelderReferanse) ?: notatMedType(type, true, gjelderReferanse)
+
 internal fun VedtakDto.notatMedType(
     type: NotatGrunnlag.NotatType,
-    medIVedtak: Boolean,
+    fraOmgjortVedtak: Boolean,
     gjelderReferanse: Grunnlagsreferanse? = null,
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
-    .filter { gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse == gjelderReferanse }
-    .map { it.innholdTilObjekt<NotatGrunnlag>() }
-    .find { it.type == type && it.erMedIVedtaksdokumentet == medIVedtak }
+    .filter {
+        gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty() ||
+            it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderReferanse
+    }.map { it.innholdTilObjekt<NotatGrunnlag>() }
+    .find { it.type == type && it.fraOmgjortVedtak == fraOmgjortVedtak }
     ?.innhold
 
 internal fun VedtakDto.avslagskode(): Resultatkode? {
@@ -1134,30 +1154,40 @@ private fun GrunnlagDto.tilRolle(
     id: Long? = null,
     virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
     aldersjustering: AldersjusteringDetaljerGrunnlag?,
-    virkningstidspunkt: LocalDate,
-) = Rolle(
-    behandling,
-    id = id,
-    rolletype =
-        when (type) {
-            Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
-            Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-            Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-            Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-            else ->
-                vedtakmappingFeilet(
-                    "Ukjent rolletype $type",
-                )
-        },
-    ident = personIdent,
-    opprinneligVirkningstidspunkt = virkningstidspunkt,
-    virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
-    årsak = virkningstidspunktGrunnlag?.årsak,
-    avslag = virkningstidspunktGrunnlag?.avslag,
-    opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
-    fødselsdato = personObjekt.fødselsdato,
-    grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
-)
+    opprinneligVirkningstidspunkt: LocalDate,
+    lesemodus: Boolean,
+): Rolle =
+    Rolle(
+        behandling,
+        id = id,
+        rolletype =
+            when (type) {
+                Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
+                Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
+                Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
+                Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
+                else ->
+                    vedtakmappingFeilet(
+                        "Ukjent rolletype $type",
+                    )
+            },
+        ident = personIdent,
+        opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+        virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
+        årsak = virkningstidspunktGrunnlag?.årsak,
+        avslag = virkningstidspunktGrunnlag?.avslag,
+        opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
+        fødselsdato = personObjekt.fødselsdato,
+        beregnTil =
+            if (lesemodus) {
+                virkningstidspunktGrunnlag?.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED
+            } else if (behandling.erBidrag()) {
+                BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+            } else {
+                BeregnTil.INNEVÆRENDE_MÅNED
+            },
+        grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
+    )
 
 private fun Inntekt.copy(
     type: Inntektsrapportering? = null,

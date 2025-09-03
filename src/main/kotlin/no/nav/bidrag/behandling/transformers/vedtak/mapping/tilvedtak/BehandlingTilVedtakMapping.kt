@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmott
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -46,7 +47,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
-import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
@@ -219,7 +219,7 @@ class BehandlingTilVedtakMapping(
         vedtak: OpprettVedtakRequestDto?,
     ): OpprettVedtakRequestDto =
         mapper.run {
-            if (vedtak != null && behandling.vedtakstype == Vedtakstype.KLAGE) {
+            if (vedtak != null && behandling.erKlageEllerOmgjøring) {
                 val referanse = "resultatFraVedtak_$vedtaksid"
                 val resultatFraGrunnlag =
                     OpprettGrunnlagRequestDto(
@@ -229,40 +229,45 @@ class BehandlingTilVedtakMapping(
                             POJONode(
                                 ResultatFraVedtakGrunnlag(
                                     vedtaksid = vedtaksid,
-                                    vedtakstype = Vedtakstype.KLAGE,
+                                    vedtakstype = behandling.vedtakstype,
                                 ),
                             ),
                     )
-                val persongrunnlag = vedtak.grunnlagListe.hentAllePersoner()
+
+                val personobjekter = behandling.tilPersonobjekter().map { it.tilOpprettRequestDto() }
                 val virkningstidspunktGrunnlag =
                     behandling
                         .byggGrunnlagVirkningsttidspunkt(
-                            persongrunnlag.map { it.tilDto() },
+                            personobjekter.map { it.tilDto() },
                         ).map(GrunnlagDto::tilOpprettRequestDto)
                 val stønadsendringGrunnlag =
                     virkningstidspunktGrunnlag +
-                        behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto)
-                val grunnlagliste = (stønadsendringGrunnlag + listOf(resultatFraGrunnlag)).toMutableList()
+                        behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
+                        behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
+                val grunnlagliste = (stønadsendringGrunnlag + listOf(resultatFraGrunnlag) + personobjekter).toMutableList()
                 behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                     type = Vedtakstype.INNKREVING,
                     grunnlagListe = grunnlagliste,
                     unikReferanse = behandling.opprettUnikReferanse("innkreving"),
                     behandlingsreferanseListe = behandling.tilBehandlingreferanseListeUtenSøknad(),
                     stønadsendringListe =
-                        vedtak.stønadsendringListe.map {
+                        vedtak.stønadsendringListe.mapNotNull {
                             val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.kravhaver.verdi }!!
                             val innkrevFraDato = behandling.finnInnkrevesFraDato(søknadsbarn)
+                            if (innkrevFraDato == null) {
+                                secureLogger.info {
+                                    "Det er ingen innkreving av bidrag for søknadsbarn ${it.kravhaver.verdi}. Oppretter ikke innkrevingsgrunnlag"
+                                }
+                                return@mapNotNull null
+                            }
 
                             val periodeliste =
                                 it.periodeListe
                                     .filter { p -> p.periode.til == null || p.periode.til!! > innkrevFraDato }
                                     .map { periode ->
+                                        val referanseSøknadsbarn = søknadsbarn.tilGrunnlagsreferanse()
                                         val periodeVirkningstidspunktGrunnlag =
-                                            vedtak.grunnlagListe
-                                                .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<VirkningstidspunktGrunnlag>(
-                                                    Grunnlagstype.VIRKNINGSTIDSPUNKT,
-                                                    periode.grunnlagReferanseListe,
-                                                ).firstOrNull()
+                                            virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == referanseSøknadsbarn }
                                         if (periode.periode.fom < innkrevFraDato) {
                                             periode.copy(
                                                 periode = periode.periode.copy(fom = innkrevFraDato!!),
@@ -425,6 +430,8 @@ class BehandlingTilVedtakMapping(
                 }
             } else if (resultatVedtak.delvedtak) {
                 stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarnReferanse))
+            } else if (resultatVedtak.endeligVedtak) {
+                grunnlagsliste.addAll(behandling.tilPersonobjekter())
             }
 
             if (!resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak) {
@@ -473,8 +480,8 @@ class BehandlingTilVedtakMapping(
                             omgjørVedtakId =
                                 when {
                                     resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak ->
-                                        behandling.klagedetaljer
-                                            ?.påklagetVedtak
+                                        behandling.omgjøringsdetaljer
+                                            ?.omgjørVedtakId
                                     else -> null
                                 },
                             kravhaver =
@@ -543,7 +550,7 @@ class BehandlingTilVedtakMapping(
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
-                            omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                            omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                             kravhaver =
                                 it.barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -664,7 +671,7 @@ class BehandlingTilVedtakMapping(
                                     sak.hentRolleMedFnr(it.ident!!),
                                 ),
                         valutakode = "NOK",
-                        omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                        omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                         sak = Saksnummer(saksnummer),
                     )
                 }
@@ -686,7 +693,7 @@ class BehandlingTilVedtakMapping(
                             OpprettStønadsendringRequestDto(
                                 innkreving = innkrevingstype!!,
                                 skyldner = tilSkyldner(),
-                                omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                                omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                                 kravhaver =
                                     it.tilNyestePersonident()
                                         ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -745,7 +752,7 @@ class BehandlingTilVedtakMapping(
                                 referanse = hentUnikReferanseEngangsbeløp(kravhaver, engangsbeloptype!!),
                                 innkreving = innkrevingstype!!,
                                 skyldner = tilSkyldner(),
-                                omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                                omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                                 kravhaver = kravhaver,
                                 mottaker =
                                     roller
@@ -766,8 +773,8 @@ class BehandlingTilVedtakMapping(
         kravhaver: Personident,
         type: Engangsbeløptype,
         skyldner: Personident? = null,
-    ) = if (klagedetaljer?.refVedtaksid != null) {
-        val vedtak = vedtaksconsumer.hentVedtak(klagedetaljer?.refVedtaksid!!)!!
+    ) = if (omgjøringsdetaljer?.refVedtaksid != null) {
+        val vedtak = vedtaksconsumer.hentVedtak(omgjøringsdetaljer?.refVedtaksid!!)!!
         val engangsbeløp =
             vedtak.engangsbeløpListe.find {
                 it.type == type &&
@@ -813,7 +820,7 @@ class BehandlingTilVedtakMapping(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
                             referanse = hentUnikReferanseEngangsbeløp(kravhaver, engangsbeloptype!!),
-                            omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                            omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                             kravhaver =
                                 barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -863,7 +870,7 @@ class BehandlingTilVedtakMapping(
                         OpprettStønadsendringRequestDto(
                             innkreving = Innkrevingstype.MED_INNKREVING,
                             skyldner = tilSkyldner(),
-                            omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                            omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                             kravhaver =
                                 it.barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),
@@ -898,7 +905,7 @@ class BehandlingTilVedtakMapping(
                             OpprettStønadsendringRequestDto(
                                 innkreving = Innkrevingstype.MED_INNKREVING,
                                 skyldner = tilSkyldner(),
-                                omgjørVedtakId = klagedetaljer?.refVedtaksid,
+                                omgjørVedtakId = omgjøringsdetaljer?.refVedtaksid,
                                 kravhaver =
                                     it.tilNyestePersonident()
                                         ?: rolleManglerIdent(Rolletype.BARN, id!!),

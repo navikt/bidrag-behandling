@@ -33,13 +33,14 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequest
-import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorManuellAldersjustering
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.OmgjøringOrkestratorGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
@@ -64,12 +65,10 @@ import java.time.YearMonth
 
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
     if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-//        val beløpshistorikk = hentSisteBeløpshistorikk(tilStønadsid(søknadsbarnRolle))
-        val beløpshistorikk = hentBeløpshistorikk(søknadsbarnRolle).konvertereData<StønadDto>()
+        val beløpshistorikk = hentBeløpshistorikk(søknadsbarnRolle, false).konvertereData<StønadDto>()
         beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom }
     } else {
         null
-        // (søknadsbarnRolle.opprinneligVirkningstidspunkt ?: søknadsbarnRolle.virkningstidspunkt)!!.toYearMonth()
     }
 
 fun Behandling.finnBeregnTilDato() =
@@ -83,20 +82,15 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
     val opphørsdato = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
     return if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-    } else if (erBidrag() && erKlageEllerOmgjøring && klagedetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
-        val opprinneligVedtakstidspunkt =
-            klagedetaljer
-                ?.opprinneligVedtakstidspunkt!!
-                .min()
-                .plusMonths(1)
-                .withDayOfMonth(1)
-                .toLocalDate()
+    } else if (erBidrag() && erKlageEllerOmgjøring && omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
+        val opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt ?: omgjøringsdetaljer?.minsteVedtakstidspunkt!!
+        val opprinneligVedtakstidspunktBeregnTil = opprinneligVedtakstidspunkt.plusMonths(1).withDayOfMonth(1).toLocalDate()
         when (søknadsbarnRolle?.beregnTil) {
             BeregnTil.INNEVÆRENDE_MÅNED -> utledBeregnTilDato(virkningstidspunkt!!, opphørsdato)
             BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
                 val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
                 if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
-                    utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, opprinneligVedtakstidspunkt)
+                    utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, opprinneligVedtakstidspunktBeregnTil)
                 } else {
                     utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, nesteVirkningstidspunkt)
                 }
@@ -104,10 +98,10 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
 
             else -> {
                 val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
-                if (virkningstidspunkt >= opprinneligVedtakstidspunkt) {
+                if (virkningstidspunkt >= opprinneligVedtakstidspunktBeregnTil) {
                     virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
                 } else {
-                    utledBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunkt)
+                    utledBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunktBeregnTil)
                 }
             }
         }
@@ -312,9 +306,10 @@ class VedtakGrunnlagMapper(
                     )
                 val klageBeregning =
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
-                        KlageOrkestratorGrunnlag(
+                        OmgjøringOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            påklagetVedtakId = behandling.klagedetaljer?.påklagetVedtak!!,
+                            omgjørVedtakId = behandling.omgjøringsdetaljer?.omgjørVedtakId!!,
+                            gjelderKlage = behandling.vedtakstype == Vedtakstype.KLAGE,
                             innkrevingstype = behandling.innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
                             gjelderParagraf35c =
                                 listOf(
@@ -336,10 +331,15 @@ class VedtakGrunnlagMapper(
                     }
                 return BidragsberegningOrkestratorRequest(
                     beregnGrunnlag = grunnlagBeregning,
-                    klageOrkestratorGrunnlag = klageBeregning,
+                    omgjøringOrkestratorGrunnlag = klageBeregning,
                     beregningstype =
                         when {
-                            behandling.erKlageEllerOmgjøring -> if (endeligBeregning) Beregningstype.KLAGE_ENDELIG else Beregningstype.KLAGE
+                            behandling.erKlageEllerOmgjøring ->
+                                if (endeligBeregning) {
+                                    Beregningstype.OMGJØRING_ENDELIG
+                                } else {
+                                    Beregningstype.OMGJØRING
+                                }
                             else -> Beregningstype.BIDRAG
                         },
                 )

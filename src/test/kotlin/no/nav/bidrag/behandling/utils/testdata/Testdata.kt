@@ -283,7 +283,7 @@ fun oppretteBehandling(
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
         virkningstidspunkt = virkningstidspunkt,
         id = id,
-        klagedetaljer = null,
+        omgjøringsdetaljer = null,
     )
 
 fun opprettInntekter(
@@ -1766,7 +1766,9 @@ fun lagGrunnlagsdata(filnavn: String): HentGrunnlagDto {
 fun lagVedtaksdata(filnavn: String): VedtakDto {
     val stringValue = erstattVariablerITestFil(filnavn)
     val grunnlag: VedtakDto = commonObjectmapper.readValue(stringValue)
-    return grunnlag
+    return grunnlag.copy(
+        vedtaksid = if (grunnlag.vedtaksid == -1) 1 else grunnlag.vedtaksid,
+    )
 }
 
 fun oppretteBarnetilsynGrunnlagDto(

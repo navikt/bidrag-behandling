@@ -20,10 +20,12 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.database.datamodell.json.Klagedetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
+import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.database.repository.SamværRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -55,7 +57,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
@@ -121,7 +123,16 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var behandlingRepository: BehandlingRepository
 
     @Autowired
+    lateinit var husstandsmedlemRepository: HusstandsmedlemRepository
+
+    @Autowired
     lateinit var grunnlagRepository: GrunnlagRepository
+
+    @Autowired
+    lateinit var inntektRepository: InntektRepository
+
+    @Autowired
+    lateinit var samværRepository: SamværRepository
 
     @Autowired
     lateinit var sivilstandRepository: SivilstandRepository
@@ -164,7 +175,10 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var unleashFeaturesProvider: UnleashFeaturesProvider
 
     @MockkBean
-    lateinit var klageOrkestrator: KlageOrkestrator
+    lateinit var klageOrkestrator: OmgjøringOrkestrator
+
+    @MockkBean
+    lateinit var virkningstidspunktService: VirkningstidspunktService
     val notatService = NotatService()
 
     @BeforeEach
@@ -172,12 +186,11 @@ class VedtakserviceTest : TestContainerRunner() {
         clearAllMocks()
         stubTokenUtils()
         enableUnleashFeature(UnleashFeatures.BIDRAG_KLAGE)
-        enableUnleashFeature(UnleashFeatures.BIDRAG_V2_ENDRING)
         enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
         disableUnleashFeature(UnleashFeatures.VEDTAKSSPERRE)
         bidragPersonConsumer = stubPersonConsumer()
         bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)
-        every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any()) } returns null
+        every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)
         val validerBeregning = ValiderBeregning()
@@ -191,13 +204,6 @@ class VedtakserviceTest : TestContainerRunner() {
                 personService,
                 BeregnGebyrApi(stubSjablonService()),
             )
-        beregningService =
-            BeregningService(
-                behandlingService,
-                vedtakGrunnlagMapper,
-                aldersjusteringOrchestrator,
-                bidragsberegningOrkestrator,
-            )
         val dtomapper =
             Dtomapper(
                 tilgangskontrollService,
@@ -206,6 +212,10 @@ class VedtakserviceTest : TestContainerRunner() {
                 vedtakGrunnlagMapper,
                 BeregnBarnebidragApi(),
             )
+        val boforholdService = BoforholdService(behandlingRepository, husstandsmedlemRepository, notatService, sivilstandRepository, dtomapper)
+
+        val inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
+
         val underholdService =
             UnderholdService(
                 underholdskostnadRepository,
@@ -213,6 +223,26 @@ class VedtakserviceTest : TestContainerRunner() {
                 notatService,
                 personService,
             )
+        val samværService = SamværService(samværRepository, behandlingRepository, notatService, BeregnSamværsklasseApi(stubSjablonService()))
+        virkningstidspunktService =
+            VirkningstidspunktService(
+                behandlingRepository,
+                boforholdService,
+                notatService,
+                grunnlagService,
+                inntektService,
+                samværService,
+                underholdService,
+                GebyrService(vedtakGrunnlagMapper),
+            )
+        beregningService =
+            BeregningService(
+                behandlingService,
+                vedtakGrunnlagMapper,
+                aldersjusteringOrchestrator,
+                bidragsberegningOrkestrator,
+            )
+
         val vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService, personRepository, behandlingRepository)
 
         val behandlingTilVedtakMapping =
@@ -230,12 +260,12 @@ class VedtakserviceTest : TestContainerRunner() {
                 notatOpplysningerService,
                 tilgangskontrollService,
                 vedtakConsumer,
-//                null,
                 validerBeregning,
                 vedtakTilBehandlingMapping,
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
                 forsendelseService,
+                virkningstidspunktService,
             )
         every { notatOpplysningerService.opprettNotat(any()) } returns testNotatJournalpostId
         every { tilgangskontrollService.sjekkTilgangPersonISak(any(), any()) } returns Unit
@@ -358,10 +388,6 @@ class VedtakserviceTest : TestContainerRunner() {
         behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null))
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!)
-        behandling.klagedetaljer =
-            Klagedetaljer(
-                klageMottattdato = LocalDate.now(),
-            )
 
         testdataManager.lagreBehandling(behandling)
         stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
@@ -419,7 +445,7 @@ class VedtakserviceTest : TestContainerRunner() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 19
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 20
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 3

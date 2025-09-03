@@ -23,7 +23,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.KlageOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -41,6 +41,7 @@ import stubPersonRepository
 import stubSaksbehandlernavnProvider
 import stubTokenUtils
 import stubUnderholdskostnadRepository
+import stubVedtakConsumer
 
 @ExtendWith(MockKExtension::class)
 abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
@@ -69,12 +70,13 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     val unleash = FakeUnleash()
 
     @MockK
-    lateinit var klageOrkestrator: KlageOrkestrator
+    lateinit var klageOrkestrator: OmgjøringOrkestrator
 
     open lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
 
     @BeforeEach
     fun initMocks() {
+        stubVedtakConsumer(vedtakConsumer)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)
@@ -151,6 +153,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 behandlingTilVedtakMapping,
                 validerBehandlingService,
                 forsendelseService,
+                virkningstidspunktService,
             )
 
         unleash.enableAll()

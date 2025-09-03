@@ -84,7 +84,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         id = id!!,
         type = tilType(),
         vedtakstype = vedtakstype,
-        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+        opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
         stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
         erKlageEllerOmgjøring = erKlageEllerOmgjøring,
@@ -107,8 +107,8 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
                         it.fødselsdato,
                     )
                 }.toSet(),
-        søknadRefId = klagedetaljer?.soknadRefId,
-        vedtakRefId = klagedetaljer?.påklagetVedtak,
+        søknadRefId = omgjøringsdetaljer?.soknadRefId,
+        vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
         virkningstidspunkt = virkningstidspunkt,
         årsak = årsak,
         avslag = avslag,
@@ -277,8 +277,8 @@ fun Behandling.tilInntektDtoV2(
 fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDto {
     val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
         erKlageEllerOmgjøring &&
-            klagedetaljer?.opprinneligVirkningstidspunkt != null &&
-            virkningstidspunkt?.isAfter(klagedetaljer!!.opprinneligVirkningstidspunkt) == true
+            omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
+            virkningstidspunkt?.isAfter(omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
     val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
 
     return VirkningstidspunktFeilDto(
@@ -482,10 +482,10 @@ fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.
 fun Behandling.tilNotat(
     notattype: Notattype,
     tekst: String,
-    rolleVedInntekt: Rolle? = null,
+    rolle: Rolle? = null,
     delAvBehandling: Boolean = true,
 ): Notat {
-    val gjelder = this.henteRolleForNotat(notattype, rolleVedInntekt)
+    val gjelder = this.henteRolleForNotat(notattype, rolle)
     return Notat(behandling = this, rolle = gjelder, type = notattype, innhold = tekst, erDelAvBehandlingen = delAvBehandling)
 }
 
@@ -624,8 +624,12 @@ fun List<SivilstandGrunnlagDto>.filtrerSivilstandGrunnlagEtterVirkningstidspunkt
 ): List<SivilstandGrunnlagDto> {
     val filtrertGrunnlag =
         sortedBy { it.gyldigFom }.slice(map { it.gyldigFom }.hentIndekserEtterVirkningstidspunkt(virkningstidspunkt))
-    return filtrertGrunnlag.ifEmpty {
-        listOf(sortedBy { it.gyldigFom }.last())
+    return if (isEmpty()) {
+        emptyList()
+    } else {
+        filtrertGrunnlag.ifEmpty {
+            listOf(sortedBy { it.gyldigFom }.last())
+        }
     }
 }
 
@@ -712,7 +716,7 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
         saksnummer = saksnummer,
         vedtakstype = vedtakstype,
         søknadstype = søknadstype,
-        harReferanseTilAnnenBehandling = klagedetaljer != null,
+        harReferanseTilAnnenBehandling = omgjøringsdetaljer != null,
         søktFomDato = søktFomDato,
         mottattdato = mottattdato,
         roller =

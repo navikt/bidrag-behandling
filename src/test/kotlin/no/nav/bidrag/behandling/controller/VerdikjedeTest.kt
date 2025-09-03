@@ -134,7 +134,7 @@ class VerdikjedeTest : KontrollerTestRunner() {
         val behandlingFraVedtak =
             behandlingRepository.findBehandlingById(behandlingRes.body!!.id).getOrNull()
         behandlingFraVedtak shouldNotBe null
-        behandlingFraVedtak!!.klagedetaljer?.refVedtaksid shouldBe 12333
+        behandlingFraVedtak!!.omgjøringsdetaljer?.refVedtaksid shouldBe 12333
     }
 
     private fun Behandling.taMedInntekt(

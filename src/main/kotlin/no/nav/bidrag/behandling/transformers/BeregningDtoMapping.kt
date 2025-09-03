@@ -34,7 +34,6 @@ import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
@@ -380,7 +379,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                             } ?: false,
                                         beregnTilDato = resultat.beregnTilDato,
                                         skalOpprette35c =
-                                            resultat.klagedetaljer
+                                            resultat.omgjøringsdetaljer
                                                 ?.paragraf35c
                                                 ?.any { it.vedtaksid == resultatFraVedtak?.vedtaksid } == true,
                                         manuellAldersjustering =
@@ -609,6 +608,15 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         )
     } else {
         finnResultatFraAnnenVedtak(grunnlagsreferanseListe)?.let {
+            if (it.vedtakstype == Vedtakstype.OPPHØR && it.vedtaksid == null) {
+                return ResultatBarnebidragsberegningPeriodeDto(
+                    vedtakstype = Vedtakstype.OPPHØR,
+                    periode = periode,
+                    faktiskBidrag = BigDecimal.ZERO,
+                    erOpphør = true,
+                    resultatKode = Resultatkode.OPPHØR,
+                )
+            }
             val vedtak = hentVedtak(it.vedtaksid)
             val vedtakPeriode =
                 vedtak!!

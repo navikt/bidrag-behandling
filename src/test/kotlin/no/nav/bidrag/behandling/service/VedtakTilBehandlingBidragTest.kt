@@ -43,6 +43,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.junit.jupiter.api.Test
+import stubVedtakConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
@@ -50,7 +51,17 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for BIDRAG`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("fattetvedtak/bidrag-innvilget")
+        val vedtakDto = lagVedtaksdata("fattetvedtak/bidrag-innvilget")
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
+            vedtakDto.copy(
+                vedtaksid = 1,
+                stønadsendringListe = vedtakDto.stønadsendringListe.map { it.copy(omgjørVedtakId = 2) },
+            )
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            vedtakDto.copy(
+                vedtaksid = 2,
+                stønadsendringListe = vedtakDto.stønadsendringListe.map { it.copy(omgjørVedtakId = null) },
+            )
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
@@ -65,14 +76,14 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-11-18")
-            klagedetaljer?.klageMottattdato shouldBe null
+            omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
-            notater shouldHaveSize 5
+            notater shouldHaveSize 7
             henteNotatinnhold(behandling, Notattype.SAMVÆR, behandling.søknadsbarn.first()) shouldBe "Begrunnelse samvær"
             henteNotatinnhold(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.søknadsbarn.first()) shouldBe "Begrunnelse underholdskostnad"
             validerRoller()
@@ -140,9 +151,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus for BIDRAG med klage mottatt dato`() {
         val originalVedtak = lagVedtaksdata("fattetvedtak/bidrag-innvilget")
-        val vedtak1 =
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
             originalVedtak.copy(
-                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+                vedtaksid = 1,
+                stønadsendringListe = originalVedtak.stønadsendringListe.map { it.copy(omgjørVedtakId = 2) },
                 grunnlagListe =
                     originalVedtak.grunnlagListe.map {
                         if (it.type == Grunnlagstype.SØKNAD) {
@@ -160,8 +172,13 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                         }
                     },
             )
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            originalVedtak.copy(
+                vedtaksid = 2,
+                stønadsendringListe = originalVedtak.stønadsendringListe.map { it.copy(omgjørVedtakId = null) },
+                vedtakstidspunkt = LocalDate.parse("2024-02-01").atStartOfDay(),
+            )
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
-        every { vedtakConsumer.hentVedtak(eq(1)) } returns vedtak1
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
 
         assertSoftly(behandling) {
@@ -175,10 +192,10 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             engangsbeloptype shouldBe null
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2024-05-01")
-            klagedetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
+            omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            klagedetaljer?.påklagetVedtak shouldBe 1
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
             opprettetAvNavn shouldBe null
@@ -262,16 +279,26 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             )!!
 
         assertSoftly(behandling) {
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 3
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
-            klagedetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 3
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
         }
     }
 
     @Test
     fun `Skal konvertere vedtak til behandling for lesemodus hvis direkte avslag`() {
-        every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("fattetvedtak/bidrag-avslag")
+        val vedtakDto = lagVedtaksdata("fattetvedtak/bidrag-avslag")
+        every { vedtakConsumer.hentVedtak(eq(1)) } returns
+            vedtakDto.copy(
+                vedtaksid = 1,
+                stønadsendringListe = vedtakDto.stønadsendringListe.map { it.copy(omgjørVedtakId = 2) },
+            )
+        every { vedtakConsumer.hentVedtak(eq(2)) } returns
+            vedtakDto.copy(
+                vedtaksid = 2,
+                stønadsendringListe = vedtakDto.stønadsendringListe.map { it.copy(omgjørVedtakId = null) },
+            )
         every { behandlingService.hentBehandlingById(1) } returns (oppretteBehandling())
 
         val behandling = vedtakService.konverterVedtakTilBehandlingForLesemodus(1)!!
@@ -287,12 +314,13 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             avslag shouldBe Resultatkode.IKKE_OMSORG_FOR_BARNET
             notater shouldHaveSize 0
             virkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
-            klagedetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
+            omgjøringsdetaljer!!.opprinneligVirkningstidspunkt shouldBe LocalDate.parse("2023-09-01")
         }
     }
 
     @Test
     fun `Skal konvertere vedtak for beregning`() {
+        stubVedtakConsumer(vedtakConsumer)
         every { vedtakConsumer.hentVedtak(any()) } returns lagVedtaksdata("vedtak_response-særbidrag")
         val resultat =
             vedtakService.konverterVedtakTilBeregningResultatBidrag(1)

@@ -24,7 +24,7 @@ import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteresManueltException
 import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.BeregnBasertPåVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak
+import no.nav.bidrag.beregn.barnebidrag.service.FinnesEtterfølgendeVedtakMedVirkningstidspunktFørOmgjortVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
 import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.beregn.core.bo.Periode
@@ -57,7 +57,6 @@ import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
 import no.nav.bidrag.transport.felles.tilVisningsnavn
-import org.checkerframework.checker.units.qual.s
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -129,7 +128,7 @@ class BeregningService(
                 beregnSærbidragApi
                     .beregn(
                         beregningRequest.beregnGrunnlag!!,
-                        behandling.klagedetaljer?.opprinneligVedtakstype ?: behandling.vedtakstype,
+                        behandling.omgjøringsdetaljer?.opprinneligVedtakstype ?: behandling.vedtakstype,
                     ).let { resultat ->
                         resultat.validerForSærbidrag()
                         resultat
@@ -185,7 +184,7 @@ class BeregningService(
                                     },
                             ),
                         avslaskode = søknasdbarn.avslag,
-                        klagedetaljer = behandling.klagedetaljer,
+                        omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         beregnTilDato =
                             behandling
                                 .finnBeregnTilDatoBehandling(søknasdbarn)
@@ -206,7 +205,7 @@ class BeregningService(
                                     )
                                 } ?: BeregnetBarnebidragResultat(),
                     )
-                } catch (e: FinnesEtterfølgendeVedtakMedVirkningstidspunktFørPåklagetVedtak) {
+                } catch (e: FinnesEtterfølgendeVedtakMedVirkningstidspunktFørOmgjortVedtak) {
                     val beregnTilDato =
                         søknasdbarn
                             .behandling
@@ -222,7 +221,7 @@ class BeregningService(
                             ),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
-                        klagedetaljer = behandling.klagedetaljer,
+                        omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat = BeregnetBarnebidragResultat(),
                     )
@@ -231,7 +230,7 @@ class BeregningService(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
-                        klagedetaljer = behandling.klagedetaljer,
+                        omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             e.data.copy(
@@ -247,7 +246,7 @@ class BeregningService(
                         ugyldigBeregning = e.opprettBegrunnelse(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
-                        klagedetaljer = behandling.klagedetaljer,
+                        omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
                         resultat =
                             e.data.copy(
@@ -290,7 +289,7 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
-                    klagedetaljer = behandling.klagedetaljer,
+                    omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         beregning.beregning.copy(
@@ -320,7 +319,7 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
-                    klagedetaljer = behandling.klagedetaljer,
+                    omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         BeregnetBarnebidragResultat(
@@ -344,7 +343,7 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
                     vedtakstype = behandling.vedtakstype,
-                    klagedetaljer = behandling.klagedetaljer,
+                    omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     resultat =
                         BeregnetBarnebidragResultat(
@@ -382,7 +381,7 @@ class BeregningService(
             barn = barn.mapTilResultatBarn(),
             avslaskode = avslag,
             vedtakstype = vedtakstype,
-            klagedetaljer = klagedetaljer,
+            omgjøringsdetaljer = omgjøringsdetaljer,
             resultat =
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =

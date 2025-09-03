@@ -21,6 +21,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.consumer.ForsendelseResponsTo
 import no.nav.bidrag.behandling.consumer.dto.OppgaveDto
 import no.nav.bidrag.behandling.consumer.dto.OppgaveSokResponse
@@ -59,6 +60,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlerInfoResponse
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.commons.util.IdentConsumer
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -228,9 +230,20 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
     }
     mockkObject(AppContext)
     every {
-        AppContext.getBean<BidragPersonConsumer>(any())
+        AppContext.getBean(eq(BidragPersonConsumer::class.java))
     } returns personConsumerMock
     return personConsumerMock
+}
+
+fun stubVedtakConsumer(
+    vedtakConsumer: BidragVedtakConsumer = mockkClass(BidragVedtakConsumer::class, relaxed = true),
+): BidragVedtakConsumer {
+    mockkObject(AppContext)
+    every {
+        AppContext.getBean(eq(BidragVedtakConsumer::class.java))
+    } returns vedtakConsumer
+
+    return vedtakConsumer
 }
 
 fun stubHentPersonNyIdent(
@@ -248,7 +261,11 @@ fun stubHentPersonNyIdent(
         )
     mockkObject(AppContext)
     every {
-        AppContext.getBean<BidragPersonConsumer>(any())
+        try {
+            AppContext.getBean(eq(BidragPersonConsumer::class.java))
+        } catch (e: Exception) {
+            secureLogger.error(e) { "asdsad" }
+        }
     } returns personConsumerMock
 
     return personConsumerMock

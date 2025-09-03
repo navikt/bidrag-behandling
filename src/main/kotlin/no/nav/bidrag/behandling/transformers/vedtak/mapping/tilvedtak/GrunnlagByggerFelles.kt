@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnota
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
@@ -108,16 +109,23 @@ private fun opprettGrunnlagNotat(
     medIVedtak: Boolean,
     innhold: String,
     gjelderReferanse: String? = null,
+    gjelderBarnReferanse: String? = null,
+    fraOmgjortVedtak: Boolean = false,
 ) = GrunnlagDto(
-    referanse = "notat_${notatType}_${if (medIVedtak) "med_i_vedtaket" else "kun_i_notat"}${gjelderReferanse?.let { "_$it" } ?: ""}",
+    referanse =
+        "notat_${notatType}_${if (medIVedtak) "med_i_vedtaket" else "kun_i_notat"}" +
+            (if (fraOmgjortVedtak) "_fra_opprinnelig_vedtak" else "") +
+            "${gjelderReferanse?.let { "_$it" } ?: ""}${gjelderBarnReferanse?.let { "_$it" } ?: ""}",
     type = Grunnlagstype.NOTAT,
     gjelderReferanse = gjelderReferanse,
+    gjelderBarnReferanse = gjelderBarnReferanse,
     innhold =
         POJONode(
             NotatGrunnlag(
                 innhold = innhold,
                 erMedIVedtaksdokumentet = medIVedtak,
                 type = notatType,
+                fraOmgjortVedtak = fraOmgjortVedtak,
             ),
         ),
 )
@@ -149,7 +157,7 @@ fun Behandling.byggGrunnlagSøknad() =
             innhold =
                 POJONode(
                     SøknadGrunnlag(
-                        klageMottattDato = klagedetaljer?.klageMottattdato,
+                        klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
                         mottattDato = mottattdato,
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
@@ -161,7 +169,7 @@ fun Behandling.byggGrunnlagSøknad() =
                                 BisysSøknadstype.PARAGRAF_35_C,
                                 BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
                             ).contains(søknadstype),
-                        opprinneligVedtakstype = klagedetaljer?.opprinneligVedtakstype,
+                        opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
                         privatAvtale = søknadstype == BisysSøknadstype.PRIVAT_AVTALE,
                         paragraf35c =
                             listOf(
@@ -254,7 +262,7 @@ fun byggGrunnlagVirkningstidspunktResultatvedtak(
     )
 
 fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<GrunnlagDto> = emptyList()) =
-    if (tilType() == TypeBehandling.BIDRAG) {
+    if (erBidrag()) {
         søknadsbarn
             .map { sb ->
                 val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(sb.ident) ?: sb.tilGrunnlagPerson()
@@ -295,70 +303,239 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
     }
 
 fun Behandling.byggGrunnlagNotaterDirekteAvslag(): Set<GrunnlagDto> =
-    setOf(
-        henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT)?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT, false, it)
-        },
-        henteNotatinnhold(this, Notattype.UTGIFTER)?.takeIfNotNullOrEmpty {
-            opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
-        },
-    ).filterNotNull().toSet()
-
-fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
-    val notatGrunnlag =
+    byggGrunnlagBegrunnelseVirkningstidspunkt() +
         setOf(
-            henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT)?.takeIfNotNullOrEmpty {
+            henteNotatinnhold(this, Notattype.UTGIFTER).takeIfNotNullOrEmpty {
+                opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
+            },
+        ).filterNotNull().toSet()
+
+fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
+    if (erBidrag()) {
+        søknadsbarn
+            .flatMap { rolle ->
+                listOf(
+                    henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT, rolle).takeIfNotNullOrEmpty {
+                        opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT, false, it, gjelderBarnReferanse = rolle.tilGrunnlagsreferanse())
+                    } ?: henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT).takeIfNotNullOrEmpty {
+                        opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT, false, it)
+                    },
+                    henteNotatinnhold(
+                        this,
+                        Notattype.VIRKNINGSTIDSPUNKT,
+                        rolle,
+                        begrunnelseDelAvBehandlingen = false,
+                    ).takeIfNotNullOrEmpty {
+                        opprettGrunnlagNotat(
+                            Notattype.VIRKNINGSTIDSPUNKT,
+                            false,
+                            it,
+                            fraOmgjortVedtak = true,
+                            gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                        )
+                    } ?: henteNotatinnhold(
+                        this,
+                        Notattype.VIRKNINGSTIDSPUNKT,
+                        begrunnelseDelAvBehandlingen = false,
+                    ).takeIfNotNullOrEmpty {
+                        opprettGrunnlagNotat(
+                            Notattype.VIRKNINGSTIDSPUNKT,
+                            false,
+                            it,
+                            fraOmgjortVedtak = true,
+                        )
+                    },
+                )
+            }.filterNotNull()
+            .toSet()
+    } else {
+        setOf(
+            henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT).takeIfNotNullOrEmpty {
                 opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT, false, it)
             },
-            henteNotatinnhold(this, Notattype.BOFORHOLD)?.takeIfNotNullOrEmpty {
+            henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT, begrunnelseDelAvBehandlingen = false).takeIfNotNullOrEmpty {
+                opprettGrunnlagNotat(
+                    Notattype.VIRKNINGSTIDSPUNKT,
+                    false,
+                    it,
+                    fraOmgjortVedtak = true,
+                )
+            },
+        ).filterNotNull().toSet()
+    }
+
+fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
+    val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt()
+    val notatGrunnlag =
+        setOf(
+            henteNotatinnhold(this, Notattype.BOFORHOLD).takeIfNotNullOrEmpty {
                 opprettGrunnlagNotat(Notattype.BOFORHOLD, false, it)
             },
-            henteNotatinnhold(this, Notattype.UTGIFTER)?.takeIfNotNullOrEmpty {
+            henteNotatinnhold(this, Notattype.BOFORHOLD, begrunnelseDelAvBehandlingen = false).takeIfNotNullOrEmpty {
+                opprettGrunnlagNotat(Notattype.BOFORHOLD, false, it, fraOmgjortVedtak = true)
+            },
+            henteNotatinnhold(this, Notattype.UTGIFTER).takeIfNotNullOrEmpty {
                 opprettGrunnlagNotat(Notattype.UTGIFTER, false, it)
+            },
+            henteNotatinnhold(this, Notattype.UTGIFTER, begrunnelseDelAvBehandlingen = false).takeIfNotNullOrEmpty {
+                opprettGrunnlagNotat(Notattype.UTGIFTER, false, it, fraOmgjortVedtak = true)
             },
         ).filterNotNull()
 
     val notatVurderingAvSkolegang =
         if (kanSkriveVurderingAvSkolegangAlle()) {
             roller
-                .mapNotNull { rolle ->
-                    henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle).takeIfNotNullOrEmpty { innhold ->
-                        opprettGrunnlagNotat(
+                .flatMap { rolle ->
+                    listOf(
+                        henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle)
+                            .takeIfNotNullOrEmpty { innhold ->
+                                opprettGrunnlagNotat(
+                                    Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                                    false,
+                                    innhold,
+                                    gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                                )
+                            },
+                        henteNotatinnhold(
+                            this,
                             Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                            false,
-                            innhold,
-                            rolle.tilGrunnlagsreferanse(),
-                        )
-                    }
-                }
+                            rolle,
+                            begrunnelseDelAvBehandlingen = false,
+                        ).takeIfNotNullOrEmpty { innhold ->
+                            opprettGrunnlagNotat(
+                                Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                                false,
+                                innhold,
+                                gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                                fraOmgjortVedtak = true,
+                            )
+                        },
+                    )
+                }.filterNotNull()
         } else {
             emptyList()
         }
     val notatUnderhold =
         roller
-            .mapNotNull { rolle ->
-                henteNotatinnhold(this, Notattype.UNDERHOLDSKOSTNAD, rolle).takeIfNotNullOrEmpty { innhold ->
-                    opprettGrunnlagNotat(Notattype.UNDERHOLDSKOSTNAD, false, innhold, rolle.tilGrunnlagsreferanse())
-                }
-            }
+            .flatMap { rolle ->
+                listOf(
+                    henteNotatinnhold(this, Notattype.UNDERHOLDSKOSTNAD, rolle).takeIfNotNullOrEmpty { innhold ->
+                        opprettGrunnlagNotat(
+                            Notattype.UNDERHOLDSKOSTNAD,
+                            false,
+                            innhold,
+                            gjelderReferanse =
+                                if (rolle.rolletype != Rolletype.BARN) {
+                                    rolle.tilGrunnlagsreferanse()
+                                } else {
+                                    null
+                                },
+                            gjelderBarnReferanse =
+                                if (rolle.rolletype == Rolletype.BARN) {
+                                    rolle.tilGrunnlagsreferanse()
+                                } else {
+                                    null
+                                },
+                        )
+                    },
+                    henteNotatinnhold(this, Notattype.UNDERHOLDSKOSTNAD, rolle, begrunnelseDelAvBehandlingen = false)
+                        .takeIfNotNullOrEmpty { innhold ->
+                            opprettGrunnlagNotat(
+                                Notattype.UNDERHOLDSKOSTNAD,
+                                false,
+                                innhold,
+                                gjelderReferanse =
+                                    if (rolle.rolletype != Rolletype.BARN) {
+                                        rolle.tilGrunnlagsreferanse()
+                                    } else {
+                                        null
+                                    },
+                                gjelderBarnReferanse =
+                                    if (rolle.rolletype == Rolletype.BARN) {
+                                        rolle.tilGrunnlagsreferanse()
+                                    } else {
+                                        null
+                                    },
+                                fraOmgjortVedtak = true,
+                            )
+                        },
+                )
+            }.filterNotNull()
+    val notatPrivatAvtale =
+        roller
+            .flatMap { rolle ->
+                listOf(
+                    henteNotatinnhold(
+                        this,
+                        Notattype.PRIVAT_AVTALE,
+                        rolle,
+                    ).takeIfNotNullOrEmpty { innhold ->
+                        opprettGrunnlagNotat(Notattype.PRIVAT_AVTALE, false, innhold, gjelderBarnReferanse = rolle.tilGrunnlagsreferanse())
+                    },
+                    henteNotatinnhold(
+                        this,
+                        Notattype.PRIVAT_AVTALE,
+                        rolle,
+                        begrunnelseDelAvBehandlingen = false,
+                    ).takeIfNotNullOrEmpty { innhold ->
+                        opprettGrunnlagNotat(
+                            Notattype.PRIVAT_AVTALE,
+                            false,
+                            innhold,
+                            gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                            fraOmgjortVedtak = true,
+                        )
+                    },
+                )
+            }.filterNotNull()
+
     val notatSamvær =
-        roller.mapNotNull { rolle ->
-            henteSamværsnotat(this, rolle)?.takeIfNotNullOrEmpty { innhold ->
-                opprettGrunnlagNotat(Notattype.SAMVÆR, false, innhold, rolle.tilGrunnlagsreferanse())
-            }
-        }
+        roller
+            .flatMap { rolle ->
+                listOf(
+                    henteSamværsnotat(this, rolle)?.takeIfNotNullOrEmpty { innhold ->
+                        opprettGrunnlagNotat(Notattype.SAMVÆR, false, innhold, gjelderBarnReferanse = rolle.tilGrunnlagsreferanse())
+                    },
+                    henteSamværsnotat(this, rolle, begrunnelseDelAvBehandlingen = false)?.takeIfNotNullOrEmpty { innhold ->
+                        opprettGrunnlagNotat(
+                            Notattype.SAMVÆR,
+                            false,
+                            innhold,
+                            gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                            fraOmgjortVedtak = true,
+                        )
+                    },
+                )
+            }.filterNotNull()
+
     val notatGrunnlagInntekter =
         roller
-            // TODO: Midlertidlig løsning til alle notat er migrert over. Kan fjernes når alle notater er migrert
-            .filter { tilType() != TypeBehandling.FORSKUDD || it.rolletype == Rolletype.BIDRAGSMOTTAKER }
-            .mapNotNull { rolle ->
-                henteInntektsnotat(this, rolle.id!!)?.takeIfNotNullOrEmpty {
-                    opprettGrunnlagNotat(Notattype.INNTEKT, false, it, rolle.tilGrunnlagsreferanse())
-                }
-            }
+            .flatMap { rolle ->
+                listOf(
+                    henteInntektsnotat(this, rolle.id!!)?.takeIfNotNullOrEmpty {
+                        opprettGrunnlagNotat(
+                            Notattype.INNTEKT,
+                            false,
+                            it,
+                            gjelderReferanse = rolle.tilGrunnlagsreferanse(),
+                        )
+                    },
+                    henteInntektsnotat(this, rolle.id!!, begrunnelseDelAvBehandlingen = false)?.takeIfNotNullOrEmpty {
+                        opprettGrunnlagNotat(
+                            Notattype.INNTEKT,
+                            false,
+                            it,
+                            gjelderReferanse = rolle.tilGrunnlagsreferanse(),
+                            fraOmgjortVedtak = true,
+                        )
+                    },
+                )
+            }.filterNotNull()
 
-    return (notatGrunnlag + notatGrunnlagInntekter + notatSamvær + notatUnderhold + notatVurderingAvSkolegang)
-        .toSet()
+    return (
+        virkningstidspunktGrunnlag + notatGrunnlag + notatGrunnlagInntekter + notatSamvær + notatUnderhold + notatVurderingAvSkolegang +
+            notatPrivatAvtale
+    ).toSet()
 }
 
 fun Behandling.tilSkyldner() =
@@ -375,7 +552,7 @@ fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
             kilde = BehandlingsrefKilde.BEHANDLING_ID,
             referanse = id.toString(),
         ),
-        klagedetaljer?.soknadRefId?.let {
+        omgjøringsdetaljer?.soknadRefId?.let {
             OpprettBehandlingsreferanseRequestDto(
                 kilde = BehandlingsrefKilde.BISYS_KLAGE_REF_SØKNAD,
                 referanse = it.toString(),

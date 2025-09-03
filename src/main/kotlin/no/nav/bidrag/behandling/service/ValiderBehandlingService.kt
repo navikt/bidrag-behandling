@@ -98,7 +98,9 @@ class ValiderBehandlingService(
             return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
         }
 
-        if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01"))) {
+        if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01")) &&
+            !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
+        ) {
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
         }
         return null

@@ -22,6 +22,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import stubPersonConsumer
+import stubVedtakConsumer
 
 abstract class KontrollerTestRunner : CommonTestRunner() {
     companion object {
@@ -74,6 +75,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
 
     @BeforeEach
     fun initMocks() {
+        stubVedtakConsumer()
         clearMocks(unleashInstance)
         every { unleashInstance.isEnabled(any(), any<Boolean>()) } returns true
         every { unleashInstance.isEnabled(eq("vedtakssperre"), any<Boolean>()) } returns false

@@ -35,6 +35,7 @@ open class Grunnlag(
     @Enumerated(EnumType.STRING)
     open val type: Grunnlagsdatatype,
     open val erBearbeidet: Boolean = false,
+    open val grunnlagFraVedtakSomSkalOmgjøres: Boolean = false,
     @Column(name = "data", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var data: String,
@@ -57,6 +58,7 @@ open class Grunnlag(
         }
 
     val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
+    val identifikatorAlle get() = type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres
 }
 
 fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
@@ -78,9 +80,9 @@ fun Set<Grunnlag>.hentSisteIkkeAktiv() =
         .values
         .filterNotNull()
 
-fun Set<Grunnlag>.hentSisteAktiv() =
+fun Set<Grunnlag>.hentSisteAktiv(inkluderGrunnlagFraVedtakSomSkalOmgjøres: Boolean = false) =
     hentAlleAktiv()
-        .groupBy { it.identifikator }
+        .groupBy { if (inkluderGrunnlagFraVedtakSomSkalOmgjøres) it.identifikatorAlle else it.identifikator }
         .mapValues { (_, grunnlagList) -> grunnlagList.maxByOrNull { it.innhentet } }
         .values
         .filterNotNull()
@@ -99,8 +101,13 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
 fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
     gjelderBarnIdent: String,
     type: Grunnlagsdatatype,
-) = hentSisteAktiv()
-    .find { it.gjelder == gjelderBarnIdent && type == it.type }
+    grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
+) = hentSisteAktiv(true)
+    .find {
+        it.gjelder == gjelderBarnIdent && type == it.type &&
+            // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres
+            if (grunnlagFraVedtakSomSkalOmgjøres == null) true else it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
+    }
 
 fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
     hentSisteAktiv()
