@@ -58,7 +58,7 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
     return SamværValideringsfeilDto(
         samværId = id!!,
         gjelderRolle = rolle,
-        manglerBegrunnelse = if (behandling.metadata?.erKlagePåBisysVedtak() == true) false else notatSæmvær?.innhold.isNullOrBlank(),
+        manglerBegrunnelse = if (behandling.erKlageEllerOmgjøring) false else notatSæmvær?.innhold.isNullOrBlank(),
         ingenLøpendeSamvær =
             (opphørsdato == null || opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)) &&
                 (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
