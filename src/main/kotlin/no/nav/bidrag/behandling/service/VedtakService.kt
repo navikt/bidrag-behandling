@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
@@ -32,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatadBeregningOrkestrering
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.leggTilVedtaksidPåAldersjusteringGrunnlag
+import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.vedtak.validerGrunnlagsreferanser
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.core.util.justerVedtakstidspunktVedtak
@@ -91,7 +91,7 @@ class VedtakService(
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
     private val forsendelseService: ForsendelseService,
     private val virkningstidspunktService: VirkningstidspunktService,
-    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
+//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
         try {
@@ -161,29 +161,59 @@ class VedtakService(
                 vedtak.virkningstidspunkt?.toYearMonth()
             }
         if (refererTilVedtakId.isNotEmpty()) {
+            val påklagetVedtakListe =
+                if (vedtak.stønadsendringListe.isEmpty()) {
+                    val kravhaver = vedtak.engangsbeløpListe.first().kravhaver
+                    return setOf(
+                        PåklagetVedtak(
+                            vedtak.vedtaksid,
+                            kravhaver,
+                            vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
+                            virkningstidspunkt,
+                        ),
+                    )
+                } else {
+                    vedtak.stønadsendringListe
+                        .map { se ->
+                            PåklagetVedtak(
+                                vedtak.vedtaksid,
+                                se.kravhaver,
+                                vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
+                                se.periodeListe.takeIfNotNullOrEmpty {
+                                    vedtak.finnVirkningstidspunktForStønad(
+                                        se.tilStønadsid(),
+                                    )
+                                },
+                            )
+                        }.toSet()
+                }
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
                     val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
 
                     hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
-                }.toSet() +
-                vedtak.stønadsendringListe
-                    .filter { listOf(Stønadstype.BIDRAG18AAR, Stønadstype.BIDRAG).contains(it.type) }
-                    .map {
-                        PåklagetVedtak(
-                            vedtak.vedtaksid,
-                            it.kravhaver,
-                            vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
-                            virkningstidspunkt,
-                        )
-                    }.toSet()
+                }.toSet() + påklagetVedtakListe
         }
-
-        return vedtak.stønadsendringListe
-            .filter { listOf(Stønadstype.BIDRAG18AAR, Stønadstype.BIDRAG).contains(it.type) }
-            .map {
-                PåklagetVedtak(vedtak.vedtaksid, it.kravhaver, vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!, virkningstidspunkt)
-            }.toSet()
+        return if (vedtak.stønadsendringListe.isEmpty()) {
+            val kravhaver = vedtak.engangsbeløpListe.first().kravhaver
+            return setOf(
+                PåklagetVedtak(vedtak.vedtaksid, kravhaver, vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!, virkningstidspunkt),
+            )
+        } else {
+            vedtak.stønadsendringListe
+                .map { se ->
+                    PåklagetVedtak(
+                        vedtak.vedtaksid,
+                        se.kravhaver,
+                        vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
+                        se.periodeListe.takeIfNotNullOrEmpty {
+                            vedtak.finnVirkningstidspunktForStønad(
+                                se.tilStønadsid(),
+                            )
+                        },
+                    )
+                }.toSet()
+        }
     }
 
     @Transactional
@@ -681,7 +711,7 @@ class VedtakService(
             "Vedtak er allerede fattet for behandling $id med vedtakId $vedtaksid",
         )
 
-//    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-
-    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
+    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
+//
+//    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }
