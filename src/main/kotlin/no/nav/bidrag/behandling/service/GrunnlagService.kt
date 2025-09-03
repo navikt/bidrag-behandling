@@ -1148,7 +1148,7 @@ class GrunnlagService(
                 innhentetGrunnlag = SkattepliktigeInntekter(it.ainntektListe, it.skattegrunnlagListe),
                 hentetTidspunkt = it.hentetTidspunkt,
                 aktiveringstidspunkt = null,
-                tekniskFeilsjekk = (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+                tekniskFeilVedInnhenting = tekniskFeilVedHentingAvInntekter,
             )
         }
 
@@ -1167,7 +1167,7 @@ class GrunnlagService(
                 it,
                 rolleInnhentetFor,
                 feilrapporteringer,
-                (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+                tekniskFeilVedHentingAvInntekter,
             )
         }
 
@@ -1988,7 +1988,7 @@ class GrunnlagService(
         innhentetGrunnlag: T,
         hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
-        tekniskFeilsjekk: Boolean = false,
+        tekniskFeilVedInnhenting: Boolean = false,
     ) {
         val sistInnhentedeGrunnlagAvType: T? = behandling.hentSisteInnhentaGrunnlag(grunnlagstype, rolle)
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, rolle)
@@ -1998,7 +1998,9 @@ class GrunnlagService(
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
 
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null && tekniskFeilsjekk) {
+        if (erFørstegangsinnhentingAvInntekter ||
+            erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null && !tekniskFeilVedInnhenting
+        ) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -2030,7 +2032,7 @@ class GrunnlagService(
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
                 )
             }
-        } else if (erGrunnlagEndretSidenSistInnhentet && tekniskFeilsjekk) {
+        } else if (erGrunnlagEndretSidenSistInnhentet && !tekniskFeilVedInnhenting) {
             val grunnlagSomSkalOppdateres =
                 behandling.henteUaktiverteGrunnlag(grunnlagstype, rolle).maxByOrNull { it.innhentet }
             grunnlagSomSkalOppdateres?.data = tilJson(innhentetGrunnlag)
