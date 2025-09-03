@@ -116,7 +116,7 @@ class VedtakTilBehandlingMapping(
         erOrkestrertVedtak: Boolean = false,
         omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),
     ): Behandling {
-        val opprinneligVedtak = omgjørVedtaksliste.minBy { it.vedtakstidspunkt }.vedtaksid
+        val opprinneligVedtak = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtaksid ?: omgjørVedtakId
         val opprinneligVedtakstidspunkt = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
         val opprettetAv =
             if (lesemodus) {
