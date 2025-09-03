@@ -18,6 +18,8 @@ import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.dto.OrkestrertVedtak
+import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
@@ -39,9 +41,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
-import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -58,25 +58,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.YearMonth
 
 private val LOGGER = KotlinLogging.logger {}
-
-internal data class PåklagetVedtak(
-    val vedtaksid: Int,
-    val gjelderBarn: Personident,
-    val vedtakstidspunkt: LocalDateTime,
-    val virkningstidspunkt: YearMonth?,
-)
-
-internal data class OrkestrertVedtak(
-    val vedtak: VedtakDto,
-    val erOrkestrertVedtak: Boolean,
-    val referertVedtak: VedtakDto?,
-) {
-    val opprinneligVedtak get() = referertVedtak ?: vedtak
-}
 
 @Service
 class VedtakService(
@@ -106,8 +89,8 @@ class VedtakService(
             return vedtakTilBehandlingMapping.run {
                 vedtak.opprinneligVedtak.tilBehandling(
                     vedtakId,
-                    omgjørVedtak = påklagetVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
                     lesemodus = true,
+                    omgjørVedtaksliste = påklagetVedtakListe,
                     erOrkestrertVedtak = vedtak.erOrkestrertVedtak,
                 )
             }
@@ -164,7 +147,7 @@ class VedtakService(
             val påklagetVedtakListe =
                 if (vedtak.stønadsendringListe.isEmpty()) {
                     val kravhaver = vedtak.engangsbeløpListe.first().kravhaver
-                    return setOf(
+                    setOf(
                         PåklagetVedtak(
                             vedtak.vedtaksid,
                             kravhaver,
@@ -196,7 +179,7 @@ class VedtakService(
         }
         return if (vedtak.stønadsendringListe.isEmpty()) {
             val kravhaver = vedtak.engangsbeløpListe.first().kravhaver
-            return setOf(
+            setOf(
                 PåklagetVedtak(vedtak.vedtaksid, kravhaver, vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!, virkningstidspunkt),
             )
         } else {
@@ -294,8 +277,7 @@ class VedtakService(
         val omgjørVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak)
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
-                vedtakId = refVedtaksid,
-                omgjørVedtak = omgjørVedtakListe.minBy { it.vedtakstidspunkt }.vedtaksid,
+                omgjørVedtakId = refVedtaksid,
                 søktFomDato = request.søktFomDato,
                 mottattdato = request.mottattdato,
                 soknadFra = request.søknadFra,
@@ -305,8 +287,8 @@ class VedtakService(
                 søknadId = request.søknadsid,
                 søknadstype = request.søknadstype,
                 lesemodus = false,
+                omgjørVedtaksliste = omgjørVedtakListe,
                 omgjortVedtakVedtakstidspunkt = vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt,
-                opprinneligVedtakstidspunkt = omgjørVedtakListe.map { it.vedtakstidspunkt }.toSet(),
                 opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
             )

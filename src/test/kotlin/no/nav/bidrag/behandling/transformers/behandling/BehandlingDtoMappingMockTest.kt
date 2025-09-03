@@ -41,12 +41,12 @@ class BehandlingDtoMappingMockTest {
 
         behandling.vedtakstype = Vedtakstype.ENDRING
         behandling.stonadstype = Stønadstype.BIDRAG
-        behandling.omgjøringsdetaljer = Omgjøringsdetaljer(omgjørVedtakId = 1)
+        behandling.omgjøringsdetaljer = Omgjøringsdetaljer(opprinneligVedtakId = 1)
         behandling.skalInnkrevingKunneUtsettes() shouldBe false
 
         behandling.vedtakstype = Vedtakstype.KLAGE
         behandling.stonadstype = Stønadstype.BIDRAG
-        behandling.omgjøringsdetaljer = Omgjøringsdetaljer(omgjørVedtakId = 1)
+        behandling.omgjøringsdetaljer = Omgjøringsdetaljer(opprinneligVedtakId = 1)
         behandling.skalInnkrevingKunneUtsettes() shouldBe false
 
         behandling.vedtakstype = Vedtakstype.KLAGE

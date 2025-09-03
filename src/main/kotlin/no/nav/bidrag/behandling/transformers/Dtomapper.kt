@@ -763,7 +763,7 @@ class Dtomapper(
                 gebyr = mapGebyr(),
                 roller = roller.map { it.tilDto() }.toSet(),
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
-                vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
+                vedtakRefId = omgjøringsdetaljer?.opprinneligVedtakId,
                 virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),

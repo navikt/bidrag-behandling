@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
 import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
+import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.behandling.transformers.erAldersjusteringNyLøsning
 import no.nav.bidrag.behandling.transformers.erUnder12År
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
@@ -99,8 +100,7 @@ class VedtakTilBehandlingMapping(
     private val behandlingRepository: BehandlingRepository,
 ) {
     fun VedtakDto.tilBehandling(
-        vedtakId: Int,
-        omgjørVedtak: Int = vedtakId,
+        omgjørVedtakId: Int,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
@@ -109,13 +109,15 @@ class VedtakTilBehandlingMapping(
         søknadRefId: Long? = null,
         søknadId: Long? = null,
         enhet: String? = null,
-        opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
         omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
         opprinneligVedtakstype: Vedtakstype? = null,
         søknadstype: BisysSøknadstype? = null,
         erBisysVedtak: Boolean = false,
         erOrkestrertVedtak: Boolean = false,
+        omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),
     ): Behandling {
+        val opprinneligVedtak = omgjørVedtaksliste.minBy { it.vedtakstidspunkt }.vedtaksid
+        val opprinneligVedtakstidspunkt = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
         val opprettetAv =
             if (lesemodus) {
                 this.opprettetAv
@@ -175,12 +177,12 @@ class VedtakTilBehandlingMapping(
         behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
-            if (!lesemodus || omgjørVedtak != vedtakId) {
+            if (!lesemodus || opprinneligVedtak != omgjørVedtakId) {
                 Omgjøringsdetaljer(
                     opprinneligVedtakstype = opprinneligVedtakstype,
-                    omgjørVedtakId = omgjørVedtak,
+                    opprinneligVedtakId = opprinneligVedtak,
                     innkrevingstype = innkrevingstype,
-                    opprinneligVedtaksid = if (!lesemodus) vedtakId else null,
+                    omgjørVedtakId = if (!lesemodus) omgjørVedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,
                     omgjortVedtakVedtakstidspunkt = omgjortVedtakVedtakstidspunkt,

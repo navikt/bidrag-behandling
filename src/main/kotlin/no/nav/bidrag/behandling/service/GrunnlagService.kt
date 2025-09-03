@@ -280,7 +280,8 @@ class GrunnlagService(
             .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
             .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
             .filter {
-                behandling.omgjøringsdetaljer?.omgjørVedtakId == null || it.vedtaksid != behandling.omgjøringsdetaljer?.omgjørVedtakId
+                behandling.omgjøringsdetaljer?.opprinneligVedtakId == null ||
+                    it.vedtaksid != behandling.omgjøringsdetaljer?.opprinneligVedtakId
             }.sortedBy { it.vedtakstidspunkt }
             .forEach { vedtak ->
                 val harResultatInnvilgetVedtak =
@@ -394,7 +395,7 @@ class GrunnlagService(
                         .hentAlleVedtakForStønad(
                             behandling.tilStønadsid(sb),
                             sb.opprinneligVirkningstidspunkt!!.toYearMonth(),
-                            behandling.omgjøringsdetaljer?.omgjørVedtakId,
+                            behandling.omgjøringsdetaljer?.opprinneligVedtakId,
                         ).filter {
                             opprinneligVedtakstidspunkt == null ||
                                 it.justerVedtakstidspunkt().vedtakstidspunkt.isAfter(opprinneligVedtakstidspunkt)

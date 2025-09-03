@@ -121,7 +121,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
                 klageMottattdato = LocalDate.now(),
             )
         behandling.inntekter = mutableSetOf()
@@ -367,7 +367,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
                 klageMottattdato = LocalDate.now(),
             )
         behandling.inntekter = mutableSetOf()
@@ -464,7 +464,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
                 klageMottattdato = LocalDate.now(),
             )
         behandling.inntekter = mutableSetOf()
@@ -561,7 +561,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(false, typeBehandling = TypeBehandling.SÆRBIDRAG)
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
                 klageMottattdato = LocalDate.now(),
             )
         behandling.inntekter = mutableSetOf()
@@ -699,7 +699,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
                 klageMottattdato = LocalDate.now(),
             )
         behandling.inntekter = mutableSetOf()
@@ -843,7 +843,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
                 klageMottattdato = LocalDate.now(),
             )
         behandling.inntekter = mutableSetOf()
@@ -1059,7 +1059,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
             )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
@@ -1218,7 +1218,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
             )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()
@@ -1416,7 +1416,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
             )
         behandling.inntekter = mutableSetOf()
         behandling.grunnlag = mutableSetOf()

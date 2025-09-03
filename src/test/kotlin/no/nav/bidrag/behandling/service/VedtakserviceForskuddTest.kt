@@ -133,7 +133,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -196,7 +196,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -442,7 +442,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
         behandling.avslag = Resultatkode.AVSLAG
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
-                opprinneligVedtaksid = 553,
+                omgjørVedtakId = 553,
             )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
