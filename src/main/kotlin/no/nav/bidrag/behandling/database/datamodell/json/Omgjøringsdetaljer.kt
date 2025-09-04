@@ -13,9 +13,10 @@ class KlageDetaljerConverter : JsonColumnConverter<Omgjøringsdetaljer>(Omgjøri
 data class Omgjøringsdetaljer(
     val klageMottattdato: LocalDate? = null,
     val soknadRefId: Long? = null,
-    var refVedtaksid: Int? = null,
+    @JsonAlias("refVedtaksid", "opprinneligVedtaksid")
+    var omgjørVedtakId: Int? = null,
     @JsonAlias("påklagetVedtak", "omgjørVedtak")
-    val omgjørVedtakId: Int? = null,
+    val opprinneligVedtakId: Int? = null,
     val omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),

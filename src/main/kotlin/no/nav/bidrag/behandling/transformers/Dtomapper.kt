@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
-import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
@@ -122,9 +121,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
-import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
-import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
-import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.notat.BoforholdBarn
 import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
@@ -768,6 +764,8 @@ class Dtomapper(
                 roller = roller.map { it.tilDto() }.toSet(),
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
+                omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
+                opprinneligVedtakId = omgjøringsdetaljer?.opprinneligVedtakId,
                 virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
@@ -790,11 +788,12 @@ class Dtomapper(
                             beregnTilDato = finnBeregnTilDatoBehandling(it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
                             opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
+                            omgjortVedtakVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate(),
                             opprinneligVirkningstidspunkt =
                                 it.opprinneligVirkningstidspunkt
                                     ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
                             manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
-                            etterfølgendeVedtak = hentEtterfølgendeVedtakDto(this, it),
+                            etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
                             grunnlagFraVedtak = it.grunnlagFraVedtak,

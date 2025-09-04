@@ -280,7 +280,8 @@ class GrunnlagService(
             .filter { it.kilde != Vedtakskilde.AUTOMATISK && !vedtakstyperIkkeBeregning.contains(it.type) }
             .filter { it.stønadsendring.beslutning == Beslutningstype.ENDRING }
             .filter {
-                behandling.omgjøringsdetaljer?.omgjørVedtakId == null || it.vedtaksid != behandling.omgjøringsdetaljer?.omgjørVedtakId
+                behandling.omgjøringsdetaljer?.opprinneligVedtakId == null ||
+                    it.vedtaksid != behandling.omgjøringsdetaljer?.opprinneligVedtakId
             }.sortedBy { it.vedtakstidspunkt }
             .forEach { vedtak ->
                 val harResultatInnvilgetVedtak =
@@ -394,7 +395,7 @@ class GrunnlagService(
                         .hentAlleVedtakForStønad(
                             behandling.tilStønadsid(sb),
                             sb.opprinneligVirkningstidspunkt!!.toYearMonth(),
-                            behandling.omgjøringsdetaljer?.omgjørVedtakId,
+                            behandling.omgjøringsdetaljer?.opprinneligVedtakId,
                         ).filter {
                             opprinneligVedtakstidspunkt == null ||
                                 it.justerVedtakstidspunkt().vedtakstidspunkt.isAfter(opprinneligVedtakstidspunkt)
@@ -1148,7 +1149,7 @@ class GrunnlagService(
                 innhentetGrunnlag = SkattepliktigeInntekter(it.ainntektListe, it.skattegrunnlagListe),
                 hentetTidspunkt = it.hentetTidspunkt,
                 aktiveringstidspunkt = null,
-                tekniskFeilsjekk = (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+                tekniskFeilVedInnhenting = tekniskFeilVedHentingAvInntekter,
             )
         }
 
@@ -1167,7 +1168,7 @@ class GrunnlagService(
                 it,
                 rolleInnhentetFor,
                 feilrapporteringer,
-                (!tekniskFeilVedHentingAvInntekter || tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter),
+                tekniskFeilVedHentingAvInntekter,
             )
         }
 
@@ -1988,7 +1989,7 @@ class GrunnlagService(
         innhentetGrunnlag: T,
         hentetTidspunkt: LocalDateTime,
         aktiveringstidspunkt: LocalDateTime? = null,
-        tekniskFeilsjekk: Boolean = false,
+        tekniskFeilVedInnhenting: Boolean = false,
     ) {
         val sistInnhentedeGrunnlagAvType: T? = behandling.hentSisteInnhentaGrunnlag(grunnlagstype, rolle)
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, rolle)
@@ -1998,7 +1999,9 @@ class GrunnlagService(
         val erGrunnlagEndretSidenSistInnhentet =
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
 
-        if (erFørstegangsinnhentingAvInntekter || erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null && tekniskFeilsjekk) {
+        if (erFørstegangsinnhentingAvInntekter ||
+            erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null && !tekniskFeilVedInnhenting
+        ) {
             opprett(
                 behandling = behandling,
                 data = tilJson(innhentetGrunnlag),
@@ -2030,7 +2033,7 @@ class GrunnlagService(
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
                 )
             }
-        } else if (erGrunnlagEndretSidenSistInnhentet && tekniskFeilsjekk) {
+        } else if (erGrunnlagEndretSidenSistInnhentet && !tekniskFeilVedInnhenting) {
             val grunnlagSomSkalOppdateres =
                 behandling.henteUaktiverteGrunnlag(grunnlagstype, rolle).maxByOrNull { it.innhentet }
             grunnlagSomSkalOppdateres?.data = tilJson(innhentetGrunnlag)

@@ -75,7 +75,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
+            omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -162,7 +162,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.ENDRING
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
+            omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
             soknadsid shouldBe 101
@@ -256,8 +256,8 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.refVedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
+            omgjøringsdetaljer?.omgjørVedtakId shouldBe null
+            omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L
@@ -340,7 +340,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
             vedtaksid shouldBe null
-            omgjøringsdetaljer?.omgjørVedtakId shouldBe 2
+            omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
             soknadsid shouldBe 433434L

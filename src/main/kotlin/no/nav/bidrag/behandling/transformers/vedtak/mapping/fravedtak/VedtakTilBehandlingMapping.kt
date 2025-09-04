@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.beregning.erAvslagSomInneholderUtgifter
 import no.nav.bidrag.behandling.transformers.byggResultatSærbidragsberegning
+import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.behandling.transformers.erAldersjusteringNyLøsning
 import no.nav.bidrag.behandling.transformers.erUnder12År
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
@@ -89,7 +90,6 @@ import no.nav.bidrag.transport.felles.ifTrue
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 @Component
@@ -100,8 +100,7 @@ class VedtakTilBehandlingMapping(
     private val behandlingRepository: BehandlingRepository,
 ) {
     fun VedtakDto.tilBehandling(
-        vedtakId: Int,
-        omgjørVedtak: Int = vedtakId,
+        omgjørVedtakId: Int,
         lesemodus: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
@@ -110,14 +109,15 @@ class VedtakTilBehandlingMapping(
         søknadRefId: Long? = null,
         søknadId: Long? = null,
         enhet: String? = null,
-        minsteVirkningstidspunkt: YearMonth? = null,
-        opprinneligVedtakstidspunkt: Set<LocalDateTime> = emptySet(),
         omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
-        opprinneligVedtakstype: Vedtakstype? = null,
         søknadstype: BisysSøknadstype? = null,
         erBisysVedtak: Boolean = false,
         erOrkestrertVedtak: Boolean = false,
+        omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),
     ): Behandling {
+        val opprinneligVedtak = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtaksid ?: omgjørVedtakId
+        val opprinneligVedtakstidspunkt = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
+        val opprinneligVedtakstype = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtakstype
         val opprettetAv =
             if (lesemodus) {
                 this.opprettetAv
@@ -139,11 +139,11 @@ class VedtakTilBehandlingMapping(
             this.stønadsendringListe.firstOrNull()?.innkreving
                 ?: this.engangsbeløpListe.firstOrNull()?.innkreving
                 ?: Innkrevingstype.MED_INNKREVING
-        val opprinneligVirkningstidspunkt = minsteVirkningstidspunkt?.atDay(1) ?: virkningstidspunkt ?: hentSøknad().søktFraDato
+        val omgjortVedtakVirkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
         val virkningstidspunkt =
             grunnlagListe
                 .filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT)
-                .minOfOrNull { it.innhold.virkningstidspunkt } ?: opprinneligVirkningstidspunkt
+                .minOfOrNull { it.innhold.virkningstidspunkt } ?: omgjortVedtakVirkningstidspunkt
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
@@ -174,19 +174,19 @@ class VedtakTilBehandlingMapping(
                 soknadsid = søknadId ?: this.søknadId,
             )
 
-        behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, opprinneligVirkningstidspunkt)
+        behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
-            if (!lesemodus || omgjørVedtak != vedtakId) {
+            if (!lesemodus || opprinneligVedtak != omgjørVedtakId) {
                 Omgjøringsdetaljer(
                     opprinneligVedtakstype = opprinneligVedtakstype,
-                    omgjørVedtakId = omgjørVedtak,
+                    opprinneligVedtakId = opprinneligVedtak,
                     innkrevingstype = innkrevingstype,
-                    refVedtaksid = if (!lesemodus) vedtakId else null,
+                    omgjørVedtakId = if (!lesemodus) omgjørVedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,
                     omgjortVedtakVedtakstidspunkt = omgjortVedtakVedtakstidspunkt,
-                    opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
+                    opprinneligVirkningstidspunkt = omgjortVedtakVirkningstidspunkt,
                     opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
                 )
             } else {
@@ -217,7 +217,7 @@ class VedtakTilBehandlingMapping(
         behandling.sivilstand = grunnlagListe.mapSivilstand(behandling, lesemodus)
         behandling.utgift = grunnlagListe.mapUtgifter(behandling, lesemodus)
         behandling.samvær = grunnlagListe.mapSamvær(behandling, lesemodus)
-        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, opprinneligVirkningstidspunkt)
+        behandling.underholdskostnader = grunnlagListe.mapUnderholdskostnad(behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
         behandling.privatAvtale = grunnlagListe.mapPrivatAvtale(behandling, lesemodus)
         behandling.metadata = BehandlingMetadataDo()
         if (erBisysVedtak) {

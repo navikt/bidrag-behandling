@@ -126,6 +126,8 @@ data class BehandlingDtoV2(
     val søknadsid: Long? = null,
     val søknadRefId: Long? = null,
     val vedtakRefId: Int? = null,
+    val omgjørVedtakId: Int? = null,
+    val opprinneligVedtakId: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
     val virkningstidspunkt: VirkningstidspunktDto,

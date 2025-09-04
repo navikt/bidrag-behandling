@@ -292,13 +292,14 @@ class VedtakGrunnlagMapper(
                     }
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling(søknadsbarnRolle)
+                val beregningsperiode =
+                    ÅrMånedsperiode(
+                        beregnFraDato,
+                        beregningTilDato,
+                    )
                 val grunnlagBeregning =
                     BeregnGrunnlag(
-                        periode =
-                            ÅrMånedsperiode(
-                                beregnFraDato,
-                                beregningTilDato,
-                            ),
+                        periode = beregningsperiode,
                         stønadstype = stonadstype ?: Stønadstype.BIDRAG,
                         opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
                         søknadsbarnReferanse = søknadsbarn.referanse,
@@ -306,11 +307,15 @@ class VedtakGrunnlagMapper(
                     )
                 val klageBeregning =
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
+                        val innkrevesFraPeriode = behandling.finnInnkrevesFraDato(søknadsbarnRolle)?.let { ÅrMånedsperiode(it, null) }
+                        val skalInnkreves =
+                            behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING ||
+                                innkrevesFraPeriode != null && innkrevesFraPeriode.overlapper(beregningsperiode)
                         OmgjøringOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
-                            omgjørVedtakId = behandling.omgjøringsdetaljer?.omgjørVedtakId!!,
+                            omgjørVedtakId = behandling.omgjøringsdetaljer?.opprinneligVedtakId!!,
                             gjelderKlage = behandling.vedtakstype == Vedtakstype.KLAGE,
-                            innkrevingstype = behandling.innkrevingstype ?: Innkrevingstype.MED_INNKREVING,
+                            innkrevingstype = if (skalInnkreves) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING,
                             gjelderParagraf35c =
                                 listOf(
                                     BisysSøknadstype.PARAGRAF_35_C,
