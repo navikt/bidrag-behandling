@@ -110,7 +110,6 @@ class VedtakTilBehandlingMapping(
         søknadId: Long? = null,
         enhet: String? = null,
         omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
-        opprinneligVedtakstype: Vedtakstype? = null,
         søknadstype: BisysSøknadstype? = null,
         erBisysVedtak: Boolean = false,
         erOrkestrertVedtak: Boolean = false,
@@ -118,6 +117,7 @@ class VedtakTilBehandlingMapping(
     ): Behandling {
         val opprinneligVedtak = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtaksid ?: omgjørVedtakId
         val opprinneligVedtakstidspunkt = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
+        val opprinneligVedtakstype = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtakstype
         val opprettetAv =
             if (lesemodus) {
                 this.opprettetAv

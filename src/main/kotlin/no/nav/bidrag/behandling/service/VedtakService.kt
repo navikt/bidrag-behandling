@@ -83,7 +83,7 @@ class VedtakService(
                 hentOrkestrertVedtak(vedtakId) ?: return null
 
             tilgangskontrollService.sjekkTilgangVedtak(vedtak.opprinneligVedtak)
-            val påklagetVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak.vedtak)
+            val påklagetVedtakListe = hentOmgjortVedtaksliste(vedtak.vedtak)
 
             secureLogger.info { "Konverterer vedtak $vedtakId for lesemodus med innhold $vedtak" }
             return vedtakTilBehandlingMapping.run {
@@ -129,7 +129,7 @@ class VedtakService(
         return vedtak.type
     }
 
-    private fun hentOpprinneligVedtakstidspunkt(vedtak: VedtakDto): Set<PåklagetVedtak> {
+    private fun hentOmgjortVedtaksliste(vedtak: VedtakDto): Set<PåklagetVedtak> {
         val vedtaksiderStønadsendring = vedtak.stønadsendringListe.mapNotNull { it.omgjørVedtakId }
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
@@ -143,60 +143,45 @@ class VedtakService(
             } else {
                 vedtak.virkningstidspunkt?.toYearMonth()
             }
-        if (refererTilVedtakId.isNotEmpty()) {
-            val påklagetVedtakListe =
-                if (vedtak.stønadsendringListe.isEmpty()) {
-                    val kravhaver = vedtak.engangsbeløpListe.first().kravhaver
-                    setOf(
+
+        fun VedtakDto.tilPåklagetVedtaksliste() =
+            if (stønadsendringListe.isEmpty()) {
+                val kravhaver = engangsbeløpListe.first().kravhaver
+                setOf(
+                    PåklagetVedtak(
+                        vedtaksid,
+                        kravhaver,
+                        justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
+                        virkningstidspunkt,
+                        type,
+                    ),
+                )
+            } else {
+                stønadsendringListe
+                    .map { se ->
                         PåklagetVedtak(
                             vedtak.vedtaksid,
-                            kravhaver,
-                            vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
-                            virkningstidspunkt,
-                        ),
-                    )
-                } else {
-                    vedtak.stønadsendringListe
-                        .map { se ->
-                            PåklagetVedtak(
-                                vedtak.vedtaksid,
-                                se.kravhaver,
-                                vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
-                                se.periodeListe.takeIfNotNullOrEmpty {
-                                    vedtak.finnVirkningstidspunktForStønad(
-                                        se.tilStønadsid(),
-                                    )
-                                },
-                            )
-                        }.toSet()
-                }
+                            se.kravhaver,
+                            justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
+                            se.periodeListe.takeIfNotNullOrEmpty {
+                                finnVirkningstidspunktForStønad(
+                                    se.tilStønadsid(),
+                                )
+                            },
+                            type,
+                        )
+                    }.toSet()
+            }
+
+        if (refererTilVedtakId.isNotEmpty()) {
             return refererTilVedtakId
                 .flatMap { vedtaksid ->
                     val opprinneligVedtak = vedtakConsumer.hentVedtak(vedtaksid)!!
 
-                    hentOpprinneligVedtakstidspunkt(opprinneligVedtak)
-                }.toSet() + påklagetVedtakListe
+                    hentOmgjortVedtaksliste(opprinneligVedtak)
+                }.toSet() + vedtak.tilPåklagetVedtaksliste()
         }
-        return if (vedtak.stønadsendringListe.isEmpty()) {
-            val kravhaver = vedtak.engangsbeløpListe.first().kravhaver
-            setOf(
-                PåklagetVedtak(vedtak.vedtaksid, kravhaver, vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!, virkningstidspunkt),
-            )
-        } else {
-            vedtak.stønadsendringListe
-                .map { se ->
-                    PåklagetVedtak(
-                        vedtak.vedtaksid,
-                        se.kravhaver,
-                        vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
-                        se.periodeListe.takeIfNotNullOrEmpty {
-                            vedtak.finnVirkningstidspunktForStønad(
-                                se.tilStønadsid(),
-                            )
-                        },
-                    )
-                }.toSet()
-        }
+        return vedtak.tilPåklagetVedtaksliste()
     }
 
     @Transactional
@@ -256,11 +241,11 @@ class VedtakService(
 
     fun konverterVedtakTilBehandling(
         request: OpprettBehandlingFraVedtakRequest,
-        refVedtaksid: Int,
+        omgjørVedtakId: Int,
     ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(refVedtaksid)?.let {
+            vedtakConsumer.hentVedtak(omgjørVedtakId)?.let {
                 if (it.erOrkestrertVedtak) {
                     vedtakConsumer.hentVedtak(it.referertVedtaksid!!)
                 } else {
@@ -270,14 +255,14 @@ class VedtakService(
         if (vedtak.behandlingId == null && vedtak.grunnlagListe.isEmpty()) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
-                "Vedtak $refVedtaksid er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
+                "Vedtak $omgjørVedtakId er ikke fattet gjennom ny løsning og kan derfor ikke konverteres til behandling",
             )
         }
 
-        val omgjørVedtakListe = hentOpprinneligVedtakstidspunkt(vedtak)
+        val omgjørVedtakListe = hentOmgjortVedtaksliste(vedtak)
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
-                omgjørVedtakId = refVedtaksid,
+                omgjørVedtakId = omgjørVedtakId,
                 søktFomDato = request.søktFomDato,
                 mottattdato = request.mottattdato,
                 soknadFra = request.søknadFra,
@@ -289,7 +274,6 @@ class VedtakService(
                 lesemodus = false,
                 omgjørVedtaksliste = omgjørVedtakListe,
                 omgjortVedtakVedtakstidspunkt = vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt,
-                opprinneligVedtakstype = hentOpprinneligVedtakstype(vedtak),
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
             )
         }
@@ -694,6 +678,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-//
+
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }
