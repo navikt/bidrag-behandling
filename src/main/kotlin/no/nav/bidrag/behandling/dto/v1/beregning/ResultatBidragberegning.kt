@@ -32,6 +32,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.felles.tilVisningsnavn
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -229,7 +230,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             if (klageOmgjøringDetaljer == null) return ""
             return when {
                 klageOmgjøringDetaljer.omgjøringsvedtak && vedtakstype == Vedtakstype.KLAGE -> "Klagevedtak"
-                klageOmgjøringDetaljer.omgjøringsvedtak -> "Omgjøringsvedtak"
+                klageOmgjøringDetaljer.omgjøringsvedtak && !vedtakstype.erIndeksEllerAldersjustering -> "Omgjøringsvedtak"
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
                     vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
