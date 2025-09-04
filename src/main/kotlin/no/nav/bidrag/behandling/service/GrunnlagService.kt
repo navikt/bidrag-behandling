@@ -398,7 +398,7 @@ class GrunnlagService(
                             behandling.omgjøringsdetaljer?.opprinneligVedtakId,
                         ).filter {
                             opprinneligVedtakstidspunkt == null ||
-                                it.justerVedtakstidspunkt().vedtakstidspunkt.isAfter(opprinneligVedtakstidspunkt)
+                                it.vedtakstidspunkt.isAfter(opprinneligVedtakstidspunkt)
                         }
                 if (eksisterendeGrunnlag == null ||
                     eksisterendeGrunnlag.konvertereData<List<VedtakForStønad>>() != respons
