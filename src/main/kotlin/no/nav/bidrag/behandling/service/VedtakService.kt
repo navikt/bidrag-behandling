@@ -135,11 +135,13 @@ class VedtakService(
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
         val virkningstidspunkt =
             if (vedtak.stønadsendringListe.isNotEmpty()) {
-                vedtak.stønadsendringListe.filter { it.periodeListe.isNotEmpty() }.minOfOrNull {
-                    vedtak.finnVirkningstidspunktForStønad(
-                        it.tilStønadsid(),
-                    )
-                }
+                vedtak.stønadsendringListe
+                    .filter { it.periodeListe.isNotEmpty() }
+                    .mapNotNull {
+                        vedtak.finnVirkningstidspunktForStønad(
+                            it.tilStønadsid(),
+                        )
+                    }.minOrNull()
             } else {
                 vedtak.virkningstidspunkt?.toYearMonth()
             }
