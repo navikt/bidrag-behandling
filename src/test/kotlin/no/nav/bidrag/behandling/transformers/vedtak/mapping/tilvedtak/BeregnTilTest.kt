@@ -56,6 +56,27 @@ class BeregnTilTest {
     }
 
     @Test
+    fun `Skal lage beregn til dato for OMGJORT_VEDTAK_VEDTAKSTIDSPUNKT til opprinnelig vedtakstidspunkt`() {
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        behandling.vedtakstype = Vedtakstype.KLAGE
+        søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
+        søknadsbarn.beregnTil = BeregnTil.OMGJORT_VEDTAK_VEDTAKSTIDSPUNKT
+        behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
+        søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
+                klageMottattdato = LocalDate.parse("2025-01-10"),
+                opprinneligVedtakId = 2,
+                omgjortVedtakVedtakstidspunkt = LocalDate.parse("2025-05-14").atStartOfDay(),
+                opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
+                opprinneligVedtakstidspunkt = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
+            )
+
+        behandling.finnBeregnTilDatoBehandling(søknadsbarn) shouldBe LocalDate.parse("2025-06-01")
+    }
+
+    @Test
     fun `Skal lage beregn til dato for OPPRINNELIG_VEDTAKSTIDSPUNKT til opprinnelig vedtakstidspunkt`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         val søknadsbarn = behandling.søknadsbarn.first()
