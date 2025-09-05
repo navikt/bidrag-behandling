@@ -228,6 +228,7 @@ fun Behandling.hentNesteEtterfølgendeVedtak(rolle: Rolle): EtterfølgendeVedtak
         hentEtterfølgendeVedtak(rolle)
     return grunnlag
         .konvertereData<List<VedtakForStønad>>()
+        ?.filter { it.virkningstidspunkt != null }
         ?.groupBy { it.virkningstidspunkt }
         ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
         ?.filter { !it.type.erIndeksEllerAldersjustering && it.stønadsendring.periodeListe.isNotEmpty() }
