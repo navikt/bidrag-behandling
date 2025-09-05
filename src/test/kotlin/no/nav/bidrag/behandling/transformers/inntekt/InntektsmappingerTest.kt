@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -167,6 +168,7 @@ class InntektsmappingerTest {
     @Test
     fun `skal bestemme fjerne for offentlig barnetillegg hvis opphørsdato er før datoFom`() {
         val behandling = oppretteBehandling()
+        behandling.stonadstype = Stønadstype.BIDRAG
         val søknadsbarn =
             Rolle(
                 ident = testdataBarn2.ident,
