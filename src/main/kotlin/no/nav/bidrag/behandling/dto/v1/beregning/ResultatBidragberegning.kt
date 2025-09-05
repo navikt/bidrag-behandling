@@ -236,7 +236,17 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
                     vedtakstype == Vedtakstype.INDEKSREGULERING -> "Beregnet indeksregulering"
                 klageOmgjøringDetaljer.beregnTilDato != null && periode.fom >= klageOmgjøringDetaljer.beregnTilDato
-                -> "Vedtak (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"
+                -> {
+                    val prefiks =
+                        if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+                            "Aldersjustering"
+                        } else if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
+                            "Indeksregulering"
+                        } else {
+                            "Vedtak"
+                        }
+                    "$prefiks (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"
+                }
                 else -> "Gjenopprettet beløpshistorikk"
             }
         }
