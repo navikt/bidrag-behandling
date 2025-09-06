@@ -240,6 +240,9 @@ open class Behandling(
             Personident(bidragspliktig!!.ident!!),
             Saksnummer(saksnummer),
         )
+
+    fun logInfo() =
+        "Behandling(id=$id, vedtakstype=$vedtakstype, saksnummer='$saksnummer', soknadsid=$soknadsid, stonadstype=$stonadstype, engangsbeloptype=$engangsbeloptype)"
 }
 
 val Behandling.særbidragKategori
