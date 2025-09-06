@@ -16,6 +16,7 @@ enum class UnleashFeatures(
     BIDRAG_KLAGE("behandling.bidrag_klage", false),
     BEGRENSET_REVURDERING("behandling.begrenset_revurdering", false),
     VEDTAKSSPERRE("vedtakssperre", false),
+    AKTIVERE_GRUNNLAG_HVIS_INGEN_ENDRINGER("behandling.automatisk_aktiver_grunnlag", false),
     ;
 
     private var defaultValue = false

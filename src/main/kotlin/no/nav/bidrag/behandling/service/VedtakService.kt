@@ -48,6 +48,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erDelvedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
+import no.nav.bidrag.transport.behandling.vedtak.response.erVedtaksforslag
 import no.nav.bidrag.transport.behandling.vedtak.response.finnVirkningstidspunktForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.harResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.referertVedtaksid
@@ -130,6 +131,7 @@ class VedtakService(
     }
 
     private fun hentOmgjortVedtaksliste(vedtak: VedtakDto): Set<PåklagetVedtak> {
+        if (vedtak.erVedtaksforslag()) return emptySet()
         val vedtaksiderStønadsendring = vedtak.stønadsendringListe.mapNotNull { it.omgjørVedtakId }
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
@@ -357,7 +359,7 @@ class VedtakService(
             }
         vedtakRequest.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $vedtakRequest" }
-        val response = vedtakConsumer.fatteVedtak(vedtakRequest)
+        val response = fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandlingId,
             vedtaksid = response.vedtaksid,
@@ -387,7 +389,7 @@ class VedtakService(
 
         fatteVedtakRequest.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $fatteVedtakRequest" }
-        val response = vedtakConsumer.fatteVedtak(fatteVedtakRequest)
+        val response = fatteVedtak(fatteVedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = response.vedtaksid,
