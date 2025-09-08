@@ -766,6 +766,8 @@ class Dtomapper(
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
                 omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
                 opprinneligVedtakId = omgjøringsdetaljer?.opprinneligVedtakId,
+                sisteVedtakBeregnetUtNåværendeMåned =
+                    omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned ?: omgjøringsdetaljer?.opprinneligVedtakId,
                 virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
@@ -784,10 +786,12 @@ class Dtomapper(
                         val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                         VirkningstidspunktDtoV2(
                             rolle = it.tilDto(),
-                            beregnTil = it.beregnTil ?: BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                            beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
                             beregnTilDato = finnBeregnTilDatoBehandling(it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
+                            opprinneligVedtakstidspunkt =
+                                omgjøringsdetaljer?.sisteVedtakstidspunktBeregnetUtNåværendeMåned?.toLocalDate()
+                                    ?: omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
                             omgjortVedtakVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate(),
                             opprinneligVirkningstidspunkt =
                                 it.opprinneligVirkningstidspunkt
@@ -841,7 +845,7 @@ class Dtomapper(
                             rolle = bidragsmottaker!!.tilDto(),
                             virkningstidspunkt = virkningstidspunkt,
                             opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
+                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
                             årsak = årsak,
                             avslag = avslag,
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
@@ -993,6 +997,14 @@ class Dtomapper(
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = avtaleDato,
             avtaleType = avtaleType,
+            etterfølgendeVedtak =
+                if (behandling.erInnkreving) {
+                    behandling.hentNesteEtterfølgendeVedtak(
+                        barnetsRolleIBehandlingen!!,
+                    )
+                } else {
+                    null
+                },
             begrunnelse =
                 henteNotatinnhold(
                     this.behandling,
@@ -1012,9 +1024,9 @@ class Dtomapper(
                     null
                 },
             valideringsfeil = validerePrivatAvtale().takeIf { it.harFeil },
-            beregnetPrivatAvtale = if (skalIndeksreguleres && perioder.size > 0) behandling.tilBeregnetPrivatAvtale(person) else null,
+            beregnetPrivatAvtale = if (skalIndeksreguleres && perioder.isNotEmpty()) behandling.tilBeregnetPrivatAvtale(person) else null,
             perioder =
-                perioder.sortedBy { it.fom }.map {
+                perioderInnkreving.sortedBy { it.fom }.map {
                     PrivatAvtalePeriodeDto(
                         id = it.id,
                         periode =

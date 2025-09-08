@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Entity(name = "privat_avtale")
@@ -44,6 +45,21 @@ open class PrivatAvtale(
     open var perioder: MutableSet<PrivatAvtalePeriode> = mutableSetOf(),
 ) {
     val barnetsRolleIBehandlingen get() = person.rolle.find { behandling.id == it.behandling.id }
+
+    val perioderInnkreving get() =
+        when {
+            behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV ->
+                barnetsRolleIBehandlingen!!.grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }?.perioder?.mapIndexed { i, it ->
+                    PrivatAvtalePeriode(
+                        i.toLong(),
+                        this,
+                        it.periode.fom.atDay(1),
+                        it.periode.til?.atDay(1),
+                        it.beløp ?: BigDecimal.ZERO,
+                    )
+                } ?: emptyList()
+            else -> perioder
+        }
 
     override fun toString(): String = "PrivatAvtale(id=$id, behandling=${behandling.id}, person=${person.id}, perioder=$perioder)"
 }

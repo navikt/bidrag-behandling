@@ -70,7 +70,6 @@ import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIn
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
-import no.nav.bidrag.beregn.core.util.justerVedtakstidspunkt
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -155,8 +154,6 @@ class GrunnlagService(
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
             if (behandling.vedtakstype.kreverGrunnlag()) {
                 val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
-                val tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter =
-                    tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter(behandling)
                 behandling.grunnlagsinnhentingFeilet = null
 
                 grunnlagRequestobjekter.forEach {
@@ -164,7 +161,6 @@ class GrunnlagService(
                         henteOglagreGrunnlag(
                             behandling,
                             it,
-                            tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter,
                         )
                 }
             }
@@ -178,11 +174,6 @@ class GrunnlagService(
             if (feilrapporteringer.isNotEmpty()) {
                 behandling.grunnlagsinnhentingFeilet =
                     objectmapper.writeValueAsString(feilrapporteringer)
-                behandling.grunnlagSistInnhentet =
-                    LocalDateTime
-                        .now()
-                        .minusMinutes(maxOf(grenseInnhenting.toLong(), 11))
-                        .plusMinutes(10)
                 secureLogger.error {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
@@ -197,6 +188,20 @@ class GrunnlagService(
         } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
             hentOgLagreEtterfølgendeVedtak(behandling)
             lagreBeløpshistorikkGrunnlag(behandling)
+
+            if (UnleashFeatures.AKTIVERE_GRUNNLAG_HVIS_INGEN_ENDRINGER.isEnabled) {
+                secureLogger.info {
+                    "Forsøker å aktivere boforhold og sivilstand grunnlag hvis de ikke er aktivert i behandling ${behandling.id} og saksnummer ${behandling.saksnummer}"
+                }
+                aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
+                aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
+                aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+                behandling.roller.forEach { rolle ->
+                    inntekterOgYtelser.forEach {
+                        aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
+                    }
+                }
+            }
         } else {
             val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
@@ -1062,6 +1067,9 @@ class GrunnlagService(
                     behandling,
                 )
             ) {
+                secureLogger.info {
+                    "Aktiverer ikke bearbeidet ${nyesteIkkeBearbeidaBoforholdsgrunnlag.type} grunnlag i behandling ${behandling.logInfo()}"
+                }
                 nyesteIkkeBearbeidaBoforholdsgrunnlag.aktiv = LocalDateTime.now()
             }
         }
@@ -1101,18 +1109,18 @@ class GrunnlagService(
         behandling: Behandling,
         antallMinutter: Long,
     ): Boolean =
-        !behandling.erVedtakFattet &&
-            (
-                behandling.grunnlagSistInnhentet == null ||
-                    LocalDateTime
-                        .now()
-                        .minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
-            )
+        when {
+            behandling.erVedtakFattet -> false
+            behandling.grunnlagSistInnhentet == null -> true
+            behandling.grunnlagsinnhentingFeilet != null && antallMinutter > 10 ->
+                LocalDateTime.now().minusMinutes(10) >
+                    behandling.grunnlagSistInnhentet
+            else -> LocalDateTime.now().minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
+        }
 
     private fun henteOglagreGrunnlag(
         behandling: Behandling,
         grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
-        tekniskFeilVedForrigeInnhentingAvSkattepliktigeInntekter: Boolean,
     ): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
         val formål =
             when (behandling.tilType()) {
@@ -1171,9 +1179,6 @@ class GrunnlagService(
                 tekniskFeilVedHentingAvInntekter,
             )
         }
-
-        val innhentingAvBoforholdBMFeilet =
-            feilrapporteringer.filter { Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == it.key }.isNotEmpty()
 
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
@@ -1462,7 +1467,7 @@ class GrunnlagService(
         val endringerSomMåBekreftes = mapper.endringerIAndreVoksneIBpsHusstand(ikkeAktiveGrunnlag, aktiveGrunnlag)
 
         if (endringerSomMåBekreftes == null || endringerSomMåBekreftes.perioder.isEmpty()) {
-            log.debug {
+            secureLogger.info {
                 "Bps ikke aktive boforholdsgrunnlag med type " +
                     "${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN} i behandling ${behandling.id} har " +
                     "ingen endringer som må bekreftes av saksbehandler. Automatisk aktiverer ny innhentet " +
@@ -1554,8 +1559,8 @@ class GrunnlagService(
                         false -> "ikke-bearbeida"
                     }
 
-                log.debug {
-                    "Ikke-aktivert $type sivilstandsgrunnlag med id ${it.id} i behandling ${behandling.id},"
+                secureLogger.debug {
+                    "Ikke-aktivert $type sivilstandsgrunnlag med id ${it.id} i behandling ${behandling.logInfo()},"
                     "har ingen endringer som må aksepeteres av saksbehandler. Grunnlaget aktiveres derfor automatisk."
                 }
 

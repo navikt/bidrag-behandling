@@ -72,8 +72,8 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
             roller shouldHaveSize 3
             inntekter shouldHaveSize 15
             innkrevingstype shouldBe Innkrevingstype.MED_INNKREVING
-            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldHaveSize 1
-            omgjøringsdetaljer!!.opprinneligVedtakstidspunkt shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
+            omgjøringsdetaljer!!.omgjortVedtakstidspunktListe shouldHaveSize 1
+            omgjøringsdetaljer!!.omgjortVedtakstidspunktListe shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
             omgjøringsdetaljer?.omgjørVedtakId shouldBe 12333
             grunnlag.filter { it.aktiv == null }.shouldHaveSize(10)
             sivilstand shouldHaveSize 2

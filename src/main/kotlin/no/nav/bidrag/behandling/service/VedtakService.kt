@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.core.util.justerVedtakstidspunktVedtak
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -48,6 +49,8 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erDelvedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
+import no.nav.bidrag.transport.behandling.vedtak.response.erVedtaksforslag
+import no.nav.bidrag.transport.behandling.vedtak.response.finnVirkningstidspunkt
 import no.nav.bidrag.transport.behandling.vedtak.response.finnVirkningstidspunktForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.harResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.referertVedtaksid
@@ -130,6 +133,7 @@ class VedtakService(
     }
 
     private fun hentOmgjortVedtaksliste(vedtak: VedtakDto): Set<PåklagetVedtak> {
+        if (vedtak.erVedtaksforslag()) return emptySet()
         val vedtaksiderStønadsendring = vedtak.stønadsendringListe.mapNotNull { it.omgjørVedtakId }
         val vedtaksiderEngangsbeløp = vedtak.engangsbeløpListe.mapNotNull { it.omgjørVedtakId }
         val refererTilVedtakId = (vedtaksiderEngangsbeløp + vedtaksiderStønadsendring).toSet()
@@ -156,11 +160,13 @@ class VedtakService(
                         justerVedtakstidspunktVedtak().vedtakstidspunkt!!,
                         virkningstidspunkt,
                         type,
+                        BeregnTil.INNEVÆRENDE_MÅNED,
                     ),
                 )
             } else {
                 stønadsendringListe
                     .map { se ->
+                        val virkningstidspunktGrunnlag = vedtak.finnVirkningstidspunkt(se)
                         PåklagetVedtak(
                             vedtak.vedtaksid,
                             se.kravhaver,
@@ -171,6 +177,7 @@ class VedtakService(
                                 )
                             },
                             type,
+                            virkningstidspunktGrunnlag?.innhold?.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
                         )
                     }.toSet()
             }
@@ -357,7 +364,7 @@ class VedtakService(
             }
         vedtakRequest.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $vedtakRequest" }
-        val response = vedtakConsumer.fatteVedtak(vedtakRequest)
+        val response = fatteVedtak(vedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandlingId,
             vedtaksid = response.vedtaksid,
@@ -387,7 +394,7 @@ class VedtakService(
 
         fatteVedtakRequest.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $fatteVedtakRequest" }
-        val response = vedtakConsumer.fatteVedtak(fatteVedtakRequest)
+        val response = fatteVedtak(fatteVedtakRequest)
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = response.vedtaksid,
@@ -401,6 +408,31 @@ class VedtakService(
             } med vedtaksid ${response.vedtaksid}"
         }
         return response.vedtaksid
+    }
+
+    fun fatteVedtakOmInnkreving(
+        behandling: Behandling,
+        request: FatteVedtakRequestDto?,
+    ): Int {
+//        if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
+//            fatteInnkrevingsgrunnlag(behandling, request?.enhet, response.first.vedtaksid, response.second)
+//        }
+//        behandlingService.oppdaterVedtakFattetStatus(
+//            behandling.id!!,
+//            vedtaksid = response.first.vedtaksid,
+//            request?.enhet ?: behandling.behandlerEnhet,
+//        )
+//
+//        opprettNotat(behandling)
+//
+//        LOGGER.info {
+//            "Fattet vedtak for behandling ${behandling.id} med ${
+//                behandling.årsak?.let { "årsakstype $it" }
+//                    ?: "avslagstype ${behandling.avslag}"
+//            } med vedtaksid ${response.first.vedtaksid}"
+//        }
+//        return response.first.vedtaksid
+        return 1
     }
 
     fun fatteVedtakBidragOmgjøring(
@@ -512,7 +544,7 @@ class VedtakService(
         vedtak: OpprettVedtakRequestDto,
     ) {
         val erUtenInnkreving = behandling.søknadsbarn.all { behandling.finnInnkrevesFraDato(it) == null }
-        if (erUtenInnkreving) {
+        if (erUtenInnkreving && behandling.vedtakstype != Vedtakstype.INNKREVING) {
             secureLogger.info { "Sak ${behandling.saksnummer} er uten innkreving. Fatter ikke innkrevingsgrunnlag" }
             return
         }
@@ -576,6 +608,7 @@ class VedtakService(
         request: FatteVedtakRequestDto?,
     ): Int {
         if (behandling.erKlageEllerOmgjøring) return fatteVedtakBidragOmgjøring(behandling, request)
+        if (behandling.erInnkreving) return fatteVedtakBidragOmgjøring(behandling, request)
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 

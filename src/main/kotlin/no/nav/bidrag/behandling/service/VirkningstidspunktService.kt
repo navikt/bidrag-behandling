@@ -23,6 +23,8 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
+import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -101,9 +103,21 @@ class VirkningstidspunktService(
                         GrunnlagFraVedtak(
                             aldersjusteringForÅr = request.aldersjusteringForÅr,
                             vedtak = request.vedtaksid,
+                            perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
                         ),
                     )
             }
+    }
+
+    private fun hentPerioderVedtak(
+        behandling: Behandling,
+        request: OppdaterManuellVedtakRequest,
+    ): List<VedtakPeriodeDto> {
+        if (request.vedtaksid == null) return emptyList()
+        val søknadsbarn = behandling.søknadsbarn.first { it.id == request.barnId }
+        val vedtak = hentVedtak(request.vedtaksid)!!
+        val stønadsendring = vedtak.finnStønadsendring(behandling.tilStønadsid(søknadsbarn))
+        return stønadsendring!!.periodeListe
     }
 
     @Transactional

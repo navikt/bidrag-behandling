@@ -215,6 +215,7 @@ open class Behandling(
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = vedtakstype == Vedtakstype.KLAGE || omgjøringsdetaljer?.opprinneligVedtakId != null
+    val erInnkreving get() = vedtakstype == Vedtakstype.INNKREVING
     val minstEnRolleHarBegrensetBeregnTilDato get() =
         søknadsbarn.any {
             it.opphørsdato != null ||
@@ -240,6 +241,9 @@ open class Behandling(
             Personident(bidragspliktig!!.ident!!),
             Saksnummer(saksnummer),
         )
+
+    fun logInfo() =
+        "Behandling(id=$id, vedtakstype=$vedtakstype, saksnummer='$saksnummer', soknadsid=$soknadsid, stonadstype=$stonadstype, engangsbeloptype=$engangsbeloptype)"
 }
 
 val Behandling.særbidragKategori

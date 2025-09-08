@@ -83,8 +83,9 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
     val opphørsdato = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
     return if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
-    } else if (erBidrag() && erKlageEllerOmgjøring && omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.isNotEmpty() == true) {
-        val opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min()
+    } else if (erBidrag() && erKlageEllerOmgjøring && omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.isNotEmpty() == true) {
+        val opprinneligVedtakstidspunkt =
+            omgjøringsdetaljer?.sisteVedtakstidspunktBeregnetUtNåværendeMåned ?: omgjøringsdetaljer?.omgjortVedtakstidspunktListe!!.min()
         val omgjortVedtakVedtakstidspunkt =
             omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt ?: opprinneligVedtakstidspunkt
         val opprinneligVedtakstidspunktBeregnTil = opprinneligVedtakstidspunkt.plusMonths(1).withDayOfMonth(1).toLocalDate()
@@ -97,14 +98,6 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
                     utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, omgjortVedtakstidspunktBeregnTil)
                 } else {
                     utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, nesteVirkningstidspunkt)
-                }
-            }
-            BeregnTil.OMGJORT_VEDTAK_VEDTAKSTIDSPUNKT -> {
-                val virkningstidspunkt = søknadsbarnRolle.virkningstidspunkt ?: this.virkningstidspunkt!!
-                if (virkningstidspunkt >= omgjortVedtakstidspunktBeregnTil) {
-                    virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
-                } else {
-                    utledBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, omgjortVedtakstidspunktBeregnTil)
                 }
             }
             else -> {

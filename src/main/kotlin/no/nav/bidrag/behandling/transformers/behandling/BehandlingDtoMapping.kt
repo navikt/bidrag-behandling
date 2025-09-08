@@ -285,7 +285,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerÅrsakEllerAvslag = avslag == null && årsak == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerVurderingAvSkolegang =
-            if (kanSkriveVurderingAvSkolegangAlle()) {
+            if (kanSkriveVurderingAvSkolegangAlle() && !erKlageEllerOmgjøring) {
                 søknadsbarn.any {
                     NotatService
                         .henteNotatinnhold(

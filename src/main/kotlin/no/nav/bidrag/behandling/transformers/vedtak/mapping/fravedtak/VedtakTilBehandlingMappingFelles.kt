@@ -653,7 +653,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
                         rolleIdent = rolleBarn.ident!!,
                         gjelder = gjelder?.personIdent,
-                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min(),
+                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.omgjortVedtakstidspunktListe!!.min(),
                         lesemodus = lesemodus,
                     )
                 }
@@ -1173,7 +1173,7 @@ private fun GrunnlagDto.tilRolle(
             },
         ident = personIdent,
         opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-        virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
+        virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt ?: opprinneligVirkningstidspunkt,
         årsak = virkningstidspunktGrunnlag?.årsak,
         avslag = virkningstidspunktGrunnlag?.avslag,
         opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,

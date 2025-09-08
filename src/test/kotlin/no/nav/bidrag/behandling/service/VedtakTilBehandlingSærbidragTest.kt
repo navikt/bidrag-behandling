@@ -424,10 +424,10 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             )!!
 
         assertSoftly(behandling.omgjøringsdetaljer!!) {
-            opprinneligVedtakstidspunkt shouldHaveSize 3
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldHaveSize 3
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
         }
     }
 
