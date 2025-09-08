@@ -140,16 +140,12 @@ class VedtakTilBehandlingMapping(
                 ?: this.engangsbeløpListe.firstOrNull()?.innkreving
                 ?: Innkrevingstype.MED_INNKREVING
         val omgjortVedtakVirkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
-        val virkningstidspunkt =
-            grunnlagListe
-                .filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT)
-                .minOfOrNull { it.innhold.virkningstidspunkt } ?: omgjortVedtakVirkningstidspunkt
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
                 søknadstype = søknadstype,
                 vedtakstype = vedtakType ?: type,
-                virkningstidspunkt = virkningstidspunkt,
+                virkningstidspunkt = omgjortVedtakVirkningstidspunkt,
                 kategori = grunnlagListe.særbidragskategori?.kategori?.name,
                 kategoriBeskrivelse = grunnlagListe.særbidragskategori?.beskrivelse,
                 innkrevingstype = innkrevingstype,

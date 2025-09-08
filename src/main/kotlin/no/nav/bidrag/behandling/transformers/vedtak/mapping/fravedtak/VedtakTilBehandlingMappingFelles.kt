@@ -1173,7 +1173,7 @@ private fun GrunnlagDto.tilRolle(
             },
         ident = personIdent,
         opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
-        virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt,
+        virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt ?: opprinneligVirkningstidspunkt,
         årsak = virkningstidspunktGrunnlag?.årsak,
         avslag = virkningstidspunktGrunnlag?.avslag,
         opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
@@ -1182,7 +1182,7 @@ private fun GrunnlagDto.tilRolle(
             if (lesemodus) {
                 virkningstidspunktGrunnlag?.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED
             } else if (behandling.erBidrag()) {
-                BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+                BeregnTil.OMGJORT_VEDTAK_VEDTAKSTIDSPUNKT
             } else {
                 BeregnTil.INNEVÆRENDE_MÅNED
             },

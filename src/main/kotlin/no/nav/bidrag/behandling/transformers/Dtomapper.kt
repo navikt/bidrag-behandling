@@ -784,7 +784,7 @@ class Dtomapper(
                         val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                         VirkningstidspunktDtoV2(
                             rolle = it.tilDto(),
-                            beregnTil = it.beregnTil ?: BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT,
+                            beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
                             beregnTilDato = finnBeregnTilDatoBehandling(it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
                             opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
