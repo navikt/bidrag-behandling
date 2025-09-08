@@ -766,7 +766,8 @@ class Dtomapper(
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
                 omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
                 opprinneligVedtakId = omgjøringsdetaljer?.opprinneligVedtakId,
-                sisteVedtakstidspunktBeregnetUtNåværendeMåned = omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned,
+                sisteVedtakBeregnetUtNåværendeMåned =
+                    omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned ?: omgjøringsdetaljer?.opprinneligVedtakId,
                 virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
@@ -788,7 +789,9 @@ class Dtomapper(
                             beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
                             beregnTilDato = finnBeregnTilDatoBehandling(it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
+                            opprinneligVedtakstidspunkt =
+                                omgjøringsdetaljer?.sisteVedtakstidspunktBeregnetUtNåværendeMåned?.toLocalDate()
+                                    ?: omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
                             omgjortVedtakVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate(),
                             opprinneligVirkningstidspunkt =
                                 it.opprinneligVirkningstidspunkt
