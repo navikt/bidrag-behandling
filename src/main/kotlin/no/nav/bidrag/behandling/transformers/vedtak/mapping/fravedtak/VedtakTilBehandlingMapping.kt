@@ -120,7 +120,7 @@ class VedtakTilBehandlingMapping(
             omgjørVedtaksliste
                 .filter {
                     it.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED
-                }.minByOrNull { it.vedtakstidspunkt }
+                }.maxByOrNull { it.vedtakstidspunkt }
         val opprinneligVedtakstype = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtakstype
         val opprettetAv =
             if (lesemodus) {
