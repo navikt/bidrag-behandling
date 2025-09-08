@@ -120,7 +120,7 @@ class VedtakTilBehandlingMapping(
             omgjørVedtaksliste
                 .filter {
                     it.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED
-                }.minBy { it.vedtakstidspunkt }
+                }.minByOrNull { it.vedtakstidspunkt }
         val opprinneligVedtakstype = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtakstype
         val opprettetAv =
             if (lesemodus) {
@@ -187,8 +187,8 @@ class VedtakTilBehandlingMapping(
                     soknadRefId = søknadRefId,
                     omgjortVedtakVedtakstidspunkt = omgjortVedtakVedtakstidspunkt,
                     opprinneligVirkningstidspunkt = omgjortVedtakVirkningstidspunkt,
-                    sisteVedtakBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned.vedtaksid,
-                    sisteVedtakstidspunktBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned.vedtakstidspunkt,
+                    sisteVedtakBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned?.vedtaksid,
+                    sisteVedtakstidspunktBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned?.vedtakstidspunkt,
                     omgjortVedtakstidspunktListe = vedtakstidspunktListe.toMutableSet(),
                 )
             } else {

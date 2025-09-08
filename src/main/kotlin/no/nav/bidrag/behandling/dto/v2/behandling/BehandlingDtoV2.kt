@@ -128,7 +128,7 @@ data class BehandlingDtoV2(
     val vedtakRefId: Int? = null,
     val omgjørVedtakId: Int? = null,
     val opprinneligVedtakId: Int? = null,
-    val sisteVedtakstidspunktBeregnetUtNåværendeMåned: Int? = null,
+    val sisteVedtakBeregnetUtNåværendeMåned: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
     val virkningstidspunkt: VirkningstidspunktDto,
