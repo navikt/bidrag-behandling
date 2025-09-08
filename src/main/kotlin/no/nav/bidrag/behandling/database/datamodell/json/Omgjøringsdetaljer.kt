@@ -19,13 +19,18 @@ data class Omgjøringsdetaljer(
     val opprinneligVedtakId: Int? = null,
     val omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
     val opprinneligVirkningstidspunkt: LocalDate? = null,
-    val opprinneligVedtakstidspunkt: MutableSet<LocalDateTime> = mutableSetOf(),
+    // Opprinnelig vedtakstidspunkt
+    val sisteVedtakstidspunktBeregnetUtNåværendeMåned: LocalDateTime? = null,
+    val sisteVedtakBeregnetUtNåværendeMåned: Int? = null,
+    // Liste over vedtakstidspuntk for alle vedtak som ble omgjort i klage/omgjøring serien fra opprinnelig vedtak
+    @JsonAlias("opprinneligVedtakstidspunkt")
+    val omgjortVedtakstidspunktListe: MutableSet<LocalDateTime> = mutableSetOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,
     var innkrevingstype: Innkrevingstype? = null,
     val fattetDelvedtak: List<FattetDelvedtak> = emptyList(),
     val paragraf35c: List<OpprettParagraf35C> = emptyList(),
 ) {
-    val minsteVedtakstidspunkt get() = opprinneligVedtakstidspunkt.minOrNull()
+    val minsteVedtakstidspunkt get() = omgjortVedtakstidspunktListe.minOrNull()
 }
 
 data class OpprettParagraf35C(

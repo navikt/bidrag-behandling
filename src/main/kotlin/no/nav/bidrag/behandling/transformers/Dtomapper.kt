@@ -766,6 +766,7 @@ class Dtomapper(
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
                 omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
                 opprinneligVedtakId = omgjøringsdetaljer?.opprinneligVedtakId,
+                sisteVedtakstidspunktBeregnetUtNåværendeMåned = omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned,
                 virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
@@ -787,7 +788,7 @@ class Dtomapper(
                             beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
                             beregnTilDato = finnBeregnTilDatoBehandling(it),
                             virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
+                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
                             omgjortVedtakVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate(),
                             opprinneligVirkningstidspunkt =
                                 it.opprinneligVirkningstidspunkt
@@ -841,7 +842,7 @@ class Dtomapper(
                             rolle = bidragsmottaker!!.tilDto(),
                             virkningstidspunkt = virkningstidspunkt,
                             opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.opprinneligVedtakstidspunkt?.minOrNull()?.toLocalDate(),
+                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
                             årsak = årsak,
                             avslag = avslag,
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),

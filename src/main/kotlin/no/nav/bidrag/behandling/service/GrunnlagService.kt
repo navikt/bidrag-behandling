@@ -196,6 +196,11 @@ class GrunnlagService(
                 aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
                 aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
                 aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+                behandling.roller.forEach { rolle ->
+                    inntekterOgYtelser.forEach {
+                        aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
+                    }
+                }
             }
         } else {
             val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())

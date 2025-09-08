@@ -49,6 +49,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
@@ -65,9 +66,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
-import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
@@ -116,7 +115,12 @@ class VedtakTilBehandlingMapping(
         omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),
     ): Behandling {
         val opprinneligVedtak = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtaksid ?: omgjørVedtakId
-        val opprinneligVedtakstidspunkt = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
+        val vedtakstidspunktListe = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
+        val sisteVedtakBeregnetUtNåværendeMåned =
+            omgjørVedtaksliste
+                .filter {
+                    it.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED
+                }.minBy { it.vedtakstidspunkt }
         val opprinneligVedtakstype = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtakstype
         val opprettetAv =
             if (lesemodus) {
@@ -183,7 +187,9 @@ class VedtakTilBehandlingMapping(
                     soknadRefId = søknadRefId,
                     omgjortVedtakVedtakstidspunkt = omgjortVedtakVedtakstidspunkt,
                     opprinneligVirkningstidspunkt = omgjortVedtakVirkningstidspunkt,
-                    opprinneligVedtakstidspunkt = opprinneligVedtakstidspunkt.toMutableSet(),
+                    sisteVedtakBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned.vedtaksid,
+                    sisteVedtakstidspunktBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned.vedtakstidspunkt,
+                    omgjortVedtakstidspunktListe = vedtakstidspunktListe.toMutableSet(),
                 )
             } else {
                 null

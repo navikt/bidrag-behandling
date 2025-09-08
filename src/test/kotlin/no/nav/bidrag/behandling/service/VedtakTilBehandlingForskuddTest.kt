@@ -192,10 +192,10 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             )!!
 
         assertSoftly(behandling.omgjøringsdetaljer!!) {
-            opprinneligVedtakstidspunkt shouldHaveSize 3
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldHaveSize 3
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
         }
     }
 
@@ -251,10 +251,10 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             )!!
 
         assertSoftly(behandling.omgjøringsdetaljer!!) {
-            opprinneligVedtakstidspunkt shouldHaveSize 3
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
-            opprinneligVedtakstidspunkt shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldHaveSize 3
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-04-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-03-01").atStartOfDay()
+            omgjortVedtakstidspunktListe shouldContain LocalDate.parse("2024-02-01").atStartOfDay()
         }
         assertSoftly(behandling) {
             inntekter.filter { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND_FRA_OPPRINNELIG_VEDTAKSTIDSPUNKT } shouldHaveSize 2

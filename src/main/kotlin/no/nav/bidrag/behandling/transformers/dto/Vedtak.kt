@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers.dto
 
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -12,6 +13,7 @@ data class PåklagetVedtak(
     val vedtakstidspunkt: LocalDateTime,
     val virkningstidspunkt: YearMonth?,
     val vedtakstype: Vedtakstype,
+    val beregnTil: BeregnTil,
 )
 
 internal data class OrkestrertVedtak(

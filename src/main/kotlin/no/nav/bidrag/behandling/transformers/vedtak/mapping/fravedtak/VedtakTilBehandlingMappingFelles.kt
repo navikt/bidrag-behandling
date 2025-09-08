@@ -653,7 +653,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
                         rolleIdent = rolleBarn.ident!!,
                         gjelder = gjelder?.personIdent,
-                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.opprinneligVedtakstidspunkt!!.min(),
+                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.omgjortVedtakstidspunktListe!!.min(),
                         lesemodus = lesemodus,
                     )
                 }
@@ -1182,7 +1182,7 @@ private fun GrunnlagDto.tilRolle(
             if (lesemodus) {
                 virkningstidspunktGrunnlag?.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED
             } else if (behandling.erBidrag()) {
-                BeregnTil.OMGJORT_VEDTAK_VEDTAKSTIDSPUNKT
+                BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
             } else {
                 BeregnTil.INNEVÆRENDE_MÅNED
             },
