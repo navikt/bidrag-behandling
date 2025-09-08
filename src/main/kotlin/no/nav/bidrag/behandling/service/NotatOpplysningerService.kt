@@ -155,6 +155,7 @@ class NotatOpplysningerService(
     ): String {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         val notatDto = hentNotatOpplysninger(behandlingId)
+        secureLogger.info { "Oppretter notat med opplysninger $notatDto" }
         val notatPdf = bidragDokumentProduksjonConsumer.opprettNotat(notatDto)
         log.info { "Oppretter notat for behandling $behandlingId i sak ${behandling.saksnummer}" }
         val forespørsel =
