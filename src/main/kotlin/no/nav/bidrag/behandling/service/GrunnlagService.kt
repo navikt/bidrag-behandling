@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype.Companion.skalInnhentesForBehandling
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
@@ -1460,6 +1461,7 @@ class GrunnlagService(
     }
 
     fun aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
+        if (!behandling.skalInnhentesForBehandling(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN)) return
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
@@ -1541,6 +1543,8 @@ class GrunnlagService(
     }
 
     fun aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling: Behandling) {
+        if (!behandling.skalInnhentesForBehandling(Grunnlagsdatatype.SIVILSTAND)) return
+
         val rolleInhentetFor = behandling.bidragsmottaker!!
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()

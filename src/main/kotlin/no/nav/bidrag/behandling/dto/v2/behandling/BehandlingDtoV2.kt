@@ -546,6 +546,9 @@ enum class Grunnlagsdatatype(
     ;
 
     companion object {
+        fun Behandling.skalInnhentesForBehandling(type: Grunnlagsdatatype) =
+            entries.any { type.behandlingstypeMotRolletyper.keys.contains(tilType()) }
+
         @OptIn(ExperimentalStdlibApi::class)
         fun grunnlagsdatatypeobjekter(
             behandlingstype: TypeBehandling,
