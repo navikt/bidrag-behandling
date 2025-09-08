@@ -40,8 +40,8 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequest
-import no.nav.bidrag.transport.behandling.beregning.barnebidrag.KlageOrkestratorManuellAldersjustering
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.OmgjøringOrkestratorGrunnlag
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.OmgjøringorkestratorManuellAldersjustering
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
@@ -329,11 +329,12 @@ class VedtakGrunnlagMapper(
                                 ).contains(behandling.søknadstype),
                             manuellAldersjustering =
                                 søknadsbarnRolle.grunnlagFraVedtakListe
-                                    .filter { it.aldersjusteringForÅr != null && it.vedtak != null }
+                                    .filter { it.aldersjusteringForÅr != null && (it.vedtak != null || it.grunnlagFraOmgjøringsvedtak) }
                                     .map {
-                                        KlageOrkestratorManuellAldersjustering(
+                                        OmgjøringorkestratorManuellAldersjustering(
                                             it.aldersjusteringForÅr!!,
-                                            it.vedtak!!,
+                                            it.vedtak,
+                                            it.grunnlagFraOmgjøringsvedtak,
                                         )
                                     },
                         )

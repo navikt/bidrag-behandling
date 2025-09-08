@@ -25,6 +25,7 @@ data class OppdaterManuellVedtakResponse(
 data class OppdaterManuellVedtakRequest(
     val barnId: Long,
     val vedtaksid: Int?,
+    val grunnlagFraOmgjøringsvedtak: Boolean? = null,
     val aldersjusteringForÅr: Int? = null,
 )
 

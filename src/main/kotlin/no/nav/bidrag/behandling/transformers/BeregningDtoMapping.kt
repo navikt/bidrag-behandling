@@ -179,28 +179,31 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
 
 fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List<ResultatBarnebidragsberegningPeriodeDto> {
     if (resultat.resultatVedtak == null) return emptyList()
-    return resultat.barn.grunnlagFraVedtak.filter { it.vedtak != null && it.aldersjusteringForÅr != null }.mapNotNull { gv ->
-        val delvedtakAldersjustering =
-            resultat.resultatVedtak.resultatVedtakListe.filter { it.vedtakstype == Vedtakstype.ALDERSJUSTERING }.find {
-                it.beregnetFraDato.year == gv.aldersjusteringForÅr
-            }
+    return resultat.barn.grunnlagFraVedtak
+        .filter {
+            (it.vedtak != null || it.grunnlagFraOmgjøringsvedtak) && it.aldersjusteringForÅr != null
+        }.mapNotNull { gv ->
+            val delvedtakAldersjustering =
+                resultat.resultatVedtak.resultatVedtakListe.filter { it.vedtakstype == Vedtakstype.ALDERSJUSTERING }.find {
+                    it.beregnetFraDato.year == gv.aldersjusteringForÅr
+                }
 
-        if (delvedtakAldersjustering == null) {
-            ResultatBarnebidragsberegningPeriodeDto(
-                periode = ÅrMånedsperiode(YearMonth.of(gv.aldersjusteringForÅr!!, 7), null),
-                vedtakstype = Vedtakstype.ALDERSJUSTERING,
-                resultatKode = null,
-                aldersjusteringDetaljer = null,
-                klageOmgjøringDetaljer =
-                    KlageOmgjøringDetaljer(
-                        manuellAldersjustering = true,
-                        delAvVedtaket = false,
-                    ),
-            )
-        } else {
-            null
+            if (delvedtakAldersjustering == null) {
+                ResultatBarnebidragsberegningPeriodeDto(
+                    periode = ÅrMånedsperiode(YearMonth.of(gv.aldersjusteringForÅr!!, 7), null),
+                    vedtakstype = Vedtakstype.ALDERSJUSTERING,
+                    resultatKode = null,
+                    aldersjusteringDetaljer = null,
+                    klageOmgjøringDetaljer =
+                        KlageOmgjøringDetaljer(
+                            manuellAldersjustering = true,
+                            delAvVedtaket = false,
+                        ),
+                )
+            } else {
+                null
+            }
         }
-    }
 }
 
 fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
@@ -389,7 +392,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                             delvedtak?.vedtakstype == Vedtakstype.ALDERSJUSTERING && p.periode.fom.month.value == 7 &&
                                                 resultat.barn.grunnlagFraVedtak.any {
                                                     it.aldersjusteringForÅr == p.periode.fom.year &&
-                                                        it.vedtak != null
+                                                        (it.vedtak != null || it.grunnlagFraOmgjøringsvedtak)
                                                 },
                                     ),
                             )

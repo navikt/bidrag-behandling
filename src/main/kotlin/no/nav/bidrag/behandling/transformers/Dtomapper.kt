@@ -164,7 +164,10 @@ class Dtomapper(
             )
         return grunnlag
             .konvertereData<List<ManuellVedtakGrunnlag>>()
-            ?.map {
+            ?.filter {
+                val vedtaksliste = behandling.omgjøringsdetaljer?.omgjortVedtaksliste?.map { it.vedtaksid } ?: emptyList()
+                !vedtaksliste.contains(it.vedtaksid)
+            }?.map {
                 ManuellVedtakDto(
                     it.vedtaksid,
                     søknadsbarn.id!!,
