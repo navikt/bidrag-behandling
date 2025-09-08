@@ -993,6 +993,14 @@ class Dtomapper(
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = avtaleDato,
             avtaleType = avtaleType,
+            etterfølgendeVedtak =
+                if (behandling.erInnkreving) {
+                    behandling.hentNesteEtterfølgendeVedtak(
+                        barnetsRolleIBehandlingen!!,
+                    )
+                } else {
+                    null
+                },
             begrunnelse =
                 henteNotatinnhold(
                     this.behandling,
@@ -1012,9 +1020,9 @@ class Dtomapper(
                     null
                 },
             valideringsfeil = validerePrivatAvtale().takeIf { it.harFeil },
-            beregnetPrivatAvtale = if (skalIndeksreguleres && perioder.size > 0) behandling.tilBeregnetPrivatAvtale(person) else null,
+            beregnetPrivatAvtale = if (skalIndeksreguleres && perioder.isNotEmpty()) behandling.tilBeregnetPrivatAvtale(person) else null,
             perioder =
-                perioder.sortedBy { it.fom }.map {
+                perioderInnkreving.sortedBy { it.fom }.map {
                     PrivatAvtalePeriodeDto(
                         id = it.id,
                         periode =

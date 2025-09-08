@@ -27,6 +27,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.JdbcTypeCode
@@ -127,11 +128,17 @@ data class GrunnlagFraVedtak(
     @Schema(
         description =
             "Årstall for aldersjustering av grunnlag. " +
-                "Brukes hvis det er et vedtak som skal brukes for aldersjustering av grunnlag.",
+                "Brukes hvis det er et vedtak som skal brukes for aldersjustering av grunnlag. " +
+                "Dette er relevant ved omgjøring/klagebehanding i bidrag ellers aldersjusteres det for inneværende år eller ikke er relevant",
     )
     val aldersjusteringForÅr: Int? = null,
     val vedtak: Int? = null,
-    val skalAldersjusteres: Boolean = true,
+    @Schema(
+        description =
+            "Perioder i vedtaket som er valgt. " +
+                "Brukes når vedtakstype er innkreving og det er valgt å innkreve en vedtak fra NAV som opprinnelig var uten innkreving",
+    )
+    val perioder: List<VedtakPeriodeDto> = emptyList(),
 )
 
 data class RolleManueltOverstyrtGebyr(

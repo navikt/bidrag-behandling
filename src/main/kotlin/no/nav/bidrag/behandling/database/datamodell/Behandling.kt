@@ -215,6 +215,7 @@ open class Behandling(
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = vedtakstype == Vedtakstype.KLAGE || omgjøringsdetaljer?.opprinneligVedtakId != null
+    val erInnkreving get() = vedtakstype == Vedtakstype.INNKREVING
     val minstEnRolleHarBegrensetBeregnTilDato get() =
         søknadsbarn.any {
             it.opphørsdato != null ||
