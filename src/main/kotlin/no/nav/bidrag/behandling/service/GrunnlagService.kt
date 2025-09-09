@@ -351,6 +351,7 @@ class GrunnlagService(
                     sistePeriode.resultatkode,
                     resultatSistePeriode,
                     vedtak.grunnlagListe.isEmpty(),
+                    stønadsendring.innkreving,
                 )
             }.sortedByDescending { it.fattetTidspunkt }
     }

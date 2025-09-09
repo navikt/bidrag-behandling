@@ -72,6 +72,7 @@ class VirkningstidspunktService(
                     it.begrensetRevurdering,
                     it.resultatSistePeriode,
                     it.manglerGrunnlag,
+                    it.innkrevingstype,
                 )
             }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
     }
