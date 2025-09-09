@@ -302,9 +302,69 @@ class BehandlingTilVedtakMapping(
                         },
                 )
             } else {
+                val referanse = "resultatFraVedtak_$vedtaksid"
+                val resultatFraGrunnlag =
+                    OpprettGrunnlagRequestDto(
+                        referanse = referanse,
+                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                        innhold =
+                            POJONode(
+                                ResultatFraVedtakGrunnlag(
+                                    vedtaksid = vedtaksid,
+                                    vedtakstype = behandling.vedtakstype,
+                                ),
+                            ),
+                    )
+                val sak = sakConsumer.hentSak(behandling.saksnummer)
+                val personobjekter = behandling.tilPersonobjekter().map { it.tilOpprettRequestDto() }
+                val virkningstidspunktGrunnlag =
+                    behandling
+                        .byggGrunnlagVirkningsttidspunkt(
+                            personobjekter.map { it.tilDto() },
+                        ).map(GrunnlagDto::tilOpprettRequestDto)
+                val stønadsendringGrunnlag =
+                    virkningstidspunktGrunnlag +
+                        behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
+                        behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
+                val grunnlagliste = (stønadsendringGrunnlag + listOf(resultatFraGrunnlag) + personobjekter).toMutableList()
                 behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                     type = Vedtakstype.INNKREVING,
-                    grunnlagListe = listOf(),
+                    grunnlagListe = grunnlagliste,
+                    unikReferanse = behandling.opprettUnikReferanse("innkreving"),
+                    behandlingsreferanseListe = behandling.tilBehandlingreferanseListeUtenSøknad(),
+                    stønadsendringListe =
+                        behandling.søknadsbarn.map {
+                            OpprettStønadsendringRequestDto(
+                                innkreving = Innkrevingstype.MED_INNKREVING,
+                                skyldner = behandling.tilSkyldner(),
+                                kravhaver =
+                                    it.tilNyestePersonident()
+                                        ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!),
+                                mottaker =
+                                    behandling.roller
+                                        .reelMottakerEllerBidragsmottaker(
+                                            sak.hentRolleMedFnr(it.ident!!),
+                                        ),
+                                sak = Saksnummer(behandling.saksnummer),
+                                type = behandling.stonadstype!!,
+                                beslutning = Beslutningstype.ENDRING,
+                                grunnlagReferanseListe = stønadsendringGrunnlag.map { it.referanse },
+                                periodeListe =
+                                    behandling.privatAvtale
+                                        .find { pa -> pa.barnetsRolleIBehandlingen!!.ident == it.ident }!!
+                                        .perioderInnkreving
+                                        .map {
+                                            OpprettPeriodeRequestDto(
+                                                ÅrMånedsperiode(it.fom, it.tom),
+                                                it.beløp,
+                                                "NOK",
+                                                "",
+                                                null,
+                                                listOfNotNull(referanse),
+                                            )
+                                        },
+                            )
+                        },
                 )
             }
         }

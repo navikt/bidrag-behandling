@@ -63,7 +63,9 @@ import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.YearMonth
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBB
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBidrag
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBB
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBidrag
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatBeregning as ResultatBeregningSærbidrag
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatPeriode as ResultatPeriodeSærbidrag
@@ -148,7 +150,25 @@ class BeregningService(
             behandling.validerForBeregningBidrag()
         }
 
-        return if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+        return if (behandling.erInnkreving) {
+            behandling.privatAvtale.map {
+                ResultatBidragsberegningBarn(
+                    it.barnetsRolleIBehandlingen!!.mapTilResultatBarn(),
+                    behandling.vedtakstype,
+                    resultat =
+                        BeregnetBarnebidragResultat(
+                            beregnetBarnebidragPeriodeListe =
+                                it.perioderInnkreving.map {
+                                    ResultatPeriodeBB(
+                                        ÅrMånedsperiode(it.fom, it.tom),
+                                        ResultatBeregningBB(it.beløp),
+                                        emptyList(),
+                                    )
+                                },
+                        ),
+                )
+            }
+        } else if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !endeligBeregning) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }

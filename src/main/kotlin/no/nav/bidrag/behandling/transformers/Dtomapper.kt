@@ -164,7 +164,16 @@ class Dtomapper(
             )
         return grunnlag
             .konvertereData<List<ManuellVedtakGrunnlag>>()
-            ?.map {
+            ?.filter {
+                if (behandling.erKlageEllerOmgjøring) {
+                    val vedtaksliste = behandling.omgjøringsdetaljer?.omgjortVedtaksliste?.map { it.vedtaksid } ?: emptyList()
+                    !vedtaksliste.contains(it.vedtaksid)
+                } else if (behandling.erInnkreving) {
+                    it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
+                } else {
+                    true
+                }
+            }?.map {
                 ManuellVedtakDto(
                     it.vedtaksid,
                     søknadsbarn.id!!,
@@ -175,6 +184,7 @@ class Dtomapper(
                     it.begrensetRevurdering,
                     it.resultatSistePeriode,
                     it.manglerGrunnlag,
+                    it.innkrevingstype,
                 )
             }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
     }

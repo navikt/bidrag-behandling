@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.util.visningsnavn
@@ -25,6 +26,7 @@ data class OppdaterManuellVedtakResponse(
 data class OppdaterManuellVedtakRequest(
     val barnId: Long,
     val vedtaksid: Int?,
+    val grunnlagFraOmgjøringsvedtak: Boolean? = null,
     val aldersjusteringForÅr: Int? = null,
 )
 
@@ -53,6 +55,7 @@ data class ManuellVedtakDto(
     val begrensetRevurdering: Boolean,
     val resultatSistePeriode: String,
     val manglerGrunnlag: Boolean = false,
+    val innkrevingstype: Innkrevingstype,
 ) {
     val søknadstype get() =
         when {

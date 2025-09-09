@@ -72,6 +72,7 @@ class VirkningstidspunktService(
                     it.begrensetRevurdering,
                     it.resultatSistePeriode,
                     it.manglerGrunnlag,
+                    it.innkrevingstype,
                 )
             }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
     }
@@ -103,6 +104,7 @@ class VirkningstidspunktService(
                         GrunnlagFraVedtak(
                             aldersjusteringForÅr = request.aldersjusteringForÅr,
                             vedtak = request.vedtaksid,
+                            grunnlagFraOmgjøringsvedtak = request.grunnlagFraOmgjøringsvedtak ?: false,
                             perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
                         ),
                     )

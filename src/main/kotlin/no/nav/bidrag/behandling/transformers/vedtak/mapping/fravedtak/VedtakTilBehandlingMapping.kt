@@ -185,6 +185,7 @@ class VedtakTilBehandlingMapping(
                     omgjørVedtakId = if (!lesemodus) omgjørVedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,
+                    omgjortVedtaksliste = omgjørVedtaksliste,
                     omgjortVedtakVedtakstidspunkt = omgjortVedtakVedtakstidspunkt,
                     opprinneligVirkningstidspunkt = omgjortVedtakVirkningstidspunkt,
                     sisteVedtakBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned?.vedtaksid,

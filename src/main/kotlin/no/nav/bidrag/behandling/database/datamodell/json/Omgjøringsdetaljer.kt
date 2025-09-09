@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell.json
 
 import com.fasterxml.jackson.annotation.JsonAlias
 import jakarta.persistence.Converter
+import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
@@ -25,6 +26,7 @@ data class Omgjøringsdetaljer(
     // Liste over vedtakstidspuntk for alle vedtak som ble omgjort i klage/omgjøring serien fra opprinnelig vedtak
     @JsonAlias("opprinneligVedtakstidspunkt")
     val omgjortVedtakstidspunktListe: MutableSet<LocalDateTime> = mutableSetOf(),
+    val omgjortVedtaksliste: Set<PåklagetVedtak> = setOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,
     var innkrevingstype: Innkrevingstype? = null,
     val fattetDelvedtak: List<FattetDelvedtak> = emptyList(),
