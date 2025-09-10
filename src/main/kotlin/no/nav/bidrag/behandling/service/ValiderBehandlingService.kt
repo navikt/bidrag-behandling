@@ -67,6 +67,7 @@ class ValiderBehandlingService(
         if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
+        if (request.roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG && it.ident != null }) return "Kan ikke behandle bidrag ut BP"
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
 
         if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE) {
