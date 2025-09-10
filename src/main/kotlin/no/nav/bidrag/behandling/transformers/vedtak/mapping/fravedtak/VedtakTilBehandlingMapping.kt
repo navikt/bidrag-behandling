@@ -781,42 +781,58 @@ class VedtakTilBehandlingMapping(
     private fun List<GrunnlagDto>.mapSamvær(
         behandling: Behandling,
         lesemodus: Boolean,
-    ): MutableSet<Samvær> =
-        filtrerBasertPåEgenReferanse(
-            Grunnlagstype.SAMVÆRSPERIODE,
-        ).groupBy { it.gjelderBarnReferanse }
-            .map { (gjelderReferanse, perioder) ->
-                val person = hentPersonMedReferanse(gjelderReferanse)!!
-                val samvær =
+    ): MutableSet<Samvær> {
+        val samværBarn =
+            filtrerBasertPåEgenReferanse(
+                Grunnlagstype.SAMVÆRSPERIODE,
+            ).groupBy { it.gjelderBarnReferanse }
+                .map { (gjelderReferanse, perioder) ->
+                    val person = hentPersonMedReferanse(gjelderReferanse)!!
+                    val samvær =
+                        Samvær(
+                            id = if (lesemodus) 1 else null,
+                            behandling = behandling,
+                            rolle = behandling.roller.find { it.ident == person.personIdent }!!,
+                            perioder = mutableSetOf(),
+                        )
+
+                    samvær.perioder.addAll(
+                        perioder.mapIndexed { index, it ->
+                            val periodeInnhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
+                            val beregning =
+                                finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
+                                    Grunnlagstype.SAMVÆRSKALKULATOR,
+                                    it.grunnlagsreferanseListe,
+                                ).firstOrNull()
+                                    ?.innholdTilObjekt<SamværskalkulatorDetaljer>()
+                            Samværsperiode(
+                                id = if (lesemodus) index.toLong() else null,
+                                samvær = samvær,
+                                fom = periodeInnhold.periode.fom.atDay(1),
+                                tom =
+                                    periodeInnhold.periode.til
+                                        ?.minusMonths(1)
+                                        ?.atEndOfMonth(),
+                                samværsklasse = periodeInnhold.samværsklasse,
+                                beregningJson = beregning?.let { commonObjectmapper.writeValueAsString(it) },
+                            )
+                        },
+                    )
+                    samvær
+                }.toMutableSet()
+
+        return if (samværBarn.isEmpty()) {
+            behandling.søknadsbarn
+                .map {
                     Samvær(
                         id = if (lesemodus) 1 else null,
                         behandling = behandling,
-                        rolle = behandling.roller.find { it.ident == person.personIdent }!!,
+                        rolle = it,
                         perioder = mutableSetOf(),
                     )
-
-                samvær.perioder.addAll(
-                    perioder.mapIndexed { index, it ->
-                        val periodeInnhold = it.innholdTilObjekt<SamværsperiodeGrunnlag>()
-                        val beregning =
-                            finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
-                                Grunnlagstype.SAMVÆRSKALKULATOR,
-                                it.grunnlagsreferanseListe,
-                            ).firstOrNull()
-                                ?.innholdTilObjekt<SamværskalkulatorDetaljer>()
-                        Samværsperiode(
-                            id = if (lesemodus) index.toLong() else null,
-                            samvær = samvær,
-                            fom = periodeInnhold.periode.fom.atDay(1),
-                            tom =
-                                periodeInnhold.periode.til
-                                    ?.minusMonths(1)
-                                    ?.atEndOfMonth(),
-                            samværsklasse = periodeInnhold.samværsklasse,
-                            beregningJson = beregning?.let { commonObjectmapper.writeValueAsString(it) },
-                        )
-                    },
-                )
-                samvær
-            }.toMutableSet()
+                }.toMutableSet()
+        } else {
+            samværBarn
+        }
+    }
 }

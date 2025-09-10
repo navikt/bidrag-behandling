@@ -458,7 +458,8 @@ class GrunnlagService(
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type, fraOpprinneligVedtakstidspunkt)
-                val grunnlagEksistererFraKlage = eksisterendeGrunnlag != null && behandling.erKlageEllerOmgjøring
+                val grunnlagEksistererFraKlage =
+                    eksisterendeGrunnlag != null && behandling.erKlageEllerOmgjøring && fraOpprinneligVedtakstidspunkt
                 if (grunnlagEksistererFraKlage) {
                     // Hvis grunnlag allerede eksisterer fra klage, så skal det ikke hentes på nytt.
                     // Da brukes beløpshistorikken hentet fra påklaget vedtak
@@ -800,12 +801,11 @@ class GrunnlagService(
 
     private fun Grunnlag.rekalkulerOgOppdaterBoforholdBMBearbeidetGrunnlag(rekalkulerOgOverskriveAktiverte: Boolean = true) {
         val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
-        val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.virkningstidspunktEllerSøktFomDato,
-                gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
-                behandling.finnBeregnTilDatoBehandling(gjelderRolle),
+                behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
@@ -1184,7 +1184,12 @@ class GrunnlagService(
 
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
-            if (behandling.søknadsbarn.isNotEmpty() &&
+            val boforholdFeil = feilrapporteringer[Grunnlagsdatatype.BOFORHOLD]
+            val innhentingBoforholdUtenFeil =
+                boforholdFeil == null ||
+                    HentGrunnlagFeiltype.FUNKSJONELL_FEIL == boforholdFeil.feiltype &&
+                    !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
+            if (behandling.søknadsbarn.isNotEmpty() && innhentingBoforholdUtenFeil &&
                 Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
             ) {
                 periodisereOgLagreBoforhold(
@@ -1202,7 +1207,12 @@ class GrunnlagService(
                     )
                 }
             }
-            if (behandling.søknadsbarn.isNotEmpty() &&
+            val bmBoforholdFeil = feilrapporteringer[Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN]
+            val innhentingBmBoforholdUtenFeil =
+                bmBoforholdFeil == null ||
+                    HentGrunnlagFeiltype.FUNKSJONELL_FEIL == bmBoforholdFeil.feiltype &&
+                    !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
+            if (behandling.søknadsbarn.isNotEmpty() && innhentingBmBoforholdUtenFeil &&
                 Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
             ) {
                 periodisereOgLagreBoforhold(

@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
@@ -28,6 +29,7 @@ import no.nav.bidrag.beregn.særbidrag.ValiderSærbidragForBeregningService
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -162,7 +164,9 @@ class ValiderBeregning(
 
     fun Behandling.validerForBeregningBidrag() {
         val feil =
-            if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            if (erInnkreving) {
+                validerForBeregningInnkrevingBidrag()
+            } else if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
                 validerForBeregningAldersjusteringBidrag()
             } else if (avslag == null) {
                 validerForBeregningBidragIkkeAvslag()
@@ -267,6 +271,18 @@ class ValiderBeregning(
                 gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
                 samvær = samværValideringsfeil.takeIf { it.isNotEmpty() },
                 underholdskostnad = underholdValideringsfeil.takeIf { it.isNotEmpty() },
+            )
+        }
+    }
+
+    fun Behandling.validerForBeregningInnkrevingBidrag(): BeregningValideringsfeil? {
+        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
+        val privatAvtaleValideringsfeil = privatAvtale.map { it.validerePrivatAvtale() }.filter { it.harFeil }
+        val harFeil = virkningstidspunktFeil != null || privatAvtaleValideringsfeil.isNotEmpty()
+        return harFeil.ifTrue {
+            BeregningValideringsfeil(
+                virkningstidspunkt = virkningstidspunktFeil,
+                privatAvtale = privatAvtaleValideringsfeil,
             )
         }
     }

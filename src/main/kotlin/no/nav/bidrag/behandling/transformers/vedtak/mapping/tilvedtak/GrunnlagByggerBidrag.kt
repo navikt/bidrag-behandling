@@ -255,6 +255,12 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
                 } else {
                     false
                 }
+            val barnetErSelvforsørget =
+                if (sluttberegningGrunnlag?.type == Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG) {
+                    sluttberegningGrunnlag.innholdTilObjekt<SluttberegningBarnebidrag>().barnetErSelvforsørget
+                } else {
+                    false
+                }
             val erResultatIngenEndringUnderGrense = grunnlagListe.toList().erResultatEndringUnderGrense(søknadsbarn.tilGrunnlagsreferanse())
             val erIndeksregulering =
                 grunnlagListe
@@ -263,9 +269,10 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
                         Grunnlagstype.SLUTTBEREGNING_INDEKSREGULERING,
                         it.grunnlagsreferanseListe,
                     ).isNotEmpty()
+            val erDirekteAvslag = søknadsbarn.avslag != null
             OpprettPeriodeRequestDto(
                 periode = it.periode,
-                beløp = it.resultat.beløp,
+                beløp = if (erDirekteAvslag || ikkeOmsorgForBarnet || barnetErSelvforsørget) null else it.resultat.beløp,
                 valutakode = if (ikkeOmsorgForBarnet) null else "NOK",
                 resultatkode =
                     if (ikkeOmsorgForBarnet) {
@@ -274,6 +281,8 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
                         Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
                     } else if (erIndeksregulering) {
                         Resultatkode.INDEKSREGULERING.name
+                    } else if (erDirekteAvslag) {
+                        søknadsbarn.avslag!!.name
                     } else {
                         Resultatkode.BEREGNET_BIDRAG.name
                     },

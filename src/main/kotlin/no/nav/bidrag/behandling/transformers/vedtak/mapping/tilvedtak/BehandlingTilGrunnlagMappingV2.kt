@@ -171,7 +171,10 @@ class BehandlingTilGrunnlagMappingV2(
         return grunnlagBosstatus + personobjekterHusstandsmedlem
     }
 
-    fun Behandling.tilPrivatAvtaleGrunnlag(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
+    fun Behandling.tilPrivatAvtaleGrunnlag(
+        personobjekter: Set<GrunnlagDto>,
+        gjelderBarnIdent: String,
+    ): Set<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
         fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto =
@@ -197,44 +200,47 @@ class BehandlingTilGrunnlagMappingV2(
         }
 
         return privatAvtale
-            .filter { it.perioder.isNotEmpty() }
-            .flatMap { pa ->
+            .find { it.perioderInnkreving.isNotEmpty() && it.person.ident == gjelderBarnIdent }
+            ?.let { pa ->
                 val underholdRolle = pa.barnetsRolleIBehandlingen
                 val gjelderBarn =
                     underholdRolle?.tilGrunnlagPerson()?.also {
                         grunnlagslistePersoner.add(it)
                     } ?: personobjekter.hentPerson(pa.person.ident) ?: pa.opprettPersonGrunnlag()
                 val gjelderBarnReferanse = gjelderBarn.referanse
-                pa.perioder.map {
-                    GrunnlagDto(
-                        type = Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
-                        referanse = it.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse),
-                        gjelderReferanse = personobjekter.bidragspliktig!!.referanse,
-                        gjelderBarnReferanse = gjelderBarn.referanse,
-                        innhold =
-                            POJONode(
-                                PrivatAvtalePeriodeGrunnlag(
-                                    periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                                    beløp = it.beløp,
+                val grunnlag =
+                    pa.perioderInnkreving.map {
+                        GrunnlagDto(
+                            type = Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
+                            referanse = it.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse),
+                            gjelderReferanse = personobjekter.bidragspliktig!!.referanse,
+                            gjelderBarnReferanse = gjelderBarn.referanse,
+                            innhold =
+                                POJONode(
+                                    PrivatAvtalePeriodeGrunnlag(
+                                        periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                                        beløp = it.beløp,
+                                    ),
                                 ),
-                            ),
-                    )
-                } +
-                    GrunnlagDto(
-                        referanse = pa.tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse),
-                        gjelderReferanse = personobjekter.bidragspliktig!!.referanse,
-                        gjelderBarnReferanse = gjelderBarnReferanse,
-                        type = Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
-                        innhold =
-                            POJONode(
-                                PrivatAvtaleGrunnlag(
-                                    avtaleInngåttDato = pa.avtaleDato ?: virkningstidspunkt!!,
-                                    avtaleType = pa.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
-                                    skalIndeksreguleres = pa.skalIndeksreguleres,
+                        )
+                    } +
+                        GrunnlagDto(
+                            referanse = pa.tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse),
+                            gjelderReferanse = personobjekter.bidragspliktig!!.referanse,
+                            gjelderBarnReferanse = gjelderBarnReferanse,
+                            type = Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
+                            innhold =
+                                POJONode(
+                                    PrivatAvtaleGrunnlag(
+                                        avtaleInngåttDato = pa.avtaleDato ?: virkningstidspunkt!!,
+                                        avtaleType = pa.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
+                                        skalIndeksreguleres = pa.skalIndeksreguleres,
+                                    ),
                                 ),
-                            ),
-                    )
-            }.toSet()
+                        )
+
+                grunnlag.toSet()
+            } ?: emptySet()
     }
 
     fun Behandling.tilGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto> = emptySet()) =

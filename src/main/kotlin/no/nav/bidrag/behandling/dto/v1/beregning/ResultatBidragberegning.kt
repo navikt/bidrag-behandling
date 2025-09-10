@@ -150,7 +150,7 @@ data class ResultatBidragsberegningBarn(
     val vedtakstype: Vedtakstype,
     val resultat: BeregnetBarnebidragResultat,
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
-    val avslaskode: Resultatkode? = null,
+    val avslagskode: Resultatkode? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val omgjøringsdetaljer: Omgjøringsdetaljer? = null,
     val innkrevesFraDato: YearMonth? = null,

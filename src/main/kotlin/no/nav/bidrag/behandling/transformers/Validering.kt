@@ -49,6 +49,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -338,7 +339,7 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
     return PrivatAvtaleValideringsfeilDto(
         privatAvtaleId = id!!,
         gjelderPerson = person,
-        manglerAvtaledato = avtaleDato == null,
+        manglerAvtaledato = utledetAvtaledato == null,
         manglerAvtaletype = avtaleType == null,
         perioderOverlapperMedLøpendeBidrag =
             behandling.finnPerioderSomOverlapperMedLøpendeBidrag(
@@ -348,7 +349,9 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                 barnetsRolleIBehandlingen!!,
             ),
         ingenLøpendePeriode = perioder.isEmpty() || behandling.manglerLøpendePeriode(perioder, barnetsRolleIBehandlingen!!),
-        manglerBegrunnelse = notatPrivatAvtale?.innhold.isNullOrEmpty(),
+        manglerBegrunnelse = !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
+        måVelgeVedtakHvisAvtaletypeErVedtakFraNav =
+            behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && valgtVedtakFraNav == null,
         overlappendePerioder =
             perioder
                 .map { Pair(it.id!!, it.tilDatoperiode()) }

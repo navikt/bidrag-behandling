@@ -31,6 +31,7 @@ data class KanBehandlesINyLøsningRequest(
     val mottattdato: LocalDate? = null,
 ) {
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+    val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
 }
 

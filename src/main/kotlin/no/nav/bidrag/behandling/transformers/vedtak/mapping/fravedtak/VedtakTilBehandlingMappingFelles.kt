@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.byggResultatBidragsberegning
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
@@ -528,6 +529,7 @@ internal fun List<GrunnlagDto>.mapInntekter(
     behandling: Behandling,
     lesemodus: Boolean,
 ): MutableSet<Inntekt> {
+    if (behandling.søknadsbarn.all { it.avslag != null }) return mutableSetOf()
     val inntekter =
         filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
             .mapIndexed { i, it ->
@@ -714,7 +716,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             )
         },
     hentInnhentetAndreVoksneIHusstanden().let {
-        if (it.isEmpty() && !behandling.erForskudd()) {
+        if (it.isEmpty() && !behandling.erForskudd() && !behandling.erDirekteAvslag()) {
             val andreVoksneIHusstandPeriodisert =
                 BoforholdApi.beregnBoforholdAndreVoksne(
                     behandling.virkningstidspunktEllerSøktFomDato,
@@ -858,72 +860,76 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
     behandling: Behandling,
     lesemodus: Boolean,
 ): List<Grunnlag> =
-    listOf(
-        hentBeregnetInntekt().entries.map { (gjelderIdent, grunnlag) ->
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
-                grunnlag,
-                gjelderIdent,
-                innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
-                lesemodus,
-                erBearbeidet = true,
-            )
-        },
-        hentBarnetillegListe()
-            .groupBy { it.partPersonId }
-            .map { (gjelderIdent, grunnlag) ->
+    if (!lesemodus && behandling.erDirekteAvslag()) {
+        emptyList()
+    } else {
+        listOf(
+            hentBeregnetInntekt().entries.map { (gjelderIdent, grunnlag) ->
                 behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.BARNETILLEGG,
+                    Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
                     grunnlag,
                     gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG),
+                    innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
                     lesemodus,
+                    erBearbeidet = true,
                 )
             },
-        hentUtvidetbarnetrygdListe()
-            .groupBy { it.personId }
-            .map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD),
-                    lesemodus,
-                )
-            },
-        hentSmåbarnstilleggListe()
-            .groupBy { it.personId }
-            .map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG),
-                    lesemodus,
-                )
-            },
-        hentKontantstøtteListe()
-            .groupBy { it.partPersonId }
-            .map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.KONTANTSTØTTE,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE),
-                    lesemodus,
-                )
-            },
-        hentGrunnlagSkattepliktig()
-            .map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE),
-                    lesemodus,
-                )
-            },
-    ).flatten()
+            hentBarnetillegListe()
+                .groupBy { it.partPersonId }
+                .map { (gjelderIdent, grunnlag) ->
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.BARNETILLEGG,
+                        grunnlag,
+                        gjelderIdent,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG),
+                        lesemodus,
+                    )
+                },
+            hentUtvidetbarnetrygdListe()
+                .groupBy { it.personId }
+                .map { (gjelderIdent, grunnlag) ->
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                        grunnlag,
+                        gjelderIdent,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD),
+                        lesemodus,
+                    )
+                },
+            hentSmåbarnstilleggListe()
+                .groupBy { it.personId }
+                .map { (gjelderIdent, grunnlag) ->
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                        grunnlag,
+                        gjelderIdent,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG),
+                        lesemodus,
+                    )
+                },
+            hentKontantstøtteListe()
+                .groupBy { it.partPersonId }
+                .map { (gjelderIdent, grunnlag) ->
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.KONTANTSTØTTE,
+                        grunnlag,
+                        gjelderIdent,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE),
+                        lesemodus,
+                    )
+                },
+            hentGrunnlagSkattepliktig()
+                .map { (gjelderIdent, grunnlag) ->
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                        grunnlag,
+                        gjelderIdent,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE),
+                        lesemodus,
+                    )
+                },
+        ).flatten()
+    }
 
 fun Behandling.opprettGrunnlag(
     type: Grunnlagsdatatype,

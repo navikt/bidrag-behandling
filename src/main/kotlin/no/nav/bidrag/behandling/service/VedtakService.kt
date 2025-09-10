@@ -209,7 +209,6 @@ class VedtakService(
                     "Fant eksisterende behandling ${it.id} for søknadsId ${request.søknadsid}. Oppretter ikke ny behandling"
                 }
                 return OpprettBehandlingResponse(it.id!!)
-//                ugyldigForespørsel("Det finnes allerede en behandling for søknadsId ${request.søknadsid} med id ${it.id}")
             }
 
             val konvertertBehandling =
@@ -410,31 +409,6 @@ class VedtakService(
         return response.vedtaksid
     }
 
-    fun fatteVedtakOmInnkreving(
-        behandling: Behandling,
-        request: FatteVedtakRequestDto?,
-    ): Int {
-//        if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-//            fatteInnkrevingsgrunnlag(behandling, request?.enhet, response.first.vedtaksid, response.second)
-//        }
-//        behandlingService.oppdaterVedtakFattetStatus(
-//            behandling.id!!,
-//            vedtaksid = response.first.vedtaksid,
-//            request?.enhet ?: behandling.behandlerEnhet,
-//        )
-//
-//        opprettNotat(behandling)
-//
-//        LOGGER.info {
-//            "Fattet vedtak for behandling ${behandling.id} med ${
-//                behandling.årsak?.let { "årsakstype $it" }
-//                    ?: "avslagstype ${behandling.avslag}"
-//            } med vedtaksid ${response.first.vedtaksid}"
-//        }
-//        return response.first.vedtaksid
-        return 1
-    }
-
     fun fatteVedtakBidragOmgjøring(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
@@ -537,6 +511,39 @@ class VedtakService(
         return response.first.vedtaksid
     }
 
+    private fun fatteInnkreving(
+        behandling: Behandling,
+        request: FatteVedtakRequestDto?,
+    ): Int {
+        if (!UnleashFeatures.FATTE_VEDTAK.isEnabled) {
+            ugyldigForespørsel("Kan ikke fatte vedtak for klage")
+        }
+        vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
+        validering.run { behandling.validerForBeregningBidrag() }
+        val innkrevingRequest =
+            behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
+                behandling,
+                request?.enhet,
+            )
+
+        innkrevingRequest.validerGrunnlagsreferanser()
+        val responseInnkreving = fatteVedtak(innkrevingRequest)
+        secureLogger.info {
+            "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
+        }
+        behandlingService.oppdaterDelvedtakFattetStatus(
+            behandlingsid = behandling.id!!,
+            fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+            resultat =
+                FattetDelvedtak(
+                    vedtaksid = responseInnkreving.vedtaksid,
+                    vedtakstype = innkrevingRequest.type,
+                    referanse = innkrevingRequest.unikReferanse ?: "ukjent",
+                ),
+        )
+        return responseInnkreving.vedtaksid
+    }
+
     private fun fatteInnkrevingsgrunnlag(
         behandling: Behandling,
         enhet: String?,
@@ -550,7 +557,7 @@ class VedtakService(
         }
 
         val innkrevingRequest =
-            behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
+            behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkrevingAvOmgjøring(
                 behandling,
                 enhet,
                 vedtaksidOrkestrering,
@@ -608,7 +615,7 @@ class VedtakService(
         request: FatteVedtakRequestDto?,
     ): Int {
         if (behandling.erKlageEllerOmgjøring) return fatteVedtakBidragOmgjøring(behandling, request)
-        if (behandling.erInnkreving) return fatteVedtakBidragOmgjøring(behandling, request)
+        if (behandling.erInnkreving) return fatteInnkreving(behandling, request)
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 
@@ -713,6 +720,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-
+//
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }

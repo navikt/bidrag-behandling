@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.fasterxml.jackson.databind.node.POJONode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -12,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
+import no.nav.bidrag.behandling.transformers.finnDelberegningerPrivatAvtale
 import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -44,7 +46,9 @@ import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.BostatusVoksneIHussta
 import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.GrunnlagBeregning
 import no.nav.bidrag.beregn.særbidrag.core.felles.bo.SjablonListe
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -52,10 +56,16 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
+import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.felles.tilVisningsnavn
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -151,26 +161,10 @@ class BeregningService(
         }
 
         return if (behandling.erInnkreving) {
-            behandling.privatAvtale.map {
-                ResultatBidragsberegningBarn(
-                    it.barnetsRolleIBehandlingen!!.mapTilResultatBarn(),
-                    behandling.vedtakstype,
-                    resultat =
-                        BeregnetBarnebidragResultat(
-                            beregnetBarnebidragPeriodeListe =
-                                it.perioderInnkreving.map {
-                                    ResultatPeriodeBB(
-                                        ÅrMånedsperiode(it.fom, it.tom),
-                                        ResultatBeregningBB(it.beløp),
-                                        emptyList(),
-                                    )
-                                },
-                        ),
-                )
-            }
+            beregnInnkrevingsgrunnlag(behandling)
         } else if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
-        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !endeligBeregning) {
+        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
             behandling.søknadsbarn.map { søknasdbarn ->
@@ -203,7 +197,7 @@ class BeregningService(
                                         }
                                     },
                             ),
-                        avslaskode = søknasdbarn.avslag,
+                        avslagskode = søknasdbarn.avslag,
                         omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         beregnTilDato =
                             behandling
@@ -284,6 +278,87 @@ class BeregningService(
             }
         }
     }
+
+    private fun beregnInnkrevingsgrunnlag(behandling: Behandling): List<ResultatBidragsberegningBarn> =
+        behandling.privatAvtale.map { pa ->
+            val perioder =
+                if (pa.perioderInnkreving.isEmpty()) {
+                    emptyList<ResultatPeriodeBB>() to emptyList()
+                } else if (pa.skalIndeksreguleres ||
+                    pa.avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV
+                ) {
+                    val beregning = mapper.tilBeregnetPrivatAvtale(behandling, pa.person)
+                    val gjelderBarnReferanse = beregning.hentAllePersoner().find { it.personIdent == pa.person.ident }!!.referanse
+                    val delberegningPrivatAvtale = beregning.finnDelberegningerPrivatAvtale(gjelderBarnReferanse)
+                    val vedtak = pa.valgtVedtakFraNav
+                    val grunnlagFraVedtak =
+                        if (pa.avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && vedtak != null) {
+                            val referanse = "resultatFraVedtak_${vedtak.vedtak}"
+                            listOf(
+                                GrunnlagDto(
+                                    referanse = referanse,
+                                    type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                    innhold =
+                                        POJONode(
+                                            ResultatFraVedtakGrunnlag(
+                                                vedtaksid = vedtak.vedtak,
+                                                vedtakstype = behandling.vedtakstype,
+                                            ),
+                                        ),
+                                ),
+                            )
+                        } else {
+                            emptyList()
+                        }
+                    val perioderBeregnet =
+                        delberegningPrivatAvtale
+                            ?.innhold
+                            ?.perioder
+                            ?.sortedBy {
+                                it.periode.fom
+                            }
+                    val perioder =
+                        perioderBeregnet?.mapIndexed { i, it ->
+                            val sistePeriodeTil =
+                                if (pa.barnetsRolleIBehandlingen!!.opphørsdato != null && i == (perioderBeregnet.size - 1)) {
+                                    pa.barnetsRolleIBehandlingen!!.opphørsdato!!.toYearMonth()
+                                } else {
+                                    it.periode.til
+                                }
+                            ResultatPeriodeBB(
+                                periode = ÅrMånedsperiode(it.periode.fom, sistePeriodeTil),
+                                resultat = ResultatBeregningBB(it.beløp),
+                                grunnlagsreferanseListe =
+                                    listOf(delberegningPrivatAvtale.referanse) + grunnlagFraVedtak.map { it.referanse },
+                            )
+                        } ?: emptyList()
+                    perioder to (beregning + grunnlagFraVedtak)
+                } else {
+                    pa.perioderInnkreving.mapIndexed { i, it ->
+                        val sistePeriodeTil =
+                            if (pa.barnetsRolleIBehandlingen!!.opphørsdato != null && i == (pa.perioderInnkreving.size - 1)) {
+                                pa.barnetsRolleIBehandlingen!!.opphørsdato!!
+                            } else {
+                                it.tom
+                            }
+                        ResultatPeriodeBB(
+                            ÅrMånedsperiode(it.fom, sistePeriodeTil),
+                            ResultatBeregningBB(it.beløp),
+                            emptyList(),
+                        )
+                    } to emptyList()
+                }
+
+            ResultatBidragsberegningBarn(
+                pa.barnetsRolleIBehandlingen!!.mapTilResultatBarn(),
+                behandling.vedtakstype,
+                resultat =
+                    BeregnetBarnebidragResultat(
+                        beregnetBarnebidragPeriodeListe = perioder.first,
+                        grunnlagListe = perioder.second,
+                    ),
+            )
+        }
 
     private fun beregnBidragAldersjustering(behandling: Behandling): List<ResultatBidragsberegningBarn> {
         val søknadsbarn = behandling.søknadsbarn.first()
@@ -396,28 +471,47 @@ class BeregningService(
         return beregneBidrag(behandling, endeligBeregning)
     }
 
-    private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =
-        ResultatBidragsberegningBarn(
+    private fun Behandling.tilResultatAvslagBidrag(barn: Rolle): ResultatBidragsberegningBarn {
+        val resultatVedtak =
+            BeregnetBarnebidragResultat(
+                beregnetBarnebidragPeriodeListe =
+                    listOf(
+                        ResultatPeriodeBidrag(
+                            grunnlagsreferanseListe = emptyList(),
+                            periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
+                            resultat =
+                                ResultatBeregningBidrag(
+                                    beløp = BigDecimal.ZERO,
+                                ),
+                        ),
+                    ),
+                grunnlagListe = emptyList(),
+            )
+        return ResultatBidragsberegningBarn(
             barn = barn.mapTilResultatBarn(),
-            avslaskode = avslag,
+            avslagskode = avslag,
             vedtakstype = vedtakstype,
             omgjøringsdetaljer = omgjøringsdetaljer,
-            resultat =
-                BeregnetBarnebidragResultat(
-                    beregnetBarnebidragPeriodeListe =
-                        listOf(
-                            ResultatPeriodeBidrag(
-                                grunnlagsreferanseListe = emptyList(),
-                                periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
-                                resultat =
-                                    ResultatBeregningBidrag(
-                                        beløp = BigDecimal.ZERO,
-                                    ),
-                            ),
+            beregnTilDato = YearMonth.now().plusMonths(1),
+            resultatVedtak =
+                BidragsberegningOrkestratorResponse(
+                    listOf(
+                        ResultatVedtak(
+                            resultat = resultatVedtak,
+                            vedtakstype = vedtakstype,
+                            omgjøringsvedtak = false,
                         ),
-                    grunnlagListe = emptyList(),
+                        ResultatVedtak(
+                            resultat = resultatVedtak,
+                            vedtakstype = vedtakstype,
+                            omgjøringsvedtak = true,
+                            beregnet = true,
+                        ),
+                    ),
                 ),
+            resultat = resultatVedtak,
         )
+    }
 
     private fun Behandling.tilResultatAvslagSærbidrag() =
         BeregnetSærbidragResultat(

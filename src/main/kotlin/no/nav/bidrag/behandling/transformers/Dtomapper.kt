@@ -68,6 +68,7 @@ import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
+import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
@@ -169,7 +170,7 @@ class Dtomapper(
                     val vedtaksliste = behandling.omgjøringsdetaljer?.omgjortVedtaksliste?.map { it.vedtaksid } ?: emptyList()
                     !vedtaksliste.contains(it.vedtaksid)
                 } else if (behandling.erInnkreving) {
-                    it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
+                    true // it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
                 } else {
                     true
                 }
@@ -288,23 +289,7 @@ class Dtomapper(
         }?.perioder ?: emptySet()
 
     fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Person): BeregnetPrivatAvtaleDto {
-        val privatAvtaleBeregning =
-            if (grunnlagslisteFraVedtak.isNullOrEmpty()) {
-                val grunnlag =
-                    vedtakGrunnlagMapper
-                        .byggGrunnlagForBeregningPrivatAvtale(
-                            this,
-                            gjelderBarn,
-                        )
-
-                (
-                    BeregnIndeksreguleringPrivatAvtaleApi().beregnIndeksreguleringPrivatAvtale(
-                        grunnlag,
-                    ) + grunnlag.grunnlagListe
-                ).toSet().toList()
-            } else {
-                grunnlagslisteFraVedtak!!
-            }
+        val privatAvtaleBeregning = vedtakGrunnlagMapper.tilBeregnetPrivatAvtale(this, gjelderBarn)
 
         val rolle = roller.find { it.ident == gjelderBarn.ident }
         val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
@@ -840,6 +825,7 @@ class Dtomapper(
                             eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                             opphørsdato = it.opphørsdato,
                             globalOpphørsdato = globalOpphørsdato,
+                            valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                             begrunnelseFraOpprinneligVedtak =
                                 if (erKlageEllerOmgjøring) {
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -861,6 +847,7 @@ class Dtomapper(
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                             opphørsdato = globalOpphørsdato,
+                            valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                             begrunnelseFraOpprinneligVedtak =
                                 if (erKlageEllerOmgjøring) {
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
@@ -1005,7 +992,7 @@ class Dtomapper(
             perioderLøperBidrag = barnetsRolleIBehandlingen?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
             gjelderBarn = person.tilPersoninfoDto(barnetsRolleIBehandlingen, Kilde.MANUELL),
             skalIndeksreguleres = skalIndeksreguleres,
-            avtaleDato = avtaleDato,
+            avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
             etterfølgendeVedtak =
                 if (behandling.erInnkreving) {
@@ -1034,7 +1021,14 @@ class Dtomapper(
                     null
                 },
             valideringsfeil = validerePrivatAvtale().takeIf { it.harFeil },
-            beregnetPrivatAvtale = if (skalIndeksreguleres && perioder.isNotEmpty()) behandling.tilBeregnetPrivatAvtale(person) else null,
+            beregnetPrivatAvtale =
+                if (skalIndeksreguleres &&
+                    perioderInnkreving.isNotEmpty()
+                ) {
+                    behandling.tilBeregnetPrivatAvtale(person)
+                } else {
+                    null
+                },
             perioder =
                 perioderInnkreving.sortedBy { it.fom }.map {
                     PrivatAvtalePeriodeDto(

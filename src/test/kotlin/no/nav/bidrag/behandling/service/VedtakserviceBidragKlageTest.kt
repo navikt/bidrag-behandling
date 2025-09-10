@@ -1167,7 +1167,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             ),
         )
         behandling.privatAvtale.add(privatAvtale)
-        val privaavtaleGrunnlag = behandlingTilGrunnlagMappingV2.run { behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter()) }
+        val privaavtaleGrunnlag = behandlingTilGrunnlagMappingV2.run { behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale.person.ident!!) }
 
         val vedtaksidKlage = 1
         val vedtaksidIndeks = 2
@@ -1525,7 +1525,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             ),
         )
         behandling.privatAvtale.add(privatAvtale)
-        val privaavtaleGrunnlag = behandlingTilGrunnlagMappingV2.run { behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter()) }
+        val privaavtaleGrunnlag = behandlingTilGrunnlagMappingV2.run { behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale.person.ident!!) }
 
         val vedtaksidKlage = 1
         val vedtaksidIndeks = 2

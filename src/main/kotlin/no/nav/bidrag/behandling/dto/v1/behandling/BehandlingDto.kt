@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -96,6 +97,7 @@ data class VirkningstidspunktDtoV2(
     val kanSkriveVurderingAvSkolegang: Boolean = false,
     val etterfølgendeVedtak: EtterfølgendeVedtakDto? = null,
     val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
+    val valideringsfeil: VirkningstidspunktFeilDto?,
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)

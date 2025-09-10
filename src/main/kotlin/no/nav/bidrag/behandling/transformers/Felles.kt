@@ -92,6 +92,8 @@ fun Behandling.erSærbidrag() = tilType() == TypeBehandling.SÆRBIDRAG
 
 fun Behandling.erForskudd() = tilType() == TypeBehandling.FORSKUDD
 
+fun Behandling.erDirekteAvslag() = søknadsbarn.all { it.avslag != null }
+
 fun bestemTypeBehandling18ÅrsBidrag(
     stønadstype: Stønadstype?,
     engangsbeløptype: Engangsbeløptype?,

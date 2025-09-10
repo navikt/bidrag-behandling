@@ -72,6 +72,9 @@ class ValiderBehandlingService(
         if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE) {
             return "Kan ikke behandle privat avtale"
         }
+        if (request.søknadstype == BisysSøknadstype.INNKREVINGSGRUNNLAG || request.vedtakstype == Vedtakstype.INNKREVING) {
+            return "Kan ikke behandle innkrevingsgrunnlag"
+        }
         if ((request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) &&
             !UnleashFeatures.BIDRAG_KLAGE.isEnabled
         ) {
@@ -86,6 +89,8 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.ALDERSJUSTERING) return null
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
+        val bm = request.bidragsmottaker
+        if (bm == null || bm.erUkjent == true || bm.ident == null) return "Behandlingen mangler bidragsmottaker"
 
         val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
         val harBPStønadForFlereBarn =
