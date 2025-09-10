@@ -72,6 +72,9 @@ class ValiderBehandlingService(
         if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE) {
             return "Kan ikke behandle privat avtale"
         }
+        if (request.søknadstype == BisysSøknadstype.INNKREVINGSGRUNNLAG) {
+            return "Kan ikke behandle innkrevingsgrunnlag"
+        }
         if ((request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) &&
             !UnleashFeatures.BIDRAG_KLAGE.isEnabled
         ) {
