@@ -56,6 +56,8 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
@@ -162,7 +164,7 @@ class BeregningService(
             beregnInnkrevingsgrunnlag(behandling)
         } else if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
-        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !endeligBeregning) {
+        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
             behandling.søknadsbarn.map { søknasdbarn ->
@@ -469,28 +471,47 @@ class BeregningService(
         return beregneBidrag(behandling, endeligBeregning)
     }
 
-    private fun Behandling.tilResultatAvslagBidrag(barn: Rolle) =
-        ResultatBidragsberegningBarn(
+    private fun Behandling.tilResultatAvslagBidrag(barn: Rolle): ResultatBidragsberegningBarn {
+        val resultatVedtak =
+            BeregnetBarnebidragResultat(
+                beregnetBarnebidragPeriodeListe =
+                    listOf(
+                        ResultatPeriodeBidrag(
+                            grunnlagsreferanseListe = emptyList(),
+                            periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
+                            resultat =
+                                ResultatBeregningBidrag(
+                                    beløp = BigDecimal.ZERO,
+                                ),
+                        ),
+                    ),
+                grunnlagListe = emptyList(),
+            )
+        return ResultatBidragsberegningBarn(
             barn = barn.mapTilResultatBarn(),
             avslaskode = avslag,
             vedtakstype = vedtakstype,
             omgjøringsdetaljer = omgjøringsdetaljer,
-            resultat =
-                BeregnetBarnebidragResultat(
-                    beregnetBarnebidragPeriodeListe =
-                        listOf(
-                            ResultatPeriodeBidrag(
-                                grunnlagsreferanseListe = emptyList(),
-                                periode = ÅrMånedsperiode(virkningstidspunkt!!, null),
-                                resultat =
-                                    ResultatBeregningBidrag(
-                                        beløp = BigDecimal.ZERO,
-                                    ),
-                            ),
+            beregnTilDato = YearMonth.now().plusMonths(1),
+            resultatVedtak =
+                BidragsberegningOrkestratorResponse(
+                    listOf(
+                        ResultatVedtak(
+                            resultat = resultatVedtak,
+                            vedtakstype = vedtakstype,
+                            omgjøringsvedtak = false,
                         ),
-                    grunnlagListe = emptyList(),
+                        ResultatVedtak(
+                            resultat = resultatVedtak,
+                            vedtakstype = vedtakstype,
+                            omgjøringsvedtak = true,
+                            beregnet = true,
+                        ),
+                    ),
                 ),
+            resultat = resultatVedtak,
         )
+    }
 
     private fun Behandling.tilResultatAvslagSærbidrag() =
         BeregnetSærbidragResultat(

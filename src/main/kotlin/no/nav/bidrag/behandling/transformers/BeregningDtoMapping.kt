@@ -369,6 +369,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 resultat.barn.ident,
                                 erEndeligVedtak = erEndeligVedtak,
                             ).copy(
+                                erDirekteAvslag = resultat.avslaskode?.erDirekteAvslag() == true,
                                 resultatFraVedtak = resultatFraVedtak,
                                 klageOmgjøringDetaljer =
                                     KlageOmgjøringDetaljer(
