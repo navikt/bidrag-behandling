@@ -134,6 +134,7 @@ data class GrunnlagFraVedtak(
     val aldersjusteringForÅr: Int? = null,
     val vedtak: Int? = null,
     val grunnlagFraOmgjøringsvedtak: Boolean = false,
+    val vedtakstidspunkt: LocalDateTime? = null,
     @Schema(
         description =
             "Perioder i vedtaket som er valgt. " +

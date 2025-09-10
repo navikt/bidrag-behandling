@@ -1955,7 +1955,11 @@ class GrunnlagMappingTest {
             )
             behandling.privatAvtale.add(privatAvtale)
             behandling.privatAvtale.add(privatAvtale2)
-            val resultat = behandlingTilGrunnlagMapping.run { behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter()) }
+            val resultat =
+                behandlingTilGrunnlagMapping.run {
+                    behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale.person.ident!!) +
+                        behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale2.person.ident!!)
+                }
 
             resultat.shouldHaveSize(6)
             val barn1Grunnlag = resultat.filter { it.gjelderBarnReferanse == barn1.tilGrunnlagsreferanse() }

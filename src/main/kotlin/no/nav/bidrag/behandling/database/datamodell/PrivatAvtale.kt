@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -46,18 +47,33 @@ open class PrivatAvtale(
 ) {
     val barnetsRolleIBehandlingen get() = person.rolle.find { behandling.id == it.behandling.id }
 
+    val utledetAvtaledato get() =
+        if (valgtVedtakFraNav != null) {
+            valgtVedtakFraNav!!.vedtakstidspunkt?.withDayOfMonth(1)?.toLocalDate()
+        } else {
+            avtaleDato
+        }
+    val valgtVedtakFraNav get() =
+        barnetsRolleIBehandlingen!!.grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }?.takeIf {
+            it.vedtak != null
+        }
     val perioderInnkreving get() =
         when {
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV ->
-                barnetsRolleIBehandlingen!!.grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }?.perioder?.mapIndexed { i, it ->
-                    PrivatAvtalePeriode(
-                        i.toLong(),
-                        this,
-                        it.periode.fom.atDay(1),
-                        it.periode.til?.atDay(1),
-                        it.beløp ?: BigDecimal.ZERO,
-                    )
-                } ?: emptyList()
+                valgtVedtakFraNav
+                    ?.perioder
+                    ?.filter {
+                        it.periode.til == null ||
+                            it.periode.fom.isAfter(barnetsRolleIBehandlingen!!.virkningstidspunkt!!.toYearMonth())
+                    }?.mapIndexed { i, it ->
+                        PrivatAvtalePeriode(
+                            i.toLong(),
+                            this,
+                            maxOf(it.periode.fom.atDay(1), barnetsRolleIBehandlingen!!.virkningstidspunkt!!),
+                            it.periode.til?.atDay(1),
+                            it.beløp ?: BigDecimal.ZERO,
+                        )
+                    } ?: emptyList()
             else -> perioder
         }
 

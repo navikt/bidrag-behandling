@@ -106,6 +106,14 @@ class VirkningstidspunktService(
                             vedtak = request.vedtaksid,
                             grunnlagFraOmgjøringsvedtak = request.grunnlagFraOmgjøringsvedtak ?: false,
                             perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
+                            vedtakstidspunkt =
+                                if (behandling.erInnkreving) {
+                                    request.vedtaksid?.let {
+                                        hentVedtak(it)?.vedtakstidspunkt
+                                    }
+                                } else {
+                                    null
+                                },
                         ),
                     )
             }

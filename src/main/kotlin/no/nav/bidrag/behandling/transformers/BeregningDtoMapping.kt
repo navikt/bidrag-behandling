@@ -1164,11 +1164,15 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
     )
 }
 
-fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse: String): List<DelberegningPrivatAvtalePeriode> =
+fun List<GrunnlagDto>.finnDelberegningerPrivatAvtale(gjelderBarnReferanse: String): InnholdMedReferanse<DelberegningPrivatAvtale>? =
     this
         .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtale>(
             Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
         ).firstOrNull { it.gjelderBarnReferanse == gjelderBarnReferanse }
+
+fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse: String): List<DelberegningPrivatAvtalePeriode> =
+    this
+        .finnDelberegningerPrivatAvtale(gjelderBarnReferanse)
         ?.innhold
         ?.perioder
         ?.sortedBy {
