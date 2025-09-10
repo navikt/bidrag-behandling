@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.grunnlag.ainntektListe
 import no.nav.bidrag.behandling.transformers.grunnlag.skattegrunnlagListe
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -371,72 +372,76 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
     behandling: Behandling,
     lesemodus: Boolean = false,
 ): MutableSet<Grunnlag> =
-    filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
-        .filter { !it.innholdTilObjekt<InntektsrapporteringPeriode>().manueltRegistrert }
-        .groupBy {
-            hentPersonMedReferanse(it.gjelderReferanse) ?: manglerPersonGrunnlag(
-                it.gjelderReferanse,
-            )
-        }.flatMap { (gjelder, grunnlagListe) ->
-            val årsinntekter =
-                grunnlagListe.map {
-                    it.tilInntektBearbeidet(this)
-                }
+    if (!lesemodus && behandling.erDirekteAvslag()) {
+        mutableSetOf()
+    } else {
+        filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+            .filter { !it.innholdTilObjekt<InntektsrapporteringPeriode>().manueltRegistrert }
+            .groupBy {
+                hentPersonMedReferanse(it.gjelderReferanse) ?: manglerPersonGrunnlag(
+                    it.gjelderReferanse,
+                )
+            }.flatMap { (gjelder, grunnlagListe) ->
+                val årsinntekter =
+                    grunnlagListe.map {
+                        it.tilInntektBearbeidet(this)
+                    }
 
-            fun opprettGrunnlagBearbeidet(
-                type: Grunnlagsdatatype,
-                inntektsrapportering: Inntektsrapportering,
-                innhentetTidspunkt: LocalDateTime,
-            ) = behandling.opprettGrunnlag(
-                type,
-                SummerteInntekter(
-                    versjon = årsinntekter.versjon(inntektsrapportering),
-                    inntekter =
-                        årsinntekter
-                            .filter { it.inntekt.inntektRapportering == inntektsrapportering }
-                            .map { it.inntekt },
-                ),
-                rolleIdent = gjelder.personIdent!!,
-                erBearbeidet = true,
-                innhentetTidspunkt = innhentetTidspunkt,
-                lesemodus = lesemodus,
-            )
-
-            val inntekter = årsinntekter.map { it.inntekt }
-            listOf(
-                opprettGrunnlagBearbeidet(
-                    Grunnlagsdatatype.BARNETILLEGG,
-                    Inntektsrapportering.BARNETILLEGG,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG),
-                ),
-                opprettGrunnlagBearbeidet(
-                    Grunnlagsdatatype.UTVIDET_BARNETRYGD,
-                    Inntektsrapportering.UTVIDET_BARNETRYGD,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD),
-                ),
-                opprettGrunnlagBearbeidet(
-                    Grunnlagsdatatype.SMÅBARNSTILLEGG,
-                    Inntektsrapportering.SMÅBARNSTILLEGG,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG),
-                ),
-                opprettGrunnlagBearbeidet(
-                    Grunnlagsdatatype.KONTANTSTØTTE,
-                    Inntektsrapportering.KONTANTSTØTTE,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE),
-                ),
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                fun opprettGrunnlagBearbeidet(
+                    type: Grunnlagsdatatype,
+                    inntektsrapportering: Inntektsrapportering,
+                    innhentetTidspunkt: LocalDateTime,
+                ) = behandling.opprettGrunnlag(
+                    type,
                     SummerteInntekter(
-                        versjon = årsinntekter.versjon(Inntektsrapportering.AINNTEKT_BEREGNET_3MND),
-                        inntekter = inntekter.skattegrunnlagListe + inntekter.ainntektListe,
+                        versjon = årsinntekter.versjon(inntektsrapportering),
+                        inntekter =
+                            årsinntekter
+                                .filter { it.inntekt.inntektRapportering == inntektsrapportering }
+                                .map { it.inntekt },
                     ),
                     rolleIdent = gjelder.personIdent!!,
                     erBearbeidet = true,
-                    innhentetTidspunkt = innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
+                    innhentetTidspunkt = innhentetTidspunkt,
                     lesemodus = lesemodus,
-                ),
-            )
-        }.toMutableSet()
+                )
+
+                val inntekter = årsinntekter.map { it.inntekt }
+                listOf(
+                    opprettGrunnlagBearbeidet(
+                        Grunnlagsdatatype.BARNETILLEGG,
+                        Inntektsrapportering.BARNETILLEGG,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG),
+                    ),
+                    opprettGrunnlagBearbeidet(
+                        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+                        Inntektsrapportering.UTVIDET_BARNETRYGD,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_UTVIDETBARNETRYGD),
+                    ),
+                    opprettGrunnlagBearbeidet(
+                        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+                        Inntektsrapportering.SMÅBARNSTILLEGG,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_SMÅBARNSTILLEGG),
+                    ),
+                    opprettGrunnlagBearbeidet(
+                        Grunnlagsdatatype.KONTANTSTØTTE,
+                        Inntektsrapportering.KONTANTSTØTTE,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_KONTANTSTØTTE),
+                    ),
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
+                        SummerteInntekter(
+                            versjon = årsinntekter.versjon(Inntektsrapportering.AINNTEKT_BEREGNET_3MND),
+                            inntekter = inntekter.skattegrunnlagListe + inntekter.ainntektListe,
+                        ),
+                        rolleIdent = gjelder.personIdent!!,
+                        erBearbeidet = true,
+                        innhentetTidspunkt = innhentetTidspunkt(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT),
+                        lesemodus = lesemodus,
+                    ),
+                )
+            }.toMutableSet()
+    }
 
 fun List<SummerteInntekt>.versjon(type: Inntektsrapportering) =
     find { it.inntekt.inntektRapportering == type }?.versjon ?: find { it.versjon.isNotEmpty() }?.versjon ?: ""
