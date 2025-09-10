@@ -213,7 +213,6 @@ class BehandlingTilVedtakMapping(
     fun byggOpprettVedtakRequestInnkreving(
         behandling: Behandling,
         enhet: String?,
-        vedtaksid: Int?,
     ): OpprettVedtakRequestDto {
         val beregning = beregningService.beregneBidrag(behandling.id!!)
 
@@ -226,24 +225,6 @@ class BehandlingTilVedtakMapping(
         }
 
         return mapper.run {
-            val resultatFraGrunnlag =
-                if (vedtaksid != null) {
-                    val referanse = "resultatFraVedtak_$vedtaksid"
-                    OpprettGrunnlagRequestDto(
-                        referanse = referanse,
-                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                        innhold =
-                            POJONode(
-                                ResultatFraVedtakGrunnlag(
-                                    vedtaksid = vedtaksid,
-                                    vedtakstype = behandling.vedtakstype,
-                                ),
-                            ),
-                    )
-                } else {
-                    null
-                }
-
             val sak = sakConsumer.hentSak(behandling.saksnummer)
             val personobjekter = behandling.tilPersonobjekter().map { it.tilOpprettRequestDto() }
             val virkningstidspunktGrunnlag =
@@ -258,10 +239,7 @@ class BehandlingTilVedtakMapping(
             val beregningGrunnlag = beregning.flatMap { it.resultat.grunnlagListe.map { it.tilOpprettRequestDto() } }
             val grunnlagliste =
                 (
-                    stønadsendringGrunnlag +
-                        listOfNotNull(
-                            resultatFraGrunnlag,
-                        ) + personobjekter + beregningGrunnlag
+                    stønadsendringGrunnlag + personobjekter + beregningGrunnlag
                 ).toMutableList()
 
             behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
@@ -280,7 +258,7 @@ class BehandlingTilVedtakMapping(
                                         "NOK",
                                         Resultatkode.BEREGNET_BIDRAG.name,
                                         null,
-                                        listOfNotNull(resultatFraGrunnlag?.referanse) + it.grunnlagsreferanseListe,
+                                        it.grunnlagsreferanseListe,
                                     )
                                 }
                         val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!

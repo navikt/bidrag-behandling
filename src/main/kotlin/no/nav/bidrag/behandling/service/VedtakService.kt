@@ -409,14 +409,6 @@ class VedtakService(
         return response.vedtaksid
     }
 
-    fun fatteVedtakOmInnkreving(
-        behandling: Behandling,
-        request: FatteVedtakRequestDto?,
-    ): Int {
-        val response = fatteInnkreving(behandling, request?.enhet)
-        return response.vedtaksid
-    }
-
     fun fatteVedtakBidragOmgjøring(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
@@ -521,13 +513,17 @@ class VedtakService(
 
     private fun fatteInnkreving(
         behandling: Behandling,
-        enhet: String?,
-    ): OpprettVedtakResponseDto {
+        request: FatteVedtakRequestDto?,
+    ): Int {
+        if (!UnleashFeatures.FATTE_VEDTAK.isEnabled) {
+            ugyldigForespørsel("Kan ikke fatte vedtak for klage")
+        }
+        vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
+        validering.run { behandling.validerForBeregningBidrag() }
         val innkrevingRequest =
             behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
                 behandling,
-                enhet,
-                null,
+                request?.enhet,
             )
 
         innkrevingRequest.validerGrunnlagsreferanser()
@@ -537,7 +533,7 @@ class VedtakService(
         }
         behandlingService.oppdaterDelvedtakFattetStatus(
             behandlingsid = behandling.id!!,
-            fattetAvEnhet = enhet ?: behandling.behandlerEnhet,
+            fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
             resultat =
                 FattetDelvedtak(
                     vedtaksid = responseInnkreving.vedtaksid,
@@ -545,7 +541,7 @@ class VedtakService(
                     referanse = innkrevingRequest.unikReferanse ?: "ukjent",
                 ),
         )
-        return responseInnkreving
+        return responseInnkreving.vedtaksid
     }
 
     private fun fatteInnkrevingsgrunnlag(
@@ -619,7 +615,7 @@ class VedtakService(
         request: FatteVedtakRequestDto?,
     ): Int {
         if (behandling.erKlageEllerOmgjøring) return fatteVedtakBidragOmgjøring(behandling, request)
-        if (behandling.erInnkreving) return fatteVedtakOmInnkreving(behandling, request)
+        if (behandling.erInnkreving) return fatteInnkreving(behandling, request)
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 
