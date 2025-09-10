@@ -67,8 +67,6 @@ class ValiderBehandlingService(
         if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
-        if (request.roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG && it.ident != null }) return "Kan ikke behandle bidrag uten BP"
-        if (request.roller.none { it.rolletype == Rolletype.BIDRAGSMOTTAKER && it.ident != null }) return "Kan ikke behandle bidrag uten BM"
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
 
         if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE) {
@@ -91,6 +89,8 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.ALDERSJUSTERING) return null
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
+        val bm = request.bidragspliktig
+        if (bm == null || bm.erUkjent == true || bm.ident == null) return "Behandlingen mangler bidragsmottaker"
 
         val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
         val harBPStønadForFlereBarn =
