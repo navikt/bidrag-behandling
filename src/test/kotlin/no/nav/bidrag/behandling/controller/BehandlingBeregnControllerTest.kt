@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.database.repository.SamværRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
@@ -45,6 +46,9 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
     lateinit var behandlingRepository: BehandlingRepository
 
     @Autowired
+    lateinit var samværRepository: SamværRepository
+
+    @Autowired
     lateinit var grunnlagRepository: GrunnlagRepository
 
     @MockkBean
@@ -54,6 +58,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
 
     @BeforeEach
     fun oppsett() {
+        samværRepository.deleteAll()
         behandlingRepository.deleteAll()
         every { forskuddBeregning.beregn(any()) } returns BeregnetForskuddResultat()
         stubSjablonProvider()
