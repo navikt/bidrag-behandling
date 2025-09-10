@@ -458,7 +458,8 @@ class GrunnlagService(
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type, fraOpprinneligVedtakstidspunkt)
-                val grunnlagEksistererFraKlage = eksisterendeGrunnlag != null && behandling.erKlageEllerOmgjøring
+                val grunnlagEksistererFraKlage =
+                    eksisterendeGrunnlag != null && behandling.erKlageEllerOmgjøring && fraOpprinneligVedtakstidspunkt
                 if (grunnlagEksistererFraKlage) {
                     // Hvis grunnlag allerede eksisterer fra klage, så skal det ikke hentes på nytt.
                     // Da brukes beløpshistorikken hentet fra påklaget vedtak
