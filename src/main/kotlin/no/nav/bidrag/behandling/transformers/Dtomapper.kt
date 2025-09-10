@@ -68,6 +68,7 @@ import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
+import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
@@ -824,6 +825,7 @@ class Dtomapper(
                             eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                             opphørsdato = it.opphørsdato,
                             globalOpphørsdato = globalOpphørsdato,
+                            valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                             begrunnelseFraOpprinneligVedtak =
                                 if (erKlageEllerOmgjøring) {
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -845,6 +847,7 @@ class Dtomapper(
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                             opphørsdato = globalOpphørsdato,
+                            valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                             begrunnelseFraOpprinneligVedtak =
                                 if (erKlageEllerOmgjøring) {
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)

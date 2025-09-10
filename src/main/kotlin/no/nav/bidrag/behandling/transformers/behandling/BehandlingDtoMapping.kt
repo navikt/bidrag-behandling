@@ -38,6 +38,8 @@ import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
 import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
+import no.nav.bidrag.behandling.transformers.hentEtterfølgendeVedtak
+import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
@@ -58,6 +60,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -73,6 +76,7 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDt
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.time.LocalDate
 import java.time.ZoneOffset
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
@@ -300,6 +304,18 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerOpphørsdato =
             if (stonadstype == Stønadstype.BIDRAG18AAR && avslag == null) {
                 søknadsbarn.filter { it.opphørsdato == null }.map { it.tilDto() }
+            } else {
+                emptyList()
+            },
+        kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
+            if (avslag == null && erKlageEllerOmgjøring) {
+                søknadsbarn
+                    .filter { it.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED }
+                    .filter {
+                        val etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it)
+                        val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt ?: return@filter false
+                        it.opphørsdato != null && it.opphørsdato!!.toYearMonth() > virkningstidspunktEtterfølgendeVedtak
+                    }.map { it.tilDto() }
             } else {
                 emptyList()
             },

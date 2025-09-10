@@ -28,6 +28,7 @@ import java.time.LocalDate
 data class VirkningstidspunktFeilDto(
     val manglerVirkningstidspunkt: Boolean = false,
     val manglerOpphørsdato: List<RolleDto> = emptyList(),
+    val kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak: List<RolleDto> = emptyList(),
     val manglerÅrsakEllerAvslag: Boolean = false,
     val måVelgeVedtakForBeregning: List<RolleDto> = emptyList(),
     val manglerBegrunnelse: Boolean = false,
@@ -40,6 +41,7 @@ data class VirkningstidspunktFeilDto(
             manglerBegrunnelse ||
                 måVelgeVedtakForBeregning.isNotEmpty() ||
                 manglerOpphørsdato.isNotEmpty() ||
+                kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak.isNotEmpty() ||
                 manglerVurderingAvSkolegang ||
                 manglerVirkningstidspunkt ||
                 manglerÅrsakEllerAvslag ||
