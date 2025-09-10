@@ -197,7 +197,7 @@ class BeregningService(
                                         }
                                     },
                             ),
-                        avslaskode = søknasdbarn.avslag,
+                        avslagskode = søknasdbarn.avslag,
                         omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         beregnTilDato =
                             behandling
@@ -489,7 +489,7 @@ class BeregningService(
             )
         return ResultatBidragsberegningBarn(
             barn = barn.mapTilResultatBarn(),
-            avslaskode = avslag,
+            avslagskode = avslag,
             vedtakstype = vedtakstype,
             omgjøringsdetaljer = omgjøringsdetaljer,
             beregnTilDato = YearMonth.now().plusMonths(1),

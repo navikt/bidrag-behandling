@@ -227,11 +227,11 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                         resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer != null &&
                             !aldersjusteringDetaljer.aldersjustert || resultat.vedtakstype == Vedtakstype.INNKREVING,
                     indeksår =
-                        if (endeligVedtak != null) {
+                        if (endeligVedtak != null && resultat.avslagskode?.erDirekteAvslag() == false) {
                             endeligVedtak.indeksår
                         } else if (aldersjusteringDetaljer != null && aldersjusteringDetaljer.aldersjustert) {
                             Year.of(aldersjusteringDetaljer.periode.fom.year).plusYears(1).value
-                        } else if (aldersjusteringDetaljer == null && resultat.avslaskode == null) {
+                        } else if (aldersjusteringDetaljer == null && resultat.avslagskode == null) {
                             val sistePeriode =
                                 resultat.resultat.beregnetBarnebidragPeriodeListe
                                     .maxByOrNull { it.periode.fom }
@@ -259,7 +259,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                 grunnlagsListe.byggResultatBidragsberegning(
                                     it.periode,
                                     it.resultat.beløp,
-                                    resultat.avslaskode,
+                                    resultat.avslagskode,
                                     it.grunnlagsreferanseListe,
                                     resultat.ugyldigBeregning,
                                     grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
@@ -361,7 +361,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                             .byggResultatBidragsberegning(
                                 p.periode,
                                 p.resultat.beløp,
-                                resultat.avslaskode,
+                                resultat.avslagskode,
                                 p.grunnlagsreferanseListe,
                                 resultat.ugyldigBeregning,
                                 grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse, p.grunnlagsreferanseListe),
@@ -369,7 +369,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 resultat.barn.ident,
                                 erEndeligVedtak = erEndeligVedtak,
                             ).copy(
-                                erDirekteAvslag = resultat.avslaskode?.erDirekteAvslag() == true,
+                                erDirekteAvslag = resultat.avslagskode?.erDirekteAvslag() == true,
                                 resultatFraVedtak = resultatFraVedtak,
                                 klageOmgjøringDetaljer =
                                     KlageOmgjøringDetaljer(
