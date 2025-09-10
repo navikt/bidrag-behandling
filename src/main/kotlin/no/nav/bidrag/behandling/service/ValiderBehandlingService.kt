@@ -89,7 +89,7 @@ class ValiderBehandlingService(
         if (request.vedtakstype == Vedtakstype.ALDERSJUSTERING) return null
         val bp = request.bidragspliktig
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
-        val bm = request.bidragspliktig
+        val bm = request.bidragsmottaker
         if (bm == null || bm.erUkjent == true || bm.ident == null) return "Behandlingen mangler bidragsmottaker"
 
         val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
