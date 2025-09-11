@@ -49,11 +49,11 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             STØNAD_HISTORIKK_CACHE,
-            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             STØNAD_HISTORIKK_CACHE_2,
-            Caffeine.newBuilder().expireAfterAccess(1, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(TILGANG_TEMA_CACHE, Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build())
         caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build())
@@ -63,7 +63,7 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_FOR_STØNAD_CACHE,
-            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             TILGANG_PERSON_I_SAK_CACHE,
@@ -71,7 +71,7 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             SAK_CACHE,
-            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             PERSON_HAR_BESKYTTELSE,
@@ -79,7 +79,7 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_CACHE,
-            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),
         )
 
         return caffeineCacheManager

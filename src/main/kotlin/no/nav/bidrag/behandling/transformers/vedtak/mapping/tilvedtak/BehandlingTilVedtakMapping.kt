@@ -618,7 +618,7 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
-                        val sistePeriode = it.perioder.maxBy { it.periode.fom }
+                        val sistePeriode = it.perioder.filter { it.resultatkode != Resultatkode.OPPHØR.name }.maxBy { it.periode.fom }
                         val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
