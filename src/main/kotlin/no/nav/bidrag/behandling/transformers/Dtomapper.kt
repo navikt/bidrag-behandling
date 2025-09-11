@@ -250,9 +250,13 @@ class Dtomapper(
         // Vil aldri ha flere enn èn rolle per behandling
         val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
         val beregnetUnderholdskostnad =
-            this.behandling
-                .tilBeregnetUnderholdskostnad()
-                .perioderForBarn(person)
+            if (behandling.erDirekteAvslag()) {
+                emptySet()
+            } else {
+                this.behandling
+                    .tilBeregnetUnderholdskostnad()
+                    .perioderForBarn(person)
+            }
 
         return UnderholdDto(
             id = this.id!!,

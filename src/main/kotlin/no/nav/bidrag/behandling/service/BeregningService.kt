@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningerPrivatAvtale
 import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDetaljerGrunnlag
@@ -164,7 +165,7 @@ class BeregningService(
             beregnInnkrevingsgrunnlag(behandling)
         } else if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
-        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() }) {
+        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
             behandling.søknadsbarn.map { søknasdbarn ->
@@ -178,6 +179,7 @@ class BeregningService(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         vedtakstype = behandling.vedtakstype,
+                        avslagskode = søknasdbarn.avslag,
                         resultatVedtak =
                             resultat.copy(
                                 resultatVedtakListe =
@@ -197,7 +199,6 @@ class BeregningService(
                                         }
                                     },
                             ),
-                        avslagskode = søknasdbarn.avslag,
                         omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         beregnTilDato =
                             behandling
