@@ -144,7 +144,10 @@ class VedtakGrunnlagMapper(
     fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null) = mapper.run { tilPersonobjekter(søknadsbarnRolle) }
 
     fun BidragssakDto.hentRolleMedFnr(fnr: String): RolleDto =
-        roller.firstOrNull { personService.hentNyesteIdent(it.fødselsnummer?.verdi) == personService.hentNyesteIdent(fnr) }
+        roller.filter { it.type != Rolletype.REELMOTTAKER }.firstOrNull {
+            personService.hentNyesteIdent(it.fødselsnummer?.verdi) ==
+                personService.hentNyesteIdent(fnr)
+        }
             ?: fantIkkeRolleISak(saksnummer.verdi, fnr)
 
     fun Behandling.byggGrunnlagForAvslagUgyldigUtgifter() =
