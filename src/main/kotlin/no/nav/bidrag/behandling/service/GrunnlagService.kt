@@ -1184,10 +1184,16 @@ class GrunnlagService(
 
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
-            val boforholdFeil = feilrapporteringer[Grunnlagsdatatype.BOFORHOLD]
+            val grunnlagstypeBoforhold = Grunnlagsdatatype.BOFORHOLD
+            val boforholdFeil = feilrapporteringer[grunnlagstypeBoforhold]
+            val nyesteGrunnlag =
+                behandling.henteNyesteGrunnlag(
+                    Grunnlagstype(grunnlagstypeBoforhold, false),
+                    grunnlagstypeBoforhold.innhentesForRolle(behandling)!!,
+                    null,
+                )
             val innhentingBoforholdUtenFeil =
-                boforholdFeil == null ||
-                    HentGrunnlagFeiltype.FUNKSJONELL_FEIL == boforholdFeil.feiltype &&
+                boforholdFeil == null || nyesteGrunnlag == null || HentGrunnlagFeiltype.FUNKSJONELL_FEIL == boforholdFeil.feiltype &&
                     !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBoforholdUtenFeil &&
                 Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
@@ -1207,9 +1213,17 @@ class GrunnlagService(
                     )
                 }
             }
+
+            val grunnlagstypeBoforholdBM = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
             val bmBoforholdFeil = feilrapporteringer[Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN]
+            val nyesteGrunnlagBM =
+                behandling.henteNyesteGrunnlag(
+                    Grunnlagstype(grunnlagstypeBoforholdBM, false),
+                    grunnlagstypeBoforholdBM.innhentesForRolle(behandling)!!,
+                    null,
+                )
             val innhentingBmBoforholdUtenFeil =
-                bmBoforholdFeil == null ||
+                bmBoforholdFeil == null || nyesteGrunnlagBM == null ||
                     HentGrunnlagFeiltype.FUNKSJONELL_FEIL == bmBoforholdFeil.feiltype &&
                     !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBmBoforholdUtenFeil &&

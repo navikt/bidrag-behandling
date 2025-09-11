@@ -69,10 +69,12 @@ class ValiderBehandlingService(
         }
         if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
 
-        if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE) {
+        if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE && !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled) {
             return "Kan ikke behandle privat avtale"
         }
-        if (request.søknadstype == BisysSøknadstype.INNKREVINGSGRUNNLAG || request.vedtakstype == Vedtakstype.INNKREVING) {
+        if ((request.søknadstype == BisysSøknadstype.INNKREVINGSGRUNNLAG || request.vedtakstype == Vedtakstype.INNKREVING) &&
+            !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled
+        ) {
             return "Kan ikke behandle innkrevingsgrunnlag"
         }
         if ((request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) &&
