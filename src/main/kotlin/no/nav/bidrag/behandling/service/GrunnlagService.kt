@@ -70,6 +70,7 @@ import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -1184,13 +1185,22 @@ class GrunnlagService(
 
         // Husstandsmedlem og bostedsperiode
         innhentetGrunnlag.hentGrunnlagDto?.let {
-            val boforholdFeil = feilrapporteringer[Grunnlagsdatatype.BOFORHOLD]
+            val grunnlagstypeBoforhold = Grunnlagsdatatype.BOFORHOLD
+            val boforholdInnhentesForRolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)
+            val boforholdFeil = feilrapporteringer[grunnlagstypeBoforhold]
+            val nyesteGrunnlag =
+                boforholdInnhentesForRolle.takeIfNotNullOrEmpty {
+                    behandling.henteNyesteGrunnlag(
+                        Grunnlagstype(grunnlagstypeBoforhold, false),
+                        it,
+                        null,
+                    )
+                }
             val innhentingBoforholdUtenFeil =
-                boforholdFeil == null ||
-                    HentGrunnlagFeiltype.FUNKSJONELL_FEIL == boforholdFeil.feiltype &&
+                boforholdFeil == null || nyesteGrunnlag == null || HentGrunnlagFeiltype.FUNKSJONELL_FEIL == boforholdFeil.feiltype &&
                     !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBoforholdUtenFeil &&
-                Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
+                boforholdInnhentesForRolle?.ident == grunnlagsrequest.key.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1207,13 +1217,24 @@ class GrunnlagService(
                     )
                 }
             }
+
+            val grunnlagstypeBoforholdBM = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
             val bmBoforholdFeil = feilrapporteringer[Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN]
+            val grunnlagBoforholdTilBMInnhentesForRolle = grunnlagstypeBoforholdBM.innhentesForRolle(behandling)
+            val nyesteGrunnlagBM =
+                grunnlagBoforholdTilBMInnhentesForRolle.takeIfNotNullOrEmpty {
+                    behandling.henteNyesteGrunnlag(
+                        Grunnlagstype(grunnlagstypeBoforholdBM, false),
+                        it,
+                        null,
+                    )
+                }
             val innhentingBmBoforholdUtenFeil =
-                bmBoforholdFeil == null ||
+                bmBoforholdFeil == null || nyesteGrunnlagBM == null ||
                     HentGrunnlagFeiltype.FUNKSJONELL_FEIL == bmBoforholdFeil.feiltype &&
                     !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBmBoforholdUtenFeil &&
-                Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi
+                grunnlagBoforholdTilBMInnhentesForRolle?.ident == grunnlagsrequest.key.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,

@@ -185,7 +185,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                             omgjøringsvedtak = vedtak.omgjøringsvedtak,
                             beregnet = vedtak.beregnet,
                             vedtakstype = vedtak.type,
-                            opprettParagraf35c = behandling.omgjøringsdetaljer!!.paragraf35c.any { it.vedtaksid == vedtak.vedtaksid },
+                            opprettParagraf35c =
+                                behandling.omgjøringsdetaljer!!.paragraf35c.any {
+                                    it.vedtaksid == vedtak.vedtaksid &&
+                                        it.opprettParagraf35c
+                                },
                         ),
                     ),
             )
