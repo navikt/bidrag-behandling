@@ -388,7 +388,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                         skalOpprette35c =
                                             resultat.omgjøringsdetaljer
                                                 ?.paragraf35c
-                                                ?.any { it.vedtaksid == resultatFraVedtak?.vedtaksid } == true,
+                                                ?.any { it.vedtaksid == resultatFraVedtak?.vedtaksid && it.opprettParagraf35c } == true,
                                         manuellAldersjustering =
                                             delvedtak?.vedtakstype == Vedtakstype.ALDERSJUSTERING && p.periode.fom.month.value == 7 &&
                                                 resultat.barn.grunnlagFraVedtak.any {
