@@ -480,7 +480,13 @@ class BehandlingTilVedtakMapping(
             val søknadsbarn = behandling.søknadsbarn.find { it.ident == barn.ident!!.verdi }!!
             val søknadsbarnReferanse = søknadsbarn.tilGrunnlagsreferanse()
             val grunnlagListeVedtak =
-                behandling.byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
+                if (søknadsbarn.erDirekteAvslag) {
+                    emptyList()
+                } else {
+                    behandling.byggGrunnlagForVedtak(
+                        stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
+                    )
+                }
             val grunnlagsliste = mutableSetOf<GrunnlagDto>()
             if (!resultatVedtak.endeligVedtak) {
                 grunnlagsliste.addAll(grunnlagListeVedtak)
@@ -492,7 +498,7 @@ class BehandlingTilVedtakMapping(
             stønadsendringGrunnlagListe.addAll(stønadsendringGrunnlag)
 
             if (resultatVedtak.omgjøringsvedtak) {
-                if (søknadsbarn.avslag != null) {
+                if (søknadsbarn.erDirekteAvslag) {
                     grunnlagsliste.addAll(behandling.byggGrunnlagGenereltAvslag())
                 } else {
                     grunnlagsliste.addAll(

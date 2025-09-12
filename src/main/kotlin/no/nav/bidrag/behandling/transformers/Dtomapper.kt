@@ -250,9 +250,13 @@ class Dtomapper(
         // Vil aldri ha flere enn èn rolle per behandling
         val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
         val beregnetUnderholdskostnad =
-            this.behandling
-                .tilBeregnetUnderholdskostnad()
-                .perioderForBarn(person)
+            if (behandling.erDirekteAvslag()) {
+                emptySet()
+            } else {
+                this.behandling
+                    .tilBeregnetUnderholdskostnad()
+                    .perioderForBarn(person)
+            }
 
         return UnderholdDto(
             id = this.id!!,
@@ -821,6 +825,7 @@ class Dtomapper(
                                 } else {
                                     null
                                 },
+                            harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                             eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                             opphørsdato = it.opphørsdato,
@@ -846,6 +851,7 @@ class Dtomapper(
                             avslag = avslag,
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                            harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
                             opphørsdato = globalOpphørsdato,
                             valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                             begrunnelseFraOpprinneligVedtak =

@@ -18,6 +18,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.lastVisningsnavnFraFil
+import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
@@ -154,6 +155,7 @@ data class ResultatBidragsberegningBarn(
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val omgjøringsdetaljer: Omgjøringsdetaljer? = null,
     val innkrevesFraDato: YearMonth? = null,
+    val opphørsdato: YearMonth?,
     val beregnTilDato: YearMonth? = null,
 )
 
@@ -259,6 +261,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                     beregningsdetaljer?.sluttberegning?.barnetErSelvforsørget == true
                 ) {
                     beregningsdetaljer.sluttberegning.resultatVisningsnavn!!.intern
+                } else if (klageOmgjøringDetaljer?.omgjøringsvedtak == true && resultatKode != null) {
+                    resultatKode.visningsnavn.intern
                 } else {
                     "Opphør"
                 }

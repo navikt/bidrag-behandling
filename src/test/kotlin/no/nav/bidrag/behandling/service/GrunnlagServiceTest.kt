@@ -39,6 +39,8 @@ import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.lagGrunnlagsdata
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGrunnlag
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
+import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteArbeidsforhold
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -66,7 +68,9 @@ import no.nav.bidrag.domene.enums.person.SivilstandskodePDL
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
@@ -872,6 +876,19 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val behandling = testdataManager.oppretteBehandling(false)
                 stubbeHentingAvPersoninfoForTestpersoner()
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragsmottaker!!.ident!!)
+                stubUtils.stubHenteVedtak()
+                stubUtils.stubBidragBeløpshistorikkHistoriskeSaker(
+                    opprettStønadDto(
+                        stønadstype = Stønadstype.FORSKUDD,
+                        periodeListe =
+                            listOf(
+                                opprettStønadPeriodeDto(
+                                    ÅrMånedsperiode(LocalDate.now().minusMonths(4), null),
+                                    beløp = BigDecimal("5600"),
+                                ),
+                            ),
+                    ),
+                )
                 behandling.grunnlagsinnhentingFeilet =
                     "{\"BARNETILLEGG\":{\"grunnlagstype\":\"BARNETILLEGG\",\"personId\":\"313213213\",\"periodeFra\":[2023,1,1],\"periodeTil\":[2023,12,31],\"feiltype\":\"TEKNISK_FEIL\",\"feilmelding\":\"Ouups!\"}}"
                 behandling.roller.forEach {
@@ -897,7 +914,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly(oppdatertBehandling) {
                     it.isPresent shouldBe true
                     it.get().grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
-                    it.get().grunnlag.size shouldBe totaltAntallGrunnlag
+                    it.get().grunnlag.size shouldBe totaltAntallGrunnlag + 2
                     it.get().grunnlagsinnhentingFeilet shouldBe null
                 }
             }

@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
+import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
@@ -374,9 +375,13 @@ class GrunnlagService(
     }
 
     fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-        if (behandling.tilType() != TypeBehandling.BIDRAG) return emptyMap()
-
+        if (behandling.tilType() == TypeBehandling.SÆRBIDRAG) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+
+        if (behandling.tilType() == TypeBehandling.FORSKUDD) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling, false))
+            return feilrapporteringer
+        }
 
         feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling, false))
 
@@ -540,6 +545,19 @@ class GrunnlagService(
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
             it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarn, behandling.id!!, "gjelderBarn i $it") ?: it.gjelderBarn
         }
+        behandling.grunnlagsinnhentingFeilet =
+            objectmapper.writeValueAsString(
+                behandling.grunnlagsinnhentingFeiletMap().mapValues { (_, feilrapportering) ->
+                    feilrapportering.copy(
+                        personId =
+                            oppdaterTilNyesteIdent(
+                                feilrapportering.personId,
+                                behandling.id!!,
+                                "feilrapportering i $feilrapportering",
+                            ) ?: feilrapportering.personId,
+                    )
+                },
+            )
     }
 
     private fun oppdaterTilNyesteIdent(

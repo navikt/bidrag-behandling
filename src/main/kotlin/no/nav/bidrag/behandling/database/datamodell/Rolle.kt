@@ -115,6 +115,7 @@ open class Rolle(
 ) {
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
+    val erDirekteAvslag get() = avslag != null
     val opphørsdatoYearMonth get() = opphørsdato?.let { YearMonth.from(it) }
     val opphørTilDato get() = justerPeriodeTomOpphørsdato(opphørsdato)
     val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato

@@ -161,6 +161,9 @@ fun LocalDate?.erUnder12År(basertPåDato: LocalDate = LocalDate.now()) =
                 .withDayOfMonth(1),
         ).years < 13
 
+fun Behandling.finnesLøpendeForskuddForRolle(rolle: Rolle): Boolean =
+    finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle) != null
+
 fun Behandling.finnesLøpendeBidragForRolle(rolle: Rolle): Boolean = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle) != null
 
 fun Stønadstype.tilGrunnlagsdatatypeBeløpshistorikk() =
@@ -263,6 +266,19 @@ fun Behandling.hentBeløpshistorikk(
         Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
         grunnlagFraVedtakSomSkalOmgjøres,
     )
+
+fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
+    val eksisterendeVedtak =
+        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD, false)
+            ?: return null
+    val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
+    val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
+    return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! > YearMonth.from(søktFomDato)) {
+        sistePeriode
+    } else {
+        null
+    }
+}
 
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
