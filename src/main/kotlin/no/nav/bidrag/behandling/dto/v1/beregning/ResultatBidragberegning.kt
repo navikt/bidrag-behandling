@@ -155,6 +155,7 @@ data class ResultatBidragsberegningBarn(
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val omgjøringsdetaljer: Omgjøringsdetaljer? = null,
     val innkrevesFraDato: YearMonth? = null,
+    val opphørsdato: YearMonth?,
     val beregnTilDato: YearMonth? = null,
 )
 

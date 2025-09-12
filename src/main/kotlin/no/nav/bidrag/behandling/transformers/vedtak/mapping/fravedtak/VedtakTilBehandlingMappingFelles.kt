@@ -85,6 +85,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -93,6 +94,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -188,6 +190,8 @@ fun VedtakDto.erVedtakUtenBeregning() =
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
 
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(stønadsendring.kravhaver.verdi)!!
+    val virkningstidspunkt = grunnlagListe.hentVirkningstidspunkt(søknadsbarnGrunnlag.referanse)
     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
     val delvedtak =
         stønadsendring.periodeListe
@@ -220,7 +224,20 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                 it.kravhaver == barnIdent
                             }!!
                             .periodeListe
-                            .find { it.periode.inneholder(periode.periode) }!!
+                            .find { it.periode.inneholder(periode.periode) } ?: run {
+                            if (virkningstidspunkt!!.opphørsdato?.toYearMonth() == periode.periode.fom) {
+                                VedtakPeriodeDto(
+                                    periode.periode,
+                                    null,
+                                    null,
+                                    Resultatkode.OPPHØR.name,
+                                    null,
+                                    emptyList(),
+                                )
+                            } else {
+                                return@mapNotNull null
+                            }
+                        }
                     DelvedtakDto(
                         type = vedtak.type,
                         omgjøringsvedtak = it.omgjøringsvedtak,
@@ -257,6 +274,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                                         kanOpprette35C(
                                                             periode.periode,
                                                             orkestreringDetaljer.beregnTilDato,
+                                                            virkningstidspunkt?.opphørsdato?.toYearMonth(),
                                                             vedtak.type,
                                                         )
                                                     } ?: false,
@@ -391,6 +409,7 @@ internal fun List<GrunnlagDto>.mapRoller(
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
+            val stønadsendring = vedtak.stønadsendringListe.find { it.kravhaver.verdi == rolle.personIdent }
             val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
             rolle.tilRolle(

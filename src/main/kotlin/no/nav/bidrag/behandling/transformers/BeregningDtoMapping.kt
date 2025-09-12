@@ -335,7 +335,10 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                         )
                     val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.omgjøringsvedtak }
                     val erKlagevedtak =
-                        klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any { it.periode.fom == p.periode.fom } == true
+                        klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any {
+                            it.periode.fom == p.periode.fom ||
+                                p.periode.fom == resultat.opphørsdato
+                        } == true
 
                     val aldersjusteringsdetaljer =
                         delvedtak
@@ -381,6 +384,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                                 kanOpprette35C(
                                                     p.periode,
                                                     resultat.beregnTilDato!!,
+                                                    resultat.opphørsdato,
                                                     it.vedtakstype,
                                                 )
                                             } ?: false,
@@ -447,9 +451,10 @@ fun List<GrunnlagDto>.finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseLi
 fun kanOpprette35C(
     periode: ÅrMånedsperiode,
     beregnTilDato: YearMonth,
+    opphørsdato: YearMonth?,
     vedtakstype: Vedtakstype,
 ) = !vedtakstype.erIndeksEllerAldersjustering &&
-    periode.fom >= beregnTilDato
+    periode.fom >= beregnTilDato && (opphørsdato == null || opphørsdato != periode.fom)
 
 fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int? {
     val delberegningPrivatAvtale =

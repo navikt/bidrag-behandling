@@ -205,6 +205,7 @@ class BeregningService(
                                 .finnBeregnTilDatoBehandling(søknasdbarn)
                                 ?.toYearMonth(),
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
+                        opphørsdato = søknasdbarn.opphørsdato?.toYearMonth(),
                         resultat =
                             resultat.resultatVedtakListe
                                 .find {
@@ -238,6 +239,7 @@ class BeregningService(
                         vedtakstype = behandling.vedtakstype,
                         omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
+                        opphørsdato = søknasdbarn.opphørsdato?.toYearMonth(),
                         resultat = BeregnetBarnebidragResultat(),
                     )
                 } catch (e: BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException) {
@@ -247,6 +249,7 @@ class BeregningService(
                         vedtakstype = behandling.vedtakstype,
                         omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
+                        opphørsdato = søknasdbarn.opphørsdato?.toYearMonth(),
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -263,6 +266,7 @@ class BeregningService(
                         vedtakstype = behandling.vedtakstype,
                         omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                         innkrevesFraDato = behandling.finnInnkrevesFraDato(søknasdbarn),
+                        opphørsdato = søknasdbarn.opphørsdato?.toYearMonth(),
                         resultat =
                             e.data.copy(
                                 grunnlagListe =
@@ -353,6 +357,7 @@ class BeregningService(
             ResultatBidragsberegningBarn(
                 pa.barnetsRolleIBehandlingen!!.mapTilResultatBarn(),
                 behandling.vedtakstype,
+                opphørsdato = pa.barnetsRolleIBehandlingen!!.opphørsdato?.toYearMonth(),
                 resultat =
                     BeregnetBarnebidragResultat(
                         beregnetBarnebidragPeriodeListe = perioder.first,
@@ -387,6 +392,7 @@ class BeregningService(
                     vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
+                    opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
                     resultat =
                         beregning.beregning.copy(
                             grunnlagListe =
@@ -417,6 +423,7 @@ class BeregningService(
                     vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
+                    opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
@@ -441,6 +448,7 @@ class BeregningService(
                     vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
+                    opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
                     resultat =
                         BeregnetBarnebidragResultat(
                             grunnlagListe = listOf(søknadsbarnGrunnlag, aldersjusteringGrunnlag),
@@ -510,6 +518,7 @@ class BeregningService(
                         ),
                     ),
                 ),
+            opphørsdato = barn.opphørsdato?.toYearMonth(),
             resultat = resultatVedtak,
         )
     }
