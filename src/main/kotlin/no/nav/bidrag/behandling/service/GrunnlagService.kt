@@ -375,9 +375,13 @@ class GrunnlagService(
     }
 
     fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-        if (behandling.tilType() != TypeBehandling.BIDRAG) return emptyMap()
-
+        if (behandling.tilType() == TypeBehandling.SÆRBIDRAG) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
+
+        if (behandling.tilType() == TypeBehandling.FORSKUDD) {
+            feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling, false))
+            return feilrapporteringer
+        }
 
         feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling, false))
 

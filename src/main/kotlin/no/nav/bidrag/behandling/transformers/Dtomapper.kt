@@ -825,6 +825,7 @@ class Dtomapper(
                                 } else {
                                     null
                                 },
+                            harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                             eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                             opphørsdato = it.opphørsdato,
@@ -850,6 +851,7 @@ class Dtomapper(
                             avslag = avslag,
                             begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                             harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                            harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
                             opphørsdato = globalOpphørsdato,
                             valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                             begrunnelseFraOpprinneligVedtak =
