@@ -547,16 +547,15 @@ class GrunnlagService(
         }
         behandling.grunnlagsinnhentingFeilet =
             objectmapper.writeValueAsString(
-                behandling.grunnlagsinnhentingFeiletMap().mapValues { (type, feilrapportering) ->
-                    type to
-                        feilrapportering.copy(
-                            personId =
-                                oppdaterTilNyesteIdent(
-                                    feilrapportering.personId,
-                                    behandling.id!!,
-                                    "feilrapportering i $feilrapportering",
-                                ) ?: feilrapportering.personId,
-                        )
+                behandling.grunnlagsinnhentingFeiletMap().mapValues { (_, feilrapportering) ->
+                    feilrapportering.copy(
+                        personId =
+                            oppdaterTilNyesteIdent(
+                                feilrapportering.personId,
+                                behandling.id!!,
+                                "feilrapportering i $feilrapportering",
+                            ) ?: feilrapportering.personId,
+                    )
                 },
             )
     }
