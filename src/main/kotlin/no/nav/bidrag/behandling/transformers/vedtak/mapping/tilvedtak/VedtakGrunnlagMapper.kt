@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
+import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -311,7 +312,11 @@ class VedtakGrunnlagMapper(
                             stønadstype = stonadstype ?: Stønadstype.BIDRAG,
                             opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
                             søknadsbarnReferanse = søknadsbarn.referanse,
-                            grunnlagListe = (personobjekter + byggGrunnlagSøknad() + byggGrunnlagVirkningsttidspunkt()).toList(),
+                            grunnlagListe =
+                                (
+                                    personobjekter + byggGrunnlagSøknad() +
+                                        byggGrunnlagVirkningsttidspunkt(personobjekter.map { it.tilDto() })
+                                ).toList(),
                         )
                     } else {
                         val bostatusBarn = tilGrunnlagBostatus(personobjekter)
