@@ -190,8 +190,8 @@ fun VedtakDto.erVedtakUtenBeregning() =
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
 
-    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(stønadsendring.kravhaver.verdi)!!
-    val virkningstidspunkt = grunnlagListe.hentVirkningstidspunkt(søknadsbarnGrunnlag.referanse)
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(stønadsendring.kravhaver.verdi)
+    val virkningstidspunkt = søknadsbarnGrunnlag?.let { grunnlagListe.hentVirkningstidspunkt(it.referanse) }
     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
     val delvedtak =
         stønadsendring.periodeListe
@@ -225,7 +225,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                             }!!
                             .periodeListe
                             .find { it.periode.inneholder(periode.periode) } ?: run {
-                            if (virkningstidspunkt!!.opphørsdato?.toYearMonth() == periode.periode.fom) {
+                            if (virkningstidspunkt != null && virkningstidspunkt.opphørsdato?.toYearMonth() == periode.periode.fom) {
                                 VedtakPeriodeDto(
                                     periode.periode,
                                     null,
