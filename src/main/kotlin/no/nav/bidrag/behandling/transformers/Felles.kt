@@ -250,7 +250,7 @@ fun Behandling.hentNesteEtterfølgendeVedtak(rolle: Rolle): EtterfølgendeVedtak
                         .maxOfOrNull { it.periode.fom },
                 vedtaksid = it.vedtaksid,
             )
-        }?.minByOrNull { it.vedtaksttidspunkt }
+        }?.minByOrNull { it.virkningstidspunkt }
 }
 
 fun Behandling.hentBeløpshistorikk(

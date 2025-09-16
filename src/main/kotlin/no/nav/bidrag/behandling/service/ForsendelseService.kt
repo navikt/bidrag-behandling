@@ -37,6 +37,9 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 private val log = KotlinLogging.logger {}
+private val InitalizeForsendelseRequest.skalOppretteForsendelse get() =
+    this.behandlingInfo.stonadType == null ||
+        !listOf(Stønadstype.MOTREGNING).contains(this.behandlingInfo.stonadType)
 
 @Service
 class ForsendelseService(
@@ -149,6 +152,7 @@ class ForsendelseService(
     }
 
     private fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
+        if (!request.skalOppretteForsendelse) return emptyList()
         val opprettRequestTemplate =
             OpprettForsendelseForespørsel(
                 behandlingInfo =

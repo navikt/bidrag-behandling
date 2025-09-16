@@ -277,6 +277,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                                             orkestreringDetaljer.beregnTilDato,
                                                             virkningstidspunkt?.opphørsdato?.toYearMonth(),
                                                             vedtak.type,
+                                                            periode.beløp == null,
                                                         )
                                                     } ?: false,
                                                 skalOpprette35c = it.opprettParagraf35c,
