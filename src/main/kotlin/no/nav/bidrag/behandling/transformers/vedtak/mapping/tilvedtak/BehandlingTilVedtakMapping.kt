@@ -238,6 +238,7 @@ class BehandlingTilVedtakMapping(
                     behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
                     behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
             val beregningGrunnlag = beregning.flatMap { it.resultat.grunnlagListe.map { it.tilOpprettRequestDto() } }
+
             val grunnlagliste =
                 (
                     stønadsendringGrunnlag + personobjekter + beregningGrunnlag
@@ -262,7 +263,12 @@ class BehandlingTilVedtakMapping(
                                         it.grunnlagsreferanseListe,
                                     )
                                 }
+
                         val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!
+                        val resultatFraAnnenVedtakGrunnlag =
+                            beregning.find { it.barn.ident!!.verdi == søknadsbarn.ident }!!.resultat.grunnlagListe.filter {
+                                it.type == Grunnlagstype.RESULTAT_FRA_VEDTAK
+                            }
                         val opphørPeriode =
                             if (søknadsbarn.opphørsdato != null &&
                                 søknadsbarn.opphørsdato!!.toYearMonth() != periodeliste.last().periode.fom
@@ -285,7 +291,8 @@ class BehandlingTilVedtakMapping(
                             sak = Saksnummer(behandling.saksnummer),
                             type = behandling.stonadstype!!,
                             beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = stønadsendringGrunnlag.map { it.referanse },
+                            grunnlagReferanseListe =
+                                stønadsendringGrunnlag.map { it.referanse } + resultatFraAnnenVedtakGrunnlag.map { it.referanse },
                             periodeListe = periodeliste + opphørPeriode,
                         )
                     },

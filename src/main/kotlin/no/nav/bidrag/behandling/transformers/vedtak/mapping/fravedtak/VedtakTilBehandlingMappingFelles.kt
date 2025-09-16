@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
@@ -410,6 +411,15 @@ internal fun List<GrunnlagDto>.mapRoller(
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
             val stønadsendring = vedtak.stønadsendringListe.find { it.kravhaver.verdi == rolle.personIdent }
+            val resultatFraVedtak =
+                stønadsendring?.let { finnResultatFraAnnenVedtak(stønadsendring.grunnlagReferanseListe) }?.let {
+                    GrunnlagFraVedtak(
+                        null,
+                        it.vedtaksid,
+                        vedtakstidspunkt = it.vedtakstidspunkt!!,
+                        perioder = stønadsendring.periodeListe,
+                    )
+                }
             val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
             rolle.tilRolle(
@@ -419,6 +429,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                 aldersjustering,
                 opprinneligVirkningstidspunkt,
                 lesemodus,
+                resultatFraVedtak,
             )
         }.toMutableSet()
         .ifEmpty {
@@ -436,7 +447,16 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
+            roller.add(
+                bpGrunnlag.tilRolle(
+                    behandling,
+                    if (lesemodus) 1 else null,
+                    null,
+                    null,
+                    opprinneligVirkningstidspunkt,
+                    lesemodus,
+                ),
+            )
 
             val bmIdent = vedtak.stønadsendringListe.firstOrNull()?.mottaker ?: vedtak.engangsbeløpListe.first().mottaker
             val bmGrunnlag =
@@ -451,7 +471,16 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
+            roller.add(
+                bmGrunnlag.tilRolle(
+                    behandling,
+                    if (lesemodus) 2 else null,
+                    null,
+                    null,
+                    opprinneligVirkningstidspunkt,
+                    lesemodus,
+                ),
+            )
             roller.addAll(
                 vedtak.stønadsendringListe.mapIndexed { i, it ->
                     val baIdent = it.kravhaver
@@ -1181,6 +1210,7 @@ private fun GrunnlagDto.tilRolle(
     aldersjustering: AldersjusteringDetaljerGrunnlag?,
     opprinneligVirkningstidspunkt: LocalDate,
     lesemodus: Boolean,
+    resultatFraVedtakVedInnkrevingsgrunnlag: GrunnlagFraVedtak? = null,
 ): Rolle =
     Rolle(
         behandling,
@@ -1212,6 +1242,16 @@ private fun GrunnlagDto.tilRolle(
                 BeregnTil.INNEVÆRENDE_MÅNED
             },
         grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
+        grunnlagFraVedtakListe =
+            listOfNotNull(
+                aldersjustering?.let {
+                    GrunnlagFraVedtak(
+                        it.periode.fom.year,
+                        it.grunnlagFraVedtak,
+                    )
+                },
+                resultatFraVedtakVedInnkrevingsgrunnlag,
+            ),
     )
 
 private fun Inntekt.copy(

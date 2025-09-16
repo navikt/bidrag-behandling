@@ -293,6 +293,11 @@ class BeregningService(
                     pa.avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV
                 ) {
                     val beregning = mapper.tilBeregnetPrivatAvtale(behandling, pa.person)
+                    val gjelderReferanse =
+                        beregning
+                            .hentAllePersoner()
+                            .find { it.personIdent == pa.behandling.bidragspliktig!!.ident }!!
+                            .referanse
                     val gjelderBarnReferanse = beregning.hentAllePersoner().find { it.personIdent == pa.person.ident }!!.referanse
                     val delberegningPrivatAvtale = beregning.finnDelberegningerPrivatAvtale(gjelderBarnReferanse)
                     val vedtak = pa.valgtVedtakFraNav
@@ -303,6 +308,8 @@ class BeregningService(
                                 GrunnlagDto(
                                     referanse = referanse,
                                     type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                    gjelderBarnReferanse = gjelderBarnReferanse,
+                                    gjelderReferanse = gjelderReferanse,
                                     innhold =
                                         POJONode(
                                             ResultatFraVedtakGrunnlag(
