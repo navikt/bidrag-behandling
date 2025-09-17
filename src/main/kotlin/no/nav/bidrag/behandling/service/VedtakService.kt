@@ -420,7 +420,6 @@ class VedtakService(
         validering.run { behandling.validerForBeregningBidrag() }
 
         val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling)
-
         beregning.validerManuelAldersjustering(behandling)
 
         val requestDelvedtak =
@@ -492,7 +491,7 @@ class VedtakService(
             }
 
         if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-            fatteInnkrevingsgrunnlag(behandling, request?.enhet, response.first.vedtaksid, response.second)
+            fatteInnkrevingsgrunnlagOmgjøring(behandling, request?.enhet, response.first.vedtaksid, response.second)
         }
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
@@ -544,14 +543,14 @@ class VedtakService(
         return responseInnkreving.vedtaksid
     }
 
-    private fun fatteInnkrevingsgrunnlag(
+    private fun fatteInnkrevingsgrunnlagOmgjøring(
         behandling: Behandling,
         enhet: String?,
         vedtaksidOrkestrering: Int,
         vedtak: OpprettVedtakRequestDto,
     ) {
         val erUtenInnkreving = behandling.søknadsbarn.all { behandling.finnInnkrevesFraDato(it) == null }
-        if (erUtenInnkreving && behandling.vedtakstype != Vedtakstype.INNKREVING) {
+        if (erUtenInnkreving) {
             secureLogger.info { "Sak ${behandling.saksnummer} er uten innkreving. Fatter ikke innkrevingsgrunnlag" }
             return
         }

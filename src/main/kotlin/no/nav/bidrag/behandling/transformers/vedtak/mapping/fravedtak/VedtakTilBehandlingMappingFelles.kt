@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
@@ -85,6 +86,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
@@ -93,6 +95,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -188,6 +191,8 @@ fun VedtakDto.erVedtakUtenBeregning() =
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
 
+    val søknadsbarnGrunnlag = grunnlagListe.hentPerson(stønadsendring.kravhaver.verdi)
+    val virkningstidspunkt = søknadsbarnGrunnlag?.let { grunnlagListe.hentVirkningstidspunkt(it.referanse) }
     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
     val delvedtak =
         stønadsendring.periodeListe
@@ -220,7 +225,20 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                 it.kravhaver == barnIdent
                             }!!
                             .periodeListe
-                            .find { it.periode.inneholder(periode.periode) }!!
+                            .find { it.periode.inneholder(periode.periode) } ?: run {
+                            if (virkningstidspunkt != null && virkningstidspunkt.opphørsdato?.toYearMonth() == periode.periode.fom) {
+                                VedtakPeriodeDto(
+                                    periode.periode,
+                                    null,
+                                    null,
+                                    Resultatkode.OPPHØR.name,
+                                    null,
+                                    emptyList(),
+                                )
+                            } else {
+                                return@mapNotNull null
+                            }
+                        }
                     DelvedtakDto(
                         type = vedtak.type,
                         omgjøringsvedtak = it.omgjøringsvedtak,
@@ -257,7 +275,9 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                                         kanOpprette35C(
                                                             periode.periode,
                                                             orkestreringDetaljer.beregnTilDato,
+                                                            virkningstidspunkt?.opphørsdato?.toYearMonth(),
                                                             vedtak.type,
+                                                            periode.beløp == null,
                                                         )
                                                     } ?: false,
                                                 skalOpprette35c = it.opprettParagraf35c,
@@ -391,6 +411,16 @@ internal fun List<GrunnlagDto>.mapRoller(
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
         .mapIndexed { i, rolle ->
+            val stønadsendring = vedtak.stønadsendringListe.find { it.kravhaver.verdi == rolle.personIdent }
+            val resultatFraVedtak =
+                stønadsendring?.let { finnResultatFraAnnenVedtak(stønadsendring.grunnlagReferanseListe) }?.let {
+                    GrunnlagFraVedtak(
+                        null,
+                        it.vedtaksid,
+                        vedtakstidspunkt = it.vedtakstidspunkt!!,
+                        perioder = stønadsendring.periodeListe,
+                    )
+                }
             val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
             rolle.tilRolle(
@@ -400,6 +430,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                 aldersjustering,
                 opprinneligVirkningstidspunkt,
                 lesemodus,
+                resultatFraVedtak,
             )
         }.toMutableSet()
         .ifEmpty {
@@ -417,7 +448,16 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bpGrunnlag.tilRolle(behandling, if (lesemodus) 1 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
+            roller.add(
+                bpGrunnlag.tilRolle(
+                    behandling,
+                    if (lesemodus) 1 else null,
+                    null,
+                    null,
+                    opprinneligVirkningstidspunkt,
+                    lesemodus,
+                ),
+            )
 
             val bmIdent = vedtak.stønadsendringListe.firstOrNull()?.mottaker ?: vedtak.engangsbeløpListe.first().mottaker
             val bmGrunnlag =
@@ -432,7 +472,16 @@ internal fun List<GrunnlagDto>.mapRoller(
                             ),
                         ),
                 )
-            roller.add(bmGrunnlag.tilRolle(behandling, if (lesemodus) 2 else null, null, null, opprinneligVirkningstidspunkt, lesemodus))
+            roller.add(
+                bmGrunnlag.tilRolle(
+                    behandling,
+                    if (lesemodus) 2 else null,
+                    null,
+                    null,
+                    opprinneligVirkningstidspunkt,
+                    lesemodus,
+                ),
+            )
             roller.addAll(
                 vedtak.stønadsendringListe.mapIndexed { i, it ->
                     val baIdent = it.kravhaver
@@ -1162,6 +1211,7 @@ private fun GrunnlagDto.tilRolle(
     aldersjustering: AldersjusteringDetaljerGrunnlag?,
     opprinneligVirkningstidspunkt: LocalDate,
     lesemodus: Boolean,
+    resultatFraVedtakVedInnkrevingsgrunnlag: GrunnlagFraVedtak? = null,
 ): Rolle =
     Rolle(
         behandling,
@@ -1193,6 +1243,16 @@ private fun GrunnlagDto.tilRolle(
                 BeregnTil.INNEVÆRENDE_MÅNED
             },
         grunnlagFraVedtak = aldersjustering?.grunnlagFraVedtak,
+        grunnlagFraVedtakListe =
+            listOfNotNull(
+                aldersjustering?.let {
+                    GrunnlagFraVedtak(
+                        it.periode.fom.year,
+                        it.grunnlagFraVedtak,
+                    )
+                },
+                resultatFraVedtakVedInnkrevingsgrunnlag,
+            ),
     )
 
 private fun Inntekt.copy(

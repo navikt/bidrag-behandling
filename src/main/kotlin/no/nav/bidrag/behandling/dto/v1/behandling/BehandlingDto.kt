@@ -85,6 +85,7 @@ data class VirkningstidspunktDtoV2(
     val begrunnelseVurderingAvSkolegang: BegrunnelseDto? = null,
     val begrunnelseVurderingAvSkolegangFraOpprinneligVedtak: BegrunnelseDto? = null,
     val harLøpendeBidrag: Boolean = false,
+    val harLøpendeForskudd: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val opphørsdato: LocalDate? = null,
     val beregnTil: BeregnTil? = null,

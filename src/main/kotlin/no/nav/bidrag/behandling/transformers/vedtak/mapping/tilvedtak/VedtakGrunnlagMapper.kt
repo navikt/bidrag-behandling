@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
@@ -24,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
+import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -288,40 +290,6 @@ class VedtakGrunnlagMapper(
     ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
-                val personobjekter = tilPersonobjekter(søknadsbarnRolle)
-                val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
-                val bostatusBarn = tilGrunnlagBostatus(personobjekter)
-                val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
-                val grunnlagsliste =
-                    (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad() + byggGrunnlagVirkningsttidspunkt())
-                        .toMutableSet()
-
-                when (tilType()) {
-                    TypeBehandling.FORSKUDD ->
-                        grunnlagsliste.addAll(
-                            tilGrunnlagSivilstand(
-                                personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
-                            ),
-                        )
-
-                    TypeBehandling.SÆRBIDRAG -> {
-                        grunnlagsliste.add(tilGrunnlagUtgift())
-                        val grunnlagLøpendeBidrag =
-                            beregningEvnevurderingService
-                                .hentLøpendeBidragForBehandling(behandling)
-                                .tilGrunnlagDto(grunnlagsliste)
-                        grunnlagsliste.addAll(grunnlagLøpendeBidrag)
-                    }
-
-                    TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
-                        grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste, søknadsbarnRolle.ident!!))
-                        grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
-                        grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
-                        grunnlagsliste.addAll(opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()))
-
-                        grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
-                    }
-                }
                 val virkningstidspunkt =
                     if (erBidrag()) {
                         søknadsbarnRolle.virkningstidspunkt ?: behandling.virkningstidspunkt
@@ -335,14 +303,64 @@ class VedtakGrunnlagMapper(
                         beregnFraDato,
                         beregningTilDato,
                     )
+                val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
+                val personobjekter = tilPersonobjekter(søknadsbarnRolle)
                 val grunnlagBeregning =
-                    BeregnGrunnlag(
-                        periode = beregningsperiode,
-                        stønadstype = stonadstype ?: Stønadstype.BIDRAG,
-                        opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
-                        søknadsbarnReferanse = søknadsbarn.referanse,
-                        grunnlagListe = grunnlagsliste.toSet().toList(),
-                    )
+                    if (erDirekteAvslag() && erBidrag()) {
+                        BeregnGrunnlag(
+                            periode = beregningsperiode,
+                            stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                            opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
+                            søknadsbarnReferanse = søknadsbarn.referanse,
+                            grunnlagListe =
+                                (
+                                    personobjekter + byggGrunnlagSøknad() +
+                                        byggGrunnlagVirkningsttidspunkt(personobjekter.map { it.tilDto() })
+                                ).toList(),
+                        )
+                    } else {
+                        val bostatusBarn = tilGrunnlagBostatus(personobjekter)
+                        val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
+                        val grunnlagsliste =
+                            (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad() + byggGrunnlagVirkningsttidspunkt())
+                                .toMutableSet()
+
+                        when (tilType()) {
+                            TypeBehandling.FORSKUDD ->
+                                grunnlagsliste.addAll(
+                                    tilGrunnlagSivilstand(
+                                        personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
+                                    ),
+                                )
+
+                            TypeBehandling.SÆRBIDRAG -> {
+                                grunnlagsliste.add(tilGrunnlagUtgift())
+                                val grunnlagLøpendeBidrag =
+                                    beregningEvnevurderingService
+                                        .hentLøpendeBidragForBehandling(behandling)
+                                        .tilGrunnlagDto(grunnlagsliste)
+                                grunnlagsliste.addAll(grunnlagLøpendeBidrag)
+                            }
+
+                            TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
+                                grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste, søknadsbarnRolle.ident!!))
+                                grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
+                                grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
+                                grunnlagsliste.addAll(
+                                    opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()),
+                                )
+
+                                grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
+                            }
+                        }
+                        BeregnGrunnlag(
+                            periode = beregningsperiode,
+                            stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                            opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
+                            søknadsbarnReferanse = søknadsbarn.referanse,
+                            grunnlagListe = grunnlagsliste.toSet().toList(),
+                        )
+                    }
                 val klageBeregning =
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
                         val innkrevesFraPeriode = behandling.finnInnkrevesFraDato(søknadsbarnRolle)?.let { ÅrMånedsperiode(it, null) }
@@ -377,6 +395,7 @@ class VedtakGrunnlagMapper(
                 return BidragsberegningOrkestratorRequest(
                     beregnGrunnlag = grunnlagBeregning,
                     omgjøringOrkestratorGrunnlag = klageBeregning,
+                    erDirekteAvslag = erDirekteAvslag(),
                     beregningstype =
                         when {
                             behandling.erKlageEllerOmgjøring ->

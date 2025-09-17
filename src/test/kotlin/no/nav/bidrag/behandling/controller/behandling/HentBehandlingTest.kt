@@ -267,7 +267,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
 
         assertSoftly(behandlingRes.body?.feilOppståttVedSisteGrunnlagsinnhenting) { feil ->
             feil shouldNotBe null
-            feil!! shouldHaveSize 2
+            feil!! shouldHaveSize 3
             feil.first().rolle.id shouldBe behandling.bidragsmottaker!!.id!!
             feil.first().periode?.fom shouldBe fomdatoIFeilrespons
             feil.first().periode?.til shouldBe tildatoIFeilrespons

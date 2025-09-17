@@ -158,12 +158,19 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
     val grunnlagListe = mutableSetOf<GrunnlagDto>()
 
     fun opprettPeriode(resultatPeriode: ResultatPeriode): OpprettPeriodeRequestDto {
+        val erOpphørsperiode =
+            søknadsbarnRolle.opphørsdato != null && resultatPeriode.periode.fom == søknadsbarnRolle.opphørsdato?.toYearMonth()
         val vedtak =
             resultatDelvedtak.find { rv ->
-                rv.resultat.beregnetBarnebidragPeriodeListe.any { vp -> resultatPeriode.periode.fom == vp.periode.fom }
+                rv.resultat.beregnetBarnebidragPeriodeListe.any { vp ->
+                    resultatPeriode.periode.fom == vp.periode.fom ||
+                        erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth()
+                }
             }!!
         val resultatkode =
-            if (vedtak.request != null) {
+            if (vedtak.request != null && erOpphørsperiode) {
+                Resultatkode.OPPHØR.name
+            } else if (vedtak.request != null) {
                 vedtak.request.stønadsendringListe
                     .find { it.kravhaver.verdi == søknadsbarnRolle.ident!! }!!
                     .periodeListe
@@ -226,7 +233,12 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
         beregnetBarnebidragPeriodeListe.map {
             opprettPeriode(it)
         }
-    val opphørPeriode = listOfNotNull(opprettPeriodeOpphør(søknadsbarnRolle, periodeliste))
+    val finnesPerioderEtterOpphør =
+        periodeliste.any { p ->
+            søknadsbarnRolle.opphørsdato != null &&
+                p.periode.fom >= søknadsbarnRolle.opphørsdato?.toYearMonth()
+        }
+    val opphørPeriode = if (finnesPerioderEtterOpphør) emptyList() else listOfNotNull(opprettPeriodeOpphør(søknadsbarnRolle, periodeliste))
 
     return StønadsendringPeriode(
         søknadsbarnRolle,
