@@ -74,6 +74,7 @@ data class ResultatDelvedtak(
     val type: Vedtakstype?,
     val request: OpprettVedtakRequestDto?,
     val resultat: BeregnetBarnebidragResultat,
+    val vedtakstidspunkt: LocalDateTime?,
 )
 
 data class ResultatadBeregningOrkestrering(
@@ -442,6 +443,7 @@ class BehandlingTilVedtakMapping(
                         request = null,
                         type = resultatVedtak.vedtakstype,
                         resultat = resultatVedtak.resultat,
+                        vedtakstidspunkt = resultatFraVedtakGrunnlag?.vedtakstidspunkt,
                     )
                 }
 
@@ -467,6 +469,7 @@ class BehandlingTilVedtakMapping(
                             if (klagevedtakErEnesteVedtak) Beslutningstype.ENDRING else Beslutningstype.DELVEDTAK,
                         ),
                     resultat = resultatVedtak.resultat,
+                    vedtakstidspunkt = null,
                 )
             }
     }
