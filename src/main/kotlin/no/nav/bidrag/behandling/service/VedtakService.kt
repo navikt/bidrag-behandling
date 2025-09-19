@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.skalInnkrevingKunneUtsettes
 import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.vedtak.innkrevingstype
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatBidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatForskudd
@@ -95,6 +96,7 @@ class VedtakService(
                     lesemodus = true,
                     omgjørVedtaksliste = påklagetVedtakListe,
                     erOrkestrertVedtak = vedtak.erOrkestrertVedtak,
+                    innkrevingstype = vedtak.vedtak.innkrevingstype,
                 )
             }
         } catch (e: Exception) {
@@ -271,18 +273,19 @@ class VedtakService(
         return vedtakTilBehandlingMapping.run {
             vedtak.tilBehandling(
                 omgjørVedtakId = omgjørVedtakId,
-                søktFomDato = request.søktFomDato,
-                mottattdato = request.mottattdato,
-                soknadFra = request.søknadFra,
-                vedtakType = request.vedtakstype,
-                søknadRefId = request.søknadsreferanseid,
-                enhet = request.behandlerenhet,
-                søknadId = request.søknadsid,
-                søknadstype = request.søknadstype,
                 lesemodus = false,
-                omgjørVedtaksliste = omgjørVedtakListe,
+                vedtakType = request.vedtakstype,
+                mottattdato = request.mottattdato,
+                søktFomDato = request.søktFomDato,
+                soknadFra = request.søknadFra,
+                søknadRefId = request.søknadsreferanseid,
+                søknadId = request.søknadsid,
+                enhet = request.behandlerenhet,
                 omgjortVedtakVedtakstidspunkt = vedtak.justerVedtakstidspunktVedtak().vedtakstidspunkt,
+                søknadstype = request.søknadstype,
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
+                omgjørVedtaksliste = omgjørVedtakListe,
+                innkrevingstype = vedtak.innkrevingstype,
             )
         }
     }
