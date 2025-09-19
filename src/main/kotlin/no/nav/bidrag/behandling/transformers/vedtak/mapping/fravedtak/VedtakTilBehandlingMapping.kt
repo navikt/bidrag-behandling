@@ -113,6 +113,7 @@ class VedtakTilBehandlingMapping(
         erBisysVedtak: Boolean = false,
         erOrkestrertVedtak: Boolean = false,
         omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),
+        innkrevingstype: Innkrevingstype,
     ): Behandling {
         val opprinneligVedtak = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtaksid ?: omgjørVedtakId
         val vedtakstidspunktListe = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
@@ -139,10 +140,6 @@ class VedtakTilBehandlingMapping(
             }
         // TODO: Hvordan håndteres dette når vi begynner med flere stønadsendringer i samme vedtak?
         val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
-        val innkrevingstype =
-            this.stønadsendringListe.firstOrNull()?.innkreving
-                ?: this.engangsbeløpListe.firstOrNull()?.innkreving
-                ?: Innkrevingstype.MED_INNKREVING
         val omgjortVedtakVirkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
         val behandling =
             Behandling(
@@ -397,7 +394,8 @@ class VedtakTilBehandlingMapping(
 
     fun VedtakDto.tilBeregningResultatSærbidrag(): ResultatSærbidragsberegningDto? =
         engangsbeløpListe.firstOrNull()?.let { engangsbeløp ->
-            val behandling = tilBehandling(1)
+            val behandling =
+                tilBehandling(1, innkrevingstype = engangsbeløp.innkreving)
             grunnlagListe.byggResultatSærbidragsberegning(
                 behandling.virkningstidspunkt!!,
                 engangsbeløp.beløp,
