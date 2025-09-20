@@ -669,13 +669,16 @@ class GrunnlagService(
                 behandling.virkningstidspunktEllerSøktFomDato,
                 sivilstandBeregnet.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
             )
-        behandling
-            .henteNyesteAktiveGrunnlag(
-                Grunnlagstype(grunnlagsdatatype, true),
-                behandling.bidragsmottaker!!,
-            )?.let {
-                it.data = commonObjectmapper.writeValueAsString(sivilstandPeriodisert)
-            }
+        val nyesteAktiveGrunnlag =
+            behandling
+                .henteNyesteAktiveGrunnlag(
+                    Grunnlagstype(grunnlagsdatatype, true),
+                    behandling.bidragsmottaker!!,
+                )
+
+        if (nyesteAktiveGrunnlag != null) {
+            nyesteAktiveGrunnlag.data = commonObjectmapper.writeValueAsString(sivilstandPeriodisert)
+        }
     }
 
     @Transactional
@@ -899,7 +902,10 @@ class GrunnlagService(
                     grunnlagsdatatype.innhentesForRolle(behandling)!!,
                 )
             }
-        grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let { it.data = tilJson(perioder) }
+        val grunnlagSomSkalOVerskriverGjelder = grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }
+        if (grunnlagSomSkalOVerskriverGjelder != null) {
+            grunnlagSomSkalOVerskriverGjelder.data = tilJson(perioder)
+        }
     }
 
     private fun overskrivBearbeidetBoforholdGrunnlag(
@@ -922,7 +928,10 @@ class GrunnlagService(
                     grunnlagsdatatype.innhentesForRolle(behandling)!!,
                 )
             }
-        grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let { it.data = tilJson(perioder) }
+        val grunnlagSomSkalOverskrivesGjelder = grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }
+        if (grunnlagSomSkalOverskrivesGjelder != null) {
+            grunnlagSomSkalOverskrivesGjelder.data = tilJson(perioder)
+        }
     }
 
     fun hentSistInnhentet(

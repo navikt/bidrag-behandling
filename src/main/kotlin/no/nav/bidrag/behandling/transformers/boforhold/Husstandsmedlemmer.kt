@@ -270,11 +270,13 @@ fun List<BorISammeHusstandDto>.tilBostatus(
 }
 
 fun List<BoforholdResponseV2>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
-    this.find { it.gjelderPersonId == husstandsmedlem.ident }?.let {
+    if (this.find { it.gjelderPersonId == husstandsmedlem.ident } != null) {
         map { boforhold ->
             boforhold.tilPeriode(husstandsmedlem)
         }.toMutableSet()
-    } ?: setOf()
+    } else {
+        setOf()
+    }
 
 fun List<Bostatus>.tilPerioder(husstandsmedlem: Husstandsmedlem) =
     this.map {
