@@ -23,7 +23,6 @@ private val log = KotlinLogging.logger {}
 @Service
 class PrivatAvtaleService(
     val behandlingService: BehandlingService,
-    val personRepository: PersonRepository,
     val notatService: NotatService,
 ) {
     private fun lagrePrivatAvtale(
