@@ -292,13 +292,12 @@ class Dtomapper(
             bu.gjelderBarn.ident?.verdi == person.ident
         }?.perioder ?: emptySet()
 
-    fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Person): BeregnetPrivatAvtaleDto {
+    fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Rolle): BeregnetPrivatAvtaleDto {
         val privatAvtaleBeregning = vedtakGrunnlagMapper.tilBeregnetPrivatAvtale(this, gjelderBarn)
 
-        val rolle = roller.find { it.ident == gjelderBarn.ident }
         val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
         return BeregnetPrivatAvtaleDto(
-            gjelderBarn = gjelderBarn.tilPersoninfoDto(rolle, null),
+            gjelderBarn = gjelderBarn.tilPersoninfoDto(),
             privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
                 BeregnetPrivatAvtalePeriodeDto(
                     periode = Datoperiode(it.periode.fom, it.periode.til),
@@ -995,15 +994,15 @@ class Dtomapper(
     fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
         PrivatAvtaleDto(
             id = id!!,
-            perioderLøperBidrag = barnetsRolleIBehandlingen?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
-            gjelderBarn = person.tilPersoninfoDto(barnetsRolleIBehandlingen, Kilde.MANUELL),
+            perioderLøperBidrag = rolle?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
+            gjelderBarn = rolle!!.tilPersoninfoDto(),
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
             etterfølgendeVedtak =
                 if (behandling.erInnkreving) {
                     behandling.hentNesteEtterfølgendeVedtak(
-                        barnetsRolleIBehandlingen!!,
+                        rolle!!,
                     )
                 } else {
                     null
@@ -1012,7 +1011,7 @@ class Dtomapper(
                 henteNotatinnhold(
                     this.behandling,
                     NotatType.PRIVAT_AVTALE,
-                    barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+                    rolle ?: this.behandling.bidragsmottaker!!,
                     true,
                 ),
             begrunnelseFraOpprinneligVedtak =
@@ -1020,7 +1019,7 @@ class Dtomapper(
                     henteNotatinnhold(
                         this.behandling,
                         NotatType.PRIVAT_AVTALE,
-                        barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+                        rolle ?: this.behandling.bidragsmottaker!!,
                         false,
                     ).takeIfNotNullOrEmpty { it }
                 } else {
@@ -1031,7 +1030,7 @@ class Dtomapper(
                 if (skalIndeksreguleres &&
                     perioderInnkreving.isNotEmpty()
                 ) {
-                    behandling.tilBeregnetPrivatAvtale(person)
+                    behandling.tilBeregnetPrivatAvtale(rolle!!)
                 } else {
                     null
                 },

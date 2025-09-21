@@ -1957,8 +1957,8 @@ class GrunnlagMappingTest {
             behandling.privatAvtale.add(privatAvtale2)
             val resultat =
                 behandlingTilGrunnlagMapping.run {
-                    behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale.person.ident!!) +
-                        behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale2.person.ident!!)
+                    behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale.rolle!!.ident!!) +
+                        behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale2.rolle!!.ident!!)
                 }
 
             resultat.shouldHaveSize(6)

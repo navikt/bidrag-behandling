@@ -196,6 +196,7 @@ class BehandlingService(
                     soknadRefId = it,
                 )
         }
+
         if (opprettBehandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             val metadata = BehandlingMetadataDo()
             metadata.setFølgerAutomatiskVedtak(opprettBehandling.vedtaksid)
@@ -208,6 +209,12 @@ class BehandlingService(
                 },
             ),
         )
+
+        if (opprettBehandling.vedtakstype == Vedtakstype.INNKREVING) {
+            behandling.søknadsbarn.forEach {
+//                val privatAvtale = PrivatAvtale(person = )
+            }
+        }
 
         if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG) {
             behandling.utgift = Utgift(behandling = behandling)

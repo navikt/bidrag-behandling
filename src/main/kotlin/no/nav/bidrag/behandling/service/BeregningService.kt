@@ -292,13 +292,13 @@ class BeregningService(
                 } else if (pa.skalIndeksreguleres ||
                     pa.avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV
                 ) {
-                    val beregning = mapper.tilBeregnetPrivatAvtale(behandling, pa.person)
+                    val beregning = mapper.tilBeregnetPrivatAvtale(behandling, pa.rolle!!)
                     val gjelderReferanse =
                         beregning
                             .hentAllePersoner()
                             .find { it.personIdent == pa.behandling.bidragspliktig!!.ident }!!
                             .referanse
-                    val gjelderBarnReferanse = beregning.hentAllePersoner().find { it.personIdent == pa.person.ident }!!.referanse
+                    val gjelderBarnReferanse = beregning.hentAllePersoner().find { it.personIdent == pa.rolle!!.ident }!!.referanse
                     val delberegningPrivatAvtale = beregning.finnDelberegningerPrivatAvtale(gjelderBarnReferanse)
                     val vedtak = pa.valgtVedtakFraNav
                     val grunnlagFraVedtak =
@@ -332,8 +332,8 @@ class BeregningService(
                     val perioder =
                         perioderBeregnet?.mapIndexed { i, it ->
                             val sistePeriodeTil =
-                                if (pa.barnetsRolleIBehandlingen!!.opphørsdato != null && i == (perioderBeregnet.size - 1)) {
-                                    pa.barnetsRolleIBehandlingen!!.opphørsdato!!.toYearMonth()
+                                if (pa.rolle!!.opphørsdato != null && i == (perioderBeregnet.size - 1)) {
+                                    pa.rolle!!.opphørsdato!!.toYearMonth()
                                 } else {
                                     it.periode.til
                                 }
@@ -348,8 +348,8 @@ class BeregningService(
                 } else {
                     pa.perioderInnkreving.mapIndexed { i, it ->
                         val sistePeriodeTil =
-                            if (pa.barnetsRolleIBehandlingen!!.opphørsdato != null && i == (pa.perioderInnkreving.size - 1)) {
-                                pa.barnetsRolleIBehandlingen!!.opphørsdato!!
+                            if (pa.rolle!!.opphørsdato != null && i == (pa.perioderInnkreving.size - 1)) {
+                                pa.rolle!!.opphørsdato!!
                             } else {
                                 it.tom
                             }
@@ -362,9 +362,9 @@ class BeregningService(
                 }
 
             ResultatBidragsberegningBarn(
-                pa.barnetsRolleIBehandlingen!!.mapTilResultatBarn(),
+                pa.rolle!!.mapTilResultatBarn(),
                 behandling.vedtakstype,
-                opphørsdato = pa.barnetsRolleIBehandlingen!!.opphørsdato?.toYearMonth(),
+                opphørsdato = pa.rolle!!.opphørsdato?.toYearMonth(),
                 resultat =
                     BeregnetBarnebidragResultat(
                         beregnetBarnebidragPeriodeListe = perioder.first,

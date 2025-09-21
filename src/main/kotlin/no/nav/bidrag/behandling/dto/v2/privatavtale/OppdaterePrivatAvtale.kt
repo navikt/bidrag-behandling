@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.dto.v2.privatavtale
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
@@ -67,7 +67,7 @@ data class PrivatAvtalePeriodeDto(
 data class PrivatAvtaleValideringsfeilDto(
     val privatAvtaleId: Long,
     @JsonIgnore
-    val gjelderPerson: Person,
+    val gjelderPerson: Rolle,
     val perioderOverlapperMedLøpendeBidrag: Set<Datoperiode>,
     val manglerBegrunnelse: Boolean = false,
     val manglerAvtaledato: Boolean = false,
