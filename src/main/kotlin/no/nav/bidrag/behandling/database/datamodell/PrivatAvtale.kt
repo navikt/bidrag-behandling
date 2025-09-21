@@ -55,7 +55,7 @@ open class PrivatAvtale(
             avtaleDato
         }
     val valgtVedtakFraNav get() =
-        rolle!!.grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }?.takeIf {
+        rolle!!.grunnlagFraVedtakForInnkreving?.takeIf {
             it.vedtak != null
         }
     val perioderInnkreving get() =
@@ -74,7 +74,7 @@ open class PrivatAvtale(
                             it.periode.til?.atDay(1),
                             it.beløp ?: BigDecimal.ZERO,
                         )
-                    } ?: emptyList()
+                    }?.toSet() ?: emptySet()
             else -> perioder
         }
 

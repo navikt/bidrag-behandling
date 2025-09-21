@@ -113,6 +113,7 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
     open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),
 ) {
+    val grunnlagFraVedtakForInnkreving get() = grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
     val erDirekteAvslag get() = avslag != null

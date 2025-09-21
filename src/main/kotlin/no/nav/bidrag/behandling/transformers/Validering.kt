@@ -352,7 +352,7 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                     rolle!!,
                 )
             },
-        ingenLøpendePeriode = perioder.isEmpty() || behandling.manglerLøpendePeriode(perioder, rolle!!),
+        ingenLøpendePeriode = perioderInnkreving.isEmpty() || behandling.manglerLøpendePeriode(perioderInnkreving, rolle!!),
         manglerBegrunnelse = !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
         måVelgeVedtakHvisAvtaletypeErVedtakFraNav =
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && valgtVedtakFraNav == null,

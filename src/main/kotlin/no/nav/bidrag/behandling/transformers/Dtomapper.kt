@@ -97,7 +97,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrun
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
-import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -170,7 +169,7 @@ class Dtomapper(
                     val vedtaksliste = behandling.omgjøringsdetaljer?.omgjortVedtaksliste?.map { it.vedtaksid } ?: emptyList()
                     !vedtaksliste.contains(it.vedtaksid)
                 } else if (behandling.erInnkreving) {
-                    true // it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
+                    it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
                 } else {
                     true
                 }
@@ -798,7 +797,8 @@ class Dtomapper(
                             etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
-                            grunnlagFraVedtak = it.grunnlagFraVedtak,
+                            grunnlagFraVedtak =
+                                it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
                             kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
                             begrunnelse =
                                 if (notat.isEmpty()) {
@@ -999,11 +999,9 @@ class Dtomapper(
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
-            etterfølgendeVedtak =
+            manuelleVedtakUtenInnkreving =
                 if (behandling.erInnkreving) {
-                    behandling.hentNesteEtterfølgendeVedtak(
-                        rolle!!,
-                    )
+                    hentManuelleVedtakForBehandling(behandling, rolle!!)
                 } else {
                     null
                 },

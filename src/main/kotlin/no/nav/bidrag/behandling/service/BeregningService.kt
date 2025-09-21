@@ -65,6 +65,7 @@ import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.felles.tilVisningsnavn
@@ -294,10 +295,7 @@ class BeregningService(
                 ) {
                     val beregning = mapper.tilBeregnetPrivatAvtale(behandling, pa.rolle!!)
                     val gjelderReferanse =
-                        beregning
-                            .hentAllePersoner()
-                            .find { it.personIdent == pa.behandling.bidragspliktig!!.ident }!!
-                            .referanse
+                        beregning.bidragspliktig!!.referanse
                     val gjelderBarnReferanse = beregning.hentAllePersoner().find { it.personIdent == pa.rolle!!.ident }!!.referanse
                     val delberegningPrivatAvtale = beregning.finnDelberegningerPrivatAvtale(gjelderBarnReferanse)
                     val vedtak = pa.valgtVedtakFraNav
@@ -314,6 +312,7 @@ class BeregningService(
                                         POJONode(
                                             ResultatFraVedtakGrunnlag(
                                                 vedtaksid = vedtak.vedtak,
+                                                vedtakstidspunkt = vedtak.vedtakstidspunkt,
                                                 vedtakstype = behandling.vedtakstype,
                                             ),
                                         ),

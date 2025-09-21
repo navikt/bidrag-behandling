@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
@@ -37,6 +38,7 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -210,18 +212,18 @@ class BehandlingService(
             ),
         )
 
-        if (opprettBehandling.vedtakstype == Vedtakstype.INNKREVING) {
-            behandling.søknadsbarn.forEach {
-//                val privatAvtale = PrivatAvtale(person = )
-            }
-        }
-
         if (opprettBehandling.tilType() == TypeBehandling.SÆRBIDRAG) {
             behandling.utgift = Utgift(behandling = behandling)
         }
 
         if (opprettBehandling.tilType() == TypeBehandling.BIDRAG) {
             behandling.samvær = behandling.søknadsbarn.map { Samvær(behandling, rolle = it) }.toMutableSet()
+            if (opprettBehandling.vedtakstype == Vedtakstype.INNKREVING) {
+                behandling.søknadsbarn.forEach {
+                    val privatAvtale = PrivatAvtale(rolle = it, behandling = behandling, avtaleType = PrivatAvtaleType.PRIVAT_AVTALE)
+                    behandling.privatAvtale.add(privatAvtale)
+                }
+            }
         }
 
         val behandlingDo = opprettBehandlingHvisIkkeEksisterer(behandling)

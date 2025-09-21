@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.privatavtale
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode
@@ -55,7 +55,7 @@ data class PrivatAvtaleDto(
     val valideringsfeil: PrivatAvtaleValideringsfeilDto?,
     val perioder: List<PrivatAvtalePeriodeDto> = emptyList(),
     val beregnetPrivatAvtale: BeregnetPrivatAvtaleDto? = null,
-    val etterfølgendeVedtak: EtterfølgendeVedtakDto?,
+    val manuelleVedtakUtenInnkreving: List<ManuellVedtakDto>?,
 )
 
 data class PrivatAvtalePeriodeDto(
