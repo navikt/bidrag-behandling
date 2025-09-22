@@ -149,17 +149,19 @@ class InntektService(
     }
 
     private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato: LocalDate?) {
-        filter { it.taMed }
-            .filter {
-                it.beregnTilDato == null ||
-                    it.datoTom == null ||
-                    it.datoTom!!.isAfter(it.beregnTilDato) ||
-                    it.datoTom == forrigeOpphørsdato?.opphørSisteTilDato()
-            }.sortedBy { it.datoFom }
-            .lastOrNull()
-            ?.let { inntekt ->
-                inntekt.datoTom = justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
-            }
+        val inntektSomSkalOppdateres =
+            filter { it.taMed }
+                .filter {
+                    it.beregnTilDato == null ||
+                        it.datoTom == null ||
+                        it.datoTom!!.isAfter(it.beregnTilDato) ||
+                        it.datoTom == forrigeOpphørsdato?.opphørSisteTilDato()
+                }.sortedBy { it.datoFom }
+                .lastOrNull()
+
+        if (inntektSomSkalOppdateres != null) {
+            inntektSomSkalOppdateres.datoTom = justerPeriodeTomOpphørsdato(inntektSomSkalOppdateres.opphørsdato)
+        }
     }
 
     @Transactional
@@ -252,16 +254,16 @@ class InntektService(
         oppdatereInntektRequest: OppdatereInntektRequest,
         behandling: Behandling,
     ): InntektDtoV2? {
-        oppdatereInntektRequest.oppdatereInntektsperiode?.let { periode ->
-            val inntekt = henteInntektMedId(behandling, periode.id)
-            periode.taMedIBeregning.ifTrue {
+        oppdatereInntektRequest.oppdatereInntektsperiode?.apply {
+            val inntekt = henteInntektMedId(behandling, id)
+            taMedIBeregning.ifTrue {
                 val forrigeInntektMedSammeType = behandling.hentSisteInntektMedSammeType2(inntekt)
 
                 inntekt.datoFom =
                     if (inntekt.skalAutomatiskSettePeriode()) {
                         inntekt.bestemDatoFomForOffentligInntekt()
                     } else {
-                        periode.angittPeriode?.fom
+                        angittPeriode?.fom
                             ?: oppdateringAvInntektFeilet(
                                 "Angitt periode må settes ved oppdatering av offentlig inntekt som er tatt med i beregningen",
                             )
@@ -270,12 +272,12 @@ class InntektService(
                     if (inntekt.skalAutomatiskSettePeriode()) {
                         inntekt.bestemDatoTomForOffentligInntekt()
                     } else {
-                        periode.angittPeriode?.til
+                        angittPeriode?.til
                             ?: justerPeriodeTomOpphørsdato(inntekt.beregnTilDato)
                     }
-                forrigeInntektMedSammeType?.let {
-                    if (inntekt.datoFom!! > it.datoFom) {
-                        it.datoTom = inntekt.datoFom!!.minusDays(1)
+                forrigeInntektMedSammeType?.apply {
+                    if (inntekt.datoFom!! > datoFom) {
+                        datoTom = inntekt.datoFom!!.minusDays(1)
                     }
                 }
                 inntekt
@@ -284,7 +286,7 @@ class InntektService(
                 inntekt.datoTom = null
             }
 
-            inntekt.taMed = periode.taMedIBeregning
+            inntekt.taMed = taMedIBeregning
             return inntekt.tilInntektDtoV2()
         }
 
