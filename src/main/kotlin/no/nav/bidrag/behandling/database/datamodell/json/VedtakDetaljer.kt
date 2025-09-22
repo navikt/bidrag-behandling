@@ -15,6 +15,7 @@ data class VedtakDetaljer(
     val vedtakFattetAvEnhet: String? = null,
     val vedtakstidspunkt: LocalDateTime? = null,
     val vedtakFattetAv: String? = null,
+    val unikreferanse: String? = null,
     val fattetDelvedtak: Set<FattetDelvedtak> = emptySet(),
 )
 

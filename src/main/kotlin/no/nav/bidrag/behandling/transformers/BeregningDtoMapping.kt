@@ -641,6 +641,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     .periodeListe
                     .find { it.periode.inneholder(periode) }!!
             val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
+            val vedtakstype = if (vedtakstype == Vedtakstype.INNKREVING) vedtakstype else vedtak.type
             return vedtak.grunnlagListe
                 .byggResultatBidragsberegning(
                     periode,
@@ -649,7 +650,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     vedtakPeriode.grunnlagReferanseListe,
                     null,
                     barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
-                    vedtak.type,
+                    vedtakstype,
                     barnIdent,
                 ).copy(
                     klageOmgjøringDetaljer =

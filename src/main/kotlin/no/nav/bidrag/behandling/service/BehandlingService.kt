@@ -331,6 +331,7 @@ class BehandlingService(
         behandlingsid: Long,
         vedtaksid: Int,
         fattetAvEnhet: String,
+        unikreferanse: String? = null,
     ) {
         behandlingRepository
             .findBehandlingById(behandlingsid)
@@ -345,6 +346,7 @@ class BehandlingService(
                             vedtaksid = vedtaksid,
                             vedtakFattetAvEnhet = fattetAvEnhet,
                             vedtakstidspunkt = it.vedtakDetaljer?.vedtakstidspunkt ?: LocalDateTime.now(),
+                            unikreferanse = unikreferanse,
                             vedtakFattetAv =
                                 it.vedtakDetaljer?.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
                                     ?: TokenUtils.hentApplikasjonsnavn(),

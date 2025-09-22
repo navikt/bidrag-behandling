@@ -55,8 +55,10 @@ open class PrivatAvtale(
             avtaleDato
         }
     val valgtVedtakFraNav get() =
-        rolle!!.grunnlagFraVedtakForInnkreving?.takeIf {
-            it.vedtak != null
+        if (avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV) {
+            rolle!!.grunnlagFraVedtakForInnkreving?.takeIf { it.vedtak != null }
+        } else {
+            null
         }
     val perioderInnkreving get() =
         when {

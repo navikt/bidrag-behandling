@@ -533,15 +533,11 @@ class VedtakService(
         secureLogger.info {
             "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
         }
-        behandlingService.oppdaterDelvedtakFattetStatus(
+        behandlingService.oppdaterVedtakFattetStatus(
             behandlingsid = behandling.id!!,
+            vedtaksid = responseInnkreving.vedtaksid,
             fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-            resultat =
-                FattetDelvedtak(
-                    vedtaksid = responseInnkreving.vedtaksid,
-                    vedtakstype = innkrevingRequest.type,
-                    referanse = innkrevingRequest.unikReferanse ?: "ukjent",
-                ),
+            unikreferanse = innkrevingRequest.unikReferanse,
         )
         return responseInnkreving.vedtaksid
     }
