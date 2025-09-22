@@ -335,10 +335,11 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                         )
                     val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.omgjøringsvedtak }
                     val erKlagevedtak =
-                        klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any {
-                            it.periode.fom == p.periode.fom ||
-                                p.periode.fom == resultat.opphørsdato && p.resultat.beløp == null
-                        } == true
+                        resultatFraVedtak?.vedtaksid == null &&
+                            klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any {
+                                it.periode.fom == p.periode.fom ||
+                                    p.periode.fom == resultat.opphørsdato && p.resultat.beløp == null
+                            } == true
 
                     val aldersjusteringsdetaljer =
                         delvedtak
