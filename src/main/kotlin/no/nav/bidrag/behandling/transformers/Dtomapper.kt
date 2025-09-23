@@ -121,15 +121,15 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalPersonDto
+import no.nav.bidrag.transport.dokumentmaler.notat.BoforholdBarn
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatAndreVoksneIHusstanden
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatAndreVoksneIHusstandenDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatVoksenIHusstandenDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerBruktTilBeregning
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteret
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteretMedDetaljer
 import no.nav.bidrag.transport.felles.ifTrue
-import no.nav.bidrag.transport.notat.BoforholdBarn
-import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
-import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstandenDetaljerDto
-import no.nav.bidrag.transport.notat.NotatPersonDto
-import no.nav.bidrag.transport.notat.NotatVoksenIHusstandenDetaljerDto
-import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
-import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
-import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -175,16 +175,17 @@ class Dtomapper(
                 }
             }?.map {
                 ManuellVedtakDto(
-                    it.vedtaksid,
-                    søknadsbarn.id!!,
-                    it.fattetTidspunkt,
-                    it.virkningsDato,
-                    it.vedtakstype,
-                    it.privatAvtale,
-                    it.begrensetRevurdering,
-                    it.resultatSistePeriode,
-                    it.manglerGrunnlag,
-                    it.innkrevingstype,
+                    valgt = søknadsbarn.beregningGrunnlagFraVedtak == it.vedtaksid,
+                    vedtaksid = it.vedtaksid,
+                    barnId = søknadsbarn.id!!,
+                    fattetTidspunkt = it.fattetTidspunkt,
+                    virkningsDato = it.virkningsDato,
+                    vedtakstype = it.vedtakstype,
+                    privatAvtale = it.privatAvtale,
+                    begrensetRevurdering = it.begrensetRevurdering,
+                    resultatSistePeriode = it.resultatSistePeriode,
+                    manglerGrunnlag = it.manglerGrunnlag,
+                    innkrevingstype = it.innkrevingstype,
                 )
             }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
     }
@@ -500,7 +501,7 @@ class Dtomapper(
             )
         return BoforholdBarn(
             gjelder =
-                NotatPersonDto(
+                DokumentmalPersonDto(
                     rolle = null,
                     navn = tilgangskontrollertPersoninfo.navn,
                     fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,

@@ -4,7 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import no.nav.bidrag.behandling.service.VedtakService
-import no.nav.bidrag.transport.notat.VedtakNotatDto
+import no.nav.bidrag.transport.dokumentmaler.notat.VedtakNotatDto
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping

@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.commons.web.client.AbstractRestClient
-import no.nav.bidrag.transport.notat.VedtakNotatDto
+import no.nav.bidrag.transport.dokumentmaler.notat.VedtakNotatDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
