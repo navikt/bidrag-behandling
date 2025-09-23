@@ -88,7 +88,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
             if (underhold.kilde == Kilde.OFFENTLIG) {
                 ugyldigForespørsel("Barn med person.id ${this.idElement} er hentet fra offentlige registre og kan derfor ikke slettes.")
             }
-            val rolle = underhold.barnetsRolleIBehandlingen
+            val rolle = underhold.rolle
             if (rolle != null) {
                 ugyldigForespørsel(
                     "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}. Barnet kan derfor ikke slettes.",
@@ -212,7 +212,7 @@ fun Underholdskostnad.manglerBegrunnelse(): Boolean {
     val begrunnelse =
         NotatService.henteUnderholdsnotat(
             this.behandling,
-            barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+            rolle ?: this.behandling.bidragsmottaker!!,
         )
     if (!begrunnelse.isNullOrEmpty()) return false
     return this.harTilsynsordning == true &&
@@ -225,7 +225,7 @@ fun Underholdskostnad.manglerBegrunnelse(): Boolean {
 
 fun Underholdskostnad.manglerPerioderForTilsynsordning(): Boolean {
     val harOffentligeOpplysninger = hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
-    if (harOffentligeOpplysninger || barnetsRolleIBehandlingen == null) return false
+    if (harOffentligeOpplysninger || rolle == null) return false
     return this.harTilsynsordning == true &&
         this.barnetilsyn.isEmpty() &&
         this.faktiskeTilsynsutgifter.isEmpty() &&

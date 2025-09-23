@@ -28,6 +28,11 @@ open class Underholdskostnad(
     )
     @JoinColumn(name = "person_id", nullable = false)
     open val person: Person,
+    @ManyToOne(
+        fetch = FetchType.LAZY,
+    )
+    @JoinColumn(name = "rolle_id", nullable = false)
+    open val rolle: Rolle? = null,
     open var harTilsynsordning: Boolean? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
@@ -51,18 +56,8 @@ open class Underholdskostnad(
     open var faktiskeTilsynsutgifter: MutableSet<FaktiskTilsynsutgift> = mutableSetOf(),
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinFormula(
-        "(SELECT r.id FROM rolle r WHERE r.person_id = person_id AND r.behandling_id = behandling_id)",
-        referencedColumnName = "id",
-    )
-    open var barnetsRolleIBehandlingenDB: Rolle? = null,
 ) {
-    val barnetsRolleIBehandlingen get() = barnetsRolleIBehandlingenDB ?: barnetsRolleIBehandlingenIEager
-    val opphørsdato get() = barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
-
-    @Deprecated("Ikke bruk dette direkte da det kan føre til uendelig loop. Er nødvendig for at tester skal fungere")
-    val barnetsRolleIBehandlingenIEager get() = person.rolle.find { behandling.id == it.behandling.id }
+    val opphørsdato get() = rolle?.opphørsdato ?: behandling.globalOpphørsdato
 
     override fun toString(): String =
         "Underholdskostnad(id=$id, behandling=${behandling.id}, person=${person.id}, harTilsynsordning=$harTilsynsordning, faktiskeTilsynsutgifter=$faktiskeTilsynsutgifter, barnetilsyn=$barnetilsyn, tilleggsstønad=$tilleggsstønad)"

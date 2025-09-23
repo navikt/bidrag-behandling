@@ -82,7 +82,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
 
             u.shouldNotBeNull()
@@ -120,7 +120,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
 
             u.shouldNotBeNull()
@@ -163,7 +163,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
 
             u.shouldNotBeNull()
@@ -209,7 +209,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
 
             u.shouldNotBeNull()
@@ -259,7 +259,7 @@ class ValideringTest {
 
             val underholdskostnad =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident == it.rolle?.personident
                 }
 
             underholdskostnad.shouldNotBeNull()
@@ -326,7 +326,7 @@ class ValideringTest {
 
             val underholdskostnad =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
 
             underholdskostnad.shouldNotBeNull()
@@ -388,7 +388,7 @@ class ValideringTest {
 
             val underholdskostnad =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident == it.rolle?.personident
                 }
             underholdskostnad.shouldNotBeNull()
 
@@ -432,7 +432,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
             u.shouldNotBeNull()
 
@@ -543,7 +543,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
             u.shouldNotBeNull()
 
@@ -588,7 +588,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
             u.shouldNotBeNull()
 
@@ -635,7 +635,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
             u.shouldNotBeNull()
 
@@ -676,7 +676,7 @@ class ValideringTest {
 
             val u =
                 behandling.underholdskostnader.find {
-                    barnIBehandling.personident!! == it.barnetsRolleIBehandlingen?.personident
+                    barnIBehandling.personident!! == it.rolle?.personident
                 }
             u.shouldNotBeNull()
 

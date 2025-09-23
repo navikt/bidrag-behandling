@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
@@ -71,12 +72,12 @@ class UnderholdService(
     ) {
         val rolleSøknadsbarn =
             request.underholdsid?.let {
-                henteOgValidereUnderholdskostnad(behandling, it).barnetsRolleIBehandlingen
+                henteOgValidereUnderholdskostnad(behandling, it).rolle
             }
 
         if (request.underholdsid == null) {
             val underholdHarAndreBarn =
-                behandling.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
+                behandling.underholdskostnader.find { it.rolle == null } != null
             if (!underholdHarAndreBarn) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
@@ -131,19 +132,19 @@ class UnderholdService(
             personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
                 rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
                 rolleSøknadsbarn?.person = eksisterendePerson
-                lagreUnderholdskostnad(behandling, eksisterendePerson, lagreKilde)
+                lagreUnderholdskostnad(behandling, eksisterendePerson, rolleSøknadsbarn, lagreKilde)
             } ?: run {
                 val person =
                     Person(
                         ident = personidentBarn.verdi,
                         fødselsdato =
-                            personService.hentPersonFødselsdato(personidentBarn.verdi)
+                            hentPersonFødselsdato(personidentBarn.verdi)
                                 ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
                         rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
                     )
                 person.rolle.forEach { it.person = person }
 
-                lagreUnderholdskostnad(behandling, person, lagreKilde)
+                lagreUnderholdskostnad(behandling, person, rolleSøknadsbarn, kilde = lagreKilde)
             }
         } ?: run {
             lagreUnderholdskostnad(
@@ -463,7 +464,7 @@ class UnderholdService(
     ) {
         behandling.underholdskostnader.remove(underholdskostnad)
         underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
-        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.barnetsRolleIBehandlingen == null) {
+        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.rolle == null) {
             personRepository.deleteById(underholdskostnad.person.id!!)
             if (!behandling.harAndreBarnIUnderhold()) {
                 notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
@@ -483,9 +484,10 @@ class UnderholdService(
     private fun lagreUnderholdskostnad(
         behandling: Behandling,
         person: Person,
+        rolle: Rolle? = null,
         kilde: Kilde? = null,
     ): Underholdskostnad {
-        val underholdskostnad = Underholdskostnad(behandling = behandling, person = person, kilde = kilde)
+        val underholdskostnad = Underholdskostnad(behandling = behandling, person = person, rolle = rolle, kilde = kilde)
         val lagreUnderholdskostnad = if (behandling.id != null) underholdskostnadRepository.save(underholdskostnad) else underholdskostnad
         behandling.underholdskostnader.add(lagreUnderholdskostnad)
         return lagreUnderholdskostnad

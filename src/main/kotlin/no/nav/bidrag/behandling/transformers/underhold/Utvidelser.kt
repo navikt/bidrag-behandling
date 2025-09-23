@@ -71,7 +71,7 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
 
 fun Set<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = sortedBy { it.fom }.map { it.tilStønadTilBarnetilsynDto() }.toSet()
 
-fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
+fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.rolle == null } != null
 
 fun BarnDto.annetBarnMedSammeNavnOgFødselsdatoEksistererFraFør(behandling: Behandling) =
     behandling.underholdskostnader
@@ -179,8 +179,8 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
     forrigeOpphørsdato: LocalDate? = null,
 ) {
     if (opphørsdato != null || opphørSlettet) {
-        val opphørsdato = this.barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
-        val beregnTilDato = behandling.finnBeregnTilDatoBehandling(this.barnetsRolleIBehandlingen)
+        val opphørsdato = this.rolle?.opphørsdato ?: behandling.globalOpphørsdato
+        val beregnTilDato = behandling.finnBeregnTilDatoBehandling(this.rolle)
 
         barnetilsyn
             .filter { opphørsdato == null || it.fom > beregnTilDato }

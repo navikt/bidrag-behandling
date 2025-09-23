@@ -242,7 +242,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 oppdatertBehandling.get().notater.find {
                     behandling.underholdskostnader
                         .first()
-                        .barnetsRolleIBehandlingen
+                        .rolle
                         ?.id == it.rolle.id &&
                         NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD == it.type
                 },
@@ -412,7 +412,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             lagretBehandling.underholdskostnader shouldHaveSize 3
 
             val u =
-                lagretBehandling.underholdskostnader.find { it.barnetsRolleIBehandlingen == null && it.person.navn == navnAnnetBarnBp }
+                lagretBehandling.underholdskostnader.find { it.rolle == null && it.person.navn == navnAnnetBarnBp }
 
             val sletteUnderholdselement = SletteUnderholdselement(u?.id!!, u.person.id!!, Underholdselement.BARN)
 

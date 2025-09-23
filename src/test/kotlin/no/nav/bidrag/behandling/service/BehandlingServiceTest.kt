@@ -806,7 +806,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandling.stonadstype shouldBe Stønadstype.BIDRAG
             opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 1
             opprettetBehandling.underholdskostnader shouldHaveSize 2
-            assertSoftly(opprettetBehandling.underholdskostnader.find { Rolletype.BARN == it.barnetsRolleIBehandlingen?.rolletype }) {
+            assertSoftly(opprettetBehandling.underholdskostnader.find { Rolletype.BARN == it.rolle?.rolletype }) {
                 it.shouldNotBeNull()
                 it.kilde shouldBe null
                 it.faktiskeTilsynsutgifter.shouldBeEmpty()
@@ -814,7 +814,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
             assertSoftly(opprettetBehandling.underholdskostnader.find { it.kilde == Kilde.OFFENTLIG }) {
                 it.shouldNotBeNull()
-                it.barnetsRolleIBehandlingen shouldBe null
+                it.rolle shouldBe null
                 it.faktiskeTilsynsutgifter.shouldBeEmpty()
                 it.person.ident.shouldBe(testdataBarn2.ident)
             }

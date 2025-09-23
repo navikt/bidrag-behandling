@@ -271,17 +271,17 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn1.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe null
-            it.barnetsRolleIBehandlingen.shouldNotBeNull()
+            it.rolle.shouldNotBeNull()
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe null
-            it.barnetsRolleIBehandlingen.shouldNotBeNull()
+            it.rolle.shouldNotBeNull()
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen shouldBe null
+            it.rolle shouldBe null
         }
     }
 
@@ -366,22 +366,22 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen.shouldBeNull()
+            it.rolle.shouldBeNull()
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn1.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe null
-            it.barnetsRolleIBehandlingen.shouldNotBeNull()
+            it.rolle.shouldNotBeNull()
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarn2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe null
-            it.barnetsRolleIBehandlingen.shouldNotBeNull()
+            it.rolle.shouldNotBeNull()
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen shouldBe null
+            it.rolle shouldBe null
         }
     }
 
@@ -432,12 +432,12 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen shouldBe null
+            it.rolle shouldBe null
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.MANUELL
-            it.barnetsRolleIBehandlingen shouldBe null
+            it.rolle shouldBe null
         }
     }
 
@@ -514,17 +514,17 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen shouldBe null
+            it.rolle shouldBe null
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == testdataBarnBm.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen shouldBe null
+            it.rolle shouldBe null
         }
         assertSoftly(behandling.underholdskostnader.find { it.person.ident == barnOver13Ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.barnetsRolleIBehandlingen shouldBe null
+            it.rolle shouldBe null
         }
     }
 

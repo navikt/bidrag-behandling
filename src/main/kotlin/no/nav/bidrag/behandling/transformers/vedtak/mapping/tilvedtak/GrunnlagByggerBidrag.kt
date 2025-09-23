@@ -79,7 +79,7 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                 .filter { inkluderIkkeAngitt || it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null }
                 .flatMap {
                     val underholdRolle =
-                        u.barnetsRolleIBehandlingen
+                        u.rolle
                             ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
                     val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                     val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
@@ -121,7 +121,7 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
         .flatMap { u ->
             u.tilleggsstønad.flatMap {
                 val underholdRolle =
-                    u.barnetsRolleIBehandlingen
+                    u.rolle
                         ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
                 val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                 val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse

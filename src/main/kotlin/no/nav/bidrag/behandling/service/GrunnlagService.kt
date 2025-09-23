@@ -1336,7 +1336,7 @@ class GrunnlagService(
                 if (nyesteBearbeidaBarnetilsynFørLagring.isEmpty() && nyesteBearbeidaBarnetilsynEtterLagring.isNotEmpty()) {
                     grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
                         behandling.underholdskostnader
-                            .find { it.barnetsRolleIBehandlingen?.personident?.verdi == barnetilsyn.key }
+                            .find { it.rolle?.personident?.verdi == barnetilsyn.key }
                             ?.let {
                                 if (it.barnetilsyn.isEmpty()) {
                                     it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
@@ -1434,7 +1434,7 @@ class GrunnlagService(
 
         val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.gjelderPersonId }
         behandling.underholdskostnader
-            .filter { it.barnetsRolleIBehandlingen == null }
+            .filter { it.rolle == null }
             .filter { !andreBarnIdenter.contains(it.person.ident) }
             .forEach {
                 secureLogger.debug { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }

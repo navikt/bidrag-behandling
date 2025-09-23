@@ -240,7 +240,7 @@ class ValiderBeregning(
                         rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
                         underholdskostnad =
                             (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BARNETILSYN).ifTrue {
-                                underholdskostnader.find { u -> u.barnetsRolleIBehandlingen != null }
+                                underholdskostnader.find { u -> u.rolle != null }
                             },
                         husstandsmedlem =
                             (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {

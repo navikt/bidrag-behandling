@@ -394,7 +394,7 @@ class BehandlingTilGrunnlagMappingV2(
 
         val barnUtenPerioder =
             underholdskostnader
-                .filter { it.barnetsRolleIBehandlingen == null && it.faktiskeTilsynsutgifter.isEmpty() }
+                .filter { it.rolle == null && it.faktiskeTilsynsutgifter.isEmpty() }
                 .map { u ->
                     personobjekter.hentPerson(u.person.ident) ?: u.opprettPersonGrunnlag()
                 }
@@ -402,7 +402,7 @@ class BehandlingTilGrunnlagMappingV2(
             underholdskostnader
                 .flatMap { u ->
                     u.faktiskeTilsynsutgifter.map {
-                        val underholdRolle = u.barnetsRolleIBehandlingen
+                        val underholdRolle = u.rolle
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)

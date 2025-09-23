@@ -284,8 +284,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
 
                 behandling.underholdskostnader.shouldHaveSize(4)
-                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen != null }
-                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen == null }
+                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle != null }
+                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle == null }
                 andreBarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.first().kilde shouldBe null
@@ -363,8 +363,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     behandling.underholdskostnader.shouldHaveSize(5)
-                    val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen != null }
-                    val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen == null }
+                    val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle != null }
+                    val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle == null }
                     andreBarnUnderholdskostnader.shouldHaveSize(3)
                     søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                     søknadsbarnUnderholdskostnader.first().kilde shouldBe null
