@@ -364,8 +364,9 @@ class VedtakGrunnlagMapper(
                 val klageBeregning =
                     if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
                         val innkrevesFraPeriode = behandling.finnInnkrevesFraDato(søknadsbarnRolle)?.let { ÅrMånedsperiode(it, null) }
+                        val etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)
                         val skalInnkreves =
-                            behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING ||
+                            behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING || etterfølgendeVedtak != null ||
                                 innkrevesFraPeriode != null && innkrevesFraPeriode.overlapper(beregningsperiode)
                         OmgjøringOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
