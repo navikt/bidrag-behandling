@@ -765,7 +765,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         Underholdskostnad(
                             id = if (generateId) 1 else null,
                             behandling = behandling,
-                            person = Person(ident = it.ident, fødselsdato = it.fødselsdato, rolle = mutableSetOf(it)),
+                            rolle = it,
                         )
                     }.toMutableSet()
             husstandsmedlem.add(
