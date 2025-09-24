@@ -191,7 +191,15 @@ class GrunnlagService(
         } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
             hentOgLagreEtterfølgendeVedtak(behandling)
             lagreBeløpshistorikkGrunnlag(behandling)
+        } else {
+            val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
+            log.debug {
+                "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
+                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
+            }
+        }
+        if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
             if (UnleashFeatures.AKTIVERE_GRUNNLAG_HVIS_INGEN_ENDRINGER.isEnabled) {
                 secureLogger.info {
                     "Forsøker å aktivere boforhold og sivilstand grunnlag hvis de ikke er aktivert i behandling ${behandling.id} og saksnummer ${behandling.saksnummer}"
@@ -204,13 +212,6 @@ class GrunnlagService(
                         aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
                     }
                 }
-            }
-        } else {
-            val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
-
-            log.debug {
-                "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
-                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
     }
