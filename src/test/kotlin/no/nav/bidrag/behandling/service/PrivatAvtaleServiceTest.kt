@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.matchers.collections.shouldExist
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -46,7 +45,7 @@ class PrivatAvtaleServiceTest {
     @BeforeEach
     fun setUp() {
         personRepository = stubPersonRepository()
-        privatAvtaleService = PrivatAvtaleService(behandlingService, personRepository, notatService)
+        privatAvtaleService = PrivatAvtaleService(behandlingService, notatService)
     }
 
     @Test
@@ -66,8 +65,7 @@ class PrivatAvtaleServiceTest {
             opprettetPrivatAvtale.avtaleDato shouldBe null
             opprettetPrivatAvtale.skalIndeksreguleres shouldBe true
             opprettetPrivatAvtale.perioder shouldHaveSize 0
-            opprettetPrivatAvtale.person.rolle.shouldExist { it.ident == behandling.søknadsbarn.first().ident }
-            opprettetPrivatAvtale.barnetsRolleIBehandlingen.shouldNotBeNull()
+            opprettetPrivatAvtale.rolle.shouldNotBeNull()
         }
     }
 

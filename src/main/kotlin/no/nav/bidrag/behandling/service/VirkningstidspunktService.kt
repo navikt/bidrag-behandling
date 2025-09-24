@@ -63,16 +63,17 @@ class VirkningstidspunktService(
             .konvertereData<List<ManuellVedtakGrunnlag>>()
             ?.map {
                 ManuellVedtakDto(
-                    it.vedtaksid,
-                    søknadsbarn.id!!,
-                    it.fattetTidspunkt,
-                    it.virkningsDato,
-                    it.vedtakstype,
-                    it.privatAvtale,
-                    it.begrensetRevurdering,
-                    it.resultatSistePeriode,
-                    it.manglerGrunnlag,
-                    it.innkrevingstype,
+                    valgt = søknadsbarn.beregningGrunnlagFraVedtak == it.vedtaksid,
+                    vedtaksid = it.vedtaksid,
+                    barnId = søknadsbarn.id!!,
+                    fattetTidspunkt = it.fattetTidspunkt,
+                    virkningsDato = it.virkningsDato,
+                    vedtakstype = it.vedtakstype,
+                    privatAvtale = it.privatAvtale,
+                    begrensetRevurdering = it.begrensetRevurdering,
+                    resultatSistePeriode = it.resultatSistePeriode,
+                    manglerGrunnlag = it.manglerGrunnlag,
+                    innkrevingstype = it.innkrevingstype,
                 )
             }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
     }

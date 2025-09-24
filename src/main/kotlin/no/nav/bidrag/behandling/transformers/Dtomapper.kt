@@ -97,7 +97,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrun
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
-import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
@@ -122,15 +121,15 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalPersonDto
+import no.nav.bidrag.transport.dokumentmaler.notat.BoforholdBarn
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatAndreVoksneIHusstanden
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatAndreVoksneIHusstandenDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatVoksenIHusstandenDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerBruktTilBeregning
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteret
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteretMedDetaljer
 import no.nav.bidrag.transport.felles.ifTrue
-import no.nav.bidrag.transport.notat.BoforholdBarn
-import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstanden
-import no.nav.bidrag.transport.notat.NotatAndreVoksneIHusstandenDetaljerDto
-import no.nav.bidrag.transport.notat.NotatPersonDto
-import no.nav.bidrag.transport.notat.NotatVoksenIHusstandenDetaljerDto
-import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
-import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
-import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteretMedDetaljer
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -170,22 +169,23 @@ class Dtomapper(
                     val vedtaksliste = behandling.omgjøringsdetaljer?.omgjortVedtaksliste?.map { it.vedtaksid } ?: emptyList()
                     !vedtaksliste.contains(it.vedtaksid)
                 } else if (behandling.erInnkreving) {
-                    true // it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
+                    it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
                 } else {
                     true
                 }
             }?.map {
                 ManuellVedtakDto(
-                    it.vedtaksid,
-                    søknadsbarn.id!!,
-                    it.fattetTidspunkt,
-                    it.virkningsDato,
-                    it.vedtakstype,
-                    it.privatAvtale,
-                    it.begrensetRevurdering,
-                    it.resultatSistePeriode,
-                    it.manglerGrunnlag,
-                    it.innkrevingstype,
+                    valgt = søknadsbarn.beregningGrunnlagFraVedtak == it.vedtaksid,
+                    vedtaksid = it.vedtaksid,
+                    barnId = søknadsbarn.id!!,
+                    fattetTidspunkt = it.fattetTidspunkt,
+                    virkningsDato = it.virkningsDato,
+                    vedtakstype = it.vedtakstype,
+                    privatAvtale = it.privatAvtale,
+                    begrensetRevurdering = it.begrensetRevurdering,
+                    resultatSistePeriode = it.resultatSistePeriode,
+                    manglerGrunnlag = it.manglerGrunnlag,
+                    innkrevingstype = it.innkrevingstype,
                 )
             }?.sortedByDescending { it.fattetTidspunkt } ?: emptyList()
     }
@@ -292,13 +292,12 @@ class Dtomapper(
             bu.gjelderBarn.ident?.verdi == person.ident
         }?.perioder ?: emptySet()
 
-    fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Person): BeregnetPrivatAvtaleDto {
+    fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Rolle): BeregnetPrivatAvtaleDto {
         val privatAvtaleBeregning = vedtakGrunnlagMapper.tilBeregnetPrivatAvtale(this, gjelderBarn)
 
-        val rolle = roller.find { it.ident == gjelderBarn.ident }
         val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
         return BeregnetPrivatAvtaleDto(
-            gjelderBarn = gjelderBarn.tilPersoninfoDto(rolle, null),
+            gjelderBarn = gjelderBarn.tilPersoninfoDto(),
             privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
                 BeregnetPrivatAvtalePeriodeDto(
                     periode = Datoperiode(it.periode.fom, it.periode.til),
@@ -502,7 +501,7 @@ class Dtomapper(
             )
         return BoforholdBarn(
             gjelder =
-                NotatPersonDto(
+                DokumentmalPersonDto(
                     rolle = null,
                     navn = tilgangskontrollertPersoninfo.navn,
                     fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
@@ -799,7 +798,8 @@ class Dtomapper(
                             etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
                             årsak = it.årsak ?: årsak,
                             avslag = it.avslag ?: avslag,
-                            grunnlagFraVedtak = it.grunnlagFraVedtak,
+                            grunnlagFraVedtak =
+                                it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
                             kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
                             begrunnelse =
                                 if (notat.isEmpty()) {
@@ -995,16 +995,14 @@ class Dtomapper(
     fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
         PrivatAvtaleDto(
             id = id!!,
-            perioderLøperBidrag = barnetsRolleIBehandlingen?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
-            gjelderBarn = person.tilPersoninfoDto(barnetsRolleIBehandlingen, Kilde.MANUELL),
+            perioderLøperBidrag = rolle?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
+            gjelderBarn = rolle!!.tilPersoninfoDto(),
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
-            etterfølgendeVedtak =
+            manuelleVedtakUtenInnkreving =
                 if (behandling.erInnkreving) {
-                    behandling.hentNesteEtterfølgendeVedtak(
-                        barnetsRolleIBehandlingen!!,
-                    )
+                    hentManuelleVedtakForBehandling(behandling, rolle!!)
                 } else {
                     null
                 },
@@ -1012,7 +1010,7 @@ class Dtomapper(
                 henteNotatinnhold(
                     this.behandling,
                     NotatType.PRIVAT_AVTALE,
-                    barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+                    rolle ?: this.behandling.bidragsmottaker!!,
                     true,
                 ),
             begrunnelseFraOpprinneligVedtak =
@@ -1020,7 +1018,7 @@ class Dtomapper(
                     henteNotatinnhold(
                         this.behandling,
                         NotatType.PRIVAT_AVTALE,
-                        barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+                        rolle ?: this.behandling.bidragsmottaker!!,
                         false,
                     ).takeIfNotNullOrEmpty { it }
                 } else {
@@ -1031,7 +1029,7 @@ class Dtomapper(
                 if (skalIndeksreguleres &&
                     perioderInnkreving.isNotEmpty()
                 ) {
-                    behandling.tilBeregnetPrivatAvtale(person)
+                    behandling.tilBeregnetPrivatAvtale(rolle!!)
                 } else {
                     null
                 },

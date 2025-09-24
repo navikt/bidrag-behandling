@@ -180,15 +180,15 @@ class BehandlingTilGrunnlagMappingV2(
         fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto =
             GrunnlagDto(
                 referanse =
-                    person.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG),
+                    rolle!!.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG),
                 grunnlagsreferanseListe = emptyList(),
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
                 innhold =
                     POJONode(
                         Person(
-                            ident = person.ident?.let { Personident(it) },
-                            navn = if (person.ident.isNullOrEmpty()) person.navn else null,
-                            fødselsdato = person.fødselsdato,
+                            ident = rolle!!.ident?.let { Personident(it) },
+                            navn = if (rolle!!.ident.isNullOrEmpty()) rolle!!.navn else null,
+                            fødselsdato = rolle!!.fødselsdato,
                         ).valider(),
                     ),
             )
@@ -200,13 +200,13 @@ class BehandlingTilGrunnlagMappingV2(
         }
 
         return privatAvtale
-            .find { it.perioderInnkreving.isNotEmpty() && it.person.ident == gjelderBarnIdent }
+            .find { it.perioderInnkreving.isNotEmpty() && it.rolle!!.ident == gjelderBarnIdent }
             ?.let { pa ->
-                val underholdRolle = pa.barnetsRolleIBehandlingen
+                val underholdRolle = pa.rolle
                 val gjelderBarn =
                     underholdRolle?.tilGrunnlagPerson()?.also {
                         grunnlagslistePersoner.add(it)
-                    } ?: personobjekter.hentPerson(pa.person.ident) ?: pa.opprettPersonGrunnlag()
+                    } ?: personobjekter.hentPerson(pa.rolle!!.ident) ?: pa.opprettPersonGrunnlag()
                 val gjelderBarnReferanse = gjelderBarn.referanse
                 val grunnlag =
                     pa.perioderInnkreving.map {
@@ -232,7 +232,7 @@ class BehandlingTilGrunnlagMappingV2(
                             innhold =
                                 POJONode(
                                     PrivatAvtaleGrunnlag(
-                                        avtaleInngåttDato = pa.avtaleDato ?: virkningstidspunkt!!,
+                                        avtaleInngåttDato = pa.utledetAvtaledato ?: virkningstidspunkt!!,
                                         avtaleType = pa.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                                         skalIndeksreguleres = pa.skalIndeksreguleres,
                                     ),

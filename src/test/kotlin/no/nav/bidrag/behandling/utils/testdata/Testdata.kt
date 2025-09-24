@@ -2087,7 +2087,7 @@ fun Behandling.leggTilPrivatAvtale(
     beløp: BigDecimal = BigDecimal(1000),
 ) {
     val privatAvtale =
-        this.privatAvtale.find { it.person.ident == barn.ident } ?: opprettPrivatAvtale(this, barn).let { pa ->
+        this.privatAvtale.find { it.rolle!!.ident == barn.ident } ?: opprettPrivatAvtale(this, barn).let { pa ->
             privatAvtale.add(pa)
             pa
         }
@@ -2388,7 +2388,7 @@ fun opprettPrivatAvtale(
         id = 1,
         behandling = behandling,
         avtaleDato = privatAvtaleDato,
-        person = person.tilPerson(behandling),
+        rolle = person.tilRolle(behandling),
         avtaleType = PrivatAvtaleType.PRIVAT_AVTALE,
     )
 

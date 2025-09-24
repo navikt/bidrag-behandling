@@ -36,7 +36,10 @@ open class PrivatAvtale(
         cascade = [CascadeType.PERSIST],
     )
     @JoinColumn(name = "person_id", nullable = false)
-    open val person: Person,
+    open val person: Person? = null,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rolle_id", nullable = true)
+    open val rolle: Rolle? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "privatAvtale",
@@ -45,8 +48,6 @@ open class PrivatAvtale(
     )
     open var perioder: MutableSet<PrivatAvtalePeriode> = mutableSetOf(),
 ) {
-    val barnetsRolleIBehandlingen get() = person.rolle.find { behandling.id == it.behandling.id }
-
     val utledetAvtaledato get() =
         if (valgtVedtakFraNav != null) {
             valgtVedtakFraNav!!.vedtakstidspunkt?.withDayOfMonth(1)?.toLocalDate()
@@ -54,8 +55,10 @@ open class PrivatAvtale(
             avtaleDato
         }
     val valgtVedtakFraNav get() =
-        barnetsRolleIBehandlingen!!.grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }?.takeIf {
-            it.vedtak != null
+        if (avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV) {
+            rolle!!.grunnlagFraVedtakForInnkreving?.takeIf { it.vedtak != null }
+        } else {
+            null
         }
     val perioderInnkreving get() =
         when {
@@ -64,18 +67,19 @@ open class PrivatAvtale(
                     ?.perioder
                     ?.filter {
                         it.periode.til == null ||
-                            it.periode.fom.isAfter(barnetsRolleIBehandlingen!!.virkningstidspunkt!!.toYearMonth())
+                            it.periode.fom.isAfter(rolle!!.virkningstidspunkt!!.toYearMonth())
                     }?.mapIndexed { i, it ->
                         PrivatAvtalePeriode(
                             i.toLong(),
                             this,
-                            maxOf(it.periode.fom.atDay(1), barnetsRolleIBehandlingen!!.virkningstidspunkt!!),
+                            maxOf(it.periode.fom.atDay(1), rolle!!.virkningstidspunkt!!),
                             it.periode.til?.atDay(1),
                             it.beløp ?: BigDecimal.ZERO,
                         )
-                    } ?: emptyList()
+                    }?.toSet() ?: emptySet()
             else -> perioder
         }
 
-    override fun toString(): String = "PrivatAvtale(id=$id, behandling=${behandling.id}, person=${person.id}, perioder=$perioder)"
+    override fun toString(): String =
+        "PrivatAvtale(id=$id, behandling=${behandling.id}, rolle=${rolle?.id} person=${person?.id}, perioder=$perioder)"
 }

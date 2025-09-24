@@ -74,56 +74,57 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunn
 import no.nav.bidrag.transport.dokument.JournalpostType
 import no.nav.bidrag.transport.dokument.OpprettDokumentDto
 import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalDelberegningBarnetilleggDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalDelberegningBidragsevneDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalDelberegningBidragspliktigesBeregnedeTotalbidragDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalManuellVedtak
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalPersonDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBeregningInntekterDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.IndeksreguleringDetaljer
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.NotatBeregningsdetaljerSamværsfradrag
+import no.nav.bidrag.transport.dokumentmaler.notat.Arbeidsforhold
+import no.nav.bidrag.transport.dokumentmaler.notat.EndeligOrkestrertVedtak
+import no.nav.bidrag.transport.dokumentmaler.notat.InntekterPerRolle
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatBegrunnelseDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatBehandlingDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatBeregnetInntektDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatBeregnetPrivatAvtalePeriodeDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatBoforholdDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatBoforholdTilBMMedSøknadsbarn
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrRolleDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrRolleDto.NotatGebyrInntektDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntektDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntekterDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntektspostDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatMaksGodkjentBeløpDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatMalType
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatOffentligeOpplysningerUnderhold
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatOffentligeOpplysningerUnderholdBarn
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatOffentligeOpplysningerUnderholdBarn.NotatBarnetilsynOffentligeOpplysninger
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatPrivatAvtaleDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatPrivatAvtalePeriodeDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatResultatForskuddBeregningBarnDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatResultatSærbidragsberegningDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatSamværDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatSivilstand
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatSærbidragKategoriDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatSærbidragUtgifterDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatTotalBeregningUtgifterDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatUnderholdBarnDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatUnderholdBarnDto.NotatFaktiskTilsynsutgiftDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatUnderholdBarnDto.NotatTilleggsstønadDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatUnderholdDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatUtgiftBeregningDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatUtgiftspostDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatVedtakDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatVirkningstidspunktDto
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerBruktTilBeregning
+import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteret
+import no.nav.bidrag.transport.dokumentmaler.notat.VedtakNotatDto
 import no.nav.bidrag.transport.felles.ifTrue
-import no.nav.bidrag.transport.notat.Arbeidsforhold
-import no.nav.bidrag.transport.notat.EndeligOrkestrertVedtak
-import no.nav.bidrag.transport.notat.InntekterPerRolle
-import no.nav.bidrag.transport.notat.NotatBegrunnelseDto
-import no.nav.bidrag.transport.notat.NotatBehandlingDetaljerDto
-import no.nav.bidrag.transport.notat.NotatBeregnetInntektDto
-import no.nav.bidrag.transport.notat.NotatBeregnetPrivatAvtalePeriodeDto
-import no.nav.bidrag.transport.notat.NotatBoforholdDto
-import no.nav.bidrag.transport.notat.NotatBoforholdTilBMMedSøknadsbarn
-import no.nav.bidrag.transport.notat.NotatDelberegningBarnetilleggDto
-import no.nav.bidrag.transport.notat.NotatDelberegningBidragsevneDto
-import no.nav.bidrag.transport.notat.NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto
-import no.nav.bidrag.transport.notat.NotatGebyrRolleDto
-import no.nav.bidrag.transport.notat.NotatGebyrRolleDto.NotatGebyrInntektDto
-import no.nav.bidrag.transport.notat.NotatInntektDto
-import no.nav.bidrag.transport.notat.NotatInntekterDto
-import no.nav.bidrag.transport.notat.NotatInntektspostDto
-import no.nav.bidrag.transport.notat.NotatMaksGodkjentBeløpDto
-import no.nav.bidrag.transport.notat.NotatMalType
-import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderhold
-import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderholdBarn
-import no.nav.bidrag.transport.notat.NotatOffentligeOpplysningerUnderholdBarn.NotatBarnetilsynOffentligeOpplysninger
-import no.nav.bidrag.transport.notat.NotatPersonDto
-import no.nav.bidrag.transport.notat.NotatPrivatAvtaleDto
-import no.nav.bidrag.transport.notat.NotatPrivatAvtalePeriodeDto
-import no.nav.bidrag.transport.notat.NotatResultatBeregningInntekterDto
-import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto
-import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto
-import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer
-import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.IndeksreguleringDetaljer
-import no.nav.bidrag.transport.notat.NotatResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.NotatBeregningsdetaljerSamværsfradrag
-import no.nav.bidrag.transport.notat.NotatResultatForskuddBeregningBarnDto
-import no.nav.bidrag.transport.notat.NotatResultatSærbidragsberegningDto
-import no.nav.bidrag.transport.notat.NotatSamværDto
-import no.nav.bidrag.transport.notat.NotatSivilstand
-import no.nav.bidrag.transport.notat.NotatSærbidragKategoriDto
-import no.nav.bidrag.transport.notat.NotatSærbidragUtgifterDto
-import no.nav.bidrag.transport.notat.NotatTotalBeregningUtgifterDto
-import no.nav.bidrag.transport.notat.NotatUnderholdBarnDto
-import no.nav.bidrag.transport.notat.NotatUnderholdBarnDto.NotatFaktiskTilsynsutgiftDto
-import no.nav.bidrag.transport.notat.NotatUnderholdBarnDto.NotatTilleggsstønadDto
-import no.nav.bidrag.transport.notat.NotatUnderholdDto
-import no.nav.bidrag.transport.notat.NotatUtgiftBeregningDto
-import no.nav.bidrag.transport.notat.NotatUtgiftspostDto
-import no.nav.bidrag.transport.notat.NotatVedtakDetaljerDto
-import no.nav.bidrag.transport.notat.NotatVirkningstidspunktDto
-import no.nav.bidrag.transport.notat.OpplysningerBruktTilBeregning
-import no.nav.bidrag.transport.notat.OpplysningerFraFolkeregisteret
-import no.nav.bidrag.transport.notat.VedtakNotatDto
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
@@ -417,6 +418,18 @@ class NotatOpplysningerService(
                             avtaleDato = it.avtaleDato,
                             avtaleType = it.avtaleType,
                             skalIndeksreguleres = it.skalIndeksreguleres,
+                            vedtakslisteUtenInnkreving =
+                                it.manuelleVedtakUtenInnkreving?.map {
+                                    DokumentmalManuellVedtak(
+                                        valgt = it.valgt,
+                                        fattetTidspunkt = it.fattetTidspunkt,
+                                        virkningsDato = it.virkningsDato,
+                                        vedtakstype = it.vedtakstype,
+                                        resultatSistePeriode = it.resultatSistePeriode,
+                                        privatAvtale = it.privatAvtale,
+                                        begrensetRevurdering = it.begrensetRevurdering,
+                                    )
+                                } ?: emptyList(),
                             perioder =
                                 it.perioder.map {
                                     NotatPrivatAvtalePeriodeDto(
@@ -464,7 +477,7 @@ class NotatOpplysningerService(
                         Saksnummer(saksnummer),
                         true,
                     )
-                NotatPersonDto(
+                DokumentmalPersonDto(
                     navn = tilgangskontrollertPersoninfo.navn,
                     fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
                     ident = tilgangskontrollertPersoninfo.ident,
@@ -521,7 +534,7 @@ class NotatOpplysningerService(
                                         },
                                     inntekter =
                                         it.inntekter?.let {
-                                            NotatResultatBeregningInntekterDto(
+                                            DokumentmalResultatBeregningInntekterDto(
                                                 inntektBM = it.inntektBM,
                                                 inntektBP = it.inntektBP,
                                                 inntektBarn = it.inntektBarn,
@@ -543,7 +556,7 @@ class NotatOpplysningerService(
                     TypeBehandling.BIDRAG ->
                         beregningService.beregneBidrag(this).tilDto().let {
                             it.resultatBarn.map { beregning ->
-                                NotatResultatBidragsberegningBarnDto(
+                                DokumentmalResultatBidragsberegningBarnDto(
                                     barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
                                     indeksår = beregning.indeksår ?: Year.now().value,
                                     innkrevesFraDato = beregning.innkrevesFraDato,
@@ -622,7 +635,7 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                     bpsAndel = it.bpsAndel,
                     inntekter =
                         it.inntekter?.let {
-                            NotatResultatBeregningInntekterDto(
+                            DokumentmalResultatBeregningInntekterDto(
                                 inntektBM = it.inntektBM,
                                 inntektBP = it.inntektBP,
                                 inntektBarn = it.inntektBarn,
@@ -649,10 +662,10 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
     )
 
 private fun DelberegningBarnetilleggDto.tilNotatDto() =
-    NotatDelberegningBarnetilleggDto(
+    DokumentmalDelberegningBarnetilleggDto(
         barnetillegg =
             barnetillegg.map {
-                NotatDelberegningBarnetilleggDto.NotatBarnetilleggDetaljerDto(
+                DokumentmalDelberegningBarnetilleggDto.DokumentmalBarnetilleggDetaljerDto(
                     bruttoBeløp = it.bruttoBeløp,
                     nettoBeløp = it.nettoBeløp,
                     visningsnavn = it.visningsnavn,
@@ -757,24 +770,24 @@ private fun SærbidragUtgifterDto.tilNotatUtgiftDto(behandling: Behandling) =
     )
 
 private fun DelberegningBidragsevneDto.tilNotatDto() =
-    NotatDelberegningBidragsevneDto(
+    DokumentmalDelberegningBidragsevneDto(
         sumInntekt25Prosent = sumInntekt25Prosent,
         bidragsevne = bidragsevne,
         utgifter =
-            NotatDelberegningBidragsevneDto.NotatBidragsevneUtgifterBolig(
+            DokumentmalDelberegningBidragsevneDto.DokumentmalBidragsevneUtgifterBolig(
                 boutgiftBeløp = utgifter.boutgiftBeløp,
                 borMedAndreVoksne = utgifter.borMedAndreVoksne,
                 underholdBeløp = utgifter.underholdBeløp,
             ),
         skatt =
-            NotatDelberegningBidragsevneDto.NotatSkattBeregning(
+            DokumentmalDelberegningBidragsevneDto.DokumentmalSkattBeregning(
                 skattAlminneligInntekt = skatt.skattAlminneligInntekt,
                 sumSkatt = skatt.sumSkatt,
                 trinnskatt = skatt.trinnskatt,
                 trygdeavgift = skatt.trygdeavgift,
             ),
         underholdEgneBarnIHusstand =
-            NotatDelberegningBidragsevneDto.NotatUnderholdEgneBarnIHusstand(
+            DokumentmalDelberegningBidragsevneDto.DokumentmalUnderholdEgneBarnIHusstand(
                 antallBarnIHusstanden = underholdEgneBarnIHusstand.antallBarnIHusstanden,
                 årsbeløp = underholdEgneBarnIHusstand.årsbeløp,
                 sjablon = underholdEgneBarnIHusstand.sjablon,
@@ -876,7 +889,7 @@ private fun Behandling.tilVirkningstidspunkt() =
     )
 
 private fun RolleDto.tilNotatRolle() =
-    NotatPersonDto(
+    DokumentmalPersonDto(
         rolle = rolletype,
         navn = navn,
         fødselsdato = fødselsdato,
@@ -884,7 +897,7 @@ private fun RolleDto.tilNotatRolle() =
     )
 
 private fun PersoninfoDto.tilNotatRolle(behandling: Behandling) =
-    NotatPersonDto(
+    DokumentmalPersonDto(
         rolle = if (medIBehandlingen == true) behandling.roller.find { it.ident == ident?.verdi }?.rolletype else null,
         navn = ident?.let { hentPersonVisningsnavn(it.verdi) } ?: navn,
         fødselsdato = fødselsdato,
@@ -892,7 +905,7 @@ private fun PersoninfoDto.tilNotatRolle(behandling: Behandling) =
     )
 
 private fun Rolle.tilNotatRolle() =
-    NotatPersonDto(
+    DokumentmalPersonDto(
         rolle = rolletype,
         navn = hentPersonVisningsnavn(ident),
         fødselsdato = fødselsdato,
@@ -1060,12 +1073,12 @@ private fun Behandling.hentInntekterForIdent(
 )
 
 private fun DelberegningBidragspliktigesBeregnedeTotalbidragDto.tilNotatDto() =
-    NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto(
+    DokumentmalDelberegningBidragspliktigesBeregnedeTotalbidragDto(
         bidragspliktigesBeregnedeTotalbidrag = bidragspliktigesBeregnedeTotalbidrag,
         periode = periode,
         beregnetBidragPerBarnListe =
             beregnetBidragPerBarnListe.map {
-                NotatDelberegningBidragspliktigesBeregnedeTotalbidragDto
+                DokumentmalDelberegningBidragspliktigesBeregnedeTotalbidragDto
                     .NotatBeregnetBidragPerBarnDto(
                         beregnetBidragPerBarn = it.beregnetBidragPerBarn,
                         personidentBarn = it.personidentBarn,

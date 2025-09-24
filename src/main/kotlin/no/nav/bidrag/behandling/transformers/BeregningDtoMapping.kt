@@ -335,10 +335,11 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                         )
                     val klagevedtak = resultat.resultatVedtak.resultatVedtakListe.find { it.omgjøringsvedtak }
                     val erKlagevedtak =
-                        klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any {
-                            it.periode.fom == p.periode.fom ||
-                                p.periode.fom == resultat.opphørsdato && p.resultat.beløp == null
-                        } == true
+                        resultatFraVedtak?.vedtaksid == null &&
+                            klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any {
+                                it.periode.fom == p.periode.fom ||
+                                    p.periode.fom == resultat.opphørsdato && p.resultat.beløp == null
+                            } == true
 
                     val aldersjusteringsdetaljer =
                         delvedtak
@@ -641,6 +642,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     .periodeListe
                     .find { it.periode.inneholder(periode) }!!
             val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
+            val vedtakstype = if (vedtakstype == Vedtakstype.INNKREVING) vedtakstype else vedtak.type
             return vedtak.grunnlagListe
                 .byggResultatBidragsberegning(
                     periode,
@@ -649,7 +651,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     vedtakPeriode.grunnlagReferanseListe,
                     null,
                     barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
-                    vedtak.type,
+                    vedtakstype,
                     barnIdent,
                 ).copy(
                     klageOmgjøringDetaljer =

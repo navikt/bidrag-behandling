@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
@@ -22,14 +23,15 @@ private val log = KotlinLogging.logger {}
 @Service
 class PrivatAvtaleService(
     val behandlingService: BehandlingService,
-    val personRepository: PersonRepository,
     val notatService: NotatService,
 ) {
     private fun lagrePrivatAvtale(
         behandling: Behandling,
-        person: Person,
+        rolle: Rolle? = null,
+        person: Person? = null,
     ): PrivatAvtale {
-        val privatAvtale = PrivatAvtale(behandling = behandling, person = person, avtaleType = PrivatAvtaleType.PRIVAT_AVTALE)
+        val privatAvtale =
+            PrivatAvtale(behandling = behandling, rolle = rolle, person = person, avtaleType = PrivatAvtaleType.PRIVAT_AVTALE)
         behandling.privatAvtale.add(privatAvtale)
         return privatAvtale
     }
@@ -89,7 +91,7 @@ class PrivatAvtaleService(
             behandling,
             NotatGrunnlag.NotatType.PRIVAT_AVTALE,
             nyBegrunnelse,
-            privatAvtale.barnetsRolleIBehandlingen ?: behandling.bidragspliktig!!,
+            privatAvtale.rolle ?: behandling.bidragspliktig!!,
         )
     }
 
@@ -154,33 +156,18 @@ class PrivatAvtaleService(
     ): PrivatAvtale {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         behandling.privatAvtale
-            .find { it.person.ident == gjelderBarn.personident?.verdi }
+            .find { it.rolle?.ident == gjelderBarn.personident?.verdi }
             ?.let {
                 ugyldigForespørsel("Privat avtale for barn med personident ${gjelderBarn.personident?.verdi} finnes allerede")
             }
         return gjelderBarn.personident?.let { personidentBarn ->
-            val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
-            personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
-                rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
-                rolleSøknadsbarn?.person = eksisterendePerson
-                lagrePrivatAvtale(behandling, eksisterendePerson)
-            } ?: run {
-                val person =
-                    Person(
-                        ident = personidentBarn.verdi,
-                        fødselsdato =
-                            hentPersonFødselsdato(personidentBarn.verdi)
-                                ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
-                        rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
-                    )
-                person.rolle.forEach { it.person = person }
-
-                lagrePrivatAvtale(behandling, person)
+            behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }?.let {
+                lagrePrivatAvtale(behandling, it)
             }
         } ?: run {
             lagrePrivatAvtale(
                 behandling,
-                Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
+                person = Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
             )
         }
     }

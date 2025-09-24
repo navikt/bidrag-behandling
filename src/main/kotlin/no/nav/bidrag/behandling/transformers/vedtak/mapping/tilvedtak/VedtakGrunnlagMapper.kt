@@ -229,11 +229,11 @@ class VedtakGrunnlagMapper(
 
     fun tilBeregnetPrivatAvtale(
         behandling: Behandling,
-        gjelderBarn: no.nav.bidrag.behandling.database.datamodell.Person,
+        gjelderBarn: Rolle,
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
             if (behandling.privatAvtale
-                    .find { it.person.ident == gjelderBarn.ident }
+                    .find { it.rolle!!.ident == gjelderBarn.ident }
                     ?.perioderInnkreving
                     ?.isEmpty() == true
             ) {
@@ -257,7 +257,7 @@ class VedtakGrunnlagMapper(
 
     fun byggGrunnlagForBeregningPrivatAvtale(
         behandling: Behandling,
-        person: no.nav.bidrag.behandling.database.datamodell.Person,
+        person: Rolle,
     ): BeregnGrunnlag {
         mapper.run {
             behandling.run {
@@ -266,8 +266,8 @@ class VedtakGrunnlagMapper(
 
                 val personObjekt = personobjekter.hentPerson(person.ident)!!
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
-                val opphørsdato = person.opphørsdatoForRolle(behandling)
-                val beregningTilDato = finnBeregnTilDatoBehandling(person.finnRolle(behandling))
+                val opphørsdato = person.opphørsdatoYearMonth
+                val beregningTilDato = finnBeregnTilDatoBehandling(person)
                 return BeregnGrunnlag(
                     periode =
                         ÅrMånedsperiode(

@@ -335,20 +335,24 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
 }
 
 fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
-    val notatPrivatAvtale = behandling.notater.find { it.type == NotatGrunnlag.NotatType.PRIVAT_AVTALE && person?.ident == it.rolle?.ident }
+    val notatPrivatAvtale = behandling.notater.find { it.type == NotatGrunnlag.NotatType.PRIVAT_AVTALE && rolle?.ident == it.rolle?.ident }
     return PrivatAvtaleValideringsfeilDto(
         privatAvtaleId = id!!,
-        gjelderPerson = person,
+        gjelderPerson = rolle!!,
         manglerAvtaledato = utledetAvtaledato == null,
         manglerAvtaletype = avtaleType == null,
         perioderOverlapperMedLøpendeBidrag =
-            behandling.finnPerioderSomOverlapperMedLøpendeBidrag(
-                perioder.map {
-                    it.tilDatoperiode()
-                },
-                barnetsRolleIBehandlingen!!,
-            ),
-        ingenLøpendePeriode = perioder.isEmpty() || behandling.manglerLøpendePeriode(perioder, barnetsRolleIBehandlingen!!),
+            if (behandling.erInnkreving) {
+                emptySet()
+            } else {
+                behandling.finnPerioderSomOverlapperMedLøpendeBidrag(
+                    perioder.map {
+                        it.tilDatoperiode()
+                    },
+                    rolle!!,
+                )
+            },
+        ingenLøpendePeriode = perioderInnkreving.isEmpty() || behandling.manglerLøpendePeriode(perioderInnkreving, rolle!!),
         manglerBegrunnelse = !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
         måVelgeVedtakHvisAvtaletypeErVedtakFraNav =
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && valgtVedtakFraNav == null,

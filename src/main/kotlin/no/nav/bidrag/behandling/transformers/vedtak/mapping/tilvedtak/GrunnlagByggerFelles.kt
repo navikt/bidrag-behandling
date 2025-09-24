@@ -364,6 +364,76 @@ fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
         ).filterNotNull().toSet()
     }
 
+fun Behandling.byggGrunnlagPrivatAvtale() =
+    roller
+        .flatMap { rolle ->
+            listOf(
+                henteNotatinnhold(
+                    this,
+                    Notattype.PRIVAT_AVTALE,
+                    rolle,
+                ).takeIfNotNullOrEmpty { innhold ->
+                    opprettGrunnlagNotat(Notattype.PRIVAT_AVTALE, false, innhold, gjelderBarnReferanse = rolle.tilGrunnlagsreferanse())
+                },
+                henteNotatinnhold(
+                    this,
+                    Notattype.PRIVAT_AVTALE,
+                    rolle,
+                    begrunnelseDelAvBehandlingen = false,
+                ).takeIfNotNullOrEmpty { innhold ->
+                    opprettGrunnlagNotat(
+                        Notattype.PRIVAT_AVTALE,
+                        false,
+                        innhold,
+                        gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                        fraOmgjortVedtak = true,
+                    )
+                },
+            )
+        }.filterNotNull()
+
+fun Behandling.byggGrunnlagNotatVurderingAvSkolegang() =
+    if (kanSkriveVurderingAvSkolegangAlle()) {
+        roller
+            .flatMap { rolle ->
+                listOf(
+                    henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle)
+                        .takeIfNotNullOrEmpty { innhold ->
+                            opprettGrunnlagNotat(
+                                Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                                false,
+                                innhold,
+                                gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                            )
+                        },
+                    henteNotatinnhold(
+                        this,
+                        Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                        rolle,
+                        begrunnelseDelAvBehandlingen = false,
+                    ).takeIfNotNullOrEmpty { innhold ->
+                        opprettGrunnlagNotat(
+                            Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                            false,
+                            innhold,
+                            gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
+                            fraOmgjortVedtak = true,
+                        )
+                    },
+                )
+            }.filterNotNull()
+    } else {
+        emptyList()
+    }
+
+fun Behandling.byggGrunnlagNotaterInnkreving(): Set<GrunnlagDto> {
+    val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt()
+    val notatVurderingAvSkolegang = byggGrunnlagNotatVurderingAvSkolegang()
+    val notatPrivatAvtale = byggGrunnlagPrivatAvtale()
+
+    return (virkningstidspunktGrunnlag + notatVurderingAvSkolegang + notatPrivatAvtale).toSet()
+}
+
 fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
     val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt()
     val notatGrunnlag =
@@ -382,39 +452,8 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
             },
         ).filterNotNull()
 
-    val notatVurderingAvSkolegang =
-        if (kanSkriveVurderingAvSkolegangAlle()) {
-            roller
-                .flatMap { rolle ->
-                    listOf(
-                        henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle)
-                            .takeIfNotNullOrEmpty { innhold ->
-                                opprettGrunnlagNotat(
-                                    Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                                    false,
-                                    innhold,
-                                    gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
-                                )
-                            },
-                        henteNotatinnhold(
-                            this,
-                            Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                            rolle,
-                            begrunnelseDelAvBehandlingen = false,
-                        ).takeIfNotNullOrEmpty { innhold ->
-                            opprettGrunnlagNotat(
-                                Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                                false,
-                                innhold,
-                                gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
-                                fraOmgjortVedtak = true,
-                            )
-                        },
-                    )
-                }.filterNotNull()
-        } else {
-            emptyList()
-        }
+    val notatVurderingAvSkolegang = byggGrunnlagNotatVurderingAvSkolegang()
+
     val notatUnderhold =
         roller
             .flatMap { rolle ->
@@ -461,33 +500,8 @@ fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
                         },
                 )
             }.filterNotNull()
-    val notatPrivatAvtale =
-        roller
-            .flatMap { rolle ->
-                listOf(
-                    henteNotatinnhold(
-                        this,
-                        Notattype.PRIVAT_AVTALE,
-                        rolle,
-                    ).takeIfNotNullOrEmpty { innhold ->
-                        opprettGrunnlagNotat(Notattype.PRIVAT_AVTALE, false, innhold, gjelderBarnReferanse = rolle.tilGrunnlagsreferanse())
-                    },
-                    henteNotatinnhold(
-                        this,
-                        Notattype.PRIVAT_AVTALE,
-                        rolle,
-                        begrunnelseDelAvBehandlingen = false,
-                    ).takeIfNotNullOrEmpty { innhold ->
-                        opprettGrunnlagNotat(
-                            Notattype.PRIVAT_AVTALE,
-                            false,
-                            innhold,
-                            gjelderBarnReferanse = rolle.tilGrunnlagsreferanse(),
-                            fraOmgjortVedtak = true,
-                        )
-                    },
-                )
-            }.filterNotNull()
+
+    val notatPrivatAvtale = byggGrunnlagPrivatAvtale()
 
     val notatSamvær =
         roller

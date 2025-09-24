@@ -45,6 +45,7 @@ data class EtterfølgendeVedtakDto(
 )
 
 data class ManuellVedtakDto(
+    val valgt: Boolean,
     val vedtaksid: Int,
     val barnId: Long,
     val fattetTidspunkt: LocalDateTime,

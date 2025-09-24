@@ -85,7 +85,7 @@ fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
 
 fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(this) else null
 
-fun Person.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
+fun Rolle.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
     opprettPersonBarnBPBMReferanse(type, fødselsdato, ident, navn)
 
 fun opprettPersonBarnBPBMReferanse(

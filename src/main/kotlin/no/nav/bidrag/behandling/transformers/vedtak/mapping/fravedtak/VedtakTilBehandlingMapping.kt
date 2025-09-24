@@ -469,13 +469,7 @@ class VedtakTilBehandlingMapping(
                             skalIndeksreguleres = privatAvtaleGrunnlag?.innhold?.skalIndeksreguleres ?: false,
                             avtaleType = privatAvtaleGrunnlag?.innhold?.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                             behandling = behandling,
-                            person =
-                                Person(
-                                    id = 1,
-                                    ident = personFraVedtak.ident?.verdi,
-                                    fødselsdato = personFraVedtak.fødselsdato,
-                                    rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
-                                ),
+                            rolle = rolleSøknadsbarn,
                         )
                     } else {
                         PrivatAvtale(
@@ -483,19 +477,7 @@ class VedtakTilBehandlingMapping(
                             avtaleType = privatAvtaleGrunnlag?.innhold?.avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                             skalIndeksreguleres = privatAvtaleGrunnlag?.innhold?.skalIndeksreguleres ?: false,
                             behandling = behandling,
-                            person =
-                                personRepository.findFirstByIdent(personFraVedtak.ident?.verdi!!) ?: run {
-                                    val person =
-                                        Person(
-                                            ident = personFraVedtak.ident?.verdi,
-                                            fødselsdato =
-                                                hentPersonFødselsdato(personFraVedtak.ident?.verdi)
-                                                    ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
-                                            rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
-                                        )
-                                    person.rolle.forEach { it.person = person }
-                                    personRepository.save(person)
-                                },
+                            rolle = rolleSøknadsbarn,
                         )
                     }
                 it.value.forEach {
