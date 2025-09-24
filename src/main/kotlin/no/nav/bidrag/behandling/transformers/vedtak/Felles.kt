@@ -55,7 +55,11 @@ data class StønadsendringPeriode(
 fun Collection<BaseGrunnlag>.hentPersonMedIdent(ident: String?) = hentAllePersoner().find { it.personIdent == ident }
 
 fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
-    filter { it.erPerson() }.find { it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
+    filter { it.erPerson() }
+        // Person barn BM havner nederst i listen. Det kan hende samme person er oppgitt som både husstandsmedlem og barn BM pga underholdskostnad
+        .sortedBy { listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type) }
+        .toSet()
+        .find { it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
 
 // TODO: Reel mottaker fra bidrag-sak?
 fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =

@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagUnderh
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -406,7 +407,12 @@ class BehandlingTilGrunnlagMappingV2(
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)
-                            } ?: personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag()
+                            }
+                                ?: personobjekter
+                                    .sortedByDescending {
+                                        listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type)
+                                    }.hentPerson(u.personIdent)
+                                ?: u.opprettPersonGrunnlag()
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
@@ -429,9 +435,6 @@ class BehandlingTilGrunnlagMappingV2(
                 } + grunnlagslistePersoner + barnUtenPerioder
         ).toSet().toList()
     }
-
-    fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
-        filter { it.erPerson() }.find { it.personIdent == personService.hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
 
     fun finnFødselsdato(
         ident: String?,

@@ -83,7 +83,11 @@ fun BarnDto.annetBarnMedSammePersonidentEksistererFraFør(behandling: Behandling
         .filter { it.personIdent != null }
         .find { it.personIdent == this.personident?.verdi } != null
 
-fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) = this.map { it.tilBarnetilsyn(u) }.toSet()
+fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) =
+    this
+        .justerBarnetilsynPeriodeTil()
+        .map { it.tilBarnetilsyn(u) }
+        .toSet()
 
 fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
     fun erUnderSkolealder(fødselsdato: LocalDate) = fødselsdato.plusYears(ALDER_VED_SKOLESTART).year > LocalDate.now().year
@@ -100,6 +104,20 @@ fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
     )
 }
 
+fun Collection<BarnetilsynGrunnlagDto>.justerBarnetilsynPeriodeTil() =
+    map {
+        // Hvis barnetilsyn slutter i Juli så justeres den automatisk til August.
+        // Det har blitt avklart at sjablongsatsen for stønad til barnetilsyn skal legges til grunn for den betalingsfrie måneden, juli.
+        // Ref FAGSYSTEM-394230
+        if (it.periodeTil != null && it.periodeTil!!.monthValue == 7) {
+            it.copy(
+                periodeTil = LocalDate.of(it.periodeTil!!.year, 8, 1),
+            )
+        } else {
+            it
+        }
+    }
+
 fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overskriveAktiverte: Boolean = true) {
     val barnetilsyn = konvertereData<MutableSet<BarnetilsynGrunnlagDto>>()!!
 
@@ -110,6 +128,7 @@ fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overs
         .forEach { (gjelder, perioder) ->
             perioder
                 .filter { it.periodeFra < virkningstidspunkt }
+                .justerBarnetilsynPeriodeTil()
                 .forEach { periode ->
                     if (periode.periodeTil != null && virkningstidspunkt >= periode.periodeTil) {
                         barnetilsyn.remove(periode)

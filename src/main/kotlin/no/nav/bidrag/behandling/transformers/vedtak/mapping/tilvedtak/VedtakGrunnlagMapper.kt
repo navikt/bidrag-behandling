@@ -344,11 +344,11 @@ class VedtakGrunnlagMapper(
 
                             TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
                                 grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste, søknadsbarnRolle.ident!!))
-                                grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
-                                grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
                                 grunnlagsliste.addAll(
                                     opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()),
                                 )
+                                grunnlagsliste.addAll(tilGrunnlagUnderholdskostnad(grunnlagsliste))
+                                grunnlagsliste.addAll(tilGrunnlagSamvær(søknadsbarn))
 
                                 grunnlagsliste.addAll(barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(this, søknadsbarnRolle))
                             }
@@ -414,7 +414,8 @@ class VedtakGrunnlagMapper(
 
     fun Behandling.byggGrunnlagForVedtak(personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf()): Set<GrunnlagDto> {
         mapper.run {
-            val personobjekter = (tilPersonobjekter() + personobjekterFraBeregning).toSet()
+            val personobjekter =
+                (tilPersonobjekter() + personobjekterFraBeregning).toSet()
             val bostatus = tilGrunnlagBostatus(personobjekter)
             val personobjekterMedHusstandsmedlemmer =
                 (personobjekter + bostatus.husstandsmedlemmer()).toMutableSet()

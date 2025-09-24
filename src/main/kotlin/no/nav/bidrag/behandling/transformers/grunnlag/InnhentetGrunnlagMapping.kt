@@ -211,8 +211,7 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(
             innhentetAndreVoksneIHusstandenGrunnlagListe +
             innhentetHusstandsmedlemBMGrunnlagListe
 
-    return innhentetGrunnlagsliste +
-        behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(innhentetGrunnlagsliste, personobjekter)
+    return innhentetGrunnlagsliste + behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(innhentetGrunnlagsliste, personobjekter)
 }
 
 fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
