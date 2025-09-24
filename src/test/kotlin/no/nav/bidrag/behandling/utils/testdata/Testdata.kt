@@ -1854,7 +1854,7 @@ fun Behandling.leggTilFaktiskTilsynsutgift(
     medId: Boolean = false,
 ) {
     val underholdskostnad =
-        underholdskostnader.find { it.person.ident == barn.ident } ?: run {
+        underholdskostnader.find { it.personIdent == barn.ident } ?: run {
             Underholdskostnad(
                 id = if (medId) 1 else null,
                 behandling = this,
@@ -1882,7 +1882,7 @@ fun Behandling.leggTilBarnetilsyn(
     under_skolealder: Boolean? = true,
     kilde: Kilde = Kilde.MANUELL,
 ) {
-    val underholdskostnad = underholdskostnader.find { it.person.ident == barn.ident }!!
+    val underholdskostnad = underholdskostnader.find { it.personIdent == barn.ident }!!
     underholdskostnad.barnetilsyn.add(
         Barnetilsyn(
             id = if (generateId) 1 else null,
@@ -1902,7 +1902,7 @@ fun Behandling.leggTilTillegsstønad(
     medId: Boolean = false,
 ) {
     val underholdskostnad =
-        underholdskostnader.find { it.person.ident == barn.ident }!!
+        underholdskostnader.find { it.personIdent == barn.ident }!!
     underholdskostnad.tilleggsstønad.add(
         Tilleggsstønad(
             id = if (medId) 1 else null,
@@ -2160,7 +2160,7 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
         this.grunnlag
             .filter { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet && it.aktiv != null }
             .forEach { g ->
-                val u = this.underholdskostnader.find { it.person.ident == g.gjelder }
+                val u = this.underholdskostnader.find { it.personIdent == g.gjelder }
                 g.konvertereData<Set<BarnetilsynGrunnlagDto>>()?.tilBarnetilsyn(u!!)?.let { u.barnetilsyn.addAll(it) }
             }
     }

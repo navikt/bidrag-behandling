@@ -128,23 +128,23 @@ class UnderholdService(
 
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
-            val lagreKilde = if (rolleSøknadsbarn == null) kilde else null
-            personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
-                rolleSøknadsbarn?.let { eksisterendePerson.rolle.add(it) }
-                rolleSøknadsbarn?.person = eksisterendePerson
-                lagreUnderholdskostnad(behandling, eksisterendePerson, rolleSøknadsbarn, lagreKilde)
-            } ?: run {
-                val person =
-                    Person(
-                        ident = personidentBarn.verdi,
-                        fødselsdato =
-                            hentPersonFødselsdato(personidentBarn.verdi)
-                                ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
-                        rolle = rolleSøknadsbarn?.let { mutableSetOf(it) } ?: mutableSetOf(),
-                    )
-                person.rolle.forEach { it.person = person }
+            if (rolleSøknadsbarn != null) {
+                lagreUnderholdskostnad(behandling, null, rolleSøknadsbarn, null)
+            } else {
+                personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
+                    lagreUnderholdskostnad(behandling, eksisterendePerson, rolleSøknadsbarn, kilde)
+                } ?: run {
+                    val person =
+                        Person(
+                            ident = personidentBarn.verdi,
+                            fødselsdato =
+                                hentPersonFødselsdato(personidentBarn.verdi)
+                                    ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
+                        )
+                    person.rolle.forEach { it.person = person }
 
-                lagreUnderholdskostnad(behandling, person, rolleSøknadsbarn, kilde = lagreKilde)
+                    lagreUnderholdskostnad(behandling, person, rolleSøknadsbarn, kilde = kilde)
+                }
             }
         } ?: run {
             lagreUnderholdskostnad(
@@ -190,7 +190,7 @@ class UnderholdService(
                     behandling.bidragsmottaker!!,
                 )
 
-        val u = behandling.underholdskostnader.find { it.person.personident == gjelderSøknadsbarn }
+        val u = behandling.underholdskostnader.find { it.personIdent == gjelderSøknadsbarn.verdi }
         if (u == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
@@ -283,7 +283,7 @@ class UnderholdService(
             ) {
                 underholdskostnad.barnetilsyn.add(
                     Barnetilsyn(
-                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.personFødselsdato)),
                         tom = periodeJustert.tom,
                         under_skolealder =
                             when (request.skolealder) {
@@ -339,7 +339,7 @@ class UnderholdService(
             ) {
                 underholdskostnad.faktiskeTilsynsutgifter.add(
                     FaktiskTilsynsutgift(
-                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.personFødselsdato)),
                         tom = periodeJustert.tom,
                         kostpenger = request.kostpenger,
                         tilsynsutgift = request.utgift,
@@ -386,7 +386,7 @@ class UnderholdService(
             ) {
                 underholdskostnad.tilleggsstønad.add(
                     Tilleggsstønad(
-                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.person.fødselsdato)),
+                        fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.personFødselsdato)),
                         tom = periodeJustert.tom,
                         dagsats = request.dagsats,
                         underholdskostnad = underholdskostnad,
@@ -425,7 +425,7 @@ class UnderholdService(
 
     private fun Underholdskostnad.begrensTomDatoForTolvÅr(periode: DatoperiodeDto): LocalDate? =
         if (erPeriodeFørOgEtterFyltTolvÅr(periode)) {
-            periodeFomJuli(årstallNårBarnFyllerTolvÅr(person.fødselsdato)).minusDays(1)
+            periodeFomJuli(årstallNårBarnFyllerTolvÅr(personFødselsdato)).minusDays(1)
         } else {
             periode.tom
         }
@@ -437,7 +437,7 @@ class UnderholdService(
 
     private fun Underholdskostnad.erBarnOverTolvÅrForDato(dato: LocalDate?): Boolean {
         if (dato == null) return false
-        val fødselsdato = person.fødselsdato
+        val fødselsdato = personFødselsdato
         val period = Period.between(fødselsdato.withMonth(7).withDayOfMonth(1), dato)
         return period.years >= 12
     }
@@ -463,13 +463,17 @@ class UnderholdService(
         underholdskostnad: Underholdskostnad,
     ) {
         behandling.underholdskostnader.remove(underholdskostnad)
-        underholdskostnad.person.underholdskostnad.remove(underholdskostnad)
-        if (underholdskostnad.person.underholdskostnad.isEmpty() && underholdskostnad.rolle == null) {
-            personRepository.deleteById(underholdskostnad.person.id!!)
-            if (!behandling.harAndreBarnIUnderhold()) {
-                notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
+        val personUnderhold = underholdskostnad.person
+        if (personUnderhold != null) {
+            personUnderhold.underholdskostnad.remove(underholdskostnad)
+            if (personUnderhold.underholdskostnad.isEmpty() && underholdskostnad.rolle == null) {
+                personRepository.deleteById(personUnderhold.id!!)
+                if (!behandling.harAndreBarnIUnderhold()) {
+                    notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)
+                }
             }
         }
+
         underholdskostnadRepository.deleteById(underholdskostnad.id!!)
     }
 
@@ -483,7 +487,7 @@ class UnderholdService(
 
     private fun lagreUnderholdskostnad(
         behandling: Behandling,
-        person: Person,
+        person: Person? = null,
         rolle: Rolle? = null,
         kilde: Kilde? = null,
     ): Underholdskostnad {

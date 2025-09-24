@@ -538,8 +538,8 @@ class GrunnlagService(
         behandling.husstandsmedlem.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
         }
-        behandling.underholdskostnader.forEach {
-            it.person.ident = oppdaterTilNyesteIdent(it.person.ident, behandling.id!!, it.toString()) ?: it.person.ident
+        behandling.underholdskostnader.filter { it.person != null }.forEach {
+            it.person!!.ident = oppdaterTilNyesteIdent(it.person!!.ident, behandling.id!!, it.toString()) ?: it.person!!.ident
         }
         behandling.inntekter.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
@@ -1415,14 +1415,14 @@ class GrunnlagService(
                 .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
 
         andreBarnIkkeIBehandling.forEach { barn ->
-            behandling.underholdskostnader.find { u -> u.person.ident == barn.gjelderPersonId }?.let {
+            behandling.underholdskostnader.find { u -> u.personIdent == barn.gjelderPersonId }?.let {
                 secureLogger.debug { "$barn er annen barn til BM. Oppdaterer underholdskostnad til kilde OFFENTLIG" }
                 it.kilde = Kilde.OFFENTLIG
             }
         }
 
         andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunkt!!) }.forEach { barn ->
-            if (behandling.underholdskostnader.none { u -> u.person.ident == barn.gjelderPersonId }) {
+            if (behandling.underholdskostnader.none { u -> u.personIdent == barn.gjelderPersonId }) {
                 secureLogger.debug { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
                 underholdService.oppretteUnderholdskostnad(
                     behandling,
@@ -1435,7 +1435,7 @@ class GrunnlagService(
         val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.gjelderPersonId }
         behandling.underholdskostnader
             .filter { it.rolle == null }
-            .filter { !andreBarnIdenter.contains(it.person.ident) }
+            .filter { !andreBarnIdenter.contains(it.personIdent) }
             .forEach {
                 secureLogger.debug { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }
                 it.kilde = Kilde.MANUELL

@@ -290,7 +290,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.first().kilde shouldBe null
                 andreBarnUnderholdskostnader.first().kilde shouldBe Kilde.OFFENTLIG
-                andreBarnUnderholdskostnader.first().person.ident shouldBe testdataBarnBm.ident
+                andreBarnUnderholdskostnader.first().personIdent shouldBe testdataBarnBm.ident
             }
 
             @Test
@@ -368,8 +368,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     andreBarnUnderholdskostnader.shouldHaveSize(3)
                     søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                     søknadsbarnUnderholdskostnader.first().kilde shouldBe null
-                    val andreBarnHusstandsmedlem = andreBarnUnderholdskostnader.find { it.person.ident == testdataHusstandsmedlem1.ident }!!
-                    val andreBarnBarnBM = andreBarnUnderholdskostnader.find { it.person.ident == testdataBarnBm.ident }!!
+                    val andreBarnHusstandsmedlem = andreBarnUnderholdskostnader.find { it.personIdent == testdataHusstandsmedlem1.ident }!!
+                    val andreBarnBarnBM = andreBarnUnderholdskostnader.find { it.personIdent == testdataBarnBm.ident }!!
                     andreBarnHusstandsmedlem.kilde shouldBe Kilde.MANUELL
                     andreBarnBarnBM.kilde shouldBe Kilde.OFFENTLIG
 
@@ -449,9 +449,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val uTestbarn1 =
                     behandling.underholdskostnader
                         .find {
-                            it.person.rolle
-                                .first()
-                                .personident
+                            it.rolle
+                                ?.personident
                                 ?.verdi == testdataBarn1.ident
                         }
 

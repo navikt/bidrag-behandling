@@ -364,7 +364,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     private fun Behandling.validerUnderhold() {
         assertSoftly(underholdskostnader) {
             size shouldBe 3
-            val underholdSøknadsbarn = underholdskostnader.find { it.person.rolle.isNotEmpty() }!!
+            val underholdSøknadsbarn = underholdskostnader.find { it.rolle != null }!!
             assertSoftly(underholdSøknadsbarn) {
                 harTilsynsordning shouldBe true
 
@@ -388,7 +388,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 faktiskeTilsynsutgifter.first().kommentar shouldBe "Dette er test"
             }
 
-            assertSoftly(underholdskostnader.find { it.person.ident == "27461456400" }!!) {
+            assertSoftly(underholdskostnader.find { it.personIdent == "27461456400" }!!) {
                 harTilsynsordning shouldBe null
                 kilde shouldBe Kilde.MANUELL
                 barnetilsyn shouldHaveSize 0
@@ -401,7 +401,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 faktiskeTilsynsutgifter.first().kommentar shouldBe "Barnehage"
             }
 
-            assertSoftly(underholdskostnader.find { it.person.ident == "11441387387" }!!) {
+            assertSoftly(underholdskostnader.find { it.personIdent == "11441387387" }!!) {
                 harTilsynsordning shouldBe null
                 kilde shouldBe Kilde.OFFENTLIG
                 barnetilsyn shouldHaveSize 0

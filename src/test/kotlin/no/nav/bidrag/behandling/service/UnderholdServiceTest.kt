@@ -223,7 +223,7 @@ class UnderholdServiceTest {
 
             assertSoftly(behandling.underholdskostnader.find { it.id == underholdskostnadTilBarnSomSlettes.id!! }) {
                 shouldNotBeNull()
-                person.id shouldBe barn.id
+                person?.id shouldBe barn.id
             }
 
             assertSoftly(behandling.notater.find { it.rolle == behandling.bidragsmottaker }) {
@@ -279,7 +279,7 @@ class UnderholdServiceTest {
 
             assertSoftly(behandling.underholdskostnader.find { it.id == kostnadForUnderholdAvGeneralen.id!! }) {
                 shouldNotBeNull()
-                person.id shouldBe generalen.id
+                person?.id shouldBe generalen.id
             }
 
             assertSoftly(behandling.notater.find { it.rolle == behandling.bidragsmottaker }) {

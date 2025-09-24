@@ -95,7 +95,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
                 )
             }
 
-            if (this.idElement != underhold.person.id) {
+            if (this.idElement != underhold.person?.id && this.idElement != underhold.rolle?.id) {
                 ressursIkkeFunnetException("Fant ikke barn med person.id ${this.idElement} i behandling ${behandling.id}")
             }
         }
@@ -247,7 +247,7 @@ fun StønadTilBarnetilsynDto.validerePerioderStønadTilBarnetilsyn(underholdskos
             ressursIkkeFunnetException("Fant ikke barnetilsyn med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
-    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+    if (periode.fom < underholdskostnad.personFødselsdato.withDayOfMonth(1)) {
         ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
     }
 }
@@ -258,7 +258,7 @@ fun OppdatereFaktiskTilsynsutgiftRequest.validere(underholdskostnad: Underholdsk
             ressursIkkeFunnetException("Fant ikke faktisk tilsynsutgift med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
-    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+    if (periode.fom < underholdskostnad.personFødselsdato.withDayOfMonth(1)) {
         ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
     }
 }
@@ -269,7 +269,7 @@ fun OppdatereTilleggsstønadRequest.validere(underholdskostnad: Underholdskostna
             ressursIkkeFunnetException("Fant ikke tilleggsstønad med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
-    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+    if (periode.fom < underholdskostnad.personFødselsdato.withDayOfMonth(1)) {
         ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
     }
 }

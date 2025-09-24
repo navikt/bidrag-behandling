@@ -361,9 +361,9 @@ class BehandlingTilGrunnlagMappingV2(
                 referanse =
                     opprettPersonBarnBPBMReferanse(
                         type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
-                        person.fødselsdato,
-                        person.ident,
-                        person.navn,
+                        personFødselsdato,
+                        personIdent,
+                        personNavn,
                     ),
                 grunnlagsreferanseListe =
                     if (kilde == Kilde.OFFENTLIG) {
@@ -379,9 +379,9 @@ class BehandlingTilGrunnlagMappingV2(
                 innhold =
                     POJONode(
                         Person(
-                            ident = person.ident?.let { Personident(it) },
-                            navn = if (person.ident.isNullOrEmpty()) person.navn else null,
-                            fødselsdato = person.fødselsdato,
+                            ident = personIdent?.let { Personident(it) },
+                            navn = if (personIdent.isNullOrEmpty()) personNavn else null,
+                            fødselsdato = personFødselsdato,
                         ).valider(),
                     ),
             )
@@ -396,7 +396,7 @@ class BehandlingTilGrunnlagMappingV2(
             underholdskostnader
                 .filter { it.rolle == null && it.faktiskeTilsynsutgifter.isEmpty() }
                 .map { u ->
-                    personobjekter.hentPerson(u.person.ident) ?: u.opprettPersonGrunnlag()
+                    personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag()
                 }
         return (
             underholdskostnader
@@ -406,7 +406,7 @@ class BehandlingTilGrunnlagMappingV2(
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)
-                            } ?: personobjekter.hentPerson(u.person.ident) ?: u.opprettPersonGrunnlag()
+                            } ?: personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag()
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),

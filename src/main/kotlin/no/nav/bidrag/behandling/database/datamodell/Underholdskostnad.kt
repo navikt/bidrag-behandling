@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import org.hibernate.annotations.JoinFormula
+import java.time.LocalDate
 
 @Entity
 open class Underholdskostnad(
@@ -27,7 +28,7 @@ open class Underholdskostnad(
         cascade = [CascadeType.PERSIST],
     )
     @JoinColumn(name = "person_id", nullable = false)
-    open val person: Person,
+    open val person: Person? = null,
     @ManyToOne(
         fetch = FetchType.LAZY,
     )
@@ -57,8 +58,11 @@ open class Underholdskostnad(
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde? = null,
 ) {
+    val personNavn: String? get() = person?.navn ?: rolle?.navn
+    val personIdent: String? get() = person?.ident ?: rolle?.ident
+    val personFødselsdato: LocalDate get() = person?.fødselsdato ?: rolle?.fødselsdato!!
     val opphørsdato get() = rolle?.opphørsdato ?: behandling.globalOpphørsdato
 
     override fun toString(): String =
-        "Underholdskostnad(id=$id, behandling=${behandling.id}, person=${person.id}, harTilsynsordning=$harTilsynsordning, faktiskeTilsynsutgifter=$faktiskeTilsynsutgifter, barnetilsyn=$barnetilsyn, tilleggsstønad=$tilleggsstønad)"
+        "Underholdskostnad(id=$id, behandling=${behandling.id}, person=${person?.id}, harTilsynsordning=$harTilsynsordning, faktiskeTilsynsutgifter=$faktiskeTilsynsutgifter, barnetilsyn=$barnetilsyn, tilleggsstønad=$tilleggsstønad)"
 }
