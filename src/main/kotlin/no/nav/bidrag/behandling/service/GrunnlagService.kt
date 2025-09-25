@@ -549,8 +549,8 @@ class GrunnlagService(
         }
         behandling.grunnlagsinnhentingFeilet =
             objectmapper.writeValueAsString(
-                behandling.grunnlagsinnhentingFeiletMap().mapValues { (_, feilrapportering) ->
-                    feilrapportering.copy(
+                behandling.grunnlagsinnhentingFeiletMap().filter { it.value != null }.mapValues { (_, feilrapportering) ->
+                    feilrapportering!!.copy(
                         personId =
                             oppdaterTilNyesteIdent(
                                 feilrapportering.personId,
