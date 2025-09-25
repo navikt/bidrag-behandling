@@ -88,14 +88,14 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
             if (underhold.kilde == Kilde.OFFENTLIG) {
                 ugyldigForespørsel("Barn med person.id ${this.idElement} er hentet fra offentlige registre og kan derfor ikke slettes.")
             }
-            val rolle = underhold.barnetsRolleIBehandlingen
+            val rolle = underhold.rolle
             if (rolle != null) {
                 ugyldigForespørsel(
                     "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}. Barnet kan derfor ikke slettes.",
                 )
             }
 
-            if (this.idElement != underhold.person.id) {
+            if (this.idElement != underhold.person?.id && this.idElement != underhold.rolle?.id) {
                 ressursIkkeFunnetException("Fant ikke barn med person.id ${this.idElement} i behandling ${behandling.id}")
             }
         }
@@ -212,7 +212,7 @@ fun Underholdskostnad.manglerBegrunnelse(): Boolean {
     val begrunnelse =
         NotatService.henteUnderholdsnotat(
             this.behandling,
-            barnetsRolleIBehandlingen ?: this.behandling.bidragsmottaker!!,
+            rolle ?: this.behandling.bidragsmottaker!!,
         )
     if (!begrunnelse.isNullOrEmpty()) return false
     return this.harTilsynsordning == true &&
@@ -225,7 +225,7 @@ fun Underholdskostnad.manglerBegrunnelse(): Boolean {
 
 fun Underholdskostnad.manglerPerioderForTilsynsordning(): Boolean {
     val harOffentligeOpplysninger = hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
-    if (harOffentligeOpplysninger || barnetsRolleIBehandlingen == null) return false
+    if (harOffentligeOpplysninger || rolle == null) return false
     return this.harTilsynsordning == true &&
         this.barnetilsyn.isEmpty() &&
         this.faktiskeTilsynsutgifter.isEmpty() &&
@@ -247,7 +247,7 @@ fun StønadTilBarnetilsynDto.validerePerioderStønadTilBarnetilsyn(underholdskos
             ressursIkkeFunnetException("Fant ikke barnetilsyn med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
-    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+    if (periode.fom < underholdskostnad.personFødselsdato.withDayOfMonth(1)) {
         ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
     }
 }
@@ -258,7 +258,7 @@ fun OppdatereFaktiskTilsynsutgiftRequest.validere(underholdskostnad: Underholdsk
             ressursIkkeFunnetException("Fant ikke faktisk tilsynsutgift med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
-    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+    if (periode.fom < underholdskostnad.personFødselsdato.withDayOfMonth(1)) {
         ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
     }
 }
@@ -269,7 +269,7 @@ fun OppdatereTilleggsstønadRequest.validere(underholdskostnad: Underholdskostna
             ressursIkkeFunnetException("Fant ikke tilleggsstønad med id $id i behandling ${underholdskostnad.behandling.id}")
         }
     }
-    if (periode.fom < underholdskostnad.person.fødselsdato.withDayOfMonth(1)) {
+    if (periode.fom < underholdskostnad.personFødselsdato.withDayOfMonth(1)) {
         ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
     }
 }

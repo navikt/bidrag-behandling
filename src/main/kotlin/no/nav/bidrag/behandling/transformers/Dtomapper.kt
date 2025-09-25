@@ -248,20 +248,20 @@ class Dtomapper(
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
-        val rolleSøknadsbarn = this.barnetsRolleIBehandlingen
+        val rolleSøknadsbarn = this.rolle
         val beregnetUnderholdskostnad =
             if (behandling.erDirekteAvslag()) {
                 emptySet()
             } else {
                 this.behandling
                     .tilBeregnetUnderholdskostnad()
-                    .perioderForBarn(person)
+                    .perioderForBarn(personIdent)
             }
 
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
-            gjelderBarn = this.person.tilPersoninfoDto(rolleSøknadsbarn, kilde),
+            gjelderBarn = this.person?.tilPersoninfoDto(rolleSøknadsbarn, kilde) ?: rolle?.tilPersoninfoDto()!!,
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
             tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
@@ -287,9 +287,9 @@ class Dtomapper(
         )
     }
 
-    fun Set<BeregnetUnderholdskostnad>.perioderForBarn(person: Person) =
+    fun Set<BeregnetUnderholdskostnad>.perioderForBarn(personIdent: String?) =
         find { bu ->
-            bu.gjelderBarn.ident?.verdi == person.ident
+            bu.gjelderBarn.ident?.verdi == personIdent
         }?.perioder ?: emptySet()
 
     fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Rolle): BeregnetPrivatAvtaleDto {
@@ -336,7 +336,7 @@ class Dtomapper(
                 )
             }.toSet()
 
-    private fun Rolle.tilPersoninfoDto(): PersoninfoDto {
+    private fun Rolle.tilPersoninfoDto(kilde: Kilde? = null): PersoninfoDto {
         val personinfo =
             this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
 
@@ -345,7 +345,7 @@ class Dtomapper(
             ident = ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) },
             navn = personinfo?.visningsnavn ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
-            kilde = null,
+            kilde = kilde,
             medIBehandlingen = ident != null,
         )
     }

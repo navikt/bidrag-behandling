@@ -284,13 +284,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
 
                 behandling.underholdskostnader.shouldHaveSize(4)
-                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen != null }
-                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen == null }
+                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle != null }
+                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle == null }
                 andreBarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.first().kilde shouldBe null
                 andreBarnUnderholdskostnader.first().kilde shouldBe Kilde.OFFENTLIG
-                andreBarnUnderholdskostnader.first().person.ident shouldBe testdataBarnBm.ident
+                andreBarnUnderholdskostnader.first().personIdent shouldBe testdataBarnBm.ident
             }
 
             @Test
@@ -363,13 +363,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     behandling.underholdskostnader.shouldHaveSize(5)
-                    val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen != null }
-                    val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.barnetsRolleIBehandlingen == null }
+                    val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle != null }
+                    val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle == null }
                     andreBarnUnderholdskostnader.shouldHaveSize(3)
                     søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                     søknadsbarnUnderholdskostnader.first().kilde shouldBe null
-                    val andreBarnHusstandsmedlem = andreBarnUnderholdskostnader.find { it.person.ident == testdataHusstandsmedlem1.ident }!!
-                    val andreBarnBarnBM = andreBarnUnderholdskostnader.find { it.person.ident == testdataBarnBm.ident }!!
+                    val andreBarnHusstandsmedlem = andreBarnUnderholdskostnader.find { it.personIdent == testdataHusstandsmedlem1.ident }!!
+                    val andreBarnBarnBM = andreBarnUnderholdskostnader.find { it.personIdent == testdataBarnBm.ident }!!
                     andreBarnHusstandsmedlem.kilde shouldBe Kilde.MANUELL
                     andreBarnBarnBM.kilde shouldBe Kilde.OFFENTLIG
 
@@ -449,9 +449,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val uTestbarn1 =
                     behandling.underholdskostnader
                         .find {
-                            it.person.rolle
-                                .first()
-                                .personident
+                            it.rolle
+                                ?.personident
                                 ?.verdi == testdataBarn1.ident
                         }
 

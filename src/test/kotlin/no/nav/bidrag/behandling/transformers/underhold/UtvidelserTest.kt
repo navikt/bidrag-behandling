@@ -28,7 +28,7 @@ class UtvidelserTest {
 
         val u = b.underholdskostnader.first()
 
-        u.person.henteFødselsdato!!
+        u.personFødselsdato
             .plusYears(ALDER_VED_SKOLESTART)
             .year shouldBeGreaterThan LocalDate.now().year
 
@@ -64,7 +64,7 @@ class UtvidelserTest {
 
         val u = b.underholdskostnader.first { it.id == idUnderhold }
 
-        u.person.henteFødselsdato!!
+        u.personFødselsdato!!
             .plusYears(ALDER_VED_SKOLESTART)
             .year shouldNotBeGreaterThan LocalDate.now().year
         val barnetilsynGrunnlagDto = oppretteBarnetilsynGrunnlagDto(b, periodeFraAntallMndTilbake = 13)
@@ -101,7 +101,7 @@ class UtvidelserTest {
 
         val u = b.underholdskostnader.first { it.id == idUnderhold }
 
-        u.person.henteFødselsdato!!
+        u.personFødselsdato!!
             .plusYears(ALDER_VED_SKOLESTART)
             .year shouldBeGreaterThan LocalDate.now().year
         val barnetilsynGrunnlagDto = oppretteBarnetilsynGrunnlagDto(b, periodeFraAntallMndTilbake = 13)

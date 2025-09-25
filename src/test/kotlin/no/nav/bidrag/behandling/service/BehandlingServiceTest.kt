@@ -806,19 +806,19 @@ class BehandlingServiceTest : TestContainerRunner() {
             opprettetBehandling.stonadstype shouldBe Stønadstype.BIDRAG
             opprettetBehandling.roller.filter { Rolletype.BARN == it.rolletype } shouldHaveSize 1
             opprettetBehandling.underholdskostnader shouldHaveSize 2
-            assertSoftly(opprettetBehandling.underholdskostnader.find { Rolletype.BARN == it.barnetsRolleIBehandlingen?.rolletype }) {
+            assertSoftly(opprettetBehandling.underholdskostnader.find { Rolletype.BARN == it.rolle?.rolletype }) {
                 it.shouldNotBeNull()
                 it.kilde shouldBe null
                 it.faktiskeTilsynsutgifter.shouldBeEmpty()
-                it.person.ident.shouldBe(testdataBarn1.ident)
+                it.personIdent.shouldBe(testdataBarn1.ident)
             }
             assertSoftly(opprettetBehandling.underholdskostnader.find { it.kilde == Kilde.OFFENTLIG }) {
                 it.shouldNotBeNull()
-                it.barnetsRolleIBehandlingen shouldBe null
+                it.rolle shouldBe null
                 it.faktiskeTilsynsutgifter.shouldBeEmpty()
-                it.person.ident.shouldBe(testdataBarn2.ident)
+                it.personIdent.shouldBe(testdataBarn2.ident)
             }
-            opprettetBehandling.underholdskostnader.filter { it.person.ident != null } shouldHaveSize 2
+            opprettetBehandling.underholdskostnader.filter { it.personIdent != null } shouldHaveSize 2
         }
 
         @Test

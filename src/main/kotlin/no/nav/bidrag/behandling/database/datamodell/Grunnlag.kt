@@ -123,7 +123,7 @@ fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
 fun Underholdskostnad.hentSisteBearbeidetBarnetilsyn() =
     behandling.grunnlag
         .hentSisteAktiv()
-        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BARNETILSYN && it.gjelder == this.person.ident }
+        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BARNETILSYN && it.gjelder == this.personIdent }
         .konvertereData<List<BarnetilsynGrunnlagDto>>()
 
 fun Husstandsmedlem.henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(gjelderRolle: Rolle): List<RelatertPersonGrunnlagDto> {

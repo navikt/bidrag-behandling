@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagUnderh
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -361,9 +362,9 @@ class BehandlingTilGrunnlagMappingV2(
                 referanse =
                     opprettPersonBarnBPBMReferanse(
                         type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
-                        person.fødselsdato,
-                        person.ident,
-                        person.navn,
+                        personFødselsdato,
+                        personIdent,
+                        personNavn,
                     ),
                 grunnlagsreferanseListe =
                     if (kilde == Kilde.OFFENTLIG) {
@@ -379,9 +380,9 @@ class BehandlingTilGrunnlagMappingV2(
                 innhold =
                     POJONode(
                         Person(
-                            ident = person.ident?.let { Personident(it) },
-                            navn = if (person.ident.isNullOrEmpty()) person.navn else null,
-                            fødselsdato = person.fødselsdato,
+                            ident = personIdent?.let { Personident(it) },
+                            navn = if (personIdent.isNullOrEmpty()) personNavn else null,
+                            fødselsdato = personFødselsdato,
                         ).valider(),
                     ),
             )
@@ -394,19 +395,24 @@ class BehandlingTilGrunnlagMappingV2(
 
         val barnUtenPerioder =
             underholdskostnader
-                .filter { it.barnetsRolleIBehandlingen == null && it.faktiskeTilsynsutgifter.isEmpty() }
+                .filter { it.rolle == null && it.faktiskeTilsynsutgifter.isEmpty() }
                 .map { u ->
-                    personobjekter.hentPerson(u.person.ident) ?: u.opprettPersonGrunnlag()
+                    personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag()
                 }
         return (
             underholdskostnader
                 .flatMap { u ->
                     u.faktiskeTilsynsutgifter.map {
-                        val underholdRolle = u.barnetsRolleIBehandlingen
+                        val underholdRolle = u.rolle
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)
-                            } ?: personobjekter.hentPerson(u.person.ident) ?: u.opprettPersonGrunnlag()
+                            }
+                                ?: personobjekter
+                                    .sortedByDescending {
+                                        listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type)
+                                    }.hentPerson(u.personIdent)
+                                ?: u.opprettPersonGrunnlag()
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
@@ -429,9 +435,6 @@ class BehandlingTilGrunnlagMappingV2(
                 } + grunnlagslistePersoner + barnUtenPerioder
         ).toSet().toList()
     }
-
-    fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
-        filter { it.erPerson() }.find { it.personIdent == personService.hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
 
     fun finnFødselsdato(
         ident: String?,

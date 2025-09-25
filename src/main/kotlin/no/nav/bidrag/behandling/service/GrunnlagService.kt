@@ -69,6 +69,7 @@ import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
+import no.nav.bidrag.behandling.transformers.underhold.justerBarnetilsynPeriodeTil
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
@@ -191,7 +192,15 @@ class GrunnlagService(
         } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
             hentOgLagreEtterfølgendeVedtak(behandling)
             lagreBeløpshistorikkGrunnlag(behandling)
+        } else {
+            val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
+            log.debug {
+                "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
+                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
+            }
+        }
+        if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
             if (UnleashFeatures.AKTIVERE_GRUNNLAG_HVIS_INGEN_ENDRINGER.isEnabled) {
                 secureLogger.info {
                     "Forsøker å aktivere boforhold og sivilstand grunnlag hvis de ikke er aktivert i behandling ${behandling.id} og saksnummer ${behandling.saksnummer}"
@@ -204,13 +213,6 @@ class GrunnlagService(
                         aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
                     }
                 }
-            }
-        } else {
-            val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
-
-            log.debug {
-                "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
-                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
     }
@@ -538,8 +540,8 @@ class GrunnlagService(
         behandling.husstandsmedlem.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
         }
-        behandling.underholdskostnader.forEach {
-            it.person.ident = oppdaterTilNyesteIdent(it.person.ident, behandling.id!!, it.toString()) ?: it.person.ident
+        behandling.underholdskostnader.filter { it.person != null }.forEach {
+            it.person!!.ident = oppdaterTilNyesteIdent(it.person!!.ident, behandling.id!!, it.toString()) ?: it.person!!.ident
         }
         behandling.inntekter.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
@@ -1336,7 +1338,7 @@ class GrunnlagService(
                 if (nyesteBearbeidaBarnetilsynFørLagring.isEmpty() && nyesteBearbeidaBarnetilsynEtterLagring.isNotEmpty()) {
                     grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
                         behandling.underholdskostnader
-                            .find { it.barnetsRolleIBehandlingen?.personident?.verdi == barnetilsyn.key }
+                            .find { it.rolle?.personident?.verdi == barnetilsyn.key }
                             ?.let {
                                 if (it.barnetilsyn.isEmpty()) {
                                     it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
@@ -1415,14 +1417,14 @@ class GrunnlagService(
                 .filter { !søknadsbarnidenter.contains(it.gjelderPersonId) }
 
         andreBarnIkkeIBehandling.forEach { barn ->
-            behandling.underholdskostnader.find { u -> u.person.ident == barn.gjelderPersonId }?.let {
+            behandling.underholdskostnader.find { u -> u.personIdent == barn.gjelderPersonId }?.let {
                 secureLogger.debug { "$barn er annen barn til BM. Oppdaterer underholdskostnad til kilde OFFENTLIG" }
                 it.kilde = Kilde.OFFENTLIG
             }
         }
 
         andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunkt!!) }.forEach { barn ->
-            if (behandling.underholdskostnader.none { u -> u.person.ident == barn.gjelderPersonId }) {
+            if (behandling.underholdskostnader.none { u -> u.personIdent == barn.gjelderPersonId }) {
                 secureLogger.debug { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
                 underholdService.oppretteUnderholdskostnad(
                     behandling,
@@ -1434,8 +1436,8 @@ class GrunnlagService(
 
         val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.gjelderPersonId }
         behandling.underholdskostnader
-            .filter { it.barnetsRolleIBehandlingen == null }
-            .filter { !andreBarnIdenter.contains(it.person.ident) }
+            .filter { it.rolle == null }
+            .filter { !andreBarnIdenter.contains(it.personIdent) }
             .forEach {
                 secureLogger.debug { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }
                 it.kilde = Kilde.MANUELL
@@ -2311,6 +2313,7 @@ class GrunnlagService(
                     rolleInhentetFor,
                     Grunnlagstype(grunnlagsdatatype, false),
                     innhentetGrunnlag.barnetilsynListe
+                        .justerBarnetilsynPeriodeTil()
                         .filter {
                             harBarnRolleIBehandling(it.barnPersonId, behandling)
                         }.toSet(),

@@ -134,7 +134,7 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
 
     fun Behandling.henteUnderholdskostnadPersonident(personident: Personident) =
         this.underholdskostnader.find {
-            it.person.personident == personident
+            it.personIdent == personident.verdi
         }
 
     val innhentaForRolle = behandling.bidragsmottaker!!

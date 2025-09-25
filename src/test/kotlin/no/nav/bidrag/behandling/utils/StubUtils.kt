@@ -164,7 +164,8 @@ fun stubUnderholdskostnadRepository(underholdskostnadRepository: Underholdskostn
     every { underholdskostnadRepository.save(any()) }.answers {
         val underholdskostnad = firstArg<Underholdskostnad>()
         underholdskostnad.id = underholdskostnad.id ?: 1
-        underholdskostnad.person.id = underholdskostnad.person.id ?: 1
+        underholdskostnad.person?.id = underholdskostnad.person?.id
+        underholdskostnad.rolle?.id = underholdskostnad.rolle?.id
         underholdskostnad.tilleggsstønad.forEachIndexed { index, tilleggsstønad ->
             tilleggsstønad.id = index.toLong()
         }

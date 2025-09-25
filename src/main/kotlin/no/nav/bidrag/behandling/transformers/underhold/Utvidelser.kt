@@ -71,19 +71,23 @@ fun Barnetilsyn.tilStønadTilBarnetilsynDto(): StønadTilBarnetilsynDto =
 
 fun Set<Barnetilsyn>.tilStønadTilBarnetilsynDtos() = sortedBy { it.fom }.map { it.tilStønadTilBarnetilsynDto() }.toSet()
 
-fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.barnetsRolleIBehandlingen == null } != null
+fun Behandling.harAndreBarnIUnderhold() = this.underholdskostnader.find { it.rolle == null } != null
 
 fun BarnDto.annetBarnMedSammeNavnOgFødselsdatoEksistererFraFør(behandling: Behandling) =
     behandling.underholdskostnader
-        .filter { it.person.ident == null }
-        .find { it.person.navn == this.navn && it.person.fødselsdato == this.fødselsdato } != null
+        .filter { it.personIdent == null }
+        .find { it.personNavn == this.navn && it.personFødselsdato == this.fødselsdato } != null
 
 fun BarnDto.annetBarnMedSammePersonidentEksistererFraFør(behandling: Behandling) =
     behandling.underholdskostnader
-        .filter { it.person.ident != null }
-        .find { it.person.ident == this.personident?.verdi } != null
+        .filter { it.personIdent != null }
+        .find { it.personIdent == this.personident?.verdi } != null
 
-fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) = this.map { it.tilBarnetilsyn(u) }.toSet()
+fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) =
+    this
+        .justerBarnetilsynPeriodeTil()
+        .map { it.tilBarnetilsyn(u) }
+        .toSet()
 
 fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
     fun erUnderSkolealder(fødselsdato: LocalDate) = fødselsdato.plusYears(ALDER_VED_SKOLESTART).year > LocalDate.now().year
@@ -96,9 +100,23 @@ fun BarnetilsynGrunnlagDto.tilBarnetilsyn(u: Underholdskostnad): Barnetilsyn {
         tom = if (tilOgMedDato != null && tilOgMedDato.isAfter(justerForDato)) null else tilOgMedDato,
         kilde = Kilde.OFFENTLIG,
         omfang = this.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-        under_skolealder = erUnderSkolealder(u.person.henteFødselsdato!!),
+        under_skolealder = erUnderSkolealder(u.personFødselsdato),
     )
 }
+
+fun Collection<BarnetilsynGrunnlagDto>.justerBarnetilsynPeriodeTil() =
+    map {
+        // Hvis barnetilsyn slutter i Juli så justeres den automatisk til August.
+        // Det har blitt avklart at sjablongsatsen for stønad til barnetilsyn skal legges til grunn for den betalingsfrie måneden, juli.
+        // Ref FAGSYSTEM-394230
+        if (it.periodeTil != null && it.periodeTil!!.monthValue == 7) {
+            it.copy(
+                periodeTil = LocalDate.of(it.periodeTil!!.year, 8, 1),
+            )
+        } else {
+            it
+        }
+    }
 
 fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overskriveAktiverte: Boolean = true) {
     val barnetilsyn = konvertereData<MutableSet<BarnetilsynGrunnlagDto>>()!!
@@ -110,6 +128,7 @@ fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overs
         .forEach { (gjelder, perioder) ->
             perioder
                 .filter { it.periodeFra < virkningstidspunkt }
+                .justerBarnetilsynPeriodeTil()
                 .forEach { periode ->
                     if (periode.periodeTil != null && virkningstidspunkt >= periode.periodeTil) {
                         barnetilsyn.remove(periode)
@@ -129,7 +148,7 @@ fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertG
             .hentSisteAktiv()
             .find { Grunnlagsdatatype.BARNETILSYN == it.type && it.erBearbeidet }
             .konvertereData<Set<BarnetilsynGrunnlagDto>>()
-            ?.filter { this.person.ident == it.barnPersonId }
+            ?.filter { this.personIdent == it.barnPersonId }
 
     barnetilsynFraGrunnlag?.let { g ->
         barnetilsyn.removeAll(barnetilsyn.filter { Kilde.OFFENTLIG == it.kilde })
@@ -179,8 +198,8 @@ fun Underholdskostnad.justerPerioderForOpphørsdato(
     forrigeOpphørsdato: LocalDate? = null,
 ) {
     if (opphørsdato != null || opphørSlettet) {
-        val opphørsdato = this.barnetsRolleIBehandlingen?.opphørsdato ?: behandling.globalOpphørsdato
-        val beregnTilDato = behandling.finnBeregnTilDatoBehandling(this.barnetsRolleIBehandlingen)
+        val opphørsdato = this.rolle?.opphørsdato ?: behandling.globalOpphørsdato
+        val beregnTilDato = behandling.finnBeregnTilDatoBehandling(this.rolle)
 
         barnetilsyn
             .filter { opphørsdato == null || it.fom > beregnTilDato }
@@ -257,16 +276,16 @@ fun Behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres() {
     val rolleInnhentetFor = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)
 
     underholdskostnader
-        .filter { it.person.rolle.isNotEmpty() }
+        .filter { it.rolle != null }
         .filter { u ->
-            endringerSomMåBekreftes?.stønadTilBarnetilsyn?.none { it.key == u.person.personident } ?: true
+            endringerSomMåBekreftes?.stønadTilBarnetilsyn?.none { it.key.verdi == u.personIdent } ?: true
         }.forEach { u ->
             val ikkeaktivtGrunnlag =
                 ikkeAktiveGrunnlag
                     .hentGrunnlagForType(
                         Grunnlagsdatatype.BARNETILSYN,
                         rolleInnhentetFor?.personident!!.verdi,
-                    ).find { it.gjelder != null && it.gjelder == u.person.personident!!.verdi } ?: return@forEach
+                    ).find { it.gjelder != null && it.gjelder == u.personIdent } ?: return@forEach
 
             log.info {
                 "Ikke-aktive grunnlag type ${Grunnlagsdatatype.BOFORHOLD} med id ${ikkeaktivtGrunnlag.id} " +

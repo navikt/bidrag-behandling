@@ -242,7 +242,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
                 oppdatertBehandling.get().notater.find {
                     behandling.underholdskostnader
                         .first()
-                        .barnetsRolleIBehandlingen
+                        .rolle
                         ?.id == it.rolle.id &&
                         NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD == it.type
                 },
@@ -412,13 +412,13 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             lagretBehandling.underholdskostnader shouldHaveSize 3
 
             val u =
-                lagretBehandling.underholdskostnader.find { it.barnetsRolleIBehandlingen == null && it.person.navn == navnAnnetBarnBp }
+                lagretBehandling.underholdskostnader.find { it.rolle == null && it.personNavn == navnAnnetBarnBp }
 
-            val sletteUnderholdselement = SletteUnderholdselement(u?.id!!, u.person.id!!, Underholdselement.BARN)
+            val sletteUnderholdselement = SletteUnderholdselement(u?.id!!, u.person!!.id!!, Underholdselement.BARN)
 
             assertSoftly(u) {
                 id.shouldNotBeNull()
-                person.id.shouldNotBeNull()
+                person?.id.shouldNotBeNull()
             }
 
             // hvis
@@ -442,7 +442,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
 
             assertSoftly(oppdatertBehandling.underholdskostnader) {
                 it shouldHaveSize 2
-                it.filter { it.person.navn == u.person.navn } shouldHaveSize 0
+                it.filter { it.personNavn == u.personNavn } shouldHaveSize 0
             }
         }
     }

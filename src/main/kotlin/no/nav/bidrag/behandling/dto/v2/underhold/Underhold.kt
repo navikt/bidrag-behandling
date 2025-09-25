@@ -99,10 +99,10 @@ data class UnderholdskostnadValideringsfeil(
             gjelderUnderholdskostnad?.let {
                 UnderholdBarnDto(
                     navn =
-                        gjelderUnderholdskostnad.person.navn ?: hentPersonVisningsnavn(gjelderUnderholdskostnad.person.personident?.verdi),
-                    ident = gjelderUnderholdskostnad.person.personident?.verdi,
-                    fødselsdato = gjelderUnderholdskostnad.person.henteFødselsdato!!,
-                    medIBehandlingen = gjelderUnderholdskostnad.barnetsRolleIBehandlingen != null,
+                        gjelderUnderholdskostnad.personNavn ?: hentPersonVisningsnavn(gjelderUnderholdskostnad.personIdent),
+                    ident = gjelderUnderholdskostnad.personIdent,
+                    fødselsdato = gjelderUnderholdskostnad.personFødselsdato,
+                    medIBehandlingen = gjelderUnderholdskostnad.rolle != null,
                     kilde = gjelderUnderholdskostnad.kilde,
                     id = gjelderUnderholdskostnad.person?.id,
                 )

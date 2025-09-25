@@ -49,7 +49,7 @@ class TestdataManager(
         behandlingRepository.save(behandling)
         inntekter.forEach { inntektRepository.save(it) }
 
-        underholdskostnader.forEach { personRepository.save(it.person) }
+        underholdskostnader.filter { it.person != null }.forEach { personRepository.save(it.person!!) }
         behandling.underholdskostnader.addAll(underholdskostnader)
 
         return behandlingRepository.save(behandling)

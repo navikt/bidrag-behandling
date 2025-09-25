@@ -48,18 +48,12 @@ open class Rolle(
     open val behandling: Behandling,
     @Enumerated(EnumType.STRING)
     open val rolletype: Rolletype,
-    // TODO: Migere persondata til Person-tabellen
-    @Deprecated("Migrere til Person.ident")
     open var ident: String?,
-    // TODO: Migere persondata til Person-tabellen
-    @Deprecated("Migrere til Person.fødselsdato")
     open var fødselsdato: LocalDate,
     open val opprettet: LocalDateTime = LocalDateTime.now(),
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
-    // TODO: Migere persondata til Person-tabellen
-    @Deprecated("Migrere til Person.navn")
     open val navn: String? = null,
     open val deleted: Boolean = false,
     open var harGebyrsøknad: Boolean = false,

@@ -510,7 +510,7 @@ class DtoMapperTest : TestContainerRunner() {
                 )
 
             // hvis
-            val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.find { it.person.id == 10L }!!)
+            val dto = dtomapper.tilUnderholdDto(behandling.underholdskostnader.find { it.person?.id == 10L }!!)
 
             // så
             dto.gjelderBarn.navn shouldBe "Annet Barn Bm"
