@@ -9,6 +9,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import jakarta.persistence.EntityManager
+import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
@@ -4308,7 +4309,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             behandling.grunnlag shouldBe emptySet()
 
-            every { bidragGrunnlagConsumerMock.henteGrunnlag(any(), any()) } returns (
+            every { runBlocking { bidragGrunnlagConsumerMock.henteGrunnlag(any(), any()) } } returns (
                 HentetGrunnlag(null, "Teknisk feil ved henting av grunnlag")
             )
 
@@ -4338,7 +4339,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any(), any())) } returns (HentetGrunnlag(innhentingMedFeil))
+            every { (runBlocking { bidragGrunnlagConsumerMock.henteGrunnlag(any(), any()) }) } returns (HentetGrunnlag(innhentingMedFeil))
 
             // hvis
             grunnlagServiceMock.oppdatereGrunnlagForBehandling(behandling)
@@ -4366,25 +4367,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId == behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId == behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId != behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId != behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             // hvis
@@ -4412,25 +4417,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId == behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId == behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(innhentingUtenFeil))
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId != behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId != behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             // hvis
@@ -4472,25 +4481,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId == behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId == behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId != behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId != behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
@@ -4542,7 +4555,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 )
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
-            every { (bidragGrunnlagConsumerMock.henteGrunnlag(any(), any())) } returns (HentetGrunnlag(innhentingMedFeil))
+            every { (runBlocking { bidragGrunnlagConsumerMock.henteGrunnlag(any(), any()) }) } returns (HentetGrunnlag(innhentingMedFeil))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
 
@@ -4593,25 +4606,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId == behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId == behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId != behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId != behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
@@ -4674,25 +4691,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 30
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId == behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId == behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId != behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId != behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet shouldBe null
@@ -4754,25 +4775,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 10
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId == behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId == behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId != behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId != behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet =
@@ -4839,25 +4864,29 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             innhentingMedFeil.feilrapporteringListe shouldHaveSize 30
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId == behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId == behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(innhentingMedFeil, "Teknisk feil ved henting av grunnlag"))
 
             every {
-                bidragGrunnlagConsumerMock.henteGrunnlag(
-                    match {
-                        it.find { request ->
-                            request.personId != behandling.bidragsmottaker?.ident!!
-                        } != null
-                    },
-                    any(),
-                )
+                runBlocking {
+                    bidragGrunnlagConsumerMock.henteGrunnlag(
+                        match {
+                            it.find { request ->
+                                request.personId != behandling.bidragsmottaker?.ident!!
+                            } != null
+                        },
+                        any(),
+                    )
+                }
             } returns (HentetGrunnlag(opprettHentGrunnlagDto()))
 
             behandling.grunnlagsinnhentingFeilet =
