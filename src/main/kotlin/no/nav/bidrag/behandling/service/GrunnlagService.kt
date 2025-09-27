@@ -185,19 +185,24 @@ class GrunnlagService(
         if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
+
+            fun Map<Grunnlagsdatatype, GrunnlagFeilDto>.lagreFeilrapportering(): Pair<Personident, HentetGrunnlag>? {
+                feilrapporteringer += this
+                return null
+            }
             val andreGrunnlagListe =
                 listOf(
                     scope.async {
-                        hentOgLagreEtterfølgendeVedtak(behandling)
+                        hentOgLagreEtterfølgendeVedtak(behandling).lagreFeilrapportering()
                     },
                     scope.async {
-                        lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+                        lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling).lagreFeilrapportering()
                     },
                     scope.async {
-                        lagreBeløpshistorikkGrunnlag(behandling)
+                        lagreBeløpshistorikkGrunnlag(behandling).lagreFeilrapportering()
                     },
                     scope.async {
-                        lagreManuelleVedtakGrunnlag(behandling)
+                        lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
                     },
                 )
             if (behandling.vedtakstype.kreverGrunnlag()) {
@@ -208,20 +213,17 @@ class GrunnlagService(
 
                 val grunnlagResponsObjekter =
                     runBlocking {
-                        andreGrunnlagListe.awaitAll().forEach {
-                            feilrapporteringer += it
-                        }
-                        grunnlagRequestobjekter
-                            .map { entry ->
-                                scope.async {
-                                    val hentStart = System.currentTimeMillis()
-                                    val result = hentGrunnlag(behandling, entry.key, entry.value)
-                                    val hentEnd = System.currentTimeMillis()
-                                    hentGrunnlagTid += (hentEnd - hentStart)
-                                    result
-                                }
-                            }.awaitAll()
-                    }
+                        val deferredListe =
+                            andreGrunnlagListe +
+                                grunnlagRequestobjekter
+                                    .map { entry ->
+                                        scope.async {
+                                            hentGrunnlag(behandling, entry.key, entry.value)
+                                        }
+                                    }
+                        deferredListe.awaitAll()
+                    }.filterNotNull()
+
                 hentAsyncTid = (System.currentTimeMillis() - hentAsyncStart)
                 val lagreStart = System.currentTimeMillis()
 
@@ -235,13 +237,11 @@ class GrunnlagService(
                 lagreGrunnlagTid += (System.currentTimeMillis() - lagreStart)
             } else {
                 runBlocking {
-                    andreGrunnlagListe.awaitAll().forEach {
-                        feilrapporteringer += it
-                    }
+                    andreGrunnlagListe.awaitAll()
                 }
             }
 
-//            behandling.grunnlagSistInnhentet = LocalDateTime.now()
+            behandling.grunnlagSistInnhentet = LocalDateTime.now()
 
             if (feilrapporteringer.isNotEmpty()) {
                 behandling.grunnlagsinnhentingFeilet =
@@ -298,7 +298,6 @@ class GrunnlagService(
         log.info {
             "oppdatereGrunnlagForBehandling tid: hentGrunnlag=${hentGrunnlagTid / 1000.0}s, hentAsync=${hentAsyncTid / 1000.0}s lagreGrunnlag=${lagreGrunnlagTid}ms, total=${totalTid}ms"
         }
-        // Optionally: store or return these values as needed
     }
 
     suspend fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
