@@ -169,7 +169,7 @@ class GrunnlagService(
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }
-        log.info { "Henter grunnlag for ${gjelder.verdi}" }
+        secureLogger.debug { "Henter grunnlag for ${gjelder.verdi}: $request" }
         val hentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(request, formål)
         return gjelder to hentetGrunnlag
     }
@@ -218,7 +218,10 @@ class GrunnlagService(
                                 grunnlagRequestobjekter
                                     .map { entry ->
                                         scope.async {
-                                            hentGrunnlag(behandling, entry.key, entry.value)
+                                            val hentGrunnlagStart = System.currentTimeMillis()
+                                            val resultat = hentGrunnlag(behandling, entry.key, entry.value)
+                                            hentGrunnlagTid += (System.currentTimeMillis() - hentGrunnlagStart)
+                                            resultat
                                         }
                                     }
                         deferredListe.awaitAll()
