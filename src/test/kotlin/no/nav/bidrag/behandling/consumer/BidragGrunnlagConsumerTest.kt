@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
+import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
@@ -36,7 +37,7 @@ class BidragGrunnlagConsumerTest : TestContainerRunner() {
 
         grunnlagRequestobjekter.forEach {
             // when
-            val returnertGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(it.value, Formål.BIDRAG).hentGrunnlagDto!!
+            val returnertGrunnlag = runBlocking { bidragGrunnlagConsumer.henteGrunnlag(it.value, Formål.BIDRAG) }.hentGrunnlagDto!!
 
             // then
             assertSoftly {

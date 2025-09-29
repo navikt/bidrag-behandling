@@ -2,6 +2,11 @@ package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
@@ -77,6 +82,8 @@ import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.commons.util.RequestContextAsyncContext
+import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -151,27 +158,91 @@ class GrunnlagService(
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting-belophistorikk:5}")
     lateinit var grenseInnhentingBeløpshistorikk: String
 
+    private suspend fun hentGrunnlag(
+        behandling: Behandling,
+        gjelder: Personident,
+        request: List<GrunnlagRequestDto>,
+    ): Pair<Personident, HentetGrunnlag> {
+        val formål =
+            when (behandling.tilType()) {
+                TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> Formål.BIDRAG
+                TypeBehandling.FORSKUDD -> Formål.FORSKUDD
+                TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
+            }
+        secureLogger.debug { "Henter grunnlag for ${gjelder.verdi}: $request" }
+        val hentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(request, formål)
+        return gjelder to hentetGrunnlag
+    }
+
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
+        val totalStart = System.currentTimeMillis()
+        var hentGrunnlagTid: Long = 0
+        var lagreGrunnlagTid: Long = 0
+        var hentAsyncTid: Long = 0
+        val scope = CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
+
         if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
+
+            fun Map<Grunnlagsdatatype, GrunnlagFeilDto>.lagreFeilrapportering(): Pair<Personident, HentetGrunnlag>? {
+                feilrapporteringer += this
+                return null
+            }
+            val andreGrunnlagListe =
+                listOf(
+                    scope.async {
+                        hentOgLagreEtterfølgendeVedtak(behandling).lagreFeilrapportering()
+                    },
+                    scope.async {
+                        lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling).lagreFeilrapportering()
+                    },
+                    scope.async {
+                        lagreBeløpshistorikkGrunnlag(behandling).lagreFeilrapportering()
+                    },
+                    scope.async {
+                        lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
+                    },
+                )
             if (behandling.vedtakstype.kreverGrunnlag()) {
                 val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
                 behandling.grunnlagsinnhentingFeilet = null
 
-                grunnlagRequestobjekter.forEach {
+                val hentAsyncStart = System.currentTimeMillis()
+
+                val grunnlagResponsObjekter =
+                    runBlocking {
+                        val deferredListe =
+                            andreGrunnlagListe +
+                                grunnlagRequestobjekter
+                                    .map { entry ->
+                                        scope.async {
+                                            val hentGrunnlagStart = System.currentTimeMillis()
+                                            val resultat = hentGrunnlag(behandling, entry.key, entry.value)
+                                            hentGrunnlagTid += (System.currentTimeMillis() - hentGrunnlagStart)
+                                            resultat
+                                        }
+                                    }
+                        deferredListe.awaitAll()
+                    }.filterNotNull()
+
+                hentAsyncTid = (System.currentTimeMillis() - hentAsyncStart)
+                val lagreStart = System.currentTimeMillis()
+
+                grunnlagResponsObjekter.forEach {
                     feilrapporteringer +=
-                        henteOglagreGrunnlag(
+                        lagreGrunnlag(
                             behandling,
                             it,
                         )
                 }
+                lagreGrunnlagTid += (System.currentTimeMillis() - lagreStart)
+            } else {
+                runBlocking {
+                    andreGrunnlagListe.awaitAll()
+                }
             }
-            feilrapporteringer += hentOgLagreEtterfølgendeVedtak(behandling)
-            feilrapporteringer += lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
-            feilrapporteringer += lagreBeløpshistorikkGrunnlag(behandling)
-            feilrapporteringer += lagreManuelleVedtakGrunnlag(behandling)
 
             behandling.grunnlagSistInnhentet = LocalDateTime.now()
 
@@ -190,8 +261,16 @@ class GrunnlagService(
                 }
             }
         } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
-            hentOgLagreEtterfølgendeVedtak(behandling)
-            lagreBeløpshistorikkGrunnlag(behandling)
+            runBlocking {
+                listOf(
+                    scope.async {
+                        hentOgLagreEtterfølgendeVedtak(behandling)
+                    },
+                    scope.async {
+                        lagreBeløpshistorikkGrunnlag(behandling)
+                    },
+                ).awaitAll()
+            }
         } else {
             val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
 
@@ -215,9 +294,16 @@ class GrunnlagService(
                 }
             }
         }
+
+        val totalEnd = System.currentTimeMillis()
+        val totalTid = totalEnd - totalStart
+
+        log.info {
+            "oppdatereGrunnlagForBehandling tid: hentGrunnlag=${hentGrunnlagTid / 1000.0}s, hentAsync=${hentAsyncTid / 1000.0}s lagreGrunnlag=${lagreGrunnlagTid}ms, total=${totalTid}ms"
+        }
     }
 
-    fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    suspend fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         // Klage er pga at det skal være mulig å velge vedtak for aldersjustering hvis klagebehandling endrer resultat for aldersjusteringen
         val erAldersjusteringEllerOmgjøring =
             listOf(
@@ -360,7 +446,9 @@ class GrunnlagService(
             }.sortedByDescending { it.fattetTidspunkt }
     }
 
-    fun lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    suspend fun lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(
+        behandling: Behandling,
+    ): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (behandling.tilType() != TypeBehandling.BIDRAG || !behandling.erKlageEllerOmgjøring) return emptyMap()
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
@@ -376,7 +464,7 @@ class GrunnlagService(
         return feilrapporteringer
     }
 
-    fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    suspend fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (behandling.tilType() == TypeBehandling.SÆRBIDRAG) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
 
@@ -396,7 +484,7 @@ class GrunnlagService(
         return feilrapporteringer
     }
 
-    fun hentOgLagreEtterfølgendeVedtak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    suspend fun hentOgLagreEtterfølgendeVedtak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (!(behandling.erKlageEllerOmgjøring && behandling.erBidrag())) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
         val type = Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK
@@ -1150,27 +1238,20 @@ class GrunnlagService(
             else -> LocalDateTime.now().minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
         }
 
-    private fun henteOglagreGrunnlag(
+    private fun lagreGrunnlag(
         behandling: Behandling,
-        grunnlagsrequest: Map.Entry<Personident, List<GrunnlagRequestDto>>,
+        input: Pair<Personident, HentetGrunnlag>,
     ): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
-        val formål =
-            when (behandling.tilType()) {
-                TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> Formål.BIDRAG
-                TypeBehandling.FORSKUDD -> Formål.FORSKUDD
-                TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
-            }
-        val innhentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(grunnlagsrequest.value, formål)
-
+        val (gjelder, innhentetGrunnlag) = input
         val feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?> =
             innhentetGrunnlag.hentGrunnlagDto?.let { g ->
                 Grunnlagsdatatype
                     .grunnlagsdatatypeobjekter(behandling.tilType())
-                    .associateWith { hentFeilrapporteringForGrunnlag(it, grunnlagsrequest.key, g)?.tilGrunnlagFeilDto() }
+                    .associateWith { hentFeilrapporteringForGrunnlag(it, gjelder, g)?.tilGrunnlagFeilDto() }
                     .filterNot { it.value == null }
             } ?: Grunnlagsdatatype.gjeldende().associateWith { null }
 
-        val rolleInnhentetFor = behandling.roller.find { it.ident == grunnlagsrequest.key.verdi }!!
+        val rolleInnhentetFor = behandling.roller.find { it.ident == gjelder.verdi }!!
         innhentetGrunnlag.hentGrunnlagDto?.let {
             lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, it, feilrapporteringer)
         }
@@ -1229,7 +1310,7 @@ class GrunnlagService(
                 boforholdFeil == null || nyesteGrunnlag == null || HentGrunnlagFeiltype.FUNKSJONELL_FEIL == boforholdFeil.feiltype &&
                     !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBoforholdUtenFeil &&
-                boforholdInnhentesForRolle?.ident == grunnlagsrequest.key.verdi
+                boforholdInnhentesForRolle?.ident == gjelder.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1263,7 +1344,7 @@ class GrunnlagService(
                     HentGrunnlagFeiltype.FUNKSJONELL_FEIL == bmBoforholdFeil.feiltype &&
                     !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBmBoforholdUtenFeil &&
-                grunnlagBoforholdTilBMInnhentesForRolle?.ident == grunnlagsrequest.key.verdi
+                grunnlagBoforholdTilBMInnhentesForRolle?.ident == gjelder.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1271,7 +1352,7 @@ class GrunnlagService(
                     Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
                 )
             }
-            if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == grunnlagsrequest.key.verdi) {
+            if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == gjelder.verdi) {
                 lagreAndreBarnTilBMGrunnlag(
                     behandling,
                     it.husstandsmedlemmerOgEgneBarnListe.toSet(),

@@ -10,6 +10,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
@@ -177,15 +178,17 @@ class GrunnlagMockService {
         stubHusstandrepository(husstandsmedlemRepository)
         stubSivilstandrepository(sivilstandRepository)
         every {
-            grunnlagConsumer.henteGrunnlag(
-                grunnlag =
-                    match {
-                        it.any { request ->
-                            request.personId != testdataBM.ident && request.personId != testdataBP.ident
-                        }
-                    },
-                formål = any(),
-            )
+            runBlocking {
+                grunnlagConsumer.henteGrunnlag(
+                    grunnlag =
+                        match {
+                            it.any { request ->
+                                request.personId != testdataBM.ident && request.personId != testdataBP.ident
+                            }
+                        },
+                    formål = any(),
+                )
+            }
         } returns (
             HentetGrunnlag(opprettHentGrunnlagDto())
         )
@@ -1041,28 +1044,32 @@ class GrunnlagMockService {
         grunnlagBP: HentGrunnlagDto,
     ) {
         every {
-            grunnlagConsumer.henteGrunnlag(
-                match {
-                    it.any { request ->
-                        request.personId == testdataBM?.ident!!
-                    }
-                },
-                any(),
-            )
+            runBlocking {
+                grunnlagConsumer.henteGrunnlag(
+                    match {
+                        it.any { request ->
+                            request.personId == testdataBM?.ident!!
+                        }
+                    },
+                    any(),
+                )
+            }
         } returns (
             HentetGrunnlag(
                 grunnlagBM,
             )
         )
         every {
-            grunnlagConsumer.henteGrunnlag(
-                match {
-                    it.any { request ->
-                        request.personId == testdataBP.ident!!
-                    }
-                },
-                any(),
-            )
+            runBlocking {
+                grunnlagConsumer.henteGrunnlag(
+                    match {
+                        it.any { request ->
+                            request.personId == testdataBP.ident!!
+                        }
+                    },
+                    any(),
+                )
+            }
         } returns (
             HentetGrunnlag(
                 grunnlagBP,
