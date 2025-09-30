@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -221,6 +222,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                     barn = resultat.barn,
                     innkrevesFraDato = resultat.innkrevesFraDato,
                     ugyldigBeregning = resultat.ugyldigBeregning,
+                    erAvvisning = resultat.avslagskode?.erAvvisning() == true,
                     forsendelseDistribueresAutomatisk =
                         resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,
                     resultatUtenBeregning =
