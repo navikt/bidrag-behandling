@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
+import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GebyrService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.NotatService
@@ -68,6 +69,7 @@ class BehandlingControllerV2(
     private val validerBehandlingService: ValiderBehandlingService,
     private val dtomapper: Dtomapper,
     private val virkningstidspunktService: VirkningstidspunktService,
+    private val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -475,5 +477,24 @@ class BehandlingControllerV2(
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         return ResponseEntity.accepted().build()
+    }
+
+    @PostMapping("/behandling/forholdsmessigfordeling/{behandlingsid}")
+    @Operation(
+        description = "Sjekk om behandling kan behandles i ny løsning",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun opprettForholdsmessigFordeling(
+        @PathVariable behandlingsid: Long,
+    ) {
+        forholdsmessigFordelingService.opprettForholdsmessigFordeling(behandlingsid)
     }
 }

@@ -17,6 +17,8 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
 import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
@@ -119,6 +121,10 @@ open class Behandling(
     @ColumnTransformer(write = "?::jsonb")
     open var vedtakDetaljer: VedtakDetaljer? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
+    @Column(name = "forholdsmessig_fordeling", columnDefinition = "jsonb")
+    @Convert(converter = ForholdsmessigFordelingConverter::class)
+    @ColumnTransformer(write = "?::jsonb")
+    open var forholdsmessigFordeling: ForholdsmessigFordeling? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
@@ -267,9 +273,9 @@ private fun Behandling.leggeTilBPSomHusstandsmedlem(): Husstandsmedlem {
     return bpSomHusstandsmedlem
 }
 
-fun Behandling.grunnlagsinnhentingFeiletMap(): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
-        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
+fun Behandling.grunnlagsinnhentingFeiletMap(): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
+    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto?>> =
+        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto?>>() {}
 
     return grunnlagsinnhentingFeilet?.let { objectmapper.readValue(grunnlagsinnhentingFeilet, typeRef) } ?: emptyMap()
 }

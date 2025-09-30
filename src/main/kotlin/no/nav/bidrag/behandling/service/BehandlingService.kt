@@ -8,6 +8,8 @@ import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
@@ -122,6 +124,23 @@ class BehandlingService(
             return OpprettBehandlingResponse(it.id!!)
         }
 
+        val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+        behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
+            behandling.roller.addAll(
+                HashSet(
+                    opprettBehandling.roller.map {
+                        val rolle = it.toRolle(behandling)
+                        rolle.forholdsmessigFordeling =
+                            ForholdsmessigFordelingRolle(
+                                tilhørerSak = opprettBehandling.saksnummer,
+                                delAvOpprinneligBehandling = true,
+                            )
+                        rolle
+                    },
+                ),
+            )
+            return OpprettBehandlingResponse(behandling.id!!)
+        }
         opprettBehandling.valider()
         validerBehandlingService.validerKanBehandlesINyLøsning(opprettBehandling.tilKanBehandlesINyLøsningRequest())
 

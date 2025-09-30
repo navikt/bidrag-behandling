@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -25,6 +26,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
@@ -106,6 +108,10 @@ open class Rolle(
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
     open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),
+    open var innkrevingstype: Innkrevingstype? = null,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
+    open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
     val beregningGrunnlagFraVedtak get() = grunnlagFraVedtak ?: grunnlagFraVedtakForInnkreving?.vedtak
     val grunnlagFraVedtakForInnkreving get() = grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }

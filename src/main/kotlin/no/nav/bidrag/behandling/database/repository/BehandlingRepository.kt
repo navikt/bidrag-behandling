@@ -39,4 +39,28 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     fun hentBehandlingerSomInneholderBestillingMedForsendelseId(
         @Param("forsendelseId") forsendelseId: Long,
     ): List<Behandling>
+
+    @Query(
+        "SELECT b FROM behandling b JOIN b.roller bp JOIN b.roller barn " +
+            "WHERE bp.rolletype = 'BIDRAGSPLIKTIG' AND bp.ident = :bpIdent and b.deleted is false and b.vedtakDetaljer is null",
+    )
+    fun finnÅpneBidragsbehandlingerForBp(
+        @Param("bpIdent") bpIdent: String,
+    ): List<Behandling>
+
+    @Query(
+        value = """
+        SELECT b.* FROM behandling b
+        JOIN rolle br ON br.behandling_id = b.id
+        WHERE br.rolletype = 'BIDRAGSPLIKTIG'
+          AND br.ident = :bpIdent
+          AND b.deleted = false
+          AND b.vedtak_detaljer IS NULL
+          AND (b.forholdsmessig_fordeling->>'erHovedbehandling') = 'true'
+    """,
+        nativeQuery = true,
+    )
+    fun finnHovedbehandlingForBpVedFF(
+        @Param("bpIdent") bpIdent: String,
+    ): Behandling?
 }

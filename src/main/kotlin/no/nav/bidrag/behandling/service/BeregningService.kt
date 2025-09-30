@@ -169,7 +169,16 @@ class BeregningService(
             beregnBidragAldersjustering(behandling)
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
+        } else if (behandling.forholdsmessigFordeling != null) {
+            val grunnlagslisteBarn =
+                behandling.søknadsbarn.map { søknasdbarn ->
+                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
+                }
+            // TODO: FF - grunnlagBeregning for alle barna sendes i samme input
+            // TODO Til beregningen
+            emptyList()
         } else {
+            // TODO: FF - grunnlagBeregning for alle barna sendes i samme input
             behandling.søknadsbarn.map { søknasdbarn ->
                 val grunnlagBeregning =
                     mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
