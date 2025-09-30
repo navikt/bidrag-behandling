@@ -54,6 +54,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
+import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -169,6 +170,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                         hentDirekteOppgjørBeløp(barnIdent.verdi),
                         referanse = barnGrunnlag?.referanse ?: "",
                     ),
+                erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 delvedtak = hentDelvedtak(stønadsendring),
                 innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
