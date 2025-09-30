@@ -52,12 +52,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
             } else {
                 BeregnTil.INNEVÆRENDE_MÅNED
             },
-        opphørsdato =
-            if (barnErOver18 && skalOpphørVed18År) {
-                fødselsdatoPerson.plusYears(18).plusMonths(1).withDayOfMonth(1)
-            } else {
-                null
-            },
+        opphørsdato = null,
         virkningstidspunkt =
             if (rolletype == Rolletype.BARN) {
                 maxOf(fødselsdatoPerson, behandling.virkningstidspunktEllerSøktFomDato)
