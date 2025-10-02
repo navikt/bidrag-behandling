@@ -128,14 +128,18 @@ class BehandlingService(
         behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
             behandling.roller.addAll(
                 HashSet(
-                    opprettBehandling.roller.map {
-                        val rolle = it.toRolle(behandling)
-                        rolle.forholdsmessigFordeling =
-                            ForholdsmessigFordelingRolle(
-                                tilhørerSak = opprettBehandling.saksnummer,
-                                delAvOpprinneligBehandling = true,
-                            )
-                        rolle
+                    opprettBehandling.roller.mapNotNull { opprettRolle ->
+                        if (behandling.roller.none { it.ident == opprettRolle.ident!!.verdi }) {
+                            val rolle = opprettRolle.toRolle(behandling)
+                            rolle.forholdsmessigFordeling =
+                                ForholdsmessigFordelingRolle(
+                                    tilhørerSak = opprettBehandling.saksnummer,
+                                    delAvOpprinneligBehandling = true,
+                                )
+                            rolle
+                        } else {
+                            null
+                        }
                     },
                 ),
             )

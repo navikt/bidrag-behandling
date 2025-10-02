@@ -109,6 +109,8 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
                         it.ident,
                         it.navn ?: hentPersonVisningsnavn(it.ident),
                         it.fødselsdato,
+                        harInnvilgetTilleggsstønad = null,
+                        delAvOpprinneligBehandling = it.forholdsmessigFordeling?.delAvOpprinneligBehandling == false,
                     )
                 }.toSet(),
         søknadRefId = omgjøringsdetaljer?.soknadRefId,
@@ -135,7 +137,8 @@ fun Rolle.tilDto() =
         ident,
         navn ?: hentPersonVisningsnavn(ident),
         fødselsdato,
-        this.harInnvilgetTilleggsstønad(),
+        harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
+        delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == false,
     )
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {

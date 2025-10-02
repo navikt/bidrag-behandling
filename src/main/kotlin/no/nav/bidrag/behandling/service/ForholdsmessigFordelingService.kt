@@ -60,9 +60,11 @@ class ForholdsmessigFordelingService(
                     behandlesAvBehandling = behandling.id,
                 )
             it.bidragsmottaker?.let { rolle ->
-                behandling.roller.add(
-                    rolle.kopierRolle(behandling),
-                )
+                if (behandling.roller.none { it.ident == rolle.ident }) {
+                    behandling.roller.add(
+                        rolle.kopierRolle(behandling),
+                    )
+                }
             }
             it.søknadsbarn.forEach { rolle ->
                 if (behandling.søknadsbarn.none { barn -> barn.ident == rolle.ident }) {
@@ -78,6 +80,8 @@ class ForholdsmessigFordelingService(
                         it.kopierGrunnlag(behandling),
                     )
                 }
+
+            behandlingRepository.save(it)
         }
     }
 
@@ -143,6 +147,8 @@ class ForholdsmessigFordelingService(
             virkningstidspunkt = virkningstidspunkt,
             grunnlagFraVedtakListe = grunnlagFraVedtakListe,
             opphørsdato = opphørsdato,
+            manueltOverstyrtGebyr = manueltOverstyrtGebyr,
+            harGebyrsøknad = harGebyrsøknad,
             opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
             beregnTil = beregnTil,
             fødselsdato = fødselsdato,
