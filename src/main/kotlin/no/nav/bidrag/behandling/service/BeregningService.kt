@@ -47,6 +47,7 @@ import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.BostatusVoksneIHussta
 import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.GrunnlagBeregning
 import no.nav.bidrag.beregn.særbidrag.core.felles.bo.SjablonListe
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
@@ -173,6 +174,16 @@ class BeregningService(
                 val grunnlagBeregning =
                     mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
                 try {
+                    if (søknasdbarn.avslag?.erAvvisning() == true) {
+                        return@map ResultatBidragsberegningBarn(
+                            ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                            barn = søknasdbarn.mapTilResultatBarn(),
+                            vedtakstype = behandling.vedtakstype,
+                            avslagskode = søknasdbarn.avslag,
+                            resultat = BeregnetBarnebidragResultat(),
+                            opphørsdato = null,
+                        )
+                    }
                     val resultat =
                         beregnBarnebidrag
                             .utførBidragsberegning(grunnlagBeregning)

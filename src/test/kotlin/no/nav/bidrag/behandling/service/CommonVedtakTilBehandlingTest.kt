@@ -112,7 +112,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 notatService,
                 personService,
             )
-        vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService, personRepository, behandlingRepository)
+        vedtakTilBehandlingMapping = VedtakTilBehandlingMapping(validerBeregning, underholdService = underholdService, behandlingRepository)
         val identConsumer = stubIdentConsumer()
         val identUtils = IdentUtils(identConsumer)
         aldersjusteringOrchestrator =
