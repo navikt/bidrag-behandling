@@ -138,7 +138,7 @@ fun Rolle.tilDto() =
         navn ?: hentPersonVisningsnavn(ident),
         fødselsdato,
         harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
-        delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == false,
+        delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == true,
     )
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {

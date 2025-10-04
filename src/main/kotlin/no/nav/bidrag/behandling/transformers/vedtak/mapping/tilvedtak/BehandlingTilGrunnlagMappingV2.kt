@@ -63,12 +63,8 @@ class BehandlingTilGrunnlagMappingV2(
         val søknadsbarnListe =
             søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
                 ?: søknadsbarn.map { it.tilGrunnlagPerson() }
-        return (
-            listOf(
-                bidragsmottaker?.tilGrunnlagPerson(),
-                bidragspliktig?.tilGrunnlagPerson(),
-            ) + søknadsbarnListe
-        ).filterNotNull().toMutableSet()
+        val bidragsmottakere = alleBidragsmottakere.map { it.tilGrunnlagPerson() }
+        return (bidragsmottakere + listOf(bidragspliktig?.tilGrunnlagPerson()) + søknadsbarnListe).filterNotNull().toMutableSet()
     }
 
     fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> =

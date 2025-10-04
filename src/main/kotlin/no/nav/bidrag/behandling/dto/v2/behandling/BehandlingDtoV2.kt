@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
@@ -96,7 +97,9 @@ data class BehandlingDtoV2(
     val id: Long,
     val type: TypeBehandling,
     val lesemodus: LesemodusVedtak? = null,
+    val virkningstidspunktErSammeForAlleBarn: Boolean,
     val erBisysVedtak: Boolean,
+    val forholdsmessigFordeling: ForholdmessigFordelingDetaljerDto?,
     val erVedtakUtenBeregning: Boolean = false,
     val grunnlagFraVedtaksid: Int? = null,
     val medInnkreving: Boolean,

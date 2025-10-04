@@ -478,23 +478,4 @@ class BehandlingControllerV2(
         validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         return ResponseEntity.accepted().build()
     }
-
-    @PostMapping("/behandling/forholdsmessigfordeling/{behandlingsid}")
-    @Operation(
-        description = "Sjekk om behandling kan behandles i ny løsning",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "202",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
-    fun opprettForholdsmessigFordeling(
-        @PathVariable behandlingsid: Long,
-    ) {
-        forholdsmessigFordelingService.opprettForholdsmessigFordeling(behandlingsid)
-    }
 }

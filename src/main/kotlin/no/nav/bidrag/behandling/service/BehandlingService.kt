@@ -47,6 +47,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
@@ -135,6 +136,7 @@ class BehandlingService(
                                 ForholdsmessigFordelingRolle(
                                     tilhørerSak = opprettBehandling.saksnummer,
                                     delAvOpprinneligBehandling = true,
+                                    sakBehandlerEnhet = Enhetsnummer(opprettBehandling.behandlerenhet),
                                 )
                             rolle
                         } else {

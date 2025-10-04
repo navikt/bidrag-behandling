@@ -43,6 +43,8 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
@@ -738,6 +740,29 @@ class Dtomapper(
                 type = tilType(),
                 lesemodus = lesemodusVedtak,
                 erBisysVedtak = erBisysVedtak,
+                virkningstidspunktErSammeForAlleBarn = sammeVirkningstidspunktForAlle,
+                forholdsmessigFordeling =
+                    forholdsmessigFordeling?.let {
+                        val barnDto =
+                            søknadsbarn.map { barn ->
+                                val bm =
+                                    alleBidragsmottakere.find {
+                                        it.forholdsmessigFordeling?.tilhørerSak == barn.forholdsmessigFordeling?.tilhørerSak ||
+                                            barn.forholdsmessigFordeling == null && it.forholdsmessigFordeling == null ||
+                                            barn.forholdsmessigFordeling?.tilhørerSak == saksnummer && it.forholdsmessigFordeling == null
+                                    }
+                                ForholdsmessigFordelingBarnDto(
+                                    ident = barn.ident!!,
+                                    navn = barn.navn ?: "",
+                                    fødselsdato = barn.fødselsdato,
+                                    saksnr = barn.forholdsmessigFordeling?.tilhørerSak ?: "",
+                                    bidragsmottaker = bm!!.tilDto(),
+                                    sammeSakSomBehandling = barn.forholdsmessigFordeling?.tilhørerSak == saksnummer,
+                                    åpenBehandling = null,
+                                )
+                            }
+                        ForholdmessigFordelingDetaljerDto(barn = barnDto)
+                    },
                 erVedtakUtenBeregning =
                     vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
                 grunnlagFraVedtaksid = grunnlagFraVedtak,
