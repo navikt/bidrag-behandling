@@ -17,6 +17,9 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDoConverter
+import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
@@ -233,6 +236,16 @@ open class Behandling(
     val globalVirkningstidspunkt get() =
         søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt
 
+    val globalOpphørsdato get() =
+        if (søknadsbarn.any { it.opphørsdato == null }) {
+            null
+        } else {
+            søknadsbarn.maxByOrNull { it.opphørsdato!! }?.opphørsdato
+        }
+
+    val opphørTilDato get() = justerPeriodeTomOpphørsdato(globalOpphørsdato)
+    val opphørSistePeriode get() = opphørTilDato != null
+
     val sammeVirkningstidspunktForAlle get() =
         søknadsbarn.all { sb1 ->
             søknadsbarn.all {
@@ -247,15 +260,13 @@ open class Behandling(
                     it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold
             }
         }
-    val globalOpphørsdato get() =
-        if (søknadsbarn.any { it.opphørsdato == null }) {
-            null
-        } else {
-            søknadsbarn.maxByOrNull { it.opphørsdato!! }?.opphørsdato
-        }
 
-    val opphørTilDato get() = justerPeriodeTomOpphørsdato(globalOpphørsdato)
-    val opphørSistePeriode get() = opphørTilDato != null
+    val sammeSamværForAlle get() =
+        samvær.all { sb1 ->
+            samvær.all {
+                sb1.erLik(it)
+            }
+        }
 
     fun tilStønadsid(søknadsbarn: Rolle) =
         Stønadsid(
@@ -316,86 +327,3 @@ fun Behandling.hentBeløpshistorikkForStønadstype(
 
 fun Behandling.opprettUnikReferanse(postfix: String? = null) =
     "behandling_${id}_${opprettetTidspunkt.toCompactString()}${postfix?.let { "_$it" } ?: ""}"
-
-@Converter
-open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {
-    override fun convertToDatabaseColumn(attribute: VirkningstidspunktÅrsakstype?): String? = attribute?.name
-
-    override fun convertToEntityAttribute(dbData: String?): VirkningstidspunktÅrsakstype? = dbData?.tilÅrsakstype()
-}
-
-class BehandlingMetadataDoConverter : ImmutableType<BehandlingMetadataDo>(BehandlingMetadataDo::class.java) {
-    override fun get(
-        rs: ResultSet,
-        p1: Int,
-        session: SharedSessionContractImplementor?,
-        owner: Any?,
-    ): BehandlingMetadataDo? {
-        val map = rs.getObject(p1) as Map<String, String>?
-        return map?.let { BehandlingMetadataDo.from(it) }
-    }
-
-    override fun set(
-        st: PreparedStatement,
-        value: BehandlingMetadataDo?,
-        index: Int,
-        session: SharedSessionContractImplementor,
-    ) {
-        st.setObject(index, value?.toMap())
-    }
-
-    override fun getSqlType(): Int = Types.OTHER
-
-    override fun compare(
-        p0: Any?,
-        p1: Any?,
-        p2: SessionFactoryImplementor?,
-    ): Int = 0
-
-    override fun fromStringValue(sequence: CharSequence?): BehandlingMetadataDo? =
-        try {
-            sequence?.let { JacksonUtil.fromString(sequence as String, BehandlingMetadataDo::class.java) }
-        } catch (e: Exception) {
-            throw IllegalArgumentException(
-                String.format(
-                    "Could not transform the [%s] value to a Map!",
-                    sequence,
-                ),
-            )
-        }
-}
-
-class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
-    companion object {
-        fun from(initValue: Map<String, String> = hashMapOf()): BehandlingMetadataDo {
-            val dokmap = BehandlingMetadataDo()
-            dokmap.putAll(initValue)
-            return dokmap
-        }
-    }
-
-    private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
-    private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
-
-    fun setKlagePåBisysVedtak() {
-        update(klagePåBisysVedtak, "true")
-    }
-
-    fun erKlagePåBisysVedtak() = get(klagePåBisysVedtak)?.toBooleanStrictOrNull() == true
-
-    fun setFølgerAutomatiskVedtak(vedtaksid: Int?) {
-        vedtaksid?.let { update(følgerAutomatiskVedtak, it.toString()) }
-    }
-
-    fun getFølgerAutomatiskVedtak(): Int? = get(følgerAutomatiskVedtak)?.toIntOrNull()
-
-    private fun update(
-        key: String,
-        value: String?,
-    ) {
-        remove(key)
-        value?.let { put(key, value) }
-    }
-
-    fun copy(): BehandlingMetadataDo = from(this)
-}

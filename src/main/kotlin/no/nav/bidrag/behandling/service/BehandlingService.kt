@@ -3,12 +3,12 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
-import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
@@ -161,20 +161,7 @@ class BehandlingService(
                 TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> opprettBehandling.søktFomDato
                 TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
             }
-        val årsak =
-            when (opprettBehandling.tilType()) {
-                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
-                    if (opprettBehandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-                        VirkningstidspunktÅrsakstype.AUTOMATISK_JUSTERING
-                    } else if (opprettBehandling.vedtakstype !=
-                        Vedtakstype.OPPHØR
-                    ) {
-                        VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-                    } else {
-                        null
-                    }
-                TypeBehandling.SÆRBIDRAG -> null
-            }
+        val årsak = hentDefaultÅrsak(opprettBehandling.tilType(), opprettBehandling.vedtakstype)
         val avslag =
             when (opprettBehandling.tilType()) {
                 TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
@@ -261,8 +248,9 @@ class BehandlingService(
                 )
             }
         }
-
-        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+        val metadata = behandling.metadata ?: BehandlingMetadataDo()
+        metadata.setOppdatererGrunnlagAsync(true)
+        behandling.metadata = metadata
 
         behandling.søknadsbarn.forEach { rolle ->
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
@@ -279,6 +267,8 @@ class BehandlingService(
             }
         }
         behandlingRepository.save(behandling)
+        grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo.id!!)
+
         log.debug {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
                 "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +

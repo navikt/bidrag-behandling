@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
@@ -113,6 +114,12 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    val bidragsmottaker get() =
+        behandling.alleBidragsmottakere.find {
+            it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
+                forholdsmessigFordeling == null && it.forholdsmessigFordeling == null ||
+                forholdsmessigFordeling?.tilhørerSak == behandling.saksnummer && it.forholdsmessigFordeling == null
+        }
     val beregningGrunnlagFraVedtak get() = grunnlagFraVedtak ?: grunnlagFraVedtakForInnkreving?.vedtak
     val grunnlagFraVedtakForInnkreving get() = grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }

@@ -34,5 +34,12 @@ open class Samvær(
     )
     open var perioder: MutableSet<Samværsperiode> = mutableSetOf(),
 ) {
+    fun erLik(other: Samvær): Boolean {
+        if (this === other) return true
+        if (perioder.size != other.perioder.size) return false
+        if (!perioder.all { periode -> other.perioder.any { otherPeriode -> periode.erLik(otherPeriode) } }) return false
+        return true
+    }
+
     override fun toString(): String = "Samvær(id=$id, behandlingId=${behandling.id}, perioder(size)=${perioder.size}"
 }

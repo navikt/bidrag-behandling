@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
@@ -31,6 +32,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnla
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
@@ -130,8 +132,10 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.task.TaskExecutor
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
@@ -151,6 +155,8 @@ class GrunnlagService(
     private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
     private val vedtakConsumer: BidragVedtakConsumer,
     private val vedtakService: VedtakService? = null,
+    private val grunnlagFetchTaskExecutor: TaskExecutor? = null,
+    private val behandlngRepository: BehandlingRepository? = null,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
     lateinit var grenseInnhenting: String
@@ -172,6 +178,23 @@ class GrunnlagService(
         secureLogger.debug { "Henter grunnlag for ${gjelder.verdi}: $request" }
         val hentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(request, formål)
         return gjelder to hentetGrunnlag
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun oppdaterGrunnlagForBehandlingAsync(behandlingId: Long) {
+        grunnlagFetchTaskExecutor?.execute {
+            try {
+                val behandling = behandlngRepository!!.findBehandlingById(behandlingId).get()
+                // Your long-running method
+                oppdatereGrunnlagForBehandling(behandling)
+                val metadata = behandling.metadata ?: BehandlingMetadataDo()
+                metadata.setOppdatererGrunnlagAsync(false)
+                behandling.metadata = metadata
+            } catch (e: Exception) {
+                // Handle exceptions
+                log.error(e) { "Error processing behandling $behandlingId" }
+            }
+        }
     }
 
     @Transactional

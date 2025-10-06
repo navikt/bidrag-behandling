@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.service.SamværService
+import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -31,7 +32,7 @@ class SamværController(
         @Valid
         @RequestBody(required = true)
         request: OppdaterSamværDto,
-    ): OppdaterSamværResponsDto = samværService.oppdaterSamvær(behandlingsid, request)
+    ): OppdaterSamværResponsDto = samværService.oppdaterSamvær(behandlingsid, request).tilOppdaterSamværResponseDto()
 
     @Suppress("unused")
     @DeleteMapping("/behandling/{behandlingsid}/samvar/periode")

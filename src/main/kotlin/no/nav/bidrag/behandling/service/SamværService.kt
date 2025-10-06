@@ -23,6 +23,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværskl
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
@@ -35,28 +36,43 @@ class SamværService(
     private val notatService: NotatService,
     private val beregnSamværsklasseApi: BeregnSamværsklasseApi,
 ) {
+    @Transactional
     fun oppdaterSamvær(
         behandlingsid: Long,
         request: OppdaterSamværDto,
-    ): OppdaterSamværResponsDto {
+    ): Samvær {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         secureLogger.debug { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
-        val oppdaterSamvær = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+        if (request.gjelderBarn.isNullOrEmpty()) {
+            behandling.samvær.forEach { oppdaterSamvær ->
+                oppdaterSamvær(request, oppdaterSamvær)
+            }
+        } else {
+            val samværBarn = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+            oppdaterSamvær(request, samværBarn)
+            return samværBarn
+        }
+
+        return behandling.samvær.first()
+    }
+
+    private fun oppdaterSamvær(
+        request: OppdaterSamværDto,
+        oppdaterSamvær: Samvær,
+    ) {
         request.valider(oppdaterSamvær.rolle.opphørsdato)
 
         request.run {
             periode?.let { oppdaterPeriode(it, oppdaterSamvær) }
             oppdatereBegrunnelse?.let {
                 notatService.oppdatereNotat(
-                    behandling,
+                    oppdaterSamvær.behandling,
                     NotatGrunnlag.NotatType.SAMVÆR,
                     it.henteNyttNotat() ?: "",
                     oppdaterSamvær.rolle,
                 )
             }
         }
-
-        return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
 
     private fun oppdaterPeriode(

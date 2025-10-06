@@ -8,15 +8,20 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
+import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
@@ -213,10 +218,21 @@ class ForholdsmessigFordelingService(
         rolletype: Rolletype,
         fødselsnummer: String,
         eierfogd: Enhetsnummer,
-    ): Rolle =
-        Rolle(
+    ): Rolle {
+        val erBarn = rolletype == Rolletype.BARN
+        return Rolle(
             behandling = behandling,
             rolletype = rolletype,
+            virkningstidspunkt = if (erBarn)behandling.globalVirkningstidspunkt else null,
+            opphørsdato = if (erBarn) behandling.globalOpphørsdato else null,
+            årsak = if (erBarn)hentDefaultÅrsak(behandling.tilType(), behandling.vedtakstype) else null,
+            avslag = if (erBarn) behandling.avslag else null,
+            beregnTil =
+                if (behandling.vedtakstype == Vedtakstype.KLAGE) {
+                    BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+                } else {
+                    BeregnTil.INNEVÆRENDE_MÅNED
+                },
             ident = fødselsnummer,
             fødselsdato = hentPersonFødselsdato(fødselsnummer)!!,
             forholdsmessigFordeling =
@@ -226,6 +242,7 @@ class ForholdsmessigFordelingService(
                     sakBehandlerEnhet = eierfogd,
                 ),
         )
+    }
 
     private fun Grunnlag.kopierGrunnlag(hovedbehandling: Behandling): Grunnlag =
         Grunnlag(
@@ -245,11 +262,11 @@ class ForholdsmessigFordelingService(
             behandling = hovedbehandling,
             rolletype = rolletype,
             ident = ident,
-            årsak = årsak,
-            avslag = avslag,
-            virkningstidspunkt = virkningstidspunkt,
+            årsak = årsak ?: behandling.årsak,
+            avslag = avslag ?: behandling.avslag,
+            virkningstidspunkt = virkningstidspunkt ?: hovedbehandling.globalVirkningstidspunkt,
             grunnlagFraVedtakListe = grunnlagFraVedtakListe,
-            opphørsdato = opphørsdato,
+            opphørsdato = opphørsdato ?: hovedbehandling.globalOpphørsdato,
             manueltOverstyrtGebyr = manueltOverstyrtGebyr,
             harGebyrsøknad = harGebyrsøknad,
             opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,

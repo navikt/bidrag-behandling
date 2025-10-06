@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværsperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
+import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.commons.service.sjablon.SjablonService
@@ -59,17 +60,18 @@ class SamværMockTest : TestContainerRunner() {
         val søknadsbarn = behandling.søknadsbarn.first()
 
         val respons =
-            samværService.oppdaterSamvær(
-                behandling.id!!,
-                OppdaterSamværDto(
-                    gjelderBarn = søknadsbarn.ident!!,
-                    periode =
-                        OppdaterSamværsperiodeDto(
-                            periode = DatoperiodeDto(behandling.virkningstidspunkt!!, null),
-                            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
-                        ),
-                ),
-            )
+            samværService
+                .oppdaterSamvær(
+                    behandling.id!!,
+                    OppdaterSamværDto(
+                        gjelderBarn = søknadsbarn.ident!!,
+                        periode =
+                            OppdaterSamværsperiodeDto(
+                                periode = DatoperiodeDto(behandling.virkningstidspunkt!!, null),
+                                samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                            ),
+                    ),
+                ).tilOppdaterSamværResponseDto()
 
         assertSoftly(respons.oppdatertSamvær!!) {
             perioder.shouldHaveSize(1)
@@ -101,18 +103,19 @@ class SamværMockTest : TestContainerRunner() {
         val søknadsbarn = behandling.søknadsbarn.first()
 
         val respons =
-            samværService.oppdaterSamvær(
-                behandling.id!!,
-                OppdaterSamværDto(
-                    gjelderBarn = søknadsbarn.ident!!,
-                    periode =
-                        OppdaterSamværsperiodeDto(
-                            id = samvær.perioder.first().id,
-                            periode = DatoperiodeDto(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(2)),
-                            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_2,
-                        ),
-                ),
-            )
+            samværService
+                .oppdaterSamvær(
+                    behandling.id!!,
+                    OppdaterSamværDto(
+                        gjelderBarn = søknadsbarn.ident!!,
+                        periode =
+                            OppdaterSamværsperiodeDto(
+                                id = samvær.perioder.first().id,
+                                periode = DatoperiodeDto(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(2)),
+                                samværsklasse = Samværsklasse.SAMVÆRSKLASSE_2,
+                            ),
+                    ),
+                ).tilOppdaterSamværResponseDto()
 
         assertSoftly(respons.oppdatertSamvær!!) {
             perioder.shouldHaveSize(1)
@@ -145,17 +148,18 @@ class SamværMockTest : TestContainerRunner() {
         val søknadsbarn = behandling.søknadsbarn.first()
 
         val respons =
-            samværService.oppdaterSamvær(
-                behandling.id!!,
-                OppdaterSamværDto(
-                    gjelderBarn = søknadsbarn.ident!!,
-                    periode =
-                        OppdaterSamværsperiodeDto(
-                            periode = DatoperiodeDto(behandling.virkningstidspunkt!!.plusMonths(2), null),
-                            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_2,
-                        ),
-                ),
-            )
+            samværService
+                .oppdaterSamvær(
+                    behandling.id!!,
+                    OppdaterSamværDto(
+                        gjelderBarn = søknadsbarn.ident!!,
+                        periode =
+                            OppdaterSamværsperiodeDto(
+                                periode = DatoperiodeDto(behandling.virkningstidspunkt!!.plusMonths(2), null),
+                                samværsklasse = Samværsklasse.SAMVÆRSKLASSE_2,
+                            ),
+                    ),
+                ).tilOppdaterSamværResponseDto()
 
         assertSoftly(respons.oppdatertSamvær!!) {
             perioder.shouldHaveSize(2)
@@ -195,17 +199,18 @@ class SamværMockTest : TestContainerRunner() {
         val søknadsbarn = behandling.søknadsbarn.first()
 
         val respons =
-            samværService.oppdaterSamvær(
-                behandling.id!!,
-                OppdaterSamværDto(
-                    gjelderBarn = søknadsbarn.ident!!,
-                    periode =
-                        OppdaterSamværsperiodeDto(
-                            periode = DatoperiodeDto(behandling.virkningstidspunkt!!.plusMonths(2), null),
-                            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_2,
-                        ),
-                ),
-            )
+            samværService
+                .oppdaterSamvær(
+                    behandling.id!!,
+                    OppdaterSamværDto(
+                        gjelderBarn = søknadsbarn.ident!!,
+                        periode =
+                            OppdaterSamværsperiodeDto(
+                                periode = DatoperiodeDto(behandling.virkningstidspunkt!!.plusMonths(2), null),
+                                samværsklasse = Samværsklasse.SAMVÆRSKLASSE_2,
+                            ),
+                    ),
+                ).tilOppdaterSamværResponseDto()
 
         assertSoftly(respons.oppdatertSamvær!!) {
             perioder.shouldHaveSize(2)
@@ -245,30 +250,31 @@ class SamværMockTest : TestContainerRunner() {
         val søknadsbarn = behandling.søknadsbarn.first()
 
         val respons =
-            samværService.oppdaterSamvær(
-                behandling.id!!,
-                OppdaterSamværDto(
-                    gjelderBarn = søknadsbarn.ident!!,
-                    periode =
-                        OppdaterSamværsperiodeDto(
-                            id = samvær.perioder.first().id,
-                            periode = DatoperiodeDto(behandling.virkningstidspunkt!!, null),
-                            beregning =
-                                SamværskalkulatorDetaljer(
-                                    regelmessigSamværNetter = BigDecimal(4),
-                                    ferier =
-                                        listOf(
-                                            SamværskalkulatorDetaljer.SamværskalkulatorFerie(
-                                                type = SamværskalkulatorFerietype.SOMMERFERIE,
-                                                bidragsmottakerNetter = BigDecimal(14),
-                                                bidragspliktigNetter = BigDecimal(1),
-                                                frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+            samværService
+                .oppdaterSamvær(
+                    behandling.id!!,
+                    OppdaterSamværDto(
+                        gjelderBarn = søknadsbarn.ident!!,
+                        periode =
+                            OppdaterSamværsperiodeDto(
+                                id = samvær.perioder.first().id,
+                                periode = DatoperiodeDto(behandling.virkningstidspunkt!!, null),
+                                beregning =
+                                    SamværskalkulatorDetaljer(
+                                        regelmessigSamværNetter = BigDecimal(4),
+                                        ferier =
+                                            listOf(
+                                                SamværskalkulatorDetaljer.SamværskalkulatorFerie(
+                                                    type = SamværskalkulatorFerietype.SOMMERFERIE,
+                                                    bidragsmottakerNetter = BigDecimal(14),
+                                                    bidragspliktigNetter = BigDecimal(1),
+                                                    frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+                                                ),
                                             ),
-                                        ),
-                                ),
-                        ),
-                ),
-            )
+                                    ),
+                            ),
+                    ),
+                ).tilOppdaterSamværResponseDto()
 
         assertSoftly(respons.oppdatertSamvær!!) {
             perioder.shouldHaveSize(1)
@@ -291,29 +297,30 @@ class SamværMockTest : TestContainerRunner() {
         val søknadsbarn = behandling.søknadsbarn.first()
 
         val respons =
-            samværService.oppdaterSamvær(
-                behandling.id!!,
-                OppdaterSamværDto(
-                    gjelderBarn = søknadsbarn.ident!!,
-                    periode =
-                        OppdaterSamværsperiodeDto(
-                            periode = DatoperiodeDto(behandling.virkningstidspunkt!!, null),
-                            beregning =
-                                SamværskalkulatorDetaljer(
-                                    regelmessigSamværNetter = BigDecimal(4),
-                                    ferier =
-                                        listOf(
-                                            SamværskalkulatorDetaljer.SamværskalkulatorFerie(
-                                                type = SamværskalkulatorFerietype.SOMMERFERIE,
-                                                bidragsmottakerNetter = BigDecimal(14),
-                                                bidragspliktigNetter = BigDecimal(1),
-                                                frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+            samværService
+                .oppdaterSamvær(
+                    behandling.id!!,
+                    OppdaterSamværDto(
+                        gjelderBarn = søknadsbarn.ident!!,
+                        periode =
+                            OppdaterSamværsperiodeDto(
+                                periode = DatoperiodeDto(behandling.virkningstidspunkt!!, null),
+                                beregning =
+                                    SamværskalkulatorDetaljer(
+                                        regelmessigSamværNetter = BigDecimal(4),
+                                        ferier =
+                                            listOf(
+                                                SamværskalkulatorDetaljer.SamværskalkulatorFerie(
+                                                    type = SamværskalkulatorFerietype.SOMMERFERIE,
+                                                    bidragsmottakerNetter = BigDecimal(14),
+                                                    bidragspliktigNetter = BigDecimal(1),
+                                                    frekvens = SamværskalkulatorNetterFrekvens.HVERT_ÅR,
+                                                ),
                                             ),
-                                        ),
-                                ),
-                        ),
-                ),
-            )
+                                    ),
+                            ),
+                    ),
+                ).tilOppdaterSamværResponseDto()
 
         assertSoftly(respons.oppdatertSamvær!!) {
             perioder.shouldHaveSize(1)

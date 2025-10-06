@@ -62,6 +62,21 @@ class VirkningstidspunktController(
         return dtomapper.tilDto(behandling)
     }
 
+    @PostMapping("/behandling/{behandlingsid}/virkningstidspunkt/merge")
+    @Operation(
+        description = "Bruk samme virkning for alle barna",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun brukSammeVirkningstidspunktForAlleBarna(
+        @PathVariable behandlingsid: Long,
+    ): BehandlingDtoV2 {
+        secureLogger.info { "Sett sammen virkningstidspunkt for alle barne for behandling $behandlingsid" }
+
+        val behandling = virkningstidspunktService.brukSammeVirkningstidspunktForAlleBarn(behandlingsid)
+
+        return dtomapper.tilDto(behandling)
+    }
+
     @GetMapping("/behandling/{behandlingsid}/manuelleVedtak")
     @Operation(
         description = "Hent manuelle vedtak.",

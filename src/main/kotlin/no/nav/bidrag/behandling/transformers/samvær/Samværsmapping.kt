@@ -4,7 +4,7 @@ import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
-import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
 import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
@@ -25,7 +25,7 @@ fun Samvær.tilBegrunnelseFraOpprinneligVedtak() =
         .takeIfNotNullOrEmpty { BegrunnelseDto(it, rolle.tilDto()) }
 
 fun Samvær.tilDto() =
-    SamværDto(
+    SamværBarnDto(
         id = id!!,
         gjelderBarn = rolle.ident!!,
         begrunnelse = tilBegrunnelse(),
@@ -40,7 +40,7 @@ fun Samvær.tilDto() =
             perioder
                 .sortedBy { it.fom }
                 .map {
-                    SamværDto.SamværsperiodeDto(
+                    SamværBarnDto.SamværsperiodeDto(
                         id = it.id,
                         periode = DatoperiodeDto(it.fom, it.tom),
                         samværsklasse = it.samværsklasse,
