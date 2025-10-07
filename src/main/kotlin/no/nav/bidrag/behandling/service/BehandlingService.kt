@@ -45,7 +45,6 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -136,7 +135,7 @@ class BehandlingService(
                                 ForholdsmessigFordelingRolle(
                                     tilhørerSak = opprettBehandling.saksnummer,
                                     delAvOpprinneligBehandling = true,
-                                    sakBehandlerEnhet = Enhetsnummer(opprettBehandling.behandlerenhet),
+                                    behandlerEnhet = Enhetsnummer(opprettBehandling.behandlerenhet),
                                 )
                             rolle
                         } else {
@@ -248,9 +247,8 @@ class BehandlingService(
                 )
             }
         }
-        val metadata = behandling.metadata ?: BehandlingMetadataDo()
-        metadata.setOppdatererGrunnlagAsync(true)
-        behandling.metadata = metadata
+
+        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
 
         behandling.søknadsbarn.forEach { rolle ->
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
@@ -267,8 +265,6 @@ class BehandlingService(
             }
         }
         behandlingRepository.save(behandling)
-        grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo.id!!)
-
         log.debug {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
                 "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
@@ -302,9 +298,7 @@ class BehandlingService(
         behandlingsid: Long,
         request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 {
-        behandlingRepository
-            .findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+        hentBehandlingById(behandlingsid)
             .let {
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.debug {
@@ -323,9 +317,8 @@ class BehandlingService(
         resultat: FattetDelvedtak,
     ) {
         behandlingRepository
-            .findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
-            .let {
+            .finnAlleRelaterteBehandlinger(behandlingsid)
+            .forEach {
                 log.info {
                     "Oppdaterer behandling $behandlingsid med fattet delvedtak ${resultat.vedtaksid} - $resultat"
                 }
@@ -349,9 +342,8 @@ class BehandlingService(
         unikreferanse: String? = null,
     ) {
         behandlingRepository
-            .findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
-            .let {
+            .finnAlleRelaterteBehandlinger(behandlingsid)
+            .forEach {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
 
                 val eksisterendeDetaljer = it.vedtakDetaljer ?: VedtakDetaljer()
@@ -394,10 +386,7 @@ class BehandlingService(
     }
 
     @Transactional
-    fun henteBehandling(
-        behandlingsid: Long,
-        inkluderHistoriskeInntekter: Boolean = false,
-    ): Behandling {
+    fun henteBehandling(behandlingsid: Long): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         virkningstidspunktService.run {
@@ -411,6 +400,17 @@ class BehandlingService(
             behandlingRepository
                 .findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
+                .let {
+                    if (it.forholdsmessigFordeling != null &&
+                        it.forholdsmessigFordeling?.erHovedbehandling == false
+                    ) {
+                        behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!)
+                            ?: behandlingNotFoundException(behandlingId)
+                    } else {
+                        it
+                    }
+                }
+
         tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.deleted) behandlingNotFoundException(behandlingId)
         return behandling
@@ -421,8 +421,7 @@ class BehandlingService(
         behandlingId: Long,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ): OppdaterRollerResponse {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        tilgangskontrollService.sjekkTilgangBehandling(behandling)
+        val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,

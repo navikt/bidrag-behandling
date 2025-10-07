@@ -755,6 +755,7 @@ class Dtomapper(
                                     bidragsmottaker = bm!!.tilDto(),
                                     sammeSakSomBehandling = barn.forholdsmessigFordeling?.tilhørerSak == saksnummer,
                                     åpenBehandling = null,
+                                    enhet = barn.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: "",
                                 )
                             }
                         ForholdmessigFordelingDetaljerDto(barn = barnDto)

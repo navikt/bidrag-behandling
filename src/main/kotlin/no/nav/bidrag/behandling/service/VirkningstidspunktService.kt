@@ -421,7 +421,14 @@ class VirkningstidspunktService(
         behandling.søknadsbarn.forEach {
             if (it.id != yngsteBarn.id) {
                 val begrunnelse = it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""
-                nyNotat += begrunnelse.replace(nyNotat, "").let { "<br> $it" }
+                nyNotat +=
+                    begrunnelse.replace(nyNotat, "").let {
+                        if (it.isNotEmpty()) {
+                            "<br> $it"
+                        } else {
+                            ""
+                        }
+                    }
             }
         }
         behandling.søknadsbarn.forEach {

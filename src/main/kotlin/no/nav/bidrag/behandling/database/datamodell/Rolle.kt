@@ -28,6 +28,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
@@ -110,6 +111,8 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
     open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),
     open var innkrevingstype: Innkrevingstype? = null,
+    @Enumerated(EnumType.STRING)
+    open var stønadstype: Stønadstype? = null,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,

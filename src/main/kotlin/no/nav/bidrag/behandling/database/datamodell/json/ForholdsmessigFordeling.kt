@@ -13,7 +13,7 @@ data class ForholdsmessigFordeling(
 
 data class ForholdsmessigFordelingRolle(
     val tilhørerSak: String,
-    val sakBehandlerEnhet: Enhetsnummer?,
+    val behandlerEnhet: Enhetsnummer?,
     val delAvOpprinneligBehandling: Boolean,
     val overførtFraBehandling: Long? = null,
     val overførtFraSøknad: Long? = null,

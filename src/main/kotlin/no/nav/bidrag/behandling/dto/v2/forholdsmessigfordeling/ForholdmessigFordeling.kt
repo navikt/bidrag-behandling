@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling
 
+import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.time.LocalDate
@@ -20,7 +21,9 @@ data class ForholdsmessigFordelingBarnDto(
     val navn: String,
     val fødselsdato: LocalDate?,
     val saksnr: String,
+    val enhet: String,
     val sammeSakSomBehandling: Boolean,
+    @Schema(name = "åpenBehandling")
     val åpenBehandling: ForholdsmessigFordelingÅpenBehandlingDto?,
 )
 

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -54,6 +55,41 @@ class SamværService(
         }
 
         return behandling.samvær.first()
+    }
+
+    @Transactional
+    fun brukSammeSamværForAlleBarn(behandlingId: Long): Behandling {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
+
+        val samværYngsteBarn = behandling.samvær.finnSamværForBarn(yngsteBarn.ident!!)
+        var nyNotat = yngsteBarn.notat.find { it.type == NotatGrunnlag.NotatType.SAMVÆR }?.innhold ?: ""
+        behandling.søknadsbarn.forEach {
+            if (it.id != yngsteBarn.id) {
+                val begrunnelse = it.notat.find { it.type == NotatGrunnlag.NotatType.SAMVÆR }?.innhold ?: ""
+                nyNotat +=
+                    begrunnelse.replace(nyNotat, "").let {
+                        if (it.isNotEmpty()) {
+                            "<br> $it"
+                        } else {
+                            ""
+                        }
+                    }
+            }
+        }
+        behandling.søknadsbarn.forEach {
+            val samværBarn = behandling.samvær.finnSamværForBarn(it.ident!!)
+            val perioderKopiert =
+                samværYngsteBarn.perioder.map {
+                    Samværsperiode(fom = it.fom, tom = it.tom, samvær = samværBarn, samværsklasse = it.samværsklasse)
+                }
+            samværBarn.perioder.clear()
+            samværBarn.perioder = perioderKopiert.toMutableSet()
+        }
+        behandling.søknadsbarn.forEach {
+            notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.SAMVÆR, nyNotat, it)
+        }
+        return behandling
     }
 
     private fun oppdaterSamvær(

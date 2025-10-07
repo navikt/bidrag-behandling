@@ -316,9 +316,8 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
-        @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
-        val behandling = behandlingService.henteBehandling(behandlingsid, inkluderHistoriskeInntekter)
+        val behandling = behandlingService.henteBehandling(behandlingsid)
         return dtomapper.tilDto(behandling, true)
     }
 

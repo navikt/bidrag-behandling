@@ -64,4 +64,16 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     fun finnHovedbehandlingForBpVedFF(
         @Param("bpIdent") bpIdent: String,
     ): Behandling?
+
+    @Query(
+        value = """
+        SELECT b.* FROM behandling b
+        WHERE b.deleted = false
+          AND ((b.forholdsmessig_fordeling->>'behandlesAvBehandling') = :behandlingId or b.id = :behandlingId)
+    """,
+        nativeQuery = true,
+    )
+    fun finnAlleRelaterteBehandlinger(
+        @Param("behandlingId") behandlingId: Long,
+    ): List<Behandling>
 }

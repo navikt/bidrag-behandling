@@ -41,7 +41,7 @@ open class Inntekt(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "inntekt",
-        cascade = [CascadeType.PERSIST, CascadeType.REMOVE],
+        cascade = [CascadeType.ALL],
         orphanRemoval = true,
     )
     open var inntektsposter: MutableSet<Inntektspost> = mutableSetOf(),
