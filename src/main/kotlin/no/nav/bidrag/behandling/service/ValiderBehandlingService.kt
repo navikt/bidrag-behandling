@@ -67,7 +67,10 @@ class ValiderBehandlingService(
         if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
-        if (request.søknadsbarn.size > 1) return "Behandlingen har flere enn ett søknadsbarn"
+        val erInnkreving =
+            listOf(BisysSøknadstype.INNKREVINGSGRUNNLAG, BisysSøknadstype.PRIVAT_AVTALE).contains(request.søknadstype) ||
+                request.vedtakstype == Vedtakstype.INNKREVING
+        if (request.søknadsbarn.size > 1 && !erInnkreving) return "Behandlingen har flere enn ett søknadsbarn"
 
         if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE && !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled) {
             return "Kan ikke behandle privat avtale"
