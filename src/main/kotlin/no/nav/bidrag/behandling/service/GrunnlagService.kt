@@ -340,40 +340,41 @@ class GrunnlagService(
         }
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
-        val søknadsbarn = behandling.søknadsbarn.first()
 
-        try {
-            val eksisterendeGrunnlag =
-                behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(søknadsbarn.personident!!.verdi, Grunnlagsdatatype.MANUELLE_VEDTAK)
-            val manuelleVedtakRespons = hentManuelleVedtakForBehandling(behandling, søknadsbarn)
-            if (eksisterendeGrunnlag == null ||
-                eksisterendeGrunnlag.konvertereData<List<ManuellVedtakGrunnlag>>()?.toSet() != manuelleVedtakRespons.toSet()
-            ) {
-                secureLogger.debug {
-                    "Lagrer ny grunnlag manuelle vedtak for type ${Grunnlagsdatatype.MANUELLE_VEDTAK} med respons $manuelleVedtakRespons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+        behandling.søknadsbarn.forEach { søknadsbarn ->
+            try {
+                val eksisterendeGrunnlag =
+                    behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(søknadsbarn.personident!!.verdi, Grunnlagsdatatype.MANUELLE_VEDTAK)
+                val manuelleVedtakRespons = hentManuelleVedtakForBehandling(behandling, søknadsbarn)
+                if (eksisterendeGrunnlag == null ||
+                    eksisterendeGrunnlag.konvertereData<List<ManuellVedtakGrunnlag>>()?.toSet() != manuelleVedtakRespons.toSet()
+                ) {
+                    secureLogger.debug {
+                        "Lagrer ny grunnlag manuelle vedtak for type ${Grunnlagsdatatype.MANUELLE_VEDTAK} med respons $manuelleVedtakRespons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+                    }
+                    val nyGrunnlag =
+                        Grunnlag(
+                            behandling = behandling,
+                            type = Grunnlagsdatatype.MANUELLE_VEDTAK,
+                            data = commonObjectmapper.writeValueAsString(manuelleVedtakRespons),
+                            gjelder = søknadsbarn.personident!!.verdi,
+                            innhentet = LocalDateTime.now(),
+                            aktiv = LocalDateTime.now(),
+                            rolle = behandling.bidragspliktig!!,
+                            erBearbeidet = false,
+                        )
+                    behandling.grunnlag.add(nyGrunnlag)
                 }
-                val nyGrunnlag =
-                    Grunnlag(
-                        behandling = behandling,
-                        type = Grunnlagsdatatype.MANUELLE_VEDTAK,
-                        data = commonObjectmapper.writeValueAsString(manuelleVedtakRespons),
-                        gjelder = søknadsbarn.personident!!.verdi,
-                        innhentet = LocalDateTime.now(),
-                        aktiv = LocalDateTime.now(),
-                        rolle = behandling.bidragspliktig!!,
-                        erBearbeidet = false,
-                    )
-                behandling.grunnlag.add(nyGrunnlag)
+            } catch (e: Exception) {
+                feilrapporteringer.put(
+                    Grunnlagsdatatype.MANUELLE_VEDTAK,
+                    GrunnlagFeilDto(
+                        personId = søknadsbarn.personident!!.verdi,
+                        feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                        feilmelding = e.message,
+                    ),
+                )
             }
-        } catch (e: Exception) {
-            feilrapporteringer.put(
-                Grunnlagsdatatype.MANUELLE_VEDTAK,
-                GrunnlagFeilDto(
-                    personId = søknadsbarn.personident!!.verdi,
-                    feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
-                    feilmelding = e.message,
-                ),
-            )
         }
 
         return feilrapporteringer
