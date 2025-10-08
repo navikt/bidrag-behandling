@@ -29,7 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -195,7 +195,7 @@ open class Behandling(
     @Column(columnDefinition = "hstore", name = "metadata")
     open var metadata: BehandlingMetadataDo? = null,
     @Enumerated(EnumType.STRING)
-    open var søknadstype: BisysSøknadstype? = null,
+    open var søknadstype: Behandlingstype? = null,
     @Transient
     var erBisysVedtak: Boolean = false,
     @Transient

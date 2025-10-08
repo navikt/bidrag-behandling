@@ -45,7 +45,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -1492,7 +1492,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         val søknadsbarn = behandling.søknadsbarn.first()
         behandling.vedtakstype = Vedtakstype.ENDRING
-        behandling.søknadstype = BisysSøknadstype.PARAGRAF_35_C
+        behandling.søknadstype = Behandlingstype.PARAGRAF_35_C
         søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
         søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
         søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")

@@ -28,7 +28,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreve
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.ugyldigForespørsel
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -164,17 +164,17 @@ fun Behandling.byggGrunnlagSøknad() =
                         begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
                         egetTiltak =
                             listOf(
-                                BisysSøknadstype.BEGRENSET_REVURDERING,
-                                BisysSøknadstype.EGET_TILTAK,
-                                BisysSøknadstype.PARAGRAF_35_C,
-                                BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                Behandlingstype.BEGRENSET_REVURDERING,
+                                Behandlingstype.EGET_TILTAK,
+                                Behandlingstype.PARAGRAF_35_C,
+                                Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
                             ).contains(søknadstype),
                         opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
-                        privatAvtale = søknadstype == BisysSøknadstype.PRIVAT_AVTALE,
+                        privatAvtale = søknadstype == Behandlingstype.PRIVAT_AVTALE,
                         paragraf35c =
                             listOf(
-                                BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
-                                BisysSøknadstype.PARAGRAF_35_C,
+                                Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                Behandlingstype.PARAGRAF_35_C,
                             ).contains(søknadstype),
                     ),
                 ),

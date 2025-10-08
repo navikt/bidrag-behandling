@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -68,14 +68,14 @@ class ValiderBehandlingService(
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
         val erInnkreving =
-            listOf(BisysSøknadstype.INNKREVINGSGRUNNLAG, BisysSøknadstype.PRIVAT_AVTALE).contains(request.søknadstype) ||
+            listOf(Behandlingstype.INNKREVINGSGRUNNLAG, Behandlingstype.PRIVAT_AVTALE).contains(request.søknadstype) ||
                 request.vedtakstype == Vedtakstype.INNKREVING
         if (request.søknadsbarn.size > 1 && !erInnkreving) return "Behandlingen har flere enn ett søknadsbarn"
 
-        if (request.søknadstype == BisysSøknadstype.PRIVAT_AVTALE && !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled) {
+        if (request.søknadstype == Behandlingstype.PRIVAT_AVTALE && !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled) {
             return "Kan ikke behandle privat avtale"
         }
-        if ((request.søknadstype == BisysSøknadstype.INNKREVINGSGRUNNLAG || request.vedtakstype == Vedtakstype.INNKREVING) &&
+        if ((request.søknadstype == Behandlingstype.INNKREVINGSGRUNNLAG || request.vedtakstype == Vedtakstype.INNKREVING) &&
             !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled
         ) {
             return "Kan ikke behandle innkrevingsgrunnlag"
@@ -140,11 +140,11 @@ class ValiderBehandlingService(
         }
 
     private fun KanBehandlesINyLøsningRequest.erBegrensetRevurdering() =
-        this.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING ||
-            this.søknadstype == BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS ||
-            this.søknadstype == BisysSøknadstype.KLAGE_BEGRENSET_SATS ||
-            this.søknadstype == BisysSøknadstype.OMGJØRING_BEGRENSET_SATS ||
-            this.søknadstype == BisysSøknadstype.REVURDERING
+        this.søknadstype == Behandlingstype.BEGRENSET_REVURDERING ||
+            this.søknadstype == Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS ||
+            this.søknadstype == Behandlingstype.KLAGE_BEGRENSET_SATS ||
+            this.søknadstype == Behandlingstype.OMGJØRING_BEGRENSET_SATS ||
+            this.søknadstype == Behandlingstype.REVURDERING
 
     private fun harIngenHistoriskePerioderMedUtenlandskValuta(
         request: KanBehandlesINyLøsningRequest,

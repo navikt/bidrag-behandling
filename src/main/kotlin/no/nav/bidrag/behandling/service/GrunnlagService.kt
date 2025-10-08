@@ -85,7 +85,7 @@ import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.util.RequestContextAsyncContext
 import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -459,7 +459,7 @@ class GrunnlagService(
         if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
             feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling, true))
         }
-        if (behandling.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
+        if (behandling.søknadstype == Behandlingstype.BEGRENSET_REVURDERING) {
             feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling, true))
         }
         return feilrapporteringer
@@ -479,7 +479,7 @@ class GrunnlagService(
         if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
             feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling, false))
         }
-        if (behandling.søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
+        if (behandling.søknadstype == Behandlingstype.BEGRENSET_REVURDERING) {
             feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling, false))
         }
         return feilrapporteringer
