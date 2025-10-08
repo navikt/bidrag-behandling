@@ -38,7 +38,7 @@ fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakst
 
 fun Behandling.skalInnkrevingKunneUtsettes() =
     erBidrag() && !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.OPPHØR, Vedtakstype.INNKREVING).contains(vedtakstype) &&
-        !erKlageEllerOmgjøring
+        !erKlageEllerOmgjøring && søknadsbarn.none { finnesLøpendeBidragForRolle(it) }
 
 fun StønadsendringDto.tilStønadsid() =
     Stønadsid(
