@@ -11,7 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -75,7 +75,7 @@ class AdminController(
                         .setScale(0, RoundingMode.HALF_DOWN)
                         .toLong(),
                 behandlerenhet = sak.eierfogd.verdi,
-                søknadstype = BisysSøknadstype.ALDERSJUSTERING,
+                søknadstype = Behandlingstype.ALDERSJUSTERING,
                 saksnummer = saksnummer,
                 roller =
                     setOf(
