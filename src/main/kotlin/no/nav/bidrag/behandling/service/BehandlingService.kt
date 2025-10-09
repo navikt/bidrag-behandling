@@ -167,7 +167,8 @@ class BehandlingService(
             }
         val behandling =
             Behandling(
-                søknadstype = opprettBehandling.søknadstype,
+                søknadstype = opprettBehandling.søknadstype ?: opprettBehandling.behandlingstype,
+                behandlingstema = opprettBehandling.behandlingstema,
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
                 innkrevingstype =
