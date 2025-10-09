@@ -460,6 +460,10 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
 
         vedtakService.fatteVedtak(behandling.id!!)
 
@@ -480,7 +484,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             mottaker.verdi shouldBe nyIdentBm
         }
         opprettVedtakRequest.engangsbeløpListe.shouldBeEmpty()
-        opprettVedtakRequest.grunnlagListe.shouldHaveSize(5)
+        opprettVedtakRequest.grunnlagListe.shouldHaveSize(6)
         opprettVedtakRequest.grunnlagListe.hentAllePersoner() shouldHaveSize 3
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
