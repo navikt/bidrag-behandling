@@ -336,6 +336,7 @@ class BeregningService(
                         delberegningPrivatAvtale
                             ?.innhold
                             ?.perioder
+                            ?.filter { it.periode.fom >= pa.rolle!!.virkningstidspunkt!!.toYearMonth() }
                             ?.sortedBy {
                                 it.periode.fom
                             }
