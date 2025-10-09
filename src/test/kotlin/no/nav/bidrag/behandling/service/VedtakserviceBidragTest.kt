@@ -62,7 +62,7 @@ import no.nav.bidrag.behandling.utils.validerHarReferanseTilSjablonIReferanser
 import no.nav.bidrag.behandling.utils.virkningsdato
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -1438,7 +1438,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal ikke fatte vedtak hvis begrenset revurdering beregning feiler`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         behandling.inntekter =
             mutableSetOf(
                 opprettInntekt(
@@ -1570,7 +1570,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en bidrag behandling - begrenset revurdering`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         behandling.inntekter =
             mutableSetOf(
                 opprettInntekt(

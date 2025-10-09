@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
@@ -30,4 +32,6 @@ data class OpprettRolleDto(
     val erSlettet: Boolean = false,
     val erUkjent: Boolean = false,
     val harGebyrsøknad: Boolean = false,
+    val behandlingstatus: Behandlingstatus? = null,
+    val behandlingstema: Behandlingstema? = null,
 )

@@ -36,6 +36,7 @@ import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
@@ -167,7 +168,8 @@ class BehandlingService(
             }
         val behandling =
             Behandling(
-                søknadstype = opprettBehandling.søknadstype,
+                søknadstype = opprettBehandling.søknadstype ?: opprettBehandling.behandlingstype,
+                behandlingstema = opprettBehandling.behandlingstema,
                 vedtakstype = opprettBehandling.vedtakstype,
                 søktFomDato = opprettBehandling.søktFomDato,
                 innkrevingstype =
@@ -357,6 +359,9 @@ class BehandlingService(
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
                 it.vedtakFattetAv = it.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
                     ?: TokenUtils.hentApplikasjonsnavn()
+                it.søknadsbarn.forEach {
+                    it.behandlingstatus = Behandlingstatus.VEDTAK_FATTET
+                }
             }
     }
 

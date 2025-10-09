@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -25,8 +25,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.collections.contains
 
-val søknadstyperSomKreverBeløpshistorikkForskudd = setOf(BisysSøknadstype.BEGRENSET_REVURDERING)
-val søknadstyperSomKreverBeløpshistorikkBidrag = setOf(BisysSøknadstype.BEGRENSET_REVURDERING)
+val søknadstyperSomKreverBeløpshistorikkForskudd = setOf(Behandlingstype.BEGRENSET_REVURDERING)
+val søknadstyperSomKreverBeløpshistorikkBidrag = setOf(Behandlingstype.BEGRENSET_REVURDERING)
 val stønadstyperSomKreverBeløpshistorikkBidrag = setOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)
 
 @Service

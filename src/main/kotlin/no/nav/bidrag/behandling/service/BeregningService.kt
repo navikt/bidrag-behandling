@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import com.fasterxml.jackson.databind.node.POJONode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
@@ -47,6 +48,7 @@ import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.BostatusVoksneIHussta
 import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.GrunnlagBeregning
 import no.nav.bidrag.beregn.særbidrag.core.felles.bo.SjablonListe
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
@@ -173,6 +175,16 @@ class BeregningService(
                 val grunnlagBeregning =
                     mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
                 try {
+                    if (søknasdbarn.avslag?.erAvvisning() == true) {
+                        return@map ResultatBidragsberegningBarn(
+                            ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                            barn = søknasdbarn.mapTilResultatBarn(),
+                            vedtakstype = behandling.vedtakstype,
+                            avslagskode = søknasdbarn.avslag,
+                            resultat = BeregnetBarnebidragResultat(),
+                            opphørsdato = null,
+                        )
+                    }
                     val resultat =
                         beregnBarnebidrag
                             .utførBidragsberegning(grunnlagBeregning)
@@ -325,7 +337,16 @@ class BeregningService(
                         delberegningPrivatAvtale
                             ?.innhold
                             ?.perioder
-                            ?.sortedBy {
+                            ?.mapNotNull { periode ->
+                                val adjustedFom = maxOf(periode.periode.fom, pa.rolle!!.virkningstidspunkt!!.toYearMonth())
+                                if (periode.periode.til != null && adjustedFom >= periode.periode.til) {
+                                    null
+                                } else {
+                                    periode.copy(
+                                        periode = ÅrMånedsperiode(adjustedFom, periode.periode.til),
+                                    )
+                                }
+                            }?.sortedBy {
                                 it.periode.fom
                             }
                     val perioder =
@@ -345,19 +366,31 @@ class BeregningService(
                         } ?: emptyList()
                     perioder to (beregning + grunnlagFraVedtak)
                 } else {
-                    pa.perioderInnkreving.mapIndexed { i, it ->
-                        val sistePeriodeTil =
-                            if (pa.rolle!!.opphørsdato != null && i == (pa.perioderInnkreving.size - 1)) {
-                                pa.rolle!!.opphørsdato!!
+                    pa.perioderInnkreving
+                        .mapNotNull { periode ->
+                            val periodeTil = periode.tom?.plusMonths(1)?.withDayOfMonth(1)
+                            val adjustedFom = maxOf(periode.fom, pa.rolle!!.virkningstidspunkt!!)
+                            if (periodeTil != null && adjustedFom >= periodeTil) {
+                                null
                             } else {
-                                it.tom
+                                periode.copy(
+                                    fom = adjustedFom,
+                                    tom = periode.tom,
+                                )
                             }
-                        ResultatPeriodeBB(
-                            ÅrMånedsperiode(it.fom, sistePeriodeTil),
-                            ResultatBeregningBB(it.beløp),
-                            emptyList(),
-                        )
-                    } to emptyList()
+                        }.mapIndexed { i, it ->
+                            val sistePeriodeTil =
+                                if (pa.rolle!!.opphørsdato != null && i == (pa.perioderInnkreving.size - 1)) {
+                                    pa.rolle!!.opphørsdato!!
+                                } else {
+                                    it.tom
+                                }
+                            ResultatPeriodeBB(
+                                ÅrMånedsperiode(it.fom, sistePeriodeTil),
+                                ResultatBeregningBB(it.beløp),
+                                emptyList(),
+                            )
+                        } to emptyList()
                 }
 
             ResultatBidragsberegningBarn(
@@ -370,6 +403,15 @@ class BeregningService(
                         grunnlagListe = perioder.second,
                     ),
             )
+        }
+
+    fun justerPerioder(
+        periods: List<ÅrMånedsperiode>,
+        virkningstidspunkt: YearMonth,
+    ): List<ÅrMånedsperiode> =
+        periods.mapNotNull { periode ->
+            val adjustedFom = maxOf(periode.fom, virkningstidspunkt)
+            if (adjustedFom >= periode.til) null else ÅrMånedsperiode(adjustedFom, periode.til)
         }
 
     private fun beregnBidragAldersjustering(behandling: Behandling): List<ResultatBidragsberegningBarn> {

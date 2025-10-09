@@ -16,7 +16,7 @@ import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -41,7 +41,7 @@ class BarnebidragGrunnlagInnhentingTest {
     @Test
     fun `skal hente grunnlag hvis søknadstype er SØKNAD`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        behandling.søknadstype = Behandlingstype.SØKNAD
         val grunnlagsliste = barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(behandling, behandling.søknadsbarn.first())
         grunnlagsliste shouldHaveSize 1
     }
@@ -74,7 +74,7 @@ class BarnebidragGrunnlagInnhentingTest {
                     ),
             ),
         )
-        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        behandling.søknadstype = Behandlingstype.SØKNAD
         val grunnlagsliste = barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(behandling, behandling.søknadsbarn.first())
         grunnlagsliste shouldHaveSize 2
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }) {
@@ -108,7 +108,7 @@ class BarnebidragGrunnlagInnhentingTest {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
 
         behandling.stonadstype = Stønadstype.FORSKUDD
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         val grunnlagsliste = barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(behandling, behandling.søknadsbarn.first())
         grunnlagsliste shouldHaveSize 0
     }
@@ -119,7 +119,7 @@ class BarnebidragGrunnlagInnhentingTest {
 
         behandling.stonadstype = null
         behandling.engangsbeloptype = Engangsbeløptype.SÆRBIDRAG
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         val grunnlagsliste = barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(behandling, behandling.søknadsbarn.first())
         grunnlagsliste shouldHaveSize 0
     }
@@ -128,7 +128,7 @@ class BarnebidragGrunnlagInnhentingTest {
     fun `skal hente grunnlag hvis søknadstype er Begrenset revurdering `() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
 
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         behandling.grunnlag.add(
             Grunnlag(
                 type = Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD,
@@ -217,7 +217,7 @@ class BarnebidragGrunnlagInnhentingTest {
     fun `skal hente grunnlag hvis søknadstype er Begrenset revurdering hvis ingen bidrag eller forskudd `() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
 
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         val grunnlagsliste = barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(behandling, behandling.søknadsbarn.first())
         grunnlagsliste shouldHaveSize 2
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }) {

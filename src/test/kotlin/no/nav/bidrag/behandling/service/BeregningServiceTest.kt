@@ -44,7 +44,7 @@ import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -241,7 +241,7 @@ class BeregningServiceTest {
     fun `skal feile beregning av bidrag begrenset revurdering hvis innhenting av beløpshistorikk feiler`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilNotat(
@@ -296,7 +296,7 @@ class BeregningServiceTest {
     fun `skal feile beregning av bidrag begrenset revurdering hvis lavere enn løpende bidrag`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilNotat(
@@ -361,7 +361,7 @@ class BeregningServiceTest {
     fun `skal feile beregning av bidrag begrenset revurdering hvis ingen forskudd`() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.vedtakstype = Vedtakstype.FASTSETTELSE
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
 
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
@@ -398,7 +398,7 @@ class BeregningServiceTest {
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldNotBe null
             it.ugyldigBeregning!!.begrunnelse shouldContain "har ingen løpende forskudd"
-            it.ugyldigBeregning!!.perioder shouldHaveSize 1
+            it.ugyldigBeregning!!.perioder shouldHaveSize 2
             it.ugyldigBeregning!!.resultatPeriode[0].type shouldBe UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD
             it.resultat.grunnlagListe
                 .filter { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }
@@ -408,7 +408,7 @@ class BeregningServiceTest {
                 .size shouldBe 1
 
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 3
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(0)
         }

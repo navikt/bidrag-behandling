@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.beregn.barnebidrag.service.EtterfølgendeVedtakSomOverlapper
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -46,7 +46,7 @@ val ÅrMånedsperiode.periodeString get() = "${fom.formatterDatoFom} - ${til?.fo
 
 fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
     val grunnlagsfeil = grunnlagsinnhentingFeiletMap()
-    if (søknadstype == BisysSøknadstype.BEGRENSET_REVURDERING) {
+    if (søknadstype == Behandlingstype.BEGRENSET_REVURDERING) {
         if (grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG) ||
             grunnlagsfeil.containsKey(Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
         ) {
@@ -188,6 +188,7 @@ data class ResultatBidragsberegningBarnDto(
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val forsendelseDistribueresAutomatisk: Boolean = false,
+    val erAvvisning: Boolean = false,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val delvedtak: List<DelvedtakDto> = emptyList(),
 )

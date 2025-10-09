@@ -48,7 +48,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.commons.web.mock.stubSjablonService
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.HentGrunnlagFeiltype
@@ -589,7 +589,7 @@ class GrunnlagMockService {
             opprettHentGrunnlagDto(),
         )
         behandling.stonadstype = Stønadstype.BIDRAG
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         behandling.leggTilGrunnlagBeløpshistorikk(
             Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
             behandling.søknadsbarn.first(),
@@ -721,7 +721,7 @@ class GrunnlagMockService {
                         opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
                     ),
             )
-        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        behandling.søknadstype = Behandlingstype.SØKNAD
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
         grunnlagsliste shouldHaveSize 2
@@ -796,7 +796,7 @@ class GrunnlagMockService {
                         opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
                     ),
             )
-        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        behandling.søknadstype = Behandlingstype.SØKNAD
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
         grunnlagsliste shouldHaveSize 1
@@ -872,7 +872,7 @@ class GrunnlagMockService {
                         opprettStønadPeriodeDto(ÅrMånedsperiode(LocalDate.parse("2024-01-01"), null), beløp = null),
                     ),
             )
-        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        behandling.søknadstype = Behandlingstype.SØKNAD
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
         grunnlagsliste shouldHaveSize 2
@@ -926,7 +926,7 @@ class GrunnlagMockService {
         behandling.stonadstype = Stønadstype.BIDRAG18AAR
         every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG }) } throws HttpClientErrorException(HttpStatus.BAD_REQUEST)
         every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.BIDRAG18AAR }) } throws HttpClientErrorException(HttpStatus.BAD_REQUEST)
-        behandling.søknadstype = BisysSøknadstype.SØKNAD
+        behandling.søknadstype = Behandlingstype.SØKNAD
         grunnlagService.grenseInnhenting = "60"
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlagsliste = behandling.grunnlag.filter { it.type in listOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD) }
@@ -973,7 +973,7 @@ class GrunnlagMockService {
             opprettHentGrunnlagDto(),
         )
         behandling.stonadstype = Stønadstype.BIDRAG
-        behandling.søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING
+        behandling.søknadstype = Behandlingstype.BEGRENSET_REVURDERING
         every { bidragStønadConsumer.hentHistoriskeStønader(match { it.type == Stønadstype.FORSKUDD }) } returns
             opprettStønadDto(
                 stønadstype = Stønadstype.FORSKUDD,

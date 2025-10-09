@@ -28,6 +28,7 @@ import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
@@ -258,7 +259,7 @@ class BehandlingTilVedtakMapping(
                                         it.periode,
                                         it.resultat.beløp,
                                         "NOK",
-                                        Resultatkode.BEREGNET_BIDRAG.name,
+                                        Resultatkode.INNKREVINGSGRUNNLAG.name,
                                         null,
                                         it.grunnlagsreferanseListe,
                                     )
@@ -792,7 +793,7 @@ class BehandlingTilVedtakMapping(
                                         ),
                                 sak = Saksnummer(saksnummer),
                                 type = stonadstype!!,
-                                beslutning = Beslutningstype.ENDRING,
+                                beslutning = if (avslag?.erAvvisning() == true) Beslutningstype.AVVIST else Beslutningstype.ENDRING,
                                 grunnlagReferanseListe =
                                     grunnlagListe.map { it.referanse } +
                                         grunnlagVirkningstidspunkt
@@ -801,15 +802,19 @@ class BehandlingTilVedtakMapping(
                                             }!!
                                             .referanse,
                                 periodeListe =
-                                    listOf(
-                                        OpprettPeriodeRequestDto(
-                                            periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
-                                            beløp = null,
-                                            resultatkode = avslag!!.name,
-                                            valutakode = "NOK",
-                                            grunnlagReferanseListe = emptyList(),
-                                        ),
-                                    ),
+                                    if (avslag?.erAvvisning() == true) {
+                                        emptyList()
+                                    } else {
+                                        listOf(
+                                            OpprettPeriodeRequestDto(
+                                                periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
+                                                beløp = null,
+                                                resultatkode = avslag!!.name,
+                                                valutakode = "NOK",
+                                                grunnlagReferanseListe = emptyList(),
+                                            ),
+                                        )
+                                    },
                             )
                         },
                     grunnlagListe =

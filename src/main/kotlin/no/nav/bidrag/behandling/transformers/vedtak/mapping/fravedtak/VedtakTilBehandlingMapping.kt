@@ -16,14 +16,11 @@ import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.service.UnderholdService
-import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -41,7 +38,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -95,7 +92,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 class VedtakTilBehandlingMapping(
     val validerBeregning: ValiderBeregning,
     private val underholdService: UnderholdService,
-    private val personRepository: PersonRepository,
     private val behandlingRepository: BehandlingRepository,
 ) {
     fun VedtakDto.tilBehandling(
@@ -109,7 +105,7 @@ class VedtakTilBehandlingMapping(
         søknadId: Long? = null,
         enhet: String? = null,
         omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
-        søknadstype: BisysSøknadstype? = null,
+        søknadstype: Behandlingstype? = null,
         erBisysVedtak: Boolean = false,
         erOrkestrertVedtak: Boolean = false,
         omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),
