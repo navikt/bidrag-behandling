@@ -9,6 +9,9 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.transformers.erUnder12År
+import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
+import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -103,6 +106,11 @@ fun SummertÅrsinntekt.tilInntekt(
             kilde = Kilde.OFFENTLIG,
             taMed = false,
         )
+    if (inntekt.skalAutomatiskSettePeriode()) {
+        inntekt.datoFom = inntekt.bestemDatoFomForOffentligInntekt()
+        inntekt.datoTom = inntekt.bestemDatoTomForOffentligInntekt()
+        inntekt.taMed = true
+    }
     inntekt.inntektsposter =
         if (this.inntektRapportering == Inntektsrapportering.BARNETILLEGG) {
             mutableSetOf(
