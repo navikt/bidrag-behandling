@@ -182,15 +182,16 @@ class BeregningService(
                     )
                 }
                 if (søknasdbarn.avslag?.erAvvisning() == true) {
-                        return@map ResultatBidragsberegningBarn(
-                            ugyldigBeregning = behandling.tilBeregningFeilmelding(),
-                            barn = søknasdbarn.mapTilResultatBarn(),
-                            vedtakstype = behandling.vedtakstype,
-                            avslagskode = søknasdbarn.avslag,
-                            resultat = BeregnetBarnebidragResultat(),
-                            opphørsdato = null,
-                        )
-                    }val resultat =
+                    return ResultatBidragsberegningBarn(
+                        ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        vedtakstype = behandling.vedtakstype,
+                        avslagskode = søknasdbarn.avslag,
+                        resultat = BeregnetBarnebidragResultat(),
+                        opphørsdato = null,
+                    )
+                }
+                val resultat =
                     beregnBarnebidrag
                         .utførBidragsberegning(grunnlagBeregning)
                 ResultatBidragsberegningBarn(
