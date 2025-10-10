@@ -268,10 +268,11 @@ class HentBehandlingTest : BehandlingControllerTest() {
         assertSoftly(behandlingRes.body?.feilOppståttVedSisteGrunnlagsinnhenting) { feil ->
             feil shouldNotBe null
             feil!! shouldHaveSize 3
-            feil.first().rolle.id shouldBe behandling.bidragsmottaker!!.id!!
-            feil.first().periode?.fom shouldBe fomdatoIFeilrespons
-            feil.first().periode?.til shouldBe tildatoIFeilrespons
-            feil.first().feilmelding shouldBe feilmeldingIFeilrespons
+            val sjekkFeil = feil.find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!
+            sjekkFeil.rolle.id shouldBe behandling.bidragsmottaker!!.id!!
+            sjekkFeil.periode?.fom shouldBe fomdatoIFeilrespons
+            sjekkFeil.periode?.til shouldBe tildatoIFeilrespons
+            sjekkFeil.feilmelding shouldBe feilmeldingIFeilrespons
             feil.filter { Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER == it.grunnlagsdatatype } shouldHaveSize 1
             feil.filter { Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER == it.grunnlagsdatatype } shouldHaveSize 1
         }

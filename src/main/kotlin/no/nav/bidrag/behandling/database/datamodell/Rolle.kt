@@ -22,6 +22,8 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -97,6 +99,10 @@ open class Rolle(
     )
     open var person: Person? = null,
     open var opphørsdato: LocalDate? = null,
+    @Enumerated(EnumType.STRING)
+    open var behandlingstema: Behandlingstema? = null,
+    @Enumerated(EnumType.STRING)
+    open var behandlingstatus: Behandlingstatus? = null,
     @Enumerated(EnumType.STRING)
     open var beregnTil: BeregnTil? = null,
     open var virkningstidspunkt: LocalDate? = null,

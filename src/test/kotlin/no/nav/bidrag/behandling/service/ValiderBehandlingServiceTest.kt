@@ -26,7 +26,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -141,7 +141,7 @@ class ValiderBehandlingServiceTest {
             val request = opprettBidragKanBehandlesINyLøsningRequest()
 
             shouldThrow<HttpClientErrorException> {
-                validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING))
+                validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = Behandlingstype.BEGRENSET_REVURDERING))
             }
         }
 
@@ -170,7 +170,7 @@ class ValiderBehandlingServiceTest {
                 )
             val request = opprettBidragKanBehandlesINyLøsningRequest()
             shouldNotThrow<HttpClientErrorException> {
-                validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING))
+                validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = Behandlingstype.BEGRENSET_REVURDERING))
             }
         }
 
@@ -194,7 +194,7 @@ class ValiderBehandlingServiceTest {
 
             val expection =
                 shouldThrow<HttpClientErrorException> {
-                    validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = BisysSøknadstype.BEGRENSET_REVURDERING))
+                    validerBehandlingService.validerKanBehandlesINyLøsning(request.copy(søknadstype = Behandlingstype.BEGRENSET_REVURDERING))
                 }
             expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
             expection.validerInneholderMelding("Kan ikke behandle begrenset revurdering. Minst en løpende forskudd eller bidrag periode har utenlandsk valuta")

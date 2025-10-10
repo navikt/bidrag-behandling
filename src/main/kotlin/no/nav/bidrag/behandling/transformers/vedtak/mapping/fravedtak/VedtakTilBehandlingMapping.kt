@@ -38,7 +38,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -105,7 +105,7 @@ class VedtakTilBehandlingMapping(
         søknadId: Long? = null,
         enhet: String? = null,
         omgjortVedtakVedtakstidspunkt: LocalDateTime? = null,
-        søknadstype: BisysSøknadstype? = null,
+        søknadstype: Behandlingstype? = null,
         erBisysVedtak: Boolean = false,
         erOrkestrertVedtak: Boolean = false,
         omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),

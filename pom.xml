@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.3</version>
+    <version>3.5.6</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>no.nav</groupId>
@@ -16,8 +16,8 @@
   <properties>
     <java.version>21</java.version>
     <kotlin.version>2.2.10</kotlin.version>
-    <bidrag-felles.version>2025.10.07.061233</bidrag-felles.version>
-    <bidrag-beregn-felles.version>2025.10.07.083200</bidrag-beregn-felles.version>
+    <bidrag-felles.version>2025.10.09.061244</bidrag-felles.version>
+    <bidrag-beregn-felles.version>2025.10.08.105136</bidrag-beregn-felles.version>
     <h2.version>2.3.232</h2.version>
     <shedlock.version>6.6.1</shedlock.version>
     <logback-encoder.version>8.0</logback-encoder.version>
@@ -29,8 +29,8 @@
     <kotlin-logging-jvm.version>7.0.7</kotlin-logging-jvm.version>
     <flyway.version>11.8.2</flyway.version>
     <jackson.version>2.18.3</jackson.version>
-    <testcontainers.version>1.21.1</testcontainers.version>
-    <spring-boot-testcontainers.version>3.3.5</spring-boot-testcontainers.version>
+    <testcontainers.version>1.21.3</testcontainers.version>
+    <spring-boot-testcontainers.version>3.5.6</spring-boot-testcontainers.version>
     <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
     <snakeyaml.version>2.3</snakeyaml.version>
     <snappy-java.version>1.1.10.7</snappy-java.version>
@@ -201,6 +201,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-testcontainers</artifactId>
       <version>${spring-boot-testcontainers.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -476,7 +477,7 @@
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
-      <version>3.1.8</version>
+      <version>3.2.2</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.errorprone</groupId>

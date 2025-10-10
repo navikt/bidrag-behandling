@@ -259,7 +259,7 @@ class BehandlingTilVedtakMapping(
                                         it.periode,
                                         it.resultat.beløp,
                                         "NOK",
-                                        Resultatkode.BEREGNET_BIDRAG.name,
+                                        Resultatkode.INNKREVINGSGRUNNLAG.name,
                                         null,
                                         it.grunnlagsreferanseListe,
                                     )

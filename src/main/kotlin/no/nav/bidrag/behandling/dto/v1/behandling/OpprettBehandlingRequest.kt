@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Size
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.transformers.bestemTypeBehandling
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -17,7 +18,9 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
 data class OpprettBehandlingRequest(
-    val søknadstype: BisysSøknadstype? = null,
+    val søknadstype: Behandlingstype? = null,
+    val behandlingstype: Behandlingstype? = null,
+    val behandlingstema: Behandlingstema? = null,
     @Schema(required = true)
     val vedtakstype: Vedtakstype,
     @Schema(required = true)

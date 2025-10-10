@@ -42,6 +42,8 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
     val skalOpphørVed18År = (behandling.stonadstype == Stønadstype.BIDRAG || behandling.stonadstype == Stønadstype.FORSKUDD)
     return Rolle(
         behandling = behandling,
+        behandlingstema = behandlingstema,
+        behandlingstatus = behandlingstatus,
         rolletype = rolletype,
         ident = ident?.verdi,
         fødselsdato = fødselsdatoPerson,

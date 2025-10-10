@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import no.nav.bidrag.behandling.transformers.bestemTypeBehandling
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -24,7 +24,7 @@ data class KanBehandlesINyLøsningRequest(
     var vedtakstype: Vedtakstype? = null,
     @Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
-    var søknadstype: BisysSøknadstype? = null,
+    var søknadstype: Behandlingstype? = null,
     val harReferanseTilAnnenBehandling: Boolean = false,
     val skruddAvManuelt: String? = null,
     val søktFomDato: LocalDate? = null,

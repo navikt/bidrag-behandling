@@ -27,7 +27,7 @@ import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnIndeksreguleringPrivatAvtaleApi
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.beregn.core.BeregnApi
-import no.nav.bidrag.domene.enums.behandling.BisysSøknadstype
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Beregningstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -376,8 +376,8 @@ class VedtakGrunnlagMapper(
                             erBeregningsperiodeLøpende = søknadsbarnRolle.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED,
                             gjelderParagraf35c =
                                 listOf(
-                                    BisysSøknadstype.PARAGRAF_35_C,
-                                    BisysSøknadstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                    Behandlingstype.PARAGRAF_35_C,
+                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
                                 ).contains(behandling.søknadstype),
                             manuellAldersjustering =
                                 søknadsbarnRolle.grunnlagFraVedtakListe

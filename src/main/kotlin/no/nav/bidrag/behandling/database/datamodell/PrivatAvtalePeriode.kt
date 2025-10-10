@@ -23,6 +23,17 @@ open class PrivatAvtalePeriode(
     open var tom: LocalDate?,
     open var beløp: BigDecimal,
 ) {
+    fun copy(
+        fom: LocalDate,
+        tom: LocalDate?,
+    ) = PrivatAvtalePeriode(
+        id = id,
+        privatAvtale = privatAvtale,
+        fom = fom,
+        tom = tom,
+        beløp = beløp,
+    )
+
     fun tilDatoperiode() = Datoperiode(fom, tom)
 
     override fun toString(): String = "PrivatAvtalePeriode(id=$id, privatAvtale=${privatAvtale.id}, fom=$fom, tom=$tom, beløp=$beløp)"

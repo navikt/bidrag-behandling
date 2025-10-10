@@ -323,7 +323,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
                 emptyList()
             },
         manglerBegrunnelse =
-            if (vedtakstype == Vedtakstype.OPPHØR) {
+            if (vedtakstype == Vedtakstype.OPPHØR || avslag != null) {
                 begrunnelseVirkningstidspunkt.isEmpty()
             } else {
                 false
