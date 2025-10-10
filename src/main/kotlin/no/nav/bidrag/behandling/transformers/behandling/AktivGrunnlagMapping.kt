@@ -467,13 +467,13 @@ fun Grunnlagsdatatype.inneholder(type: Inntektsrapportering) =
 fun Inntekt.erDetSammeSom(grunnlag: SummertÅrsinntekt): Boolean {
     if (opprinneligPeriode == null || type != grunnlag.inntektRapportering) return false
     return if (eksplisitteYtelser.contains(type)) {
-        opprinneligPeriode!! == grunnlag.periode
+        opprinneligPeriode!!.inneholder(grunnlag.periode)
     } else if (ainntekt12Og3Måneder.contains(type)) {
         grunnlag.inntektRapportering == type
     } else if (ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(type)) {
         grunnlag.inntektRapportering == type && opprinneligPeriode!! == grunnlag.periode
     } else {
-        opprinneligPeriode!! == grunnlag.periode
+        opprinneligPeriode!!.inneholder(grunnlag.periode)
     }
 }
 
