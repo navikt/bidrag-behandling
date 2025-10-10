@@ -276,6 +276,7 @@ class GrunnlagService(
                 aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
                 aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
                 aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+                behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
                 behandling.roller.forEach { rolle ->
                     inntekterOgYtelser.forEach {
                         aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
@@ -693,7 +694,6 @@ class GrunnlagService(
             underholdService.oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
                 behandling,
                 request.gjelderIdent!!,
-                request.overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == request.grunnlagstype) {
             aktivereBoforholdBMsSøknadsbarn(behandling)
