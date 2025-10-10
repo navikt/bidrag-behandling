@@ -199,10 +199,6 @@ class GrunnlagService(
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
-        val totalStart = System.currentTimeMillis()
-        var hentGrunnlagTid: Long = 0
-        var lagreGrunnlagTid: Long = 0
-        var hentAsyncTid: Long = 0
         val scope = CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
 
         if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
@@ -241,17 +237,11 @@ class GrunnlagService(
                                 grunnlagRequestobjekter
                                     .map { entry ->
                                         scope.async {
-                                            val hentGrunnlagStart = System.currentTimeMillis()
-                                            val resultat = hentGrunnlag(behandling, entry.key, entry.value)
-                                            hentGrunnlagTid += (System.currentTimeMillis() - hentGrunnlagStart)
-                                            resultat
+                                            hentGrunnlag(behandling, entry.key, entry.value)
                                         }
                                     }
                         deferredListe.awaitAll()
                     }.filterNotNull()
-
-                hentAsyncTid = (System.currentTimeMillis() - hentAsyncStart)
-                val lagreStart = System.currentTimeMillis()
 
                 grunnlagResponsObjekter.forEach {
                     feilrapporteringer +=
@@ -260,7 +250,6 @@ class GrunnlagService(
                             it,
                         )
                 }
-                lagreGrunnlagTid += (System.currentTimeMillis() - lagreStart)
             } else {
                 runBlocking {
                     andreGrunnlagListe.awaitAll()
@@ -310,19 +299,13 @@ class GrunnlagService(
                 aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
                 aktivereInnhentetBoforholdsgrunnlagHvisBearbeidetGrunnlagErAktivertForAlleHusstandsmedlemmene(behandling)
                 aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+                behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
                 behandling.roller.forEach { rolle ->
                     inntekterOgYtelser.forEach {
                         aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
                     }
                 }
             }
-        }
-
-        val totalEnd = System.currentTimeMillis()
-        val totalTid = totalEnd - totalStart
-
-        log.info {
-            "oppdatereGrunnlagForBehandling tid: hentGrunnlag=${hentGrunnlagTid / 1000.0}s, hentAsync=${hentAsyncTid / 1000.0}s lagreGrunnlag=${lagreGrunnlagTid}ms, total=${totalTid}ms"
         }
     }
 
@@ -734,7 +717,6 @@ class GrunnlagService(
             underholdService.oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
                 behandling,
                 request.gjelderIdent!!,
-                request.overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == request.grunnlagstype) {
             aktivereBoforholdBMsSøknadsbarn(behandling)

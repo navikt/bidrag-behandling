@@ -158,7 +158,6 @@ class UnderholdService(
     fun oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
         behandling: Behandling,
         gjelderSøknadsbarn: Personident,
-        overskriveManuelleOpplysninger: Boolean,
     ) {
         val ikkeAktiverteGrunnlag =
             behandling.grunnlag.hentAlleIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type }
@@ -173,7 +172,7 @@ class UnderholdService(
                 .filter { it.erBearbeidet }
                 .find { it.gjelder == gjelderSøknadsbarn.verdi }
 
-        if (nyesteIkkeaktiverteGrunnlag == null || ikkeaktivertBearbeidaGrunnlagForSøknadsbarn == null) {
+        if (ikkeaktivertBearbeidaGrunnlagForSøknadsbarn == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
                 "Fant ingen grunnlag av type BARNETILSYN å aktivere for søknadsbarn i behandling $behandling.id",
@@ -198,17 +197,14 @@ class UnderholdService(
             )
         }
 
-        if (overskriveManuelleOpplysninger) {
-            u.barnetilsyn.clear()
-            u.barnetilsyn.addAll(data.tilBarnetilsyn(u))
-        } else {
-            val gamleOffentligeBarnetilsyn = u.barnetilsyn.filter { it.kilde == Kilde.OFFENTLIG }
-            u.barnetilsyn.removeAll(gamleOffentligeBarnetilsyn)
-            u.barnetilsyn.addAll(data.tilBarnetilsyn(u))
-        }
+        val gamleOffentligeBarnetilsyn = u.barnetilsyn.filter { it.kilde == Kilde.OFFENTLIG }
+        u.barnetilsyn.removeAll(gamleOffentligeBarnetilsyn)
+        u.barnetilsyn.addAll(data.tilBarnetilsyn(u))
 
         ikkeaktivertBearbeidaGrunnlagForSøknadsbarn.aktiv = LocalDateTime.now()
-        if (ikkeAktiverteGrunnlag.filter { it.erBearbeidet }.find { it.gjelder != gjelderSøknadsbarn.verdi } == null) {
+        if (nyesteIkkeaktiverteGrunnlag != null &&
+            ikkeAktiverteGrunnlag.filter { it.erBearbeidet }.find { it.gjelder != gjelderSøknadsbarn.verdi } == null
+        ) {
             nyesteIkkeaktiverteGrunnlag.aktiv = LocalDateTime.now()
         }
     }
