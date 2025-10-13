@@ -47,6 +47,7 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.toCompactString
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
@@ -236,6 +237,28 @@ open class Behandling(
 
     val opphørTilDato get() = justerPeriodeTomOpphørsdato(globalOpphørsdato)
     val opphørSistePeriode get() = opphørTilDato != null
+
+    val sammeVirkningstidspunktForAlle get() =
+        søknadsbarn.all { sb1 ->
+            søknadsbarn.all {
+                sb1.virkningstidspunkt == it.virkningstidspunkt &&
+                    sb1.opphørsdato == it.opphørsdato &&
+                    sb1.beregnTil == it.beregnTil &&
+                    sb1.avslag == it.avslag &&
+                    sb1.årsak == it.årsak &&
+                    sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ==
+                    it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold &&
+                    sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold ==
+                    it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold
+            }
+        }
+
+    val sammeSamværForAlle get() =
+        samvær.all { sb1 ->
+            samvær.all {
+                sb1.erLik(it)
+            }
+        }
 
     fun tilStønadsid(søknadsbarn: Rolle) =
         Stønadsid(

@@ -37,6 +37,8 @@ open class Samværsperiode(
     @ColumnTransformer(write = "?::jsonb")
     open var beregningJson: String? = null,
 ) {
+    fun erLik(other: Samværsperiode?): Boolean = fom == other?.fom && tom == other.tom && samværsklasse == other.samværsklasse
+
     override fun toString(): String =
         "Samværsperiode(id=$id, datoFom=$fom, datoTom=$tom, samværsklasse=$samværsklasse, beregning=$beregningJson)"
 
