@@ -26,6 +26,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
+import no.nav.bidrag.behandling.kafka.BehandlingHendelseType
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
@@ -51,6 +53,7 @@ import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -71,6 +74,7 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -84,17 +88,36 @@ class BehandlingService(
 
         log.debug { "Logisk sletter behandling $behandlingId" }
         behandlingRepository.logiskSlett(behandling.id!!)
+        if (TokenUtils.hentApplikasjonsnavn()?.contains("bisys") == false) {
+            applicationEventPublisher!!.publishEvent(
+                BehandlingEndringHendelse(
+                    behandlingId,
+                    BehandlingHendelseType.AVSLUTTET,
+                ),
+            )
+        }
     }
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
 
     fun lagreBehandling(behandling: Behandling): Behandling {
+        val oppretterBehandling = behandling.id == null
         val lagretBehandling =
-            if (behandling.id == null) {
+            if (oppretterBehandling) {
                 behandlingRepository.save(behandling)
             } else {
                 behandling
             }
+        applicationEventPublisher!!.publishEvent(
+            BehandlingEndringHendelse(
+                lagretBehandling.id!!,
+                if (oppretterBehandling) {
+                    BehandlingHendelseType.OPPRETTET
+                } else {
+                    BehandlingHendelseType.ENDRET
+                },
+            ),
+        )
         if (behandling.vedtakstype.kreverGrunnlag()) {
             opprettForsendelseForBehandling(lagretBehandling)
         }
@@ -478,7 +501,7 @@ class BehandlingService(
 
         // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
-        behandlingRepository.save(behandling)
+        lagreBehandling(behandling)
 
         if (behandling.søknadsbarn.isEmpty()) {
             log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }

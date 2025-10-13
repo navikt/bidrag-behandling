@@ -199,6 +199,7 @@ class VedtakTilBehandlingMapping(
                     erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
                     opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
                     erOrkestrertVedtak = erOrkestrertVedtak,
+                    fattetTidspunkt = this.vedtakstidspunkt ?: LocalDateTime.now(),
                 )
             behandling.grunnlagslisteFraVedtak = grunnlagListe
             behandling.erBisysVedtak = behandlingId == null && this.søknadId != null

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
@@ -20,6 +21,12 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     @Modifying
     @Query("update behandling set deleted = true, slettet_tidspunkt = now() where id = :behandlingsid", nativeQuery = true)
     fun logiskSlett(behandlingsid: Long)
+
+    @Query("select b.* from behandling b where b.id = :behandlingsid", nativeQuery = true)
+    fun hentBehandlingInkludertSlettet(behandlingsid: Long): Behandling?
+
+    @Query("select r.* from rolle r where r.behandling_id = :behandlingsid", nativeQuery = true)
+    fun hentRollerInkludertSlettet(behandlingsid: Long): List<Rolle>
 
     @Query(
         "select b from behandling b where b.vedtaksid is not null and b.notatJournalpostId is null and b.vedtakstidspunkt >= :afterDate and b.vedtakstype != 'ALDERSJUSTERING'",

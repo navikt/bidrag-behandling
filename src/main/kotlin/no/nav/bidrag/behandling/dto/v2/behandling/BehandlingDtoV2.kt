@@ -93,6 +93,7 @@ data class LesemodusVedtak(
     val erAvvist: Boolean,
     val opprettetAvBatch: Boolean,
     val erOrkestrertVedtak: Boolean,
+    val fattetTidspunkt: LocalDateTime,
 )
 
 data class BehandlingDtoV2(

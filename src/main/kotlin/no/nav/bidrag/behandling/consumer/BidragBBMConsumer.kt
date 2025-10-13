@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderRequest
+import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderResponse
 import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
@@ -49,9 +51,9 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun hentÅpneSøknaderForBp(bidragspliktig: String): List<ÅpenSøknadDto> =
+    fun hentÅpneSøknaderForBp(bidragspliktig: String): HentBPsÅpneSøknaderResponse =
         postForNonNullEntity(
             bidragBBMUri.pathSegment("apnesoknader").build().toUri(),
-            bidragspliktig,
+            HentBPsÅpneSøknaderRequest(bidragspliktig),
         )
 }
