@@ -236,10 +236,10 @@ class BehandlingTilVedtakMapping(
                     ).map(GrunnlagDto::tilOpprettRequestDto)
             val stønadsendringGrunnlag =
                 virkningstidspunktGrunnlag +
-                    behandling.byggGrunnlagNotaterInnkreving().map(GrunnlagDto::tilOpprettRequestDto)
-            behandling.byggGrunnlagManuelleVedtak(personobjekter.map { it.tilDto() }).map(GrunnlagDto::tilOpprettRequestDto) +
-                behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
-                behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
+                    behandling.byggGrunnlagNotaterInnkreving().map(GrunnlagDto::tilOpprettRequestDto) +
+                    behandling.byggGrunnlagManuelleVedtak(personobjekter.map { it.tilDto() }).map(GrunnlagDto::tilOpprettRequestDto) +
+                    behandling.byggGrunnlagSøknad().map(GrunnlagDto::tilOpprettRequestDto) +
+                    behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
             val beregningGrunnlag = beregning.flatMap { it.resultat.grunnlagListe.map { it.tilOpprettRequestDto() } }
 
             val grunnlagliste =
