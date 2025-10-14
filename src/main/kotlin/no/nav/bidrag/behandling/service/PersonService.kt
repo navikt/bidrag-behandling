@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.service
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.util.secureLogger
@@ -38,19 +37,12 @@ fun hentVedtak(vedtaksid: Int?): VedtakDto? =
         vedtaksid.takeIfNotNullOrEmpty {
             AppContext.getBean(BidragVedtakConsumer::class.java).hentVedtak(it)
         }
-
-            ?: vedtaksid.takeIfNotNullOrEmpty {
-                AppContext.getBean(BidragVedtakConsumerLocal::class.java).hentVedtak(it)
-            }
     } catch (e: Exception) {
         secureLogger.debug(e) { "Feil ved henting av vedtak $vedtaksid" }
-//        if (e is HttpStatusCodeException) {
-//            throw e
-//        }
-        vedtaksid.takeIfNotNullOrEmpty {
-            AppContext.getBean(BidragVedtakConsumerLocal::class.java).hentVedtak(it)
+        if (e is HttpStatusCodeException) {
+            throw e
         }
-//        null
+        null
     }
 
 fun hentPerson(ident: String?): PersonDto? =
