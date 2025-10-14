@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
+import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegang
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -691,27 +692,27 @@ private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
         gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
-private fun Behandling.tilNotatVurderingAvSkolegang() =
+private fun Behandling.tilNotatVurderingAvSkolegang(rolle: Rolle? = null) =
     NotatBegrunnelseDto(
         innhold =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first()).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle ?: søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG)
             },
         innholdFraOmgjortVedtak =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first(), false).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle ?: søknadsbarn.first(), false).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, null, false)
             },
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
     )
 
-private fun Behandling.tilNotatVirkningstidspunkt() =
+private fun Behandling.tilNotatVirkningstidspunkt(rolle: Rolle? = null) =
     NotatBegrunnelseDto(
         innhold =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first()).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, rolle ?: søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
             },
         innholdFraOmgjortVedtak =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first(), false).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, rolle ?: søknadsbarn.first(), false).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
             },
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
@@ -891,8 +892,8 @@ private fun Behandling.tilVirkningstidspunktBarn() =
             mottattDato = mottattdato,
             søktFraDato = YearMonth.from(søktFomDato),
             virkningstidspunkt = it.virkningstidspunkt,
-            begrunnelse = tilNotatVirkningstidspunkt(),
-            begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegangAlle()) tilNotatVurderingAvSkolegang() else null,
+            begrunnelse = tilNotatVirkningstidspunkt(it),
+            begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegang(it)) tilNotatVurderingAvSkolegang(it) else null,
             beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(it)),
             beregnTil = it.beregnTil,
             etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(it)?.virkningstidspunkt,

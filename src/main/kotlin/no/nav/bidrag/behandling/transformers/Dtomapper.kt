@@ -912,7 +912,7 @@ class Dtomapper(
                 },
             kanBehandlesINyLøsning = kanBehandles,
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
-            privatAvtale = privatAvtale.map { it.tilDto() },
+            privatAvtale = privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
         )
     }
 
