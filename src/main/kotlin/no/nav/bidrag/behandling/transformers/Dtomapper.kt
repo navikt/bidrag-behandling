@@ -995,7 +995,13 @@ class Dtomapper(
     fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
         PrivatAvtaleDto(
             id = id!!,
-            perioderLøperBidrag = rolle?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
+            perioderLøperBidrag =
+                if (behandling.erInnkreving) {
+                    emptyList()
+                } else {
+                    rolle?.let { behandling.finnPerioderHvorDetLøperBidrag(it) }
+                        ?: emptyList()
+                },
             gjelderBarn = rolle!!.tilPersoninfoDto(),
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,
