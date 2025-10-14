@@ -860,7 +860,7 @@ class Dtomapper(
                 },
             kanBehandlesINyLøsning = kanBehandles,
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
-            privatAvtale = privatAvtale.map { it.tilDto() },
+            privatAvtale = privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
         )
     }
 
@@ -1030,7 +1030,13 @@ class Dtomapper(
     fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
         PrivatAvtaleDto(
             id = id!!,
-            perioderLøperBidrag = rolle?.let { behandling.finnPerioderHvorDetLøperBidrag(it) } ?: emptyList(),
+            perioderLøperBidrag =
+                if (behandling.erInnkreving) {
+                    emptyList()
+                } else {
+                    rolle?.let { behandling.finnPerioderHvorDetLøperBidrag(it) }
+                        ?: emptyList()
+                },
             gjelderBarn = rolle!!.tilPersoninfoDto(),
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,

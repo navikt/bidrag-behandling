@@ -162,6 +162,7 @@ fun Behandling.byggGrunnlagSøknad() =
                         søktFraDato = søktFomDato,
                         søktAv = soknadFra,
                         begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
+                        innkrevingsgrunnlag = erInnkreving,
                         egetTiltak =
                             listOf(
                                 Behandlingstype.BEGRENSET_REVURDERING,

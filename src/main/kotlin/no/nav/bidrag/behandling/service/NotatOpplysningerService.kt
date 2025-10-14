@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
+import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegang
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -120,11 +121,13 @@ import no.nav.bidrag.transport.dokumentmaler.notat.NotatUnderholdDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatUtgiftBeregningDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatUtgiftspostDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatVedtakDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatVirkningstidspunktBarnDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatVirkningstidspunktDto
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.transport.dokumentmaler.notat.VedtakNotatDto
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
@@ -250,6 +253,11 @@ class NotatOpplysningerService(
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt = behandling.tilVirkningstidspunkt(),
+            virkningstidspunktV2 =
+                NotatVirkningstidspunktDto(
+                    erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
+                    barn = behandling.tilVirkningstidspunktBarn(),
+                ),
             utgift = mapper.run { behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling) },
             samvær = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
             underholdskostnader =
@@ -684,27 +692,27 @@ private fun Behandling.tilNotatBoforhold(): NotatBegrunnelseDto =
         gjelder = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!.tilNotatRolle(),
     )
 
-private fun Behandling.tilNotatVurderingAvSkolegang() =
+private fun Behandling.tilNotatVurderingAvSkolegang(rolle: Rolle? = null) =
     NotatBegrunnelseDto(
         innhold =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first()).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle ?: søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG)
             },
         innholdFraOmgjortVedtak =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, søknadsbarn.first(), false).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle ?: søknadsbarn.first(), false).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, null, false)
             },
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
     )
 
-private fun Behandling.tilNotatVirkningstidspunkt() =
+private fun Behandling.tilNotatVirkningstidspunkt(rolle: Rolle? = null) =
     NotatBegrunnelseDto(
         innhold =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first()).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, rolle ?: søknadsbarn.first()).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
             },
         innholdFraOmgjortVedtak =
-            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, søknadsbarn.first(), false).ifEmpty {
+            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, rolle ?: søknadsbarn.first(), false).ifEmpty {
                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
             },
         gjelder = this.bidragsmottaker!!.tilNotatRolle(),
@@ -871,8 +879,30 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
         kategori = tilSærbidragKategoriDto().tilNotatSærbidragKategoriDto(),
     )
 
+private fun Behandling.tilVirkningstidspunktBarn() =
+    søknadsbarn.map {
+        NotatVirkningstidspunktBarnDto(
+            rolle = it.tilNotatRolle(),
+            søknadstype = vedtakstype.name,
+            vedtakstype = vedtakstype,
+            søktAv = soknadFra,
+            avslag = it.avslag,
+            årsak = it.årsak,
+            opphørsdato = it.opphørsdato?.toYearMonth(),
+            mottattDato = mottattdato,
+            søktFraDato = YearMonth.from(søktFomDato),
+            virkningstidspunkt = it.virkningstidspunkt,
+            begrunnelse = tilNotatVirkningstidspunkt(it),
+            begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegang(it)) tilNotatVurderingAvSkolegang(it) else null,
+            beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(it)),
+            beregnTil = it.beregnTil,
+            etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(it)?.virkningstidspunkt,
+        )
+    }
+
 private fun Behandling.tilVirkningstidspunkt() =
-    NotatVirkningstidspunktDto(
+    NotatVirkningstidspunktBarnDto(
+        rolle = søknadsbarn.first().tilNotatRolle(),
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
         søktAv = soknadFra,
@@ -881,6 +911,7 @@ private fun Behandling.tilVirkningstidspunkt() =
         mottattDato = mottattdato,
         søktFraDato = YearMonth.from(søktFomDato),
         virkningstidspunkt = virkningstidspunkt,
+        opphørsdato = globalOpphørsdatoYearMonth,
         begrunnelse = tilNotatVirkningstidspunkt(),
         begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegangAlle()) tilNotatVurderingAvSkolegang() else null,
         beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(søknadsbarn.first())),

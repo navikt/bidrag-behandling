@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import kotlin.text.compareTo
 
 private val log = KotlinLogging.logger {}
 
@@ -121,13 +122,16 @@ class PrivatAvtaleService(
         privatavtaleId: Long,
         request: OppdaterePrivatAvtalePeriodeDto,
     ) {
-        log.info { "Oppdaterer privat avtale periode ${request.id} i privat avtale $privatavtaleId i behandling $behandlingsid" }
+        log.debug { "Oppdaterer privat avtale periode ${request.id} i privat avtale $privatavtaleId i behandling $behandlingsid" }
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         val privatAvtale =
             behandling.privatAvtale.find { it.id == privatavtaleId }
                 ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
 
         if (request.id == null) {
+            privatAvtale.perioder.filter { it.fom < request.periode.fom }.maxByOrNull { it.fom }?.let {
+                it.tom = request.periode.fom.minusDays(1)
+            }
             val nyPeriode =
                 PrivatAvtalePeriode(
                     privatAvtale = privatAvtale,
@@ -136,6 +140,10 @@ class PrivatAvtaleService(
                     tom = request.periode.tom,
                 )
             privatAvtale.perioder.add(nyPeriode)
+            // Adjust the new period's tom if there's a period coming after
+            privatAvtale.perioder.filter { it.fom > nyPeriode.fom }.minByOrNull { it.fom }?.let { nextPeriode ->
+                nyPeriode.tom = nextPeriode.fom.minusDays(1)
+            }
         } else {
             val eksisterendePeriode =
                 privatAvtale.perioder.find { it.id == request.id }

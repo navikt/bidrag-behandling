@@ -104,7 +104,7 @@ class ValiderBehandlingService(
                 .stønader
                 .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
                 .any { it.type != Stønadstype.FORSKUDD }
-        if (harBPStønadForFlereBarn) {
+        if (harBPStønadForFlereBarn && !(erInnkreving && UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled)) {
             return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
         }
 

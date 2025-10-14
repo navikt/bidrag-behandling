@@ -210,7 +210,7 @@ fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List
 fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         resultatBarn =
-            map { resultat ->
+            sortedBy { it.barn.fødselsdato }.map { resultat ->
                 val delvedtakListe = opprettDelvedtak(resultat)
                 val endeligVedtak = delvedtakListe.find { it.endeligVedtak }
                 val grunnlagsListe =
