@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
+import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
@@ -75,7 +76,8 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
-    private val applicationEventPublisher: ApplicationEventPublisher? = null,
+    private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
+//    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -89,23 +91,30 @@ class BehandlingService(
 
         log.debug { "Logisk sletter behandling $behandlingId" }
         behandlingRepository.logiskSlett(behandling.id!!)
-        applicationEventPublisher!!.publishEvent(
-            BehandlingEndringHendelse(
-                behandlingId,
-                BehandlingHendelseType.AVSLUTTET,
-            ),
+        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
+            behandling,
+            BehandlingHendelseType.AVSLUTTET,
         )
     }
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
 
     fun lagreBehandling(behandling: Behandling): Behandling {
+        val oppretterBehandling = behandling.id == null
         val lagretBehandling =
-            if (behandling.id == null) {
+            if (oppretterBehandling) {
                 behandlingRepository.save(behandling)
             } else {
                 behandling
             }
+        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
+            lagretBehandling,
+            if (oppretterBehandling) {
+                BehandlingHendelseType.OPPRETTET
+            } else {
+                BehandlingHendelseType.ENDRET
+            },
+        )
         if (behandling.vedtakstype.kreverGrunnlag()) {
             opprettForsendelseForBehandling(lagretBehandling)
         }
