@@ -518,7 +518,7 @@ class VedtakService(
         request: FatteVedtakRequestDto?,
     ): Int {
         if (!UnleashFeatures.FATTE_VEDTAK.isEnabled) {
-            ugyldigForespørsel("Kan ikke fatte vedtak for klage")
+            ugyldigForespørsel("Kan ikke fatte vedtak for innkreving")
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
@@ -539,6 +539,13 @@ class VedtakService(
             fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
             unikreferanse = innkrevingRequest.unikReferanse,
         )
+        opprettNotat(behandling)
+        LOGGER.info {
+            "Fattet vedtak for behandling ${behandling.id} med ${
+                behandling.årsak?.let { "årsakstype $it" }
+                    ?: "avslagstype ${behandling.avslag}"
+            } med vedtaksid ${responseInnkreving.vedtaksid}"
+        }
         return responseInnkreving.vedtaksid
     }
 
@@ -718,6 +725,6 @@ class VedtakService(
         )
 
     private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
-//
+
 //    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
 }
