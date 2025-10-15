@@ -90,9 +90,9 @@ class BehandlingService(
         }
 
         log.debug { "Logisk sletter behandling $behandlingId" }
-        behandlingRepository.logiskSlett(behandling.id)
+        behandlingRepository.logiskSlett(behandling.id!!)
         behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandling.id,
+            behandling.id!!,
             BehandlingHendelseType.AVSLUTTET,
         )
     }
@@ -100,7 +100,7 @@ class BehandlingService(
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
 
     fun lagreBehandling(behandling: Behandling): Behandling {
-        val oppretterBehandling = behandling.id == 0L
+        val oppretterBehandling = behandling.id == null
         val lagretBehandling =
             if (oppretterBehandling) {
                 behandlingRepository.save(behandling)
@@ -108,7 +108,7 @@ class BehandlingService(
                 behandling
             }
         behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            lagretBehandling.id,
+            lagretBehandling.id!!,
             if (oppretterBehandling) {
                 BehandlingHendelseType.OPPRETTET
             } else {

@@ -109,7 +109,7 @@ open class Behandling(
     open var avslag: Resultatkode? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    open var id: Long = 0,
+    open var id: Long? = null,
     @Column(name = "grunnlagsinnhenting_feilet", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     open var grunnlagsinnhentingFeilet: String? = null,

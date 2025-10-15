@@ -282,7 +282,7 @@ fun oppretteBehandling(
         null,
         årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
         virkningstidspunkt = virkningstidspunkt,
-        id = id ?: 1,
+        id = id,
         omgjøringsdetaljer = null,
     )
 
