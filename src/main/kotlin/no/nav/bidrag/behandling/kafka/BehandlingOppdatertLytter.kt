@@ -41,7 +41,7 @@ class BehandlingOppdatertLytter(
     ) {
         if (!UnleashFeatures.SEND_BEHANDLING_HENDELSE.isEnabled) return
         val behandling = behandlingRepository.hentBehandlingInkludertSlettet(behandlingId)!!
-        val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingId)!!
+        val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingId)
         val erVedtakFattet = behandling.vedtakDetaljer?.vedtakstidspunkt != null
         val erBehandlingSlettet = behandling.deleted
         val hendelse =

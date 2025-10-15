@@ -1795,7 +1795,7 @@ class GrunnlagMappingTest {
                 null,
                 årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT,
                 virkningstidspunkt = LocalDate.parse("2023-02-01"),
-                id = id,
+                id = id ?: 1,
                 omgjøringsdetaljer =
                     Omgjøringsdetaljer(
                         soknadRefId = søknadRefId,
