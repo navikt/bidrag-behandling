@@ -81,6 +81,6 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
         nativeQuery = true,
     )
     fun finnAlleRelaterteBehandlinger(
-        @Param("behandlingId") behandlingId: Long,
+        @Param("behandlingId") behandlingId: String,
     ): List<Behandling>
 }
