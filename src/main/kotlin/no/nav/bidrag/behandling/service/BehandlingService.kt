@@ -3,11 +3,13 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
@@ -24,6 +26,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
@@ -46,9 +49,12 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -69,6 +75,7 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -82,6 +89,12 @@ class BehandlingService(
 
         log.debug { "Logisk sletter behandling $behandlingId" }
         behandlingRepository.logiskSlett(behandling.id!!)
+        applicationEventPublisher!!.publishEvent(
+            BehandlingEndringHendelse(
+                behandlingId,
+                BehandlingHendelseType.AVSLUTTET,
+            ),
+        )
     }
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
@@ -411,8 +424,7 @@ class BehandlingService(
         behandlingId: Long,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ): OppdaterRollerResponse {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        tilgangskontrollService.sjekkTilgangBehandling(behandling)
+        val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,

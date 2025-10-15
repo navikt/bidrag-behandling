@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
@@ -21,6 +22,12 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     @Query("update behandling set deleted = true, slettet_tidspunkt = now() where id = :behandlingsid", nativeQuery = true)
     fun logiskSlett(behandlingsid: Long)
 
+    @Query("select b.* from behandling b where b.id = :behandlingsid", nativeQuery = true)
+    fun hentBehandlingInkludertSlettet(behandlingsid: Long): Behandling?
+
+    @Query("select r.* from rolle r where r.behandling_id = :behandlingsid", nativeQuery = true)
+    fun hentRollerInkludertSlettet(behandlingsid: Long): List<Rolle>
+
     @Query(
         "select b from behandling b where b.vedtaksid is not null and b.notatJournalpostId is null and b.vedtakstidspunkt >= :afterDate and b.vedtakstype != 'ALDERSJUSTERING'",
     )
@@ -38,5 +45,42 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     )
     fun hentBehandlingerSomInneholderBestillingMedForsendelseId(
         @Param("forsendelseId") forsendelseId: Long,
+    ): List<Behandling>
+
+    @Query(
+        "SELECT b FROM behandling b JOIN b.roller bp JOIN b.roller barn " +
+            "WHERE bp.rolletype = 'BIDRAGSPLIKTIG' AND bp.ident = :bpIdent and b.deleted is false and b.vedtakDetaljer is null and b.id != :ignorerBehandling",
+    )
+    fun finnÅpneBidragsbehandlingerForBp(
+        @Param("bpIdent") bpIdent: String,
+        @Param("ignorerBehandling") ignorerBehandling: Long,
+    ): List<Behandling>
+
+    @Query(
+        value = """
+        SELECT b.* FROM behandling b
+        JOIN rolle br ON br.behandling_id = b.id
+        WHERE br.rolletype = 'BIDRAGSPLIKTIG'
+          AND br.ident = :bpIdent
+          AND b.deleted = false
+          AND b.vedtak_detaljer IS NULL
+          AND (b.forholdsmessig_fordeling->>'erHovedbehandling') = 'true'
+    """,
+        nativeQuery = true,
+    )
+    fun finnHovedbehandlingForBpVedFF(
+        @Param("bpIdent") bpIdent: String,
+    ): Behandling?
+
+    @Query(
+        value = """
+        SELECT b.* FROM behandling b
+        WHERE b.deleted = false
+          AND ((b.forholdsmessig_fordeling->>'behandlesAvBehandling')::bigint = :behandlingId or b.id = :behandlingId)
+    """,
+        nativeQuery = true,
+    )
+    fun finnAlleRelaterteBehandlinger(
+        @Param("behandlingId") behandlingId: Long,
     ): List<Behandling>
 }

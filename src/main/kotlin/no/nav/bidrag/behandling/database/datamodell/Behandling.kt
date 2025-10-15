@@ -17,6 +17,11 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDoConverter
+import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
 import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
@@ -121,6 +126,10 @@ open class Behandling(
     @ColumnTransformer(write = "?::jsonb")
     open var vedtakDetaljer: VedtakDetaljer? = null,
     open var grunnlagSistInnhentet: LocalDateTime? = null,
+    @Column(name = "forholdsmessig_fordeling", columnDefinition = "jsonb")
+    @Convert(converter = ForholdsmessigFordelingConverter::class)
+    @ColumnTransformer(write = "?::jsonb")
+    open var forholdsmessigFordeling: ForholdsmessigFordeling? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
@@ -214,6 +223,7 @@ open class Behandling(
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+    val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
     val erVedtakFattet get() = vedtaksid != null
@@ -228,6 +238,7 @@ open class Behandling(
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
     val globalVirkningstidspunkt get() =
         søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt
+
     val globalOpphørsdato get() =
         if (søknadsbarn.any { it.opphørsdato == null }) {
             null
@@ -293,9 +304,9 @@ private fun Behandling.leggeTilBPSomHusstandsmedlem(): Husstandsmedlem {
     return bpSomHusstandsmedlem
 }
 
-fun Behandling.grunnlagsinnhentingFeiletMap(): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
-        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
+fun Behandling.grunnlagsinnhentingFeiletMap(): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
+    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto?>> =
+        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto?>>() {}
 
     return grunnlagsinnhentingFeilet?.let { objectmapper.readValue(grunnlagsinnhentingFeilet, typeRef) } ?: emptyMap()
 }
@@ -319,86 +330,3 @@ fun Behandling.hentBeløpshistorikkForStønadstype(
 
 fun Behandling.opprettUnikReferanse(postfix: String? = null) =
     "behandling_${id}_${opprettetTidspunkt.toCompactString()}${postfix?.let { "_$it" } ?: ""}"
-
-@Converter
-open class ÅrsakConverter : AttributeConverter<VirkningstidspunktÅrsakstype?, String?> {
-    override fun convertToDatabaseColumn(attribute: VirkningstidspunktÅrsakstype?): String? = attribute?.name
-
-    override fun convertToEntityAttribute(dbData: String?): VirkningstidspunktÅrsakstype? = dbData?.tilÅrsakstype()
-}
-
-class BehandlingMetadataDoConverter : ImmutableType<BehandlingMetadataDo>(BehandlingMetadataDo::class.java) {
-    override fun get(
-        rs: ResultSet,
-        p1: Int,
-        session: SharedSessionContractImplementor?,
-        owner: Any?,
-    ): BehandlingMetadataDo? {
-        val map = rs.getObject(p1) as Map<String, String>?
-        return map?.let { BehandlingMetadataDo.from(it) }
-    }
-
-    override fun set(
-        st: PreparedStatement,
-        value: BehandlingMetadataDo?,
-        index: Int,
-        session: SharedSessionContractImplementor,
-    ) {
-        st.setObject(index, value?.toMap())
-    }
-
-    override fun getSqlType(): Int = Types.OTHER
-
-    override fun compare(
-        p0: Any?,
-        p1: Any?,
-        p2: SessionFactoryImplementor?,
-    ): Int = 0
-
-    override fun fromStringValue(sequence: CharSequence?): BehandlingMetadataDo? =
-        try {
-            sequence?.let { JacksonUtil.fromString(sequence as String, BehandlingMetadataDo::class.java) }
-        } catch (e: Exception) {
-            throw IllegalArgumentException(
-                String.format(
-                    "Could not transform the [%s] value to a Map!",
-                    sequence,
-                ),
-            )
-        }
-}
-
-class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
-    companion object {
-        fun from(initValue: Map<String, String> = hashMapOf()): BehandlingMetadataDo {
-            val dokmap = BehandlingMetadataDo()
-            dokmap.putAll(initValue)
-            return dokmap
-        }
-    }
-
-    private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
-    private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
-
-    fun setKlagePåBisysVedtak() {
-        update(klagePåBisysVedtak, "true")
-    }
-
-    fun erKlagePåBisysVedtak() = get(klagePåBisysVedtak)?.toBooleanStrictOrNull() == true
-
-    fun setFølgerAutomatiskVedtak(vedtaksid: Int?) {
-        vedtaksid?.let { update(følgerAutomatiskVedtak, it.toString()) }
-    }
-
-    fun getFølgerAutomatiskVedtak(): Int? = get(følgerAutomatiskVedtak)?.toIntOrNull()
-
-    private fun update(
-        key: String,
-        value: String?,
-    ) {
-        remove(key)
-        value?.let { put(key, value) }
-    }
-
-    fun copy(): BehandlingMetadataDo = from(this)
-}
