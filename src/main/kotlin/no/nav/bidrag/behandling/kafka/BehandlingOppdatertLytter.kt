@@ -15,6 +15,7 @@ import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseBarn
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.dokument.Sporingsdata
+import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -68,7 +69,7 @@ class BehandlingOppdatertLytter(
                     },
                 sporingsdata =
                     Sporingsdata(
-                        correlationId = null,
+                        correlationId = "${LocalDateTime.now().toCompactString()}_behandling_søknadshendelse_${behandling.soknadsid}",
                         brukerident = TokenUtils.hentSaksbehandlerIdent(),
                         enhetsnummer = behandling.behandlerEnhet,
                         saksbehandlersNavn =
