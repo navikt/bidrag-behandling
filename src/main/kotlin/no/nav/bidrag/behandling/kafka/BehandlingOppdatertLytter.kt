@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.kafka
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
@@ -67,6 +68,7 @@ class BehandlingOppdatertLytter(
                             behandlerEnhet = it.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: behandling.behandlerEnhet,
                             saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
                             behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
+                            særbidragskategori = behandling.særbidragKategori,
                             status =
                                 when {
                                     it.deleted -> Behandlingstatus.FEILREGISTRERT
