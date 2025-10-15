@@ -3,12 +3,13 @@ package no.nav.bidrag.behandling.kafka
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
+import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelse
@@ -33,18 +34,22 @@ class BehandlingOppdatertLytter(
     private val behandlingRepository: BehandlingRepository,
     private val behandlingKafkaPublisher: BehandlingKafkaPublisher,
 ) {
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    @Transactional(Transactional.TxType.REQUIRED)
-    fun behandleBehandlingLagret(behandlingHendelse: BehandlingEndringHendelse) {
+    //    fun sendBehandlingOppdatertHendelse(behandlingHendelse: BehandlingEndringHendelse) {
+//    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @Transactional
+    fun sendBehandlingOppdatertHendelse(
+        behandlingId: Long,
+        type: BehandlingHendelseType = BehandlingHendelseType.ENDRET,
+    ) {
         if (!UnleashFeatures.SEND_BEHANDLING_HENDELSE.isEnabled) return
-        val behandling = behandlingRepository.hentBehandlingInkludertSlettet(behandlingHendelse.behandlingId)!!
-        val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingHendelse.behandlingId)!!
+        val behandling = behandlingRepository.hentBehandlingInkludertSlettet(behandlingId)!!
+        val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingId)
         val erVedtakFattet = behandling.vedtakDetaljer?.vedtakstidspunkt != null
         val erBehandlingSlettet = behandling.deleted
         val hendelse =
             BehandlingHendelse(
                 søknadsid = behandling.soknadsid,
-                behandlingsid = behandlingHendelse.behandlingId,
+                behandlingsid = behandling.id,
                 omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
                 vedtakstype = behandling.vedtakstype,
                 opprettetTidspunkt = behandling.opprettetTidspunkt,
@@ -59,11 +64,12 @@ class BehandlingOppdatertLytter(
                             ident = it.ident!!,
                             stønadstype = it.stønadstype ?: behandling.stonadstype,
                             engangsbeløptype = behandling.engangsbeloptype,
-                            behandlingstema = it.behandlingstema ?: behandling.behandlingstema!!,
+                            behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                             søknadsid = it.forholdsmessigFordeling?.søknadsid ?: behandling.soknadsid,
                             behandlerEnhet = it.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: behandling.behandlerEnhet,
                             saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
                             behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
+                            særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,
                             status =
                                 when {
                                     it.deleted -> Behandlingstatus.FEILREGISTRERT
@@ -93,7 +99,7 @@ class BehandlingOppdatertLytter(
                         behandling.opprettetTidspunkt.isAfter(LocalDateTime.now().minusMinutes(1)) -> BehandlingHendelseType.OPPRETTET
                         behandling.vedtakDetaljer?.vedtakstidspunkt != null -> BehandlingHendelseType.AVSLUTTET
                         erBehandlingSlettet -> BehandlingHendelseType.AVSLUTTET
-                        else -> behandlingHendelse.type
+                        else -> type
                     },
             )
 

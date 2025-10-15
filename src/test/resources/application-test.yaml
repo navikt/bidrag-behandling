@@ -11,11 +11,13 @@ BIDRAG_ORGANISASJON_URL: http://localhost:${wiremock.server.port}/organisasjon
 ARBEID_OG_INNTEKT_URL: http://localhost:${wiremock.server.port}/ainntekt
 BIDRAG_SJABLON_URL: http://localhost:${wiremock.server.port}/sjablon
 BIDRAG_VEDTAK_URL: http://localhost:${wiremock.server.port}/vedtak
+BIDRAG_VEDTAK_LOCAL_URL: http://localhost:${wiremock.server.port}/vedtak
 BIDRAG_SAK_URL: http://localhost:${wiremock.server.port}/sak
 OPPGAVE_URL: http://localhost:${wiremock.server.port}/oppgave
 KODEVERK_URL: http://localhost:${wiremock.server.port}/kodeverk
 GRUNNLAG_INNHENTE_SIVILSTAND_AUTOMATISK: true
 GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 60
+GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING_BELOPSHISTORIKK: 60
 AZURE_OPENID_CONFIG_ISSUER: http://localhost:${mock-oauth2-server.port}/aad
 UNLEASH_SERVER_API_URL: http://localhost:${mock-oauth2-server.port}/unleash
 AZURE_APP_TENANT_ID: 12321321-123213-3213123
@@ -25,13 +27,13 @@ NAIS_APP_NAME: bidrag-behandling
 NAIS_APP_IMAGE: europe-north1-docker.pkg.dev/nais-management-233d/bidrag/bidrag-dokument-forsendelse:2025.05.20-14.36-95e7fbb
 TOPIC_VEDTAK: bidrag.vedtak-test
 TOPIC_JOURNALPOST: bidrag.jp-test
+TOPIC_BEHANDLING: bidrag.behandling-q1
 UNLEASH_SERVER_API_ENV: development
 UNLEASH_SERVER_API_PROJECTS: default
 UNLEASH_SERVER_API_TOKEN: some_token
 UNLEASH_SERVER_API_TYPE: CLIENT
 UNLEASH_FETCH_SYNC: false
-logging.level:
-  secureLogger: OFF
+
 no.nav.security.jwt:
   client:
     registration:
