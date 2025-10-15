@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.kafka
 
 import jakarta.transaction.Transactional
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.service.BehandlingService
@@ -9,6 +10,10 @@ import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelse
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseBarn
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.dokument.Sporingsdata
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
@@ -29,19 +34,20 @@ class BehandlingOppdatertLytter(
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(Transactional.TxType.REQUIRED)
     fun behandleBehandlingLagret(behandlingHendelse: BehandlingEndringHendelse) {
+        if (!UnleashFeatures.SEND_BEHANDLING_HENDELSE.isEnabled) return
         val behandling = behandlingRepository.hentBehandlingInkludertSlettet(behandlingHendelse.behandlingId)!!
         val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingHendelse.behandlingId)!!
         val erVedtakFattet = behandling.vedtakDetaljer?.vedtakstidspunkt != null
         val erBehandlingSlettet = behandling.deleted
         val hendelse =
             BehandlingHendelse(
+                søknadsid = behandling.soknadsid,
                 behandlingsid = behandlingHendelse.behandlingId,
                 vedtakstype = behandling.vedtakstype,
                 opprettetTidspunkt = behandling.opprettetTidspunkt,
                 endretTidspunkt = LocalDateTime.now(),
                 mottattDato = behandling.mottattdato,
                 behandlerEnhet = behandling.behandlerEnhet,
-                søknadsid = if (behandling.forholdsmessigFordeling == null) behandling.soknadsid else null,
                 barn =
                     roller.filter { it.rolletype == Rolletype.BARN }.map {
                         BehandlingHendelseBarn(
@@ -72,7 +78,7 @@ class BehandlingOppdatertLytter(
                     ),
                 status =
                     when {
-                        behandling.deleted -> BehandlingStatusType.AVBRUTT
+                        erBehandlingSlettet -> BehandlingStatusType.AVBRUTT
                         behandling.vedtakDetaljer?.vedtakstidspunkt != null -> BehandlingStatusType.VEDTAK_FATTET
                         else -> BehandlingStatusType.UNDER_BEHANDLING
                     },
