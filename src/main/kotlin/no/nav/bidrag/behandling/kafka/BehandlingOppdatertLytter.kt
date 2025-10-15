@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelse
@@ -33,15 +34,14 @@ class BehandlingOppdatertLytter(
 ) {
     //    fun sendBehandlingOppdatertHendelse(behandlingHendelse: BehandlingEndringHendelse) {
 //    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    @Transactional(Transactional.TxType.REQUIRED)
+    @Transactional
     fun sendBehandlingOppdatertHendelse(
-        behandling: Behandling,
+        behandlingId: Long,
         type: BehandlingHendelseType = BehandlingHendelseType.ENDRET,
     ) {
         if (!UnleashFeatures.SEND_BEHANDLING_HENDELSE.isEnabled) return
-//        val behandling = behandlingRepository.hentBehandlingInkludertSlettet(behandlingHendelse.behandlingId)!!
-//        val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingHendelse.behandlingId)!!
-        val roller = behandling.roller
+        val behandling = behandlingRepository.hentBehandlingInkludertSlettet(behandlingId)!!
+        val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingId)!!
         val erVedtakFattet = behandling.vedtakDetaljer?.vedtakstidspunkt != null
         val erBehandlingSlettet = behandling.deleted
         val hendelse =
@@ -62,7 +62,7 @@ class BehandlingOppdatertLytter(
                             ident = it.ident!!,
                             stønadstype = it.stønadstype ?: behandling.stonadstype,
                             engangsbeløptype = behandling.engangsbeloptype,
-                            behandlingstema = it.behandlingstema ?: behandling.behandlingstema!!,
+                            behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                             søknadsid = it.forholdsmessigFordeling?.søknadsid ?: behandling.soknadsid,
                             behandlerEnhet = it.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: behandling.behandlerEnhet,
                             saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,

@@ -92,7 +92,7 @@ class BehandlingService(
         log.debug { "Logisk sletter behandling $behandlingId" }
         behandlingRepository.logiskSlett(behandling.id!!)
         behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandling,
+            behandling.id!!,
             BehandlingHendelseType.AVSLUTTET,
         )
     }
@@ -108,7 +108,7 @@ class BehandlingService(
                 behandling
             }
         behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            lagretBehandling,
+            lagretBehandling.id!!,
             if (oppretterBehandling) {
                 BehandlingHendelseType.OPPRETTET
             } else {
@@ -485,11 +485,11 @@ class BehandlingService(
 
         // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
-        behandlingRepository.save(behandling)
+        lagreBehandling(behandling)
 
         if (behandling.søknadsbarn.isEmpty()) {
             log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
-            behandlingRepository.logiskSlett(behandling.id!!)
+            slettBehandling(behandling.id!!)
             return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
 
