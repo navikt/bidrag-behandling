@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.kafka
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -44,6 +45,7 @@ class BehandlingOppdatertLytter(
             BehandlingHendelse(
                 søknadsid = behandling.soknadsid,
                 behandlingsid = behandlingHendelse.behandlingId,
+                omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
                 vedtakstype = behandling.vedtakstype,
                 opprettetTidspunkt = behandling.opprettetTidspunkt,
                 endretTidspunkt = LocalDateTime.now(),
@@ -55,6 +57,9 @@ class BehandlingOppdatertLytter(
                             søktAv = it.forholdsmessigFordeling?.søktAvType ?: behandling.soknadFra,
                             søktFraDato = it.forholdsmessigFordeling?.søknadFomDato ?: behandling.søktFomDato,
                             ident = it.ident!!,
+                            stønadstype = it.stønadstype ?: behandling.stonadstype,
+                            engangsbeløptype = behandling.engangsbeloptype,
+                            behandlingstema = it.behandlingstema ?: behandling.behandlingstema!!,
                             søknadsid = it.forholdsmessigFordeling?.søknadsid ?: behandling.soknadsid,
                             behandlerEnhet = it.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: behandling.behandlerEnhet,
                             saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
@@ -63,7 +68,7 @@ class BehandlingOppdatertLytter(
                                 when {
                                     it.deleted -> Behandlingstatus.FEILREGISTRERT
                                     erVedtakFattet -> Behandlingstatus.VEDTAK_FATTET
-                                    else -> Behandlingstatus.UNDER_BEHANDLING
+                                    else -> it.behandlingstatus ?: Behandlingstatus.UNDER_BEHANDLING
                                 },
                         )
                     },

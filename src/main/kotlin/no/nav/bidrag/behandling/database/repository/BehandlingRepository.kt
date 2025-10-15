@@ -76,11 +76,11 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
         value = """
         SELECT b.* FROM behandling b
         WHERE b.deleted = false
-          AND ((b.forholdsmessig_fordeling->>'behandlesAvBehandling') = :behandlingId or b.id = :behandlingId)
+          AND ((b.forholdsmessig_fordeling->>'behandlesAvBehandling')::bigint = :behandlingId or b.id = :behandlingId)
     """,
         nativeQuery = true,
     )
     fun finnAlleRelaterteBehandlinger(
-        @Param("behandlingId") behandlingId: String,
+        @Param("behandlingId") behandlingId: Long,
     ): List<Behandling>
 }

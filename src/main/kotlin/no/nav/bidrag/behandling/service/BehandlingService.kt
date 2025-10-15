@@ -342,7 +342,7 @@ class BehandlingService(
         resultat: FattetDelvedtak,
     ) {
         behandlingRepository
-            .finnAlleRelaterteBehandlinger(behandlingsid.toString())
+            .finnAlleRelaterteBehandlinger(behandlingsid)
             .forEach {
                 log.info {
                     "Oppdaterer behandling $behandlingsid med fattet delvedtak ${resultat.vedtaksid} - $resultat"
@@ -367,7 +367,7 @@ class BehandlingService(
         unikreferanse: String? = null,
     ) {
         behandlingRepository
-            .finnAlleRelaterteBehandlinger(behandlingsid.toString())
+            .finnAlleRelaterteBehandlinger(behandlingsid)
             .forEach {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
 
