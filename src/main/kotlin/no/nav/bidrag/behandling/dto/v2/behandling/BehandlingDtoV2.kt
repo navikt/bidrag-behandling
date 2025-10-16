@@ -136,6 +136,7 @@ data class BehandlingDtoV2(
     val sisteVedtakBeregnetUtNåværendeMåned: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
+    val bpsBarnUtenBidraggsak: Set<RolleDto>,
     val virkningstidspunkt: VirkningstidspunktDto,
     val virkningstidspunktV2: List<VirkningstidspunktBarnDtoV2> = emptyList(),
     val virkningstidspunktV3: VirkningstidspunktDtoV3,
@@ -474,6 +475,9 @@ enum class Grunnlagsdatatype(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
+    ),
+    BARN_TIL_BP_UTEN_BIDRAGSAK(
+        mapOf(),
     ),
     KONTANTSTØTTE(
         mapOf(

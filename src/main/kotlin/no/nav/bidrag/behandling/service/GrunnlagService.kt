@@ -10,6 +10,8 @@ import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -24,6 +26,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
@@ -112,6 +115,7 @@ import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
@@ -157,6 +161,8 @@ class GrunnlagService(
     private val vedtakService: VedtakService? = null,
     private val grunnlagFetchTaskExecutor: TaskExecutor? = null,
     private val behandlngRepository: BehandlingRepository? = null,
+    private val sakConsumer: BidragSakConsumer? = null,
+    private val personConsumer: BidragPersonConsumer? = null,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
     lateinit var grenseInnhenting: String
@@ -228,8 +234,6 @@ class GrunnlagService(
                 val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
                 behandling.grunnlagsinnhentingFeilet = null
 
-                val hentAsyncStart = System.currentTimeMillis()
-
                 val grunnlagResponsObjekter =
                     runBlocking {
                         val deferredListe =
@@ -280,6 +284,9 @@ class GrunnlagService(
                     },
                     scope.async {
                         lagreBeløpshistorikkGrunnlag(behandling)
+                    },
+                    scope.async {
+                        lagreBpsBarnUtenBidragsak(behandling)
                     },
                 ).awaitAll()
             }
@@ -469,6 +476,56 @@ class GrunnlagService(
             feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.FORSKUDD, behandling, true))
         }
         return feilrapporteringer
+    }
+
+    suspend fun lagreBpsBarnUtenBidragsak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        if (!behandling.erBidrag() || behandling.bidragspliktig == null) return emptyMap()
+        val barnTilBp = personConsumer!!.hentPersonRelasjon(Personident(behandling.bidragspliktig!!.ident!!))
+
+        val barnUtenBidragssak = mutableListOf<Person>()
+        val sakerBp = sakConsumer!!.hentSakerPerson(behandling.bidragspliktig!!.ident!!)
+        val barnBpMedBidragssak =
+            sakerBp.flatMap {
+                it.roller.filter { it.type == Rolletype.BARN && it.fødselsnummer != null }.map { it.fødselsnummer!!.verdi }
+            }
+        barnTilBp.forelderBarnRelasjon.filter { it.erRelatertPersonsBarn() }.sortedBy { it.relatertPersonsIdent?.verdi }.forEach { barn ->
+            val ident = barn.relatertPersonsIdent?.verdi ?: return@forEach
+            if (!barnBpMedBidragssak.contains(ident)) {
+                barnUtenBidragssak.add(
+                    Person(
+                        Personident(ident),
+                        hentPersonVisningsnavn(ident),
+                        hentPersonFødselsdato(ident)!!,
+                        delAvOpprinneligBehandling = false,
+                    ),
+                )
+            }
+        }
+
+        val eksisterendeVerdi = behandling.grunnlag.hentSisteGrunnlagBpsBarnUtenBidragsak()
+
+        if (eksisterendeVerdi != barnUtenBidragssak) {
+            log.debug { "Lagrer ny grunnlag barn til BP uten bidragssak for type ${Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK}" }
+            secureLogger.debug {
+                "Lagrer ny grunnlag barn til BP uten bidragssak for type ${Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK} med respons $barnUtenBidragssak hvor siste aktive grunnlag var $eksisterendeVerdi"
+            }
+            val nyGrunnlag =
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK,
+                    data = commonObjectmapper.writeValueAsString(barnUtenBidragssak),
+                    innhentet = LocalDateTime.now(),
+                    grunnlagFraVedtakSomSkalOmgjøres = false,
+                    aktiv = LocalDateTime.now(),
+                    rolle = behandling.bidragspliktig!!,
+                    erBearbeidet = false,
+                )
+            behandling.grunnlag.add(nyGrunnlag)
+        } else {
+            log.debug { "Ingen endring i grunnlag barn til BP uten bidragssak for behandling ${behandling.id}, lagrer ikke på nytt" }
+        }
+
+        return emptyMap()
     }
 
     suspend fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {

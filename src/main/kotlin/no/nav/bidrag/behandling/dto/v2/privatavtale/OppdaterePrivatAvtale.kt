@@ -49,7 +49,7 @@ data class PrivatAvtaleDto(
     val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
     val avtaleDato: LocalDate?,
     val avtaleType: PrivatAvtaleType?,
-    val skalIndeksreguleres: Boolean,
+    val skalIndeksreguleres: Boolean = false,
     val begrunnelse: String?,
     val begrunnelseFraOpprinneligVedtak: String? = null,
     val valideringsfeil: PrivatAvtaleValideringsfeilDto?,
