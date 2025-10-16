@@ -149,6 +149,7 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val vedtakstype: Vedtakstype,
+    val beregningInnkrevingsgrunnlag: Boolean = false,
     val resultat: BeregnetBarnebidragResultat,
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
     val avslagskode: Resultatkode? = null,

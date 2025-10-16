@@ -30,7 +30,6 @@ import no.nav.bidrag.beregn.barnebidrag.service.BeregnBasertPåVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.service.FinnesEtterfølgendeVedtakMedVirkningstidspunktFørOmgjortVedtak
 import no.nav.bidrag.beregn.barnebidrag.service.SkalIkkeAldersjusteresException
-import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.beregn.core.bo.Periode
 import no.nav.bidrag.beregn.core.bo.Sjablon
 import no.nav.bidrag.beregn.core.bo.SjablonInnhold
@@ -71,6 +70,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.felles.tilVisningsnavn
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
@@ -337,16 +337,7 @@ class BeregningService(
                         delberegningPrivatAvtale
                             ?.innhold
                             ?.perioder
-                            ?.mapNotNull { periode ->
-                                val adjustedFom = maxOf(periode.periode.fom, pa.rolle!!.virkningstidspunkt!!.toYearMonth())
-                                if (periode.periode.til != null && adjustedFom >= periode.periode.til) {
-                                    null
-                                } else {
-                                    periode.copy(
-                                        periode = ÅrMånedsperiode(adjustedFom, periode.periode.til),
-                                    )
-                                }
-                            }?.sortedBy {
+                            ?.sortedBy {
                                 it.periode.fom
                             }
                     val perioder =
@@ -397,9 +388,22 @@ class BeregningService(
                 pa.rolle!!.mapTilResultatBarn(),
                 behandling.vedtakstype,
                 opphørsdato = pa.rolle!!.opphørsdato?.toYearMonth(),
+                beregningInnkrevingsgrunnlag = true,
                 resultat =
                     BeregnetBarnebidragResultat(
-                        beregnetBarnebidragPeriodeListe = perioder.first,
+                        beregnetBarnebidragPeriodeListe =
+                            perioder.first
+                                .filter {
+                                    it.periode.til == null ||
+                                        it.periode.fom.isAfter(pa.rolle!!.virkningstidspunkt!!.toYearMonth())
+                                }.map {
+                                    it.copy(
+                                        periode =
+                                            it.periode.copy(
+                                                fom = maxOf(it.periode.fom.atDay(1), pa.rolle!!.virkningstidspunkt!!).toYearMonth(),
+                                            ),
+                                    )
+                                }.toList(),
                         grunnlagListe = perioder.second,
                     ),
             )

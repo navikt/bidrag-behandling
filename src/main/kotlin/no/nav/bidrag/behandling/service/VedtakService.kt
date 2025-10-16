@@ -526,6 +526,7 @@ class VedtakService(
             behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
                 behandling,
                 request?.enhet,
+                request?.skalIndeksreguleres ?: true,
             )
 
         innkrevingRequest.validerGrunnlagsreferanser()

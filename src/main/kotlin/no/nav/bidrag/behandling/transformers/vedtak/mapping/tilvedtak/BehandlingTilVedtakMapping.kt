@@ -65,6 +65,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.Year
 import java.time.YearMonth
 
 data class ResultatDelvedtak(
@@ -215,6 +216,7 @@ class BehandlingTilVedtakMapping(
     fun byggOpprettVedtakRequestInnkreving(
         behandling: Behandling,
         enhet: String?,
+        skalIndeksreguleres: Boolean,
     ): OpprettVedtakRequestDto {
         val beregning = beregningService.beregneBidrag(behandling.id!!)
 
@@ -280,6 +282,7 @@ class BehandlingTilVedtakMapping(
                             } else {
                                 emptyList()
                             }
+                        val grunnlagSøknadsbarn = grunnlagliste.hentPersonMedIdent(søknadsbarn.ident!!)
                         OpprettStønadsendringRequestDto(
                             innkreving = Innkrevingstype.MED_INNKREVING,
                             skyldner = behandling.tilSkyldner(),
@@ -297,6 +300,7 @@ class BehandlingTilVedtakMapping(
                             grunnlagReferanseListe =
                                 stønadsendringGrunnlag.map { it.referanse } + resultatFraAnnenVedtakGrunnlag.map { it.referanse },
                             periodeListe = periodeliste + opphørPeriode,
+                            førsteIndeksreguleringsår = if (skalIndeksreguleres) Year.now().plusYears(1).value else null,
                         )
                     },
             )
