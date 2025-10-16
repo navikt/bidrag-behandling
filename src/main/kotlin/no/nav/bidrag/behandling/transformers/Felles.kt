@@ -35,6 +35,8 @@ import java.time.Period
 import java.time.Year
 import java.time.YearMonth
 
+fun Vedtakstype.opprettForsendelse() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
+
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(this)
 
 fun Behandling.skalInnkrevingKunneUtsettes() =

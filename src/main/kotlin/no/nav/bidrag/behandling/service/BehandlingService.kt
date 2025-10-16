@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
+import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
@@ -115,7 +116,7 @@ class BehandlingService(
                 BehandlingHendelseType.ENDRET
             },
         )
-        if (behandling.vedtakstype.kreverGrunnlag()) {
+        if (behandling.vedtakstype.opprettForsendelse()) {
             opprettForsendelseForBehandling(lagretBehandling)
         }
         return lagretBehandling
