@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSøknad
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fjernMidlertidligPersonobjekterBMsbarn
@@ -355,7 +356,7 @@ class BeregningService(
                                     listOf(delberegningPrivatAvtale.referanse) + grunnlagFraVedtak.map { it.referanse },
                             )
                         } ?: emptyList()
-                    perioder to (beregning + grunnlagFraVedtak)
+                    perioder to (beregning + grunnlagFraVedtak + behandling.byggGrunnlagSøknad())
                 } else {
                     pa.perioderInnkreving
                         .mapNotNull { periode ->

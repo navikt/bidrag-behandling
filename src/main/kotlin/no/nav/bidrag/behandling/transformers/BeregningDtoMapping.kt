@@ -113,6 +113,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
+import no.nav.bidrag.transport.behandling.vedtak.response.finnSøknadGrunnlag
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -624,45 +625,47 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                 },
         )
     } else {
-        finnResultatFraAnnenVedtak(grunnlagsreferanseListe)?.let {
-            if (it.vedtakstype == Vedtakstype.OPPHØR && it.vedtaksid == null) {
-                return ResultatBarnebidragsberegningPeriodeDto(
-                    vedtakstype = Vedtakstype.OPPHØR,
-                    periode = periode,
-                    faktiskBidrag = BigDecimal.ZERO,
-                    erOpphør = true,
-                    resultatKode = Resultatkode.OPPHØR,
-                )
+        val erinnkrevingsgrunnlag = finnSøknadGrunnlag() != null && finnSøknadGrunnlag()!!.innkrevingsgrunnlag
+        if (!erinnkrevingsgrunnlag) {
+            finnResultatFraAnnenVedtak(grunnlagsreferanseListe)?.let {
+                if (it.vedtakstype == Vedtakstype.OPPHØR && it.vedtaksid == null) {
+                    return ResultatBarnebidragsberegningPeriodeDto(
+                        vedtakstype = Vedtakstype.OPPHØR,
+                        periode = periode,
+                        faktiskBidrag = BigDecimal.ZERO,
+                        erOpphør = true,
+                        resultatKode = Resultatkode.OPPHØR,
+                    )
+                }
+                val vedtak = hentVedtak(it.vedtaksid)
+                val vedtakPeriode =
+                    vedtak!!
+                        .stønadsendringListe
+                        .find {
+                            it.kravhaver == barnIdent
+                        }!!
+                        .periodeListe
+                        .find { it.periode.inneholder(periode) }!!
+                val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
+                val vedtakstype = if (vedtakstype == Vedtakstype.INNKREVING) vedtakstype else vedtak.type
+                return vedtak.grunnlagListe
+                    .byggResultatBidragsberegning(
+                        periode,
+                        vedtakPeriode.beløp,
+                        Resultatkode.fraKode(vedtakPeriode.resultatkode),
+                        vedtakPeriode.grunnlagReferanseListe,
+                        null,
+                        barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
+                        vedtakstype,
+                        barnIdent,
+                    ).copy(
+                        klageOmgjøringDetaljer =
+                            KlageOmgjøringDetaljer(
+                                omgjøringsvedtak = it.omgjøringsvedtak,
+                            ),
+                    )
             }
-            val vedtak = hentVedtak(it.vedtaksid)
-            val vedtakPeriode =
-                vedtak!!
-                    .stønadsendringListe
-                    .find {
-                        it.kravhaver == barnIdent
-                    }!!
-                    .periodeListe
-                    .find { it.periode.inneholder(periode) }!!
-            val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
-            val vedtakstype = if (vedtakstype == Vedtakstype.INNKREVING) vedtakstype else vedtak.type
-            return vedtak.grunnlagListe
-                .byggResultatBidragsberegning(
-                    periode,
-                    vedtakPeriode.beløp,
-                    Resultatkode.fraKode(vedtakPeriode.resultatkode),
-                    vedtakPeriode.grunnlagReferanseListe,
-                    null,
-                    barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
-                    vedtakstype,
-                    barnIdent,
-                ).copy(
-                    klageOmgjøringDetaljer =
-                        KlageOmgjøringDetaljer(
-                            omgjøringsvedtak = it.omgjøringsvedtak,
-                        ),
-                )
         }
-
         val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
         val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
         val sluttberegningGrunnlag =
