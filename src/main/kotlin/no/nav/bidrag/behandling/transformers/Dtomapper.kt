@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
@@ -136,6 +137,7 @@ import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteret
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteretMedDetaljer
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -304,13 +306,22 @@ class Dtomapper(
         val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
         return BeregnetPrivatAvtaleDto(
             gjelderBarn = gjelderBarn.tilPersoninfoDto(),
-            privatAvtaleBeregning.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse).map {
-                BeregnetPrivatAvtalePeriodeDto(
-                    periode = Datoperiode(it.periode.fom, it.periode.til),
-                    beløp = it.beløp,
-                    indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
-                )
-            },
+            privatAvtaleBeregning
+                .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
+                .filter {
+                    it.periode.til == null ||
+                        it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
+                }.map {
+                    BeregnetPrivatAvtalePeriodeDto(
+                        periode =
+                            Datoperiode(
+                                maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
+                                it.periode.til,
+                            ),
+                        beløp = it.beløp,
+                        indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
+                    )
+                },
         )
     }
 

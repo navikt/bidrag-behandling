@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
+import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
@@ -96,6 +97,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
     fun initMocksKlage() {
         enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK)
         bidragsberegningOrkestrator = mockkClass(BidragsberegningOrkestrator::class)
+        val behandlingHendeleLytter = mockkClass(BehandlingOppdatertLytter::class, relaxed = true)
         behandlingService =
             BehandlingService(
                 behandlingRepository,
@@ -106,6 +108,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 dtomapper,
                 validerBehandlingService,
                 underholdService,
+                behandlingOppdatertLytter = behandlingHendeleLytter,
             )
         beregningService =
             BeregningService(
