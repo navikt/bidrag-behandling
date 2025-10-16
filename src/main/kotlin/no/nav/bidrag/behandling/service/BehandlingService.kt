@@ -389,6 +389,11 @@ class BehandlingService(
                     it.behandlingstatus = Behandlingstatus.VEDTAK_FATTET
                 }
             }
+
+        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
+            behandlingsid,
+            BehandlingHendelseType.AVSLUTTET,
+        )
     }
 
     fun henteBehandlingDetaljer(behandlingsid: Long): BehandlingDetaljerDtoV2 {
