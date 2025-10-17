@@ -35,7 +35,6 @@ data class OpprettBehandlingRequest(
     @field:NotBlank(message = "Enhet kan ikke være blank")
     @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
     val behandlerenhet: String,
-    @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
     val roller: Set<@Valid OpprettRolleDto>,
     @Schema(required = true)
     var stønadstype: Stønadstype? = null,

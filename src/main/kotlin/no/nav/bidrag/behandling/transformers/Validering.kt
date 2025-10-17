@@ -162,6 +162,9 @@ fun OpprettBehandlingRequest.valider() {
     (stønadstype == null && engangsbeløpstype == null).ifTrue {
         feilliste.add("Stønadstype eller engangsbeløpstype må settes")
     }
+    if (roller.size < 2) {
+        feilliste.add("Behandling må ha minst to roller")
+    }
     if (erSærbidrag()) {
         when {
             roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG } ->
