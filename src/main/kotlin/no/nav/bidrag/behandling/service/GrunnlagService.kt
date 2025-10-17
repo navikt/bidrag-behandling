@@ -265,15 +265,10 @@ class GrunnlagService(
             if (feilrapporteringer.isNotEmpty()) {
                 behandling.grunnlagsinnhentingFeilet =
                     objectmapper.writeValueAsString(feilrapporteringer)
-                secureLogger.error {
+                secureLogger.warn {
                     "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
                         "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
                         "${feilrapporteringer.map { "${it.key}: ${it.value}" }}"
-                }
-                log.error {
-                    "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
-                        "Innhentingen ble derfor ikke gjort for følgende grunnlagstyper: " +
-                        "${feilrapporteringer.map { it.key }}"
                 }
             }
         } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {

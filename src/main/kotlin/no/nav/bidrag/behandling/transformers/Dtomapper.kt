@@ -309,15 +309,20 @@ class Dtomapper(
             privatAvtaleBeregning
                 .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
                 .filter {
-                    it.periode.til == null ||
+                    !erInnkreving ||
+                        it.periode.til == null ||
                         it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
                 }.map {
                     BeregnetPrivatAvtalePeriodeDto(
                         periode =
-                            Datoperiode(
-                                maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
-                                it.periode.til,
-                            ),
+                            if (erInnkreving) {
+                                Datoperiode(
+                                    maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
+                                    it.periode.til,
+                                )
+                            } else {
+                                Datoperiode(it.periode.fom, it.periode.til)
+                            },
                         beløp = it.beløp,
                         indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
                     )
