@@ -65,14 +65,11 @@ open class PrivatAvtale(
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV ->
                 valgtVedtakFraNav
                     ?.perioder
-                    ?.filter {
-                        it.periode.til == null ||
-                            it.periode.fom.isAfter(rolle!!.virkningstidspunkt!!.toYearMonth())
-                    }?.mapIndexed { i, it ->
+                    ?.mapIndexed { i, it ->
                         PrivatAvtalePeriode(
                             i.toLong(),
                             this,
-                            maxOf(it.periode.fom.atDay(1), rolle!!.virkningstidspunkt!!),
+                            it.periode.fom.atDay(1),
                             it.periode.til?.atDay(1),
                             it.beløp ?: BigDecimal.ZERO,
                         )

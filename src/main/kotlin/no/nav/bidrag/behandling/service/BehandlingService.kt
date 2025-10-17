@@ -3,11 +3,13 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
@@ -24,10 +26,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
+import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
+import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
@@ -46,9 +51,12 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -69,6 +77,8 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
+//    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
     fun slettBehandling(behandlingId: Long) {
@@ -82,18 +92,31 @@ class BehandlingService(
 
         log.debug { "Logisk sletter behandling $behandlingId" }
         behandlingRepository.logiskSlett(behandling.id!!)
+        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
+            behandling.id!!,
+            BehandlingHendelseType.AVSLUTTET,
+        )
     }
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
 
     fun lagreBehandling(behandling: Behandling): Behandling {
+        val oppretterBehandling = behandling.id == null
         val lagretBehandling =
-            if (behandling.id == null) {
+            if (oppretterBehandling) {
                 behandlingRepository.save(behandling)
             } else {
                 behandling
             }
-        if (behandling.vedtakstype.kreverGrunnlag()) {
+        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
+            lagretBehandling.id!!,
+            if (oppretterBehandling) {
+                BehandlingHendelseType.OPPRETTET
+            } else {
+                BehandlingHendelseType.ENDRET
+            },
+        )
+        if (behandling.vedtakstype.opprettForsendelse()) {
             opprettForsendelseForBehandling(lagretBehandling)
         }
         return lagretBehandling
@@ -363,6 +386,11 @@ class BehandlingService(
                     it.behandlingstatus = Behandlingstatus.VEDTAK_FATTET
                 }
             }
+
+        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
+            behandlingsid,
+            BehandlingHendelseType.AVSLUTTET,
+        )
     }
 
     fun henteBehandlingDetaljer(behandlingsid: Long): BehandlingDetaljerDtoV2 {
@@ -411,8 +439,7 @@ class BehandlingService(
         behandlingId: Long,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ): OppdaterRollerResponse {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        tilgangskontrollService.sjekkTilgangBehandling(behandling)
+        val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -464,11 +491,11 @@ class BehandlingService(
 
         // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
-        behandlingRepository.save(behandling)
+        lagreBehandling(behandling)
 
         if (behandling.søknadsbarn.isEmpty()) {
             log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
-            behandlingRepository.logiskSlett(behandling.id!!)
+            slettBehandling(behandling.id!!)
             return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
 
