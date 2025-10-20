@@ -64,7 +64,7 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
                 (perioder.isEmpty() || perioder.maxByOrNull { it.fom }!!.tom != null),
         overlappendePerioder =
             perioder
-                .map { Pair(it.id!!, it.tilDatoperiode()) }
+                .map { Pair(it.id ?: -1, it.tilDatoperiode()) }
                 .finnOverlappendePerioder(),
         manglerSamvær = perioder.isEmpty(),
         ugyldigSluttperiode =

@@ -817,7 +817,7 @@ class Dtomapper(
                 sisteVedtakBeregnetUtNåværendeMåned =
                     omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned ?: omgjøringsdetaljer?.opprinneligVedtakId,
                 virkningstidspunktV2 = emptyList(),
-                virkningstidspunkt = VirkningstidspunktDtoV3(false, emptyList()),
+                virkningstidspunkt = VirkningstidspunktDtoV3(false, globalVirkningstidspunkt.toYearMonth(), emptyList()),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
                 boforhold = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
                 aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
@@ -831,6 +831,7 @@ class Dtomapper(
             virkningstidspunkt =
                 VirkningstidspunktDtoV3(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
+                    minsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarn(),
                 ),
             virkningstidspunktV2 = mapVirkningstidspunktAlleBarn(),
@@ -863,17 +864,6 @@ class Dtomapper(
                 privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
         )
     }
-
-    private fun Behandling.bpsBarnUtenBidragssak(): Set<BpsBarnUtenBidragsakDto> =
-        grunnlag
-            .hentSisteGrunnlagBpsBarnUtenBidragsak()
-            ?.map {
-                BpsBarnUtenBidragsakDto(
-                    ident = it.ident.verdi,
-                    fødselsdato = it.fødselsdato,
-                    navn = it.navn,
-                )
-            }?.toSet() ?: emptySet()
 
     private fun Behandling.mapVirkningstidspunktAlleBarn(): List<VirkningstidspunktBarnDtoV2> =
         if (tilType() == TypeBehandling.BIDRAG) {

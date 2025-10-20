@@ -213,6 +213,7 @@ class BeregningService(
                             } else {
                                 Beregningstype.OMGJØRING
                             }
+
                         else -> Beregningstype.BIDRAG
                     },
                 beregningBarn =
@@ -269,11 +270,16 @@ class BeregningService(
                                     delvedtak = it.delvedtak,
                                     omgjøringsvedtak = it.omgjøringsvedtak,
                                     beregnet = it.beregnet,
-//                                    beregnetFraDato = it.beregnetFraDato,
+                                    beregnetFraDato = it.beregnetFraDato,
                                     resultat =
                                         BeregnetBarnebidragResultat(
                                             beregnetBarnebidragPeriodeListe = it.periodeListe,
-                                            grunnlagListe = if (it.omgjøringsvedtak) grunnlagBarn + grunnlagBeregning.grunnlagsliste else grunnlagBarn,
+                                            grunnlagListe =
+                                                if (it.omgjøringsvedtak) {
+                                                    grunnlagBarn + grunnlagBeregning.grunnlagsliste
+                                                } else {
+                                                    grunnlagBarn
+                                                },
                                         ),
                                 )
                             },
@@ -396,7 +402,8 @@ class BeregningService(
                             perioder.first
                                 .filter {
                                     it.periode.til == null ||
-                                        it.periode.fom.isAfter(pa.rolle!!.virkningstidspunkt!!.toYearMonth())
+                                        it.periode.overlapper(ÅrMånedsperiode(pa.rolle!!.virkningstidspunkt!!, pa.rolle!!.opphørsdato)) &&
+                                        it.periode.til != pa.rolle!!.virkningstidspunkt!!.toYearMonth()
                                 }.map {
                                     it.copy(
                                         periode =

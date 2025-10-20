@@ -115,7 +115,7 @@ class BehandlingService(
                 BehandlingHendelseType.ENDRET
             },
         )
-        if (behandling.vedtakstype.opprettForsendelse()) {
+        if (behandling.vedtakstype.opprettForsendelse() && oppretterBehandling) {
             opprettForsendelseForBehandling(lagretBehandling)
         }
         return lagretBehandling
