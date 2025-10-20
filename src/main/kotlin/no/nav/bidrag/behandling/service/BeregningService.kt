@@ -396,7 +396,8 @@ class BeregningService(
                             perioder.first
                                 .filter {
                                     it.periode.til == null ||
-                                        it.periode.overlapper(ÅrMånedsperiode(pa.rolle!!.virkningstidspunkt!!, pa.rolle!!.opphørsdato))
+                                        it.periode.overlapper(ÅrMånedsperiode(pa.rolle!!.virkningstidspunkt!!, pa.rolle!!.opphørsdato)) &&
+                                        it.periode.til != pa.rolle!!.virkningstidspunkt!!.toYearMonth()
                                 }.map {
                                     it.copy(
                                         periode =
