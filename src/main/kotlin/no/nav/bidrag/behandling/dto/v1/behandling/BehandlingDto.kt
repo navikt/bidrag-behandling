@@ -67,7 +67,12 @@ data class ManuellVedtakDto(
         }
 }
 
-data class VirkningstidspunktDtoV2(
+data class VirkningstidspunktDtoV3(
+    val erLikForAlle: Boolean,
+    val barn: List<VirkningstidspunktBarnDtoV2>,
+)
+
+data class VirkningstidspunktBarnDtoV2(
     val rolle: RolleDto,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -105,33 +110,6 @@ data class VirkningstidspunktDtoV2(
     @Schema(description = "Bruk begrunnelse", deprecated = true)
     val notat: BegrunnelseDto = begrunnelse
 }
-
-data class VirkningstidspunktDto(
-    @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val virkningstidspunkt: LocalDate? = null,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    val opprinneligVirkningstidspunkt: LocalDate? = null,
-    @Schema(name = "årsak", enumAsRef = true)
-    val årsak: VirkningstidspunktÅrsakstype? = null,
-    @Schema(enumAsRef = true)
-    val avslag: Resultatkode? = null,
-    @Schema(description = "Saksbehandlers begrunnelse")
-    val begrunnelse: BegrunnelseDto,
-    val harLøpendeBidrag: Boolean = false,
-    val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
-    val opphør: OpphørsdetaljerDto? = null,
-) {
-    @Deprecated("Bruk begrunnelse")
-    @Schema(description = "Bruk begrunnelse", deprecated = true)
-    val notat: BegrunnelseDto = begrunnelse
-}
-
-data class OpphørsdetaljerDto(
-    val opphørsdato: LocalDate? = null,
-    val opphørRoller: List<OpphørsdetaljerRolleDto>,
-)
 
 data class OpphørsdetaljerRolleDto(
     val rolle: RolleDto,

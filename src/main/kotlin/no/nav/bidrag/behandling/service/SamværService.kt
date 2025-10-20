@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -23,6 +24,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværskl
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
@@ -35,28 +37,78 @@ class SamværService(
     private val notatService: NotatService,
     private val beregnSamværsklasseApi: BeregnSamværsklasseApi,
 ) {
+    @Transactional
     fun oppdaterSamvær(
         behandlingsid: Long,
         request: OppdaterSamværDto,
-    ): OppdaterSamværResponsDto {
+    ): Samvær {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         secureLogger.debug { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
-        val oppdaterSamvær = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+        if (request.gjelderBarn.isNullOrEmpty()) {
+            behandling.samvær.forEach { oppdaterSamvær ->
+                oppdaterSamvær(request, oppdaterSamvær)
+            }
+        } else {
+            val samværBarn = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+            oppdaterSamvær(request, samværBarn)
+            return samværBarn
+        }
+
+        return behandling.samvær.first()
+    }
+
+    @Transactional
+    fun brukSammeSamværForAlleBarn(behandlingId: Long): Behandling {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
+
+        val samværYngsteBarn = behandling.samvær.finnSamværForBarn(yngsteBarn.ident!!)
+        var nyNotat = yngsteBarn.notat.find { it.type == NotatGrunnlag.NotatType.SAMVÆR }?.innhold ?: ""
+        behandling.søknadsbarn.forEach {
+            if (it.id != yngsteBarn.id) {
+                val begrunnelse = it.notat.find { it.type == NotatGrunnlag.NotatType.SAMVÆR }?.innhold ?: ""
+                nyNotat +=
+                    begrunnelse.replace(nyNotat, "").let {
+                        if (it.isNotEmpty()) {
+                            "<br> $it"
+                        } else {
+                            ""
+                        }
+                    }
+            }
+        }
+        behandling.søknadsbarn.forEach {
+            val samværBarn = behandling.samvær.finnSamværForBarn(it.ident!!)
+            val perioderKopiert =
+                samværYngsteBarn.perioder.map {
+                    Samværsperiode(fom = it.fom, tom = it.tom, samvær = samværBarn, samværsklasse = it.samværsklasse)
+                }
+            samværBarn.perioder.clear()
+            samværBarn.perioder = perioderKopiert.toMutableSet()
+        }
+        behandling.søknadsbarn.forEach {
+            notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.SAMVÆR, nyNotat, it)
+        }
+        return behandling
+    }
+
+    private fun oppdaterSamvær(
+        request: OppdaterSamværDto,
+        oppdaterSamvær: Samvær,
+    ) {
         request.valider(oppdaterSamvær.rolle.opphørsdato)
 
         request.run {
             periode?.let { oppdaterPeriode(it, oppdaterSamvær) }
             oppdatereBegrunnelse?.let {
                 notatService.oppdatereNotat(
-                    behandling,
+                    oppdaterSamvær.behandling,
                     NotatGrunnlag.NotatType.SAMVÆR,
                     it.henteNyttNotat() ?: "",
                     oppdaterSamvær.rolle,
                 )
             }
         }
-
-        return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
 
     private fun oppdaterPeriode(

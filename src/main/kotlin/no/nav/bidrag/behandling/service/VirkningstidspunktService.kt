@@ -228,7 +228,7 @@ class VirkningstidspunktService(
                 forRolle.årsak = if (request.avslag != null) null else request.årsak ?: forRolle.årsak
                 forRolle.avslag = if (request.årsak != null) null else request.avslag ?: forRolle.avslag
             } else {
-                behandling.roller.forEach {
+                behandling.søknadsbarn.forEach {
                     it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
                     it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
                 }
@@ -347,13 +347,13 @@ class VirkningstidspunktService(
         behandling: Behandling,
     ) {
         val requestBeregnTil = request.beregnTil
-        val rolle = behandling.roller.find { it.id == request.idRolle }!!
-        val nåværendeBeregnTil = rolle.beregnTil
+        val rolle = behandling.roller.find { it.id == request.idRolle }
+        val nåværendeBeregnTil = rolle?.beregnTil
         val erBeregnTilDatoEndret = requestBeregnTil != nåværendeBeregnTil
         val forrigeBeregnTilDato = behandling.finnBeregnTilDatoBehandling(rolle)
 
         val erBeregnTilEndretTilInneværende =
-            rolle.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED && request.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED
+            (rolle == null || rolle.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED) && request.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny opphørsdato i behandling ${behandling.id}" }
@@ -391,7 +391,13 @@ class VirkningstidspunktService(
         }
 
         if (erBeregnTilDatoEndret) {
-            rolle.beregnTil = request.beregnTil
+            if (rolle != null) {
+                rolle.beregnTil = request.beregnTil
+            } else {
+                behandling.søknadsbarn.forEach {
+                    it.beregnTil = request.beregnTil
+                }
+            }
             oppdaterBoforhold()
             oppdaterAndreVoksneIHusstanden()
             oppdaterInntekter()
@@ -401,15 +407,46 @@ class VirkningstidspunktService(
     }
 
     @Transactional
+    fun brukSammeVirkningstidspunktForAlleBarn(behandlingId: Long): Behandling {
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingId)
+                .orElseThrow { behandlingNotFoundException(behandlingId) }
+        val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
+        oppdaterOpphørsdato(OppdaterOpphørsdatoRequestDto(null, behandling.globalOpphørsdato), behandling)
+        oppdaterVirkningstidspunkt(null, behandling.globalVirkningstidspunkt, behandling)
+        oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(årsak = yngsteBarn.årsak, avslag = yngsteBarn.avslag))
+        oppdaterBeregnTilDato(OppdaterBeregnTilDatoRequestDto(null, yngsteBarn.beregnTil), behandling)
+        var nyNotat = yngsteBarn.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""
+        behandling.søknadsbarn.forEach {
+            if (it.id != yngsteBarn.id) {
+                val begrunnelse = it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""
+                nyNotat +=
+                    begrunnelse.replace(nyNotat, "").let {
+                        if (it.isNotEmpty()) {
+                            "<br> $it"
+                        } else {
+                            ""
+                        }
+                    }
+            }
+        }
+        behandling.søknadsbarn.forEach {
+            notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, nyNotat, it)
+        }
+        return behandling
+    }
+
+    @Transactional
     fun oppdaterOpphørsdato(
         request: OppdaterOpphørsdatoRequestDto,
         behandling: Behandling,
     ) {
         val requestOpphørsmåned = request.opphørsdato?.withDayOfMonth(1)
-        val rolle = behandling.roller.find { it.id == request.idRolle }!!
-        val erOpphørsdatoEndret = requestOpphørsmåned != rolle.opphørsdato || request.simulerEndring
-        val forrigeOpphørsdato = rolle.opphørsdato
-        val erOpphørSlettet = requestOpphørsmåned == null && rolle.opphørsdato != null
+        val rolle = behandling.roller.find { it.id == request.idRolle }
+        val forrigeOpphørsdato = rolle?.opphørsdato ?: behandling.globalOpphørsdato
+        val erOpphørsdatoEndret = requestOpphørsmåned != forrigeOpphørsdato || request.simulerEndring
+        val erOpphørSlettet = requestOpphørsmåned == null && forrigeOpphørsdato != null
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny opphørsdato i behandling ${behandling.id}" }
@@ -446,7 +483,13 @@ class VirkningstidspunktService(
         }
 
         if (erOpphørsdatoEndret) {
-            rolle.opphørsdato = requestOpphørsmåned
+            if (rolle != null) {
+                rolle.opphørsdato = requestOpphørsmåned
+            } else {
+                behandling.søknadsbarn.forEach {
+                    it.opphørsdato = requestOpphørsmåned
+                }
+            }
             oppdaterBoforhold()
             oppdaterAndreVoksneIHusstanden()
             oppdaterInntekter()

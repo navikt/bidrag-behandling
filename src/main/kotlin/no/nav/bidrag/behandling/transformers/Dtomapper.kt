@@ -22,10 +22,9 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -50,6 +49,7 @@ import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtalePeriodeDto
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BeregnetUnderholdskostnad
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.FaktiskTilsynsutgiftDto
@@ -782,8 +782,8 @@ class Dtomapper(
                 opprinneligVedtakId = omgjøringsdetaljer?.opprinneligVedtakId,
                 sisteVedtakBeregnetUtNåværendeMåned =
                     omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned ?: omgjøringsdetaljer?.opprinneligVedtakId,
-                virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV2 = emptyList(),
+                virkningstidspunkt = VirkningstidspunktDtoV3(false, emptyList()),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
                 boforhold = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
                 aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
@@ -794,120 +794,12 @@ class Dtomapper(
             return behandlingDto
         }
         return behandlingDto.copy(
-            virkningstidspunktV2 =
-                if (tilType() == TypeBehandling.BIDRAG) {
-                    søknadsbarn.sortedBy { it.fødselsdato }.map {
-                        val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
-                        VirkningstidspunktDtoV2(
-                            rolle = it.tilDto(),
-                            beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
-                            beregnTilDato = finnBeregnTilDatoBehandling(it),
-                            virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                            opprinneligVedtakstidspunkt =
-                                omgjøringsdetaljer?.sisteVedtakstidspunktBeregnetUtNåværendeMåned?.toLocalDate()
-                                    ?: omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
-                            omgjortVedtakVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate(),
-                            opprinneligVirkningstidspunkt =
-                                it.opprinneligVirkningstidspunkt
-                                    ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                            manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
-                            etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
-                            årsak = it.årsak ?: årsak,
-                            avslag = it.avslag ?: avslag,
-                            grunnlagFraVedtak =
-                                it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
-                            kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
-                            begrunnelse =
-                                if (notat.isEmpty()) {
-                                    BegrunnelseDto(
-                                        henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
-                                    )
-                                } else {
-                                    BegrunnelseDto(notat)
-                                },
-                            begrunnelseVurderingAvSkolegang =
-                                if (stonadstype == Stønadstype.BIDRAG18AAR) {
-                                    BegrunnelseDto(
-                                        henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it),
-                                    )
-                                } else {
-                                    null
-                                },
-                            begrunnelseVurderingAvSkolegangFraOpprinneligVedtak =
-                                if (stonadstype == Stønadstype.BIDRAG18AAR) {
-                                    BegrunnelseDto(
-                                        henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, false),
-                                    )
-                                } else {
-                                    null
-                                },
-                            harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
-                            harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
-                            eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
-                            opphørsdato = it.opphørsdato,
-                            globalOpphørsdato = globalOpphørsdato,
-                            valideringsfeil = hentVirkningstidspunktValideringsfeil(),
-                            begrunnelseFraOpprinneligVedtak =
-                                if (erKlageEllerOmgjøring) {
-                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
-                                        .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
-                                } else {
-                                    null
-                                },
-                        )
-                    }
-                } else {
-                    listOf(
-                        VirkningstidspunktDtoV2(
-                            rolle = bidragsmottaker!!.tilDto(),
-                            virkningstidspunkt = virkningstidspunkt,
-                            opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                            opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
-                            årsak = årsak,
-                            avslag = avslag,
-                            begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-                            harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
-                            harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
-                            opphørsdato = globalOpphørsdato,
-                            valideringsfeil = hentVirkningstidspunktValideringsfeil(),
-                            begrunnelseFraOpprinneligVedtak =
-                                if (erKlageEllerOmgjøring) {
-                                    henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
-                                        .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
-                                } else {
-                                    null
-                                },
-                        ),
-                    )
-                },
             virkningstidspunkt =
-                VirkningstidspunktDto(
-                    virkningstidspunkt = virkningstidspunkt,
-                    opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                    årsak = årsak,
-                    avslag = avslag,
-                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-                    harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
-                    opphør =
-                        OpphørsdetaljerDto(
-                            opphørsdato = globalOpphørsdato,
-                            opphørRoller =
-                                søknadsbarn.map {
-                                    OpphørsdetaljerRolleDto(
-                                        rolle = it.tilDto(),
-                                        opphørsdato = it.opphørsdato,
-                                        eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
-                                    )
-                                },
-                        ),
-                    begrunnelseFraOpprinneligVedtak =
-                        if (erKlageEllerOmgjøring) {
-                            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
-                                .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
-                        } else {
-                            null
-                        },
+                VirkningstidspunktDtoV3(
+                    erLikForAlle = this.sammeVirkningstidspunktForAlle,
+                    barn = mapVirkningstidspunktAlleBarn(),
                 ),
+            virkningstidspunktV2 = mapVirkningstidspunktAlleBarn(),
             boforhold = tilBoforholdV2(),
             inntekter =
                 tilInntektDtoV2(
@@ -918,6 +810,11 @@ class Dtomapper(
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
             samvær = tilSamværDto(),
+            samværV2 =
+                SamværDtoV2(
+                    this.sammeSamværForAlle,
+                    tilSamværDto() ?: emptyList(),
+                ),
             ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
             feilOppståttVedSisteGrunnlagsinnhenting =
                 grunnlagsinnhentingFeilet?.let {
@@ -928,9 +825,97 @@ class Dtomapper(
                 },
             kanBehandlesINyLøsning = kanBehandles,
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
-            privatAvtale = privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
+            privatAvtale =
+                privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
         )
     }
+
+    private fun Behandling.mapVirkningstidspunktAlleBarn(): List<VirkningstidspunktBarnDtoV2> =
+        if (tilType() == TypeBehandling.BIDRAG) {
+            søknadsbarn.sortedBy { it.fødselsdato }.map {
+                val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
+                VirkningstidspunktBarnDtoV2(
+                    rolle = it.tilDto(),
+                    beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
+                    beregnTilDato = finnBeregnTilDatoBehandling(it),
+                    virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
+                    opprinneligVedtakstidspunkt =
+                        omgjøringsdetaljer?.sisteVedtakstidspunktBeregnetUtNåværendeMåned?.toLocalDate()
+                            ?: omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
+                    omgjortVedtakVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate(),
+                    opprinneligVirkningstidspunkt =
+                        it.opprinneligVirkningstidspunkt
+                            ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
+                    manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
+                    etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
+                    årsak = it.årsak ?: årsak,
+                    avslag = it.avslag ?: avslag,
+                    grunnlagFraVedtak =
+                        it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
+                    kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
+                    begrunnelse =
+                        if (notat.isEmpty()) {
+                            BegrunnelseDto(
+                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
+                            )
+                        } else {
+                            BegrunnelseDto(notat)
+                        },
+                    begrunnelseVurderingAvSkolegang =
+                        if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                            BegrunnelseDto(
+                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it),
+                            )
+                        } else {
+                            null
+                        },
+                    begrunnelseVurderingAvSkolegangFraOpprinneligVedtak =
+                        if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                            BegrunnelseDto(
+                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, false),
+                            )
+                        } else {
+                            null
+                        },
+                    harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
+                    harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
+                    eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
+                    opphørsdato = it.opphørsdato,
+                    globalOpphørsdato = globalOpphørsdato,
+                    valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                    begrunnelseFraOpprinneligVedtak =
+                        if (erKlageEllerOmgjøring) {
+                            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
+                                .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
+                        } else {
+                            null
+                        },
+                )
+            }
+        } else {
+            listOf(
+                VirkningstidspunktBarnDtoV2(
+                    rolle = bidragsmottaker!!.tilDto(),
+                    virkningstidspunkt = virkningstidspunkt,
+                    opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
+                    opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
+                    årsak = årsak,
+                    avslag = avslag,
+                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                    harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
+                    opphørsdato = globalOpphørsdato,
+                    valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                    begrunnelseFraOpprinneligVedtak =
+                        if (erKlageEllerOmgjøring) {
+                            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
+                                .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
+                        } else {
+                            null
+                        },
+                ),
+            )
+        }
 
     fun tilUnderholdskostnadDto(
         behandling: Behandling,

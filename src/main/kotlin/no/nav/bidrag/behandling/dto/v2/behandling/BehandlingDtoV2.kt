@@ -8,14 +8,15 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV2
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
-import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
@@ -131,8 +132,8 @@ data class BehandlingDtoV2(
     val sisteVedtakBeregnetUtNåværendeMåned: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
-    val virkningstidspunkt: VirkningstidspunktDto,
-    val virkningstidspunktV2: List<VirkningstidspunktDtoV2> = emptyList(),
+    val virkningstidspunktV2: List<VirkningstidspunktBarnDtoV2> = emptyList(),
+    val virkningstidspunkt: VirkningstidspunktDtoV3,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
     val gebyr: GebyrDto? = null,
@@ -142,7 +143,8 @@ data class BehandlingDtoV2(
     @Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
     val utgift: SærbidragUtgifterDto? = null,
     @Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
-    val samvær: List<SamværDto>? = null,
+    val samvær: List<SamværBarnDto>? = null,
+    val samværV2: SamværDtoV2? = null,
     val privatAvtale: List<PrivatAvtaleDto>? = null,
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {

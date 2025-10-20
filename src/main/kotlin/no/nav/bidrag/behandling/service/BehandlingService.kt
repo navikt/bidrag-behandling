@@ -412,10 +412,7 @@ class BehandlingService(
     }
 
     @Transactional
-    fun henteBehandling(
-        behandlingsid: Long,
-        inkluderHistoriskeInntekter: Boolean = false,
-    ): Behandling {
+    fun henteBehandling(behandlingsid: Long): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         virkningstidspunktService.run {

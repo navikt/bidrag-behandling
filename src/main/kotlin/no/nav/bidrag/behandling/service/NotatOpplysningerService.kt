@@ -22,7 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
-import no.nav.bidrag.behandling.dto.v2.samvær.SamværDto
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -987,7 +987,7 @@ private fun List<Inntekt>.inntekterForIdent(ident: String) = filter { it.ident =
 private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
     filter { !filtrerBareOffentlige || it.kilde == Kilde.OFFENTLIG }
 
-private fun List<SamværDto>.tilNotatSamværDto(behandling: Behandling) =
+private fun List<SamværBarnDto>.tilNotatSamværDto(behandling: Behandling) =
     map { samvær ->
         val gjelderBarn = behandling.søknadsbarn.find { it.ident == samvær.gjelderBarn }!!
         NotatSamværDto(
