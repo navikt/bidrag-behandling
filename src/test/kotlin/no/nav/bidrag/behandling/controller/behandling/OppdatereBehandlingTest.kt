@@ -76,9 +76,15 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyVirkningstidspunkt
-        responseBody.virkningstidspunkt.årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-        responseBody.virkningstidspunkt.avslag shouldBe null
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .virkningstidspunkt shouldBe nyVirkningstidspunkt
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .avslag shouldBe null
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -121,9 +127,15 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
-        responseBody.virkningstidspunkt.årsak shouldBe null
-        responseBody.virkningstidspunkt.avslag shouldBe Resultatkode.AVSLAG
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .virkningstidspunkt shouldBe nyttVirkningstidspunkt
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .årsak shouldBe null
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .avslag shouldBe Resultatkode.AVSLAG
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -166,9 +178,15 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
-        responseBody.virkningstidspunkt.årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-        responseBody.virkningstidspunkt.avslag shouldBe null
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .avslag shouldBe null
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -211,9 +229,15 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
-        responseBody.virkningstidspunkt.årsak shouldBe null
-        responseBody.virkningstidspunkt.avslag shouldBe Resultatkode.AVSLAG
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .årsak shouldBe null
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .avslag shouldBe Resultatkode.AVSLAG
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -308,7 +332,9 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .virkningstidspunkt shouldBe nyttVirkningstidspunkt
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -403,7 +429,9 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .virkningstidspunkt shouldBe nyttVirkningstidspunkt
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
@@ -481,7 +509,9 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.virkningstidspunkt shouldBe nyttVirkningstidspunkt
+        responseBody.virkningstidspunkt.barn
+            .first()
+            .virkningstidspunkt shouldBe nyttVirkningstidspunkt
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
