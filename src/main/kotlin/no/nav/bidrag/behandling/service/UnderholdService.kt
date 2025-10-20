@@ -101,7 +101,7 @@ class UnderholdService(
     ) {
         val harOffentligeOpplysninger = underholdskostnad.hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
 
-        if (harOffentligeOpplysninger) {
+        if (harOffentligeOpplysninger && !harTilsynsordning) {
             ugyldigForespørsel("Kan ikke endre tilsynsordning når det finnes offentlige opplysninger")
         } else if (!harTilsynsordning &&
             (
