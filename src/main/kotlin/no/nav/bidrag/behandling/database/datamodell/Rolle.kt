@@ -125,7 +125,8 @@ open class Rolle(
 ) {
     val bidragsmottaker get() =
         behandling.alleBidragsmottakere.find {
-            it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
+            forholdsmessigFordeling?.bidragsmottaker != null && it.ident == forholdsmessigFordeling?.bidragsmottaker ||
+                it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
                 forholdsmessigFordeling == null && it.forholdsmessigFordeling == null ||
                 forholdsmessigFordeling?.tilhørerSak == behandling.saksnummer && it.forholdsmessigFordeling == null
         }

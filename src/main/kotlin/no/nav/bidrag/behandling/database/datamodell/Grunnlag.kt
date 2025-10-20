@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsak
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -69,7 +70,7 @@ fun Set<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter {
 fun Set<Grunnlag>.hentSisteGrunnlagBpsBarnUtenBidragsak() =
     hentSisteAktiv()
         .find { it.type == Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK && !it.erBearbeidet }
-        .konvertereData<List<Person>>()
+        .konvertereData<List<BpsBarnUtenBidragsak>>()
 
 fun Set<Grunnlag>.henteNyesteGrunnlag(
     grunnlagstype: Grunnlagstype,

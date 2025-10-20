@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
@@ -63,8 +64,15 @@ class BehandlingTilGrunnlagMappingV2(
         val søknadsbarnListe =
             søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
                 ?: søknadsbarn.map { it.tilGrunnlagPerson() }
+
+        val privatavtaleBarnSimulert = privatAvtale.filter { it.rolle == null }.map { it.person!!.tilRolle(this).tilGrunnlagPerson() }
         val bidragsmottakere = alleBidragsmottakere.map { it.tilGrunnlagPerson() }
-        return (bidragsmottakere + listOf(bidragspliktig?.tilGrunnlagPerson()) + søknadsbarnListe).filterNotNull().toMutableSet()
+        return (
+            bidragsmottakere +
+                listOf(
+                    bidragspliktig?.tilGrunnlagPerson(),
+                ) + søknadsbarnListe + privatavtaleBarnSimulert
+        ).filterNotNull().toMutableSet()
     }
 
     fun Behandling.tilGrunnlagSivilstand(gjelder: BaseGrunnlag): Set<GrunnlagDto> =
@@ -209,13 +217,13 @@ class BehandlingTilGrunnlagMappingV2(
         }
 
         return privatAvtale
-            .find { it.perioderInnkreving.isNotEmpty() && it.rolle!!.ident == gjelderBarnIdent }
+            .find { it.perioderInnkreving.isNotEmpty() && it.personIdent == gjelderBarnIdent }
             ?.let { pa ->
                 val underholdRolle = pa.rolle
                 val gjelderBarn =
                     underholdRolle?.tilGrunnlagPerson()?.also {
                         grunnlagslistePersoner.add(it)
-                    } ?: personobjekter.hentPerson(pa.rolle!!.ident) ?: pa.opprettPersonGrunnlag()
+                    } ?: personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()
                 val gjelderBarnReferanse = gjelderBarn.referanse
                 val grunnlag =
                     pa.perioderInnkreving.map {

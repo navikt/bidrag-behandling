@@ -20,6 +20,9 @@ data class ForholdsmessigFordelingRolle(
     val søknadFomDato: LocalDate? = null,
     val søktAvType: SøktAvType? = null,
     val delAvOpprinneligBehandling: Boolean,
+    val erRevurdering: Boolean,
+    val harLøpendeBidrag: Boolean = true,
     val behandlingsid: Long? = null,
     val søknadsid: Long? = null,
+    var bidragsmottaker: String? = null,
 )

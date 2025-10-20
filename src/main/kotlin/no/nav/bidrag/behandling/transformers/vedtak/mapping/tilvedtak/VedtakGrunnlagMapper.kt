@@ -77,7 +77,7 @@ fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
 
 fun Behandling.finnBeregnTilDato() =
     if (erBidrag()) {
-        søknadsbarn.minOf { finnBeregnTilDatoBehandling(it) }
+        søknadsbarn.maxOf { finnBeregnTilDatoBehandling(it) }
     } else {
         finnBeregnTilDatoBehandling()
     }
@@ -233,7 +233,7 @@ class VedtakGrunnlagMapper(
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
             if (behandling.privatAvtale
-                    .find { it.rolle!!.ident == gjelderBarn.ident }
+                    .find { it.personIdent == gjelderBarn.ident }
                     ?.perioderInnkreving
                     ?.isEmpty() == true
             ) {

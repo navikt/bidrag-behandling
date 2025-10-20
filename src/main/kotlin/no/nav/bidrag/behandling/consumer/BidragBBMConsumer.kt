@@ -2,6 +2,9 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderRequest
 import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderResponse
+import no.nav.bidrag.behandling.consumer.dto.LagreBehandlingsidRequest
+import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderRequest
+import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderResponse
 import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
@@ -40,10 +43,21 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun opprettSøknad(): BidragBeregningResponsDto =
+    fun opprettSøknader(request: OpprettSøknaderRequest): OpprettSøknaderResponse =
         postForNonNullEntity(
-            bidragBBMUri.build().toUri(),
-            null,
+            bidragBBMUri.pathSegment("opprettsoknad").build().toUri(),
+            request,
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun lagreBehandlingsid(request: LagreBehandlingsidRequest): Unit =
+        postForNonNullEntity(
+            bidragBBMUri.pathSegment("settbehandlingsid").build().toUri(),
+            request,
         )
 
     @Retryable(

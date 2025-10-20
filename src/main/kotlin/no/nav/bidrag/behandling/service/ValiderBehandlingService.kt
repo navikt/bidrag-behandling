@@ -70,7 +70,9 @@ class ValiderBehandlingService(
         val erInnkreving =
             listOf(Behandlingstype.INNKREVINGSGRUNNLAG, Behandlingstype.PRIVAT_AVTALE).contains(request.søknadstype) ||
                 request.vedtakstype == Vedtakstype.INNKREVING
-        if (request.søknadsbarn.size > 1 && !erInnkreving) return "Behandlingen har flere enn ett søknadsbarn"
+        if (request.søknadsbarn.size > 1 && !erInnkreving && !UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            return "Behandlingen har flere enn ett søknadsbarn"
+        }
 
         if (request.søknadstype == Behandlingstype.PRIVAT_AVTALE && !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled) {
             return "Kan ikke behandle privat avtale"

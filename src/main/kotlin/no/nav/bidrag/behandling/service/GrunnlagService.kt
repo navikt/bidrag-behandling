@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForTy
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsak
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -87,6 +88,7 @@ import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.RequestContextAsyncContext
 import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
@@ -477,7 +479,7 @@ class GrunnlagService(
         if (!behandling.erBidrag() || behandling.bidragspliktig == null) return emptyMap()
         val barnTilBp = personConsumer!!.hentPersonRelasjon(Personident(behandling.bidragspliktig!!.ident!!))
 
-        val barnUtenBidragssak = mutableListOf<Person>()
+        val barnUtenBidragssak = mutableListOf<BpsBarnUtenBidragsak>()
         val sakerBp = sakConsumer!!.hentSakerPerson(behandling.bidragspliktig!!.ident!!)
         val barnBpMedBidragssak =
             sakerBp.flatMap {
@@ -487,11 +489,11 @@ class GrunnlagService(
             val ident = barn.relatertPersonsIdent?.verdi ?: return@forEach
             if (!barnBpMedBidragssak.contains(ident)) {
                 barnUtenBidragssak.add(
-                    Person(
+                    BpsBarnUtenBidragsak(
                         Personident(ident),
                         hentPersonVisningsnavn(ident),
                         hentPersonFødselsdato(ident)!!,
-                        delAvOpprinneligBehandling = false,
+                        EnhetProvider.hentGeografiskTilknytningPerson(ident),
                     ),
                 )
             }
@@ -680,6 +682,10 @@ class GrunnlagService(
         secureLogger.debug { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
+            if (it.forholdsmessigFordeling?.bidragsmottaker != null) {
+                it.forholdsmessigFordeling!!.bidragsmottaker =
+                    oppdaterTilNyesteIdent(it.forholdsmessigFordeling!!.bidragsmottaker, behandling.id!!, "FF_$it")
+            }
         }
         behandling.grunnlag.forEach {
             it.gjelder = oppdaterTilNyesteIdent(it.gjelder, behandling.id!!, it.toString()) ?: it.gjelder

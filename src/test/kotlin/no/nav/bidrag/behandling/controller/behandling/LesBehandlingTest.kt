@@ -51,7 +51,7 @@ class LesBehandlingTest : BehandlingControllerTest() {
             roller shouldHaveSize 3
         }
 
-        assertSoftly(behandling.virkningstidspunkt) {
+        assertSoftly(behandling.virkningstidspunktV2.first()) {
             virkningstidspunkt shouldBe LocalDate.parse("2022-11-01")
             årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
             notat.kunINotat shouldBe "Notat virkningstidspunkt"

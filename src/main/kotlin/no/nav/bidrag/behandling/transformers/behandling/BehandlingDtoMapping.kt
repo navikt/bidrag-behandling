@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Notat
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
@@ -78,6 +79,7 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -111,6 +113,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
                         it.fødselsdato,
                         harInnvilgetTilleggsstønad = null,
                         delAvOpprinneligBehandling = it.forholdsmessigFordeling?.delAvOpprinneligBehandling == false,
+                        erRevurdering = it.forholdsmessigFordeling?.erRevurdering == false,
                     )
                 }.toSet(),
         søknadRefId = omgjøringsdetaljer?.soknadRefId,
@@ -130,6 +133,29 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
+fun Person.tilRolle(behandling: Behandling) =
+    Rolle(
+        behandling,
+        Rolletype.BARN,
+        ident,
+        fødselsdato,
+        LocalDateTime.now(),
+        id,
+        navn ?: hentPersonVisningsnavn(ident),
+    )
+
+fun Person.tilDto() =
+    RolleDto(
+        id!!,
+        Rolletype.BARN,
+        ident,
+        navn ?: hentPersonVisningsnavn(ident),
+        fødselsdato,
+        harInnvilgetTilleggsstønad = false,
+        delAvOpprinneligBehandling = false,
+        erRevurdering = false,
+    )
+
 fun Rolle.tilDto() =
     RolleDto(
         id!!,
@@ -139,6 +165,7 @@ fun Rolle.tilDto() =
         fødselsdato,
         harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
         delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == true,
+        erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
     )
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {

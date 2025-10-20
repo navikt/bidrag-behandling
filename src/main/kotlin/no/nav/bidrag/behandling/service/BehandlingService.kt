@@ -147,16 +147,20 @@ class BehandlingService(
 
         val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
         behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
+            val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
             behandling.roller.addAll(
                 HashSet(
                     opprettBehandling.roller.mapNotNull { opprettRolle ->
+
                         if (behandling.roller.none { it.ident == opprettRolle.ident!!.verdi }) {
                             val rolle = opprettRolle.toRolle(behandling)
                             rolle.forholdsmessigFordeling =
                                 ForholdsmessigFordelingRolle(
                                     tilhørerSak = opprettBehandling.saksnummer,
                                     delAvOpprinneligBehandling = true,
+                                    bidragsmottaker = bm?.ident?.verdi,
                                     behandlerEnhet = Enhetsnummer(opprettBehandling.behandlerenhet),
+                                    erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
                                 )
                             rolle
                         } else {

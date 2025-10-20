@@ -9,8 +9,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenBidragsakDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
@@ -136,10 +136,9 @@ data class BehandlingDtoV2(
     val sisteVedtakBeregnetUtNåværendeMåned: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
-    val bpsBarnUtenBidraggsak: Set<RolleDto>,
-    val virkningstidspunkt: VirkningstidspunktDto,
+    val bpsBarnUtenBidraggsak: Set<BpsBarnUtenBidragsakDto>,
     val virkningstidspunktV2: List<VirkningstidspunktBarnDtoV2> = emptyList(),
-    val virkningstidspunktV3: VirkningstidspunktDtoV3,
+    val virkningstidspunkt: VirkningstidspunktDtoV3,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
     val gebyr: GebyrDto? = null,

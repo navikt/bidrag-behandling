@@ -37,3 +37,35 @@ data class PartISøknad(
     val innbetaltBeløp: BigDecimal? = BigDecimal.ZERO,
     val gebyr: Boolean = false,
 )
+
+data class OpprettSøknaderRequest(
+    val opprettSøknadListe: List<OpprettSøknad>,
+)
+
+data class OpprettSøknaderResponse(
+    val opprettedeSøknaderPerSaksnrListe: List<OpprettedeSøknader>,
+)
+
+data class OpprettSøknad(
+    val saksnummer: String,
+//    val søknadFomDato: LocalDate,
+    val behandlingsid: String?,
+    val barnListe: List<Barn>,
+)
+
+data class Barn(
+    val personident: String,
+    val søknadFomDato: LocalDate,
+    val stønadstype: Stønadstype,
+    val innkreving: Boolean,
+)
+
+data class OpprettedeSøknader(
+    val saksnummer: String?,
+    val søknadsidListe: List<String> = emptyList(),
+)
+
+data class LagreBehandlingsidRequest(
+    val behandlingsid: String,
+    val søknadsid: String,
+)

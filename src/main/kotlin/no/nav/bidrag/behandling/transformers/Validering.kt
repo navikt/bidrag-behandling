@@ -42,6 +42,7 @@ import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
+import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -341,21 +342,28 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
     val notatPrivatAvtale = behandling.notater.find { it.type == NotatGrunnlag.NotatType.PRIVAT_AVTALE && rolle?.ident == it.rolle?.ident }
     return PrivatAvtaleValideringsfeilDto(
         privatAvtaleId = id!!,
-        gjelderPerson = rolle!!,
+        gjelderPerson = person?.tilDto() ?: rolle!!.tilDto(),
         manglerAvtaledato = utledetAvtaledato == null,
         manglerAvtaletype = avtaleType == null,
         perioderOverlapperMedLøpendeBidrag =
             if (behandling.erInnkreving) {
                 emptySet()
-            } else {
+            } else if (rolle != null) {
                 behandling.finnPerioderSomOverlapperMedLøpendeBidrag(
                     perioder.map {
                         it.tilDatoperiode()
                     },
                     rolle!!,
                 )
+            } else {
+                emptySet()
             },
-        ingenLøpendePeriode = perioderInnkreving.isEmpty() || behandling.manglerLøpendePeriode(perioderInnkreving, rolle!!),
+        ingenLøpendePeriode =
+            perioderInnkreving.isEmpty() || rolle != null &&
+                behandling.manglerLøpendePeriode(
+                    perioderInnkreving,
+                    rolle!!,
+                ),
         manglerBegrunnelse = !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
         måVelgeVedtakHvisAvtaletypeErVedtakFraNav =
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && valgtVedtakFraNav == null,

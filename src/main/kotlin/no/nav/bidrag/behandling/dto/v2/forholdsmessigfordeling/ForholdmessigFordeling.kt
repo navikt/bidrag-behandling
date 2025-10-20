@@ -10,6 +10,7 @@ data class ForholdmessigFordelingDetaljerDto(
 )
 
 data class SjekkForholdmessigFordelingResponse(
+    val skalBehandlesAvEnhet: String,
     val kanOppretteForholdsmessigFordeling: Boolean,
     val måOppretteForholdsmessigFordeling: Boolean = false,
     val barn: List<ForholdsmessigFordelingBarnDto> = emptyList(),
@@ -17,19 +18,22 @@ data class SjekkForholdmessigFordelingResponse(
 
 data class ForholdsmessigFordelingBarnDto(
     val ident: String,
-    val bidragsmottaker: RolleDto,
+    val bidragsmottaker: RolleDto?,
     val navn: String,
     val fødselsdato: LocalDate?,
     val saksnr: String,
     val enhet: String,
+    val erRevurdering: Boolean,
+    val harLøpendeBidrag: Boolean,
     val sammeSakSomBehandling: Boolean,
     @Schema(name = "åpenBehandling")
     val åpenBehandling: ForholdsmessigFordelingÅpenBehandlingDto?,
 )
 
 data class ForholdsmessigFordelingÅpenBehandlingDto(
-    val søktFraDato: LocalDate,
-    val mottattDato: LocalDate,
+    val søktFraDato: LocalDate?,
+    val mottattDato: LocalDate?,
     val stønadstype: Stønadstype,
     val behandlerEnhet: String,
+    val behandlingId: Long?,
 )
