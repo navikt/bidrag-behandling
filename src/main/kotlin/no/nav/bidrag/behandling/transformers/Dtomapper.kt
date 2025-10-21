@@ -294,7 +294,10 @@ class Dtomapper(
             bu.gjelderBarn.ident?.verdi == personIdent
         }?.perioder ?: emptySet()
 
-    fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Rolle): BeregnetPrivatAvtaleDto {
+    fun Behandling.tilBeregnetPrivatAvtale(
+        gjelderBarn: Rolle,
+        filtrerFraVirkningstidspunkt: Boolean = true,
+    ): BeregnetPrivatAvtaleDto {
         val privatAvtaleBeregning = vedtakGrunnlagMapper.tilBeregnetPrivatAvtale(this, gjelderBarn)
 
         val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
@@ -303,13 +306,12 @@ class Dtomapper(
             privatAvtaleBeregning
                 .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
                 .filter {
-                    !erInnkreving ||
-                        it.periode.til == null ||
+                    !erInnkreving || !filtrerFraVirkningstidspunkt || it.periode.til == null ||
                         it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
                 }.map {
                     BeregnetPrivatAvtalePeriodeDto(
                         periode =
-                            if (erInnkreving) {
+                            if (erInnkreving && filtrerFraVirkningstidspunkt) {
                                 Datoperiode(
                                     maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
                                     it.periode.til,
@@ -1037,7 +1039,7 @@ class Dtomapper(
                 if (skalIndeksreguleres &&
                     perioderInnkreving.isNotEmpty()
                 ) {
-                    behandling.tilBeregnetPrivatAvtale(rolle!!)
+                    behandling.tilBeregnetPrivatAvtale(rolle!!, false)
                 } else {
                     null
                 },
