@@ -284,10 +284,10 @@ class BeregningService(
                                             BeregnetBarnebidragResultat(
                                                 beregnetBarnebidragPeriodeListe = it.periodeListe,
                                                 grunnlagListe =
-                                                    if (it.delvedtak) {
-                                                        it.grunnlagslisteDelvedtak
-                                                    } else if (it.omgjøringsvedtak) {
+                                                    if (it.omgjøringsvedtak) {
                                                         grunnlagBarn + grunnlagBeregning.grunnlagsliste
+                                                    } else if (it.delvedtak) {
+                                                        it.grunnlagslisteDelvedtak
                                                     } else {
                                                         grunnlagBarn
                                                     },
