@@ -216,7 +216,7 @@ class BehandlingTilVedtakMapping(
     fun byggOpprettVedtakRequestInnkreving(
         behandling: Behandling,
         enhet: String?,
-        skalIndeksreguleres: Boolean,
+        skalIndeksreguleres: Map<String, Boolean>,
     ): OpprettVedtakRequestDto {
         val beregning = beregningService.beregneBidrag(behandling.id!!)
 
@@ -300,7 +300,14 @@ class BehandlingTilVedtakMapping(
                             grunnlagReferanseListe =
                                 stønadsendringGrunnlag.map { it.referanse } + resultatFraAnnenVedtakGrunnlag.map { it.referanse },
                             periodeListe = periodeliste + opphørPeriode,
-                            førsteIndeksreguleringsår = if (skalIndeksreguleres) Year.now().plusYears(1).value else null,
+                            førsteIndeksreguleringsår =
+                                if (skalIndeksreguleres[søknadsbarn.ident] ==
+                                    true
+                                ) {
+                                    Year.now().plusYears(1).value
+                                } else {
+                                    null
+                                },
                         )
                     },
             )
