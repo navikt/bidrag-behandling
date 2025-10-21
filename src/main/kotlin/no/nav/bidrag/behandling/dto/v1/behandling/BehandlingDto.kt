@@ -69,7 +69,7 @@ data class ManuellVedtakDto(
 
 data class VirkningstidspunktDtoV3(
     val erLikForAlle: Boolean,
-    val minsteVirkningstidspunkt: YearMonth,
+    val tidligsteVirkningstidspunkt: YearMonth,
     val barn: List<VirkningstidspunktBarnDtoV2>,
 )
 

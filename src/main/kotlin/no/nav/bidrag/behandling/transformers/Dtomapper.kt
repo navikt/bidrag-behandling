@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
-import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
@@ -23,7 +22,6 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
-import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
@@ -300,7 +298,10 @@ class Dtomapper(
             bu.gjelderBarn.ident?.verdi == personIdent
         }?.perioder ?: emptySet()
 
-    fun Behandling.tilBeregnetPrivatAvtale(gjelderBarn: Rolle): BeregnetPrivatAvtaleDto {
+    fun Behandling.tilBeregnetPrivatAvtale(
+        gjelderBarn: Rolle,
+        filtrerFraVirkningstidspunkt: Boolean = true,
+    ): BeregnetPrivatAvtaleDto {
         val privatAvtaleBeregning = vedtakGrunnlagMapper.tilBeregnetPrivatAvtale(this, gjelderBarn)
 
         val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
@@ -309,13 +310,12 @@ class Dtomapper(
             privatAvtaleBeregning
                 .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
                 .filter {
-                    !erInnkreving ||
-                        it.periode.til == null ||
+                    !erInnkreving || !filtrerFraVirkningstidspunkt || it.periode.til == null ||
                         it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
                 }.map {
                     BeregnetPrivatAvtalePeriodeDto(
                         periode =
-                            if (erInnkreving) {
+                            if (erInnkreving && filtrerFraVirkningstidspunkt) {
                                 Datoperiode(
                                     maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
                                     it.periode.til,
@@ -831,7 +831,7 @@ class Dtomapper(
             virkningstidspunkt =
                 VirkningstidspunktDtoV3(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
-                    minsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
+                    tidligsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarn(),
                 ),
             virkningstidspunktV2 = mapVirkningstidspunktAlleBarn(),
@@ -1082,7 +1082,7 @@ class Dtomapper(
                 if (skalIndeksreguleres &&
                     perioderInnkreving.isNotEmpty()
                 ) {
-                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling)!!)
+                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling)!!, false)
                 } else {
                     null
                 },
