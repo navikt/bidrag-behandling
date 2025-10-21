@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
-import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
@@ -22,7 +21,6 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
-import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
@@ -799,7 +797,7 @@ class Dtomapper(
             virkningstidspunkt =
                 VirkningstidspunktDtoV3(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
-                    minsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
+                    tidligsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarn(),
                 ),
             virkningstidspunktV2 = mapVirkningstidspunktAlleBarn(),
