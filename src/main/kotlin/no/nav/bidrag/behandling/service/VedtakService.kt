@@ -218,7 +218,7 @@ class VedtakService(
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
 
             tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
-            val behandlingDo = behandlingService.lagreBehandling(konvertertBehandling)
+            val behandlingDo = behandlingService.lagreBehandling(konvertertBehandling, true)
             grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
             if (behandlingDo.erBidrag()) {
                 behandlingDo.søknadsbarn.forEach { rolle ->
@@ -526,7 +526,7 @@ class VedtakService(
             behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkreving(
                 behandling,
                 request?.enhet,
-                request?.skalIndeksreguleres ?: true,
+                request?.skalIndeksreguleres ?: emptyMap(),
             )
 
         innkrevingRequest.validerGrunnlagsreferanser()
