@@ -100,7 +100,10 @@ class BehandlingService(
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
 
-    fun lagreBehandling(behandling: Behandling): Behandling {
+    fun lagreBehandling(
+        behandling: Behandling,
+        opprettForsendelse: Boolean = false,
+    ): Behandling {
         val oppretterBehandling = behandling.id == null
         val lagretBehandling =
             if (oppretterBehandling) {
@@ -116,7 +119,7 @@ class BehandlingService(
                 BehandlingHendelseType.ENDRET
             },
         )
-        if (behandling.vedtakstype.opprettForsendelse() && oppretterBehandling) {
+        if (behandling.vedtakstype.opprettForsendelse() && (oppretterBehandling || opprettForsendelse)) {
             opprettForsendelseForBehandling(lagretBehandling)
         }
         return lagretBehandling
