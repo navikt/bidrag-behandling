@@ -1028,6 +1028,17 @@ class Dtomapper(
                 }
             }
 
+    private fun Behandling.bpsBarnUtenBidragssak(): Set<BpsBarnUtenBidragsakDto> =
+        grunnlag
+            .hentSisteGrunnlagBpsBarnUtenBidragsak()
+            ?.map {
+                BpsBarnUtenBidragsakDto(
+                    ident = it.ident.verdi,
+                    fødselsdato = it.fødselsdato,
+                    navn = it.navn,
+                )
+            }?.toSet() ?: emptySet()
+
     fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
         PrivatAvtaleDto(
             id = id!!,

@@ -117,7 +117,6 @@ import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
@@ -138,6 +137,7 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
 import org.springframework.core.task.TaskExecutor
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -165,6 +165,8 @@ class GrunnlagService(
     private val behandlngRepository: BehandlingRepository? = null,
     private val sakConsumer: BidragSakConsumer? = null,
     private val personConsumer: BidragPersonConsumer? = null,
+    @Lazy
+    private val ffService: ForholdsmessigFordelingService? = null,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
     lateinit var grenseInnhenting: String
@@ -230,6 +232,9 @@ class GrunnlagService(
                     },
                     scope.async {
                         lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
+                    },
+                    scope.async {
+                        lagreBpsBarnUtenBidragsak(behandling).lagreFeilrapportering()
                     },
                 )
             if (behandling.vedtakstype.kreverGrunnlag()) {
@@ -479,25 +484,35 @@ class GrunnlagService(
         if (!behandling.erBidrag() || behandling.bidragspliktig == null) return emptyMap()
         val barnTilBp = personConsumer!!.hentPersonRelasjon(Personident(behandling.bidragspliktig!!.ident!!))
 
-        val barnUtenBidragssak = mutableListOf<BpsBarnUtenBidragsak>()
+        val åpneSakerBp = ffService!!.hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
         val sakerBp = sakConsumer!!.hentSakerPerson(behandling.bidragspliktig!!.ident!!)
+        val barnBpMedÅpenSøknad = åpneSakerBp.map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
         val barnBpMedBidragssak =
             sakerBp.flatMap {
-                it.roller.filter { it.type == Rolletype.BARN && it.fødselsnummer != null }.map { it.fødselsnummer!!.verdi }
+                it.roller
+                    .filter {
+                        it.type == Rolletype.BARN
+                    }.map { it.fødselsnummer!!.verdi }
             }
-        barnTilBp.forelderBarnRelasjon.filter { it.erRelatertPersonsBarn() }.sortedBy { it.relatertPersonsIdent?.verdi }.forEach { barn ->
-            val ident = barn.relatertPersonsIdent?.verdi ?: return@forEach
-            if (!barnBpMedBidragssak.contains(ident)) {
-                barnUtenBidragssak.add(
-                    BpsBarnUtenBidragsak(
-                        Personident(ident),
-                        hentPersonVisningsnavn(ident),
-                        hentPersonFødselsdato(ident)!!,
-                        EnhetProvider.hentGeografiskTilknytningPerson(ident),
-                    ),
+        val barnMedBidragssakUtenLøpendeBidrag = barnBpMedBidragssak.filter { !barnBpMedÅpenSøknad.contains(it) }
+        val barnUtenBidragsak =
+            barnTilBp.forelderBarnRelasjon
+                .filter { it.erRelatertPersonsBarn() }
+                .sortedBy { it.relatertPersonsIdent?.verdi }
+                .filter { barn ->
+                    val ident = barn.relatertPersonsIdent?.verdi ?: return@filter false
+                    !barnBpMedBidragssak.contains(ident)
+                }.map { it.relatertPersonsIdent!!.verdi }
+        val barnUtenBidragsakEllerUtenLøpendeBidrag = barnUtenBidragsak + barnMedBidragssakUtenLøpendeBidrag
+        val barnUtenBidragssak =
+            barnUtenBidragsakEllerUtenLøpendeBidrag.map { barn ->
+                BpsBarnUtenBidragsak(
+                    Personident(barn),
+                    hentPersonVisningsnavn(barn),
+                    hentPersonFødselsdato(barn)!!,
+                    EnhetProvider.hentGeografiskTilknytningPerson(barn),
                 )
             }
-        }
 
         val eksisterendeVerdi = behandling.grunnlag.hentSisteGrunnlagBpsBarnUtenBidragsak()
 
@@ -1484,10 +1499,10 @@ class GrunnlagService(
                     grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
                         behandling.underholdskostnader
                             .find { it.rolle?.personident?.verdi == barnetilsyn.key }
-                            ?.let {
-                                if (it.barnetilsyn.isEmpty()) {
-                                    it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
-                                    it.harTilsynsordning = true
+                            ?.apply {
+                                if (this.barnetilsyn.isEmpty()) {
+                                    this.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(this))
+                                    this.harTilsynsordning = true
                                 }
                             }
                     }

@@ -58,9 +58,12 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponseV2
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningResultatBarnV2
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtakV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
@@ -502,40 +505,43 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegning(any()) } returns
-            BidragsberegningOrkestratorResponse(
-                listOf(
-                    ResultatVedtak(
-                        vedtakstype = Vedtakstype.KLAGE,
-                        omgjøringsvedtak = true,
-                        beregnet = true,
-                        resultat =
-                            BeregnetBarnebidragResultat(
-                                listOf(
-                                    ResultatPeriode(
-                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                        resultat = ResultatBeregning(BigDecimal.ZERO),
-                                        grunnlagsreferanseListe = emptyList(),
-                                    ),
+        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+            BidragsberegningOrkestratorResponseV2(
+                grunnlagListe = emptyList(),
+                resultat =
+                    listOf(
+                        BidragsberegningResultatBarnV2(
+                            "",
+                            listOf(
+                                ResultatVedtakV2(
+                                    vedtakstype = Vedtakstype.KLAGE,
+                                    omgjøringsvedtak = true,
+                                    beregnet = true,
+                                    periodeListe =
+                                        listOf(
+                                            ResultatPeriode(
+                                                periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                                resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                grunnlagsreferanseListe = emptyList(),
+                                            ),
+                                        ),
+                                ),
+                                ResultatVedtakV2(
+                                    vedtakstype = Vedtakstype.KLAGE,
+                                    omgjøringsvedtak = false,
+                                    beregnet = true,
+                                    periodeListe =
+                                        listOf(
+                                            ResultatPeriode(
+                                                periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                                resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                grunnlagsreferanseListe = emptyList(),
+                                            ),
+                                        ),
                                 ),
                             ),
+                        ),
                     ),
-                    ResultatVedtak(
-                        vedtakstype = Vedtakstype.KLAGE,
-                        omgjøringsvedtak = false,
-                        beregnet = true,
-                        resultat =
-                            BeregnetBarnebidragResultat(
-                                listOf(
-                                    ResultatPeriode(
-                                        periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                        resultat = ResultatBeregning(BigDecimal.ZERO),
-                                        grunnlagsreferanseListe = emptyList(),
-                                    ),
-                                ),
-                            ),
-                    ),
-                ),
             )
         behandling.leggTilGrunnlagBeløpshistorikk(
             Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,

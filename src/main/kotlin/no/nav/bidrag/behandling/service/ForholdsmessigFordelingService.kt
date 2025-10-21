@@ -4,11 +4,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.dto.LagreBehandlingsidRequest
+import no.nav.bidrag.behandling.consumer.dto.OppdaterBehandlingsidRequest
 import no.nav.bidrag.behandling.consumer.dto.OpprettSøknad
 import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderRequest
-import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderResponse
-import no.nav.bidrag.behandling.consumer.dto.OpprettedeSøknader
 import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -33,7 +31,6 @@ import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFor
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -47,10 +44,8 @@ import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
-import no.nav.bidrag.transport.sak.BidragssakDto
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.client.RestClientResponseException
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.collections.plus
@@ -60,6 +55,8 @@ private val LOGGER = KotlinLogging.logger {}
 data class SakKravhaver(
     val saksnummer: String,
     val kravhaver: String,
+    val bidragsmottaker: String? = null,
+    val eierfogd: String? = null,
     val åpenSøknad: ÅpenSøknadDto? = null,
     val åpenBehandling: Behandling? = null,
     val harLøpendeBidrag: Boolean = true,
@@ -84,22 +81,19 @@ class ForholdsmessigFordelingService(
 //            )
 //        }
         val originalBM = behandling.bidragsmottaker!!.ident
+        val behandlerEnhet = finnEnhetForBarnIBehandling(behandling)
         overførÅpneBehandlingTilHovedbehandling(behandling)
         overførÅpneBisysSøknaderTilBehandling(behandling)
-        val bidragssakerBpUtenLøpendeBidrag =
-            hentSakerUtenLøpendeBidrag(behandling).flatMap { sak ->
-                sak.roller
-                    .filter { it.type == Rolletype.BARN }
-                    .map { SakKravhaver(sak.saksnummer.verdi, it.fødselsnummer!!.verdi, harLøpendeBidrag = false) }
-            }
+        val bidragssakerBpUtenLøpendeBidrag = hentBarnUtenLøpendeBidrag(behandling)
+
         val bidraggsakerBPMedLøpendeBidrag =
             hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!))
-                .map { SakKravhaver(it.sak.verdi, it.kravhaver.verdi) }
+                .map { SakKravhaver(saksnummer = it.sak.verdi, kravhaver = it.kravhaver.verdi, eierfogd = "9999") }
 
         val bidragssakerBp = bidragssakerBpUtenLøpendeBidrag + bidraggsakerBPMedLøpendeBidrag
 
         bidragssakerBp.groupBy { it.saksnummer }.forEach { (saksnummer, løpendebidragssaker) ->
-            opprettRollerForSak(behandling, saksnummer, løpendebidragssaker)
+            opprettRollerForSak(behandling, saksnummer, løpendebidragssaker, behandlerEnhet)
         }
         behandling.forholdsmessigFordeling =
             ForholdsmessigFordeling(
@@ -188,34 +182,32 @@ class ForholdsmessigFordelingService(
 
         val åpneLøpendeSakerBp = hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
         val sakerUtenLøpendeBidrag =
-            hentSakerUtenLøpendeBidrag(behandling, åpneLøpendeSakerBp)
-                .flatMap { sak ->
-                    sak.roller.filter { it.type == Rolletype.BARN }.map { barn ->
-                        val barnIdent = barn.fødselsnummer!!.verdi
-                        ForholdsmessigFordelingBarnDto(
-                            ident = barnIdent,
-                            navn = hentPersonVisningsnavn(barnIdent) ?: "Ukjent",
-                            fødselsdato = hentPersonFødselsdato(barnIdent),
-                            saksnr = sak.saksnummer.verdi,
-                            sammeSakSomBehandling = false,
-                            erRevurdering = true,
-                            enhet = sak.eierfogd.verdi,
-                            åpenBehandling = null,
-                            harLøpendeBidrag = false,
-                            bidragsmottaker =
-                                sak.bidragsmottaker?.let {
-                                    RolleDto(
-                                        id = -1,
-                                        ident = it.fødselsnummer!!.verdi,
-                                        rolletype = Rolletype.BIDRAGSMOTTAKER,
-                                        navn = hentPersonVisningsnavn(it.fødselsnummer!!.verdi) ?: "Ukjent",
-                                        fødselsdato = hentPersonFødselsdato(it.fødselsnummer!!.verdi),
-                                        delAvOpprinneligBehandling = false,
-                                        erRevurdering = false,
-                                    )
-                                },
-                        )
-                    }
+            hentBarnUtenLøpendeBidrag(behandling, åpneLøpendeSakerBp)
+                .map { sakKravhaver ->
+                    val barnIdent = sakKravhaver.kravhaver
+                    ForholdsmessigFordelingBarnDto(
+                        ident = barnIdent,
+                        navn = hentPersonVisningsnavn(barnIdent) ?: "Ukjent",
+                        fødselsdato = hentPersonFødselsdato(barnIdent),
+                        saksnr = sakKravhaver.saksnummer,
+                        sammeSakSomBehandling = false,
+                        erRevurdering = true,
+                        enhet = sakKravhaver.eierfogd!!,
+                        åpenBehandling = null,
+                        harLøpendeBidrag = false,
+                        bidragsmottaker =
+                            sakKravhaver.bidragsmottaker?.let {
+                                RolleDto(
+                                    id = -1,
+                                    ident = it,
+                                    rolletype = Rolletype.BIDRAGSMOTTAKER,
+                                    navn = hentPersonVisningsnavn(it) ?: "Ukjent",
+                                    fødselsdato = hentPersonFødselsdato(it),
+                                    delAvOpprinneligBehandling = false,
+                                    erRevurdering = false,
+                                )
+                            },
+                    )
                 }
         val bidragsaker =
             åpneLøpendeSakerBp
@@ -273,24 +265,35 @@ class ForholdsmessigFordelingService(
         )
     }
 
-    private fun hentSakerUtenLøpendeBidrag(
+    private fun hentBarnUtenLøpendeBidrag(
         behandling: Behandling,
         sakerMedLøpendeBidrag: Set<SakKravhaver>? = null,
-    ): List<BidragssakDto> {
+    ): List<SakKravhaver> {
         val sakerMedLøpendeBidrag = sakerMedLøpendeBidrag ?: hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
 
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
-        val sakerMedLøpendeBidragEllerErDelAvBehandling =
-            sakerMedLøpendeBidrag.map { it.saksnummer } +
-                behandling.søknadsbarn.mapNotNull {
-                    it.forholdsmessigFordeling?.tilhørerSak
-                }
+        val søknadsbarnIdenter =
+            sakerMedLøpendeBidrag.map { it.kravhaver } +
+                behandling.søknadsbarn.mapNotNull { it.ident }
 
         val sakerBp = sakConsumer.hentSakerPerson(bidragspliktigFnr)
-        return sakerBp.filter {
-            behandling.saksnummer != it.saksnummer.verdi &&
-                !sakerMedLøpendeBidragEllerErDelAvBehandling.contains(it.saksnummer.verdi)
-        }
+        return sakerBp
+            .filter { behandling.saksnummer != it.saksnummer.verdi }
+            .flatMap { sak ->
+                val barn =
+                    sak.roller
+                        .filter { it.type == Rolletype.BARN }
+                        .filter { it.fødselsnummer != null && !søknadsbarnIdenter.contains(it.fødselsnummer!!.verdi) }
+                barn.map {
+                    SakKravhaver(
+                        kravhaver = it.fødselsnummer!!.verdi,
+                        saksnummer = sak.saksnummer.verdi,
+                        harLøpendeBidrag = false,
+                        eierfogd = sak.eierfogd.verdi,
+                        bidragsmottaker = sak.bidragsmottaker?.fødselsnummer?.verdi,
+                    )
+                }
+            }.filter { barn -> behandling.privatAvtale.any { it.personIdent == barn.kravhaver } }
     }
 
     fun overførÅpneBisysSøknaderTilBehandling(behandling: Behandling) {
@@ -330,13 +333,10 @@ class ForholdsmessigFordelingService(
                     ffDetaljer = ffDetaljer,
                 )
             }
-            try {
-                bbmConsumer.lagreBehandlingsid(LagreBehandlingsidRequest(behandling.id!!.toString(), åpenSøknad.søknadsid))
-            } catch (e: Exception) {
-            }
+            bbmConsumer.lagreBehandlingsid(
+                OppdaterBehandlingsidRequest(åpenSøknad.behandlingsid, behandling.id!!.toString(), åpenSøknad.søknadsid),
+            )
         }
-
-        // TODO: Kall BBM for å lagre behandlingid
     }
 
     @Transactional
@@ -536,6 +536,7 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         saksnummer: String,
         løpendeBidragssak: List<SakKravhaver>,
+        behandlerEnhet: String,
     ) {
         val sak = sakConsumer.hentSak(saksnummer)
 
@@ -548,6 +549,7 @@ class ForholdsmessigFordelingService(
                 OpprettSøknad(
                     saksnummer = saksnummer,
                     behandlingsid = behandling.id.toString(),
+                    enhet = behandlerEnhet,
                     barnListe =
                         listOf(
                             no.nav.bidrag.behandling.consumer.dto.Barn(
@@ -559,12 +561,8 @@ class ForholdsmessigFordelingService(
                         ),
                 )
             }
-        val response =
-            try {
-                bbmConsumer.opprettSøknader(OpprettSøknaderRequest(opprettSøknader))
-            } catch (e: RestClientResponseException) {
-                OpprettSøknaderResponse(listOf(OpprettedeSøknader(saksnummer, listOf("13213"))))
-            }
+        val response = bbmConsumer.opprettSøknader(OpprettSøknaderRequest(opprettSøknader))
+
         val søknadsid =
             response.opprettedeSøknaderPerSaksnrListe
                 .first()
@@ -729,7 +727,7 @@ class ForholdsmessigFordelingService(
             ),
     )
 
-    private fun hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling: Behandling): Set<SakKravhaver> {
+    fun hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling: Behandling): Set<SakKravhaver> {
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr))
         val åpneBehandlinger = behandlingRepository.finnÅpneBidragsbehandlingerForBp(bidragspliktigFnr, behandling.id!!)
@@ -737,10 +735,17 @@ class ForholdsmessigFordelingService(
 
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
         val bidragsaker =
-            løpendeBidraggsakerBP.map { SakKravhaver(it.sak.verdi, it.kravhaver.verdi) } +
+            løpendeBidraggsakerBP.map { SakKravhaver(saksnummer = it.sak.verdi, kravhaver = it.kravhaver.verdi) } +
                 åpneSøknader.tilSakKravhaver() +
                 åpneBehandlinger.flatMap { behandling ->
-                    behandling.søknadsbarn.map { SakKravhaver(behandling.saksnummer, it.ident!!, åpenBehandling = behandling) }
+                    behandling.søknadsbarn.map {
+                        SakKravhaver(
+                            saksnummer = behandling.saksnummer,
+                            kravhaver = it.ident!!,
+                            åpenBehandling = behandling,
+                            eierfogd = behandling.behandlerEnhet,
+                        )
+                    }
                 }
         return bidragsaker
             .filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
@@ -759,7 +764,7 @@ class ForholdsmessigFordelingService(
     private fun List<ÅpenSøknadDto>.tilSakKravhaver() =
         flatMap { åpenSøknad ->
             åpenSøknad.partISøknadListe.filter { it.rolletype == Rolletype.BARN.name }.map { barnFnr ->
-                SakKravhaver(åpenSøknad.saksnummer, barnFnr.personident!!, åpenSøknad)
+                SakKravhaver(åpenSøknad.saksnummer, kravhaver = barnFnr.personident!!, åpenSøknad = åpenSøknad)
             }
         }
 }

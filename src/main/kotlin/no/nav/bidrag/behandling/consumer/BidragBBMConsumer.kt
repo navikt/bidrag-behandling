@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderRequest
 import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderResponse
-import no.nav.bidrag.behandling.consumer.dto.LagreBehandlingsidRequest
+import no.nav.bidrag.behandling.consumer.dto.OppdaterBehandlingsidRequest
 import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderRequest
 import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderResponse
 import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
@@ -54,7 +54,7 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun lagreBehandlingsid(request: LagreBehandlingsidRequest): Unit =
+    fun lagreBehandlingsid(request: OppdaterBehandlingsidRequest): Unit =
         postForNonNullEntity(
             bidragBBMUri.pathSegment("settbehandlingsid").build().toUri(),
             request,

@@ -48,7 +48,7 @@ data class OpprettSøknaderResponse(
 
 data class OpprettSøknad(
     val saksnummer: String,
-//    val søknadFomDato: LocalDate,
+    val enhet: String,
     val behandlingsid: String?,
     val barnListe: List<Barn>,
 )
@@ -65,7 +65,8 @@ data class OpprettedeSøknader(
     val søknadsidListe: List<String> = emptyList(),
 )
 
-data class LagreBehandlingsidRequest(
-    val behandlingsid: String,
+data class OppdaterBehandlingsidRequest(
+    val eksisterendeBehandlingsid: String? = null,
+    val nyBehandlingsid: String,
     val søknadsid: String,
 )
