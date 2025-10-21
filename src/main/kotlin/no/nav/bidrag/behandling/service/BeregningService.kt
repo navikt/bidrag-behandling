@@ -258,6 +258,7 @@ class BeregningService(
                         val gjelderErBm =
                             resultat.grunnlagListe.hentPersonMedReferanse(it.gjelderReferanse)?.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER
                         it.gjelderBarnReferanse == null || !gjelderErBm ||
+                            grunnlagSøknadsbarn.personObjekt.bidragsmottaker == null ||
                             it.gjelderReferanse == grunnlagSøknadsbarn.personObjekt.bidragsmottaker
                     }
                 val endeligResultat =
@@ -283,7 +284,9 @@ class BeregningService(
                                             BeregnetBarnebidragResultat(
                                                 beregnetBarnebidragPeriodeListe = it.periodeListe,
                                                 grunnlagListe =
-                                                    if (it.omgjøringsvedtak) {
+                                                    if (it.delvedtak) {
+                                                        it.grunnlagslisteDelvedtak
+                                                    } else if (it.omgjøringsvedtak) {
                                                         grunnlagBarn + grunnlagBeregning.grunnlagsliste
                                                     } else {
                                                         grunnlagBarn

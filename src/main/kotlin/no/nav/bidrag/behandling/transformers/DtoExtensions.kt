@@ -57,7 +57,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         opphørsdato = null,
         virkningstidspunkt =
             if (rolletype == Rolletype.BARN) {
-                maxOf(fødselsdatoPerson, behandling.virkningstidspunktEllerSøktFomDato)
+                maxOf(fødselsdatoPerson.withDayOfMonth(1), behandling.virkningstidspunktEllerSøktFomDato)
             } else {
                 null
             },
