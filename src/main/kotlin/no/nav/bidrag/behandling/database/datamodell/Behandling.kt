@@ -238,6 +238,8 @@ open class Behandling(
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
     val globalVirkningstidspunkt get() =
         søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt ?: søktFomDato
+    val erAvslagForAlle get() =
+        søknadsbarn.all { it.avslag != null }
 
     val globalOpphørsdato get() =
         if (søknadsbarn.any { it.opphørsdato == null }) {
