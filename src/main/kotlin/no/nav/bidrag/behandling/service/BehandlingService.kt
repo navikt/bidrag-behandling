@@ -77,6 +77,7 @@ class BehandlingService(
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
     private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
+    private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
 //    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
@@ -501,7 +502,7 @@ class BehandlingService(
             behandling.roller
                 .filter { identerSomSkalSlettes.contains(it.ident) }
                 .forEach {
-                    it.forholdsmessigFordeling!!.erRevurdering = true
+                    forholdsmessigFordelingService?.slettBarnFraBehandlingFF(it, behandling)
                 }
         } else {
             behandling.roller.removeIf { r ->

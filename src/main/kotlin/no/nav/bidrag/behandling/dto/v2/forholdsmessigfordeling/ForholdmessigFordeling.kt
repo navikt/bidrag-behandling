@@ -36,4 +36,5 @@ data class ForholdsmessigFordelingÅpenBehandlingDto(
     val stønadstype: Stønadstype,
     val behandlerEnhet: String,
     val behandlingId: Long?,
+    val søknadsid: Long?,
 )

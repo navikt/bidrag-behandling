@@ -784,6 +784,7 @@ class Dtomapper(
                                             stønadstype = barn.stønadstype ?: Stønadstype.BIDRAG,
                                             behandlerEnhet = barn.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: "",
                                             behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
+                                            søknadsid = barn.forholdsmessigFordeling?.søknadsid,
                                         ),
                                     enhet = barn.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: "",
                                 )

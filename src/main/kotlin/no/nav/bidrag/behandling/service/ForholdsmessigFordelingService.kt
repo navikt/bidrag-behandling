@@ -40,6 +40,8 @@ import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
+import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
@@ -52,9 +54,9 @@ import java.time.LocalDate
 import kotlin.collections.plus
 
 private val LOGGER = KotlinLogging.logger {}
-val ÅpenSøknadDto.bidragsmottaker get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER.name || it.rolletype == "BM" }
-val ÅpenSøknadDto.bidragspliktig get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG.name || it.rolletype == "BP" }
-val ÅpenSøknadDto.barn get() = partISøknadListe.filter { it.rolletype == Rolletype.BARN.name || it.rolletype == "BA" }
+val ÅpenSøknadDto.bidragsmottaker get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+val ÅpenSøknadDto.bidragspliktig get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+val ÅpenSøknadDto.barn get() = partISøknadListe.filter { it.rolletype == Rolletype.BARN }
 
 data class SakKravhaver(
     val saksnummer: String,
@@ -86,6 +88,7 @@ class ForholdsmessigFordelingService(
 //        }
         val originalBM = behandling.bidragsmottaker!!.ident
         val behandlerEnhet = finnEnhetForBarnIBehandling(behandling)
+        giSakTilgangTilEnhet(behandling, behandlerEnhet)
         overførÅpneBehandlingTilHovedbehandling(behandling)
         overførÅpneBisysSøknaderTilBehandling(behandling)
         val bidragssakerBpUtenLøpendeBidrag = hentBarnUtenLøpendeBidrag(behandling)
@@ -125,6 +128,16 @@ class ForholdsmessigFordelingService(
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
     }
 
+    private fun giSakTilgangTilEnhet(
+        behandling: Behandling,
+        behandlerEnhet: String,
+    ) {
+        if (behandlerEnhet == behandling.behandlerEnhet) return
+        behandling.behandlerEnhet = behandlerEnhet
+        // TODO: Kall bidrag-sak gi midlertidlig tilgang
+        bbmConsumer.lagreBehandlerEnhet(OppdaterBehandlerenhetRequest(behandlerEnhet, behandling.soknadsid.toString()))
+    }
+
     fun slettBarnFraBehandlingFF(
         barn: Rolle,
         behandling: Behandling,
@@ -144,7 +157,13 @@ class ForholdsmessigFordelingService(
         if (åpenFFBehandling != null) {
             barn.forholdsmessigFordeling!!.søknadFomDato = åpenFFBehandling.søknadFomDato
             barn.forholdsmessigFordeling!!.søknadsid = åpenFFBehandling.søknadsid.toLong()
-            // TODO: Legg til barn i søknad
+            bbmConsumer.leggTilBarnISøknad(
+                LeggTilBarnIFFSøknadRequest(
+                    åpenFFBehandling.søknadsid,
+                    barn.ident!!,
+                    barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                ),
+            )
         } else {
             val søknad =
                 bbmConsumer.opprettSøknader(
@@ -274,6 +293,7 @@ class ForholdsmessigFordelingService(
                                     stønadstype = lb.åpenBehandling.stonadstype!!,
                                     behandlerEnhet = lb.åpenBehandling.behandlerEnhet,
                                     behandlingId = lb.åpenBehandling.id,
+                                    søknadsid = null,
                                 )
                             } else if (lb.åpenSøknad != null) {
                                 ForholdsmessigFordelingÅpenBehandlingDto(
@@ -282,6 +302,7 @@ class ForholdsmessigFordelingService(
                                     søktFraDato = LocalDate.now(),
                                     mottattDato = LocalDate.now(),
                                     behandlingId = null,
+                                    søknadsid = lb.åpenSøknad.søknadsid.toLong(),
                                 )
                             } else {
                                 null
@@ -339,7 +360,7 @@ class ForholdsmessigFordelingService(
 
     fun overførÅpneBisysSøknaderTilBehandling(behandling: Behandling) {
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
-        val åpneSøknader = bbmConsumer.hentÅpneSøknaderForBp(bidragspliktigFnr).åpneSøknader
+        val åpneSøknader = hentÅpneSøknader(bidragspliktigFnr)
         åpneSøknader.forEach { åpenSøknad ->
 
             val sak = sakConsumer.hentSak(åpenSøknad.saksnummer)
@@ -377,8 +398,21 @@ class ForholdsmessigFordelingService(
             bbmConsumer.lagreBehandlingsid(
                 OppdaterBehandlingsidRequest(åpenSøknad.behandlingsid, behandling.id!!.toString(), åpenSøknad.søknadsid),
             )
+            if (sak.eierfogd.verdi != behandling.behandlerEnhet) {
+                bbmConsumer.lagreBehandlerEnhet(OppdaterBehandlerenhetRequest(behandling.behandlerEnhet, åpenSøknad.søknadsid))
+                // TODO: Gi midlertidlig tilgang til sak enhet
+            }
         }
     }
+
+    private fun hentÅpneSøknader(bidragspliktigFnr: String) =
+        bbmConsumer
+            .hentÅpneSøknaderForBp(bidragspliktigFnr)
+            .åpneSøknader
+            .sortedWith(
+                compareByDescending<ÅpenSøknadDto> { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+                    .thenBy { it.søknadFomDato },
+            ).distinctBy { it.saksnummer }
 
     @Transactional
     fun overførÅpneBehandlingTilHovedbehandling(behandling: Behandling) {
@@ -439,6 +473,7 @@ class ForholdsmessigFordelingService(
                     )
                 }
 
+            giSakTilgangTilEnhet(behandlingOverført, behandling.behandlerEnhet)
             behandlingService.lagreBehandling(behandlingOverført)
         }
     }
@@ -767,7 +802,7 @@ class ForholdsmessigFordelingService(
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr))
         val åpneBehandlinger = behandlingRepository.finnÅpneBidragsbehandlingerForBp(bidragspliktigFnr, behandling.id!!)
-        val åpneSøknader = bbmConsumer.hentÅpneSøknaderForBp(bidragspliktigFnr).åpneSøknader
+        val åpneSøknader = hentÅpneSøknader(bidragspliktigFnr)
 
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
         val bidragsaker =
@@ -799,7 +834,7 @@ class ForholdsmessigFordelingService(
 
     private fun List<ÅpenSøknadDto>.tilSakKravhaver() =
         flatMap { åpenSøknad ->
-            åpenSøknad.partISøknadListe.filter { it.rolletype == Rolletype.BARN.name || it.rolletype == "BA" }.map { barnFnr ->
+            åpenSøknad.partISøknadListe.filter { it.rolletype == Rolletype.BARN }.map { barnFnr ->
                 SakKravhaver(åpenSøknad.saksnummer, kravhaver = barnFnr.personident!!, åpenSøknad = åpenSøknad)
             }
         }
