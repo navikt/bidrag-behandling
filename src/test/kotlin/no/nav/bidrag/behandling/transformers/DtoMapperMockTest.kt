@@ -119,7 +119,7 @@ class DtoMapperMockTest {
         dto.virkningstidspunktV2
             .find { it.rolle.ident == barn1.ident }!!
             .begrunnelse.innhold shouldBe "test"
-        dto.virkningstidspunkt.barn
+        dto.virkningstidspunktV3.barn
             .first()
             .begrunnelse.innhold shouldBe "test"
     }
@@ -161,7 +161,7 @@ class DtoMapperMockTest {
         dto.virkningstidspunktV2
             .find { it.rolle.ident == barn2.ident }!!
             .begrunnelse.innhold shouldBe "Notat barn 2"
-        dto.virkningstidspunkt.barn
+        dto.virkningstidspunktV3.barn
             .first()
             .begrunnelse.innhold shouldBe "Notat BM"
     }

@@ -564,7 +564,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 30
+                it.grunnlagListe shouldHaveSize 31
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
@@ -859,20 +859,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
-                    GrunnlagDto(
-                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                        innhold =
-                            POJONode(
-                                ResultatFraVedtakGrunnlag(
-                                    vedtaksid = vedtakidsEtterfølgende,
-                                    omgjøringsvedtak = false,
-                                    beregnet = false,
-                                    vedtakstype = Vedtakstype.ENDRING,
-                                    opprettParagraf35c = false,
-                                ),
-                            ),
-                        referanse = "",
-                    ),
                 ),
                 listOf(
                     BidragsberegningResultatBarnV2(
@@ -910,6 +896,23 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                 omgjøringsvedtak = false,
                                 delvedtak = true,
                                 beregnet = false,
+                                grunnlagslisteDelvedtak =
+                                    listOf(
+                                        GrunnlagDto(
+                                            type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                            innhold =
+                                                POJONode(
+                                                    ResultatFraVedtakGrunnlag(
+                                                        vedtaksid = vedtakidsEtterfølgende,
+                                                        omgjøringsvedtak = false,
+                                                        beregnet = false,
+                                                        vedtakstype = Vedtakstype.ENDRING,
+                                                        opprettParagraf35c = false,
+                                                    ),
+                                                ),
+                                            referanse = "",
+                                        ),
+                                    ),
                                 periodeListe =
                                     listOf(
                                         ResultatPeriode(
@@ -955,7 +958,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 45
+                it.grunnlagListe shouldHaveSize 44
             }
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 16
             validerNotater()
@@ -1001,7 +1004,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 15
+                it.grunnlagListe shouldHaveSize 14
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1205,20 +1208,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 privaavtaleGrunnlag.toList() +
                     listOf(
                         søknadsbarn.tilGrunnlagPerson(),
-                        GrunnlagDto(
-                            type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                            innhold =
-                                POJONode(
-                                    ResultatFraVedtakGrunnlag(
-                                        vedtaksid = vedtakidsEtterfølgende,
-                                        omgjøringsvedtak = false,
-                                        beregnet = false,
-                                        vedtakstype = Vedtakstype.ENDRING,
-                                        opprettParagraf35c = false,
-                                    ),
-                                ),
-                            referanse = "",
-                        ),
                     ),
                 listOf(
                     BidragsberegningResultatBarnV2(
@@ -1256,6 +1245,23 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                 omgjøringsvedtak = false,
                                 delvedtak = true,
                                 beregnet = false,
+                                grunnlagslisteDelvedtak =
+                                    listOf(
+                                        GrunnlagDto(
+                                            type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                            innhold =
+                                                POJONode(
+                                                    ResultatFraVedtakGrunnlag(
+                                                        vedtaksid = vedtakidsEtterfølgende,
+                                                        omgjøringsvedtak = false,
+                                                        beregnet = false,
+                                                        vedtakstype = Vedtakstype.ENDRING,
+                                                        opprettParagraf35c = false,
+                                                    ),
+                                                ),
+                                            referanse = "",
+                                        ),
+                                    ),
                                 periodeListe =
                                     listOf(
                                         ResultatPeriode(
@@ -1301,7 +1307,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 34
+                it.grunnlagListe shouldHaveSize 33
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1356,7 +1362,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 18
+                it.grunnlagListe shouldHaveSize 14
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1560,20 +1566,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
-                    GrunnlagDto(
-                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                        innhold =
-                            POJONode(
-                                ResultatFraVedtakGrunnlag(
-                                    vedtaksid = vedtakidsEtterfølgende,
-                                    omgjøringsvedtak = false,
-                                    beregnet = false,
-                                    vedtakstype = Vedtakstype.ENDRING,
-                                    opprettParagraf35c = false,
-                                ),
-                            ),
-                        referanse = "",
-                    ),
                 ) + privaavtaleGrunnlag.toList(),
                 listOf(
                     BidragsberegningResultatBarnV2(
@@ -1611,6 +1603,23 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                 omgjøringsvedtak = false,
                                 delvedtak = true,
                                 beregnet = false,
+                                grunnlagslisteDelvedtak =
+                                    listOf(
+                                        GrunnlagDto(
+                                            type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                            innhold =
+                                                POJONode(
+                                                    ResultatFraVedtakGrunnlag(
+                                                        vedtaksid = vedtakidsEtterfølgende,
+                                                        omgjøringsvedtak = false,
+                                                        beregnet = false,
+                                                        vedtakstype = Vedtakstype.ENDRING,
+                                                        opprettParagraf35c = false,
+                                                    ),
+                                                ),
+                                            referanse = "",
+                                        ),
+                                    ),
                                 periodeListe =
                                     listOf(
                                         ResultatPeriode(
@@ -1656,7 +1665,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.ENDRING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 34
+                it.grunnlagListe shouldHaveSize 33
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1711,7 +1720,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 18
+                it.grunnlagListe shouldHaveSize 14
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1898,20 +1907,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
-                    GrunnlagDto(
-                        type = no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                        innhold =
-                            POJONode(
-                                ResultatFraVedtakGrunnlag(
-                                    vedtaksid = vedtakidsEtterfølgende,
-                                    omgjøringsvedtak = false,
-                                    beregnet = false,
-                                    opprettParagraf35c = false,
-                                    vedtakstype = Vedtakstype.ENDRING,
-                                ),
-                            ),
-                        referanse = "",
-                    ),
                 ),
                 listOf(
                     BidragsberegningResultatBarnV2(
@@ -1935,6 +1930,23 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                                 omgjøringsvedtak = false,
                                 delvedtak = true,
                                 beregnet = false,
+                                grunnlagslisteDelvedtak =
+                                    listOf(
+                                        GrunnlagDto(
+                                            type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                            innhold =
+                                                POJONode(
+                                                    ResultatFraVedtakGrunnlag(
+                                                        vedtaksid = vedtakidsEtterfølgende,
+                                                        omgjøringsvedtak = false,
+                                                        beregnet = false,
+                                                        opprettParagraf35c = false,
+                                                        vedtakstype = Vedtakstype.ENDRING,
+                                                    ),
+                                                ),
+                                            referanse = "",
+                                        ),
+                                    ),
                                 periodeListe =
                                     listOf(
                                         ResultatPeriode(
@@ -1995,7 +2007,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 31
+                it.grunnlagListe shouldHaveSize 30
             }
             val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
@@ -2537,7 +2549,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 28
+                it.grunnlagListe shouldHaveSize 14
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
 

@@ -76,13 +76,13 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .virkningstidspunkt shouldBe nyVirkningstidspunkt
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .avslag shouldBe null
 
@@ -127,13 +127,13 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .virkningstidspunkt shouldBe nyttVirkningstidspunkt
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .årsak shouldBe null
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .avslag shouldBe Resultatkode.AVSLAG
 
@@ -178,13 +178,13 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .årsak shouldBe VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .avslag shouldBe null
 
@@ -229,13 +229,13 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .virkningstidspunkt shouldBe LocalDate.parse("2023-01-01")
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .årsak shouldBe null
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .avslag shouldBe Resultatkode.AVSLAG
 
@@ -332,7 +332,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .virkningstidspunkt shouldBe nyttVirkningstidspunkt
 
@@ -429,7 +429,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .virkningstidspunkt shouldBe nyttVirkningstidspunkt
 
@@ -509,7 +509,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
             )
         Assertions.assertEquals(HttpStatus.OK, behandlingRes.statusCode)
         val responseBody = behandlingRes.body!!
-        responseBody.virkningstidspunkt.barn
+        responseBody.virkningstidspunktV3.barn
             .first()
             .virkningstidspunkt shouldBe nyttVirkningstidspunkt
 

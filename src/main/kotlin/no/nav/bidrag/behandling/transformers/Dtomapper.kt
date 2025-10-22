@@ -21,7 +21,10 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
@@ -783,7 +786,14 @@ class Dtomapper(
                 sisteVedtakBeregnetUtNåværendeMåned =
                     omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned ?: omgjøringsdetaljer?.opprinneligVedtakId,
                 virkningstidspunktV2 = emptyList(),
-                virkningstidspunkt = VirkningstidspunktDtoV3(false, globalVirkningstidspunkt.toYearMonth(), emptyList()),
+                virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
+                virkningstidspunktV3 =
+                    VirkningstidspunktDtoV3(
+                        false,
+                        erAvslagForAlle,
+                        globalVirkningstidspunkt.toYearMonth(),
+                        emptyList(),
+                    ),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
                 boforhold = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
                 aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
@@ -794,11 +804,33 @@ class Dtomapper(
             return behandlingDto
         }
         return behandlingDto.copy(
-            virkningstidspunkt =
+            virkningstidspunktV3 =
                 VirkningstidspunktDtoV3(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
-                    tidligsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
+                    erAvslagForAlle = erAvslagForAlle,
+                    eldsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarn(),
+                ),
+            virkningstidspunkt =
+                VirkningstidspunktDto(
+                    virkningstidspunkt = virkningstidspunkt,
+                    opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
+                    årsak = årsak,
+                    avslag = avslag,
+                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
+                    opphør =
+                        OpphørsdetaljerDto(
+                            opphørsdato = globalOpphørsdato,
+                            opphørRoller =
+                                søknadsbarn.map {
+                                    OpphørsdetaljerRolleDto(
+                                        rolle = it.tilDto(),
+                                        opphørsdato = it.opphørsdato,
+                                        eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
+                                    )
+                                },
+                        ),
                 ),
             virkningstidspunktV2 = mapVirkningstidspunktAlleBarn(),
             boforhold = tilBoforholdV2(),
