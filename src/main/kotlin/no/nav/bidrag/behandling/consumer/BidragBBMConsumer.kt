@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.consumer
 import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderRequest
 import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderResponse
 import no.nav.bidrag.behandling.consumer.dto.OppdaterBehandlingsidRequest
+import no.nav.bidrag.behandling.consumer.dto.OpprettSøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderRequest
 import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderResponse
 import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
@@ -43,7 +44,7 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun opprettSøknader(request: OpprettSøknaderRequest): OpprettSøknaderResponse =
+    fun opprettSøknader(request: OpprettSøknadRequest): OpprettSøknaderResponse =
         postForNonNullEntity(
             bidragBBMUri.pathSegment("opprettsoknad").build().toUri(),
             request,

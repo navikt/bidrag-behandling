@@ -12,7 +12,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsak
+import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -21,7 +21,6 @@ import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListe
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
-import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
@@ -70,7 +69,7 @@ fun Set<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter {
 fun Set<Grunnlag>.hentSisteGrunnlagBpsBarnUtenBidragsak() =
     hentSisteAktiv()
         .find { it.type == Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK && !it.erBearbeidet }
-        .konvertereData<List<BpsBarnUtenBidragsak>>()
+        .konvertereData<List<BpsBarnUtenBidragsakEllerLøpendeBidrag>>()
 
 fun Set<Grunnlag>.henteNyesteGrunnlag(
     grunnlagstype: Grunnlagstype,

@@ -497,12 +497,20 @@ class BehandlingService(
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
-        behandling.roller.removeIf { r ->
-            val skalSlettes = identerSomSkalSlettes.contains(r.ident)
-            skalSlettes.ifTrue {
-                log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+        if (behandling.forholdsmessigFordeling != null) {
+            behandling.roller
+                .filter { identerSomSkalSlettes.contains(it.ident) }
+                .forEach {
+                    it.forholdsmessigFordeling!!.erRevurdering = true
+                }
+        } else {
+            behandling.roller.removeIf { r ->
+                val skalSlettes = identerSomSkalSlettes.contains(r.ident)
+                skalSlettes.ifTrue {
+                    log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+                }
+                skalSlettes
             }
-            skalSlettes
         }
 
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)

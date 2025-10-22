@@ -4,9 +4,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.consumer.dto.Barn
 import no.nav.bidrag.behandling.consumer.dto.OppdaterBehandlingsidRequest
-import no.nav.bidrag.behandling.consumer.dto.OpprettSøknad
-import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderRequest
+import no.nav.bidrag.behandling.consumer.dto.OpprettSøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFor
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
@@ -119,6 +120,43 @@ class ForholdsmessigFordelingService(
         opprettSamværOgUnderholdForBarn(behandling)
         behandlingService.lagreBehandling(behandling)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+    }
+
+    fun slettBarnFraBehandlingFF(
+        barn: Rolle,
+        behandling: Behandling,
+    ) {
+        if (barn.forholdsmessigFordeling == null) return
+        if (barn.forholdsmessigFordeling!!.erRevurdering) return
+        barn.forholdsmessigFordeling!!.erRevurdering = true
+        val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
+        val åpneSøknader = bbmConsumer.hentÅpneSøknaderForBp(bidragspliktigFnr).åpneSøknader
+        val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
+
+        val åpenFFBehandling =
+            åpneSøknader.filter { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }.find {
+                it.saksnummer == barn.forholdsmessigFordeling?.tilhørerSak &&
+                    it.søknadFomDato == søktFomDato
+            }
+        if (åpenFFBehandling != null) {
+            barn.forholdsmessigFordeling!!.søknadFomDato = åpenFFBehandling.søknadFomDato
+            barn.forholdsmessigFordeling!!.søknadsid = åpenFFBehandling.søknadsid.toLong()
+            // TODO: Legg til barn i søknad
+        } else {
+            val søknad =
+                bbmConsumer.opprettSøknader(
+                    OpprettSøknadRequest(
+                        saksnummer = barn.forholdsmessigFordeling!!.tilhørerSak,
+                        behandlingsid = behandling.id.toString(),
+                        enhet = behandling.behandlerEnhet,
+                        stønadstype = Stønadstype.BIDRAG,
+                        søknadFomDato = søktFomDato,
+                        barnListe = listOf(Barn(personident = barn.ident!!, innkreving = true)),
+                    ),
+                )
+            barn.forholdsmessigFordeling!!.søknadFomDato = søktFomDato
+            barn.forholdsmessigFordeling!!.søknadsid = søknad.søknadsid.toLong()
+        }
     }
 
     private fun opprettSamværOgUnderholdForBarn(behandling: Behandling) {
@@ -236,7 +274,7 @@ class ForholdsmessigFordelingService(
                                 )
                             } else if (lb.åpenSøknad != null) {
                                 ForholdsmessigFordelingÅpenBehandlingDto(
-                                    stønadstype = Stønadstype.valueOf(lb.åpenSøknad.stønadstype),
+                                    stønadstype = lb.åpenSøknad.stønadstype,
                                     behandlerEnhet = sak.eierfogd.verdi,
                                     søktFraDato = LocalDate.now(),
                                     mottattDato = LocalDate.now(),
@@ -327,7 +365,7 @@ class ForholdsmessigFordelingService(
                     behandling,
                     Rolletype.BARN,
                     it.personident!!,
-                    stønadstype = Stønadstype.valueOf(åpenSøknad.stønadstype),
+                    stønadstype = åpenSøknad.stønadstype,
                     harGebyrSøknad = it.gebyr,
                     innbetaltBeløp = it.innbetaltBeløp,
                     ffDetaljer = ffDetaljer,
@@ -546,29 +584,24 @@ class ForholdsmessigFordelingService(
         val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
         val opprettSøknader =
             barnUtenSøknader.map {
-                OpprettSøknad(
+                no.nav.bidrag.behandling.consumer.dto.Barn(
+                    personident = it.kravhaver,
+                    innkreving = behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                )
+            }
+        val response =
+            bbmConsumer.opprettSøknader(
+                OpprettSøknadRequest(
                     saksnummer = saksnummer,
                     behandlingsid = behandling.id.toString(),
                     enhet = behandlerEnhet,
-                    barnListe =
-                        listOf(
-                            no.nav.bidrag.behandling.consumer.dto.Barn(
-                                personident = it.kravhaver,
-                                søknadFomDato = søktFomDato,
-                                stønadstype = behandling.stonadstype ?: Stønadstype.BIDRAG,
-                                innkreving = behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                            ),
-                        ),
-                )
-            }
-        val response = bbmConsumer.opprettSøknader(OpprettSøknaderRequest(opprettSøknader))
+                    stønadstype = Stønadstype.BIDRAG,
+                    søknadFomDato = søktFomDato,
+                    barnListe = opprettSøknader,
+                ),
+            )
 
-        val søknadsid =
-            response.opprettedeSøknaderPerSaksnrListe
-                .first()
-                .søknadsidListe
-                .first()
-                .toLong()
+        val søknadsid = response.søknadsid.toLong()
 
         val ffDetaljer =
             ForholdsmessigFordelingRolle(

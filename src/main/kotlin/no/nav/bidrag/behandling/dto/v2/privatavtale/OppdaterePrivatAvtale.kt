@@ -52,6 +52,7 @@ data class PrivatAvtaleDto(
     val avtaleType: PrivatAvtaleType?,
     val skalIndeksreguleres: Boolean = false,
     val begrunnelse: String?,
+    val erSøknadsbarn: Boolean = true,
     val begrunnelseFraOpprinneligVedtak: String? = null,
     val valideringsfeil: PrivatAvtaleValideringsfeilDto?,
     val perioder: List<PrivatAvtalePeriodeDto> = emptyList(),

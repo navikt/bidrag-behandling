@@ -2,11 +2,30 @@
 
 package no.nav.bidrag.behandling.consumer.dto
 
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.math.BigDecimal
 import java.time.LocalDate
+
+data class OpprettSøknadRequest(
+    val saksnummer: String,
+    val stønadstype: Stønadstype,
+    val behandlingsid: String?,
+    val enhet: String,
+    val søknadFomDato: LocalDate,
+    val barnListe: List<Barn>,
+)
+
+data class Barn(
+    val personident: String,
+    val innkreving: Boolean,
+)
+
+data class OpprettSøknaderResponse(
+    val søknadsid: String,
+)
 
 data class HentBPsÅpneSøknaderRequest(
     val personidentBP: String,
@@ -17,9 +36,10 @@ data class HentBPsÅpneSøknaderResponse(
 )
 
 data class ÅpenSøknadDto(
+    val behandlingstype: Behandlingstype,
     val saksnummer: String,
     val søknadsid: String,
-    val stønadstype: String,
+    val stønadstype: Stønadstype,
     val behandlingsid: String?,
     val søknadMottattDato: LocalDate,
     val søknadFomDato: LocalDate?,
@@ -42,22 +62,11 @@ data class OpprettSøknaderRequest(
     val opprettSøknadListe: List<OpprettSøknad>,
 )
 
-data class OpprettSøknaderResponse(
-    val opprettedeSøknaderPerSaksnrListe: List<OpprettedeSøknader>,
-)
-
 data class OpprettSøknad(
     val saksnummer: String,
     val enhet: String,
     val behandlingsid: String?,
     val barnListe: List<Barn>,
-)
-
-data class Barn(
-    val personident: String,
-    val søknadFomDato: LocalDate,
-    val stønadstype: Stønadstype,
-    val innkreving: Boolean,
 )
 
 data class OpprettedeSøknader(

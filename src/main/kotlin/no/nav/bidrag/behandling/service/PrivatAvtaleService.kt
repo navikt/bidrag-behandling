@@ -175,7 +175,13 @@ class PrivatAvtaleService(
         } ?: run {
             lagrePrivatAvtale(
                 behandling,
-                person = Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!, ident = gjelderBarn.personident?.verdi),
+                person =
+                    Person(
+                        navn = gjelderBarn.navn,
+                        fødselsdato =
+                            gjelderBarn.fødselsdato ?: hentPersonFødselsdato(gjelderBarn.personident!!.verdi)!!,
+                        ident = gjelderBarn.personident?.verdi,
+                    ),
             )
         }
     }

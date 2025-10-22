@@ -25,7 +25,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
-import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenBidragsakDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
@@ -809,7 +809,7 @@ class Dtomapper(
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
                 roller = roller.map { it.tilDto() }.toSet(),
-                bpsBarnUtenBidraggsak = bpsBarnUtenBidragssak(),
+                bpsBarnUtenLøpendeBidrag = bpsBarnUtenLøpendeBidrag(),
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
                 omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
@@ -1028,14 +1028,16 @@ class Dtomapper(
                 }
             }
 
-    private fun Behandling.bpsBarnUtenBidragssak(): Set<BpsBarnUtenBidragsakDto> =
+    private fun Behandling.bpsBarnUtenLøpendeBidrag(): Set<BpsBarnUtenLøpendeBidragDto> =
         grunnlag
             .hentSisteGrunnlagBpsBarnUtenBidragsak()
             ?.map {
-                BpsBarnUtenBidragsakDto(
+                BpsBarnUtenLøpendeBidragDto(
                     ident = it.ident.verdi,
                     fødselsdato = it.fødselsdato,
                     navn = it.navn,
+                    saksnummer = it.saksnummer,
+                    enhet = it.enhet,
                 )
             }?.toSet() ?: emptySet()
 
@@ -1053,6 +1055,7 @@ class Dtomapper(
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
+            erSøknadsbarn = rolle != null,
             manuelleVedtakUtenInnkreving =
                 if (behandling.erInnkreving) {
                     hentManuelleVedtakForBehandling(behandling, rolle!!)

@@ -33,7 +33,7 @@ import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForTy
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
-import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsak
+import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -506,11 +506,13 @@ class GrunnlagService(
         val barnUtenBidragsakEllerUtenLøpendeBidrag = barnUtenBidragsak + barnMedBidragssakUtenLøpendeBidrag
         val barnUtenBidragssak =
             barnUtenBidragsakEllerUtenLøpendeBidrag.map { barn ->
-                BpsBarnUtenBidragsak(
+                val sak = sakerBp.find { it.roller.any { it.fødselsnummer?.verdi == barn } }
+                BpsBarnUtenBidragsakEllerLøpendeBidrag(
                     Personident(barn),
                     hentPersonVisningsnavn(barn),
                     hentPersonFødselsdato(barn)!!,
-                    EnhetProvider.hentGeografiskTilknytningPerson(barn),
+                    sak?.eierfogd?.verdi ?: EnhetProvider.hentGeografiskTilknytningPerson(barn),
+                    sak?.saksnummer?.verdi,
                 )
             }
 
