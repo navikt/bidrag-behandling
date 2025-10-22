@@ -564,7 +564,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 31
+                it.grunnlagListe shouldHaveSize 30
             }
 
             assertSoftly(it.stønadsendringListe) { se ->
