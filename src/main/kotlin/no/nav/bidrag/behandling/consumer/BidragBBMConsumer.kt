@@ -1,15 +1,16 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderRequest
-import no.nav.bidrag.behandling.consumer.dto.HentBPsÅpneSøknaderResponse
-import no.nav.bidrag.behandling.consumer.dto.OppdaterBehandlingsidRequest
-import no.nav.bidrag.behandling.consumer.dto.OpprettSøknadRequest
-import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderRequest
-import no.nav.bidrag.behandling.consumer.dto.OpprettSøknaderResponse
-import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
+import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderResponse
+import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknaderResponse
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.annotation.Backoff
@@ -55,9 +56,42 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun lagreBehandlingsid(request: OppdaterBehandlingsidRequest): Unit =
-        postForNonNullEntity(
+    fun lagreBehandlingsid(request: OppdaterBehandlingsidRequest) =
+        postForEntity<Unit>(
             bidragBBMUri.pathSegment("settbehandlingsid").build().toUri(),
+            request,
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun leggTilBarnISøknad(request: LeggTilBarnIFFSøknadRequest) =
+        postForEntity<Unit>(
+            bidragBBMUri.pathSegment("leggtilbarniffsoknad").build().toUri(),
+            request,
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun feilregistrerSøknad(request: FeilregistrerSøknadRequest) =
+        postForEntity<Unit>(
+            bidragBBMUri.pathSegment("feilregistrersoknad").build().toUri(),
+            request,
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun lagreBehandlerEnhet(request: OppdaterBehandlerenhetRequest) =
+        postForEntity<Unit>(
+            bidragBBMUri.pathSegment("oppdaterbehandlerenhet").build().toUri(),
             request,
         )
 

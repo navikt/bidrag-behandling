@@ -4,10 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.dto.Barn
-import no.nav.bidrag.behandling.consumer.dto.OppdaterBehandlingsidRequest
-import no.nav.bidrag.behandling.consumer.dto.OpprettSøknadRequest
-import no.nav.bidrag.behandling.consumer.dto.ÅpenSøknadDto
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
@@ -43,6 +39,10 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
+import no.nav.bidrag.transport.behandling.beregning.felles.Barn
+import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import org.springframework.stereotype.Service
@@ -52,6 +52,9 @@ import java.time.LocalDate
 import kotlin.collections.plus
 
 private val LOGGER = KotlinLogging.logger {}
+val ÅpenSøknadDto.bidragsmottaker get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER.name || it.rolletype == "BM" }
+val ÅpenSøknadDto.bidragspliktig get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG.name || it.rolletype == "BP" }
+val ÅpenSøknadDto.barn get() = partISøknadListe.filter { it.rolletype == Rolletype.BARN.name || it.rolletype == "BA" }
 
 data class SakKravhaver(
     val saksnummer: String,
@@ -584,7 +587,7 @@ class ForholdsmessigFordelingService(
         val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
         val opprettSøknader =
             barnUtenSøknader.map {
-                no.nav.bidrag.behandling.consumer.dto.Barn(
+                Barn(
                     personident = it.kravhaver,
                     innkreving = behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
                 )
@@ -796,7 +799,7 @@ class ForholdsmessigFordelingService(
 
     private fun List<ÅpenSøknadDto>.tilSakKravhaver() =
         flatMap { åpenSøknad ->
-            åpenSøknad.partISøknadListe.filter { it.rolletype == Rolletype.BARN.name }.map { barnFnr ->
+            åpenSøknad.partISøknadListe.filter { it.rolletype == Rolletype.BARN.name || it.rolletype == "BA" }.map { barnFnr ->
                 SakKravhaver(åpenSøknad.saksnummer, kravhaver = barnFnr.personident!!, åpenSøknad = åpenSøknad)
             }
         }
