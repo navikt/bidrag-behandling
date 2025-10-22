@@ -619,3 +619,16 @@ fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
 
         else -> null
     }
+
+data class HentÅpneBehandlingerRequest(
+    val barnIdent: String,
+)
+
+data class HentÅpneBehandlingerRespons(
+    val åpneBehandling: List<ÅpenBehandling>,
+)
+
+data class ÅpenBehandling(
+    val stønadstype: Stønadstype,
+    val behandlingId: Long,
+)

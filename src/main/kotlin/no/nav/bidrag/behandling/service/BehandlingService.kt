@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.ÅpenBehandling
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
 import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
@@ -423,6 +424,13 @@ class BehandlingService(
         }
         return behandling
     }
+
+    @Transactional(readOnly = true)
+    fun hentÅpneBehandlinger(barnIdent: String): List<ÅpenBehandling> =
+        behandlingRepository
+            .finnÅpneBidragsbehandlingerForBarn(barnIdent)
+            .filter { it.stonadstype != null }
+            .map { ÅpenBehandling(it.stonadstype!!, it.id!!) }
 
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
