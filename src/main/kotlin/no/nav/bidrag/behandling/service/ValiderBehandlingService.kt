@@ -135,7 +135,11 @@ class ValiderBehandlingService(
             }
             throw HttpClientErrorException(
                 HttpStatus.PRECONDITION_FAILED,
-                "Behandling kan ikke behandles i Bisys fordi den har forholdsmessig fordeling",
+                "Behandling kan ikke behandles i Bisys",
+                commonObjectmapper.writeValueAsBytes(
+                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling behandles i ny løsning")),
+                ),
+                Charsets.UTF_8,
             )
         }
     }
