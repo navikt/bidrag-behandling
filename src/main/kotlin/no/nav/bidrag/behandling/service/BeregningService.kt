@@ -74,7 +74,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
@@ -179,7 +178,6 @@ class BeregningService(
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
-            // TODO: FF - grunnlagBeregning for alle barna sendes i samme input
             beregneBarnebidrag(behandling, endeligBeregning)
         }
     }

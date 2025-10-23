@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.vedtak
 
 data class FatteVedtakRequestDto(
-    val skalIndeksreguleres: Map<String, Boolean> = emptyMap(),
+    val skalIndeksreguleres: Map<String, Boolean>? = null,
     val innkrevingUtsattAntallDager: Long? = null,
     val enhet: String? = null,
 )

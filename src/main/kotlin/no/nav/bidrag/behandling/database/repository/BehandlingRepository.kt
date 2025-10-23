@@ -57,6 +57,14 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     ): List<Behandling>
 
     @Query(
+        "SELECT b FROM behandling b JOIN b.roller bp JOIN b.roller barn " +
+            "WHERE barn.rolletype = 'BARN' AND barn.ident = :barnIdent and b.deleted is false and b.vedtakDetaljer is null",
+    )
+    fun finnÅpneBidragsbehandlingerForBarn(
+        @Param("barnIdent") barnIdent: String,
+    ): List<Behandling>
+
+    @Query(
         value = """
         SELECT b.* FROM behandling b
         JOIN rolle br ON br.behandling_id = b.id
