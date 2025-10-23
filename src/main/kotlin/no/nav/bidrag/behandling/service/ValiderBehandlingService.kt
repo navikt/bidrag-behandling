@@ -50,7 +50,7 @@ class ValiderBehandlingService(
     }
 
     private fun kanSærbidragBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
-        val bp = request.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }!!
+        val bp = request.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG } ?: return "Saken mangler bidragspliktig"
         val løpendeBidrag = bidragBeløpshistorikkConsumer.hentLøpendeBidrag(LøpendeBidragssakerRequest(skyldner = bp.ident!!))
         val harLøpendeBidragUtenlandskValuta =
             løpendeBidrag.bidragssakerListe.all {

@@ -16,7 +16,7 @@ data class KanBehandlesINyLøsningRequest(
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
     @field:Size(max = 7, min = 7, message = "Saksnummer skal ha sju tegn")
     val saksnummer: String,
-    @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
+//    @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
     val roller: List<SjekkRolleDto>,
     @Schema(required = true)
     var stønadstype: Stønadstype? = null,

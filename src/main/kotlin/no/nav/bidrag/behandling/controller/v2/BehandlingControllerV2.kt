@@ -20,6 +20,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.HentÅpneBehandlingerRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.HentÅpneBehandlingerRespons
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
@@ -314,9 +316,8 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
-        @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
-        val behandling = behandlingService.henteBehandling(behandlingsid, inkluderHistoriskeInntekter)
+        val behandling = behandlingService.henteBehandling(behandlingsid)
         return dtomapper.tilDto(behandling, true)
     }
 
@@ -455,6 +456,23 @@ class BehandlingControllerV2(
         validerBehandlingService.validerKanBehandlesINyLøsning(request)
         return ResponseEntity.accepted().build()
     }
+
+    @PostMapping("/behandling/apnebehandlinger")
+    @Operation(
+        description = "Hent åpne behandlinger",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun hentÅpneBehandlinger(
+        @RequestBody request: HentÅpneBehandlingerRequest,
+    ) = HentÅpneBehandlingerRespons(behandlingService.hentÅpneBehandlinger(request.barnIdent))
 
     @PostMapping("/behandling/kanBehandles/{behandlingsid}")
     @Operation(

@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.ÅpenBehandling
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
 import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
@@ -100,7 +101,10 @@ class BehandlingService(
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
 
-    fun lagreBehandling(behandling: Behandling): Behandling {
+    fun lagreBehandling(
+        behandling: Behandling,
+        opprettForsendelse: Boolean = false,
+    ): Behandling {
         val oppretterBehandling = behandling.id == null
         val lagretBehandling =
             if (oppretterBehandling) {
@@ -116,7 +120,7 @@ class BehandlingService(
                 BehandlingHendelseType.ENDRET
             },
         )
-        if (behandling.vedtakstype.opprettForsendelse() && oppretterBehandling) {
+        if (behandling.vedtakstype.opprettForsendelse() && (oppretterBehandling || opprettForsendelse)) {
             opprettForsendelseForBehandling(lagretBehandling)
         }
         return lagretBehandling
@@ -412,10 +416,7 @@ class BehandlingService(
     }
 
     @Transactional
-    fun henteBehandling(
-        behandlingsid: Long,
-        inkluderHistoriskeInntekter: Boolean = false,
-    ): Behandling {
+    fun henteBehandling(behandlingsid: Long): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         virkningstidspunktService.run {
@@ -423,6 +424,13 @@ class BehandlingService(
         }
         return behandling
     }
+
+    @Transactional(readOnly = true)
+    fun hentÅpneBehandlinger(barnIdent: String): List<ÅpenBehandling> =
+        behandlingRepository
+            .finnÅpneBidragsbehandlingerForBarn(barnIdent)
+            .filter { it.stonadstype != null }
+            .map { ÅpenBehandling(it.stonadstype!!, it.id!!) }
 
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =

@@ -10,7 +10,7 @@ import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDe
 import java.math.BigDecimal
 
 data class OppdaterSamværDto(
-    val gjelderBarn: String,
+    val gjelderBarn: String?,
     @field:Valid
     val periode: OppdaterSamværsperiodeDto? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
@@ -19,7 +19,7 @@ data class OppdaterSamværDto(
 
 data class OppdaterSamværResponsDto(
     @Schema(description = "Samvær som ble oppdatert")
-    val oppdatertSamvær: SamværDto? = null,
+    val oppdatertSamvær: SamværBarnDto? = null,
 )
 
 data class OppdaterSamværsperiodeDto(
@@ -42,7 +42,12 @@ data class SletteSamværsperiodeElementDto(
     val samværsperiodeId: Long,
 )
 
-data class SamværDto(
+data class SamværDtoV2(
+    val erSammeForAlle: Boolean,
+    val barn: List<SamværBarnDto>,
+)
+
+data class SamværBarnDto(
     val id: Long,
     val gjelderBarn: String,
     val begrunnelse: BegrunnelseDto?,

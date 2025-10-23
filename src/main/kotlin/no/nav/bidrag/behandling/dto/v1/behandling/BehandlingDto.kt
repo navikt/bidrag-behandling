@@ -67,7 +67,14 @@ data class ManuellVedtakDto(
         }
 }
 
-data class VirkningstidspunktDtoV2(
+data class VirkningstidspunktDtoV3(
+    val erLikForAlle: Boolean,
+    val erAvslagForAlle: Boolean = false,
+    val eldsteVirkningstidspunkt: YearMonth,
+    val barn: List<VirkningstidspunktBarnDtoV2>,
+)
+
+data class VirkningstidspunktBarnDtoV2(
     val rolle: RolleDto,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")

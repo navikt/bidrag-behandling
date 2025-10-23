@@ -3,10 +3,14 @@ package no.nav.bidrag.behandling.controller.v2
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.service.SamværService
+import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody
 @BehandlingRestControllerV2
 class SamværController(
     private val samværService: SamværService,
+    private val dtomapper: Dtomapper,
 ) {
     @Suppress("unused")
     @PutMapping("/behandling/{behandlingsid}/samvar")
@@ -31,7 +36,22 @@ class SamværController(
         @Valid
         @RequestBody(required = true)
         request: OppdaterSamværDto,
-    ): OppdaterSamværResponsDto = samværService.oppdaterSamvær(behandlingsid, request)
+    ): OppdaterSamværResponsDto = samværService.oppdaterSamvær(behandlingsid, request).tilOppdaterSamværResponseDto()
+
+    @PostMapping("/behandling/{behandlingsid}/samvar/merge")
+    @Operation(
+        description = "Bruk samme samvær for alle barna",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun brukSammeSamværForAlleBarna(
+        @PathVariable behandlingsid: Long,
+    ): BehandlingDtoV2 {
+        secureLogger.info { "Sett sammen virkningstidspunkt for alle barne for behandling $behandlingsid" }
+
+        val behandling = samværService.brukSammeSamværForAlleBarn(behandlingsid)
+
+        return dtomapper.tilDto(behandling)
+    }
 
     @Suppress("unused")
     @DeleteMapping("/behandling/{behandlingsid}/samvar/periode")

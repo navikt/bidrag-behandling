@@ -116,10 +116,12 @@ class DtoMapperMockTest {
             behandling.bidragsmottaker,
         )
         val dto = dtomapper.tilDto(behandling)
-        dto.virkningstidspunktV2
+        dto.virkningstidspunktV3.barn
             .find { it.rolle.ident == barn1.ident }!!
             .begrunnelse.innhold shouldBe "test"
-        dto.virkningstidspunkt.begrunnelse.innhold shouldBe "test"
+        dto.virkningstidspunktV3.barn
+            .first()
+            .begrunnelse.innhold shouldBe "test"
     }
 
     @Test
@@ -153,13 +155,12 @@ class DtoMapperMockTest {
             barn2,
         )
         val dto = dtomapper.tilDto(behandling)
-        dto.virkningstidspunktV2
+        dto.virkningstidspunktV3.barn
             .find { it.rolle.ident == barn1.ident }!!
             .begrunnelse.innhold shouldBe "Notat barn 1"
-        dto.virkningstidspunktV2
+        dto.virkningstidspunktV3.barn
             .find { it.rolle.ident == barn2.ident }!!
             .begrunnelse.innhold shouldBe "Notat barn 2"
-        dto.virkningstidspunkt.begrunnelse.innhold shouldBe "Notat BM"
     }
 
     @Test

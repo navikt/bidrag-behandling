@@ -54,6 +54,9 @@ azure_access_inbound:
   - application: bidrag-dokument-bestilling
     namespace: bidrag
     cluster: dev-gcp
+  - application: bidrag-automatisk-jobb-q2
+    namespace: bidrag
+    cluster: dev-gcp
 database:
   dbname: bidrag-behandling-q2
   autoResize: true

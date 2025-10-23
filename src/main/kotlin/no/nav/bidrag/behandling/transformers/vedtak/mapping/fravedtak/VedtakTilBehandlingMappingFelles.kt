@@ -46,6 +46,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -1236,6 +1237,8 @@ private fun GrunnlagDto.tilRolle(
         avslag = virkningstidspunktGrunnlag?.avslag,
         opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
         fødselsdato = personObjekt.fødselsdato,
+        behandlingstema = behandling.behandlingstema,
+        behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         beregnTil =
             if (lesemodus) {
                 virkningstidspunktGrunnlag?.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED
