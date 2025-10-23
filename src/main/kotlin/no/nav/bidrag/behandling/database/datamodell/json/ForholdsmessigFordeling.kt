@@ -10,7 +10,7 @@ class ForholdsmessigFordelingConverter : JsonColumnConverter<ForholdsmessigForde
 
 data class ForholdsmessigFordeling(
     val behandlesAvBehandling: Long? = null,
-    val erHovedbehandling: Boolean = false,
+    var erHovedbehandling: Boolean = false,
 )
 
 data class ForholdsmessigFordelingRolle(

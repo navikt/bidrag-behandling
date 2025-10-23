@@ -4,9 +4,12 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
+import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -121,6 +124,20 @@ class ValiderBehandlingService(
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
         }
         return null
+    }
+
+    fun validerKanBehandlesIBisys(behandling: Behandling) {
+        if (!behandling.erBidrag()) return
+
+        if (behandling.forholdsmessigFordeling != null) {
+            log.debug {
+                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi den har forholdsmessig fordeling"
+            }
+            throw HttpClientErrorException(
+                HttpStatus.PRECONDITION_FAILED,
+                "Behandling kan ikke behandles i Bisys fordi den har forholdsmessig fordeling",
+            )
+        }
     }
 
     fun validerKanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest) {

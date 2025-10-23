@@ -482,10 +482,16 @@ class GrunnlagService(
 
     suspend fun lagreBpsBarnUtenBidragsak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (!behandling.erBidrag() || behandling.bidragspliktig == null) return emptyMap()
-        val barnTilBp = personConsumer!!.hentPersonRelasjon(Personident(behandling.bidragspliktig!!.ident!!))
+        val bidragspliktigIdent = behandling.bidragspliktig!!.ident ?: return emptyMap()
+        val barnTilBp = personConsumer!!.hentPersonRelasjon(Personident(bidragspliktigIdent))
 
         val åpneSakerBp = ffService!!.hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
-        val sakerBp = sakConsumer!!.hentSakerPerson(behandling.bidragspliktig!!.ident!!)
+        val sakerBp =
+            sakConsumer!!
+                .hentSakerPerson(bidragspliktigIdent)
+                .filter {
+                    it.roller.any { it.type == Rolletype.BIDRAGSPLIKTIG && it.fødselsnummer!!.verdi == bidragspliktigIdent }
+                }
         val barnBpMedÅpenSøknad = åpneSakerBp.map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
         val barnBpMedBidragssak =
             sakerBp.flatMap {

@@ -40,6 +40,7 @@ import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
+import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
@@ -47,8 +48,10 @@ import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.collections.plus
@@ -138,12 +141,60 @@ class ForholdsmessigFordelingService(
         bbmConsumer.lagreBehandlerEnhet(OppdaterBehandlerenhetRequest(behandlerEnhet, behandling.soknadsid.toString()))
     }
 
+    @Transactional
+    fun avsluttForholdsmessigFordeling(
+        behandling: Behandling,
+        slettBarn: List<Rolle>,
+    ) {
+        if (behandling.forholdsmessigFordeling == null) return
+        if (!behandling.forholdsmessigFordeling!!.erHovedbehandling) return
+
+        if (!kanBehandlingSlettes(behandling, slettBarn)) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke slette behandling som ",
+            )
+        }
+        behandling.søknadsbarn
+            .filter { it.forholdsmessigFordeling!!.erRevurdering }
+            .map { it.forholdsmessigFordeling!!.søknadsid }
+            .distinct()
+            .forEach {
+                LOGGER.info { "Feilregistrerer søknad $it i behandling ${behandling.id}" }
+                bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(it.toString()))
+            }
+    }
+
+    fun kanBehandlingSlettes(
+        behandling: Behandling,
+        slettBarn: List<Rolle>,
+    ): Boolean =
+        if (slettBarn.isEmpty()) {
+            behandling.søknadsbarn
+                .filter { !it.forholdsmessigFordeling!!.erRevurdering }
+                .map { it.forholdsmessigFordeling!!.søknadsid }
+                .distinct()
+                .size == 1
+        } else {
+            behandling.søknadsbarn.none { !it.forholdsmessigFordeling!!.erRevurdering && !slettBarn.contains(it) }
+        }
+
+    @Transactional
+    fun slettBarnFraBehandlingFF(
+        slettBarn: List<Rolle>,
+        behandling: Behandling,
+    ) {
+        if (kanBehandlingSlettes(behandling, slettBarn)) {
+            behandlingService.slettBehandling(behandling, slettBarn)
+        } else {
+            slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling) }
+        }
+    }
+
     fun slettBarnFraBehandlingFF(
         barn: Rolle,
         behandling: Behandling,
     ) {
-        if (barn.forholdsmessigFordeling == null) return
-        if (barn.forholdsmessigFordeling!!.erRevurdering) return
         barn.forholdsmessigFordeling!!.erRevurdering = true
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val åpneSøknader = bbmConsumer.hentÅpneSøknaderForBp(bidragspliktigFnr).åpneSøknader
@@ -250,7 +301,7 @@ class ForholdsmessigFordelingService(
                         navn = hentPersonVisningsnavn(barnIdent) ?: "Ukjent",
                         fødselsdato = hentPersonFødselsdato(barnIdent),
                         saksnr = sakKravhaver.saksnummer,
-                        sammeSakSomBehandling = false,
+                        sammeSakSomBehandling = sakKravhaver.saksnummer == behandling.saksnummer,
                         erRevurdering = true,
                         enhet = sakKravhaver.eierfogd!!,
                         åpenBehandling = null,
@@ -340,7 +391,6 @@ class ForholdsmessigFordelingService(
 
         val sakerBp = sakConsumer.hentSakerPerson(bidragspliktigFnr)
         return sakerBp
-            .filter { behandling.saksnummer != it.saksnummer.verdi }
             .flatMap { sak ->
                 val barn =
                     sak.roller

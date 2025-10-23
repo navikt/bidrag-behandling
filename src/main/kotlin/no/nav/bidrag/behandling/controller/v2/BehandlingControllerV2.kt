@@ -477,4 +477,25 @@ class BehandlingControllerV2(
         validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         return ResponseEntity.accepted().build()
     }
+
+    @PostMapping("/behandling/kanBehandles/bisys/{behandlingsid}")
+    @Operation(
+        description = "Sjekk om behandling kan behandles i ny løsning",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun kanBehandlingBehandlesINyBisys(
+        @PathVariable behandlingsid: Long,
+    ): ResponseEntity<Void> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        validerBehandlingService.validerKanBehandlesIBisys(behandling)
+        return ResponseEntity.accepted().build()
+    }
 }

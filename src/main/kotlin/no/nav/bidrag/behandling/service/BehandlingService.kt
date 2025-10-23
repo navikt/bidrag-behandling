@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
@@ -26,7 +27,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
 import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -55,7 +55,7 @@ import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
-import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -77,6 +77,7 @@ class BehandlingService(
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
     private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
+    @Lazy
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
 //    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
@@ -90,7 +91,18 @@ class BehandlingService(
             )
         }
 
-        log.debug { "Logisk sletter behandling $behandlingId" }
+        slettBehandling(behandling)
+    }
+
+    fun slettBehandling(
+        behandling: Behandling,
+        slettBarn: List<Rolle> = emptyList(),
+    ) {
+        if (behandling.forholdsmessigFordeling != null) {
+            forholdsmessigFordelingService?.avsluttForholdsmessigFordeling(behandling, slettBarn)
+        }
+
+        log.debug { "Logisk sletter behandling ${behandling.id}" }
         behandlingRepository.logiskSlett(behandling.id!!)
         behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
             behandling.id!!,
@@ -499,11 +511,11 @@ class BehandlingService(
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
         if (behandling.forholdsmessigFordeling != null) {
-            behandling.roller
-                .filter { identerSomSkalSlettes.contains(it.ident) }
-                .forEach {
-                    forholdsmessigFordelingService?.slettBarnFraBehandlingFF(it, behandling)
-                }
+            val rollerSomSkalSlettes =
+                behandling.roller
+                    .filter { identerSomSkalSlettes.contains(it.ident) }
+                    .map { it }
+            forholdsmessigFordelingService?.slettBarnFraBehandlingFF(rollerSomSkalSlettes, behandling)
         } else {
             behandling.roller.removeIf { r ->
                 val skalSlettes = identerSomSkalSlettes.contains(r.ident)
