@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v2.behandling
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
@@ -11,7 +12,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
@@ -135,6 +138,7 @@ data class BehandlingDtoV2(
     val sisteVedtakBeregnetUtNåværendeMåned: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
+    val bpsBarnUtenLøpendeBidrag: Set<BpsBarnUtenLøpendeBidragDto>,
     val virkningstidspunktV2: List<VirkningstidspunktBarnDtoV2> = emptyList(),
     val virkningstidspunktV3: VirkningstidspunktDtoV3,
     val virkningstidspunkt: VirkningstidspunktDto,
@@ -434,6 +438,9 @@ enum class Grunnlagsdatatype(
     val behandlingstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
     val erGjeldende: Boolean = true,
 ) {
+    @JsonEnumDefaultValue
+    UKJENT,
+
     ARBEIDSFORHOLD(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),

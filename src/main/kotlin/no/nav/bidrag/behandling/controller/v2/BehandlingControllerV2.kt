@@ -20,8 +20,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.HentÅpneBehandlingerRequest
-import no.nav.bidrag.behandling.dto.v2.behandling.HentÅpneBehandlingerRespons
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
@@ -49,6 +47,8 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRequest
+import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRespons
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
