@@ -178,7 +178,6 @@ class BeregningService(
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
         } else {
-            // TODO: FF - grunnlagBeregning for alle barna sendes i samme input
             beregneBarnebidrag(behandling, endeligBeregning)
         }
     }
