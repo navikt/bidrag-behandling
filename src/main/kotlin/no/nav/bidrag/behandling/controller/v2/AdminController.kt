@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -35,6 +36,7 @@ class AdminController(
     private val sakConsumer: BidragSakConsumer,
     private val behandlingRepository: BehandlingRepository,
     private val behandlingService: BehandlingService,
+    private val forholsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
     @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
     @Operation(
@@ -62,6 +64,27 @@ class AdminController(
         behandling.vedtakstidspunkt = null
         behandling.opprettetTidspunkt = LocalDateTime.now().minusSeconds(900)
         behandlingRepository.save(behandling)
+    }
+
+    @PostMapping("/admin/avslutt/ff/{behandlingId}")
+    @Operation(
+        description =
+            "Opprett aldersjustering behandling for sak",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun avsluttFFSøknad(
+        @PathVariable behandlingId: Long,
+    ) {
+        forholsmessigFordelingService.lukkAllFFSaker(behandlingId)
     }
 
     @PostMapping("/admin/grunnlag/ignorer/{behandlingId}")

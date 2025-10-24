@@ -14,8 +14,14 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
+import no.nav.bidrag.behandling.service.SakKravhaver
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -23,6 +29,8 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.felles.toYearMonth
+import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
@@ -43,7 +51,7 @@ fun opprettRolle(
     val rolle =
         Rolle(
             harGebyrsøknad = harGebyrSøknad,
-            innkrevesFraDato = innkrevesFraDato?.let { LocalDate.from(it) },
+            innkrevesFraDato = innkrevesFraDato?.atDay(1),
             innkrevingstype =
                 if (medInnkreving == null) {
                     null
@@ -285,4 +293,68 @@ fun opprettSamværOgUnderholdForBarn(behandling: Behandling) {
             )
         }
     }
+}
+
+fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
+    sak: BidragssakDto?,
+    behandling: Behandling,
+    løpendeBidrag: Boolean = true,
+    erRevurdering: Boolean = true,
+): ForholdsmessigFordelingBarnDto {
+    val bmFødselsnummer = sak?.bidragsmottaker?.fødselsnummer?.verdi ?: bidragsmottaker
+    val barnFødselsnummer = kravhaver
+
+    return ForholdsmessigFordelingBarnDto(
+        ident = barnFødselsnummer,
+        navn = hentPersonVisningsnavn(barnFødselsnummer) ?: "Ukjent",
+        fødselsdato = hentPersonFødselsdato(barnFødselsnummer),
+        saksnr = saksnummer,
+        sammeSakSomBehandling = behandling.saksnummer == saksnummer,
+        erRevurdering = erRevurdering,
+        enhet = sak?.eierfogd?.verdi ?: eierfogd!!,
+        harLøpendeBidrag = løpendeBidrag,
+        stønadstype = stønadstype,
+        innkrevesFraDato =
+            if (løperBidragFra != null &&
+                løperBidragFra > behandling.søktFomDato.toYearMonth()
+            ) {
+                løperBidragFra
+            } else {
+                null
+            },
+        åpenBehandling =
+            if (åpenBehandling != null) {
+                ForholdsmessigFordelingÅpenBehandlingDto(
+                    søktFraDato = åpenBehandling.søktFomDato,
+                    mottattDato = åpenBehandling.mottattdato,
+                    stønadstype = åpenBehandling.stonadstype!!,
+                    behandlerEnhet = åpenBehandling.behandlerEnhet,
+                    behandlingId = åpenBehandling.id,
+                    medInnkreving = åpenBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                    søknadsid = null,
+                )
+            } else if (åpenSøknad != null) {
+                ForholdsmessigFordelingÅpenBehandlingDto(
+                    stønadstype = åpenSøknad.stønadstype,
+                    behandlerEnhet = sak?.eierfogd?.verdi ?: eierfogd!!,
+                    søktFraDato = LocalDate.now(),
+                    mottattDato = LocalDate.now(),
+                    behandlingId = null,
+                    medInnkreving = åpenSøknad.innkreving,
+                    søknadsid = åpenSøknad.søknadsid.toLong(),
+                )
+            } else {
+                null
+            },
+        bidragsmottaker =
+            RolleDto(
+                id = -1,
+                ident = bmFødselsnummer,
+                rolletype = Rolletype.BIDRAGSMOTTAKER,
+                navn = hentPersonVisningsnavn(bmFødselsnummer) ?: "Ukjent",
+                fødselsdato = hentPersonFødselsdato(bmFødselsnummer),
+                delAvOpprinneligBehandling = false,
+                erRevurdering = erRevurdering,
+            ),
+    )
 }
