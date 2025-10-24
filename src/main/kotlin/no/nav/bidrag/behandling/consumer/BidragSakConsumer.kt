@@ -66,7 +66,7 @@ class BidragSakConsumer(
     @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
     fun opprettMidlertidligTilgang(request: OpprettMidlertidligTilgangRequest) {
         try {
-            return postForNonNullEntity(createUri("/sak/tilgang/opprett"), request)
+            postForEntity<Unit>(createUri("/sak/tilgang/opprett"), request)
         } catch (e: HttpStatusCodeException) {
             LOGGER.warn(e) { "Det skjedde en feil opprettelse av midlertlidlig tilgang for $request" }
             throw e
@@ -76,7 +76,7 @@ class BidragSakConsumer(
     @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
     fun fjernMidlertidligTilgang(request: FjernMidlertidligTilgangRequest) {
         try {
-            return postForNonNullEntity(createUri("/sak/tilgang/fjern"), request)
+            postForEntity<Unit>(createUri("/sak/tilgang/fjern"), request)
         } catch (e: HttpStatusCodeException) {
             LOGGER.warn(e) { "Det skjedde en feil fjerning av midlertidlig tilgang for sak $request" }
             throw e

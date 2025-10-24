@@ -43,7 +43,7 @@ fun opprettRolle(
     val rolle =
         Rolle(
             harGebyrsøknad = harGebyrSøknad,
-            innkrevesFraDato = LocalDate.from(innkrevesFraDato),
+            innkrevesFraDato = innkrevesFraDato?.let { LocalDate.from(it) },
             innkrevingstype =
                 if (medInnkreving == null) {
                     null
