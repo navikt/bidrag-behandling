@@ -204,6 +204,20 @@ class ForsendelseService(
         return opprettetForsendelser
     }
 
+    private fun harEksisterendeForsendelser(request: InitalizeForsendelseRequest): Boolean {
+        val forsendelser = bidragForsendelseConsumer.hentForsendelserISak(request.saksnummer)
+        return forsendelser
+            .filter { it.forsendelseType == ForsendelseTypeTo.UTGÅENDE }
+            .filter { it.status == ForsendelseStatusTo.UNDER_OPPRETTELSE && it.behandlingInfo?.soknadId?.isNotEmpty() == true }
+            .any {
+                it.behandlingInfo?.soknadId == request.behandlingInfo.soknadId &&
+                    (
+                        request.behandlingInfo.erVedtakFattet() && it.behandlingInfo?.erFattet == true ||
+                            !request.behandlingInfo.erVedtakFattet() && it.behandlingInfo?.erFattet == false
+                    )
+            }
+    }
+
     private fun slettVarselbrevUnderOpprettelse(
         saksnummer: String,
         soknadId: Long,

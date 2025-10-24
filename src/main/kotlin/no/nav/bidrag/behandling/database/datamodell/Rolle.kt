@@ -116,7 +116,9 @@ open class Rolle(
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
     open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),
+    @Enumerated(EnumType.STRING)
     open var innkrevingstype: Innkrevingstype? = null,
+    open var innkrevesFraDato: LocalDate? = null,
     @Enumerated(EnumType.STRING)
     open var stønadstype: Stønadstype? = null,
     @JdbcTypeCode(SqlTypes.JSON)
@@ -125,7 +127,8 @@ open class Rolle(
 ) {
     val bidragsmottaker get() =
         behandling.alleBidragsmottakere.find {
-            it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
+            forholdsmessigFordeling?.bidragsmottaker != null && it.ident == forholdsmessigFordeling?.bidragsmottaker ||
+                it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
                 forholdsmessigFordeling == null && it.forholdsmessigFordeling == null ||
                 forholdsmessigFordeling?.tilhørerSak == behandling.saksnummer && it.forholdsmessigFordeling == null
         }

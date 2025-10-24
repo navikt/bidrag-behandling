@@ -78,6 +78,9 @@ class InntektServiceMockTest {
     lateinit var virkningstidspunktService: VirkningstidspunktService
 
     @MockK
+    lateinit var ffservice: ForholdsmessigFordelingService
+
+    @MockK
     lateinit var validerBeregning: ValiderBeregning
 
     @MockK
@@ -128,6 +131,7 @@ class InntektServiceMockTest {
                 validerBehandlingService = validerBehandlingService,
                 virkningstidspunktService = virkningstidspunktService,
                 dtomapper = dtomapper,
+                forholdsmessigFordelingService = ffservice,
             )
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }

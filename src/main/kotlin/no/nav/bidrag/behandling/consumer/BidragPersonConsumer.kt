@@ -2,11 +2,13 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_FØDSELSDATO_CACHE
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.PERSON_RELASJON_CACHE
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningPersonConsumer
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.service.consumers.FellesPersonConsumer
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.person.ForelderBarnRelasjonDto
 import no.nav.bidrag.transport.person.NavnFødselDødDto
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.person.PersonRequest
@@ -41,6 +43,12 @@ class BidragPersonConsumer(
             .pathSegment("navnfoedseldoed")
             .build()
             .toUri()
+    private val hentFamilierelasjonUri =
+        UriComponentsBuilder
+            .fromUri(bidragPersonUrl)
+            .pathSegment("forelderbarnrelasjon")
+            .build()
+            .toUri()
 
     @BrukerCacheable(PERSON_CACHE)
     fun hentPerson(ident: String): PersonDto = postForNonNullEntity(hentPersonUri, PersonDto(Personident(ident)))
@@ -58,6 +66,23 @@ class BidragPersonConsumer(
         } catch (e: HttpStatusCodeException) {
             if (e.statusCode.value() == HttpStatus.NOT_FOUND.value()) {
                 return null
+            }
+            throw e
+        }
+    }
+
+    @BrukerCacheable(PERSON_RELASJON_CACHE)
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun hentPersonRelasjon(personident: Personident): ForelderBarnRelasjonDto {
+        try {
+            return postForNonNullEntity(hentFamilierelasjonUri, PersonRequest(personident))
+        } catch (e: HttpStatusCodeException) {
+            if (e.statusCode.value() == HttpStatus.NOT_FOUND.value()) {
+                return ForelderBarnRelasjonDto(emptyList())
             }
             throw e
         }

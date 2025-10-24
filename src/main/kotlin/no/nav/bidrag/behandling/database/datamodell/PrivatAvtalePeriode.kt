@@ -1,12 +1,16 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.tid.Datoperiode
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -22,6 +26,10 @@ open class PrivatAvtalePeriode(
     open var fom: LocalDate,
     open var tom: LocalDate?,
     open var beløp: BigDecimal,
+    @Enumerated(EnumType.STRING)
+    open var valutakode: Valutakode? = null,
+    @Enumerated(EnumType.STRING)
+    open var samværsklasse: Samværsklasse? = null,
 ) {
     fun copy(
         fom: LocalDate,

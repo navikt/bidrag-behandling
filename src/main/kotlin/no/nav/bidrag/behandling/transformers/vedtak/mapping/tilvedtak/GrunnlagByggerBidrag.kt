@@ -88,7 +88,7 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseBarnetilsyn(gjelderBarnReferanse),
                             type = Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE,
-                            gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                            gjelderReferanse = underholdRolle.bidragsmottaker!!.tilGrunnlagsreferanse(),
                             gjelderBarnReferanse = gjelderBarnReferanse,
                             grunnlagsreferanseListe =
                                 if (it.kilde == Kilde.OFFENTLIG) {

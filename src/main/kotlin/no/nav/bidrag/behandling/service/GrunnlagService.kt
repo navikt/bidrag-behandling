@@ -10,12 +10,15 @@ import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
@@ -23,14 +26,17 @@ import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
@@ -82,6 +88,7 @@ import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.RequestContextAsyncContext
 import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
@@ -130,8 +137,11 @@ import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
+import org.springframework.core.task.TaskExecutor
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDateTime
@@ -151,6 +161,12 @@ class GrunnlagService(
     private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
     private val vedtakConsumer: BidragVedtakConsumer,
     private val vedtakService: VedtakService? = null,
+    private val grunnlagFetchTaskExecutor: TaskExecutor? = null,
+    private val behandlngRepository: BehandlingRepository? = null,
+    private val sakConsumer: BidragSakConsumer? = null,
+    private val personConsumer: BidragPersonConsumer? = null,
+    @Lazy
+    private val ffService: ForholdsmessigFordelingService? = null,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
     lateinit var grenseInnhenting: String
@@ -172,6 +188,23 @@ class GrunnlagService(
         secureLogger.debug { "Henter grunnlag for ${gjelder.verdi}: $request" }
         val hentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(request, formål)
         return gjelder to hentetGrunnlag
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun oppdaterGrunnlagForBehandlingAsync(behandlingId: Long) {
+        grunnlagFetchTaskExecutor?.execute {
+            try {
+                val behandling = behandlngRepository!!.findBehandlingById(behandlingId).get()
+                // Your long-running method
+                oppdatereGrunnlagForBehandling(behandling)
+                val metadata = behandling.metadata ?: BehandlingMetadataDo()
+                metadata.setOppdatererGrunnlagAsync(false)
+                behandling.metadata = metadata
+            } catch (e: Exception) {
+                // Handle exceptions
+                log.error(e) { "Error processing behandling $behandlingId" }
+            }
+        }
     }
 
     @Transactional
@@ -200,12 +233,13 @@ class GrunnlagService(
                     scope.async {
                         lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
                     },
+                    scope.async {
+                        lagreBpsBarnUtenBidragsak(behandling).lagreFeilrapportering()
+                    },
                 )
             if (behandling.vedtakstype.kreverGrunnlag()) {
                 val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
                 behandling.grunnlagsinnhentingFeilet = null
-
-                val hentAsyncStart = System.currentTimeMillis()
 
                 val grunnlagResponsObjekter =
                     runBlocking {
@@ -252,6 +286,9 @@ class GrunnlagService(
                     },
                     scope.async {
                         lagreBeløpshistorikkGrunnlag(behandling)
+                    },
+                    scope.async {
+                        lagreBpsBarnUtenBidragsak(behandling)
                     },
                 ).awaitAll()
             }
@@ -443,6 +480,83 @@ class GrunnlagService(
         return feilrapporteringer
     }
 
+    suspend fun lagreBpsBarnUtenBidragsak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+        if (!behandling.erBidrag() || behandling.bidragspliktig == null ||
+            !UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
+        ) {
+            return emptyMap()
+        }
+        val bidragspliktigIdent = behandling.bidragspliktig!!.ident ?: return emptyMap()
+        val barnTilBp = personConsumer!!.hentPersonRelasjon(Personident(bidragspliktigIdent))
+
+        val søknadsbarnIdenter = behandling.søknadsbarn.map { it.ident }
+        val åpneSakerBp = ffService!!.hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
+        val sakerBp =
+            sakConsumer!!
+                .hentSakerPerson(bidragspliktigIdent)
+                .filter {
+                    it.roller.any { it.type == Rolletype.BIDRAGSPLIKTIG && it.fødselsnummer!!.verdi == bidragspliktigIdent }
+                }
+        val barnBpMedÅpenSøknad = åpneSakerBp.map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
+        val barnBpMedBidragssak =
+            sakerBp.flatMap {
+                it.roller
+                    .filter {
+                        it.type == Rolletype.BARN
+                    }.map { it.fødselsnummer!!.verdi }
+            }
+        val barnMedBidragssakUtenLøpendeBidrag =
+            barnBpMedBidragssak.filter {
+                !barnBpMedÅpenSøknad.contains(it) &&
+                    !søknadsbarnIdenter.contains(it)
+            }
+        val barnUtenBidragsak =
+            barnTilBp.forelderBarnRelasjon
+                .filter { it.erRelatertPersonsBarn() }
+                .sortedBy { it.relatertPersonsIdent?.verdi }
+                .filter { barn ->
+                    val ident = barn.relatertPersonsIdent?.verdi ?: return@filter false
+                    !barnBpMedBidragssak.contains(ident) && !søknadsbarnIdenter.contains(ident)
+                }.map { it.relatertPersonsIdent!!.verdi }
+        val barnUtenBidragsakEllerUtenLøpendeBidrag = barnUtenBidragsak + barnMedBidragssakUtenLøpendeBidrag
+        val barnUtenBidragssak =
+            barnUtenBidragsakEllerUtenLøpendeBidrag.map { barn ->
+                val sak = sakerBp.find { it.roller.any { it.fødselsnummer?.verdi == barn } }
+                BpsBarnUtenBidragsakEllerLøpendeBidrag(
+                    Personident(barn),
+                    hentPersonVisningsnavn(barn),
+                    hentPersonFødselsdato(barn)!!,
+                    sak?.eierfogd?.verdi ?: EnhetProvider.hentGeografiskTilknytningPerson(barn),
+                    sak?.saksnummer?.verdi,
+                )
+            }
+
+        val eksisterendeVerdi = behandling.grunnlag.hentSisteGrunnlagBpsBarnUtenBidragsak()
+
+        if (eksisterendeVerdi != barnUtenBidragssak) {
+            log.debug { "Lagrer ny grunnlag barn til BP uten bidragssak for type ${Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK}" }
+            secureLogger.debug {
+                "Lagrer ny grunnlag barn til BP uten bidragssak for type ${Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK} med respons $barnUtenBidragssak hvor siste aktive grunnlag var $eksisterendeVerdi"
+            }
+            val nyGrunnlag =
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK,
+                    data = commonObjectmapper.writeValueAsString(barnUtenBidragssak),
+                    innhentet = LocalDateTime.now(),
+                    grunnlagFraVedtakSomSkalOmgjøres = false,
+                    aktiv = LocalDateTime.now(),
+                    rolle = behandling.bidragspliktig!!,
+                    erBearbeidet = false,
+                )
+            behandling.grunnlag.add(nyGrunnlag)
+        } else {
+            log.debug { "Ingen endring i grunnlag barn til BP uten bidragssak for behandling ${behandling.id}, lagrer ikke på nytt" }
+        }
+
+        return emptyMap()
+    }
+
     suspend fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (behandling.tilType() == TypeBehandling.SÆRBIDRAG) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
@@ -600,6 +714,10 @@ class GrunnlagService(
         secureLogger.debug { "Sjekker om identer i behandling ${behandling.id} skal oppdateres" }
         behandling.roller.forEach {
             it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
+            if (it.forholdsmessigFordeling?.bidragsmottaker != null) {
+                it.forholdsmessigFordeling!!.bidragsmottaker =
+                    oppdaterTilNyesteIdent(it.forholdsmessigFordeling!!.bidragsmottaker, behandling.id!!, "FF_$it")
+            }
         }
         behandling.grunnlag.forEach {
             it.gjelder = oppdaterTilNyesteIdent(it.gjelder, behandling.id!!, it.toString()) ?: it.gjelder
@@ -1398,10 +1516,10 @@ class GrunnlagService(
                     grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
                         behandling.underholdskostnader
                             .find { it.rolle?.personident?.verdi == barnetilsyn.key }
-                            ?.let {
-                                if (it.barnetilsyn.isEmpty()) {
-                                    it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
-                                    it.harTilsynsordning = true
+                            ?.apply {
+                                if (this.barnetilsyn.isEmpty()) {
+                                    this.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(this))
+                                    this.harTilsynsordning = true
                                 }
                             }
                     }
