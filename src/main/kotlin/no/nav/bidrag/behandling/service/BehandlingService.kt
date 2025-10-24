@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.erBidrag
 import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
@@ -162,32 +163,35 @@ class BehandlingService(
             return OpprettBehandlingResponse(it.id!!)
         }
 
-        val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
-        behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
-            val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
-            behandling.roller.addAll(
-                HashSet(
-                    opprettBehandling.roller.mapNotNull { opprettRolle ->
+        if (opprettBehandling.erBidrag()) {
+            val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+            behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
+                val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+                behandling.roller.addAll(
+                    HashSet(
+                        opprettBehandling.roller.mapNotNull { opprettRolle ->
 
-                        if (behandling.roller.none { it.ident == opprettRolle.ident!!.verdi }) {
-                            val rolle = opprettRolle.toRolle(behandling)
-                            rolle.forholdsmessigFordeling =
-                                ForholdsmessigFordelingRolle(
-                                    tilhørerSak = opprettBehandling.saksnummer,
-                                    delAvOpprinneligBehandling = true,
-                                    bidragsmottaker = bm?.ident?.verdi,
-                                    eierfogd = Enhetsnummer(opprettBehandling.behandlerenhet),
-                                    erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
-                                )
-                            rolle
-                        } else {
-                            null
-                        }
-                    },
-                ),
-            )
-            return OpprettBehandlingResponse(behandling.id!!)
+                            if (behandling.roller.none { it.ident == opprettRolle.ident!!.verdi }) {
+                                val rolle = opprettRolle.toRolle(behandling)
+                                rolle.forholdsmessigFordeling =
+                                    ForholdsmessigFordelingRolle(
+                                        tilhørerSak = opprettBehandling.saksnummer,
+                                        delAvOpprinneligBehandling = true,
+                                        bidragsmottaker = bm?.ident?.verdi,
+                                        eierfogd = Enhetsnummer(opprettBehandling.behandlerenhet),
+                                        erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
+                                    )
+                                rolle
+                            } else {
+                                null
+                            }
+                        },
+                    ),
+                )
+                return OpprettBehandlingResponse(behandling.id!!)
+            }
         }
+
         opprettBehandling.valider()
         validerBehandlingService.validerKanBehandlesINyLøsning(opprettBehandling.tilKanBehandlesINyLøsningRequest())
 
