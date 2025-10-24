@@ -777,7 +777,7 @@ class Dtomapper(
                                     sammeSakSomBehandling = barn.forholdsmessigFordeling?.tilhørerSak == saksnummer,
                                     erRevurdering = barn.forholdsmessigFordeling?.erRevurdering == true,
                                     harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
-                                    innkrevesFraDato = barn.innkrevesFraDato,
+                                    innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
                                     åpenBehandling =
                                         ForholdsmessigFordelingÅpenBehandlingDto(
                                             søktFraDato = barn.forholdsmessigFordeling?.søknadFomDato,

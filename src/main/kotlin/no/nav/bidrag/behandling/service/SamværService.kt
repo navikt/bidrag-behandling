@@ -84,7 +84,7 @@ class SamværService(
                     Samværsperiode(fom = it.fom, tom = it.tom, samvær = samværBarn, samværsklasse = it.samværsklasse)
                 }
             samværBarn.perioder.clear()
-            samværBarn.perioder = perioderKopiert.toMutableSet()
+            samværBarn.perioder.addAll(perioderKopiert.toMutableSet())
         }
         behandling.søknadsbarn.forEach {
             notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.SAMVÆR, nyNotat, it)

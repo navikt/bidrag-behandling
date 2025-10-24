@@ -1114,7 +1114,7 @@ class BoforholdService(
 
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.globalVirkningstidspunkt,
                 rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(rolle),
                 behandling.tilTypeBoforhold(),
@@ -1133,7 +1133,7 @@ class BoforholdService(
 
         val borMedAndreVoksneperioder =
             BoforholdApi.beregnBoforholdAndreVoksne(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.globalVirkningstidspunkt,
                 periodiseringsrequest,
                 behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),

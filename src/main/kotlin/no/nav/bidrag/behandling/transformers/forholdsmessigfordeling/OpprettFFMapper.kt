@@ -24,6 +24,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.YearMonth
 
 fun opprettRolle(
@@ -42,7 +43,7 @@ fun opprettRolle(
     val rolle =
         Rolle(
             harGebyrsøknad = harGebyrSøknad,
-            innkrevesFraDato = innkrevesFraDato,
+            innkrevesFraDato = LocalDate.from(innkrevesFraDato),
             innkrevingstype =
                 if (medInnkreving == null) {
                     null
