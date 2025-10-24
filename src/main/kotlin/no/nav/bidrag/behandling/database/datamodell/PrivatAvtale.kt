@@ -12,7 +12,9 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.time.LocalDate

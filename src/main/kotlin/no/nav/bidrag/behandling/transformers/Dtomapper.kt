@@ -777,16 +777,18 @@ class Dtomapper(
                                     sammeSakSomBehandling = barn.forholdsmessigFordeling?.tilhørerSak == saksnummer,
                                     erRevurdering = barn.forholdsmessigFordeling?.erRevurdering == true,
                                     harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
+                                    innkrevesFraDato = barn.innkrevesFraDato,
                                     åpenBehandling =
                                         ForholdsmessigFordelingÅpenBehandlingDto(
                                             søktFraDato = barn.forholdsmessigFordeling?.søknadFomDato,
                                             mottattDato = barn.forholdsmessigFordeling?.mottattDato,
                                             stønadstype = barn.stønadstype ?: Stønadstype.BIDRAG,
-                                            behandlerEnhet = barn.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: "",
+                                            behandlerEnhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
                                             behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
                                             søknadsid = barn.forholdsmessigFordeling?.søknadsid,
+                                            medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
                                         ),
-                                    enhet = barn.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: "",
+                                    enhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
                                 )
                             }
                         ForholdmessigFordelingDetaljerDto(barn = barnDto)

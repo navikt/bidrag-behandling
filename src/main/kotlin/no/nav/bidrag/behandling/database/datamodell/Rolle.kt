@@ -117,6 +117,7 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
     open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),
     open var innkrevingstype: Innkrevingstype? = null,
+    open var innkrevesFraDato: YearMonth? = null,
     @Enumerated(EnumType.STRING)
     open var stønadstype: Stønadstype? = null,
     @JdbcTypeCode(SqlTypes.JSON)

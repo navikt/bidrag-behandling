@@ -65,7 +65,7 @@ class CacheConfig {
         caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build())
         caffeineCacheManager.registerCustomCache(
             STØNAD_LØPENDE_BIDRAG_CACHE,
-            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build(),
+            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_FOR_STØNAD_CACHE,

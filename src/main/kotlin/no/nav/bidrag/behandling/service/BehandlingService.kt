@@ -176,7 +176,7 @@ class BehandlingService(
                                     tilhørerSak = opprettBehandling.saksnummer,
                                     delAvOpprinneligBehandling = true,
                                     bidragsmottaker = bm?.ident?.verdi,
-                                    behandlerEnhet = Enhetsnummer(opprettBehandling.behandlerenhet),
+                                    eierfogd = Enhetsnummer(opprettBehandling.behandlerenhet),
                                     erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
                                 )
                             rolle

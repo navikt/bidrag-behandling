@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
@@ -35,6 +36,17 @@ class PrivatAvtaleService(
             PrivatAvtale(behandling = behandling, rolle = rolle, person = person, avtaleType = PrivatAvtaleType.PRIVAT_AVTALE)
         behandling.privatAvtale.add(privatAvtale)
         return privatAvtale
+    }
+
+    @Transactional
+    fun oppdaterPrivatAvtaleBegrunnelse(
+        behandlingsid: Long,
+        request: OppdaterePrivatAvtaleBegrunnelseRequest,
+    ) {
+        log.info { "Oppdaterer privatavtale begrunnelse ${request.privatavtaleid} i behandling $behandlingsid" }
+        request.begrunnelse?.let {
+            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request.privatavtaleid, it)
+        }
     }
 
     @Transactional
@@ -80,19 +92,23 @@ class PrivatAvtaleService(
     @Transactional
     fun oppdaterPrivatAvtaleBegrunnelse(
         behandlingsid: Long,
-        privatavtaleId: Long,
+        privatavtaleId: Long?,
         nyBegrunnelse: String,
     ) {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         val privatAvtale =
-            behandling.privatAvtale.find { it.id == privatavtaleId }
-                ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
+            if (privatavtaleId != null) {
+                behandling.privatAvtale.find { it.id == privatavtaleId }
+                    ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
+            } else {
+                null
+            }
 
         notatService.oppdatereNotat(
             behandling,
             NotatGrunnlag.NotatType.PRIVAT_AVTALE,
             nyBegrunnelse,
-            privatAvtale.rolle ?: behandling.bidragspliktig!!,
+            privatAvtale?.rolle ?: behandling.bidragsmottaker!!,
         )
     }
 

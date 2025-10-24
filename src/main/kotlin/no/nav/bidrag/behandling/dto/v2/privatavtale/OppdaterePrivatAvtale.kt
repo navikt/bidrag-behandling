@@ -9,11 +9,18 @@ import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.math.BigDecimal
 import java.time.LocalDate
+
+data class OppdaterePrivatAvtaleBegrunnelseRequest(
+    val privatavtaleid: Long? = null,
+    val begrunnelse: String? = null,
+)
 
 data class OppdaterePrivatAvtaleRequest(
     @Schema(description = "Setter avtaledato på privat avtalen. Dersom avtaleDato er null, vil avtaledato fjernes.")
@@ -31,6 +38,8 @@ data class OppdaterePrivatAvtaleRequest(
     val avtaleType: PrivatAvtaleType? = null,
     val oppdaterPeriode: OppdaterePrivatAvtalePeriodeDto? = null,
     val slettePeriodeId: Long? = null,
+    val samværsklasse: Samværsklasse? = null,
+    val valute: Valutakode? = null,
 )
 
 data class OppdaterePrivatAvtaleResponsDto(

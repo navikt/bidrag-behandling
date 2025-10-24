@@ -355,7 +355,7 @@ class VedtakGrunnlagMapper(
                         }
                         BeregnGrunnlag(
                             periode = beregningsperiode,
-                            stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                            stønadstype = søknadsbarnRolle.stønadstype ?: stonadstype ?: Stønadstype.BIDRAG,
                             opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
                             søknadsbarnReferanse = søknadsbarn.referanse,
                             grunnlagListe = grunnlagsliste.toSet().toList(),

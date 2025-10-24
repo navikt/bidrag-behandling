@@ -9,6 +9,8 @@ import no.nav.bidrag.commons.service.consumers.FellesSakConsumer
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.sak.BidragssakDto
+import no.nav.bidrag.transport.sak.FjernMidlertidligTilgangRequest
+import no.nav.bidrag.transport.sak.OpprettMidlertidligTilgangRequest
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -57,6 +59,26 @@ class BidragSakConsumer(
                 return emptyList()
             }
             LOGGER.warn(e) { "Det skjedde en feil ved henting av sak for $personident" }
+            throw e
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
+    fun opprettMidlertidligTilgang(request: OpprettMidlertidligTilgangRequest) {
+        try {
+            return postForNonNullEntity(createUri("/sak/tilgang/opprett"), request)
+        } catch (e: HttpStatusCodeException) {
+            LOGGER.warn(e) { "Det skjedde en feil opprettelse av midlertlidlig tilgang for $request" }
+            throw e
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = Backoff(delay = 500, maxDelay = 1500, multiplier = 2.0))
+    fun fjernMidlertidligTilgang(request: FjernMidlertidligTilgangRequest) {
+        try {
+            return postForNonNullEntity(createUri("/sak/tilgang/fjern"), request)
+        } catch (e: HttpStatusCodeException) {
+            LOGGER.warn(e) { "Det skjedde en feil fjerning av midlertidlig tilgang for sak $request" }
             throw e
         }
     }

@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_CACHE_2
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_LØPENDE_BIDRAG_CACHE
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningBeløpshistorikkConsumer
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
@@ -31,7 +32,7 @@ class BidragBeløpshistorikkConsumer(
     private val bidragBeløpshistorikkUri
         get() = UriComponentsBuilder.fromUri(bidragBeløpshistorikkUrl)
 
-    //    @BrukerCacheable(STØNAD_LØPENDE_BIDRAG_CACHE)
+    @BrukerCacheable(STØNAD_LØPENDE_BIDRAG_CACHE)
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,

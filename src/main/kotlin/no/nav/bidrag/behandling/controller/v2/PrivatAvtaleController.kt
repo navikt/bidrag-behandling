@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleResponsDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
@@ -69,6 +70,27 @@ class PrivatAvtaleController(
     ): OppdaterePrivatAvtaleResponsDto {
         privatAvtaleService.oppdaterPrivatAvtale(behandlingsid, privatavtaleid, request)
         return tilPrivatAvtaleResponsDto(behandlingsid, privatavtaleid)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/privatavtale/begrunnelse")
+    @Operation(
+        description =
+            "Oppdatere privat avtale. Returnerer oppdatert element.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun oppdaterPrivatAvtaleBegrunnelse(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdaterePrivatAvtaleBegrunnelseRequest,
+    ) {
+        privatAvtaleService.oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request)
     }
 
     @PostMapping("/behandling/{behandlingsid}/privatavtale/opprette")

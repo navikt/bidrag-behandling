@@ -481,10 +481,15 @@ class GrunnlagService(
     }
 
     suspend fun lagreBpsBarnUtenBidragsak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
-        if (!behandling.erBidrag() || behandling.bidragspliktig == null) return emptyMap()
+        if (!behandling.erBidrag() || behandling.bidragspliktig == null ||
+            !UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
+        ) {
+            return emptyMap()
+        }
         val bidragspliktigIdent = behandling.bidragspliktig!!.ident ?: return emptyMap()
         val barnTilBp = personConsumer!!.hentPersonRelasjon(Personident(bidragspliktigIdent))
 
+        val søknadsbarnIdenter = behandling.søknadsbarn.map { it.ident }
         val åpneSakerBp = ffService!!.hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
         val sakerBp =
             sakConsumer!!
@@ -500,14 +505,18 @@ class GrunnlagService(
                         it.type == Rolletype.BARN
                     }.map { it.fødselsnummer!!.verdi }
             }
-        val barnMedBidragssakUtenLøpendeBidrag = barnBpMedBidragssak.filter { !barnBpMedÅpenSøknad.contains(it) }
+        val barnMedBidragssakUtenLøpendeBidrag =
+            barnBpMedBidragssak.filter {
+                !barnBpMedÅpenSøknad.contains(it) &&
+                    !søknadsbarnIdenter.contains(it)
+            }
         val barnUtenBidragsak =
             barnTilBp.forelderBarnRelasjon
                 .filter { it.erRelatertPersonsBarn() }
                 .sortedBy { it.relatertPersonsIdent?.verdi }
                 .filter { barn ->
                     val ident = barn.relatertPersonsIdent?.verdi ?: return@filter false
-                    !barnBpMedBidragssak.contains(ident)
+                    !barnBpMedBidragssak.contains(ident) && !søknadsbarnIdenter.contains(ident)
                 }.map { it.relatertPersonsIdent!!.verdi }
         val barnUtenBidragsakEllerUtenLøpendeBidrag = barnUtenBidragsak + barnMedBidragssakUtenLøpendeBidrag
         val barnUtenBidragssak =

@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.kafka
 
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.config.UnleashFeatures
-import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.erSærbidrag
@@ -19,8 +18,6 @@ import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.dokument.Sporingsdata
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Component
-import org.springframework.transaction.event.TransactionPhase
-import org.springframework.transaction.event.TransactionalEventListener
 import java.time.LocalDateTime
 import kotlin.collections.filter
 
@@ -66,7 +63,7 @@ class BehandlingOppdatertLytter(
                             engangsbeløptype = behandling.engangsbeloptype,
                             behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                             søknadsid = it.forholdsmessigFordeling?.søknadsid ?: behandling.soknadsid,
-                            behandlerEnhet = it.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: behandling.behandlerEnhet,
+                            behandlerEnhet = it.forholdsmessigFordeling?.eierfogd?.verdi ?: behandling.behandlerEnhet,
                             saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
                             behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
                             særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,
