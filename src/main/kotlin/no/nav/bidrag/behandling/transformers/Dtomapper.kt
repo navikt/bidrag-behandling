@@ -778,6 +778,7 @@ class Dtomapper(
                                     erRevurdering = barn.forholdsmessigFordeling?.erRevurdering == true,
                                     harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
                                     innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
+                                    stønadstype = barn.stønadstype,
                                     åpenBehandling =
                                         ForholdsmessigFordelingÅpenBehandlingDto(
                                             søktFraDato = barn.forholdsmessigFordeling?.søknadFomDato,

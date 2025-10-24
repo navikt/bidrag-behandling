@@ -25,6 +25,7 @@ data class ForholdsmessigFordelingBarnDto(
     val saksnr: String,
     val enhet: String,
     val erRevurdering: Boolean,
+    val stønadstype: Stønadstype?,
     val harLøpendeBidrag: Boolean,
     val innkrevesFraDato: YearMonth?,
     val sammeSakSomBehandling: Boolean,

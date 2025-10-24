@@ -102,6 +102,7 @@ fun Rolle.kopierRolle(
 ) = Rolle(
     behandling = hovedbehandling,
     rolletype = rolletype,
+    stønadstype = stønadstype,
     innkrevingstype =
         if (medInnkreving == null) {
             null

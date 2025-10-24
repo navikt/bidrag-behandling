@@ -368,7 +368,7 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                     perioderInnkreving,
                     rolle!!,
                 ),
-        manglerBegrunnelse = !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
+        manglerBegrunnelse = if (rolle == null) false else !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
         måVelgeVedtakHvisAvtaletypeErVedtakFraNav =
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && valgtVedtakFraNav == null,
         overlappendePerioder =

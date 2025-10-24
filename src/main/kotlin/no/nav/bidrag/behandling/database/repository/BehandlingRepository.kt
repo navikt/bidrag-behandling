@@ -48,8 +48,11 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     ): List<Behandling>
 
     @Query(
-        "SELECT b FROM behandling b JOIN b.roller bp JOIN b.roller barn " +
-            "WHERE b.stonadstype is not null and bp.rolletype = 'BIDRAGSPLIKTIG' AND bp.ident = :bpIdent and b.deleted is false and b.vedtakDetaljer is null and b.id != :ignorerBehandling",
+        """
+            SELECT b.* FROM behandling b JOIN rolle br ON br.behandling_id = b.id 
+            WHERE b.stonadstype is not null and br.rolletype = 'BIDRAGSPLIKTIG' AND br.ident = :bpIdent and b.deleted is false and b.vedtak_detaljer is null 
+            and b.id != :ignorerBehandling and (b.forholdsmessig_fordeling is null or b.forholdsmessig_fordeling ->> 'erHovedbehandling' = 'true')""",
+        nativeQuery = true,
     )
     fun finnÅpneBidragsbehandlingerForBp(
         @Param("bpIdent") bpIdent: String,

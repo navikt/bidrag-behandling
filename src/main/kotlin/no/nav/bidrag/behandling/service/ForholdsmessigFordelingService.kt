@@ -307,6 +307,7 @@ class ForholdsmessigFordelingService(
                         åpenBehandling = null,
                         harLøpendeBidrag = false,
                         innkrevesFraDato = null,
+                        stønadstype = sakKravhaver.stønadstype,
                         bidragsmottaker =
                             sakKravhaver.bidragsmottaker?.let {
                                 RolleDto(
@@ -337,9 +338,10 @@ class ForholdsmessigFordelingService(
                         erRevurdering = false,
                         enhet = sak.eierfogd.verdi,
                         harLøpendeBidrag = true,
+                        stønadstype = lb.stønadstype,
                         innkrevesFraDato =
                             if (lb.løperBidragFra != null &&
-                                lb.løperBidragFra > behandling.søktFomDato.toYearMonth()
+                                lb.løperBidragFra > behandling.globalVirkningstidspunkt.toYearMonth()
                             ) {
                                 lb.løperBidragFra
                             } else {
