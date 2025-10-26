@@ -36,10 +36,9 @@ data class OppdaterePrivatAvtaleRequest(
     )
     val begrunnelse: String? = null,
     val avtaleType: PrivatAvtaleType? = null,
+    val gjelderUtland: Boolean? = false,
     val oppdaterPeriode: OppdaterePrivatAvtalePeriodeDto? = null,
     val slettePeriodeId: Long? = null,
-    val samværsklasse: Samværsklasse? = null,
-    val valute: Valutakode? = null,
 )
 
 data class OppdaterePrivatAvtaleResponsDto(
@@ -51,6 +50,8 @@ data class OppdaterePrivatAvtalePeriodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val beløp: BigDecimal,
+    val samværsklasse: Samværsklasse? = null,
+    val valuta: Valutakode? = null,
 )
 
 data class PrivatAvtaleDto(
@@ -73,6 +74,8 @@ data class PrivatAvtalePeriodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val beløp: BigDecimal,
+    val samværsklasse: Samværsklasse? = null,
+    val valuta: Valutakode? = null,
 )
 
 data class PrivatAvtaleValideringsfeilDto(

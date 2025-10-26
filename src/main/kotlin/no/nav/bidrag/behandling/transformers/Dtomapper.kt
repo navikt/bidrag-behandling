@@ -113,6 +113,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -788,6 +789,8 @@ class Dtomapper(
                                             behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
                                             søknadsid = barn.forholdsmessigFordeling?.søknadsid,
                                             medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                                            søktAvType = barn.forholdsmessigFordeling?.søktAvType ?: SøktAvType.NAV_BIDRAG,
+                                            behandlingstype = barn.forholdsmessigFordeling?.behandlingstype,
                                         ),
                                     enhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
                                 )
@@ -1195,6 +1198,8 @@ class Dtomapper(
                             no.nav.bidrag.behandling.dto.v2.behandling
                                 .DatoperiodeDto(it.fom, it.tom),
                         beløp = it.beløp,
+                        valuta = it.valutakode,
+                        samværsklasse = it.samværsklasse,
                     )
                 },
         )

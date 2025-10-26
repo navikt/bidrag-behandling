@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
@@ -45,8 +46,10 @@ fun opprettRolle(
     ffDetaljer: ForholdsmessigFordelingRolle,
     innkrevesFraDato: YearMonth? = null,
     medInnkreving: Boolean? = null,
-) {
-    if (behandling.roller.any { it.ident == fødselsnummer }) return
+): Rolle {
+    behandling.roller.find { it.ident == fødselsnummer }?.let {
+        return it
+    }
     val erBarn = rolletype == Rolletype.BARN
     val rolle =
         Rolle(
@@ -87,6 +90,7 @@ fun opprettRolle(
             forholdsmessigFordeling = ffDetaljer,
         )
     behandling.roller.add(rolle)
+    return rolle
 }
 
 fun Grunnlag.kopierGrunnlag(hovedbehandling: Behandling): Grunnlag =
@@ -139,6 +143,11 @@ fun Rolle.kopierRolle(
             bidragsmottaker = bmFnr,
             løperBidragFra = periodeFra,
             erRevurdering = false,
+            behandlingstype = behandling.søknadstype,
+            søktAvType = behandling.soknadFra,
+            søknadFomDato = behandling.søktFomDato,
+            mottattDato = behandling.mottattdato,
+            søknadsid = behandling.soknadsid,
         ),
 )
 
@@ -311,7 +320,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
         saksnr = saksnummer,
         sammeSakSomBehandling = behandling.saksnummer == saksnummer,
         erRevurdering = erRevurdering,
-        enhet = sak?.eierfogd?.verdi ?: eierfogd!!,
+        enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent",
         harLøpendeBidrag = løpendeBidrag,
         stønadstype = stønadstype,
         innkrevesFraDato =
@@ -332,6 +341,8 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
                     behandlingId = åpenBehandling.id,
                     medInnkreving = åpenBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
                     søknadsid = null,
+                    behandlingstype = åpenBehandling.søknadstype,
+                    søktAvType = åpenBehandling.soknadFra,
                 )
             } else if (åpenSøknad != null) {
                 ForholdsmessigFordelingÅpenBehandlingDto(
@@ -339,6 +350,8 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
                     behandlerEnhet = sak?.eierfogd?.verdi ?: eierfogd!!,
                     søktFraDato = LocalDate.now(),
                     mottattDato = LocalDate.now(),
+                    behandlingstype = åpenSøknad.behandlingstype,
+                    søktAvType = åpenSøknad.søktAvType,
                     behandlingId = null,
                     medInnkreving = åpenSøknad.innkreving,
                     søknadsid = åpenSøknad.søknadsid.toLong(),

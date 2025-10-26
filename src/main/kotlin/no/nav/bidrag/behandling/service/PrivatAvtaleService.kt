@@ -154,6 +154,8 @@ class PrivatAvtaleService(
                     beløp = request.beløp,
                     fom = request.periode.fom,
                     tom = request.periode.tom,
+                    valutakode = request.valuta,
+                    samværsklasse = request.samværsklasse,
                 )
             privatAvtale.perioder.add(nyPeriode)
             // Adjust the new period's tom if there's a period coming after
@@ -170,6 +172,8 @@ class PrivatAvtaleService(
             eksisterendePeriode.beløp = request.beløp
             eksisterendePeriode.fom = request.periode.fom
             eksisterendePeriode.tom = request.periode.tom
+            eksisterendePeriode.valutakode = request.valuta
+            eksisterendePeriode.samværsklasse = request.samværsklasse
         }
     }
 

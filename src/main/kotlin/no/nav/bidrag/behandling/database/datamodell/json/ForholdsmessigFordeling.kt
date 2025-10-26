@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.database.datamodell.json
 
 import jakarta.persistence.Converter
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import java.time.LocalDate
@@ -20,6 +22,7 @@ data class ForholdsmessigFordelingRolle(
     val mottattDato: LocalDate? = null,
     var søknadFomDato: LocalDate? = null,
     val søktAvType: SøktAvType? = null,
+    val behandlingstype: Behandlingstype?,
     val delAvOpprinneligBehandling: Boolean,
     var erRevurdering: Boolean,
     val harLøpendeBidrag: Boolean = true,

@@ -39,10 +39,10 @@ open class PrivatAvtale(
         cascade = [CascadeType.PERSIST],
     )
     @JoinColumn(name = "person_id", nullable = false)
-    open val person: Person? = null,
+    open var person: Person? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = true)
-    open val rolle: Rolle? = null,
+    open var rolle: Rolle? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "privatAvtale",

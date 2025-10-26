@@ -65,6 +65,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.toString
 
 private val log = KotlinLogging.logger {}
 
@@ -180,6 +181,11 @@ class BehandlingService(
                                         bidragsmottaker = bm?.ident?.verdi,
                                         eierfogd = Enhetsnummer(opprettBehandling.behandlerenhet),
                                         erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
+                                        behandlingstype = opprettBehandling.behandlingstype,
+                                        søktAvType = opprettBehandling.søknadFra,
+                                        søknadFomDato = opprettBehandling.søktFomDato,
+                                        mottattDato = opprettBehandling.mottattdato,
+                                        søknadsid = opprettBehandling.søknadsid,
                                     )
                                 rolle
                             } else {
@@ -188,6 +194,16 @@ class BehandlingService(
                         },
                     ),
                 )
+                val opprettRollerFnr = opprettBehandling.roller.filter { it.rolletype == Rolletype.BARN }.mapNotNull { it.ident?.verdi }
+                val eksisterenderRoller = behandling.roller.filter { r -> opprettRollerFnr.contains(r.ident!!) }
+                eksisterenderRoller.forEach {
+                    forholdsmessigFordelingService!!.feilregistrerSøknadForBarn(
+                        it.forholdsmessigFordeling!!.søknadsid.toString(),
+                        behandling,
+                    )
+                    it.forholdsmessigFordeling!!.søknadsid = opprettBehandling.søknadsid
+                    it.forholdsmessigFordeling!!.erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING
+                }
                 return OpprettBehandlingResponse(behandling.id!!)
             }
         }
