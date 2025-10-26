@@ -47,17 +47,31 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
         @Param("forsendelseId") forsendelseId: Long,
     ): List<Behandling>
 
+//    @Query(
+//        """
+//            SELECT b.* FROM behandling b JOIN rolle br ON br.behandling_id = b.id
+//            WHERE b.stonadstype is not null and br.rolletype = 'BIDRAGSPLIKTIG' AND br.ident = :bpIdent and b.deleted is false and b.vedtak_detaljer is null
+//            and b.id != :ignorerBehandling and (b.forholdsmessig_fordeling is null or b.forholdsmessig_fordeling ->> 'erHovedbehandling' = 'true')""",
+//        nativeQuery = true,
+//    )
     @Query(
         """
             SELECT b.* FROM behandling b JOIN rolle br ON br.behandling_id = b.id 
             WHERE b.stonadstype is not null and br.rolletype = 'BIDRAGSPLIKTIG' AND br.ident = :bpIdent and b.deleted is false and b.vedtak_detaljer is null 
-            and b.id != :ignorerBehandling and (b.forholdsmessig_fordeling is null or b.forholdsmessig_fordeling ->> 'erHovedbehandling' = 'true')""",
+            and b.id != :ignorerBehandling and b.forholdsmessig_fordeling is null""",
         nativeQuery = true,
     )
     fun finnÅpneBidragsbehandlingerForBp(
         @Param("bpIdent") bpIdent: String,
         @Param("ignorerBehandling") ignorerBehandling: Long,
     ): List<Behandling>
+
+    @Query(
+        "SELECT CASE WHEN EXISTS (SELECT 1 FROM behandling b WHERE b.id = :behandlingId AND b.forholdsmessigFordeling IS NOT NULL) THEN TRUE ELSE FALSE END",
+    )
+    fun erIForholdsmessigFordeling(
+        @Param("behandlingId") behandlingId: Long,
+    ): Boolean
 
     @Query(
         "SELECT b FROM behandling b JOIN b.roller bp JOIN b.roller barn " +

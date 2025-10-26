@@ -743,20 +743,24 @@ class ForholdsmessigFordelingService(
         val kravhavereFraÅpneBehandlinger = åpneBehandlingSakKravhaver.map { it.kravhaver }
 
         val åpneSøknaderSakKravhaver =
-            åpneSøknader.flatMap { åpenSøknad ->
-                åpenSøknad.partISøknadListe
-                    .filter { it.rolletype == Rolletype.BARN }
-                    .filter { !kravhavereFraÅpneBehandlinger.contains(it.personident) }
-                    .map { barnFnr ->
-                        val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barnFnr.personident }
-                        SakKravhaver(
-                            åpenSøknad.saksnummer,
-                            kravhaver = barnFnr.personident!!,
-                            løperBidragFra = løpendeBidrag?.periodeFra,
-                            åpenSøknad = åpenSøknad,
-                        )
-                    }
-            }
+            åpneSøknader
+                .filter {
+                    it.behandlingsid == null ||
+                        !behandlingRepository.erIForholdsmessigFordeling(it.behandlingsid!!.toLong())
+                }.flatMap { åpenSøknad ->
+                    åpenSøknad.partISøknadListe
+                        .filter { it.rolletype == Rolletype.BARN }
+                        .filter { !kravhavereFraÅpneBehandlinger.contains(it.personident) }
+                        .map { barnFnr ->
+                            val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barnFnr.personident }
+                            SakKravhaver(
+                                åpenSøknad.saksnummer,
+                                kravhaver = barnFnr.personident!!,
+                                løperBidragFra = løpendeBidrag?.periodeFra,
+                                åpenSøknad = åpenSøknad,
+                            )
+                        }
+                }
 
         val krahaverFraÅpneSaker = åpneSøknaderSakKravhaver.map { it.kravhaver } + kravhavereFraÅpneBehandlinger
 
