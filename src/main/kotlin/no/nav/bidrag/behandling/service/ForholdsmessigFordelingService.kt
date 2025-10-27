@@ -199,7 +199,11 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
     ) {
         LOGGER.info { "Feilregistrerer søknad $søknadId i behandling ${behandling.id}" }
-        bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadId))
+        try {
+            bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadId))
+        } catch (e: Exception) {
+            LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadId i behandling ${behandling.id}" }
+        }
     }
 
     fun kanBehandlingSlettes(
