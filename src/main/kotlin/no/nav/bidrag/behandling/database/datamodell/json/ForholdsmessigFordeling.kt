@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell.json
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.Converter
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -19,16 +20,31 @@ data class ForholdsmessigFordeling(
 data class ForholdsmessigFordelingRolle(
     val tilhørerSak: String,
     val eierfogd: Enhetsnummer?,
-    val mottattDato: LocalDate? = null,
-    var søknadFomDato: LocalDate? = null,
-    val søktAvType: SøktAvType? = null,
-    val behandlingstype: Behandlingstype?,
     val delAvOpprinneligBehandling: Boolean,
     var erRevurdering: Boolean,
     val harLøpendeBidrag: Boolean = true,
     val løperBidragFra: YearMonth? = null,
     val behandlingsid: Long? = null,
-    var søknadsid: Long? = null,
     var søknadsidUtenInnkreving: Long? = null,
     var bidragsmottaker: String? = null,
+    var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
+) {
+    @get:JsonIgnore
+    val eldsteSøknad get() = søknader.filter { it.søknadFomDato != null }.minBy { it.søknadFomDato!! }
+
+    @get:JsonIgnore
+    val søknadsid get() = eldsteSøknad.søknadsid
+}
+
+data class ForholdsmessigFordelingSøknadBarn(
+    val mottattDato: LocalDate,
+    var søknadFomDato: LocalDate? = null,
+    val søktAvType: SøktAvType,
+    var søknadsid: Long? = null,
+    val behandlingstype: Behandlingstype?,
+    val behandlingstema: Behandlingstema?,
+    var søknadsidUtenInnkreving: Long? = null,
+    val omgjørSøknadsid: Long? = null,
+    val omgjørVedtaksid: Int? = null,
+    val innkreving: Boolean = true,
 )

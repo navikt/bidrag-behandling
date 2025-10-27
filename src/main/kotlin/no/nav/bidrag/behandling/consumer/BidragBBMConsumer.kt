@@ -4,13 +4,14 @@ import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadsBarnRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderResponse
 import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
-import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknaderResponse
+import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadResponse
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.annotation.Backoff
@@ -45,7 +46,7 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun opprettSøknader(request: OpprettSøknadRequest): OpprettSøknaderResponse =
+    fun opprettSøknader(request: OpprettSøknadRequest): OpprettSøknadResponse =
         postForNonNullEntity(
             bidragBBMUri.pathSegment("opprettsoknad").build().toUri(),
             request,
@@ -70,6 +71,17 @@ class BidragBBMConsumer(
     fun leggTilBarnISøknad(request: LeggTilBarnIFFSøknadRequest) =
         postForEntity<Unit>(
             bidragBBMUri.pathSegment("leggtilbarniffsoknad").build().toUri(),
+            request,
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun feilregistrerSøknadsbarn(request: FeilregistrerSøknadsBarnRequest) =
+        postForEntity<Unit>(
+            bidragBBMUri.pathSegment("feilregistrersoknadsbarn").build().toUri(),
             request,
         )
 

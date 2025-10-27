@@ -56,8 +56,8 @@ class BehandlingOppdatertLytter(
                 barn =
                     roller.filter { it.rolletype == Rolletype.BARN }.map {
                         BehandlingHendelseBarn(
-                            søktAv = it.forholdsmessigFordeling?.søktAvType ?: behandling.soknadFra,
-                            søktFraDato = it.forholdsmessigFordeling?.søknadFomDato ?: behandling.søktFomDato,
+                            søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: behandling.soknadFra,
+                            søktFraDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: behandling.søktFomDato,
                             ident = it.ident!!,
                             stønadstype = it.stønadstype ?: behandling.stonadstype,
                             engangsbeløptype = behandling.engangsbeloptype,

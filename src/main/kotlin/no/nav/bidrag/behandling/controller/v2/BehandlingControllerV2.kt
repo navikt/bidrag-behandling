@@ -476,6 +476,23 @@ class BehandlingControllerV2(
         @RequestBody request: HentÅpneBehandlingerRequest,
     ) = HentÅpneBehandlingerRespons(behandlingService.hentÅpneBehandlinger(request.barnIdent))
 
+    @PostMapping("/behandling/apnebehandlinger/forholdsmessigfordeling")
+    @Operation(
+        description = "Hent åpne behandlinger",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun hentÅpneBehandlingerMedFF(
+        @RequestBody request: HentÅpneBehandlingerRequest,
+    ) = HentÅpneBehandlingerRespons(behandlingService.hentÅpneBehandlingerMedFF(request.barnIdent))
+
     @PostMapping("/behandling/kanBehandles/{behandlingsid}")
     @Operation(
         description = "Sjekk om behandling kan behandles i ny løsning",

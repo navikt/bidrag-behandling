@@ -769,6 +769,7 @@ class Dtomapper(
                         val barnDto =
                             søknadsbarn.map { barn ->
                                 val bm = barn.bidragsmottaker
+                                val ffEldsteSøknad = barn.forholdsmessigFordeling?.eldsteSøknad
                                 ForholdsmessigFordelingBarnDto(
                                     ident = barn.ident!!,
                                     navn = barn.navn ?: "",
@@ -782,15 +783,16 @@ class Dtomapper(
                                     stønadstype = barn.stønadstype,
                                     åpenBehandling =
                                         ForholdsmessigFordelingÅpenBehandlingDto(
-                                            søktFraDato = barn.forholdsmessigFordeling?.søknadFomDato,
-                                            mottattDato = barn.forholdsmessigFordeling?.mottattDato,
+                                            søktFraDato = ffEldsteSøknad?.søknadFomDato,
+                                            mottattDato = ffEldsteSøknad?.mottattDato,
                                             stønadstype = barn.stønadstype ?: Stønadstype.BIDRAG,
                                             behandlerEnhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
                                             behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
-                                            søknadsid = barn.forholdsmessigFordeling?.søknadsid,
+                                            søknadsid = barn.forholdsmessigFordeling?.eldsteSøknad!!.søknadsid,
                                             medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                                            søktAvType = barn.forholdsmessigFordeling?.søktAvType ?: SøktAvType.NAV_BIDRAG,
-                                            behandlingstype = barn.forholdsmessigFordeling?.behandlingstype,
+                                            søktAvType = ffEldsteSøknad?.søktAvType ?: SøktAvType.NAV_BIDRAG,
+                                            behandlingstype = ffEldsteSøknad?.behandlingstype,
+                                            behandlingstema = ffEldsteSøknad?.behandlingstema,
                                         ),
                                     enhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
                                 )

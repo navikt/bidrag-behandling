@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
@@ -23,18 +24,46 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
+import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
+
+fun Behandling.tilFFBarnDetaljer() =
+    ForholdsmessigFordelingSøknadBarn(
+        søktAvType = soknadFra,
+        behandlingstype = søknadstype,
+        behandlingstema = behandlingstema,
+        mottattDato = mottattdato,
+        søknadFomDato = søktFomDato,
+        søknadsid = soknadsid,
+        innkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
+        omgjørSøknadsid = omgjøringsdetaljer?.soknadRefId,
+        omgjørVedtaksid = omgjøringsdetaljer?.omgjørVedtakId,
+    )
+
+fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
+    ForholdsmessigFordelingSøknadBarn(
+        behandlingstype = behandlingstype,
+        behandlingstema = behandlingstema,
+        mottattDato = søknadMottattDato,
+        søknadFomDato = søknadFomDato,
+        søktAvType = søktAvType,
+        søknadsid = søknadsid,
+        omgjørVedtaksid = referertVedtaksid,
+        innkreving = innkreving,
+        omgjørSøknadsid = referertSøknadsid,
+    )
 
 fun opprettRolle(
     behandling: Behandling,
@@ -143,11 +172,10 @@ fun Rolle.kopierRolle(
             bidragsmottaker = bmFnr,
             løperBidragFra = periodeFra,
             erRevurdering = false,
-            behandlingstype = behandling.søknadstype,
-            søktAvType = behandling.soknadFra,
-            søknadFomDato = behandling.søktFomDato,
-            mottattDato = behandling.mottattdato,
-            søknadsid = behandling.soknadsid,
+            søknader =
+                mutableSetOf(
+                    behandling.tilFFBarnDetaljer(),
+                ),
         ),
 )
 
@@ -343,10 +371,11 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
                     søknadsid = null,
                     behandlingstype = åpenBehandling.søknadstype,
                     søktAvType = åpenBehandling.soknadFra,
+                    behandlingstema = åpenBehandling.behandlingstema,
                 )
             } else if (åpenSøknad != null) {
                 ForholdsmessigFordelingÅpenBehandlingDto(
-                    stønadstype = åpenSøknad.stønadstype,
+                    behandlingstema = åpenSøknad.behandlingstema,
                     behandlerEnhet = sak?.eierfogd?.verdi ?: eierfogd!!,
                     søktFraDato = LocalDate.now(),
                     mottattDato = LocalDate.now(),
@@ -354,7 +383,8 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
                     søktAvType = åpenSøknad.søktAvType,
                     behandlingId = null,
                     medInnkreving = åpenSøknad.innkreving,
-                    søknadsid = åpenSøknad.søknadsid.toLong(),
+                    stønadstype = åpenSøknad.behandlingstema?.tilStønadstype() ?: Stønadstype.BIDRAG,
+                    søknadsid = åpenSøknad.søknadsid,
                 )
             } else {
                 null

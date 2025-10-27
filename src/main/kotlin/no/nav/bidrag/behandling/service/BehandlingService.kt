@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadat
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
@@ -54,6 +55,7 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandling
+import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarn
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
@@ -65,7 +67,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
-import kotlin.toString
+import kotlin.jvm.optionals.getOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -168,6 +170,16 @@ class BehandlingService(
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
             behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
                 val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+                val søknadsdetaljer =
+                    ForholdsmessigFordelingSøknadBarn(
+                        søknadsid = opprettBehandling.søknadsid,
+                        søknadFomDato = opprettBehandling.søktFomDato,
+                        søktAvType = opprettBehandling.søknadFra,
+                        innkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                        mottattDato = opprettBehandling.mottattdato,
+                        behandlingstema = opprettBehandling.behandlingstema,
+                        behandlingstype = opprettBehandling.behandlingstype,
+                    )
                 behandling.roller.addAll(
                     HashSet(
                         opprettBehandling.roller.mapNotNull { opprettRolle ->
@@ -179,13 +191,10 @@ class BehandlingService(
                                         tilhørerSak = opprettBehandling.saksnummer,
                                         delAvOpprinneligBehandling = true,
                                         bidragsmottaker = bm?.ident?.verdi,
+                                        behandlingsid = behandling.id,
                                         eierfogd = Enhetsnummer(opprettBehandling.behandlerenhet),
                                         erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
-                                        behandlingstype = opprettBehandling.behandlingstype,
-                                        søktAvType = opprettBehandling.søknadFra,
-                                        søknadFomDato = opprettBehandling.søktFomDato,
-                                        mottattDato = opprettBehandling.mottattdato,
-                                        søknadsid = opprettBehandling.søknadsid,
+                                        søknader = mutableSetOf(søknadsdetaljer),
                                     )
                                 rolle
                             } else {
@@ -197,11 +206,14 @@ class BehandlingService(
                 val opprettRollerFnr = opprettBehandling.roller.filter { it.rolletype == Rolletype.BARN }.mapNotNull { it.ident?.verdi }
                 val eksisterenderRoller = behandling.roller.filter { r -> opprettRollerFnr.contains(r.ident!!) }
                 eksisterenderRoller.forEach {
-                    forholdsmessigFordelingService!!.feilregistrerSøknadForBarn(
-                        it.forholdsmessigFordeling!!.søknadsid.toString(),
-                        behandling,
-                    )
-                    it.forholdsmessigFordeling!!.søknadsid = opprettBehandling.søknadsid
+                    if (it.forholdsmessigFordeling!!.erRevurdering) {
+                        forholdsmessigFordelingService!!.feilregistrerBarnFraFFSøknad(
+                            it.forholdsmessigFordeling!!.eldsteSøknad.søknadsid!!,
+                            it.ident!!,
+                        )
+                    }
+
+                    it.forholdsmessigFordeling!!.søknader.add(søknadsdetaljer)
                     it.forholdsmessigFordeling!!.erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING
                 }
                 return OpprettBehandlingResponse(behandling.id!!)
@@ -467,11 +479,33 @@ class BehandlingService(
     }
 
     @Transactional(readOnly = true)
+    fun hentÅpneBehandlingerMedFF(bpIdent: String): List<ÅpenBehandling> =
+        behandlingRepository
+            .finnÅpneBidragsbehandlingerForBpMedFF(bpIdent)
+            .filter { it.stonadstype != null }
+            .map {
+                ÅpenBehandling(
+                    it.stonadstype!!,
+                    it.id!!,
+                    it.søknadsbarn.map {
+                        ÅpenBehandlingBarn(
+                            it.forholdsmessigFordeling!!.tilhørerSak,
+                            it.forholdsmessigFordeling!!.eldsteSøknad.søknadsid!!,
+                            it.forholdsmessigFordeling!!.bidragsmottaker!!,
+                            it.ident!!,
+                            it.forholdsmessigFordeling!!.eldsteSøknad.søknadFomDato!!,
+                            it.forholdsmessigFordeling!!.eldsteSøknad.mottattDato,
+                        )
+                    },
+                )
+            }
+
+    @Transactional(readOnly = true)
     fun hentÅpneBehandlinger(barnIdent: String): List<ÅpenBehandling> =
         behandlingRepository
             .finnÅpneBidragsbehandlingerForBarn(barnIdent)
             .filter { it.stonadstype != null }
-            .map { ÅpenBehandling(it.stonadstype!!, it.id!!) }
+            .map { ÅpenBehandling(it.stonadstype!!, it.id!!, emptyList()) }
 
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
@@ -482,7 +516,7 @@ class BehandlingService(
                     if (it.forholdsmessigFordeling != null &&
                         it.forholdsmessigFordeling?.erHovedbehandling == false
                     ) {
-                        behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!)
+                        behandlingRepository.findBehandlingById(it.forholdsmessigFordeling!!.behandlesAvBehandling!!).getOrNull()
                             ?: behandlingNotFoundException(behandlingId)
                     } else {
                         it
