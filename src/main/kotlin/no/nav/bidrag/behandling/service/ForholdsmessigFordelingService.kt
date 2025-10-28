@@ -273,13 +273,7 @@ class ForholdsmessigFordelingService(
                             bidragsmottaker = bmIdent ?: behandling.bidragsmottakerForSak(saksnummer)?.ident,
                             eierfogd = Enhetsnummer(behandlerenhet),
                             erRevurdering = erRevurdering,
-                            søknader =
-                                mutableSetOf(
-                                    søknadsdetaljerBarn
-                                        .copy(
-                                            søknadsid = søknadsid,
-                                        ),
-                                ),
+                            søknader = mutableSetOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid)),
                         )
                     rolle
                 }
@@ -838,7 +832,11 @@ class ForholdsmessigFordelingService(
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr))
         val åpneBehandlinger = behandlingRepository.finnÅpneBidragsbehandlingerForBp(bidragspliktigFnr, behandling.id!!)
-        val åpneSøknader = hentÅpneSøknader(bidragspliktigFnr)
+        val åpneSøknader =
+            hentÅpneSøknader(bidragspliktigFnr).filter {
+                it.behandlingstype == Behandlingstype.KLAGE && behandling.erKlageEllerOmgjøring ||
+                    it.behandlingstype != Behandlingstype.KLAGE
+            }
 
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
 
