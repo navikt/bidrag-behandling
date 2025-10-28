@@ -68,7 +68,9 @@ import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
+import no.nav.bidrag.behandling.transformers.cuttoffBidrag18ÅrAlder
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.erOverAntallÅrGammel
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.grunnlag.grunnlagstyperSomIkkeKreverAktivering
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
@@ -502,7 +504,8 @@ class GrunnlagService(
             sakerBp.flatMap {
                 it.roller
                     .filter {
-                        it.type == Rolletype.BARN
+                        it.type == Rolletype.BARN &&
+                            !erOverAntallÅrGammel(hentPersonFødselsdato(it.fødselsnummer!!.verdi), cuttoffBidrag18ÅrAlder)
                     }.map { it.fødselsnummer!!.verdi }
             }
         val barnMedBidragssakUtenLøpendeBidrag =
@@ -516,7 +519,8 @@ class GrunnlagService(
                 .sortedBy { it.relatertPersonsIdent?.verdi }
                 .filter { barn ->
                     val ident = barn.relatertPersonsIdent?.verdi ?: return@filter false
-                    !barnBpMedBidragssak.contains(ident) && !søknadsbarnIdenter.contains(ident)
+                    !barnBpMedBidragssak.contains(ident) && !søknadsbarnIdenter.contains(ident) &&
+                        !erOverAntallÅrGammel(hentPersonFødselsdato(ident), cuttoffBidrag18ÅrAlder)
                 }.map { it.relatertPersonsIdent!!.verdi }
         val barnUtenBidragsakEllerUtenLøpendeBidrag = barnUtenBidragsak + barnMedBidragssakUtenLøpendeBidrag
         val barnUtenBidragssak =
