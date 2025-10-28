@@ -224,6 +224,9 @@ open class Behandling(
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
     val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+
+    fun bidragsmottakerForSak(saksnummer: String) = alleBidragsmottakere.find { it.forholdsmessigFordeling?.tilhørerSak == saksnummer }
+
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
     val erVedtakFattet get() = vedtaksid != null

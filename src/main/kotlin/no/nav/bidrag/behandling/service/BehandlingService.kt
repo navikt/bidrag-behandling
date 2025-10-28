@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -33,6 +34,7 @@ import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
@@ -41,7 +43,7 @@ import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.security.utils.TokenUtils
-import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -228,7 +230,7 @@ class BehandlingService(
         val opprettetAvNavn =
             TokenUtils
                 .hentSaksbehandlerIdent()
-                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+                ?.let { EnhetProvider.hentSaksbehandlernavn(it) }
         val virkningstidspunkt =
             when (opprettBehandling.tilType()) {
                 TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> opprettBehandling.søktFomDato
@@ -531,8 +533,9 @@ class BehandlingService(
     @Transactional
     fun oppdaterRoller(
         behandlingId: Long,
-        oppdaterRollerListe: List<OpprettRolleDto>,
+        request: OppdaterRollerRequest,
     ): OppdaterRollerResponse {
+        val oppdaterRollerListe = request.roller
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
@@ -565,7 +568,6 @@ class BehandlingService(
                 } til behandling $behandlingId"
             }
         }
-        behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
 
         val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
@@ -573,12 +575,15 @@ class BehandlingService(
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
         if (behandling.forholdsmessigFordeling != null) {
-            val rollerSomSkalSlettes =
-                behandling.roller
-                    .filter { identerSomSkalSlettes.contains(it.ident) }
-                    .map { it }
-            forholdsmessigFordelingService?.slettBarnFraBehandlingFF(rollerSomSkalSlettes, behandling)
+            forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
+                rollerSomLeggesTil,
+                rollerSomSkalSlettes,
+                behandling,
+                request.søknadsid ?: behandling.soknadsid!!,
+                request.saksnummer ?: behandling.saksnummer,
+            )
         } else {
+            behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
             behandling.roller.removeIf { r ->
                 val skalSlettes = identerSomSkalSlettes.contains(r.ident)
                 skalSlettes.ifTrue {

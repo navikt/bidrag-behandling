@@ -26,7 +26,7 @@ data class ForholdsmessigFordelingRolle(
     val løperBidragFra: YearMonth? = null,
     val behandlingsid: Long? = null,
     var søknadsidUtenInnkreving: Long? = null,
-    var bidragsmottaker: String? = null,
+    var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
 ) {
     @get:JsonIgnore

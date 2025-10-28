@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 data class OppdaterRollerRequest(
     @Schema(required = true) val roller: List<OpprettRolleDto>,
+    val søknadsid: Long? = null,
+    val saksnummer: String? = null,
 )
 
 data class OppdaterRollerResponse(

@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -8,6 +10,7 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.query.Param
 import java.time.LocalDateTime
 import java.util.Optional
+
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
     fun findBehandlingById(id: Long): Optional<Behandling>
@@ -34,13 +37,17 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     fun hentBehandlingerSomManglerNotater(afterDate: LocalDateTime): List<Behandling>
 
     @Query(
-        "select * from behandling b where jsonb_path_exists(b.forsendelse_bestillinger, '\$.bestillinger[*] ? (@.feilBegrunnelse != null)') and jsonb_path_exists(b.forsendelse_bestillinger, '\$.bestillinger[*] ? (@.antallForsøkOpprettEllerDistribuer < 10)') and b.vedtakstype = 'ALDERSJUSTERING' and b.vedtaksid is not null",
+        "select * from behandling b " +
+            "where jsonb_path_exists(b.forsendelse_bestillinger, '\$.bestillinger[*] ? (@.feilBegrunnelse != null)')" +
+            " and jsonb_path_exists(b.forsendelse_bestillinger, '\$.bestillinger[*] ? (@.antallForsøkOpprettEllerDistribuer < 10)') and b.vedtakstype = 'ALDERSJUSTERING' and b.vedtaksid is not null",
         nativeQuery = true,
     )
     fun hentBehandlingerHvorDistribusjonAvForsendelseFeilet(): List<Behandling>
 
     @Query(
-        "select * from behandling b where jsonb_path_exists(b.forsendelse_bestillinger, '\$.bestillinger[*] ? (@.forsendelseId == \$forsendelseId)', jsonb_build_object('forsendelseId', :forsendelseId)) and b.vedtakstype = 'ALDERSJUSTERING' and b.vedtaksid is not null",
+        "select * from behandling b " +
+            "where jsonb_path_exists(b.forsendelse_bestillinger, '\$.bestillinger[*] ? (@.forsendelseId == \$forsendelseId)', jsonb_build_object('forsendelseId', :forsendelseId)) " +
+            "and b.vedtakstype = 'ALDERSJUSTERING' and b.vedtaksid is not null",
         nativeQuery = true,
     )
     fun hentBehandlingerSomInneholderBestillingMedForsendelseId(
@@ -89,7 +96,24 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
           AND br.ident = :bpIdent
           AND b.deleted = false
           AND b.vedtak_detaljer IS NULL
-          AND (b.forholdsmessig_fordeling->>'erHovedbehandling') = 'true'
+          AND b.forholdsmessig_fordeling IS not NULL AND (b.forholdsmessig_fordeling->>'erHovedbehandling') = 'true'
+    """,
+        nativeQuery = true,
+    )
+    fun finnÅpneBidragsbehandlingerForBpMedFF(
+        @Param("bpIdent") bpIdent: String,
+    ): List<Behandling>
+
+    @Query(
+        value = """
+        SELECT b.* FROM behandling b
+        JOIN rolle br ON br.behandling_id = b.id
+        WHERE br.rolletype = 'BIDRAGSPLIKTIG'
+          AND br.ident = :bpIdent
+          AND b.deleted = false
+          AND b.vedtakstidspunkt IS NULL
+          AND b.forholdsmessig_fordeling IS not NULL AND (b.forholdsmessig_fordeling->>'erHovedbehandling') = 'true'
+       limit 1
     """,
         nativeQuery = true,
     )

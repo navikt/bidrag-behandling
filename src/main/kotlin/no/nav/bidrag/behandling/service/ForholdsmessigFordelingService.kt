@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
@@ -25,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettRoll
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettSamværOgUnderholdForBarn
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
+import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -241,21 +243,75 @@ class ForholdsmessigFordelingService(
         }
 
     @Transactional
-    fun slettBarnFraBehandlingFF(
+    fun leggTilEllerSlettBarnFraBehandlingSomErIFF(
+        rollerSomSkalLeggesTilDto: List<OpprettRolleDto>,
+        rollerSomSkalSlettes: List<OpprettRolleDto>,
+        behandling: Behandling,
+        søknadsid: Long,
+        saksnummer: String,
+    ) {
+        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        val rollerSomSkalLeggesTil =
+            rollerSomSkalLeggesTilDto.map {
+                val rolle = it.toRolle(behandling)
+                rolle.forholdsmessigFordeling =
+                    ForholdsmessigFordelingRolle(
+                        tilhørerSak = saksnummer,
+                        delAvOpprinneligBehandling = true,
+                        behandlingsid = behandling.id,
+                        bidragsmottaker =
+                            behandling.bidragsmottakerForSak(saksnummer)?.ident,
+                        eierfogd = Enhetsnummer(behandling.behandlerEnhet),
+                        erRevurdering = false,
+                        søknader =
+                            mutableSetOf(
+                                behandling
+                                    .tilFFBarnDetaljer()
+                                    .copy(
+                                        søknadsid = søknadsid,
+                                    ),
+                            ),
+                    )
+                rolle
+            }
+        behandling.roller.addAll(rollerSomSkalLeggesTil)
+        val rollerSomSkalSlettes =
+            behandling.roller
+                .filter { identerSomSkalSlettes.contains(it.ident) }
+                .map { it }
+        slettBarnEllerBehandling(rollerSomSkalSlettes, behandling, søknadsid)
+    }
+
+    private fun slettBarnEllerBehandling(
         slettBarn: List<Rolle>,
         behandling: Behandling,
+        søknadsid: Long,
     ) {
         if (kanBehandlingSlettes(behandling, slettBarn)) {
             behandlingService.slettBehandling(behandling, slettBarn)
         } else {
-            slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling) }
+            slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
         }
     }
 
     fun slettBarnFraBehandlingFF(
         barn: Rolle,
         behandling: Behandling,
+        søknadsid: Long,
     ) {
+        barn.forholdsmessigFordeling!!.søknader =
+            barn.forholdsmessigFordeling!!
+                .søknader
+                .filter { it.søknadsid != søknadsid }
+                .toMutableSet()
+        if (barn.forholdsmessigFordeling!!.søknader.isNotEmpty()) {
+            LOGGER.info {
+                "Barnet er koblet til flere søknader ${barn.forholdsmessigFordeling!!.søknader}" +
+                    " etter den ble slettet fra søknad $søknadsid. Gjør ingen endring. Behandlingid = ${behandling.id}"
+            }
+            return
+        }
+        LOGGER.info { "Sletter barn ${barn.ident} fra behandling ${behandling.id} og lager ny revurderingsøknad" }
         barn.forholdsmessigFordeling!!.erRevurdering = true
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val åpneSøknader = hentÅpneSøknader(bidragspliktigFnr)
@@ -460,6 +516,7 @@ class ForholdsmessigFordelingService(
                         delAvOpprinneligBehandling = false,
                         tilhørerSak = åpenSøknad.saksnummer,
                         eierfogd = sak.eierfogd,
+                        bidragsmottaker = åpenSøknad.bidragsmottaker?.personident,
                         erRevurdering = åpenSøknad.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING,
                         søknader =
                             mutableSetOf(
@@ -620,6 +677,7 @@ class ForholdsmessigFordelingService(
                 erRevurdering = true,
                 tilhørerSak = saksnummer,
                 eierfogd = sak.eierfogd,
+                bidragsmottaker = bmFødselsnummer,
                 søknader =
                     mutableSetOf(
                         ForholdsmessigFordelingSøknadBarn(

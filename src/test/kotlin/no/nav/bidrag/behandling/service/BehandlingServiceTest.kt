@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -1373,12 +1374,14 @@ class BehandlingServiceTest : TestContainerRunner() {
             val response =
                 behandlingService.oppdaterRoller(
                     b.id!!,
-                    listOf(
-                        OpprettRolleDto(
-                            Rolletype.BARN,
-                            Personident("newident"),
-                            null,
-                            fødselsdato = LocalDate.now().minusMonths(144),
+                    OppdaterRollerRequest(
+                        listOf(
+                            OpprettRolleDto(
+                                Rolletype.BARN,
+                                Personident("newident"),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                            ),
                         ),
                     ),
                 )
@@ -1398,15 +1401,18 @@ class BehandlingServiceTest : TestContainerRunner() {
             val response =
                 behandlingService.oppdaterRoller(
                     b.id!!,
-                    listOf(
-                        OpprettRolleDto(
-                            Rolletype.BARN,
-                            Personident(b.søknadsbarn.first().ident!!),
-                            null,
-                            fødselsdato = LocalDate.now().minusMonths(144),
-                            null,
-                            true,
-                        ),
+                    OppdaterRollerRequest(
+                        roller =
+                            listOf(
+                                OpprettRolleDto(
+                                    Rolletype.BARN,
+                                    Personident(b.søknadsbarn.first().ident!!),
+                                    null,
+                                    fødselsdato = LocalDate.now().minusMonths(144),
+                                    null,
+                                    true,
+                                ),
+                            ),
                     ),
                 )
 
@@ -1474,53 +1480,55 @@ class BehandlingServiceTest : TestContainerRunner() {
             val response =
                 behandlingService.oppdaterRoller(
                     behandling.id!!,
-                    listOf(
-                        OpprettRolleDto(
-                            Rolletype.BIDRAGSPLIKTIG,
-                            Personident(testdataBP.ident),
-                            null,
-                            fødselsdato = LocalDate.now().minusMonths(144),
-                            null,
-                            false,
-                            harGebyrsøknad = true,
-                        ),
-                        OpprettRolleDto(
-                            Rolletype.BIDRAGSMOTTAKER,
-                            Personident(testdataBM.ident),
-                            null,
-                            fødselsdato = LocalDate.now().minusMonths(144),
-                            null,
-                            false,
-                            harGebyrsøknad = false,
-                        ),
-                        OpprettRolleDto(
-                            Rolletype.BARN,
-                            Personident(identOriginaltMedISaken),
-                            null,
-                            fødselsdato = LocalDate.now().minusMonths(144),
-                            null,
-                            true,
-                        ),
-                        OpprettRolleDto(
-                            Rolletype.BARN,
-                            Personident(identOriginaltIkkeMedISaken),
-                            null,
-                            fødselsdato = LocalDate.now().minusMonths(144),
-                        ),
-                        OpprettRolleDto(
-                            Rolletype.BARN,
-                            Personident("1111234"),
-                            null,
-                            fødselsdato = LocalDate.now().minusMonths(144),
-                            innbetaltBeløp = BigDecimal("100.254"),
-                        ),
-                        OpprettRolleDto(
-                            Rolletype.BARN,
-                            Personident("5555566666"),
-                            "Person som ikke finnes",
-                            fødselsdato = LocalDate.now().minusMonths(144),
-                            null,
-                            true,
+                    OppdaterRollerRequest(
+                        listOf(
+                            OpprettRolleDto(
+                                Rolletype.BIDRAGSPLIKTIG,
+                                Personident(testdataBP.ident),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                                null,
+                                false,
+                                harGebyrsøknad = true,
+                            ),
+                            OpprettRolleDto(
+                                Rolletype.BIDRAGSMOTTAKER,
+                                Personident(testdataBM.ident),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                                null,
+                                false,
+                                harGebyrsøknad = false,
+                            ),
+                            OpprettRolleDto(
+                                Rolletype.BARN,
+                                Personident(identOriginaltMedISaken),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                                null,
+                                true,
+                            ),
+                            OpprettRolleDto(
+                                Rolletype.BARN,
+                                Personident(identOriginaltIkkeMedISaken),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                            ),
+                            OpprettRolleDto(
+                                Rolletype.BARN,
+                                Personident("1111234"),
+                                null,
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                                innbetaltBeløp = BigDecimal("100.254"),
+                            ),
+                            OpprettRolleDto(
+                                Rolletype.BARN,
+                                Personident("5555566666"),
+                                "Person som ikke finnes",
+                                fødselsdato = LocalDate.now().minusMonths(144),
+                                null,
+                                true,
+                            ),
                         ),
                     ),
                 )
@@ -1552,14 +1560,16 @@ class BehandlingServiceTest : TestContainerRunner() {
                 assertThrows<HttpClientErrorException> {
                     behandlingService.oppdaterRoller(
                         behandling.id!!,
-                        listOf(
-                            OpprettRolleDto(
-                                Rolletype.BARN,
-                                Personident(identOriginaltMedISaken),
-                                null,
-                                fødselsdato = LocalDate.now().minusMonths(144),
-                                null,
-                                true,
+                        OppdaterRollerRequest(
+                            listOf(
+                                OpprettRolleDto(
+                                    Rolletype.BARN,
+                                    Personident(identOriginaltMedISaken),
+                                    null,
+                                    fødselsdato = LocalDate.now().minusMonths(144),
+                                    null,
+                                    true,
+                                ),
                             ),
                         ),
                     )
