@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.commons.security.utils.TokenUtils
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -54,26 +55,37 @@ class BehandlingOppdatertLytter(
                 mottattDato = behandling.mottattdato,
                 behandlerEnhet = behandling.behandlerEnhet,
                 barn =
-                    roller.filter { it.rolletype == Rolletype.BARN }.map {
-                        BehandlingHendelseBarn(
-                            søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: behandling.soknadFra,
-                            søktFraDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: behandling.søktFomDato,
-                            ident = it.ident!!,
-                            stønadstype = it.stønadstype ?: behandling.stonadstype,
-                            engangsbeløptype = behandling.engangsbeloptype,
-                            behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
-                            søknadsid = it.forholdsmessigFordeling?.søknadsid ?: behandling.soknadsid,
-                            behandlerEnhet = it.forholdsmessigFordeling?.eierfogd?.verdi ?: behandling.behandlerEnhet,
-                            saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
-                            behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
-                            særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,
-                            status =
-                                when {
-                                    it.deleted -> Behandlingstatus.FEILREGISTRERT
-                                    erVedtakFattet -> Behandlingstatus.VEDTAK_FATTET
-                                    else -> it.behandlingstatus ?: Behandlingstatus.UNDER_BEHANDLING
-                                },
-                        )
+                    roller.filter { it.rolletype == Rolletype.BARN }.flatMap { barn ->
+                        val hendelseBarn =
+                            BehandlingHendelseBarn(
+                                søktAv = behandling.soknadFra,
+                                søktFraDato = behandling.søktFomDato,
+                                ident = barn.ident!!,
+                                stønadstype = barn.stønadstype ?: behandling.stonadstype,
+                                engangsbeløptype = behandling.engangsbeloptype,
+                                behandlingstema = behandling.behandlingstema ?: Behandlingstema.BIDRAG,
+                                søknadsid = behandling.soknadsid,
+                                omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
+                                behandlerEnhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: behandling.behandlerEnhet,
+                                saksnummer = barn.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
+                                behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
+                                særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,
+                                status =
+                                    when {
+                                        barn.deleted -> Behandlingstatus.FEILREGISTRERT
+                                        erVedtakFattet -> Behandlingstatus.VEDTAK_FATTET
+                                        else -> barn.behandlingstatus ?: Behandlingstatus.UNDER_BEHANDLING
+                                    },
+                            )
+                        barn.forholdsmessigFordeling?.søknader?.map {
+                            hendelseBarn.copy(
+                                søktAv = it.søktAvType,
+                                søktFraDato = it.søknadFomDato ?: behandling.søktFomDato,
+                                søknadsid = it.søknadsid ?: behandling.soknadsid,
+                                omgjørSøknadsid = it.omgjørSøknadsid,
+                                behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
+                            )
+                        } ?: listOf(hendelseBarn)
                     },
                 sporingsdata =
                     Sporingsdata(
@@ -82,7 +94,7 @@ class BehandlingOppdatertLytter(
                         enhetsnummer = behandling.behandlerEnhet,
                         saksbehandlersNavn =
                             TokenUtils.hentSaksbehandlerIdent()?.let {
-                                SaksbehandlernavnProvider.hentSaksbehandlernavn(it)
+                                EnhetProvider.hentSaksbehandlernavn(it)
                             },
                     ),
                 status =

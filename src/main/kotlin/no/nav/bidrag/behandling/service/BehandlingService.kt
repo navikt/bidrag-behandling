@@ -182,37 +182,22 @@ class BehandlingService(
                         behandlingstema = opprettBehandling.behandlingstema,
                         behandlingstype = opprettBehandling.behandlingstype,
                     )
-                behandling.roller.addAll(
-                    HashSet(
-                        opprettBehandling.roller.mapNotNull { opprettRolle ->
-
-                            if (behandling.roller.none { it.ident == opprettRolle.ident!!.verdi }) {
-                                val rolle = opprettRolle.toRolle(behandling)
-                                rolle.forholdsmessigFordeling =
-                                    ForholdsmessigFordelingRolle(
-                                        tilhørerSak = opprettBehandling.saksnummer,
-                                        delAvOpprinneligBehandling = true,
-                                        bidragsmottaker = bm?.ident?.verdi,
-                                        behandlingsid = behandling.id,
-                                        eierfogd = Enhetsnummer(opprettBehandling.behandlerenhet),
-                                        erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
-                                        søknader = mutableSetOf(søknadsdetaljer),
-                                    )
-                                rolle
-                            } else {
-                                null
-                            }
-                        },
-                    ),
+                forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
+                    opprettBehandling.roller.toList(),
+                    emptyList(),
+                    behandling,
+                    opprettBehandling.søknadsid,
+                    opprettBehandling.saksnummer,
+                    bm?.ident?.verdi,
+                    behandlerenhet = opprettBehandling.behandlerenhet,
+                    erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
+                    søknadsdetaljer,
                 )
                 val opprettRollerFnr = opprettBehandling.roller.filter { it.rolletype == Rolletype.BARN }.mapNotNull { it.ident?.verdi }
                 val eksisterenderRoller = behandling.roller.filter { r -> opprettRollerFnr.contains(r.ident!!) }
                 eksisterenderRoller.forEach {
                     if (it.forholdsmessigFordeling!!.erRevurdering) {
-                        forholdsmessigFordelingService!!.feilregistrerBarnFraFFSøknad(
-                            it.forholdsmessigFordeling!!.eldsteSøknad.søknadsid!!,
-                            it.ident!!,
-                        )
+                        forholdsmessigFordelingService.feilregistrerBarnFraFFSøknad(it)
                     }
 
                     it.forholdsmessigFordeling!!.søknader.add(søknadsdetaljer)

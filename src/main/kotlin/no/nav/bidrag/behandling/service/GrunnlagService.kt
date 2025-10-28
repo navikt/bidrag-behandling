@@ -521,7 +521,7 @@ class GrunnlagService(
         val barnUtenBidragsakEllerUtenLøpendeBidrag = barnUtenBidragsak + barnMedBidragssakUtenLøpendeBidrag
         val barnUtenBidragssak =
             barnUtenBidragsakEllerUtenLøpendeBidrag.map { barn ->
-                val sak = sakerBp.find { it.roller.any { it.fødselsnummer?.verdi == barn } }
+                val sak = sakerBp.find { it.roller.any { it.fødselsnummer?.verdi == barn && it.type == Rolletype.BARN } }
                 BpsBarnUtenBidragsakEllerLøpendeBidrag(
                     Personident(barn),
                     hentPersonVisningsnavn(barn),

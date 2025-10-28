@@ -204,15 +204,19 @@ class ForholdsmessigFordelingService(
             }
     }
 
-    fun feilregistrerBarnFraFFSøknad(
-        søknadId: Long,
-        personidentBarn: String,
-    ) {
-        LOGGER.info { "Feilregistrerer barn $personidentBarn fra søknad $søknadId" }
+    fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
+        val søknadsid = rolle.forholdsmessigFordeling!!.søknadsid!!
+        val personidentBarn = rolle.ident!!
+        LOGGER.info { "Feilregistrerer barn $personidentBarn fra søknad $søknadsid" }
         try {
-            bbmConsumer.feilregistrerSøknadsbarn(FeilregistrerSøknadsBarnRequest(søknadId, personidentBarn))
+            bbmConsumer.feilregistrerSøknadsbarn(FeilregistrerSøknadsBarnRequest(søknadsid, personidentBarn))
+            rolle.forholdsmessigFordeling!!.søknader =
+                rolle.forholdsmessigFordeling!!
+                    .søknader
+                    .filter { it.søknadsid != søknadsid }
+                    .toMutableSet()
         } catch (e: Exception) {
-            LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadId" }
+            LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid" }
         }
     }
 
@@ -249,32 +253,38 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         søknadsid: Long,
         saksnummer: String,
+        bmIdent: String? = null,
+        behandlerenhet: String = behandling.behandlerEnhet,
+        erRevurdering: Boolean = false,
+        søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         val rollerSomSkalLeggesTil =
-            rollerSomSkalLeggesTilDto.map {
-                val rolle = it.toRolle(behandling)
-                rolle.forholdsmessigFordeling =
-                    ForholdsmessigFordelingRolle(
-                        tilhørerSak = saksnummer,
-                        delAvOpprinneligBehandling = true,
-                        behandlingsid = behandling.id,
-                        bidragsmottaker =
-                            behandling.bidragsmottakerForSak(saksnummer)?.ident,
-                        eierfogd = Enhetsnummer(behandling.behandlerEnhet),
-                        erRevurdering = false,
-                        søknader =
-                            mutableSetOf(
-                                behandling
-                                    .tilFFBarnDetaljer()
-                                    .copy(
-                                        søknadsid = søknadsid,
-                                    ),
-                            ),
-                    )
-                rolle
-            }
+            rollerSomSkalLeggesTilDto
+                .filter { nyRolle -> behandling.roller.none { it.ident == nyRolle.ident!!.verdi } }
+                .map {
+                    val søknadsdetaljerBarn = søknadsdetaljer ?: behandling.tilFFBarnDetaljer()
+                    val rolle = it.toRolle(behandling)
+                    rolle.forholdsmessigFordeling =
+                        ForholdsmessigFordelingRolle(
+                            tilhørerSak = saksnummer,
+                            delAvOpprinneligBehandling = true,
+                            behandlingsid = behandling.id,
+                            bidragsmottaker = bmIdent ?: behandling.bidragsmottakerForSak(saksnummer)?.ident,
+                            eierfogd = Enhetsnummer(behandlerenhet),
+                            erRevurdering = erRevurdering,
+                            søknader =
+                                mutableSetOf(
+                                    søknadsdetaljerBarn
+                                        .copy(
+                                            søknadsid = søknadsid,
+                                        ),
+                                ),
+                        )
+                    rolle
+                }
         behandling.roller.addAll(rollerSomSkalLeggesTil)
+        opprettSamværOgUnderholdForBarn(behandling)
         val rollerSomSkalSlettes =
             behandling.roller
                 .filter { identerSomSkalSlettes.contains(it.ident) }
