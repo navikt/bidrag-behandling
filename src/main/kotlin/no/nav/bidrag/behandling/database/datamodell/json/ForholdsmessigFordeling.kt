@@ -43,7 +43,6 @@ data class ForholdsmessigFordelingSøknadBarn(
     var søknadsid: Long? = null,
     val behandlingstype: Behandlingstype?,
     val behandlingstema: Behandlingstema?,
-    var søknadsidUtenInnkreving: Long? = null,
     val omgjørSøknadsid: Long? = null,
     val omgjørVedtaksid: Int? = null,
     val innkreving: Boolean = true,

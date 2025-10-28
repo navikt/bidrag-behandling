@@ -222,7 +222,11 @@ open class Behandling(
 ) {
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
-    val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+    val bidragsmottaker get() =
+        roller.find {
+            it.rolletype == Rolletype.BIDRAGSMOTTAKER &&
+                (it.forholdsmessigFordeling == null || it.forholdsmessigFordeling?.tilhørerSak == saksnummer)
+        }
     val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
 
     fun bidragsmottakerForSak(saksnummer: String) = alleBidragsmottakere.find { it.forholdsmessigFordeling?.tilhørerSak == saksnummer }

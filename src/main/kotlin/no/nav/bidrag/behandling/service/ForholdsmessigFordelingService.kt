@@ -109,6 +109,23 @@ class ForholdsmessigFordelingService(
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
 
         val originalBM = behandling.bidragsmottaker!!.ident
+        behandling.alleBidragsmottakere.forEach {
+            if (it.forholdsmessigFordeling == null) {
+                it.forholdsmessigFordeling =
+                    ForholdsmessigFordelingRolle(
+                        delAvOpprinneligBehandling = true,
+                        tilhørerSak = behandling.saksnummer,
+                        behandlingsid = behandling.id,
+                        eierfogd = Enhetsnummer(behandling.behandlerEnhet),
+                        bidragsmottaker = null,
+                        erRevurdering = false,
+                        søknader =
+                            mutableSetOf(
+                                behandling.tilFFBarnDetaljer(),
+                            ),
+                    )
+            }
+        }
         val behandlerEnhet = finnEnhetForBarnIBehandling(behandling)
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
         overførÅpneBehandlingTilHovedbehandling(behandling, relevanteKravhavere)
@@ -197,7 +214,7 @@ class ForholdsmessigFordelingService(
         }
         behandling.søknadsbarn
             .filter { it.forholdsmessigFordeling!!.erRevurdering }
-            .map { it.forholdsmessigFordeling!!.søknadsid }
+            .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
             .distinct()
             .forEach {
                 feilregistrerFFSøknad(it!!, behandling)
@@ -675,6 +692,26 @@ class ForholdsmessigFordelingService(
             } else {
                 null
             }
+        val ffDetaljerBarn =
+            ForholdsmessigFordelingSøknadBarn(
+                søknadsid = søknadsid,
+                mottattDato = LocalDate.now(),
+                søknadFomDato = søktFomDato,
+                søktAvType = SøktAvType.NAV_BIDRAG,
+                behandlingstema = behandling.behandlingstema,
+                behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+            )
+        val søknadMedInnkreving =
+            søknadsid?.let {
+                ffDetaljerBarn.copy(søknadsid = it)
+            }
+
+        val alleSøknader =
+            setOfNotNull(
+                søknadsid?.let {
+                    ffDetaljerBarn.copy(søknadsid = it)
+                },
+            ).toMutableSet()
         val ffDetaljer =
             ForholdsmessigFordelingRolle(
                 delAvOpprinneligBehandling = false,
@@ -682,26 +719,9 @@ class ForholdsmessigFordelingService(
                 tilhørerSak = saksnummer,
                 eierfogd = sak.eierfogd,
                 bidragsmottaker = bmFødselsnummer,
-                søknader =
-                    mutableSetOf(
-                        ForholdsmessigFordelingSøknadBarn(
-                            søknadsid = søknadsid,
-                            mottattDato = LocalDate.now(),
-                            søknadFomDato = søktFomDato,
-                            søktAvType = SøktAvType.NAV_BIDRAG,
-                            behandlingstema = behandling.behandlingstema,
-                            behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
-                        ),
-                    ),
+                søknader = alleSøknader,
             )
-        if (bmFødselsnummer != null && behandling.roller.none { it.ident == bmFødselsnummer }) {
-            opprettRolle(
-                behandling,
-                Rolletype.BIDRAGSMOTTAKER,
-                bmFødselsnummer,
-                ffDetaljer = ffDetaljer,
-            )
-        }
+
         barnUtenSøknader.forEach { søknad ->
             val søknadsIdUtenInnkreving =
                 barnMedInnkrevingSenereEnnFomDato
@@ -709,6 +729,17 @@ class ForholdsmessigFordelingService(
                         b.second.any { it == søknad.kravhaver }
                     }?.first
             val skalInnkreves = barnUtenSøknader.find { it.kravhaver == søknad.kravhaver }?.løperBidragFra != null
+            val søknader =
+                setOfNotNull(
+                    søknadMedInnkreving,
+                    søknadsIdUtenInnkreving?.let {
+                        ffDetaljerBarn.copy(
+                            søknadsid = it,
+                            innkreving = false,
+                        )
+                    },
+                )
+            alleSøknader.addAll(søknader)
             val rolle =
                 opprettRolle(
                     behandling,
@@ -719,19 +750,29 @@ class ForholdsmessigFordelingService(
                     medInnkreving = skalInnkreves,
                     ffDetaljer =
                         ffDetaljer.copy(
-                            søknader =
-                                mutableSetOf(
-                                    ffDetaljer.søknader.first().copy(
-                                        søknadsid = ffDetaljer.eldsteSøknad.søknadsid ?: søknadsIdUtenInnkreving,
-                                        søknadsidUtenInnkreving = søknadsIdUtenInnkreving,
-                                    ),
-                                ),
                             løperBidragFra = søknad.løperBidragFra,
+                            søknader = søknader.toMutableSet(),
                         ),
                 )
+
             if (søknad.privatAvtale != null) {
                 søknad.privatAvtale.rolle = rolle
                 søknad.privatAvtale.person = null
+            }
+        }
+        if (bmFødselsnummer != null && behandling.roller.none { it.ident == bmFødselsnummer }) {
+            opprettRolle(
+                behandling,
+                Rolletype.BIDRAGSMOTTAKER,
+                bmFødselsnummer,
+                ffDetaljer =
+                    ffDetaljer.copy(
+                        søknader = alleSøknader.toMutableSet(),
+                    ),
+            )
+        } else {
+            behandling.roller.find { it.ident == bmFødselsnummer }?.let {
+                it.forholdsmessigFordeling!!.søknader.addAll(alleSøknader.toMutableSet())
             }
         }
     }

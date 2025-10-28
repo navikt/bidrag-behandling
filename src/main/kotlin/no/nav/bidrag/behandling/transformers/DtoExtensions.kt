@@ -46,6 +46,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         behandlingstatus = behandlingstatus,
         innkrevingstype = behandling.innkrevingstype,
         rolletype = rolletype,
+        stønadstype = behandling.stonadstype,
         ident = ident?.verdi,
         fødselsdato = fødselsdatoPerson,
         navn = navn,
