@@ -353,7 +353,7 @@ class BeregningEvnevurderingServiceTest {
                 val innhold = this.innholdTilObjekt<LøpendeBidragGrunnlag>()
                 innhold.løpendeBidragListe shouldHaveSize 3
                 assertSoftly(innhold.løpendeBidragListe.finnForKravhaver(person1!!.referanse)!!) {
-                    it.type shouldBe Stønadstype.BIDRAG
+                    it.stønadstype shouldBe Stønadstype.BIDRAG
                     it.gjelderBarn shouldBe person1.referanse
                     it.faktiskBeløp shouldBe BigDecimal.ZERO
                     it.beregnetBeløp shouldBe BigDecimal.ZERO
@@ -362,7 +362,7 @@ class BeregningEvnevurderingServiceTest {
                     it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
                 }
                 assertSoftly(innhold.løpendeBidragListe.finnForKravhaver(person2!!.referanse)!!) {
-                    it.type shouldBe Stønadstype.BIDRAG18AAR
+                    it.stønadstype shouldBe Stønadstype.BIDRAG18AAR
                     it.gjelderBarn shouldBe person2.referanse
                     it.faktiskBeløp shouldBe BigDecimal.ZERO
                     it.beregnetBeløp shouldBe BigDecimal.ZERO
@@ -371,7 +371,7 @@ class BeregningEvnevurderingServiceTest {
                     it.saksnummer shouldBe Saksnummer(SAKSNUMMER)
                 }
                 assertSoftly(innhold.løpendeBidragListe.finnForKravhaver(søknadsbarn.tilGrunnlagsreferanse())!!) {
-                    it.type shouldBe Stønadstype.BIDRAG
+                    it.stønadstype shouldBe Stønadstype.BIDRAG
                     it.gjelderBarn shouldBe søknadsbarn.tilGrunnlagsreferanse()
                     it.faktiskBeløp shouldBe BigDecimal.ZERO
                     it.beregnetBeløp shouldBe BigDecimal.ZERO
@@ -480,7 +480,6 @@ fun opprettBidragBeregning(
             Samværsklasse.SAMVÆRSKLASSE_0
         },
     datoSøknad = LocalDate.parse("2024-07-01"),
-    gjelderFom = LocalDate.parse("2024-07-01"),
 )
 
 fun opprettVedtakForStønadRespons(

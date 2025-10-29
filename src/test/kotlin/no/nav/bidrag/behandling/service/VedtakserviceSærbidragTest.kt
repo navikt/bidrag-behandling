@@ -278,13 +278,13 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
                 innhold.løpendeBidragListe shouldHaveSize 3
-                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[0].stønadstype shouldBe Stønadstype.BIDRAG
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[0].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_SØKNADSBARN
-                innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[1].stønadstype shouldBe Stønadstype.BIDRAG
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
-                innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
+                innhold.løpendeBidragListe[2].stønadstype shouldBe Stønadstype.BIDRAG18AAR
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
             }
@@ -530,16 +530,16 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
                 innhold.løpendeBidragListe shouldHaveSize 4
-                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[0].stønadstype shouldBe Stønadstype.BIDRAG
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[0].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_SØKNADSBARN
-                innhold.løpendeBidragListe[1].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[1].stønadstype shouldBe Stønadstype.BIDRAG
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[1].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
-                innhold.løpendeBidragListe[2].type shouldBe Stønadstype.BIDRAG18AAR
+                innhold.løpendeBidragListe[2].stønadstype shouldBe Stønadstype.BIDRAG18AAR
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[2].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
-                innhold.løpendeBidragListe[3].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[3].stønadstype shouldBe Stønadstype.BIDRAG
                 grunnlagsliste.filtrerBasertPåEgenReferanse(referanse = innhold.løpendeBidragListe[3].gjelderBarn).first().type shouldBe
                     Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG
             }
@@ -654,7 +654,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 it.shouldHaveSize(1)
                 val innhold = innholdTilObjekt<LøpendeBidragGrunnlag>().first()
                 innhold.løpendeBidragListe shouldHaveSize 1
-                innhold.løpendeBidragListe[0].type shouldBe Stønadstype.BIDRAG
+                innhold.løpendeBidragListe[0].stønadstype shouldBe Stønadstype.BIDRAG
                 innhold.løpendeBidragListe[0].løpendeBeløp shouldBe BigDecimal.ZERO
                 innhold.løpendeBidragListe[0].beregnetBeløp shouldBe BigDecimal("3159.00")
                 innhold.løpendeBidragListe[0].samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_2
