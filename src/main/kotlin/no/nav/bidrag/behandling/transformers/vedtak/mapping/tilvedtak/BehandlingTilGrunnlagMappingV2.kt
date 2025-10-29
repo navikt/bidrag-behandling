@@ -137,7 +137,7 @@ class BehandlingTilGrunnlagMappingV2(
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
                         bidragsmottaker =
                             if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
-                                bidragsmottaker!!.tilGrunnlagsreferanse()
+                                bidragsmottaker?.tilGrunnlagsreferanse()
                             } else {
                                 null
                             },
