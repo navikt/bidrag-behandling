@@ -246,7 +246,6 @@ class ForholdsmessigFordelingService(
                 LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid i behandling ${rolle.behandling.id}" }
             }
         }
-        rolle.forholdsmessigFordeling!!.søknader = mutableSetOf()
     }
 
     fun kanBehandlingSlettes(

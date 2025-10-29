@@ -140,7 +140,7 @@ fun Person.tilRolle(behandling: Behandling) =
         ident,
         fødselsdato,
         LocalDateTime.now(),
-        id,
+        null,
         navn ?: hentPersonVisningsnavn(ident),
     )
 
