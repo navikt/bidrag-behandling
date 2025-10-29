@@ -180,7 +180,7 @@ class Dtomapper(
                 if (behandling.erKlageEllerOmgjøring) {
                     val vedtaksliste = behandling.omgjøringsdetaljer?.omgjortVedtaksliste?.map { it.vedtaksid } ?: emptyList()
                     !vedtaksliste.contains(it.vedtaksid)
-                } else if (behandling.erInnkreving) {
+                } else if (behandling.erInnkreving || privatAvtale != null) {
                     it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
                 } else {
                     true

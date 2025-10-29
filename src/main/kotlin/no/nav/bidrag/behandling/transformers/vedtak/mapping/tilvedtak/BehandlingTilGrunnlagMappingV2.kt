@@ -288,14 +288,19 @@ class BehandlingTilGrunnlagMappingV2(
                 val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
                 innhold
                     .filter {
-                        søknadsbarn == null &&
-                            (
-                                it.gjelderBarn.isNullOrEmpty() ||
-                                    // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
-                                    alleSøknadsbarnIdenter.contains(it.gjelderBarn)
-                            ) ||
-                            søknadsbarn != null &&
-                            (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                        if (søknadsbarn == null) {
+                            it.gjelderBarn.isNullOrEmpty() ||
+                                // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
+                                alleSøknadsbarnIdenter.contains(it.gjelderBarn)
+                        } else {
+                            val inntektTilhørerBarn =
+                                if (gjelder.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER) {
+                                    gjelder.referanse == søknadsbarn.innholdTilObjekt<Person>().bidragsmottaker
+                                } else {
+                                    true
+                                }
+                            inntektTilhørerBarn && (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                        }
                     }.groupBy { it.gjelderBarn }
                     .map { (gjelderBarn, innhold) ->
                         val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)

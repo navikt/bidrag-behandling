@@ -1,7 +1,9 @@
 package no.nav.bidrag.behandling.service
 
+import io.getunleash.Unleash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -105,7 +107,7 @@ class BehandlingService(
         behandling: Behandling,
         slettBarn: List<Rolle> = emptyList(),
     ) {
-        if (behandling.forholdsmessigFordeling != null) {
+        if (behandling.forholdsmessigFordeling != null && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             forholdsmessigFordelingService?.avsluttForholdsmessigFordeling(behandling, slettBarn)
         }
 
@@ -168,7 +170,7 @@ class BehandlingService(
             return OpprettBehandlingResponse(it.id!!)
         }
 
-        if (opprettBehandling.erBidrag()) {
+        if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
             behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
                 val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
@@ -549,7 +551,7 @@ class BehandlingService(
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
-        if (behandling.forholdsmessigFordeling != null) {
+        if (behandling.forholdsmessigFordeling != null && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
                 rollerSomLeggesTil,
                 rollerSomSkalSlettes,
