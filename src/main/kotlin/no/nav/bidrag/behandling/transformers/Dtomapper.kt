@@ -165,11 +165,13 @@ class Dtomapper(
 
     fun hentManuelleVedtakForBehandling(
         behandling: Behandling,
-        søknadsbarn: Rolle,
+        barnIdent: String,
+        rolle: Rolle?,
+        privatAvtale: PrivatAvtale? = null,
     ): List<ManuellVedtakDto> {
         val grunnlag =
             behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(
-                søknadsbarn.personident!!.verdi,
+                barnIdent,
                 Grunnlagsdatatype.MANUELLE_VEDTAK,
             )
         return grunnlag
@@ -185,9 +187,10 @@ class Dtomapper(
                 }
             }?.map {
                 ManuellVedtakDto(
-                    valgt = søknadsbarn.beregningGrunnlagFraVedtak == it.vedtaksid,
+                    // Rolle == null betyr at det er simulering av privat avtale for andre barn til BP
+                    valgt = rolle?.beregningGrunnlagFraVedtak == it.vedtaksid || privatAvtale?.grunnlagFraVedtak?.vedtak == it.vedtaksid,
                     vedtaksid = it.vedtaksid,
-                    barnId = søknadsbarn.id!!,
+                    barnId = rolle?.id ?: -1,
                     fattetTidspunkt = it.fattetTidspunkt,
                     virkningsDato = it.virkningsDato,
                     vedtakstype = it.vedtakstype,
@@ -314,12 +317,12 @@ class Dtomapper(
             privatAvtaleBeregning
                 .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
                 .filter {
-                    !erInnkreving || !filtrerFraVirkningstidspunkt || it.periode.til == null ||
+                    !filtrerFraVirkningstidspunkt || it.periode.til == null ||
                         it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
                 }.map {
                     BeregnetPrivatAvtalePeriodeDto(
                         periode =
-                            if (erInnkreving && filtrerFraVirkningstidspunkt) {
+                            if (filtrerFraVirkningstidspunkt) {
                                 Datoperiode(
                                     maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
                                     it.periode.til,
@@ -921,7 +924,7 @@ class Dtomapper(
                 opprinneligVirkningstidspunkt =
                     it.opprinneligVirkningstidspunkt
                         ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
+                manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
                 etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
                 årsak = it.årsak ?: årsak,
                 avslag = it.avslag ?: avslag,
@@ -984,7 +987,7 @@ class Dtomapper(
                     opprinneligVirkningstidspunkt =
                         it.opprinneligVirkningstidspunkt
                             ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                    manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
+                    manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
                     etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
                     årsak = it.årsak ?: årsak,
                     avslag = it.avslag ?: avslag,
@@ -1160,8 +1163,8 @@ class Dtomapper(
             avtaleType = avtaleType,
             erSøknadsbarn = rolle != null,
             manuelleVedtakUtenInnkreving =
-                if (behandling.erInnkreving) {
-                    hentManuelleVedtakForBehandling(behandling, rolle!!)
+                if (behandling.erBidrag()) {
+                    hentManuelleVedtakForBehandling(behandling, personIdent!!, rolle, this)
                 } else {
                     null
                 },

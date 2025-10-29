@@ -280,9 +280,17 @@ open class Behandling(
             }
         }
 
-    fun tilStønadsid(søknadsbarn: Rolle) =
+    fun tilStønadsid(person: Person) =
         Stønadsid(
             stonadstype!!,
+            Personident(person.ident!!),
+            Personident(bidragspliktig!!.ident!!),
+            Saksnummer(saksnummer),
+        )
+
+    fun tilStønadsid(søknadsbarn: Rolle) =
+        Stønadsid(
+            søknadsbarn.stønadstype ?: stonadstype!!,
             Personident(søknadsbarn.ident!!),
             Personident(bidragspliktig!!.ident!!),
             Saksnummer(saksnummer),

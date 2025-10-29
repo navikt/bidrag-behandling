@@ -233,10 +233,10 @@ class GrunnlagService(
                         lagreBeløpshistorikkGrunnlag(behandling).lagreFeilrapportering()
                     },
                     scope.async {
-                        lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
+                        lagreBpsBarnUtenBidragsak(behandling).lagreFeilrapportering()
                     },
                     scope.async {
-                        lagreBpsBarnUtenBidragsak(behandling).lagreFeilrapportering()
+                        lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
                     },
                 )
             if (behandling.vedtakstype.kreverGrunnlag()) {
@@ -322,24 +322,83 @@ class GrunnlagService(
 
     suspend fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         // Klage er pga at det skal være mulig å velge vedtak for aldersjustering hvis klagebehandling endrer resultat for aldersjusteringen
-        val erAldersjusteringEllerOmgjøring =
-            listOf(
-                Vedtakstype.ALDERSJUSTERING,
-                Vedtakstype.KLAGE,
-                Vedtakstype.INNKREVING,
-            ).contains(behandling.vedtakstype)
 
-        if (!(erAldersjusteringEllerOmgjøring && behandling.erBidrag())) {
+        if (!behandling.erBidrag()) {
             return emptyMap()
         }
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
 
+        behandling.grunnlag
+            .hentSisteGrunnlagBpsBarnUtenBidragsak()
+            ?.filter { it.saksnummer != null }
+            ?.map { barnUtenInnkrevdBidrag ->
+                try {
+                    val eksisterendeGrunnlag =
+                        behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(
+                            barnUtenInnkrevdBidrag.ident.verdi,
+                            Grunnlagsdatatype.MANUELLE_VEDTAK,
+                        )
+                    val erOver18År = erOverAntallÅrGammel(barnUtenInnkrevdBidrag.fødselsdato, 18)
+                    val manuelleVedtak18 =
+                        if (erOver18År) {
+                            hentManuelleVedtakForBehandling(
+                                behandling,
+                                barnUtenInnkrevdBidrag.ident.verdi,
+                                barnUtenInnkrevdBidrag.saksnummer!!,
+                                Stønadstype.BIDRAG18AAR,
+                            )
+                        } else {
+                            emptyList()
+                        }
+                    val manuelleVedtakRespons =
+                        hentManuelleVedtakForBehandling(
+                            behandling,
+                            barnUtenInnkrevdBidrag.ident.verdi,
+                            behandling.saksnummer,
+                            Stønadstype.BIDRAG,
+                        ) + manuelleVedtak18
+                    if (eksisterendeGrunnlag == null ||
+                        eksisterendeGrunnlag.konvertereData<List<ManuellVedtakGrunnlag>>()?.toSet() != manuelleVedtakRespons.toSet()
+                    ) {
+                        secureLogger.debug {
+                            "Lagrer ny grunnlag manuelle vedtak for barn uten bidragssak type ${Grunnlagsdatatype.MANUELLE_VEDTAK} med respons $manuelleVedtakRespons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+                        }
+                        val nyGrunnlag =
+                            Grunnlag(
+                                behandling = behandling,
+                                type = Grunnlagsdatatype.MANUELLE_VEDTAK,
+                                data = commonObjectmapper.writeValueAsString(manuelleVedtakRespons),
+                                gjelder = barnUtenInnkrevdBidrag.ident.verdi,
+                                innhentet = LocalDateTime.now(),
+                                aktiv = LocalDateTime.now(),
+                                rolle = behandling.bidragspliktig!!,
+                                erBearbeidet = false,
+                            )
+                        behandling.grunnlag.add(nyGrunnlag)
+                    }
+                } catch (e: Exception) {
+                    feilrapporteringer.put(
+                        Grunnlagsdatatype.MANUELLE_VEDTAK,
+                        GrunnlagFeilDto(
+                            personId = barnUtenInnkrevdBidrag.ident.verdi,
+                            feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL,
+                            feilmelding = e.message,
+                        ),
+                    )
+                }
+            }
         behandling.søknadsbarn.forEach { søknadsbarn ->
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(søknadsbarn.personident!!.verdi, Grunnlagsdatatype.MANUELLE_VEDTAK)
-                val manuelleVedtakRespons = hentManuelleVedtakForBehandling(behandling, søknadsbarn)
+                val manuelleVedtakRespons =
+                    hentManuelleVedtakForBehandling(
+                        behandling,
+                        søknadsbarn.ident!!,
+                        behandling.saksnummer,
+                        søknadsbarn.stønadstype ?: behandling.stonadstype!!,
+                    )
                 if (eksisterendeGrunnlag == null ||
                     eksisterendeGrunnlag.konvertereData<List<ManuellVedtakGrunnlag>>()?.toSet() != manuelleVedtakRespons.toSet()
                 ) {
@@ -376,15 +435,17 @@ class GrunnlagService(
 
     fun hentManuelleVedtakForBehandling(
         behandling: Behandling,
-        søknadsbarn: Rolle,
+        søknadsbarnIdent: String,
+        saksnummer: String,
+        stønadstype: Stønadstype,
     ): List<ManuellVedtakGrunnlag> {
         val response =
             vedtakConsumer.hentVedtakForStønad(
                 HentVedtakForStønadRequest(
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
-                    sak = Saksnummer(behandling.saksnummer),
-                    kravhaver = Personident(søknadsbarn.ident!!),
-                    type = behandling.stonadstype!!,
+                    sak = Saksnummer(saksnummer),
+                    kravhaver = Personident(søknadsbarnIdent),
+                    type = stønadstype,
                 ),
             )
 

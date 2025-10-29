@@ -105,7 +105,7 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
         ?.toSet()
 
 fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
-    gjelderBarnIdent: String,
+    gjelderBarnIdent: String?,
     type: Grunnlagsdatatype,
     grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
 ) = hentSisteAktiv(true)
