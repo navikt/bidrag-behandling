@@ -214,10 +214,8 @@ class ForholdsmessigFordelingService(
         }
         behandling.søknadsbarn
             .filter { it.forholdsmessigFordeling!!.erRevurdering }
-            .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
-            .distinct()
             .forEach {
-                feilregistrerFFSøknad(it!!, behandling)
+                feilregistrerFFSøknad(it)
             }
     }
 
@@ -237,16 +235,18 @@ class ForholdsmessigFordelingService(
         }
     }
 
-    fun feilregistrerFFSøknad(
-        søknadId: Long,
-        behandling: Behandling,
-    ) {
-        LOGGER.info { "Feilregistrerer søknad $søknadId i behandling ${behandling.id}" }
-        try {
-            bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadId))
-        } catch (e: Exception) {
-            LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadId i behandling ${behandling.id}" }
+    fun feilregistrerFFSøknad(rolle: Rolle) {
+        if (rolle.forholdsmessigFordeling == null || !rolle.forholdsmessigFordeling!!.erRevurdering) return
+        rolle.forholdsmessigFordeling!!.søknader.forEach { søknad ->
+            val søknadsid = søknad.søknadsid
+            LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
+            try {
+                bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
+            } catch (e: Exception) {
+                LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid i behandling ${rolle.behandling.id}" }
+            }
         }
+        rolle.forholdsmessigFordeling!!.søknader = mutableSetOf()
     }
 
     fun kanBehandlingSlettes(
@@ -276,13 +276,20 @@ class ForholdsmessigFordelingService(
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        rollerSomSkalLeggesTilDto
+            .filter { it.rolletype == Rolletype.BARN }
+            .mapNotNull { nyRolle -> behandling.roller.find { it.ident == nyRolle.ident!!.verdi } }
+            .filter { it.forholdsmessigFordeling?.erRevurdering == true }
+            .forEach {
+                feilregistrerBarnFraFFSøknad(it)
+            }
         val rollerSomSkalLeggesTil =
             rollerSomSkalLeggesTilDto
-                .filter { nyRolle -> behandling.roller.none { it.ident == nyRolle.ident!!.verdi } }
-                .map {
+                .filter { it.rolletype != Rolletype.BIDRAGSPLIKTIG }
+                .map { nyRolle ->
                     val søknadsdetaljerBarn = søknadsdetaljer ?: behandling.tilFFBarnDetaljer()
-                    val rolle = it.toRolle(behandling)
-                    rolle.forholdsmessigFordeling =
+                    val eksisterendeRolle = behandling.roller.find { it.ident == nyRolle.ident!!.verdi }
+                    val ffRolleDetaljer =
                         ForholdsmessigFordelingRolle(
                             tilhørerSak = saksnummer,
                             delAvOpprinneligBehandling = true,
@@ -292,8 +299,20 @@ class ForholdsmessigFordelingService(
                             erRevurdering = erRevurdering,
                             søknader = mutableSetOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid)),
                         )
-                    rolle
+                    if (eksisterendeRolle == null) {
+                        val rolle = nyRolle.toRolle(behandling)
+                        rolle.forholdsmessigFordeling = ffRolleDetaljer
+                        rolle
+                    } else {
+                        if (eksisterendeRolle.forholdsmessigFordeling == null) {
+                            eksisterendeRolle.forholdsmessigFordeling = ffRolleDetaljer
+                        } else {
+                            eksisterendeRolle.forholdsmessigFordeling!!.søknader.add(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
+                        }
+                        eksisterendeRolle
+                    }
                 }
+
         behandling.roller.addAll(rollerSomSkalLeggesTil)
         opprettSamværOgUnderholdForBarn(behandling)
         val rollerSomSkalSlettes =
@@ -308,7 +327,7 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         søknadsid: Long,
     ) {
-        if (kanBehandlingSlettes(behandling, slettBarn)) {
+        if (kanBehandlingSlettes(behandling, slettBarn) && slettBarn.isNotEmpty()) {
             behandlingService.slettBehandling(behandling, slettBarn)
         } else {
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
