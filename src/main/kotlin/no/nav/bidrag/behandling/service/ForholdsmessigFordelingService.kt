@@ -367,7 +367,6 @@ class ForholdsmessigFordelingService(
                     LeggTilBarnIFFSøknadRequest(
                         åpenFFBehandling.søknadsid,
                         barn.ident!!,
-                        åpenFFBehandling.innkreving,
                     ),
                 )
             }
