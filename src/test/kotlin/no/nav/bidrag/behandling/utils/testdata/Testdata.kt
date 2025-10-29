@@ -1799,7 +1799,7 @@ fun opprettLøpendeBidragGrunnlag(
     barnId: Long,
 ) = LøpendeBidrag(
     gjelderBarn = gjelderBarn.tilRolle(id = barnId).tilGrunnlagPerson().referanse,
-    type = stønadstype,
+    stønadstype = stønadstype,
     løpendeBeløp = BigDecimal(5123),
     faktiskBeløp = BigDecimal(6555),
     samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
@@ -1829,7 +1829,6 @@ fun opprettEvnevurderingResultat(sakerFor: List<Pair<TestDataPerson, Stønadstyp
                             beregnetBeløp = BigDecimal(6334),
                             saksnummer = SAKSNUMMER,
                             datoSøknad = LocalDate.now(),
-                            gjelderFom = LocalDate.now(),
                             personidentBarn = Personident(it.first.ident),
                             stønadstype = it.second,
                         )
