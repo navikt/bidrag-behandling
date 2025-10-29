@@ -511,7 +511,7 @@ class VedtakGrunnlagMapper(
                                         samværsklasse = beregning?.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
                                         beregnetBeløp = beregning?.beregnetBeløp ?: BigDecimal.ZERO,
                                         løpendeBeløp = løpendeStønad.løpendeBeløp,
-                                        type = løpendeStønad.type,
+                                        stønadstype = løpendeStønad.type,
                                         gjelderBarn = personObjekt.referanse,
                                         saksnummer = Saksnummer(løpendeStønad.sak.verdi),
                                         valutakode = løpendeStønad.valutakode,
