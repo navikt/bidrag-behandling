@@ -165,7 +165,7 @@ class BeregningEvnevurderingService(
 
     private fun finnBeregningIBidragVedtak(vedtakForStønad: VedtakForStønad): BidragBeregningResponsDto.BidragBeregning? {
         // Henter vedtak fra bidrag-vedtak (med fullstendige opplysninger)
-        val vedtakDto = bidragVedtakConsumer.hentVedtak(vedtakForStønad.vedtaksid.toInt())
+        val vedtakDto = bidragVedtakConsumer.hentVedtak(vedtakForStønad.vedtaksid)
         if (vedtakDto == null) {
             secureLogger.warn { "Fant ikke vedtak for vedtaksid ${vedtakForStønad.vedtaksid} i bidrag-vedtak." }
             return null
@@ -232,7 +232,6 @@ class BeregningEvnevurderingService(
         return BidragBeregningResponsDto.BidragBeregning(
             saksnummer = vedtakForStønad.stønadsendring.sak.verdi,
             personidentBarn = vedtakForStønad.stønadsendring.kravhaver,
-            gjelderFom = LocalDate.now(), // Brukes ikke
             datoSøknad = LocalDate.now(), // Brukes ikke
             beregnetBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBM.avrundetTilNærmesteTier,
             faktiskBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBP.avrundetTilNærmesteTier,
