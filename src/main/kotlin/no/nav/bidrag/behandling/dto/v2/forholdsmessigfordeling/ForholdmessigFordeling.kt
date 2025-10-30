@@ -32,8 +32,8 @@ data class ForholdsmessigFordelingBarnDto(
     val harLøpendeBidrag: Boolean,
     val innkrevesFraDato: YearMonth?,
     val sammeSakSomBehandling: Boolean,
-    @Schema(name = "åpenBehandling")
-    val åpenBehandling: ForholdsmessigFordelingÅpenBehandlingDto?,
+    @Schema(name = "åpneBehandlinger")
+    val åpneBehandlinger: List<ForholdsmessigFordelingÅpenBehandlingDto> = emptyList(),
 )
 
 data class ForholdsmessigFordelingÅpenBehandlingDto(

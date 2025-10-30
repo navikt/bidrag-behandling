@@ -46,4 +46,5 @@ data class ForholdsmessigFordelingSøknadBarn(
     val omgjørSøknadsid: Long? = null,
     val omgjørVedtaksid: Int? = null,
     val innkreving: Boolean = true,
+    val enhet: String = "9999",
 )

@@ -784,19 +784,21 @@ class Dtomapper(
                                     harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
                                     innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
                                     stønadstype = barn.stønadstype,
-                                    åpenBehandling =
-                                        ForholdsmessigFordelingÅpenBehandlingDto(
-                                            søktFraDato = ffEldsteSøknad?.søknadFomDato,
-                                            mottattDato = ffEldsteSøknad?.mottattDato,
-                                            stønadstype = barn.stønadstype ?: Stønadstype.BIDRAG,
-                                            behandlerEnhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
-                                            behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
-                                            søknadsid = barn.forholdsmessigFordeling?.eldsteSøknad!!.søknadsid,
-                                            medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                                            søktAvType = ffEldsteSøknad?.søktAvType ?: SøktAvType.NAV_BIDRAG,
-                                            behandlingstype = ffEldsteSøknad?.behandlingstype,
-                                            behandlingstema = ffEldsteSøknad?.behandlingstema,
-                                        ),
+                                    åpneBehandlinger =
+                                        barn.forholdsmessigFordeling!!.søknader.map {
+                                            ForholdsmessigFordelingÅpenBehandlingDto(
+                                                søktFraDato = it.søknadFomDato,
+                                                mottattDato = it.mottattDato,
+                                                stønadstype = barn.stønadstype ?: Stønadstype.BIDRAG,
+                                                behandlerEnhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
+                                                behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
+                                                søknadsid = it.søknadsid,
+                                                medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                                                søktAvType = it.søktAvType,
+                                                behandlingstype = it.behandlingstype,
+                                                behandlingstema = it.behandlingstema,
+                                            )
+                                        },
                                     enhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
                                 )
                             }

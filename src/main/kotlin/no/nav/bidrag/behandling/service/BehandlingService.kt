@@ -183,6 +183,7 @@ class BehandlingService(
                         mottattDato = opprettBehandling.mottattdato,
                         behandlingstema = opprettBehandling.behandlingstema,
                         behandlingstype = opprettBehandling.behandlingstype,
+                        enhet = opprettBehandling.behandlerenhet,
                     )
                 forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
                     opprettBehandling.roller.toList(),
