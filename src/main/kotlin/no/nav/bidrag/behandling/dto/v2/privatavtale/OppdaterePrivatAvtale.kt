@@ -44,6 +44,7 @@ data class OppdaterePrivatAvtaleRequest(
 data class OppdaterePrivatAvtaleResponsDto(
     @Schema(description = "Privat avtale som ble oppdatert")
     val oppdatertPrivatAvtale: PrivatAvtaleDto? = null,
+    val andreBarnPrivatAvtaler: List<PrivatAvtaleDto> = emptyList(),
 )
 
 data class OppdaterePrivatAvtalePeriodeDto(

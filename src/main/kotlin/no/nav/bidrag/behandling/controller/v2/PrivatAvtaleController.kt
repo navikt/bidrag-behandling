@@ -89,8 +89,9 @@ class PrivatAvtaleController(
     fun oppdaterPrivatAvtaleBegrunnelse(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: OppdaterePrivatAvtaleBegrunnelseRequest,
-    ) {
+    ): OppdaterePrivatAvtaleResponsDto {
         privatAvtaleService.oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request)
+        return tilPrivatAvtaleResponsDto(behandlingsid, null)
     }
 
     @PostMapping("/behandling/{behandlingsid}/privatavtale/opprette")
@@ -117,11 +118,17 @@ class PrivatAvtaleController(
 
     private fun tilPrivatAvtaleResponsDto(
         behandlingsid: Long,
-        privatavtaleid: Long,
+        privatavtaleid: Long?,
     ): OppdaterePrivatAvtaleResponsDto {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         val privatAvtale = behandling.privatAvtale.find { it.id == privatavtaleid }!!
         return OppdaterePrivatAvtaleResponsDto(
+            andreBarnPrivatAvtaler =
+                behandling.privatAvtale.filter { it.rolle == null }.map {
+                    dtomapper.run {
+                        privatAvtale.tilDto()
+                    }
+                },
             oppdatertPrivatAvtale =
                 dtomapper.run {
                     privatAvtale.tilDto()
