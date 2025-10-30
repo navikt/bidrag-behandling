@@ -18,13 +18,13 @@ data class ForholdsmessigFordeling(
 )
 
 data class ForholdsmessigFordelingRolle(
-    val tilhørerSak: String,
+    var tilhørerSak: String,
     val eierfogd: Enhetsnummer?,
-    val delAvOpprinneligBehandling: Boolean,
+    var delAvOpprinneligBehandling: Boolean,
     var erRevurdering: Boolean,
     val harLøpendeBidrag: Boolean = true,
     val løperBidragFra: YearMonth? = null,
-    val behandlingsid: Long? = null,
+    var behandlingsid: Long? = null,
     var søknadsidUtenInnkreving: Long? = null,
     var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),

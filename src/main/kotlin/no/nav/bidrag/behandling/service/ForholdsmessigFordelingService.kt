@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierGrunnlag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierInntekt
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierRolle
@@ -73,6 +74,8 @@ data class SakKravhaver(
     val løperBidragFra: YearMonth? = null,
     val stønadstype: Stønadstype? = null,
     val åpenSøknad: ÅpenSøknadDto? = null,
+    val åpneSøknader: MutableSet<ÅpenSøknadDto> = mutableSetOf(),
+    val åpneBehandlinger: MutableSet<Behandling> = mutableSetOf(),
     val åpenBehandling: Behandling? = null,
     val privatAvtale: PrivatAvtale? = null,
 )
@@ -220,19 +223,25 @@ class ForholdsmessigFordelingService(
     }
 
     fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
-        val søknadsid = rolle.forholdsmessigFordeling!!.søknadsid!!
-        val personidentBarn = rolle.ident!!
-        LOGGER.info { "Feilregistrerer barn $personidentBarn fra søknad $søknadsid" }
-        try {
-            bbmConsumer.feilregistrerSøknadsbarn(FeilregistrerSøknadsBarnRequest(søknadsid, personidentBarn))
-            rolle.forholdsmessigFordeling!!.søknader =
-                rolle.forholdsmessigFordeling!!
-                    .søknader
-                    .filter { it.søknadsid != søknadsid }
-                    .toMutableSet()
-        } catch (e: Exception) {
-            LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid" }
-        }
+        val søknader = rolle.forholdsmessigFordeling!!.søknader.filter { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+        val søknaderFeilregistrert =
+            søknader.mapNotNull { søknad ->
+                val søknadsid = søknad.søknadsid!!
+                val personidentBarn = rolle.ident!!
+                LOGGER.info { "Feilregistrerer barn $personidentBarn fra søknad $søknadsid" }
+                try {
+                    bbmConsumer.feilregistrerSøknadsbarn(FeilregistrerSøknadsBarnRequest(søknadsid, personidentBarn))
+                    søknadsid
+                } catch (e: Exception) {
+                    LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid" }
+                    null
+                }
+            }
+        rolle.forholdsmessigFordeling!!.søknader =
+            rolle.forholdsmessigFordeling!!
+                .søknader
+                .filter { !søknaderFeilregistrert.contains(it.søknadsid!!) }
+                .toMutableSet()
     }
 
     fun feilregistrerFFSøknad(rolle: Rolle) {
@@ -306,7 +315,15 @@ class ForholdsmessigFordelingService(
                         if (eksisterendeRolle.forholdsmessigFordeling == null) {
                             eksisterendeRolle.forholdsmessigFordeling = ffRolleDetaljer
                         } else {
-                            eksisterendeRolle.forholdsmessigFordeling!!.søknader.add(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
+                            val eksisterendeSøknadsliste = eksisterendeRolle.forholdsmessigFordeling!!.søknader
+                            eksisterendeRolle.forholdsmessigFordeling =
+                                ffRolleDetaljer.copy(
+                                    søknader =
+                                        (
+                                            eksisterendeSøknadsliste +
+                                                setOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
+                                        ).toMutableSet(),
+                                )
                         }
                         eksisterendeRolle
                     }
@@ -896,46 +913,61 @@ class ForholdsmessigFordelingService(
                     it.behandlingstype != Behandlingstype.KLAGE
             }
 
+        val sakKravhaverListe = mutableSetOf<SakKravhaver>()
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
 
-        val åpneBehandlingSakKravhaver =
-            åpneBehandlinger.flatMap { behandling ->
-                behandling.søknadsbarn.map { barn ->
-                    val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barn.ident }
-                    SakKravhaver(
-                        saksnummer = behandling.saksnummer,
-                        kravhaver = barn.ident!!,
-                        stønadstype = barn.stønadstype ?: behandling.stonadstype,
-                        åpenBehandling = behandling,
-                        eierfogd = behandling.behandlerEnhet,
-                        løperBidragFra = løpendeBidrag?.periodeFra,
+        åpneBehandlinger.forEach { behandling ->
+            behandling.søknadsbarn.forEach { barn ->
+                val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barn.ident }
+                val eksisterende = sakKravhaverListe.hentForKravhaver(barn.ident!!)
+                if (eksisterende != null) {
+                    eksisterende.åpneBehandlinger.add(behandling)
+                } else {
+                    sakKravhaverListe.add(
+                        SakKravhaver(
+                            saksnummer = behandling.saksnummer,
+                            kravhaver = barn.ident!!,
+                            stønadstype = barn.stønadstype ?: behandling.stonadstype,
+                            åpenBehandling = behandling,
+                            åpneBehandlinger = mutableSetOf(behandling),
+                            eierfogd = behandling.behandlerEnhet,
+                            løperBidragFra = løpendeBidrag?.periodeFra,
+                        ),
                     )
                 }
             }
+        }
 
-        val kravhavereFraÅpneBehandlinger = åpneBehandlingSakKravhaver.map { it.kravhaver }
-
-        val åpneSøknaderSakKravhaver =
-            åpneSøknader
-                .filter {
-                    it.behandlingsid == null ||
-                        !behandlingRepository.erIForholdsmessigFordeling(it.behandlingsid!!.toLong())
-                }.flatMap { åpenSøknad ->
-                    åpenSøknad.partISøknadListe
-                        .filter { it.rolletype == Rolletype.BARN }
-                        .filter { !kravhavereFraÅpneBehandlinger.contains(it.personident) }
-                        .map { barnFnr ->
-                            val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barnFnr.personident }
-                            SakKravhaver(
-                                åpenSøknad.saksnummer,
-                                kravhaver = barnFnr.personident!!,
-                                løperBidragFra = løpendeBidrag?.periodeFra,
-                                åpenSøknad = åpenSøknad,
+        åpneSøknader
+            .filter {
+                it.behandlingsid == null ||
+                    !behandlingRepository.erIForholdsmessigFordeling(it.behandlingsid!!)
+            }.forEach { åpenSøknad ->
+                åpenSøknad.partISøknadListe
+                    .filter { it.rolletype == Rolletype.BARN }
+//                        .filter { !kravhavereFraÅpneBehandlinger.contains(it.personident) }
+                    .forEach { barnFnr ->
+                        val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barnFnr.personident }
+                        val eksisterende = sakKravhaverListe.hentForKravhaver(barnFnr.personident!!)
+                        if (eksisterende != null) {
+                            eksisterende.åpneSøknader.add(åpenSøknad)
+                        } else {
+                            sakKravhaverListe.add(
+                                SakKravhaver(
+                                    åpenSøknad.saksnummer,
+                                    kravhaver = barnFnr.personident!!,
+                                    løperBidragFra = løpendeBidrag?.periodeFra,
+                                    åpenSøknad = åpenSøknad,
+                                    åpneSøknader = mutableSetOf(åpenSøknad),
+                                ),
                             )
                         }
-                }
+                    }
+            }
 
-        val krahaverFraÅpneSaker = åpneSøknaderSakKravhaver.map { it.kravhaver } + kravhavereFraÅpneBehandlinger
+        val krahaverFraÅpneSaker = sakKravhaverListe.map { it.kravhaver }
+
+//        val krahaverFraÅpneSaker = åpneSøknaderSakKravhaver.map { it.kravhaver } + kravhavereFraÅpneBehandlinger
 
         val løpendeBidragsaker =
             løpendeBidraggsakerBP.filter { !krahaverFraÅpneSaker.contains(it.kravhaver.verdi) }.map {
@@ -946,7 +978,7 @@ class ForholdsmessigFordelingService(
                     løperBidragFra = it.periodeFra,
                 )
             }
-        val bidragsaker = løpendeBidragsaker + åpneSøknaderSakKravhaver + åpneBehandlingSakKravhaver
+        val bidragsaker = løpendeBidragsaker + sakKravhaverListe
         return bidragsaker
             .filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
             .sortedWith { a, b ->

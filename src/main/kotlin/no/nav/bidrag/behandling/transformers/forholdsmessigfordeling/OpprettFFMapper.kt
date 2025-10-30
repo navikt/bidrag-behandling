@@ -332,6 +332,8 @@ fun opprettSamværOgUnderholdForBarn(behandling: Behandling) {
     }
 }
 
+fun Set<SakKravhaver>.hentForKravhaver(kravhaverIdent: String) = find { it.kravhaver == kravhaverIdent }
+
 fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
     sak: BidragssakDto?,
     behandling: Behandling,
