@@ -50,6 +50,7 @@ fun Behandling.tilFFBarnDetaljer() =
         innkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
         omgjørSøknadsid = omgjøringsdetaljer?.soknadRefId,
         omgjørVedtaksid = omgjøringsdetaljer?.omgjørVedtakId,
+        enhet = behandlerEnhet,
     )
 
 fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
@@ -62,6 +63,7 @@ fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
         søknadsid = søknadsid,
         omgjørVedtaksid = referertVedtaksid,
         innkreving = innkreving,
+        enhet = "",
         omgjørSøknadsid = referertSøknadsid,
     )
 
@@ -140,6 +142,7 @@ fun Rolle.kopierRolle(
     bmFnr: String?,
     periodeFra: YearMonth? = null,
     medInnkreving: Boolean? = null,
+    åpneBehandlinger: List<Behandling> = emptyList(),
 ) = Rolle(
     behandling = hovedbehandling,
     rolletype = rolletype,
@@ -173,9 +176,11 @@ fun Rolle.kopierRolle(
             løperBidragFra = periodeFra,
             erRevurdering = false,
             søknader =
-                mutableSetOf(
-                    behandling.tilFFBarnDetaljer(),
-                ),
+                (
+                    setOf(
+                        behandling.tilFFBarnDetaljer(),
+                    ) + åpneBehandlinger.map { it.tilFFBarnDetaljer() }
+                ).toMutableSet(),
         ),
 )
 
@@ -342,6 +347,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
 ): ForholdsmessigFordelingBarnDto {
     val bmFødselsnummer = sak?.bidragsmottaker?.fødselsnummer?.verdi ?: bidragsmottaker
     val barnFødselsnummer = kravhaver
+    val enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent"
 
     return ForholdsmessigFordelingBarnDto(
         ident = barnFødselsnummer,
@@ -361,36 +367,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
             } else {
                 null
             },
-        åpenBehandling =
-            if (åpenBehandling != null) {
-                ForholdsmessigFordelingÅpenBehandlingDto(
-                    søktFraDato = åpenBehandling.søktFomDato,
-                    mottattDato = åpenBehandling.mottattdato,
-                    stønadstype = åpenBehandling.stonadstype!!,
-                    behandlerEnhet = åpenBehandling.behandlerEnhet,
-                    behandlingId = åpenBehandling.id,
-                    medInnkreving = åpenBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                    søknadsid = null,
-                    behandlingstype = åpenBehandling.søknadstype,
-                    søktAvType = åpenBehandling.soknadFra,
-                    behandlingstema = åpenBehandling.behandlingstema,
-                )
-            } else if (åpenSøknad != null) {
-                ForholdsmessigFordelingÅpenBehandlingDto(
-                    behandlingstema = åpenSøknad.behandlingstema,
-                    behandlerEnhet = sak?.eierfogd?.verdi ?: eierfogd!!,
-                    søktFraDato = LocalDate.now(),
-                    mottattDato = LocalDate.now(),
-                    behandlingstype = åpenSøknad.behandlingstype,
-                    søktAvType = åpenSøknad.søktAvType,
-                    behandlingId = null,
-                    medInnkreving = åpenSøknad.innkreving,
-                    stønadstype = åpenSøknad.behandlingstema?.tilStønadstype() ?: Stønadstype.BIDRAG,
-                    søknadsid = åpenSøknad.søknadsid,
-                )
-            } else {
-                null
-            },
+        åpneBehandlinger = åpneBehandlinger.map { it.tilFFBarnDto() } + åpneSøknader.map { it.tilFFBarnDto(sak, enhet) },
         bidragsmottaker =
             RolleDto(
                 id = -1,
@@ -403,3 +380,33 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
             ),
     )
 }
+
+private fun Behandling.tilFFBarnDto() =
+    ForholdsmessigFordelingÅpenBehandlingDto(
+        søktFraDato = søktFomDato,
+        mottattDato = mottattdato,
+        stønadstype = stonadstype!!,
+        behandlerEnhet = behandlerEnhet,
+        behandlingId = id,
+        medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
+        søknadsid = null,
+        behandlingstype = søknadstype,
+        søktAvType = soknadFra,
+        behandlingstema = behandlingstema,
+    )
+
+private fun ÅpenSøknadDto.tilFFBarnDto(
+    sak: BidragssakDto?,
+    eierfogd: String,
+) = ForholdsmessigFordelingÅpenBehandlingDto(
+    behandlingstema = behandlingstema,
+    behandlerEnhet = sak?.eierfogd?.verdi ?: eierfogd!!,
+    søktFraDato = LocalDate.now(),
+    mottattDato = LocalDate.now(),
+    behandlingstype = behandlingstype,
+    søktAvType = søktAvType,
+    behandlingId = null,
+    medInnkreving = innkreving,
+    stønadstype = behandlingstema?.tilStønadstype() ?: Stønadstype.BIDRAG,
+    søknadsid = søknadsid,
+)
