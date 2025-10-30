@@ -39,6 +39,11 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
+fun Rolle.fjernSøknad(søknadsid: Long) {
+    if (forholdsmessigFordeling == null) return
+    forholdsmessigFordeling!!.søknader = forholdsmessigFordeling!!.søknader.filter { it.søknadsid != søknadsid }.toMutableSet()
+}
+
 fun Behandling.tilFFBarnDetaljer() =
     ForholdsmessigFordelingSøknadBarn(
         søktAvType = soknadFra,

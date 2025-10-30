@@ -103,12 +103,9 @@ class BehandlingService(
         slettBehandling(behandling)
     }
 
-    fun slettBehandling(
-        behandling: Behandling,
-        slettBarn: List<Rolle> = emptyList(),
-    ) {
+    fun slettBehandling(behandling: Behandling) {
         if (behandling.forholdsmessigFordeling != null && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-            forholdsmessigFordelingService?.avsluttForholdsmessigFordeling(behandling, slettBarn)
+            forholdsmessigFordelingService?.avsluttForholdsmessigFordeling(behandling)
         }
 
         log.debug { "Logisk sletter behandling ${behandling.id}" }

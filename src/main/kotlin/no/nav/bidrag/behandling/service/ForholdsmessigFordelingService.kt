@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøknad
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierGrunnlag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierInntekt
@@ -200,14 +201,11 @@ class ForholdsmessigFordelingService(
     }
 
     @Transactional
-    fun avsluttForholdsmessigFordeling(
-        behandling: Behandling,
-        slettBarn: List<Rolle>,
-    ) {
+    fun avsluttForholdsmessigFordeling(behandling: Behandling) {
         if (behandling.forholdsmessigFordeling == null) return
         if (!behandling.forholdsmessigFordeling!!.erHovedbehandling) return
 
-        if (!kanBehandlingSlettes(behandling, slettBarn)) {
+        if (!kanBehandlingSlettes(behandling)) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke slette behandling fordi den inneholder flere søknader som ikke er revurdering",
@@ -255,19 +253,12 @@ class ForholdsmessigFordelingService(
         }
     }
 
-    fun kanBehandlingSlettes(
-        behandling: Behandling,
-        slettBarn: List<Rolle>,
-    ): Boolean =
-        if (slettBarn.isEmpty()) {
-            behandling.søknadsbarn
-                .filter { !it.forholdsmessigFordeling!!.erRevurdering }
-                .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
-                .distinct()
-                .size == 1
-        } else {
-            behandling.søknadsbarn.none { !it.forholdsmessigFordeling!!.erRevurdering && !slettBarn.contains(it) }
-        }
+    fun kanBehandlingSlettes(behandling: Behandling): Boolean =
+        behandling.søknadsbarn
+            .filter { !it.forholdsmessigFordeling!!.erRevurdering }
+            .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
+            .distinct()
+            .size == 1
 
     @Transactional
     fun leggTilEllerSlettBarnFraBehandlingSomErIFF(
@@ -287,7 +278,11 @@ class ForholdsmessigFordelingService(
             .mapNotNull { nyRolle -> behandling.roller.find { it.ident == nyRolle.ident!!.verdi } }
             .filter { it.forholdsmessigFordeling?.erRevurdering == true }
             .forEach {
-                feilregistrerBarnFraFFSøknad(it)
+                if (it.forholdsmessigFordeling?.erRevurdering == true) {
+                    feilregistrerBarnFraFFSøknad(it)
+                } else {
+                    it.fjernSøknad(søknadsid)
+                }
             }
         val rollerSomSkalLeggesTil =
             rollerSomSkalLeggesTilDto
@@ -341,8 +336,8 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         søknadsid: Long,
     ) {
-        if (kanBehandlingSlettes(behandling, slettBarn) && slettBarn.isNotEmpty()) {
-            behandlingService.slettBehandling(behandling, slettBarn)
+        if (kanBehandlingSlettes(behandling) && slettBarn.isNotEmpty()) {
+            behandlingService.slettBehandling(behandling)
         } else {
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
         }
