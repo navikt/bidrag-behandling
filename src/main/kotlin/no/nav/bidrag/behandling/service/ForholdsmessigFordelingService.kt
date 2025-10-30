@@ -196,7 +196,7 @@ class ForholdsmessigFordelingService(
         tilgangTilEnhet: String,
     ) {
         sakConsumer.opprettMidlertidligTilgang(OpprettMidlertidligTilgangRequest(saksnummer, tilgangTilEnhet))
-        bbmConsumer.lagreBehandlerEnhet(OppdaterBehandlerenhetRequest(tilgangTilEnhet, søknadsid))
+        bbmConsumer.lagreBehandlerEnhet(OppdaterBehandlerenhetRequest(søknadsid, tilgangTilEnhet))
     }
 
     @Transactional
@@ -399,7 +399,7 @@ class ForholdsmessigFordelingService(
                     OpprettSøknadRequest(
                         saksnummer = barn.forholdsmessigFordeling!!.tilhørerSak,
                         behandlingsid = behandling.id,
-                        enhet = behandling.behandlerEnhet,
+                        behandlerenhet = behandling.behandlerEnhet,
                         behandlingstema = Behandlingstema.BIDRAG,
                         søknadFomDato = søktFomDato,
                         innkreving = true,
@@ -609,7 +609,7 @@ class ForholdsmessigFordelingService(
                     )
                 }
                 bbmConsumer.lagreBehandlingsid(
-                    OppdaterBehandlingsidRequest(åpenSøknad.behandlingsid, behandling.id!!, åpenSøknad.søknadsid),
+                    OppdaterBehandlingsidRequest(åpenSøknad.søknadsid, åpenSøknad.behandlingsid, behandling.id!!),
                 )
                 if (sak.eierfogd.verdi != behandling.behandlerEnhet) {
                     oppdaterSakOgSøknadBehandlerEnhet(åpenSøknad.saksnummer, åpenSøknad.søknadsid, behandling.behandlerEnhet)
@@ -848,7 +848,7 @@ class ForholdsmessigFordelingService(
                 OpprettSøknadRequest(
                     saksnummer = saksnummer,
                     behandlingsid = behandling.id,
-                    enhet = behandlerEnhet,
+                    behandlerenhet = behandlerEnhet,
                     behandlingstema = stønadstype?.tilBehandlingstema() ?: Behandlingstema.BIDRAG,
                     søknadFomDato = søktFomDato,
                     barnListe = opprettSøknader,
@@ -856,7 +856,7 @@ class ForholdsmessigFordelingService(
                 ),
             )
 
-        val søknadsid = response.søknadsid.toLong()
+        val søknadsid = response.søknadsid
 
         opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString())
         return søknadsid
@@ -970,6 +970,7 @@ class ForholdsmessigFordelingService(
                                 SakKravhaver(
                                     åpenSøknad.saksnummer,
                                     kravhaver = barnFnr.personident!!,
+                                    eierfogd = åpenSøknad.behandlerenhet,
                                     løperBidragFra = løpendeBidrag?.periodeFra,
                                     åpneSøknader = mutableSetOf(åpenSøknad),
                                 ),

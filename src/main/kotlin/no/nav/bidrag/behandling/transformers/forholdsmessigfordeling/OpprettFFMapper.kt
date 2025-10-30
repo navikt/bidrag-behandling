@@ -63,7 +63,7 @@ fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
         søknadsid = søknadsid,
         omgjørVedtaksid = referertVedtaksid,
         innkreving = innkreving,
-        enhet = "",
+        enhet = behandlerenhet ?: "9999",
         omgjørSøknadsid = referertSøknadsid,
     )
 
