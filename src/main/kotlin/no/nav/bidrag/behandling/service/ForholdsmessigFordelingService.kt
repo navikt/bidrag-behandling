@@ -611,7 +611,7 @@ class ForholdsmessigFordelingService(
                 bbmConsumer.lagreBehandlingsid(
                     OppdaterBehandlingsidRequest(åpenSøknad.søknadsid, åpenSøknad.behandlingsid, behandling.id!!),
                 )
-                if (sak.eierfogd.verdi != behandling.behandlerEnhet) {
+                if (behandling.behandlerEnhet != åpenSøknad.behandlerenhet) {
                     oppdaterSakOgSøknadBehandlerEnhet(åpenSøknad.saksnummer, åpenSøknad.søknadsid, behandling.behandlerEnhet)
                 }
             }
