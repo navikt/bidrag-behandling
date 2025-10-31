@@ -92,7 +92,10 @@ class BehandlingService(
 //    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
-    fun slettBehandling(behandlingId: Long) {
+    fun slettBehandling(
+        behandlingId: Long,
+        søknadsid: Long? = null,
+    ) {
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
@@ -101,14 +104,29 @@ class BehandlingService(
             )
         }
 
-        slettBehandling(behandling)
+        slettBehandling(behandling, søknadsid)
     }
 
-    fun slettBehandling(behandling: Behandling) {
-        if (behandling.forholdsmessigFordeling != null && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-            forholdsmessigFordelingService?.avsluttForholdsmessigFordeling(behandling)
+    fun slettBehandling(
+        behandling: Behandling,
+        søknadsid: Long? = null,
+    ) {
+        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            if (søknadsid == null) {
+                forholdsmessigFordelingService!!.avsluttForholdsmessigFordeling(behandling, emptyList(), behandling.soknadsid!!)
+                logiskSlettBehandling(behandling)
+            } else {
+                val barnSomSkalSlettes =
+                    behandling.søknadsbarn
+                        .filter { it.forholdsmessigFordeling!!.søknader.any { it.søknadsid == søknadsid } }
+                forholdsmessigFordelingService!!.slettBarnEllerBehandling(barnSomSkalSlettes, behandling, søknadsid)
+            }
+        } else {
+            logiskSlettBehandling(behandling)
         }
+    }
 
+    fun logiskSlettBehandling(behandling: Behandling) {
         log.debug { "Logisk sletter behandling ${behandling.id}" }
         behandlingRepository.logiskSlett(behandling.id!!)
         behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
@@ -558,7 +576,7 @@ class BehandlingService(
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
-        if (behandling.forholdsmessigFordeling != null && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
                 rollerSomLeggesTil,
                 rollerSomSkalSlettes,

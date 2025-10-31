@@ -22,8 +22,9 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     // "delete(behandling)" sletter inntekter/grunnlag/husstandsmedlem/sivilstand som gjør at det vanskelig å gjenskape det testerne har behandlet før sletting
     // Behandling slettes hvis vedtak fattes gjennom Bisys
     @Modifying
-    @Query("update behandling set deleted = true, slettet_tidspunkt = now() where id = :behandlingsid", nativeQuery = true)
+    @Query("update behandling b set deleted = true, slettet_tidspunkt = now() where b.id = :behandlingsid or (forholdsmessig_fordeling is not null and (b.forholdsmessig_fordeling->>'behandlesAvBehandling'::text = (:behandlingsid)::text))", nativeQuery = true)
     fun logiskSlett(behandlingsid: Long)
+
 
     @Query("select b.* from behandling b where b.id = :behandlingsid", nativeQuery = true)
     fun hentBehandlingInkludertSlettet(behandlingsid: Long): Behandling?

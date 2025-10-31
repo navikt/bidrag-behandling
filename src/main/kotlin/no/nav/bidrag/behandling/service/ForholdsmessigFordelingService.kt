@@ -201,11 +201,15 @@ class ForholdsmessigFordelingService(
     }
 
     @Transactional
-    fun avsluttForholdsmessigFordeling(behandling: Behandling) {
+    fun avsluttForholdsmessigFordeling(
+        behandling: Behandling,
+        slettBarn: List<Rolle>,
+        søknadsidSomSlettes: Long,
+    ) {
         if (behandling.forholdsmessigFordeling == null) return
         if (!behandling.forholdsmessigFordeling!!.erHovedbehandling) return
 
-        if (!kanBehandlingSlettes(behandling)) {
+        if (!kanBehandlingSlettes(behandling, slettBarn, søknadsidSomSlettes)) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke slette behandling fordi den inneholder flere søknader som ikke er revurdering",
@@ -253,12 +257,19 @@ class ForholdsmessigFordelingService(
         }
     }
 
-    fun kanBehandlingSlettes(behandling: Behandling): Boolean =
-        behandling.søknadsbarn
-            .filter { !it.forholdsmessigFordeling!!.erRevurdering }
-            .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
-            .distinct()
-            .size == 1
+    fun kanBehandlingSlettes(
+        behandling: Behandling,
+        slettBarn: List<Rolle>,
+        søknadsidSomSlettes: Long,
+    ): Boolean {
+        val søknaderIkkeRevudering =
+            behandling.søknadsbarn
+                .filter { slettBarn.isEmpty() || !slettBarn.mapNotNull { it.ident }.contains(it.ident) }
+                .filter { !it.forholdsmessigFordeling!!.erRevurdering }
+                .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
+                .distinct()
+        return søknaderIkkeRevudering.isEmpty() || søknaderIkkeRevudering.size == 1 && søknaderIkkeRevudering.contains(søknadsidSomSlettes)
+    }
 
     @Transactional
     fun leggTilEllerSlettBarnFraBehandlingSomErIFF(
@@ -331,13 +342,15 @@ class ForholdsmessigFordelingService(
         slettBarnEllerBehandling(rollerSomSkalSlettes, behandling, søknadsid)
     }
 
-    private fun slettBarnEllerBehandling(
+    @Transactional
+    fun slettBarnEllerBehandling(
         slettBarn: List<Rolle>,
         behandling: Behandling,
         søknadsid: Long,
     ) {
-        if (kanBehandlingSlettes(behandling) && slettBarn.isNotEmpty()) {
-            behandlingService.slettBehandling(behandling)
+        if (kanBehandlingSlettes(behandling, slettBarn, søknadsid)) {
+            avsluttForholdsmessigFordeling(behandling, slettBarn, søknadsid)
+            behandlingService.logiskSlettBehandling(behandling)
         } else {
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
         }

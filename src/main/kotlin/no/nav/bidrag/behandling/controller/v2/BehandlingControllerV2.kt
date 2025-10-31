@@ -340,6 +340,23 @@ class BehandlingControllerV2(
     ) = behandlingService.slettBehandling(behandlingsid)
 
     @Suppress("unused")
+    @DeleteMapping("/behandling/{behandlingsid}/{søknadsid}")
+    @Operation(
+        description = "Logisk slett en behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Slettet behandling"),
+            ApiResponse(responseCode = "400", description = "Kan ikke slette behandling"),
+        ],
+    )
+    fun slettBehandlingFraSøknad(
+        @PathVariable behandlingsid: Long,
+        @PathVariable søknadsid: Long,
+    ) = behandlingService.slettBehandling(behandlingsid, søknadsid)
+
+    @Suppress("unused")
     @PostMapping("/behandling/vedtak/{refVedtaksId}")
     @Operation(
         description = "Opprett behandling fra vedtak. Brukes når det skal opprettes klagebehanling fra vedtak.",
