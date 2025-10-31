@@ -695,6 +695,29 @@ class BehandlingTilVedtakMapping(
     private fun Behandling.mapEngangsbeløpGebyr(grunnlagsliste: List<GrunnlagDto>): GebyrResulat {
         val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
         val grunnlagslisteGebyr = grunnlagsliste + byggGrunnlagForGebyr()
+        val gebyrBarn =
+            søknadsbarn.filter { it.harGebyrsøknad }.map {
+                val beregning = mapper.beregnGebyr(this, it, grunnlagslisteGebyr)
+                gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
+                val ilagtGebyr = beregning.ilagtGebyr
+                val skyldner = Personident(it.ident!!)
+                OpprettEngangsbeløpRequestDto(
+                    type = Engangsbeløptype.GEBYR_MOTTAKER,
+                    beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
+                    betaltBeløp = null,
+                    resultatkode = beregning.resultatkode.name,
+                    referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
+                    eksternReferanse = null,
+                    beslutning = Beslutningstype.ENDRING,
+                    grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
+                    innkreving = Innkrevingstype.MED_INNKREVING,
+                    skyldner = skyldner,
+                    kravhaver = personIdentNav,
+                    mottaker = personIdentNav,
+                    valutakode = if (ilagtGebyr) "NOK" else null,
+                    sak = Saksnummer(saksnummer),
+                )
+            }
         val engangsbeløpListe =
             listOfNotNull(
                 bidragspliktig!!.harGebyrsøknad.ifTrue {
@@ -742,7 +765,7 @@ class BehandlingTilVedtakMapping(
                     )
                 },
             )
-        return GebyrResulat(engangsbeløpListe, gebyrGrunnlagsliste)
+        return GebyrResulat(engangsbeløpListe + gebyrBarn, gebyrGrunnlagsliste)
     }
 
     private fun Behandling.mapEngangsbeløpDirekteOppgjør(sak: BidragssakDto) =
