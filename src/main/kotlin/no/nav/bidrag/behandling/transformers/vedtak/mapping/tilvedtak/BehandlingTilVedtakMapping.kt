@@ -912,7 +912,7 @@ class BehandlingTilVedtakMapping(
             }!!
         engangsbeløp.referanse
     } else {
-        opprettUnikReferanse(type.name)
+        opprettUnikReferanse(type.name + skyldner?.let { "_$it" })
     }
 
     fun Behandling.byggOpprettVedtakRequestSærbidrag(enhet: String? = null): OpprettVedtakRequestDto {
