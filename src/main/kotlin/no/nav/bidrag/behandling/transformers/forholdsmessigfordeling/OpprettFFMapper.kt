@@ -176,7 +176,7 @@ fun Rolle.kopierRolle(
             delAvOpprinneligBehandling = false,
             behandlingsid = behandling.id,
             tilhørerSak = behandling.saksnummer,
-            eierfogd = Enhetsnummer(behandling.behandlerEnhet),
+            behandlerenhet = behandling.behandlerEnhet,
             bidragsmottaker = bmFnr,
             løperBidragFra = periodeFra,
             erRevurdering = false,

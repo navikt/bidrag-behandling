@@ -118,7 +118,7 @@ class ForholdsmessigFordelingService(
                         delAvOpprinneligBehandling = true,
                         tilhørerSak = behandling.saksnummer,
                         behandlingsid = behandling.id,
-                        eierfogd = Enhetsnummer(behandling.behandlerEnhet),
+                        behandlerenhet = behandling.behandlerEnhet,
                         bidragsmottaker = null,
                         erRevurdering = false,
                         søknader =
@@ -160,7 +160,7 @@ class ForholdsmessigFordelingService(
                         delAvOpprinneligBehandling = true,
                         tilhørerSak = behandling.saksnummer,
                         behandlingsid = behandling.id,
-                        eierfogd = Enhetsnummer(behandling.behandlerEnhet),
+                        behandlerenhet = behandling.behandlerEnhet,
                         bidragsmottaker = originalBM,
                         erRevurdering = false,
                         søknader =
@@ -296,7 +296,7 @@ class ForholdsmessigFordelingService(
                             delAvOpprinneligBehandling = true,
                             behandlingsid = behandling.id,
                             bidragsmottaker = bmIdent ?: behandling.bidragsmottakerForSak(saksnummer)?.ident,
-                            eierfogd = Enhetsnummer(behandlerenhet),
+                            behandlerenhet = behandlerenhet,
                             erRevurdering = erRevurdering,
                             søknader = mutableSetOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid)),
                         )
@@ -564,7 +564,7 @@ class ForholdsmessigFordelingService(
                     ForholdsmessigFordelingRolle(
                         delAvOpprinneligBehandling = false,
                         tilhørerSak = åpenSøknad.saksnummer,
-                        eierfogd = sak.eierfogd,
+                        behandlerenhet = sak.eierfogd.verdi,
                         bidragsmottaker = åpenSøknad.bidragsmottaker?.personident,
                         erRevurdering = åpenSøknad.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING,
                         søknader =
@@ -762,7 +762,7 @@ class ForholdsmessigFordelingService(
                 delAvOpprinneligBehandling = false,
                 erRevurdering = true,
                 tilhørerSak = saksnummer,
-                eierfogd = sak.eierfogd,
+                behandlerenhet = sak.eierfogd.verdi,
                 bidragsmottaker = bmFødselsnummer,
                 søknader = alleSøknader,
             )

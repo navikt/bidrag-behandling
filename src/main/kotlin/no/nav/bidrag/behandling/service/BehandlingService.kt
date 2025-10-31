@@ -60,6 +60,7 @@ import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandling
 import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarn
+import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarnSøknad
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
@@ -466,12 +467,20 @@ class BehandlingService(
                     it.id!!,
                     it.søknadsbarn.map {
                         ÅpenBehandlingBarn(
-                            it.forholdsmessigFordeling!!.tilhørerSak,
-                            it.forholdsmessigFordeling!!.eldsteSøknad.søknadsid!!,
-                            it.forholdsmessigFordeling!!.bidragsmottaker!!,
-                            it.ident!!,
-                            it.forholdsmessigFordeling!!.eldsteSøknad.søknadFomDato!!,
-                            it.forholdsmessigFordeling!!.eldsteSøknad.mottattDato,
+                            saksnummer = it.forholdsmessigFordeling!!.tilhørerSak,
+                            ident = it.ident!!,
+                            bidragsmottakerIdent = it.bidragsmottaker?.ident!!,
+                            søknader =
+                                it.forholdsmessigFordeling!!.søknader.map {
+                                    ÅpenBehandlingBarnSøknad(
+                                        mottattDato = it.mottattDato,
+                                        søknadsid = it.søknadsid!!,
+                                        søktAvType = it.søktAvType,
+                                        søktFraDato = it.søknadFomDato,
+                                        behandlingstema = it.behandlingstema,
+                                        behandlingstype = it.behandlingstype,
+                                    )
+                                },
                         )
                     },
                 )

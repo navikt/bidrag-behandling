@@ -66,7 +66,7 @@ class BehandlingOppdatertLytter(
                                 behandlingstema = behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                                 søknadsid = behandling.soknadsid,
                                 omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
-                                behandlerEnhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: behandling.behandlerEnhet,
+                                behandlerEnhet = barn.forholdsmessigFordeling?.behandlerenhet ?: behandling.behandlerEnhet,
                                 saksnummer = barn.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
                                 behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
                                 særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,

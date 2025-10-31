@@ -772,7 +772,6 @@ class Dtomapper(
                         val barnDto =
                             søknadsbarn.map { barn ->
                                 val bm = barn.bidragsmottaker
-                                val ffEldsteSøknad = barn.forholdsmessigFordeling?.eldsteSøknad
                                 ForholdsmessigFordelingBarnDto(
                                     ident = barn.ident!!,
                                     navn = barn.navn ?: "",
@@ -790,7 +789,7 @@ class Dtomapper(
                                                 søktFraDato = it.søknadFomDato,
                                                 mottattDato = it.mottattDato,
                                                 stønadstype = barn.stønadstype ?: Stønadstype.BIDRAG,
-                                                behandlerEnhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
+                                                behandlerEnhet = barn.forholdsmessigFordeling?.behandlerenhet ?: "",
                                                 behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
                                                 søknadsid = it.søknadsid,
                                                 medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
@@ -799,7 +798,7 @@ class Dtomapper(
                                                 behandlingstema = it.behandlingstema,
                                             )
                                         },
-                                    enhet = barn.forholdsmessigFordeling?.eierfogd?.verdi ?: "",
+                                    enhet = barn.forholdsmessigFordeling?.behandlerenhet ?: "",
                                 )
                             }
                         ForholdmessigFordelingDetaljerDto(barn = barnDto)

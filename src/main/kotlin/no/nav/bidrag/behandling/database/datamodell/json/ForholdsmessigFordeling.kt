@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell.json
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.Converter
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -19,7 +20,8 @@ data class ForholdsmessigFordeling(
 
 data class ForholdsmessigFordelingRolle(
     var tilhørerSak: String,
-    val eierfogd: Enhetsnummer?,
+    @JsonAlias("eierfogd")
+    val behandlerenhet: String?,
     var delAvOpprinneligBehandling: Boolean,
     var erRevurdering: Boolean,
     val harLøpendeBidrag: Boolean = true,
