@@ -133,7 +133,7 @@ class BeregningEvnevurderingServiceTest {
                 assertSoftly(
                     innhold.løpendeBidragListe.find { it.gjelderBarn == barn1Objekt!!.referanse }!!,
                 ) {
-                    type shouldBe Stønadstype.BIDRAG
+                    stønadstype shouldBe Stønadstype.BIDRAG
                     løpendeBeløp shouldBe BigDecimal(5111)
                     samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
                     beregnetBeløp shouldBe BigDecimal(4515)
@@ -143,7 +143,7 @@ class BeregningEvnevurderingServiceTest {
                 assertSoftly(
                     innhold.løpendeBidragListe.find { it.gjelderBarn == barn2Objekt!!.referanse }!!,
                 ) {
-                    type shouldBe Stønadstype.BIDRAG
+                    stønadstype shouldBe Stønadstype.BIDRAG
                     løpendeBeløp shouldBe BigDecimal(5222)
                     samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
                     beregnetBeløp shouldBe BigDecimal(5934)
@@ -155,7 +155,7 @@ class BeregningEvnevurderingServiceTest {
                         it.gjelderBarn == husstandsmedlemObjekt!!.referanse
                     }!!,
                 ) {
-                    type shouldBe Stønadstype.BIDRAG18AAR
+                    stønadstype shouldBe Stønadstype.BIDRAG18AAR
                     løpendeBeløp shouldBe BigDecimal(5333)
                     samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                     beregnetBeløp shouldBe BigDecimal(7533)
@@ -295,19 +295,19 @@ class BeregningEvnevurderingServiceTest {
                 val innhold = this.innholdTilObjekt<LøpendeBidragGrunnlag>()
                 innhold.løpendeBidragListe shouldHaveSize 3
                 assertSoftly(innhold.løpendeBidragListe[0]) {
-                    type shouldBe Stønadstype.BIDRAG
+                    stønadstype shouldBe Stønadstype.BIDRAG
                     faktiskBeløp shouldNotBe BigDecimal.ZERO
                     beregnetBeløp shouldNotBe BigDecimal.ZERO
                     samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_1
                 }
                 assertSoftly(innhold.løpendeBidragListe[1]) {
-                    type shouldBe Stønadstype.BIDRAG
+                    stønadstype shouldBe Stønadstype.BIDRAG
                     faktiskBeløp shouldBe BigDecimal.ZERO
                     beregnetBeløp shouldBe BigDecimal.ZERO
                     samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
                 }
                 assertSoftly(innhold.løpendeBidragListe[2]) {
-                    type shouldBe Stønadstype.BIDRAG18AAR
+                    stønadstype shouldBe Stønadstype.BIDRAG18AAR
                     faktiskBeløp shouldNotBe BigDecimal.ZERO
                     beregnetBeløp shouldNotBe BigDecimal.ZERO
                     samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
