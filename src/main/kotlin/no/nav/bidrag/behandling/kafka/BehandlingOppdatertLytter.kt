@@ -85,6 +85,7 @@ class BehandlingOppdatertLytter(
                                 søknadsid = it.søknadsid ?: behandling.soknadsid,
                                 omgjørSøknadsid = it.omgjørSøknadsid,
                                 medInnkreving = it.innkreving,
+                                status = it.status,
                                 behandlingstype = it.behandlingstype ?: behandling.søknadstype!!,
                                 behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                             )

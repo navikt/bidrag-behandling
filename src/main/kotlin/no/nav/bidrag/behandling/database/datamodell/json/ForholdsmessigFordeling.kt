@@ -3,10 +3,10 @@ package no.nav.bidrag.behandling.database.datamodell.json
 import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.Converter
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -31,6 +31,8 @@ data class ForholdsmessigFordelingRolle(
     var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
 ) {
+    val søknaderUnderBehandling = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING }
+
     @get:JsonIgnore
     val eldsteSøknad get() = søknader.filter { it.søknadFomDato != null }.minBy { it.søknadFomDato!! }
 
@@ -49,4 +51,5 @@ data class ForholdsmessigFordelingSøknadBarn(
     val omgjørVedtaksid: Int? = null,
     val innkreving: Boolean = true,
     val enhet: String = "9999",
+    var status: Behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
 )

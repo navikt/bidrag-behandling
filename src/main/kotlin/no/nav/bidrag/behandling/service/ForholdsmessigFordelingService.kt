@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDe
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
@@ -51,6 +52,7 @@ import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhe
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.OpprettMidlertidligTilgangRequest
@@ -223,7 +225,11 @@ class ForholdsmessigFordelingService(
     }
 
     fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
-        val søknader = rolle.forholdsmessigFordeling!!.søknader.filter { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+        val søknader =
+            rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.filter {
+                it.behandlingstype ==
+                    Behandlingstype.FORHOLDSMESSIG_FORDELING
+            }
         val søknaderFeilregistrert =
             søknader.mapNotNull { søknad ->
                 val søknadsid = søknad.søknadsid!!
@@ -240,13 +246,17 @@ class ForholdsmessigFordelingService(
         rolle.forholdsmessigFordeling!!.søknader =
             rolle.forholdsmessigFordeling!!
                 .søknader
-                .filter { !søknaderFeilregistrert.contains(it.søknadsid!!) }
-                .toMutableSet()
+                .map {
+                    if (søknaderFeilregistrert.contains(it.søknadsid!!)) {
+                        it.status = Behandlingstatus.FEILREGISTRERT
+                    }
+                    it
+                }.toMutableSet()
     }
 
     fun feilregistrerFFSøknad(rolle: Rolle) {
         if (rolle.forholdsmessigFordeling == null || !rolle.forholdsmessigFordeling!!.erRevurdering) return
-        rolle.forholdsmessigFordeling!!.søknader.forEach { søknad ->
+        rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.forEach { søknad ->
             val søknadsid = søknad.søknadsid
             LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
             try {
@@ -266,8 +276,11 @@ class ForholdsmessigFordelingService(
             behandling.søknadsbarn
                 .filter { slettBarn.isEmpty() || !slettBarn.mapNotNull { it.ident }.contains(it.ident) }
                 .filter { !it.forholdsmessigFordeling!!.erRevurdering }
-                .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
-                .distinct()
+                .flatMap {
+                    it.forholdsmessigFordeling!!
+                        .søknaderUnderBehandling
+                        .map { it.søknadsid }
+                }.distinct()
         return søknaderIkkeRevudering.isEmpty() ||
             slettBarn.isNotEmpty() && søknaderIkkeRevudering.size == 1 && søknaderIkkeRevudering.contains(søknadsidSomSlettes)
     }
@@ -363,12 +376,8 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         søknadsid: Long,
     ) {
-        barn.forholdsmessigFordeling!!.søknader =
-            barn.forholdsmessigFordeling!!
-                .søknader
-                .filter { it.søknadsid != søknadsid }
-                .toMutableSet()
-        if (barn.forholdsmessigFordeling!!.søknader.isNotEmpty()) {
+        barn.fjernSøknad(søknadsid)
+        if (barn.forholdsmessigFordeling!!.søknaderUnderBehandling.isNotEmpty()) {
             LOGGER.info {
                 "Barnet er koblet til flere søknader ${barn.forholdsmessigFordeling!!.søknader}" +
                     " etter den ble slettet fra søknad $søknadsid. Gjør ingen endring. Behandlingid = ${behandling.id}"

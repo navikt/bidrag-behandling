@@ -784,7 +784,7 @@ class Dtomapper(
                                     innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
                                     stønadstype = barn.stønadstype,
                                     åpneBehandlinger =
-                                        barn.forholdsmessigFordeling!!.søknader.map {
+                                        barn.forholdsmessigFordeling!!.søknaderUnderBehandling.map {
                                             ForholdsmessigFordelingÅpenBehandlingDto(
                                                 søktFraDato = it.søknadFomDato,
                                                 mottattDato = it.mottattDato,

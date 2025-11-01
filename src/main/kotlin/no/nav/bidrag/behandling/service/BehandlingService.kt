@@ -118,7 +118,7 @@ class BehandlingService(
             } else {
                 val barnSomSkalSlettes =
                     behandling.søknadsbarn
-                        .filter { it.forholdsmessigFordeling!!.søknader.any { it.søknadsid == søknadsid } }
+                        .filter { it.forholdsmessigFordeling!!.søknaderUnderBehandling.any { it.søknadsid == søknadsid } }
                 forholdsmessigFordelingService!!.slettBarnEllerBehandling(barnSomSkalSlettes, behandling, søknadsid)
             }
         } else {
@@ -495,7 +495,7 @@ class BehandlingService(
                             ident = it.ident!!,
                             bidragsmottakerIdent = it.bidragsmottaker?.ident!!,
                             søknader =
-                                it.forholdsmessigFordeling!!.søknader.map {
+                                it.forholdsmessigFordeling!!.søknaderUnderBehandling.map {
                                     ÅpenBehandlingBarnSøknad(
                                         mottattDato = it.mottattDato,
                                         søknadsid = it.søknadsid!!,

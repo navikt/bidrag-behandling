@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
@@ -33,6 +34,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
@@ -41,7 +43,15 @@ import java.time.YearMonth
 
 fun Rolle.fjernSøknad(søknadsid: Long) {
     if (forholdsmessigFordeling == null) return
-    forholdsmessigFordeling!!.søknader = forholdsmessigFordeling!!.søknader.filter { it.søknadsid != søknadsid }.toMutableSet()
+    forholdsmessigFordeling!!.søknader =
+        forholdsmessigFordeling!!
+            .søknader
+            .map {
+                if (it.søknadsid == søknadsid) {
+                    it.status = Behandlingstatus.FEILREGISTRERT
+                }
+                it
+            }.toMutableSet()
 }
 
 fun Behandling.tilFFBarnDetaljer() =
