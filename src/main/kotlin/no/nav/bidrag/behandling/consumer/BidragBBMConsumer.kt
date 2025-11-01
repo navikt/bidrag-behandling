@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
+import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
@@ -58,10 +60,14 @@ class BidragBBMConsumer(
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
     fun lagreBehandlingsid(request: OppdaterBehandlingsidRequest) =
-        postForEntity<Unit>(
-            bidragBBMUri.pathSegment("settbehandlingsid").build().toUri(),
-            request,
-        )
+        try {
+            postForEntity<Unit>(
+                bidragBBMUri.pathSegment("settbehandlingsid").build().toUri(),
+                request,
+            )
+        } catch (e: RestClientResponseException) {
+            secureLogger.error(e) { "Feil ved oppdatering av behandlingsid av request=$request" }
+        }
 
     @Retryable(
         value = [Exception::class],

@@ -31,7 +31,8 @@ data class ForholdsmessigFordelingRolle(
     var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
 ) {
-    val søknaderUnderBehandling = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING }
+    @get:JsonIgnore
+    val søknaderUnderBehandling get() = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING }
 
     @get:JsonIgnore
     val eldsteSøknad get() = søknader.filter { it.søknadFomDato != null }.minBy { it.søknadFomDato!! }

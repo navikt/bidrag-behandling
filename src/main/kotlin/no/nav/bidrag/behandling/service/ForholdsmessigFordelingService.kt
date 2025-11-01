@@ -404,14 +404,13 @@ class ForholdsmessigFordelingService(
                     ),
                 )
             }
-            barn.forholdsmessigFordeling!!.søknader =
-                mutableSetOf(
-                    åpenFFBehandling.tilForholdsmessigFordelingSøknad().copy(
-                        søktAvType = SøktAvType.NAV_BIDRAG,
-                        behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
-                        behandlingstema = Behandlingstema.BIDRAG,
-                    ),
-                )
+            barn.forholdsmessigFordeling!!.søknader.add(
+                åpenFFBehandling.tilForholdsmessigFordelingSøknad().copy(
+                    søktAvType = SøktAvType.NAV_BIDRAG,
+                    behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                    behandlingstema = Behandlingstema.BIDRAG,
+                ),
+            )
         } else {
             val søknad =
                 bbmConsumer.opprettSøknader(
@@ -425,18 +424,17 @@ class ForholdsmessigFordelingService(
                         barnListe = listOf(Barn(personident = barn.ident!!)),
                     ),
                 )
-            barn.forholdsmessigFordeling!!.søknader =
-                mutableSetOf(
-                    ForholdsmessigFordelingSøknadBarn(
-                        søktAvType = SøktAvType.NAV_BIDRAG,
-                        behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
-                        behandlingstema = Behandlingstema.BIDRAG,
-                        mottattDato = LocalDate.now(),
-                        søknadFomDato = søktFomDato,
-                        søknadsid = søknad.søknadsid,
-                        enhet = behandling.behandlerEnhet,
-                    ),
-                )
+            barn.forholdsmessigFordeling!!.søknader.add(
+                ForholdsmessigFordelingSøknadBarn(
+                    søktAvType = SøktAvType.NAV_BIDRAG,
+                    behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                    behandlingstema = Behandlingstema.BIDRAG,
+                    mottattDato = LocalDate.now(),
+                    søknadFomDato = søktFomDato,
+                    søknadsid = søknad.søknadsid,
+                    enhet = behandling.behandlerEnhet,
+                ),
+            )
         }
     }
 
