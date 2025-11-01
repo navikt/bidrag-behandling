@@ -268,7 +268,8 @@ class ForholdsmessigFordelingService(
                 .filter { !it.forholdsmessigFordeling!!.erRevurdering }
                 .flatMap { it.forholdsmessigFordeling!!.søknader.map { it.søknadsid } }
                 .distinct()
-        return søknaderIkkeRevudering.isEmpty() || søknaderIkkeRevudering.size == 1 && søknaderIkkeRevudering.contains(søknadsidSomSlettes)
+        return søknaderIkkeRevudering.isEmpty() ||
+            slettBarn.isNotEmpty() && søknaderIkkeRevudering.size == 1 && søknaderIkkeRevudering.contains(søknadsidSomSlettes)
     }
 
     @Transactional
@@ -710,6 +711,9 @@ class ForholdsmessigFordelingService(
                     )
                 }
 
+            bbmConsumer.lagreBehandlingsid(
+                OppdaterBehandlingsidRequest(behandlingOverført.soknadsid!!, behandlingOverført.id, behandling.id!!),
+            )
             giSakTilgangTilEnhet(behandlingOverført, behandling.behandlerEnhet)
             behandlingService.lagreBehandling(behandlingOverført)
         }

@@ -188,11 +188,6 @@ class BehandlingService(
             }
         }
 
-        behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
-            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
-            return OpprettBehandlingResponse(it.id!!)
-        }
-
         if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
             behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
@@ -221,6 +216,10 @@ class BehandlingService(
                 )
                 return OpprettBehandlingResponse(behandling.id!!)
             }
+        }
+        behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
+            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
+            return OpprettBehandlingResponse(it.id!!)
         }
 
         opprettBehandling.valider()
