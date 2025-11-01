@@ -56,6 +56,7 @@ class BehandlingOppdatertLytter(
                 behandlerEnhet = behandling.behandlerEnhet,
                 barn =
                     roller.filter { it.rolletype == Rolletype.BARN }.flatMap { barn ->
+                        val ff = barn.forholdsmessigFordeling
                         val hendelseBarn =
                             BehandlingHendelseBarn(
                                 søktAv = behandling.soknadFra,
@@ -66,8 +67,8 @@ class BehandlingOppdatertLytter(
                                 behandlingstema = behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                                 søknadsid = behandling.soknadsid,
                                 omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
-                                behandlerEnhet = barn.forholdsmessigFordeling?.behandlerenhet ?: behandling.behandlerEnhet,
-                                saksnummer = barn.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
+                                behandlerEnhet = ff?.behandlerenhet ?: behandling.behandlerEnhet,
+                                saksnummer = ff?.tilhørerSak ?: behandling.saksnummer,
                                 behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
                                 særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,
                                 status =
@@ -83,6 +84,8 @@ class BehandlingOppdatertLytter(
                                 søktFraDato = it.søknadFomDato ?: behandling.søktFomDato,
                                 søknadsid = it.søknadsid ?: behandling.soknadsid,
                                 omgjørSøknadsid = it.omgjørSøknadsid,
+                                medInnkreving = it.innkreving,
+                                behandlingstype = it.behandlingstype ?: behandling.søknadstype!!,
                                 behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                             )
                         } ?: listOf(hendelseBarn)

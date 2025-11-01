@@ -353,6 +353,7 @@ class ForholdsmessigFordelingService(
             behandlingService.logiskSlettBehandling(behandling)
         } else {
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
+            behandlingService.sendOppdatertHendelse(behandling.id!!, false)
         }
     }
 
@@ -963,7 +964,10 @@ class ForholdsmessigFordelingService(
 
         åpneSøknader
             .filter { søknad ->
-                søknad.behandlingsid == null || sakKravhaverListe.none { it.åpneBehandlinger.any { it.id == søknad.behandlingsid } } &&
+                søknad.behandlingsid == null ||
+                    sakKravhaverListe.none {
+                        it.åpneBehandlinger.any { it.id == søknad.behandlingsid || it.soknadsid == søknad.søknadsid }
+                    } &&
                     !behandlingRepository.erIForholdsmessigFordeling(søknad.behandlingsid!!)
             }.forEach { åpenSøknad ->
                 åpenSøknad.partISøknadListe

@@ -126,13 +126,20 @@ class BehandlingService(
         }
     }
 
+    fun sendOppdatertHendelse(
+        behandlingId: Long,
+        slettet: Boolean,
+    ) {
+        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
+            behandlingId,
+            if (slettet) BehandlingHendelseType.AVSLUTTET else BehandlingHendelseType.ENDRET,
+        )
+    }
+
     fun logiskSlettBehandling(behandling: Behandling) {
         log.debug { "Logisk sletter behandling ${behandling.id}" }
         behandlingRepository.logiskSlett(behandling.id!!)
-        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandling.id!!,
-            BehandlingHendelseType.AVSLUTTET,
-        )
+        sendOppdatertHendelse(behandling.id!!, true)
     }
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
@@ -604,7 +611,7 @@ class BehandlingService(
 
         if (behandling.søknadsbarn.isEmpty()) {
             log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
-            slettBehandling(behandling.id!!)
+            logiskSlettBehandling(behandling)
             return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
 
