@@ -20,6 +20,7 @@ class CacheConfig {
         const val SAMHANDLER_CACHE = "SAMHANDLER_CACHE"
         const val PERSON_CACHE = "PERSON_CACHE"
         const val PERSON_FØDSELSDATO_CACHE = "PERSON_FØDSELSDATO_CACHE"
+        const val PERSON_RELASJON_CACHE = "PERSON_RELASJON_CACHE"
         const val STØNAD_HISTORIKK_CACHE_2 = "STØNAD_HISTORIKK_CACHE_2"
         const val STØNAD_HISTORIKK_CACHE = "STØNAD_HISTORIKK_CACHE"
         const val BBM_BEREGNING_CACHE = "BBM_BEREGNING_CACHE"
@@ -27,6 +28,7 @@ class CacheConfig {
         const val VEDTAK_CACHE = "VEDTAK_CACHE"
         const val STØNAD_LØPENDE_BIDRAG_CACHE = "STØNAD_LØPENDE_BIDRAG_CACHE"
         const val SAK_CACHE = "SAK_CACHE"
+        const val SAK_PERSON_CACHE = "SAK_PERSON_CACHE"
         const val TILGANG_TEMA_CACHE = "TILGANG_TEMA_CACHE"
         const val TILGANG_PERSON_I_SAK_CACHE = "TILGANG_SAK_CACHE"
         const val PERSON_HAR_BESKYTTELSE = "PERSON_HAR_BESKYTTELSE"
@@ -37,6 +39,10 @@ class CacheConfig {
         val caffeineCacheManager = CaffeineCacheManager()
         caffeineCacheManager.registerCustomCache(
             PERSON_FØDSELSDATO_CACHE,
+            Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
+        )
+        caffeineCacheManager.registerCustomCache(
+            PERSON_RELASJON_CACHE,
             Caffeine.newBuilder().expireAfter(InvaliderCacheFørStartenAvArbeidsdag()).build(),
         )
         caffeineCacheManager.registerCustomCache(
@@ -59,7 +65,7 @@ class CacheConfig {
         caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build())
         caffeineCacheManager.registerCustomCache(
             STØNAD_LØPENDE_BIDRAG_CACHE,
-            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build(),
+            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_FOR_STØNAD_CACHE,
@@ -71,6 +77,10 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             SAK_CACHE,
+            Caffeine.newBuilder().expireAfterAccess(5, TimeUnit.SECONDS).build(),
+        )
+        caffeineCacheManager.registerCustomCache(
+            SAK_PERSON_CACHE,
             Caffeine.newBuilder().expireAfterAccess(5, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(

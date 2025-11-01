@@ -10,4 +10,6 @@ data class RolleDto(
     val navn: String? = null,
     val fødselsdato: LocalDate? = null,
     val harInnvilgetTilleggsstønad: Boolean? = null,
+    val delAvOpprinneligBehandling: Boolean?,
+    val erRevurdering: Boolean?,
 )

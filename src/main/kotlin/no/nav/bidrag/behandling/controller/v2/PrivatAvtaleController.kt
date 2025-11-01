@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
+import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleResponsDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
@@ -71,6 +72,28 @@ class PrivatAvtaleController(
         return tilPrivatAvtaleResponsDto(behandlingsid, privatavtaleid)
     }
 
+    @PutMapping("/behandling/{behandlingsid}/privatavtale/begrunnelse")
+    @Operation(
+        description =
+            "Oppdatere privat avtale. Returnerer oppdatert element.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun oppdaterPrivatAvtaleBegrunnelse(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdaterePrivatAvtaleBegrunnelseRequest,
+    ): OppdaterePrivatAvtaleResponsDto {
+        privatAvtaleService.oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request)
+        return tilPrivatAvtaleResponsDto(behandlingsid, null)
+    }
+
     @PostMapping("/behandling/{behandlingsid}/privatavtale/opprette")
     @Operation(
         description = "Oppretter privat avtale",
@@ -95,11 +118,17 @@ class PrivatAvtaleController(
 
     private fun tilPrivatAvtaleResponsDto(
         behandlingsid: Long,
-        privatavtaleid: Long,
+        privatavtaleid: Long?,
     ): OppdaterePrivatAvtaleResponsDto {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         val privatAvtale = behandling.privatAvtale.find { it.id == privatavtaleid }!!
         return OppdaterePrivatAvtaleResponsDto(
+            andreBarnPrivatAvtaler =
+                behandling.privatAvtale.filter { it.rolle == null }.map {
+                    dtomapper.run {
+                        privatAvtale.tilDto()
+                    }
+                },
             oppdatertPrivatAvtale =
                 dtomapper.run {
                     privatAvtale.tilDto()

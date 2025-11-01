@@ -4,15 +4,23 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.felles.OverlappendePeriode
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.math.BigDecimal
 import java.time.LocalDate
+
+data class OppdaterePrivatAvtaleBegrunnelseRequest(
+    val privatavtaleid: Long? = null,
+    val begrunnelse: String? = null,
+)
 
 data class OppdaterePrivatAvtaleRequest(
     @Schema(description = "Setter avtaledato på privat avtalen. Dersom avtaleDato er null, vil avtaledato fjernes.")
@@ -28,6 +36,7 @@ data class OppdaterePrivatAvtaleRequest(
     )
     val begrunnelse: String? = null,
     val avtaleType: PrivatAvtaleType? = null,
+    val gjelderUtland: Boolean? = false,
     val oppdaterPeriode: OppdaterePrivatAvtalePeriodeDto? = null,
     val slettePeriodeId: Long? = null,
 )
@@ -35,12 +44,15 @@ data class OppdaterePrivatAvtaleRequest(
 data class OppdaterePrivatAvtaleResponsDto(
     @Schema(description = "Privat avtale som ble oppdatert")
     val oppdatertPrivatAvtale: PrivatAvtaleDto? = null,
+    val andreBarnPrivatAvtaler: List<PrivatAvtaleDto> = emptyList(),
 )
 
 data class OppdaterePrivatAvtalePeriodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val beløp: BigDecimal,
+    val samværsklasse: Samværsklasse? = null,
+    val valuta: Valutakode? = null,
 )
 
 data class PrivatAvtaleDto(
@@ -49,8 +61,9 @@ data class PrivatAvtaleDto(
     val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
     val avtaleDato: LocalDate?,
     val avtaleType: PrivatAvtaleType?,
-    val skalIndeksreguleres: Boolean,
+    val skalIndeksreguleres: Boolean = false,
     val begrunnelse: String?,
+    val erSøknadsbarn: Boolean = true,
     val begrunnelseFraOpprinneligVedtak: String? = null,
     val valideringsfeil: PrivatAvtaleValideringsfeilDto?,
     val perioder: List<PrivatAvtalePeriodeDto> = emptyList(),
@@ -62,12 +75,14 @@ data class PrivatAvtalePeriodeDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val beløp: BigDecimal,
+    val samværsklasse: Samværsklasse? = null,
+    val valuta: Valutakode? = null,
 )
 
 data class PrivatAvtaleValideringsfeilDto(
     val privatAvtaleId: Long,
     @JsonIgnore
-    val gjelderPerson: Rolle,
+    val gjelderPerson: RolleDto,
     val perioderOverlapperMedLøpendeBidrag: Set<Datoperiode>,
     val manglerBegrunnelse: Boolean = false,
     val manglerAvtaledato: Boolean = false,

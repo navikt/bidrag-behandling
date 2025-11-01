@@ -220,10 +220,18 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    val erIForholdsmessigFordeling get() = forholdsmessigFordeling != null
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
-    val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+    val bidragsmottaker get() =
+        roller.find {
+            it.rolletype == Rolletype.BIDRAGSMOTTAKER &&
+                (it.forholdsmessigFordeling == null || it.forholdsmessigFordeling?.tilhørerSak == saksnummer)
+        }
     val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+
+    fun bidragsmottakerForSak(saksnummer: String) = alleBidragsmottakere.find { it.forholdsmessigFordeling?.tilhørerSak == saksnummer }
+
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
     val erVedtakFattet get() = vedtaksid != null
@@ -273,9 +281,17 @@ open class Behandling(
             }
         }
 
-    fun tilStønadsid(søknadsbarn: Rolle) =
+    fun tilStønadsid(person: Person) =
         Stønadsid(
             stonadstype!!,
+            Personident(person.ident!!),
+            Personident(bidragspliktig!!.ident!!),
+            Saksnummer(saksnummer),
+        )
+
+    fun tilStønadsid(søknadsbarn: Rolle) =
+        Stønadsid(
+            søknadsbarn.stønadstype ?: stonadstype!!,
             Personident(søknadsbarn.ident!!),
             Personident(bidragspliktig!!.ident!!),
             Saksnummer(saksnummer),

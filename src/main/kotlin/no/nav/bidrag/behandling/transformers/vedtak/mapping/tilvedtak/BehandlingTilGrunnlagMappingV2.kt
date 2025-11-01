@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
@@ -63,11 +64,14 @@ class BehandlingTilGrunnlagMappingV2(
         val søknadsbarnListe =
             søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
                 ?: søknadsbarn.map { it.tilGrunnlagPerson() }
+
+        val privatavtaleBarnSimulert = privatAvtale.filter { it.rolle == null }.map { it.person!!.tilRolle(this).tilGrunnlagPerson() }
+        val bidragsmottakere = alleBidragsmottakere.map { it.tilGrunnlagPerson() }
         return (
-            listOf(
-                bidragsmottaker?.tilGrunnlagPerson(),
-                bidragspliktig?.tilGrunnlagPerson(),
-            ) + søknadsbarnListe
+            bidragsmottakere +
+                listOf(
+                    bidragspliktig?.tilGrunnlagPerson(),
+                ) + søknadsbarnListe + privatavtaleBarnSimulert
         ).filterNotNull().toMutableSet()
     }
 
@@ -131,6 +135,18 @@ class BehandlingTilGrunnlagMappingV2(
                     Person(
                         ident = ident.takeIf { !it.isNullOrEmpty() }?.let { personService.hentNyesteIdent(it) ?: Personident(it) },
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
+                        bidragsmottaker =
+                            if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
+                                bidragsmottaker?.tilGrunnlagsreferanse()
+                            } else {
+                                null
+                            },
+                        delAvOpprinneligBehandling =
+                            if (forholdsmessigFordeling != null) {
+                                forholdsmessigFordeling!!.delAvOpprinneligBehandling
+                            } else {
+                                true
+                            },
                         fødselsdato =
                             finnFødselsdato(
                                 ident,
@@ -201,13 +217,13 @@ class BehandlingTilGrunnlagMappingV2(
         }
 
         return privatAvtale
-            .find { it.perioderInnkreving.isNotEmpty() && it.rolle!!.ident == gjelderBarnIdent }
+            .find { it.perioderInnkreving.isNotEmpty() && it.personIdent == gjelderBarnIdent }
             ?.let { pa ->
                 val underholdRolle = pa.rolle
                 val gjelderBarn =
                     underholdRolle?.tilGrunnlagPerson()?.also {
                         grunnlagslistePersoner.add(it)
-                    } ?: personobjekter.hentPerson(pa.rolle!!.ident) ?: pa.opprettPersonGrunnlag()
+                    } ?: personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()
                 val gjelderBarnReferanse = gjelderBarn.referanse
                 val grunnlag =
                     pa.perioderInnkreving.map {
@@ -272,14 +288,19 @@ class BehandlingTilGrunnlagMappingV2(
                 val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
                 innhold
                     .filter {
-                        søknadsbarn == null &&
-                            (
-                                it.gjelderBarn.isNullOrEmpty() ||
-                                    // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
-                                    alleSøknadsbarnIdenter.contains(it.gjelderBarn)
-                            ) ||
-                            søknadsbarn != null &&
-                            (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                        if (søknadsbarn == null) {
+                            it.gjelderBarn.isNullOrEmpty() ||
+                                // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
+                                alleSøknadsbarnIdenter.contains(it.gjelderBarn)
+                        } else {
+                            val inntektTilhørerBarn =
+                                if (gjelder.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER) {
+                                    gjelder.referanse == søknadsbarn.innholdTilObjekt<Person>().bidragsmottaker
+                                } else {
+                                    true
+                                }
+                            inntektTilhørerBarn && (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                        }
                     }.groupBy { it.gjelderBarn }
                     .map { (gjelderBarn, innhold) ->
                         val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)

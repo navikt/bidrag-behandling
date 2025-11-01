@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -11,8 +12,13 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.transport.felles.toYearMonth
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -28,6 +34,10 @@ open class PrivatAvtale(
     )
     open val behandling: Behandling,
     open var avtaleDato: LocalDate? = null,
+    open var utenlandsk: Boolean = false,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
+    open var grunnlagFraVedtak: GrunnlagFraVedtak? = null,
     @Enumerated(EnumType.STRING)
     open var avtaleType: PrivatAvtaleType? = null,
     open var skalIndeksreguleres: Boolean = true,
@@ -36,10 +46,10 @@ open class PrivatAvtale(
         cascade = [CascadeType.PERSIST],
     )
     @JoinColumn(name = "person_id", nullable = false)
-    open val person: Person? = null,
+    open var person: Person? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = true)
-    open val rolle: Rolle? = null,
+    open var rolle: Rolle? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "privatAvtale",
@@ -48,6 +58,7 @@ open class PrivatAvtale(
     )
     open var perioder: MutableSet<PrivatAvtalePeriode> = mutableSetOf(),
 ) {
+    val personIdent get() = person?.ident ?: rolle!!.ident
     val utledetAvtaledato get() =
         if (valgtVedtakFraNav != null) {
             valgtVedtakFraNav!!.vedtakstidspunkt?.withDayOfMonth(1)?.toLocalDate()
@@ -56,13 +67,13 @@ open class PrivatAvtale(
         }
     val valgtVedtakFraNav get() =
         if (avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV) {
-            rolle!!.grunnlagFraVedtakForInnkreving?.takeIf { it.vedtak != null }
+            rolle?.grunnlagFraVedtakForInnkreving?.takeIf { it.vedtak != null } ?: grunnlagFraVedtak?.takeIf { it.vedtak != null }
         } else {
             null
         }
     val perioderInnkreving get() =
         when {
-            behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV ->
+            avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV ->
                 valgtVedtakFraNav
                     ?.perioder
                     ?.mapIndexed { i, it ->

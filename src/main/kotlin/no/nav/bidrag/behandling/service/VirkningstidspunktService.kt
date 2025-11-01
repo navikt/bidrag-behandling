@@ -90,34 +90,54 @@ class VirkningstidspunktService(
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        behandling.søknadsbarn
-            .find {
-                it.id == request.barnId
-            }!!
-            .let {
-                it.grunnlagFraVedtak = request.vedtaksid
-                val grunnlagFraVedtakListe =
-                    it.grunnlagFraVedtakListe
-                        .filter { it.aldersjusteringForÅr != request.aldersjusteringForÅr }
-                it.grunnlagFraVedtakListe =
-                    grunnlagFraVedtakListe +
-                    listOf(
+        if (request.barnId == null) {
+            behandling.privatAvtale.find { it.rolle == null && it.personIdent == request.barnIdent }?.let {
+                it.grunnlagFraVedtak =
+                    if (request.vedtaksid != null) {
                         GrunnlagFraVedtak(
                             aldersjusteringForÅr = request.aldersjusteringForÅr,
                             vedtak = request.vedtaksid,
                             grunnlagFraOmgjøringsvedtak = request.grunnlagFraOmgjøringsvedtak ?: false,
-                            perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
+                            perioder = hentPerioderVedtak(behandling, request),
                             vedtakstidspunkt =
-                                if (behandling.erInnkreving) {
-                                    request.vedtaksid?.let {
-                                        hentVedtak(it)?.vedtakstidspunkt
-                                    }
-                                } else {
-                                    null
+                                request.vedtaksid?.let {
+                                    hentVedtak(it)?.vedtakstidspunkt
                                 },
-                        ),
-                    )
+                        )
+                    } else {
+                        null
+                    }
             }
+        } else {
+            behandling.søknadsbarn
+                .find {
+                    it.id == request.barnId
+                }!!
+                .let {
+                    it.grunnlagFraVedtak = request.vedtaksid
+                    val grunnlagFraVedtakListe =
+                        it.grunnlagFraVedtakListe
+                            .filter { it.aldersjusteringForÅr != request.aldersjusteringForÅr }
+                    it.grunnlagFraVedtakListe =
+                        grunnlagFraVedtakListe +
+                        listOf(
+                            GrunnlagFraVedtak(
+                                aldersjusteringForÅr = request.aldersjusteringForÅr,
+                                vedtak = request.vedtaksid,
+                                grunnlagFraOmgjøringsvedtak = request.grunnlagFraOmgjøringsvedtak ?: false,
+                                perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
+                                vedtakstidspunkt =
+                                    if (behandling.erInnkreving) {
+                                        request.vedtaksid?.let {
+                                            hentVedtak(it)?.vedtakstidspunkt
+                                        }
+                                    } else {
+                                        null
+                                    },
+                            ),
+                        )
+                }
+        }
     }
 
     private fun hentPerioderVedtak(
@@ -125,9 +145,21 @@ class VirkningstidspunktService(
         request: OppdaterManuellVedtakRequest,
     ): List<VedtakPeriodeDto> {
         if (request.vedtaksid == null) return emptyList()
-        val søknadsbarn = behandling.søknadsbarn.first { it.id == request.barnId }
+        val stønadsid =
+            if (request.barnId == null) {
+                val personPrivatAvtale =
+                    behandling.privatAvtale
+                        .find { it.rolle == null && it.personIdent == request.barnIdent }!!
+                        .person!!
+                behandling.tilStønadsid(personPrivatAvtale)
+            } else {
+                val søknadsbarn =
+                    behandling.søknadsbarn.first { it.id == request.barnId }
+                behandling.tilStønadsid(søknadsbarn)
+            }
+
         val vedtak = hentVedtak(request.vedtaksid)!!
-        val stønadsendring = vedtak.finnStønadsendring(behandling.tilStønadsid(søknadsbarn))
+        val stønadsendring = vedtak.finnStønadsendring(stønadsid)
         return stønadsendring!!.periodeListe
     }
 

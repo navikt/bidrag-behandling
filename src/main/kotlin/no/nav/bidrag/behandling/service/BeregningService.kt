@@ -200,7 +200,7 @@ class BeregningService(
         val grunnlagBeregning =
             BidragsberegningOrkestratorRequestV2(
                 beregningsperiode = beregningsperiode,
-                grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe },
+                grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList(),
                 erDirekteAvslag = behandling.erDirekteAvslag(),
                 beregningstype =
                     when {

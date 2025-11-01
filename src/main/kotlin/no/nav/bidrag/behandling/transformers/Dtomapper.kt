@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -27,6 +28,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.behandling.AktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
@@ -44,6 +46,9 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstanden
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
@@ -81,6 +86,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -107,6 +113,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -158,11 +165,13 @@ class Dtomapper(
 
     fun hentManuelleVedtakForBehandling(
         behandling: Behandling,
-        søknadsbarn: Rolle,
+        barnIdent: String,
+        rolle: Rolle?,
+        privatAvtale: PrivatAvtale? = null,
     ): List<ManuellVedtakDto> {
         val grunnlag =
             behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(
-                søknadsbarn.personident!!.verdi,
+                barnIdent,
                 Grunnlagsdatatype.MANUELLE_VEDTAK,
             )
         return grunnlag
@@ -171,16 +180,17 @@ class Dtomapper(
                 if (behandling.erKlageEllerOmgjøring) {
                     val vedtaksliste = behandling.omgjøringsdetaljer?.omgjortVedtaksliste?.map { it.vedtaksid } ?: emptyList()
                     !vedtaksliste.contains(it.vedtaksid)
-                } else if (behandling.erInnkreving) {
+                } else if (behandling.erInnkreving || privatAvtale != null) {
                     it.innkrevingstype == Innkrevingstype.UTEN_INNKREVING
                 } else {
                     true
                 }
             }?.map {
                 ManuellVedtakDto(
-                    valgt = søknadsbarn.beregningGrunnlagFraVedtak == it.vedtaksid,
+                    // Rolle == null betyr at det er simulering av privat avtale for andre barn til BP
+                    valgt = rolle?.beregningGrunnlagFraVedtak == it.vedtaksid || privatAvtale?.grunnlagFraVedtak?.vedtak == it.vedtaksid,
                     vedtaksid = it.vedtaksid,
-                    barnId = søknadsbarn.id!!,
+                    barnId = rolle?.id ?: -1,
                     fattetTidspunkt = it.fattetTidspunkt,
                     virkningsDato = it.virkningsDato,
                     vedtakstype = it.vedtakstype,
@@ -307,12 +317,12 @@ class Dtomapper(
             privatAvtaleBeregning
                 .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
                 .filter {
-                    !erInnkreving || !filtrerFraVirkningstidspunkt || it.periode.til == null ||
+                    !filtrerFraVirkningstidspunkt || it.periode.til == null ||
                         it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
                 }.map {
                     BeregnetPrivatAvtalePeriodeDto(
                         periode =
-                            if (erInnkreving && filtrerFraVirkningstidspunkt) {
+                            if (filtrerFraVirkningstidspunkt) {
                                 Datoperiode(
                                     maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
                                     it.periode.til,
@@ -370,8 +380,8 @@ class Dtomapper(
     }
 
     private fun Person.tilPersoninfoDto(
-        rolle: Rolle?,
-        kilde: Kilde?,
+        rolle: Rolle? = null,
+        kilde: Kilde? = null,
     ): PersoninfoDto {
         val personinfo =
             this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
@@ -757,6 +767,42 @@ class Dtomapper(
                 type = tilType(),
                 lesemodus = lesemodusVedtak,
                 erBisysVedtak = erBisysVedtak,
+                forholdsmessigFordeling =
+                    forholdsmessigFordeling?.let {
+                        val barnDto =
+                            søknadsbarn.map { barn ->
+                                val bm = barn.bidragsmottaker
+                                ForholdsmessigFordelingBarnDto(
+                                    ident = barn.ident!!,
+                                    navn = barn.navn ?: "",
+                                    fødselsdato = barn.fødselsdato,
+                                    saksnr = barn.forholdsmessigFordeling?.tilhørerSak ?: "",
+                                    bidragsmottaker = bm!!.tilDto(),
+                                    sammeSakSomBehandling = barn.forholdsmessigFordeling?.tilhørerSak == saksnummer,
+                                    erRevurdering = barn.forholdsmessigFordeling?.erRevurdering == true,
+                                    harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
+                                    innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
+                                    stønadstype = barn.stønadstype,
+                                    åpneBehandlinger =
+                                        barn.forholdsmessigFordeling!!.søknaderUnderBehandling.map {
+                                            ForholdsmessigFordelingÅpenBehandlingDto(
+                                                søktFraDato = it.søknadFomDato,
+                                                mottattDato = it.mottattDato,
+                                                stønadstype = barn.stønadstype ?: Stønadstype.BIDRAG,
+                                                behandlerEnhet = barn.forholdsmessigFordeling?.behandlerenhet ?: "",
+                                                behandlingId = barn.forholdsmessigFordeling?.behandlingsid,
+                                                søknadsid = it.søknadsid,
+                                                medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                                                søktAvType = it.søktAvType,
+                                                behandlingstype = it.behandlingstype,
+                                                behandlingstema = it.behandlingstema,
+                                            )
+                                        },
+                                    enhet = barn.forholdsmessigFordeling?.behandlerenhet ?: "",
+                                )
+                            }
+                        ForholdmessigFordelingDetaljerDto(barn = barnDto)
+                    },
                 erVedtakUtenBeregning =
                     vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
                 grunnlagFraVedtaksid = grunnlagFraVedtak,
@@ -779,6 +825,7 @@ class Dtomapper(
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
                 roller = roller.map { it.tilDto() }.toSet(),
+                bpsBarnUtenLøpendeBidrag = bpsBarnUtenLøpendeBidrag(),
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
                 omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
@@ -878,7 +925,7 @@ class Dtomapper(
                 opprinneligVirkningstidspunkt =
                     it.opprinneligVirkningstidspunkt
                         ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
+                manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
                 etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
                 årsak = it.årsak ?: årsak,
                 avslag = it.avslag ?: avslag,
@@ -941,7 +988,7 @@ class Dtomapper(
                     opprinneligVirkningstidspunkt =
                         it.opprinneligVirkningstidspunkt
                             ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                    manuelleVedtak = hentManuelleVedtakForBehandling(this, it),
+                    manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
                     etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
                     årsak = it.årsak ?: årsak,
                     avslag = it.avslag ?: avslag,
@@ -1088,6 +1135,19 @@ class Dtomapper(
                 }
             }
 
+    private fun Behandling.bpsBarnUtenLøpendeBidrag(): Set<BpsBarnUtenLøpendeBidragDto> =
+        grunnlag
+            .hentSisteGrunnlagBpsBarnUtenBidragsak()
+            ?.map {
+                BpsBarnUtenLøpendeBidragDto(
+                    ident = it.ident.verdi,
+                    fødselsdato = it.fødselsdato,
+                    navn = it.navn,
+                    saksnummer = it.saksnummer,
+                    enhet = it.enhet,
+                )
+            }?.toSet() ?: emptySet()
+
     fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
         PrivatAvtaleDto(
             id = id!!,
@@ -1098,13 +1158,14 @@ class Dtomapper(
                     rolle?.let { behandling.finnPerioderHvorDetLøperBidrag(it) }
                         ?: emptyList()
                 },
-            gjelderBarn = rolle!!.tilPersoninfoDto(),
+            gjelderBarn = person?.tilPersoninfoDto() ?: rolle!!.tilPersoninfoDto(),
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
+            erSøknadsbarn = rolle != null,
             manuelleVedtakUtenInnkreving =
-                if (behandling.erInnkreving) {
-                    hentManuelleVedtakForBehandling(behandling, rolle!!)
+                if (behandling.erBidrag()) {
+                    hentManuelleVedtakForBehandling(behandling, personIdent!!, rolle, this)
                 } else {
                     null
                 },
@@ -1131,7 +1192,7 @@ class Dtomapper(
                 if (skalIndeksreguleres &&
                     perioderInnkreving.isNotEmpty()
                 ) {
-                    behandling.tilBeregnetPrivatAvtale(rolle!!, false)
+                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling)!!, false)
                 } else {
                     null
                 },
@@ -1143,6 +1204,8 @@ class Dtomapper(
                             no.nav.bidrag.behandling.dto.v2.behandling
                                 .DatoperiodeDto(it.fom, it.tom),
                         beløp = it.beløp,
+                        valuta = it.valutakode,
+                        samværsklasse = it.samværsklasse,
                     )
                 },
         )
