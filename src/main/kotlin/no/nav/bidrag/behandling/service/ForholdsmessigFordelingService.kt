@@ -418,9 +418,16 @@ class ForholdsmessigFordelingService(
                         saksnummer = barn.forholdsmessigFordeling!!.tilhørerSak,
                         behandlingsid = behandling.id,
                         behandlerenhet = behandling.behandlerEnhet,
-                        behandlingstema = Behandlingstema.BIDRAG,
+                        behandlingstema =
+                            if (barn.stønadstype ==
+                                Stønadstype.BIDRAG18AAR
+                            ) {
+                                Behandlingstema.BIDRAG_18_ÅR
+                            } else {
+                                Behandlingstema.BIDRAG
+                            },
                         søknadFomDato = søktFomDato,
-                        innkreving = true,
+                        innkreving = barn.forholdsmessigFordeling!!.harLøpendeBidrag,
                         barnListe = listOf(Barn(personident = barn.ident!!)),
                     ),
                 )

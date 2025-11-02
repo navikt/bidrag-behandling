@@ -227,7 +227,7 @@ open class Behandling(
         roller.find {
             it.rolletype == Rolletype.BIDRAGSMOTTAKER &&
                 (it.forholdsmessigFordeling == null || it.forholdsmessigFordeling?.tilhørerSak == saksnummer)
-        }
+        } ?: alleBidragsmottakere.first()
     val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
 
     fun bidragsmottakerForSak(saksnummer: String) = alleBidragsmottakere.find { it.forholdsmessigFordeling?.tilhørerSak == saksnummer }
