@@ -393,7 +393,7 @@ class ForholdsmessigFordelingService(
         val åpenFFBehandling =
             åpneSøknader.filter { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }.find {
                 it.saksnummer == barn.forholdsmessigFordeling?.tilhørerSak &&
-                    it.søknadFomDato == søktFomDato
+                    it.søknadFomDato == søktFomDato && it.behandlingstema.tilStønadstype() == barn.stønadstype
             }
         if (åpenFFBehandling != null) {
             if (åpenFFBehandling.barn.none { it.personident == barn.ident }) {
