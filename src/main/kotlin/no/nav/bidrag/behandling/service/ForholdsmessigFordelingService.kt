@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
+import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøknad
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierGrunnlag
@@ -30,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDe
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -446,12 +448,14 @@ class ForholdsmessigFordelingService(
     }
 
     fun finnEnhetForBarnIBehandling(behandling: Behandling): String {
-        val sakerBp = sakConsumer.hentSakerPerson(behandling.bidragspliktig!!.ident!!)
+        val sakerBp = hentSakerBp(behandling.bidragspliktig!!.ident!!)
         val relevantSaker = sakerBp.filter { it.eierfogd.verdi in listOf("4883", "2103") }
         return relevantSaker.find { it.eierfogd.verdi == "2103" }?.eierfogd?.verdi
             ?: relevantSaker.firstOrNull()?.eierfogd?.verdi
             ?: behandling.behandlerEnhet
     }
+
+    private fun hentSakerBp(bpIdent: String) = sakConsumer.hentSakerPerson(bpIdent).filtrerSakerHvorPersonErBP(bpIdent)
 
     @Transactional
     fun skalLeggeTilBarnFraAndreSøknaderEllerBehandlinger(behandlingId: Long): Boolean {
@@ -510,7 +514,7 @@ class ForholdsmessigFordelingService(
             sakerMedLøpendeBidrag.map { it.kravhaver } +
                 behandling.søknadsbarn.mapNotNull { it.ident }
 
-        val sakerBp = sakConsumer.hentSakerPerson(bidragspliktigFnr)
+        val sakerBp = hentSakerBp(bidragspliktigFnr)
         val barneSomHarBidragssak = sakerBp.flatMap { it.barn.map { it.fødselsnummer!!.verdi } }
         val privatAvtalerUtenBidragssak =
             behandling.privatAvtale

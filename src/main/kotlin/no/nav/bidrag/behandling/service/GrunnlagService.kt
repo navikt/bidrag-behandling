@@ -71,6 +71,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.cuttoffBidrag18ÅrAlder
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erOverAntallÅrGammel
+import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.grunnlag.grunnlagstyperSomIkkeKreverAktivering
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
@@ -557,9 +558,7 @@ class GrunnlagService(
         val sakerBp =
             sakConsumer!!
                 .hentSakerPerson(bidragspliktigIdent)
-                .filter {
-                    it.roller.any { it.type == Rolletype.BIDRAGSPLIKTIG && it.fødselsnummer!!.verdi == bidragspliktigIdent }
-                }
+                .filtrerSakerHvorPersonErBP(bidragspliktigIdent)
         val barnBpMedÅpenSøknad = åpneSakerBp.map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
         val barnBpMedBidragssak =
             sakerBp.flatMap {
