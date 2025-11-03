@@ -392,6 +392,8 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
                 fødselsdato = hentPersonFødselsdato(bmFødselsnummer),
                 delAvOpprinneligBehandling = false,
                 erRevurdering = erRevurdering,
+                stønadstype = null,
+                saksnummer = saksnummer ?: "",
             ),
     )
 }

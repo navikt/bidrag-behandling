@@ -105,16 +105,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         roller =
             roller
                 .map {
-                    RolleDto(
-                        it.id!!,
-                        it.rolletype,
-                        it.ident,
-                        it.navn ?: hentPersonVisningsnavn(it.ident),
-                        it.fødselsdato,
-                        harInnvilgetTilleggsstønad = null,
-                        delAvOpprinneligBehandling = it.forholdsmessigFordeling?.delAvOpprinneligBehandling == false,
-                        erRevurdering = it.forholdsmessigFordeling?.erRevurdering == false,
-                    )
+                    it.tilDto()
                 }.toSet(),
         søknadRefId = omgjøringsdetaljer?.soknadRefId,
         vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
@@ -144,7 +135,7 @@ fun Person.tilRolle(behandling: Behandling) =
         navn ?: hentPersonVisningsnavn(ident),
     )
 
-fun Person.tilDto() =
+fun Person.tilDto(stønadstype: Stønadstype? = null) =
     RolleDto(
         id!!,
         Rolletype.BARN,
@@ -154,6 +145,8 @@ fun Person.tilDto() =
         harInnvilgetTilleggsstønad = false,
         delAvOpprinneligBehandling = false,
         erRevurdering = false,
+        stønadstype = stønadstype,
+        saksnummer = "",
     )
 
 fun Rolle.tilDto() =
@@ -166,6 +159,8 @@ fun Rolle.tilDto() =
         harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
         delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == true,
         erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
+        stønadstype = stønadstype ?: behandling.stonadstype,
+        saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
     )
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {

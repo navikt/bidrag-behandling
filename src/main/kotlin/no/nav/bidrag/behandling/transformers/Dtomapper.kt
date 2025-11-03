@@ -998,10 +998,10 @@ class Dtomapper(
                 opphørsdato = it.opphørsdato,
                 globalOpphørsdato = globalOpphørsdato,
                 valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                vedtakstype = it.behandling.vedtakstype,
                 mottattdato = it.forholdsmessigFordeling?.eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
                 søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
                 søktFomDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
-                saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: it.behandling.saksnummer,
                 begrunnelseFraOpprinneligVedtak =
                     if (erKlageEllerOmgjøring) {
                         henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -1068,7 +1068,7 @@ class Dtomapper(
                     mottattdato = it.forholdsmessigFordeling?.eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
                     søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
                     søktFomDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
-                    saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: it.behandling.saksnummer,
+                    vedtakstype = it.behandling.vedtakstype,
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -1095,7 +1095,7 @@ class Dtomapper(
                     mottattdato = mottattdato,
                     søktAv = soknadFra,
                     søktFomDato = søktFomDato,
-                    saksnummer = saksnummer,
+                    vedtakstype = vedtakstype,
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)

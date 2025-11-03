@@ -109,6 +109,7 @@ data class VirkningstidspunktBarnDtoV2(
     val etterfølgendeVedtak: EtterfølgendeVedtakDto? = null,
     val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
     val valideringsfeil: VirkningstidspunktFeilDto?,
+    val vedtakstype: Vedtakstype,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val søktFomDato: LocalDate,
@@ -119,7 +120,6 @@ data class VirkningstidspunktBarnDtoV2(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val klageMottattdato: LocalDate? = null,
     val søktAv: SøktAvType,
-    val saksnummer: String,
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)

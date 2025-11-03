@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.time.LocalDate
 
 data class RolleDto(
@@ -12,4 +13,6 @@ data class RolleDto(
     val harInnvilgetTilleggsstønad: Boolean? = null,
     val delAvOpprinneligBehandling: Boolean?,
     val erRevurdering: Boolean?,
+    val stønadstype: Stønadstype?,
+    val saksnummer: String,
 )
