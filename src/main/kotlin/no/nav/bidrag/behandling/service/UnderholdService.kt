@@ -75,6 +75,18 @@ class UnderholdService(
                 henteOgValidereUnderholdskostnad(behandling, it).rolle
             }
 
+        val rolleBm =
+            request.bidragsmottakerIdent?.let { bmIdent ->
+                val bm = behandling.alleBidragsmottakere.find { it.ident == bmIdent }
+                if (behandling.alleBidragsmottakere.size > 1 && bm == null) {
+                    throw HttpClientErrorException(
+                        HttpStatus.BAD_REQUEST,
+                        "Bidragsmottaker ident må settes hvis det finnes flere BMer i saken",
+                    )
+                }
+                bm ?: behandling.bidragsmottaker
+            }
+
         if (request.underholdsid == null) {
             val underholdHarAndreBarn =
                 behandling.underholdskostnader.find { it.rolle == null } != null
@@ -90,7 +102,7 @@ class UnderholdService(
             behandling,
             Notattype.UNDERHOLDSKOSTNAD,
             request.begrunnelse,
-            rolleSøknadsbarn ?: behandling.bidragsmottaker!!,
+            rolleSøknadsbarn ?: rolleBm!!,
         )
     }
 
@@ -179,6 +191,8 @@ class UnderholdService(
             )
         }
 
+        val søknadsbarn = behandling.søknadsbarn.find { it.ident == gjelderSøknadsbarn.verdi }
+
         val data =
             behandling.grunnlag
                 .hentAlleIkkeAktiv()
@@ -186,7 +200,7 @@ class UnderholdService(
                 .toSet()
                 .hentAlleBearbeidaBarnetilsyn(
                     behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.bidragsmottaker!!,
+                    søknadsbarn!!.bidragsmottaker!!,
                 )
 
         val u = behandling.underholdskostnader.find { it.personIdent == gjelderSøknadsbarn.verdi }

@@ -53,7 +53,7 @@ import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
-import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndrebarnDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndreBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtalePeriodeDto
@@ -911,7 +911,8 @@ class Dtomapper(
                     PrivatAvtaleDto(
                         barn = privatAvtale.filter { it.rolle != null }.sortedBy { it.rolle!!.fødselsdato }.map { it.tilDto() },
                         andreBarn =
-                            PrivatAvtaleAndrebarnDto(
+                            PrivatAvtaleAndreBarnDto(
+                                manglerBegrunnelse = manglerPrivatAvtaleBegrunnelseAndreBarn(),
                                 barn =
                                     privatAvtale
                                         .filter { it.rolle == null }
@@ -997,6 +998,10 @@ class Dtomapper(
                 opphørsdato = it.opphørsdato,
                 globalOpphørsdato = globalOpphørsdato,
                 valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                mottattdato = it.forholdsmessigFordeling?.eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
+                søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
+                søktFomDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
+                saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: it.behandling.saksnummer,
                 begrunnelseFraOpprinneligVedtak =
                     if (erKlageEllerOmgjøring) {
                         henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -1060,6 +1065,10 @@ class Dtomapper(
                     opphørsdato = it.opphørsdato,
                     globalOpphørsdato = globalOpphørsdato,
                     valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                    mottattdato = it.forholdsmessigFordeling?.eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
+                    søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
+                    søktFomDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
+                    saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: it.behandling.saksnummer,
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -1083,6 +1092,10 @@ class Dtomapper(
                     harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
                     opphørsdato = globalOpphørsdato,
                     valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                    mottattdato = mottattdato,
+                    søktAv = soknadFra,
+                    søktFomDato = søktFomDato,
+                    saksnummer = saksnummer,
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)

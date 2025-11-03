@@ -44,6 +44,7 @@ data class OppdaterePrivatAvtaleResponsDto(
     @Schema(description = "Privat avtale som ble oppdatert")
     val oppdatertPrivatAvtale: PrivatAvtaleBarnDto? = null,
     val begrunnelseAndreBarn: String? = null,
+    val mangleBegrunnelseAndreBarn: Boolean = false,
 )
 
 data class OppdaterePrivatAvtalePeriodeDto(
@@ -56,10 +57,11 @@ data class OppdaterePrivatAvtalePeriodeDto(
 
 data class PrivatAvtaleDto(
     val barn: List<PrivatAvtaleBarnDto> = emptyList(),
-    val andreBarn: PrivatAvtaleAndrebarnDto? = null,
+    val andreBarn: PrivatAvtaleAndreBarnDto? = null,
 )
 
-data class PrivatAvtaleAndrebarnDto(
+data class PrivatAvtaleAndreBarnDto(
+    val manglerBegrunnelse: Boolean = false,
     val begrunnelse: String? = null,
     val begrunnelseFraOpprinneligVedtak: String? = null,
     val barn: List<PrivatAvtaleBarnDto> = emptyList(),

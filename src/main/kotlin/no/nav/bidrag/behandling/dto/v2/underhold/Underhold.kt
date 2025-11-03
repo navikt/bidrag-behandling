@@ -66,8 +66,13 @@ data class OppdatereUnderholdRequest(
 )
 
 data class OppdatereBegrunnelseRequest(
-    @Schema(description = "Id til underhold begrunnelsen gjelder for hvis søknadsbarn. Null for andre barn.")
+    @Schema(
+        description =
+            "Id til underhold begrunnelsen gjelder for hvis søknadsbarn. " +
+                "Bidragsmottaker må være satt for andre barn hvis det finnes flere BMer",
+    )
     val underholdsid: Long? = null,
+    val bidragsmottakerIdent: String? = null,
     val begrunnelse: String,
 )
 

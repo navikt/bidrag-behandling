@@ -64,6 +64,7 @@ class PrivatAvtaleService(
         privatAvtale.avtaleDato = request.avtaleDato ?: privatAvtale.avtaleDato
         privatAvtale.avtaleType = request.avtaleType ?: privatAvtale.avtaleType
         privatAvtale.skalIndeksreguleres = request.skalIndeksreguleres ?: privatAvtale.skalIndeksreguleres
+        privatAvtale.utenlandsk = request.gjelderUtland ?: privatAvtale.utenlandsk
         request.oppdaterPeriode?.let {
             oppdaterPrivatAvtaleAvtalePeriode(behandlingsid, privatavtaleId, it)
         }
