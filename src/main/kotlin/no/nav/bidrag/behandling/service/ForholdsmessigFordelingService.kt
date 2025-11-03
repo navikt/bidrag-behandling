@@ -765,7 +765,7 @@ class ForholdsmessigFordelingService(
                 mottattDato = LocalDate.now(),
                 søknadFomDato = søktFomDato,
                 søktAvType = SøktAvType.NAV_BIDRAG,
-                behandlingstema = behandling.behandlingstema,
+                behandlingstema = stønadstype?.tilBehandlingstema() ?: behandling.behandlingstema,
                 behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
                 enhet = behandlerEnhet,
             )

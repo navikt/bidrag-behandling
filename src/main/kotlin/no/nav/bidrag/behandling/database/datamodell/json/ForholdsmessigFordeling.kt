@@ -36,7 +36,7 @@ data class ForholdsmessigFordelingRolle(
     val søknaderUnderBehandling get() = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING }
 
     @get:JsonIgnore
-    val eldsteSøknad get() = søknader.filter { it.søknadFomDato != null }.minBy { it.søknadFomDato!! }
+    val eldsteSøknad get() = søknaderUnderBehandling.filter { it.søknadFomDato != null }.minBy { it.søknadFomDato!! }
 
     @get:JsonIgnore
     val søknadsid get() = eldsteSøknad.søknadsid

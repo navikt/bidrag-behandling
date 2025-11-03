@@ -63,7 +63,7 @@ class BehandlingOppdatertLytter(
                                 ident = barn.ident!!,
                                 stønadstype = barn.stønadstype ?: behandling.stonadstype,
                                 engangsbeløptype = behandling.engangsbeloptype,
-                                behandlingstema = behandling.behandlingstema ?: Behandlingstema.BIDRAG,
+                                behandlingstema = barn.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                                 søknadsid = behandling.soknadsid,
                                 omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
                                 behandlerEnhet = ff?.behandlerenhet ?: behandling.behandlerEnhet,
@@ -87,7 +87,8 @@ class BehandlingOppdatertLytter(
                                 mottattDato = it.mottattDato,
                                 status = it.status,
                                 behandlingstype = it.behandlingstype ?: behandling.søknadstype!!,
-                                behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
+                                behandlingstema =
+                                    barn.behandlingstema ?: it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
                             )
                         } ?: listOf(hendelseBarn)
                     },
