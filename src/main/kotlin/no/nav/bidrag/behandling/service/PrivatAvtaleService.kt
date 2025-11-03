@@ -108,7 +108,7 @@ class PrivatAvtaleService(
             behandling,
             NotatGrunnlag.NotatType.PRIVAT_AVTALE,
             nyBegrunnelse,
-            privatAvtale?.rolle ?: behandling.bidragsmottaker!!,
+            privatAvtale?.rolle ?: behandling.bidragspliktig!!,
         )
     }
 

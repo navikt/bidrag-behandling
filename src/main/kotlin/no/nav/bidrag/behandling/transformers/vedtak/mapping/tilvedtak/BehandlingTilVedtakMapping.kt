@@ -695,8 +695,10 @@ class BehandlingTilVedtakMapping(
     private fun Behandling.mapEngangsbeløpGebyr(grunnlagsliste: List<GrunnlagDto>): GebyrResulat {
         val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
         val grunnlagslisteGebyr = grunnlagsliste + byggGrunnlagForGebyr()
-        val gebyrBarn =
-            søknadsbarn.filter { it.harGebyrsøknad }.map {
+        val barnMedGebyr = søknadsbarn.filter { it.harGebyrsøknad }
+        val bmMedGebyr = alleBidragsmottakere.filter { it.harGebyrsøknad }
+        val gebyrMottakere =
+            (bmMedGebyr + barnMedGebyr).map {
                 val beregning = mapper.beregnGebyr(this, it, grunnlagslisteGebyr)
                 gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                 val ilagtGebyr = beregning.ilagtGebyr
@@ -718,7 +720,7 @@ class BehandlingTilVedtakMapping(
                     sak = Saksnummer(saksnummer),
                 )
             }
-        val engangsbeløpListe =
+        val gebyrBp =
             listOfNotNull(
                 bidragspliktig!!.harGebyrsøknad.ifTrue {
                     val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyr)
@@ -742,30 +744,8 @@ class BehandlingTilVedtakMapping(
                         sak = Saksnummer(saksnummer),
                     )
                 },
-                bidragsmottaker!!.harGebyrsøknad.ifTrue {
-                    val beregning = mapper.beregnGebyr(this, bidragsmottaker!!, grunnlagslisteGebyr)
-                    gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
-                    val ilagtGebyr = beregning.ilagtGebyr
-                    val skyldner = Personident(bidragsmottaker!!.ident!!)
-                    OpprettEngangsbeløpRequestDto(
-                        type = Engangsbeløptype.GEBYR_MOTTAKER,
-                        beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
-                        betaltBeløp = null,
-                        resultatkode = beregning.resultatkode.name,
-                        referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
-                        eksternReferanse = null,
-                        beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
-                        innkreving = Innkrevingstype.MED_INNKREVING,
-                        skyldner = skyldner,
-                        kravhaver = personIdentNav,
-                        mottaker = personIdentNav,
-                        valutakode = if (ilagtGebyr) "NOK" else null,
-                        sak = Saksnummer(saksnummer),
-                    )
-                },
             )
-        return GebyrResulat(engangsbeløpListe + gebyrBarn, gebyrGrunnlagsliste)
+        return GebyrResulat(gebyrBp + gebyrMottakere, gebyrGrunnlagsliste)
     }
 
     private fun Behandling.mapEngangsbeløpDirekteOppgjør(sak: BidragssakDto) =

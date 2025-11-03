@@ -83,6 +83,7 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                             ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
                     val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                     val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
+                    val bidragsmottaker = underholdRolle.bidragsmottaker
                     listOf(
                         underholdRolleGrunnlagobjekt,
                         GrunnlagDto(
@@ -123,6 +124,7 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                 val underholdRolle =
                     u.rolle
                         ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                val bidragsmottaker = underholdRolle.bidragsmottaker
                 val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                 val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
                 listOf(

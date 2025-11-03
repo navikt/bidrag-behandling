@@ -837,7 +837,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
 
             val grunnlagsdatatype =
                 if (behandling.tilType() != TypeBehandling.FORSKUDD &&
-                    innhentetForIdent == behandling.bidragsmottaker?.ident
+                    behandling.alleBidragsmottakere.any { it.ident == innhentetForIdent }
                 ) {
                     Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
                 } else {

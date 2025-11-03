@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.dto.v2.privatavtale
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
-import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
@@ -43,8 +42,8 @@ data class OppdaterePrivatAvtaleRequest(
 
 data class OppdaterePrivatAvtaleResponsDto(
     @Schema(description = "Privat avtale som ble oppdatert")
-    val oppdatertPrivatAvtale: PrivatAvtaleDto? = null,
-    val andreBarnPrivatAvtaler: List<PrivatAvtaleDto> = emptyList(),
+    val oppdatertPrivatAvtale: PrivatAvtaleBarnDto? = null,
+    val begrunnelseAndreBarn: String? = null,
 )
 
 data class OppdaterePrivatAvtalePeriodeDto(
@@ -56,6 +55,17 @@ data class OppdaterePrivatAvtalePeriodeDto(
 )
 
 data class PrivatAvtaleDto(
+    val barn: List<PrivatAvtaleBarnDto> = emptyList(),
+    val andreBarn: PrivatAvtaleAndrebarnDto? = null,
+)
+
+data class PrivatAvtaleAndrebarnDto(
+    val begrunnelse: String? = null,
+    val begrunnelseFraOpprinneligVedtak: String? = null,
+    val barn: List<PrivatAvtaleBarnDto> = emptyList(),
+)
+
+data class PrivatAvtaleBarnDto(
     val id: Long,
     val gjelderBarn: PersoninfoDto,
     val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),

@@ -53,6 +53,8 @@ import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndrebarnDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
@@ -113,7 +115,6 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -905,6 +906,40 @@ class Dtomapper(
                 },
             kanBehandlesINyLøsning = kanBehandles,
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
+            privatAvtaleV2 =
+                if (erBidrag() && bidragspliktig != null) {
+                    PrivatAvtaleDto(
+                        barn = privatAvtale.filter { it.rolle != null }.sortedBy { it.rolle!!.fødselsdato }.map { it.tilDto() },
+                        andreBarn =
+                            PrivatAvtaleAndrebarnDto(
+                                barn =
+                                    privatAvtale
+                                        .filter { it.rolle == null }
+                                        .sortedBy { it.person?.fødselsdato ?: LocalDate.now() }
+                                        .map { it.tilDto() },
+                                begrunnelse =
+                                    henteNotatinnhold(
+                                        this,
+                                        NotatType.PRIVAT_AVTALE,
+                                        bidragspliktig!!,
+                                        true,
+                                    ),
+                                begrunnelseFraOpprinneligVedtak =
+                                    if (erKlageEllerOmgjøring) {
+                                        henteNotatinnhold(
+                                            this,
+                                            NotatType.PRIVAT_AVTALE,
+                                            bidragspliktig!!,
+                                            false,
+                                        ).takeIfNotNullOrEmpty { it }
+                                    } else {
+                                        null
+                                    },
+                            ),
+                    )
+                } else {
+                    null
+                },
             privatAvtale =
                 privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
         )
@@ -1148,8 +1183,8 @@ class Dtomapper(
                 )
             }?.toSet() ?: emptySet()
 
-    fun PrivatAvtale.tilDto(): PrivatAvtaleDto =
-        PrivatAvtaleDto(
+    fun PrivatAvtale.tilDto(): PrivatAvtaleBarnDto =
+        PrivatAvtaleBarnDto(
             id = id!!,
             perioderLøperBidrag =
                 if (behandling.erInnkreving) {
@@ -1173,7 +1208,7 @@ class Dtomapper(
                 henteNotatinnhold(
                     this.behandling,
                     NotatType.PRIVAT_AVTALE,
-                    rolle ?: this.behandling.bidragsmottaker!!,
+                    rolle ?: this.behandling.bidragspliktig!!,
                     true,
                 ),
             begrunnelseFraOpprinneligVedtak =
@@ -1181,7 +1216,7 @@ class Dtomapper(
                     henteNotatinnhold(
                         this.behandling,
                         NotatType.PRIVAT_AVTALE,
-                        rolle ?: this.behandling.bidragsmottaker!!,
+                        rolle ?: this.behandling.bidragspliktig!!,
                         false,
                     ).takeIfNotNullOrEmpty { it }
                 } else {

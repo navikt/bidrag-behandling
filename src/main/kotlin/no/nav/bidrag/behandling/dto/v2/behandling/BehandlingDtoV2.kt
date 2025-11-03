@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFord
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
@@ -153,7 +154,8 @@ data class BehandlingDtoV2(
     @Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
     val samvær: List<SamværBarnDto>? = null,
     val samværV2: SamværDtoV2? = null,
-    val privatAvtale: List<PrivatAvtaleDto>? = null,
+    val privatAvtale: List<PrivatAvtaleBarnDto>? = null,
+    val privatAvtaleV2: PrivatAvtaleDto? = null,
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)

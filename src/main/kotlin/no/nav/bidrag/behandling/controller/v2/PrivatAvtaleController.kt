@@ -9,10 +9,13 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleResponsDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndrebarnDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -121,17 +124,18 @@ class PrivatAvtaleController(
         privatavtaleid: Long?,
     ): OppdaterePrivatAvtaleResponsDto {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        val privatAvtale = behandling.privatAvtale.find { it.id == privatavtaleid }!!
+        val privatAvtale = behandling.privatAvtale.find { it.id == privatavtaleid }
         return OppdaterePrivatAvtaleResponsDto(
-            andreBarnPrivatAvtaler =
-                behandling.privatAvtale.filter { it.rolle == null }.map {
-                    dtomapper.run {
-                        privatAvtale.tilDto()
-                    }
-                },
+            begrunnelseAndreBarn =
+                henteNotatinnhold(
+                    behandling,
+                    NotatType.PRIVAT_AVTALE,
+                    behandling.bidragspliktig!!,
+                    true,
+                ),
             oppdatertPrivatAvtale =
                 dtomapper.run {
-                    privatAvtale.tilDto()
+                    privatAvtale?.tilDto()
                 },
         )
     }
