@@ -999,11 +999,8 @@ class Dtomapper(
                 opphørsdato = it.opphørsdato,
                 globalOpphørsdato = globalOpphørsdato,
                 valideringsfeil = hentVirkningstidspunktValideringsfeil(),
-                vedtakstype = it.behandling.vedtakstype,
-//                vedtakstype =
-//                    eldsteSøknad
-//                        ?.behandlingstype
-//                        ?.tilVedtakstype() ?: it.behandling.vedtakstype,
+                vedtakstype =
+                    eldsteSøknad?.behandlingstype?.tilVedtakstype() ?: it.behandling.vedtakstype,
                 mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
                 søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
                 søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
@@ -1074,8 +1071,7 @@ class Dtomapper(
                     mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
                     søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
                     søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
-                    vedtakstype = it.behandling.vedtakstype,
-//                    vedtakstype = eldsteSøknad?.behandlingstype?.tilVedtakstype() ?: it.behandling.vedtakstype,
+                    vedtakstype = eldsteSøknad?.behandlingstype?.tilVedtakstype() ?: it.behandling.vedtakstype,
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
