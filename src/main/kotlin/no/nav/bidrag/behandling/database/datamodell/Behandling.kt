@@ -230,6 +230,16 @@ open class Behandling(
         } ?: alleBidragsmottakere.first()
     val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
 
+    fun søknadsbarnForSøknad(søknadsid: Long) =
+        if (forholdsmessigFordeling == null) {
+            søknadsbarn
+        } else {
+            søknadsbarn.filter {
+                it.forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.søknadsid == søknadsid } ==
+                    true
+            }
+        }
+
     fun bidragsmottakerForSak(saksnummer: String) = alleBidragsmottakere.find { it.forholdsmessigFordeling?.tilhørerSak == saksnummer }
 
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }

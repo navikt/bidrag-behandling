@@ -948,6 +948,7 @@ class Dtomapper(
 
     private fun Behandling.mapVirkningstidspunktAlleBarn2(): List<VirkningstidspunktBarnDtoV2> =
         søknadsbarn.sortedBy { it.fødselsdato }.map {
+            val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
             val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
             VirkningstidspunktBarnDtoV2(
                 rolle = it.tilDto(),
@@ -999,9 +1000,13 @@ class Dtomapper(
                 globalOpphørsdato = globalOpphørsdato,
                 valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                 vedtakstype = it.behandling.vedtakstype,
-                mottattdato = it.forholdsmessigFordeling?.eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
-                søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
-                søktFomDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
+//                vedtakstype =
+//                    eldsteSøknad
+//                        ?.behandlingstype
+//                        ?.tilVedtakstype() ?: it.behandling.vedtakstype,
+                mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
+                søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
+                søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
                 begrunnelseFraOpprinneligVedtak =
                     if (erKlageEllerOmgjøring) {
                         henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -1015,6 +1020,7 @@ class Dtomapper(
     private fun Behandling.mapVirkningstidspunktAlleBarn(): List<VirkningstidspunktBarnDtoV2> =
         if (tilType() == TypeBehandling.BIDRAG) {
             søknadsbarn.sortedBy { it.fødselsdato }.map {
+                val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
                 val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                 VirkningstidspunktBarnDtoV2(
                     rolle = it.tilDto(),
@@ -1065,10 +1071,11 @@ class Dtomapper(
                     opphørsdato = it.opphørsdato,
                     globalOpphørsdato = globalOpphørsdato,
                     valideringsfeil = hentVirkningstidspunktValideringsfeil(),
-                    mottattdato = it.forholdsmessigFordeling?.eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
-                    søktAv = it.forholdsmessigFordeling?.eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
-                    søktFomDato = it.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
+                    mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
+                    søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
+                    søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
                     vedtakstype = it.behandling.vedtakstype,
+//                    vedtakstype = eldsteSøknad?.behandlingstype?.tilVedtakstype() ?: it.behandling.vedtakstype,
                     begrunnelseFraOpprinneligVedtak =
                         if (erKlageEllerOmgjøring) {
                             henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)

@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
+import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
@@ -53,6 +54,20 @@ fun Rolle.fjernSøknad(søknadsid: Long) {
                 it
             }.toMutableSet()
 }
+
+fun Behandling.tilFFDetaljerBM() =
+    ForholdsmessigFordelingRolle(
+        delAvOpprinneligBehandling = true,
+        tilhørerSak = saksnummer,
+        behandlingsid = id,
+        behandlerenhet = behandlerEnhet,
+        bidragsmottaker = null,
+        erRevurdering = false,
+        søknader =
+            mutableSetOf(
+                tilFFBarnDetaljer(),
+            ),
+    )
 
 fun Behandling.tilFFBarnDetaljer() =
     ForholdsmessigFordelingSøknadBarn(
@@ -113,11 +128,13 @@ fun opprettRolle(
             rolletype = rolletype,
             innbetaltBeløp = innbetaltBeløp,
             stønadstype = stønadstype,
+            behandlingstema = stønadstype.tilBehandlingstema(),
+            behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
             virkningstidspunkt =
                 if (erBarn) {
                     maxOf(
                         hentPersonFødselsdato(fødselsnummer)!!.plusMonths(1).withDayOfMonth(1),
-                        behandling.globalVirkningstidspunkt!!,
+                        ffDetaljer.eldsteSøknad.søknadFomDato ?: behandling.globalVirkningstidspunkt,
                     )
                 } else {
                     null

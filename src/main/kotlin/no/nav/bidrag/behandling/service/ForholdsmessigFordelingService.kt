@@ -28,6 +28,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.mapSakKravh
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettSamværOgUnderholdForBarn
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBM
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
@@ -115,22 +116,8 @@ class ForholdsmessigFordelingService(
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
 
         val originalBM = behandling.bidragsmottaker!!.ident
-        behandling.alleBidragsmottakere.forEach {
-            if (it.forholdsmessigFordeling == null) {
-                it.forholdsmessigFordeling =
-                    ForholdsmessigFordelingRolle(
-                        delAvOpprinneligBehandling = true,
-                        tilhørerSak = behandling.saksnummer,
-                        behandlingsid = behandling.id,
-                        behandlerenhet = behandling.behandlerEnhet,
-                        bidragsmottaker = null,
-                        erRevurdering = false,
-                        søknader =
-                            mutableSetOf(
-                                behandling.tilFFBarnDetaljer(),
-                            ),
-                    )
-            }
+        behandling.alleBidragsmottakere.filter { it.forholdsmessigFordeling == null }.forEach {
+            it.forholdsmessigFordeling = behandling.tilFFDetaljerBM()
         }
         val behandlerEnhet = finnEnhetForBarnIBehandling(behandling)
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
@@ -751,7 +738,7 @@ class ForholdsmessigFordelingService(
         if (barnUtenSøknader.isEmpty()) return
 
         val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
-        val bmFødselsnummer = sak.bidragsmottaker?.fødselsnummer?.verdi
+        val bmFødselsnummer = hentNyesteIdent(sak.bidragsmottaker?.fødselsnummer?.verdi)?.verdi
 
         val barnMedInnkrevingSenereEnnFomDato =
             barnUtenSøknader
@@ -852,7 +839,10 @@ class ForholdsmessigFordelingService(
                     ),
             )
         } else {
-            behandling.roller.find { it.ident == bmFødselsnummer }?.let {
+            behandling.roller.find { hentNyesteIdent(it.ident)?.verdi == bmFødselsnummer }?.let {
+                if (it.forholdsmessigFordeling == null) {
+                    it.forholdsmessigFordeling = behandling.tilFFDetaljerBM()
+                }
                 it.forholdsmessigFordeling!!.søknader.addAll(alleSøknader.toMutableSet())
             }
         }
@@ -889,7 +879,7 @@ class ForholdsmessigFordelingService(
 
         val søknadsid = response.søknadsid
 
-        opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString())
+        opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer, søknadsid.toString())
         return søknadsid
     }
 
