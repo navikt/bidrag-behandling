@@ -1665,7 +1665,7 @@ class GrunnlagService(
             }
         }
 
-        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunkt!!) }.forEach { barn ->
+        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunktEllerSøktFomDato) }.forEach { barn ->
             if (behandling.underholdskostnader.none { u -> u.personIdent == barn.gjelderPersonId }) {
                 secureLogger.debug { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
                 underholdService.oppretteUnderholdskostnad(
