@@ -94,7 +94,7 @@ class PrivatAvtaleController(
         @Valid @RequestBody(required = true) request: OppdaterePrivatAvtaleBegrunnelseRequest,
     ): OppdaterePrivatAvtaleResponsDto {
         privatAvtaleService.oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request)
-        return tilPrivatAvtaleResponsDto(behandlingsid, null)
+        return tilPrivatAvtaleResponsDto(behandlingsid, request.privatavtaleid)
     }
 
     @PostMapping("/behandling/{behandlingsid}/privatavtale/opprette")

@@ -636,6 +636,7 @@ class ForholdsmessigFordelingService(
         bbmConsumer
             .hentÅpneSøknaderForBp(bidragspliktigFnr)
             .åpneSøknader
+            .filter { it.behandlingstype != Behandlingstype.ALDERSJUSTERING }
             .sortedWith(
                 compareByDescending<ÅpenSøknadDto> { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
                     .thenBy { it.søknadFomDato },
