@@ -286,11 +286,12 @@ open class Behandling(
             }
 
     val sammeSamværForAlle get() =
-        samvær.all { sb1 ->
-            samvær.all {
-                sb1.erLik(it)
+        forholdsmessigFordeling == null &&
+            samvær.all { sb1 ->
+                samvær.all {
+                    sb1.erLik(it)
+                }
             }
-        }
 
     fun tilStønadsid(person: Person) =
         Stønadsid(
