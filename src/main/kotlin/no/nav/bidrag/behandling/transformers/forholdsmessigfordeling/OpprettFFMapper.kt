@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
-import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
@@ -32,15 +31,21 @@ import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
-import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
+
+fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
+    (
+        flatMap {
+            it.åpneBehandlinger.map { it.søktFomDato } +
+                it.åpneSøknader.filter { it.søknadFomDato != null }.map { it.søknadFomDato!! }
+        } + listOf(behandling.søktFomDato)
+    ).min()
 
 fun Rolle.fjernSøknad(søknadsid: Long) {
     if (forholdsmessigFordeling == null) return
@@ -381,6 +386,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
     val barnFødselsnummer = kravhaver
     val enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent"
 
+    val åpneBehandlinger = åpneBehandlinger.map { it.tilFFBarnDto() } + åpneSøknader.map { it.tilFFBarnDto(sak, enhet) }
     return ForholdsmessigFordelingBarnDto(
         ident = barnFødselsnummer,
         navn = hentPersonVisningsnavn(barnFødselsnummer) ?: "Ukjent",
@@ -391,6 +397,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
         enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent",
         harLøpendeBidrag = løpendeBidrag,
         stønadstype = stønadstype,
+        eldsteSøktFraDato = åpneBehandlinger.filter { it.søktFraDato != null }.minOfOrNull { it.søktFraDato!! },
         innkrevesFraDato =
             if (løperBidragFra != null &&
                 løperBidragFra > behandling.søktFomDato.toYearMonth()
@@ -399,7 +406,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
             } else {
                 null
             },
-        åpneBehandlinger = åpneBehandlinger.map { it.tilFFBarnDto() } + åpneSøknader.map { it.tilFFBarnDto(sak, enhet) },
+        åpneBehandlinger = åpneBehandlinger,
         bidragsmottaker =
             RolleDto(
                 id = -1,

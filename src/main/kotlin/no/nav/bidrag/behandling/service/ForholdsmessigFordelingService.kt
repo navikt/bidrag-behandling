@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnEldsteSøktFomDato
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøknad
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierGrunnlag
@@ -137,6 +138,7 @@ class ForholdsmessigFordelingService(
                     løpendebidragssaker,
                     behandlerEnhet,
                     saksnummerLøpendeBidrag.second,
+                    relevanteKravhavere.finnEldsteSøktFomDato(behandling),
                 )
             }
         behandling.forholdsmessigFordeling =
@@ -478,6 +480,7 @@ class ForholdsmessigFordelingService(
             behandlesAvEnhet,
             bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty(),
             false, // TODO: Simuler beregning
+            eldsteSøktFraDato = relevanteKravhavere.finnEldsteSøktFomDato(behandling),
             bpsBarnMedLøpendeBidragEllerPrivatAvtale,
         )
     }
@@ -732,13 +735,14 @@ class ForholdsmessigFordelingService(
         løpendeBidragssak: List<SakKravhaver>,
         behandlerEnhet: String,
         stønadstype: Stønadstype? = null,
+        eldsteSøktFraDato: LocalDate,
     ) {
         val sak = sakConsumer.hentSak(saksnummer)
 
         val barnUtenSøknader = løpendeBidragssak.filter { ls -> behandling.søknadsbarn.none { it.ident == ls.kravhaver } }
         if (barnUtenSøknader.isEmpty()) return
 
-        val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
+        val søktFomDato = maxOf(eldsteSøktFraDato.withDayOfMonth(1), LocalDate.now().plusMonths(1).withDayOfMonth(1))
         val bmFødselsnummer = hentNyesteIdent(sak.bidragsmottaker?.fødselsnummer?.verdi)?.verdi
 
         val barnMedInnkrevingSenereEnnFomDato =

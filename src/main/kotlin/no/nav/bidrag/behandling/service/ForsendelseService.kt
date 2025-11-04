@@ -151,6 +151,12 @@ class ForsendelseService(
         }
     }
 
+    private fun finnesForsendelser(request: InitalizeForsendelseRequest) {
+        bidragForsendelseConsumer
+            .hentForsendelserISak(request.saksnummer)
+            .filter { it.status == ForsendelseStatusTo.UNDER_PRODUKSJON }
+    }
+
     private fun opprettForsendelse(request: InitalizeForsendelseRequest): List<String> {
         if (!request.skalOppretteForsendelse) return emptyList()
         val opprettRequestTemplate =

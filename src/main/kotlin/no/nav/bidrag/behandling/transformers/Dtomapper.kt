@@ -784,6 +784,11 @@ class Dtomapper(
                                     harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
                                     innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
                                     stønadstype = barn.stønadstype,
+                                    eldsteSøktFraDato =
+                                        barn.forholdsmessigFordeling!!
+                                            .søknaderUnderBehandling
+                                            .filter { it.søknadFomDato != null }
+                                            .minOfOrNull { it.søknadFomDato!! },
                                     åpneBehandlinger =
                                         barn.forholdsmessigFordeling!!.søknaderUnderBehandling.map {
                                             ForholdsmessigFordelingÅpenBehandlingDto(

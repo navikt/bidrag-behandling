@@ -17,6 +17,7 @@ data class SjekkForholdmessigFordelingResponse(
     val skalBehandlesAvEnhet: String,
     val kanOppretteForholdsmessigFordeling: Boolean,
     val måOppretteForholdsmessigFordeling: Boolean = false,
+    val eldsteSøktFraDato: LocalDate,
     val barn: List<ForholdsmessigFordelingBarnDto> = emptyList(),
 )
 
@@ -29,6 +30,7 @@ data class ForholdsmessigFordelingBarnDto(
     val enhet: String,
     val erRevurdering: Boolean,
     val stønadstype: Stønadstype?,
+    val eldsteSøktFraDato: LocalDate?,
     val harLøpendeBidrag: Boolean,
     val innkrevesFraDato: YearMonth?,
     val sammeSakSomBehandling: Boolean,
