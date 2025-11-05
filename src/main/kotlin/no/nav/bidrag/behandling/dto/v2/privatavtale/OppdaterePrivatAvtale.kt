@@ -76,6 +76,8 @@ data class PrivatAvtaleAndreBarnDetaljerDtoV2(
 data class PrivatAvtaleAndreBarnDtoV2(
     val gjelderBarn: PersoninfoDto,
     val privatAvtale: PrivatAvtaleBarnDtoV2? = null,
+    val enhet: String? = null,
+    val saksnummer: String? = null,
 )
 
 data class PrivatAvtaleAndreBarnDto(

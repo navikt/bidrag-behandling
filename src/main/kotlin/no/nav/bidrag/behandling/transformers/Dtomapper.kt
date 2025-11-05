@@ -1009,6 +1009,8 @@ class Dtomapper(
                         kilde = Kilde.OFFENTLIG,
                     ),
                     privatAvtale?.tilDtoV2(),
+                    saksnummer = barn.saksnummer,
+                    enhet = barn.enhet,
                 )
             }
         val identerAndreBarn = andreBarnUtenLøpendeBidrag.mapNotNull { it.gjelderBarn.ident?.verdi }
@@ -1017,8 +1019,8 @@ class Dtomapper(
                 .filter { it.rolle == null && !identerAndreBarn.contains(it.person!!.ident!!) }
                 .map {
                     PrivatAvtaleAndreBarnDtoV2(
-                        it.person!!.tilPersoninfoDto(kilde = Kilde.MANUELL),
-                        it.tilDtoV2(),
+                        gjelderBarn = it.person!!.tilPersoninfoDto(kilde = Kilde.MANUELL),
+                        privatAvtale = it.tilDtoV2(),
                     )
                 }
         val andreBarn =
