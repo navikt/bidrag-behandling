@@ -11,8 +11,8 @@ import net.javacrumbs.shedlock.core.LockProvider
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
-import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
-import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
 import no.nav.bidrag.commons.service.forsendelse.EnableForsendelseService
 import no.nav.bidrag.commons.unleash.EnableUnleashFeatures
 import no.nav.bidrag.commons.util.EnableSjekkForNyIdent
