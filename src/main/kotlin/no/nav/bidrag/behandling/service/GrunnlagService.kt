@@ -87,6 +87,7 @@ import no.nav.bidrag.behandling.transformers.underhold.justerBarnetilsynPeriodeT
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.behandling.transformers.vedtakstyperIkkeBeregning
 import no.nav.bidrag.beregn.barnebidrag.service.VedtakService
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2

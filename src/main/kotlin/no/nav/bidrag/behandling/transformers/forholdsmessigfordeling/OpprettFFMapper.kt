@@ -39,6 +39,8 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
+val SakKravhaver.søknadsider get() = åpneSøknader.map { it.søknadsid } + åpneBehandlinger.map { it.soknadsid ?: -1 }
+
 fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
     (
         flatMap {

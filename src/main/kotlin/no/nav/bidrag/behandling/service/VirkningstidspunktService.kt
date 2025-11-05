@@ -30,8 +30,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
-val vedtakstyperIkkeBeregning =
-    listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
 
 @Service
 class VirkningstidspunktService(
