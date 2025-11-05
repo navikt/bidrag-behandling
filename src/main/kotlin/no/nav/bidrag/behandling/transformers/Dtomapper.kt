@@ -53,9 +53,14 @@ import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndreBarnDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndreBarnDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndreBarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDtoV2
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnInfoDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDtoV3
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BeregnetUnderholdskostnad
@@ -911,6 +916,12 @@ class Dtomapper(
                 },
             kanBehandlesINyLøsning = kanBehandles,
             kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
+            privatAvtaleV3 =
+                if (erBidrag() && bidragspliktig != null) {
+                    tilPrivatAvtaleDtoV3()
+                } else {
+                    null
+                },
             privatAvtaleV2 =
                 if (erBidrag() && bidragspliktig != null) {
                     PrivatAvtaleDto(
@@ -949,6 +960,92 @@ class Dtomapper(
             privatAvtale =
                 privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
         )
+    }
+
+    fun Behandling.tilPrivatAvtaleDtoV3(): PrivatAvtaleDtoV3 {
+        val søknadsbarnPA =
+            søknadsbarn.map { barn ->
+                val privatAvtale = privatAvtale.find { it.rolle?.ident == barn.ident }
+                PrivatAvtaleBarnInfoDto(
+                    gjelderBarn = barn.tilPersoninfoDto(Kilde.OFFENTLIG),
+                    privatAvtale = privatAvtale?.tilDtoV2(),
+                    perioderLøperBidrag =
+                        if (erInnkreving) {
+                            emptyList()
+                        } else {
+                            finnPerioderHvorDetLøperBidrag(barn)
+                        },
+                    begrunnelse =
+                        henteNotatinnhold(
+                            this,
+                            NotatType.PRIVAT_AVTALE,
+                            barn,
+                            true,
+                        ),
+                    begrunnelseFraOpprinneligVedtak =
+                        if (erKlageEllerOmgjøring) {
+                            henteNotatinnhold(
+                                this,
+                                NotatType.PRIVAT_AVTALE,
+                                barn,
+                                false,
+                            ).takeIfNotNullOrEmpty { it }
+                        } else {
+                            null
+                        },
+                )
+            }
+
+        val andreBarnUtenLøpendeBidrag =
+            bpsBarnUtenLøpendeBidrag().map { barn ->
+                val privatAvtale = privatAvtale.find { it.rolle?.ident == barn.ident }
+                PrivatAvtaleAndreBarnDtoV2(
+                    PersoninfoDto(
+                        null,
+                        barn.ident?.let { Personident(it) },
+                        barn.navn,
+                        barn.fødselsdato,
+                        medIBehandlingen = false,
+                        kilde = Kilde.OFFENTLIG,
+                    ),
+                    privatAvtale?.tilDtoV2(),
+                )
+            }
+        val identerAndreBarn = andreBarnUtenLøpendeBidrag.mapNotNull { it.gjelderBarn.ident?.verdi }
+        val barnManueltLagtInn =
+            privatAvtale
+                .filter { it.rolle == null && !identerAndreBarn.contains(it.person!!.ident!!) }
+                .map {
+                    PrivatAvtaleAndreBarnDtoV2(
+                        it.person!!.tilPersoninfoDto(kilde = Kilde.MANUELL),
+                        it.tilDtoV2(),
+                    )
+                }
+        val andreBarn =
+            PrivatAvtaleAndreBarnDetaljerDtoV2(
+                manglerBegrunnelse = manglerPrivatAvtaleBegrunnelseAndreBarn(),
+                barn = barnManueltLagtInn + andreBarnUtenLøpendeBidrag,
+                begrunnelse =
+                    henteNotatinnhold(
+                        this,
+                        NotatType.PRIVAT_AVTALE,
+                        bidragspliktig!!,
+                        true,
+                    ),
+                begrunnelseFraOpprinneligVedtak =
+                    if (erKlageEllerOmgjøring) {
+                        henteNotatinnhold(
+                            this,
+                            NotatType.PRIVAT_AVTALE,
+                            bidragspliktig!!,
+                            false,
+                        ).takeIfNotNullOrEmpty { it }
+                    } else {
+                        null
+                    },
+            )
+
+        return PrivatAvtaleDtoV3(søknadsbarn = søknadsbarnPA, andreBarn)
     }
 
     private fun Behandling.mapVirkningstidspunktAlleBarn2(): List<VirkningstidspunktBarnDtoV2> =
@@ -1203,6 +1300,42 @@ class Dtomapper(
                     enhet = it.enhet,
                 )
             }?.toSet() ?: emptySet()
+
+    fun PrivatAvtale.tilDtoV2(): PrivatAvtaleBarnDtoV2 =
+        PrivatAvtaleBarnDtoV2(
+            id = id!!,
+            skalIndeksreguleres = skalIndeksreguleres,
+            avtaleDato = utledetAvtaledato,
+            avtaleType = avtaleType,
+            erSøknadsbarn = rolle != null,
+            manuelleVedtakUtenInnkreving =
+                if (behandling.erBidrag()) {
+                    hentManuelleVedtakForBehandling(behandling, personIdent!!, rolle, this)
+                } else {
+                    null
+                },
+            valideringsfeil = validerePrivatAvtale().takeIf { it.harFeil },
+            beregnetPrivatAvtale =
+                if (skalIndeksreguleres &&
+                    perioderInnkreving.isNotEmpty()
+                ) {
+                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling)!!, false)
+                } else {
+                    null
+                },
+            perioder =
+                perioderInnkreving.sortedBy { it.fom }.map {
+                    PrivatAvtalePeriodeDto(
+                        id = it.id,
+                        periode =
+                            no.nav.bidrag.behandling.dto.v2.behandling
+                                .DatoperiodeDto(it.fom, it.tom),
+                        beløp = it.beløp,
+                        valuta = it.valutakode,
+                        samværsklasse = it.samværsklasse,
+                    )
+                },
+        )
 
     fun PrivatAvtale.tilDto(): PrivatAvtaleBarnDto =
         PrivatAvtaleBarnDto(

@@ -134,6 +134,10 @@ class PrivatAvtaleController(
                     behandling.bidragspliktig!!,
                     true,
                 ),
+            privatAvtale =
+                dtomapper.run {
+                    behandling.tilPrivatAvtaleDtoV3()
+                },
             oppdatertPrivatAvtale =
                 dtomapper.run {
                     privatAvtale?.tilDto()

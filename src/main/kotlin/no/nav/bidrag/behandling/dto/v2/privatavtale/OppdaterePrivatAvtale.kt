@@ -43,6 +43,7 @@ data class OppdaterePrivatAvtaleRequest(
 data class OppdaterePrivatAvtaleResponsDto(
     @Schema(description = "Privat avtale som ble oppdatert")
     val oppdatertPrivatAvtale: PrivatAvtaleBarnDto? = null,
+    val privatAvtale: PrivatAvtaleDtoV3,
     val begrunnelseAndreBarn: String? = null,
     val mangleBegrunnelseAndreBarn: Boolean = false,
 )
@@ -55,9 +56,26 @@ data class OppdaterePrivatAvtalePeriodeDto(
     val valuta: Valutakode? = null,
 )
 
+data class PrivatAvtaleDtoV3(
+    val søknadsbarn: List<PrivatAvtaleBarnInfoDto> = emptyList(),
+    val andreBarn: PrivatAvtaleAndreBarnDetaljerDtoV2? = null,
+)
+
 data class PrivatAvtaleDto(
     val barn: List<PrivatAvtaleBarnDto> = emptyList(),
     val andreBarn: PrivatAvtaleAndreBarnDto? = null,
+)
+
+data class PrivatAvtaleAndreBarnDetaljerDtoV2(
+    val manglerBegrunnelse: Boolean = false,
+    val begrunnelse: String? = null,
+    val begrunnelseFraOpprinneligVedtak: String? = null,
+    val barn: List<PrivatAvtaleAndreBarnDtoV2> = emptyList(),
+)
+
+data class PrivatAvtaleAndreBarnDtoV2(
+    val gjelderBarn: PersoninfoDto,
+    val privatAvtale: PrivatAvtaleBarnDtoV2? = null,
 )
 
 data class PrivatAvtaleAndreBarnDto(
@@ -65,6 +83,27 @@ data class PrivatAvtaleAndreBarnDto(
     val begrunnelse: String? = null,
     val begrunnelseFraOpprinneligVedtak: String? = null,
     val barn: List<PrivatAvtaleBarnDto> = emptyList(),
+)
+
+data class PrivatAvtaleBarnInfoDto(
+    val gjelderBarn: PersoninfoDto,
+    val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
+    val begrunnelse: String?,
+    val erSøknadsbarn: Boolean = true,
+    val begrunnelseFraOpprinneligVedtak: String? = null,
+    val privatAvtale: PrivatAvtaleBarnDtoV2? = null,
+)
+
+data class PrivatAvtaleBarnDtoV2(
+    val id: Long,
+    val avtaleDato: LocalDate?,
+    val avtaleType: PrivatAvtaleType?,
+    val skalIndeksreguleres: Boolean = false,
+    val erSøknadsbarn: Boolean = true,
+    val valideringsfeil: PrivatAvtaleValideringsfeilDto?,
+    val perioder: List<PrivatAvtalePeriodeDto> = emptyList(),
+    val beregnetPrivatAvtale: BeregnetPrivatAvtaleDto? = null,
+    val manuelleVedtakUtenInnkreving: List<ManuellVedtakDto>?,
 )
 
 data class PrivatAvtaleBarnDto(

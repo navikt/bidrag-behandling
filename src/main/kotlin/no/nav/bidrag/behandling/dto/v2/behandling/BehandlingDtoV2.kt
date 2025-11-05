@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDtoV3
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
@@ -156,6 +157,7 @@ data class BehandlingDtoV2(
     val samværV2: SamværDtoV2? = null,
     val privatAvtale: List<PrivatAvtaleBarnDto>? = null,
     val privatAvtaleV2: PrivatAvtaleDto? = null,
+    val privatAvtaleV3: PrivatAvtaleDtoV3? = null,
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
