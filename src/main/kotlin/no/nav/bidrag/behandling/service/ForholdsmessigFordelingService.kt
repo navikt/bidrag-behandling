@@ -749,7 +749,7 @@ class ForholdsmessigFordelingService(
             barnUtenSøknader
                 .filter {
                     it.løperBidragFra == null ||
-                        it.løperBidragFra > behandling.søktFomDato.toYearMonth()
+                        it.løperBidragFra > søktFomDato.toYearMonth()
                 }.groupBy { it.løperBidragFra }
                 .map { (_, barn) ->
                     val søknadsid =

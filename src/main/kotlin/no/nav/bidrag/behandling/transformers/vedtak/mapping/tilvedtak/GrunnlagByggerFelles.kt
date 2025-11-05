@@ -150,37 +150,73 @@ fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
         }.toSet()
 
 fun Behandling.byggGrunnlagSøknad() =
-    setOf(
-        GrunnlagDto(
-            referanse = "søknad",
-            type = Grunnlagstype.SØKNAD,
-            innhold =
-                POJONode(
-                    SøknadGrunnlag(
-                        klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
-                        mottattDato = mottattdato,
-                        søktFraDato = søktFomDato,
-                        søktAv = soknadFra,
-                        begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
-                        innkrevingsgrunnlag = erInnkreving,
-                        egetTiltak =
-                            listOf(
-                                Behandlingstype.BEGRENSET_REVURDERING,
-                                Behandlingstype.EGET_TILTAK,
-                                Behandlingstype.PARAGRAF_35_C,
-                                Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
-                            ).contains(søknadstype),
-                        opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
-                        privatAvtale = søknadstype == Behandlingstype.PRIVAT_AVTALE,
-                        paragraf35c =
-                            listOf(
-                                Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
-                                Behandlingstype.PARAGRAF_35_C,
-                            ).contains(søknadstype),
+    if (erIForholdsmessigFordeling && erBisysVedtak) {
+        søknadsbarn.map {
+            val ffEldsteSøknad = it.forholdsmessigFordeling!!.eldsteSøknad
+            GrunnlagDto(
+                referanse = "søknad_${it.tilGrunnlagsreferanse()}",
+                type = Grunnlagstype.SØKNAD,
+                gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
+                innhold =
+                    POJONode(
+                        SøknadGrunnlag(
+                            klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
+                            mottattDato = ffEldsteSøknad.mottattDato,
+                            søktFraDato = ffEldsteSøknad.søknadFomDato ?: søktFomDato,
+                            søktAv = ffEldsteSøknad.søktAvType,
+                            begrensetRevurdering = ffEldsteSøknad.behandlingstype?.erBegrensetRevurdering() == true,
+                            innkrevingsgrunnlag = erInnkreving,
+                            egetTiltak =
+                                listOf(
+                                    Behandlingstype.BEGRENSET_REVURDERING,
+                                    Behandlingstype.EGET_TILTAK,
+                                    Behandlingstype.PARAGRAF_35_C,
+                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                ).contains(ffEldsteSøknad.behandlingstype),
+                            opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
+                            privatAvtale = ffEldsteSøknad.behandlingstype == Behandlingstype.PRIVAT_AVTALE,
+                            paragraf35c =
+                                listOf(
+                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                    Behandlingstype.PARAGRAF_35_C,
+                                ).contains(ffEldsteSøknad.behandlingstype),
+                        ),
                     ),
-                ),
-        ),
-    )
+            )
+        }
+    } else {
+        setOf(
+            GrunnlagDto(
+                referanse = "søknad",
+                type = Grunnlagstype.SØKNAD,
+                innhold =
+                    POJONode(
+                        SøknadGrunnlag(
+                            klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
+                            mottattDato = mottattdato,
+                            søktFraDato = søktFomDato,
+                            søktAv = soknadFra,
+                            begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
+                            innkrevingsgrunnlag = erInnkreving,
+                            egetTiltak =
+                                listOf(
+                                    Behandlingstype.BEGRENSET_REVURDERING,
+                                    Behandlingstype.EGET_TILTAK,
+                                    Behandlingstype.PARAGRAF_35_C,
+                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                ).contains(søknadstype),
+                            opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
+                            privatAvtale = søknadstype == Behandlingstype.PRIVAT_AVTALE,
+                            paragraf35c =
+                                listOf(
+                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                    Behandlingstype.PARAGRAF_35_C,
+                                ).contains(søknadstype),
+                        ),
+                    ),
+            ),
+        )
+    }
 
 fun Behandling.byggGrunnlaggEtterfølgendeManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto>): Set<GrunnlagDto> =
     søknadsbarn

@@ -646,32 +646,37 @@ class BehandlingTilVedtakMapping(
 
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
-                    stønadsendringPerioder.map {
-                        val sistePeriode = it.perioder.filter { it.resultatkode != Resultatkode.OPPHØR.name }.maxBy { it.periode.fom }
-                        val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
+                    stønadsendringPerioder.map { periode ->
+                        val sistePeriode = periode.perioder.filter { it.resultatkode != Resultatkode.OPPHØR.name }.maxBy { it.periode.fom }
+                        val søknadsbarnReferanse = periode.barn.tilGrunnlagsreferanse()
+                        val stønadsendringerBarn =
+                            stønadsendringGrunnlagListe.filter {
+                                it.gjelderBarnReferanse == null ||
+                                    it.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
+                            }
                         OpprettStønadsendringRequestDto(
                             innkreving = innkrevingstype!!,
                             skyldner = tilSkyldner(),
                             omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
                             kravhaver =
-                                it.barn.tilNyestePersonident()
+                                periode.barn.tilNyestePersonident()
                                     ?: rolleManglerIdent(Rolletype.BARN, id!!),
                             mottaker =
                                 roller
                                     .reelMottakerEllerBidragsmottaker(
-                                        sak.hentRolleMedFnr(it.barn.ident!!),
+                                        sak.hentRolleMedFnr(periode.barn.ident!!),
                                     ),
                             sak = Saksnummer(saksnummer),
                             type = stonadstype!!,
                             beslutning = Beslutningstype.ENDRING,
                             grunnlagReferanseListe =
-                                stønadsendringGrunnlagListe.map(GrunnlagDto::referanse) +
+                                stønadsendringerBarn.map(GrunnlagDto::referanse) +
                                     grunnlagVirkningstidspunkt
                                         .find { vt ->
-                                            vt.gjelderBarnReferanse == it.barn.tilGrunnlagsreferanse()
+                                            vt.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
                                         }!!
                                         .referanse,
-                            periodeListe = it.perioder,
+                            periodeListe = periode.perioder,
                             førsteIndeksreguleringsår =
                                 grunnlagListe.toList().finnIndeksår(
                                     søknadsbarnReferanse,

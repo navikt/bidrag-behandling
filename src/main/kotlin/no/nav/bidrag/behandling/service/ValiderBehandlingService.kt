@@ -131,13 +131,13 @@ class ValiderBehandlingService(
 
         if (behandling.forholdsmessigFordeling != null) {
             log.debug {
-                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi den har forholdsmessig fordeling"
+                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi det har blitt opprettet forholdsmessig fordeling"
             }
             throw HttpClientErrorException(
                 HttpStatus.PRECONDITION_FAILED,
                 "Behandling kan ikke behandles i Bisys",
                 commonObjectmapper.writeValueAsBytes(
-                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling behandles i ny løsning")),
+                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling er opprettet i ny løsning")),
                 ),
                 Charsets.UTF_8,
             )

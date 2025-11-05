@@ -33,6 +33,7 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.annotations.ColumnTransformer
@@ -163,6 +164,19 @@ data class GrunnlagFraVedtak(
                 "Brukes når vedtakstype er innkreving og det er valgt å innkreve en vedtak fra NAV som opprinnelig var uten innkreving",
     )
     val perioder: List<VedtakPeriodeDto> = emptyList(),
+)
+
+data class GebyrRolle(
+    val gebyrSak: List<GebyrRolleSak> = emptyList(),
+    val overstyrGebyr: Boolean = true,
+    val ilagtGebyr: Boolean? = false,
+    val begrunnelse: String? = null,
+    val beregnetIlagtGebyr: Boolean? = false,
+)
+
+data class GebyrRolleSak(
+    val saksnummer: String,
+    val manueltOverstyrtGebyr: ManueltOverstyrtGebyr,
 )
 
 data class RolleManueltOverstyrtGebyr(
