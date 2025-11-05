@@ -37,7 +37,7 @@ class BidragBeløpshistorikkConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun hentLøpendeBidrag(request: LøpendeBidragssakerRequest): LøpendeBidragssakerResponse =
+    override fun hentLøpendeBidrag(request: LøpendeBidragssakerRequest): LøpendeBidragssakerResponse =
         postForNonNullEntity(
             bidragBeløpshistorikkUri.pathSegment("hent-lopende-bidragssaker-for-skyldner").build().toUri(),
             request,

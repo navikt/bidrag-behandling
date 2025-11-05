@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
+import no.nav.bidrag.beregn.barnebidrag.service.external.VedtakService
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -101,7 +102,7 @@ class BehandlingTilVedtakMapping(
     private val mapper: VedtakGrunnlagMapper,
     private val beregningService: BeregningService,
     private val vedtaksconsumer: BidragVedtakConsumer,
-    private val vedtakService: no.nav.bidrag.beregn.barnebidrag.service.VedtakService,
+    private val vedtakService: VedtakService,
 ) {
     fun Behandling.byggOpprettVedtakRequestBidragAldersjustering(enhet: String? = null): OpprettVedtakRequestDto {
         val sak = sakConsumer.hentSak(saksnummer)

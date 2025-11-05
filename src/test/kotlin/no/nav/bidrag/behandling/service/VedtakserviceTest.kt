@@ -55,10 +55,10 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
-import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
-import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.HentLøpendeBidragService
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestrator
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -147,7 +147,7 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
     @MockkBean
-    lateinit var vedtakService2: no.nav.bidrag.beregn.barnebidrag.service.VedtakService
+    lateinit var vedtakService2: no.nav.bidrag.beregn.barnebidrag.service.external.VedtakService
 
     @Autowired
     lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
@@ -172,7 +172,7 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var forsendelseService: ForsendelseService
 
     @MockK
-    lateinit var unleashFeaturesProvider: UnleashFeaturesProvider
+    lateinit var hentLøpendeBidragService: HentLøpendeBidragService
 
     @MockkBean
     lateinit var klageOrkestrator: OmgjøringOrkestrator
@@ -189,7 +189,7 @@ class VedtakserviceTest : TestContainerRunner() {
         enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
         disableUnleashFeature(UnleashFeatures.VEDTAKSSPERRE)
         bidragPersonConsumer = stubPersonConsumer()
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, hentLøpendeBidragService)
         every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)

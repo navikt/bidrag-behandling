@@ -4,6 +4,7 @@ import io.getunleash.FakeUnleash
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -21,9 +22,10 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
-import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.HentLøpendeBidragService
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestrator
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -49,6 +51,9 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
     @MockK
+    lateinit var bbmConsumer: BidragBBMConsumer
+
+    @MockK
     lateinit var notatOpplysningerService: NotatOpplysningerService
 
     @MockK
@@ -58,9 +63,10 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var sakConsumer: BidragSakConsumer
 
     @MockK
-    lateinit var vedtakServiceBeregning: no.nav.bidrag.beregn.barnebidrag.service.VedtakService
+    lateinit var vedtakServiceBeregning: no.nav.bidrag.beregn.barnebidrag.service.external.VedtakService
 
     lateinit var beregningService: BeregningService
+    lateinit var hentLøpendeBidragService: HentLøpendeBidragService
     lateinit var vedtakTilBehandlingMapping: VedtakTilBehandlingMapping
     lateinit var behandlingTilVedtakMapping: BehandlingTilVedtakMapping
     lateinit var validerBeregning: ValiderBeregning
@@ -79,7 +85,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         stubVedtakConsumer(vedtakConsumer)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, hentLøpendeBidragService)
 
         validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
@@ -117,8 +123,8 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         val identUtils = IdentUtils(identConsumer)
         aldersjusteringOrchestrator =
             AldersjusteringOrchestrator(
-                no.nav.bidrag.beregn.barnebidrag.service
-                    .VedtakService(vedtakConsumer, bidragStønadConsumer, Vedtaksfiltrering(), identUtils),
+                no.nav.bidrag.beregn.barnebidrag.service.external
+                    .VedtakService(vedtakConsumer, bidragStønadConsumer, bbmConsumer, Vedtaksfiltrering(), identUtils),
                 sakConsumer,
                 BeregnBarnebidragApi(),
                 personConsumer,

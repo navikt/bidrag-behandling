@@ -44,7 +44,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
-import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
 import no.nav.bidrag.beregn.barnebidrag.utils.toYearMonth
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype

@@ -36,9 +36,10 @@ import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
-import no.nav.bidrag.beregn.barnebidrag.service.AldersjusteringOrchestrator
-import no.nav.bidrag.beregn.barnebidrag.service.BidragsberegningOrkestrator
-import no.nav.bidrag.beregn.barnebidrag.service.OmgjøringOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrchestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.HentLøpendeBidragService
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestrator
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -84,6 +85,9 @@ class BeregningServiceTest {
     lateinit var behandlingService: BehandlingService
 
     @MockkBean
+    lateinit var hentLøpendeBidragService: HentLøpendeBidragService
+
+    @MockkBean
     lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
@@ -109,7 +113,7 @@ class BeregningServiceTest {
         stubPersonConsumer()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, hentLøpendeBidragService)
         barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
         every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         every { evnevurderingService.hentLøpendeBidragForBehandling(any()) } returns
