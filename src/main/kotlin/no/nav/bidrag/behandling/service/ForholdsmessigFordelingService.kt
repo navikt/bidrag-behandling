@@ -780,6 +780,13 @@ class ForholdsmessigFordelingService(
                 }.forEach { inntektOverført ->
                     kopierInntekt(behandling, inntektOverført)
                 }
+
+            behandlingOverført.inntekter
+                .filter { bidragspliktigFnr == behandlingOverført.bidragspliktig!!.ident }
+                .filter { it.taMed && it.type.kanLeggesInnManuelt }
+                .forEach { inntektOverført ->
+                    kopierInntekt(behandling, inntektOverført)
+                }
             behandlingOverført.grunnlag
                 .filter { it.rolle.ident != bidragspliktigFnr && behandling.roller.any { r -> r.ident == it.rolle.ident } }
                 .forEach {
