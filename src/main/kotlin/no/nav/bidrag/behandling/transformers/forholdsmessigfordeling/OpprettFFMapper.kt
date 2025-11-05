@@ -49,6 +49,9 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
         } + listOf(behandling.søktFomDato)
     ).min()
 
+fun Collection<SakKravhaver>.finnSøktFomRevurderingSøknad(behandling: Behandling) =
+    maxOf(finnEldsteSøktFomDato(behandling).withDayOfMonth(1), LocalDate.now().plusMonths(1).withDayOfMonth(1))
+
 fun Rolle.fjernSøknad(søknadsid: Long) {
     if (forholdsmessigFordeling == null) return
     forholdsmessigFordeling!!.søknader =
