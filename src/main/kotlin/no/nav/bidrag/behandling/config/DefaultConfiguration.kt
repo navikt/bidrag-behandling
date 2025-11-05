@@ -13,6 +13,7 @@ import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrchestrator
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.HentLøpendeBidragService
 import no.nav.bidrag.commons.service.forsendelse.EnableForsendelseService
 import no.nav.bidrag.commons.unleash.EnableUnleashFeatures
 import no.nav.bidrag.commons.util.EnableSjekkForNyIdent
@@ -53,6 +54,7 @@ import javax.sql.DataSource
     BeregnBarnebidragApi::class,
     AldersjusteringOrchestrator::class,
     BidragsberegningOrkestrator::class,
+    HentLøpendeBidragService::class,
 )
 @EnableSjekkForNyIdent
 @EnableScheduling
