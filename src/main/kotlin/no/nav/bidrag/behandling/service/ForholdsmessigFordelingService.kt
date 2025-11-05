@@ -70,6 +70,14 @@ private val LOGGER = KotlinLogging.logger {}
 val ÅpenSøknadDto.bidragsmottaker get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
 val ÅpenSøknadDto.bidragspliktig get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 val ÅpenSøknadDto.barn get() = partISøknadListe.filter { it.rolletype == Rolletype.BARN }
+val behandlingstyperSomIkkeSkalInkluderesIFF =
+    listOf(
+        Behandlingstype.ALDERSJUSTERING,
+        Behandlingstype.INNKREVINGSGRUNNLAG,
+        Behandlingstype.PRIVAT_AVTALE,
+        Behandlingstype.OPPHØR,
+        Behandlingstype.INDEKSREGULERING,
+    )
 
 data class SakKravhaver(
     val saksnummer: String?,
@@ -699,7 +707,7 @@ class ForholdsmessigFordelingService(
         bbmConsumer
             .hentÅpneSøknaderForBp(bidragspliktigFnr)
             .åpneSøknader
-            .filter { it.behandlingstype != Behandlingstype.ALDERSJUSTERING }
+            .filter { !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.behandlingstype) }
             .sortedWith(
                 compareByDescending<ÅpenSøknadDto> { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
                     .thenBy { it.søknadFomDato },
@@ -1012,7 +1020,7 @@ class ForholdsmessigFordelingService(
             behandlingRepository
                 .finnÅpneBidragsbehandlingerForBp(bidragspliktigFnr, behandling.id!!)
                 .filter {
-                    !vedtakstyperIkkeBeregning.contains(it.vedtakstype)
+                    it.søknadstype != null && !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.søknadstype)
                 }
         val åpneSøknader =
             hentÅpneSøknader(bidragspliktigFnr).filter {
