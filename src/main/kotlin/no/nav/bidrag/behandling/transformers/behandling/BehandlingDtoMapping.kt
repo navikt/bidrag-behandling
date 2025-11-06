@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynAktiveGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
@@ -162,14 +163,26 @@ fun Rolle.tilDto() =
         stønadstype = stønadstype ?: behandling.stonadstype,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
         bidragsmottaker =
-            if (rolletype ==
-                Rolletype.BARN
-            ) {
+            if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker.ident
             } else {
                 null
             },
     )
+
+fun Rolle.tilSøknadsdetaljerDto(søknadsid: Long): SøknadDetaljerDto {
+    val søknadsdetaljer = forholdsmessigFordeling?.søknaderUnderBehandling?.find { it.søknadsid == søknadsid }
+    val barn = behandling.søknadsbarnForSøknad(søknadsid)
+    return SøknadDetaljerDto(
+        søknadsid = søknadsid,
+        saksnummer = sakForSøknad(søknadsid),
+        barn = if (rolletype != Rolletype.BARN) barn.map { it.tilDto() } else emptyList(),
+        søktFomDato = søknadsdetaljer?.søknadFomDato ?: behandling.søktFomDato,
+        mottattDato = søknadsdetaljer?.mottattDato ?: behandling.mottattdato,
+        søktAvType = søknadsdetaljer?.søktAvType ?: behandling.soknadFra,
+        behandlingstype = søknadsdetaljer?.behandlingstype ?: behandling.søknadstype,
+    )
+}
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
     val tilleggsstønad =

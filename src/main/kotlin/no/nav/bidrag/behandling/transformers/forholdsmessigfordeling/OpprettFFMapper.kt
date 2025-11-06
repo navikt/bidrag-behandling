@@ -68,6 +68,16 @@ fun Rolle.fjernSøknad(søknadsid: Long) {
             }.toMutableSet()
 }
 
+fun Behandling.tilFFDetaljerBP() =
+    ForholdsmessigFordelingRolle(
+        tilhørerSak = saksnummer,
+        behandlingsid = id,
+        behandlerenhet = behandlerEnhet,
+        delAvOpprinneligBehandling = true,
+        erRevurdering = false,
+        bidragsmottaker = null,
+    )
+
 fun Behandling.tilFFDetaljerBM() =
     ForholdsmessigFordelingRolle(
         delAvOpprinneligBehandling = true,

@@ -126,6 +126,12 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    fun sakForSøknad(søknadsid: Long) =
+        forholdsmessigFordeling
+            ?.søknader
+            ?.find { it.søknadsid == søknadsid }
+            ?.saksnummer ?: saksnummer
+
     val saksnummer get() = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer
     val gebyrSøknader get() =
         if (harGebyrsøknad) {

@@ -35,6 +35,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljer
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
@@ -835,6 +837,7 @@ class Dtomapper(
                 søknadsid = soknadsid,
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
+                gebyrV2 = mapGebyrV2(),
                 roller = roller.map { it.tilDto() }.toSet(),
                 bpsBarnUtenLøpendeBidrag = bpsBarnUtenLøpendeBidrag(),
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
@@ -1253,6 +1256,29 @@ class Dtomapper(
                 .tilDtos()
         } else {
             behandling.underholdskostnader.tilDtos()
+        }
+
+    fun Behandling.mapGebyrV2() =
+        if (roller.any { it.harGebyrsøknad }) {
+            GebyrDtoV2(
+                gebyrRoller =
+                    roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->
+                        GebyrRolleDto(
+                            rolle = rolle.tilDto(),
+                            gebyrDetaljer =
+                                rolle.gebyrSøknader.map {
+                                    vedtakGrunnlagMapper
+                                        .beregnGebyr(this, rolle)
+                                        .tilDto(rolle, it.søknadsid)
+                                },
+                            valideringsfeil = validerGebyr().filter { it.gjelder.ident == rolle.ident }.takeIf { it.isNotEmpty() },
+                        )
+                    },
+            )
+        } else {
+            GebyrDtoV2(
+                gebyrRoller = emptyList(),
+            )
         }
 
     fun Behandling.mapGebyr() =

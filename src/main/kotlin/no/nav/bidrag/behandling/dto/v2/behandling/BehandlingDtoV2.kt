@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -147,6 +148,7 @@ data class BehandlingDtoV2(
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
     val gebyr: GebyrDto? = null,
+    val gebyrV2: GebyrDtoV2? = null,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
@@ -163,19 +165,39 @@ data class BehandlingDtoV2(
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
 }
 
-data class GebyrDto(
+data class GebyrDtoV2(
     val gebyrRoller: List<GebyrRolleDto>,
+)
+
+data class GebyrDto(
+    val gebyrRoller: List<GebyrDetaljerDto>,
     val valideringsfeil: List<GebyrValideringsfeilDto>? = null,
 )
 
+data class SøknadDetaljerDto(
+    val søknadsid: Long,
+    val saksnummer: String,
+    val barn: List<RolleDto>,
+    val søktFomDato: LocalDate,
+    val mottattDato: LocalDate,
+    val søktAvType: SøktAvType,
+    val behandlingstype: Behandlingstype?,
+)
+
 data class GebyrRolleDto(
-    val søknadsid: Long?,
-    val saksnummer: String? = null,
+    val rolle: RolleDto,
+    val gebyrDetaljer: List<GebyrDetaljerDto>,
+    val valideringsfeil: List<GebyrValideringsfeilDto>? = null,
+)
+
+data class GebyrDetaljerDto(
+    val søknad: SøknadDetaljerDto? = null,
     val inntekt: GebyrInntektDto,
     val beløpGebyrsats: BigDecimal,
     val beregnetIlagtGebyr: Boolean,
     val endeligIlagtGebyr: Boolean,
     val begrunnelse: String? = null,
+    @Schema(deprecated = true)
     val rolle: RolleDto,
 ) {
     val erManueltOverstyrt get() = beregnetIlagtGebyr != endeligIlagtGebyr

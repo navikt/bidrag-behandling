@@ -139,6 +139,7 @@ class BehandlingControllerV2(
                     inkluderHistoriskeInntekter = true,
                 ),
             gebyr = dtomapper.run { behandling.mapGebyr() },
+            gebyrV2 = dtomapper.run { behandling.mapGebyrV2() },
             beregnetGebyrErEndret = beregnetGebyrErEndret,
             beregnetInntekter =
                 behandling.roller

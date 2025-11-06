@@ -19,7 +19,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
-import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.Underholds
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
+import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -126,15 +127,15 @@ val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, 
 fun BeregnGebyrResultat.tilDto(
     rolle: Rolle,
     søknadsid: Long,
-): GebyrRolleDto {
-    val gebyr = rolle.hentEllerOpprettGebyr().gebyrForSøknad(søknadsid, rolle.saksnummer)
+): GebyrDetaljerDto {
+    val saksnummer = rolle.sakForSøknad(søknadsid)
+    val gebyr = rolle.hentEllerOpprettGebyr().gebyrForSøknad(søknadsid, saksnummer)
     val erManueltOverstyrt = gebyr.manueltOverstyrtGebyr?.overstyrGebyr == true
 
-    return GebyrRolleDto(
-        søknadsid = søknadsid,
-        saksnummer = rolle.saksnummer,
+    return GebyrDetaljerDto(
+        søknad = rolle.tilSøknadsdetaljerDto(søknadsid),
         inntekt =
-            GebyrRolleDto.GebyrInntektDto(
+            GebyrDetaljerDto.GebyrInntektDto(
                 skattepliktigInntekt = skattepliktigInntekt,
                 maksBarnetillegg = maksBarnetillegg,
             ),

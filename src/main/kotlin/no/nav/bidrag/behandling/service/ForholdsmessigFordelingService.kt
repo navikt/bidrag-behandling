@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettRoll
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettSamværOgUnderholdForBarn
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBM
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBP
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
@@ -161,58 +162,10 @@ class ForholdsmessigFordelingService(
                 erHovedbehandling = true,
             )
 
+        oppdaterGebyrDetaljerRollerIBehandling(behandling, relevanteKravhavere)
+
         val søknaderSøknadsbarn = relevanteKravhavere.filter { eksisterendeSøknadsbarn.contains(it.kravhaver) }.toSet()
-        behandling.roller.forEach { rolle ->
-            val sakKravhaver =
-                relevanteKravhavere.find {
-                    rolle.rolletype == Rolletype.BIDRAGSPLIKTIG ||
-                        it.kravhaver == rolle.ident ||
-                        it.bidragsmottaker == rolle.ident
-                }
 
-            val gebyrDetaljerRolle =
-                if (sakKravhaver != null) {
-                    val gebyrFraBehandlinger =
-                        sakKravhaver.åpneBehandlinger
-                            .filter { it.id != behandling.id && it.soknadsid != behandling.soknadsid }
-                            .flatMap { it.roller.find { it.ident == rolle.ident }?.gebyrSøknader ?: emptySet() }
-                    val gebyrFraSøknader =
-                        sakKravhaver.åpneSøknader
-                            .filter { it.søknadsid != behandling.soknadsid }
-                            .mapNotNull {
-                                val rolleISøknad = it.barn.find { it.personident == rolle.ident }
-                                if (rolleISøknad != null && rolleISøknad.gebyr) {
-                                    GebyrRolleSøknad(
-                                        søknadsid = it.søknadsid,
-                                        saksnummer = it.saksnummer,
-                                        manueltOverstyrtGebyr = null,
-                                    )
-                                } else {
-                                    null
-                                }
-                            }
-                    gebyrFraSøknader + gebyrFraBehandlinger
-                } else {
-                    emptyList()
-                }
-
-            if (rolle.rolletype == Rolletype.BIDRAGSPLIKTIG && sakKravhaver != null) {
-                val søknader =
-                    sakKravhaver.åpneBehandlinger.map { it.tilFFBarnDetaljer() } +
-                        sakKravhaver.åpneSøknader.map { it.tilForholdsmessigFordelingSøknad() }
-                rolle.forholdsmessigFordeling =
-                    ForholdsmessigFordelingRolle(
-                        søknader = søknader.toMutableSet(),
-                        tilhørerSak = behandling.saksnummer,
-                        behandlerenhet = behandlerEnhet,
-                        delAvOpprinneligBehandling = true,
-                        erRevurdering = false,
-                        bidragsmottaker = null,
-                    )
-            }
-
-            rolle.leggTilGebyr(gebyrDetaljerRolle)
-        }
         behandling.søknadsbarn.forEach { barn ->
             if (barn.forholdsmessigFordeling == null) {
                 val sakKravhaverSøknadsbarn = søknaderSøknadsbarn.find { it.kravhaver == barn.ident }
@@ -254,6 +207,64 @@ class ForholdsmessigFordelingService(
         opprettSamværOgUnderholdForBarn(behandling)
         behandlingService.lagreBehandling(behandling)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+    }
+
+    private fun oppdaterGebyrDetaljerRollerIBehandling(
+        behandling: Behandling,
+        relevanteKravhavere: Set<SakKravhaver>,
+    ) {
+        behandling.roller.forEach { rolle ->
+            val sakKravhaver =
+                relevanteKravhavere.filter {
+                    rolle.rolletype == Rolletype.BIDRAGSPLIKTIG ||
+                        it.kravhaver == rolle.ident ||
+                        it.bidragsmottaker == rolle.ident
+                }
+
+            val gebyrDetaljerRolle =
+                if (sakKravhaver.isNotEmpty()) {
+                    val gebyrFraBehandlinger =
+                        sakKravhaver.flatMap {
+                            it.åpneBehandlinger
+                                .filter { it.id != behandling.id && it.soknadsid != behandling.soknadsid }
+                                .flatMap { it.roller.find { it.ident == rolle.ident }?.gebyrSøknader ?: emptySet() }
+                        }
+                    val gebyrFraSøknader =
+                        sakKravhaver.flatMap {
+                            it.åpneSøknader
+                                .filter { it.søknadsid != behandling.soknadsid }
+                                .mapNotNull {
+                                    val rolleISøknad = it.partISøknadListe.find { it.personident == rolle.ident }
+                                    if (rolleISøknad != null && rolleISøknad.gebyr) {
+                                        GebyrRolleSøknad(
+                                            søknadsid = it.søknadsid,
+                                            saksnummer = it.saksnummer,
+                                            manueltOverstyrtGebyr = null,
+                                        )
+                                    } else {
+                                        null
+                                    }
+                                }
+                        }
+                    gebyrFraSøknader + gebyrFraBehandlinger
+                } else {
+                    emptyList()
+                }
+
+            if (rolle.rolletype == Rolletype.BIDRAGSPLIKTIG && sakKravhaver.isNotEmpty()) {
+                val søknader =
+                    sakKravhaver.flatMap { it.åpneBehandlinger.map { it.tilFFBarnDetaljer() } } +
+                        sakKravhaver.flatMap { it.åpneSøknader.map { it.tilForholdsmessigFordelingSøknad() } }
+                if (rolle.forholdsmessigFordeling == null) {
+                    rolle.forholdsmessigFordeling = behandling.tilFFDetaljerBP()
+                }
+                rolle.forholdsmessigFordeling!!.søknader.addAll(søknader.toMutableSet())
+                LOGGER.info { "Legger til $søknader for bidragspliktig" }
+            }
+            LOGGER.info { "Legger til $gebyrDetaljerRolle for ${rolle.ident} - ${rolle.rolletype}" }
+
+            rolle.leggTilGebyr(gebyrDetaljerRolle)
+        }
     }
 
     private fun overførÅpneBehandlingerOgSøknaderSøknadsbarn(
@@ -1004,6 +1015,13 @@ class ForholdsmessigFordelingService(
                 }
                 it.forholdsmessigFordeling!!.søknader.addAll(alleSøknader.toMutableSet())
             }
+        }
+
+        behandling.bidragspliktig?.let {
+            if (it.forholdsmessigFordeling == null) {
+                it.forholdsmessigFordeling = behandling.tilFFDetaljerBP()
+            }
+            it.forholdsmessigFordeling!!.søknader.addAll(alleSøknader.toMutableSet())
         }
     }
 
