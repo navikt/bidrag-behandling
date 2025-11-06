@@ -161,7 +161,14 @@ fun Rolle.tilDto() =
         erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
         stønadstype = stønadstype ?: behandling.stonadstype,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
-        bidragsmottaker = forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker.ident,
+        bidragsmottaker =
+            if (rolletype ==
+                Rolletype.BARN
+            ) {
+                forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker.ident
+            } else {
+                null
+            },
     )
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
