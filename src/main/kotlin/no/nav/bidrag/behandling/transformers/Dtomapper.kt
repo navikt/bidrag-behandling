@@ -998,7 +998,7 @@ class Dtomapper(
 
         val andreBarnUtenLøpendeBidrag =
             bpsBarnUtenLøpendeBidrag().map { barn ->
-                val privatAvtale = privatAvtale.find { it.rolle?.ident == barn.ident }
+                val privatAvtale = privatAvtale.find { it.person?.ident == barn.ident }
                 PrivatAvtaleAndreBarnDtoV2(
                     PersoninfoDto(
                         null,
