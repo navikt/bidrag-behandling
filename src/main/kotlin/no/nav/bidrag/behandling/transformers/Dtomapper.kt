@@ -1312,6 +1312,7 @@ class Dtomapper(
             avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
             erSøknadsbarn = rolle != null,
+            gjelderUtland = utenlandsk,
             manuelleVedtakUtenInnkreving =
                 if (behandling.erBidrag()) {
                     hentManuelleVedtakForBehandling(behandling, personIdent!!, rolle, this)

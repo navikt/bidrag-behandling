@@ -103,6 +103,7 @@ data class PrivatAvtaleBarnDtoV2(
     val id: Long,
     val avtaleDato: LocalDate?,
     val avtaleType: PrivatAvtaleType?,
+    val gjelderUtland: Boolean = false,
     val skalIndeksreguleres: Boolean = false,
     val erSøknadsbarn: Boolean = true,
     val valideringsfeil: PrivatAvtaleValideringsfeilDto?,

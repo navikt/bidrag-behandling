@@ -115,7 +115,7 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
     } else if (erForskudd()) {
         utledBeregnTilDato(virkningstidspunkt!!)
     } else {
-        utledBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        utledBeregnTilDato(søknadsbarnRolle?.virkningstidspunkt ?: virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
     }
 }
 
