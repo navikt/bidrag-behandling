@@ -18,6 +18,7 @@ import java.time.LocalDate
 
 data class OppdaterePrivatAvtaleBegrunnelseRequest(
     val privatavtaleid: Long? = null,
+    val barnIdent: String? = null,
     val begrunnelse: String? = null,
 )
 
@@ -41,10 +42,12 @@ data class OppdaterePrivatAvtaleRequest(
 )
 
 data class OppdaterePrivatAvtaleResponsDto(
-    @Schema(description = "Privat avtale som ble oppdatert")
+    @Schema(description = "Privat avtale som ble oppdatert", deprecated = true)
     val oppdatertPrivatAvtale: PrivatAvtaleBarnDto? = null,
     val privatAvtale: PrivatAvtaleDtoV3,
+    @Schema(deprecated = true)
     val begrunnelseAndreBarn: String? = null,
+    @Schema(deprecated = true)
     val mangleBegrunnelseAndreBarn: Boolean = false,
 )
 

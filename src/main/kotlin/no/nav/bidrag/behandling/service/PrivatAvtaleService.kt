@@ -45,7 +45,7 @@ class PrivatAvtaleService(
     ) {
         log.info { "Oppdaterer privatavtale begrunnelse ${request.privatavtaleid} i behandling $behandlingsid" }
         request.begrunnelse?.let {
-            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request.privatavtaleid, it)
+            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request.privatavtaleid, request.barnIdent, it)
         }
     }
 
@@ -74,7 +74,7 @@ class PrivatAvtaleService(
         }
 
         request.begrunnelse?.let {
-            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, privatavtaleId, it)
+            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, privatavtaleId, null, it)
         }
     }
 
@@ -94,9 +94,11 @@ class PrivatAvtaleService(
     fun oppdaterPrivatAvtaleBegrunnelse(
         behandlingsid: Long,
         privatavtaleId: Long?,
+        barnIdent: String?,
         nyBegrunnelse: String,
     ) {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val rolle = behandling.roller.find { it.ident == barnIdent }
         val privatAvtale =
             if (privatavtaleId != null) {
                 behandling.privatAvtale.find { it.id == privatavtaleId }
@@ -109,7 +111,7 @@ class PrivatAvtaleService(
             behandling,
             NotatGrunnlag.NotatType.PRIVAT_AVTALE,
             nyBegrunnelse,
-            privatAvtale?.rolle ?: behandling.bidragspliktig!!,
+            rolle ?: privatAvtale?.rolle ?: behandling.bidragspliktig!!,
         )
     }
 
