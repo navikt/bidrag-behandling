@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.tilType
@@ -22,16 +23,31 @@ class GebyrService(
             .filter { it.harGebyrsøknad }
             .map { rolle ->
                 val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()
+                val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: GebyrRolle()
                 val beregnetGebyrErEndret = manueltOverstyrtGebyr.beregnetIlagtGebyr != beregning.ilagtGebyr
                 if (beregnetGebyrErEndret) {
                     rolle.manueltOverstyrtGebyr =
-                        manueltOverstyrtGebyr.copy(
-                            overstyrGebyr = false,
-                            ilagtGebyr = beregning.ilagtGebyr,
-                            beregnetIlagtGebyr = beregning.ilagtGebyr,
-                            begrunnelse = null,
-                        )
+                        rolle.hentEllerOpprettGebyr().let {
+                            it.copy(
+                                overstyrGebyr = false,
+                                ilagtGebyr = beregning.ilagtGebyr,
+                                beregnetIlagtGebyr = beregning.ilagtGebyr,
+                                begrunnelse = null,
+                                gebyrSøknader =
+                                    it.gebyrSøknader
+                                        .map {
+                                            it.copy(
+                                                manueltOverstyrtGebyr =
+                                                    RolleManueltOverstyrtGebyr(
+                                                        overstyrGebyr = false,
+                                                        ilagtGebyr = beregning.ilagtGebyr,
+                                                        beregnetIlagtGebyr = beregning.ilagtGebyr,
+                                                        begrunnelse = null,
+                                                    ),
+                                            )
+                                        }.toMutableSet(),
+                            )
+                        }
                 }
                 beregnetGebyrErEndret
             }.any { it }
@@ -44,12 +60,27 @@ class GebyrService(
             .forEach { rolle ->
                 val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
                 rolle.manueltOverstyrtGebyr =
-                    (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).copy(
-                        overstyrGebyr = false,
-                        ilagtGebyr = beregning.ilagtGebyr,
-                        beregnetIlagtGebyr = beregning.ilagtGebyr,
-                        begrunnelse = null,
-                    )
+                    rolle.hentEllerOpprettGebyr().let {
+                        it.copy(
+                            overstyrGebyr = beregning.ilagtGebyr,
+                            ilagtGebyr = beregning.ilagtGebyr,
+                            beregnetIlagtGebyr = beregning.ilagtGebyr,
+                            begrunnelse = null,
+                            gebyrSøknader =
+                                it.gebyrSøknader
+                                    .map {
+                                        it.copy(
+                                            manueltOverstyrtGebyr =
+                                                RolleManueltOverstyrtGebyr(
+                                                    overstyrGebyr = beregning.ilagtGebyr,
+                                                    ilagtGebyr = beregning.ilagtGebyr,
+                                                    beregnetIlagtGebyr = beregning.ilagtGebyr,
+                                                    begrunnelse = null,
+                                                ),
+                                        )
+                                    }.toMutableSet(),
+                        )
+                    }
             }
     }
 
@@ -62,9 +93,21 @@ class GebyrService(
             behandling.roller.find { it.id == request.rolleId }
                 ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId} i behandling ${behandling.id}")
         val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+        val søknadsid = request.søknadsid ?: behandling.soknadsid!!
         behandling.validerOppdatering(request)
         rolle.manueltOverstyrtGebyr =
-            (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
+            rolle.hentEllerOpprettGebyr().let {
+                val gebyrSøknad = it.gebyrForSøknad(søknadsid, rolle.saksnummer)
+                gebyrSøknad.manueltOverstyrtGebyr =
+                    RolleManueltOverstyrtGebyr(
+                        overstyrGebyr = request.overstyrGebyr,
+                        ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+                        beregnetIlagtGebyr = beregning.ilagtGebyr,
+                        begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
+                    )
+                it.gebyrSøknader.add(gebyrSøknad)
+//                it.gebyrSøknad = it.gebyrSøknad.removeDuplicates()
+                // TODO: Fjern meg etterpå
                 it.copy(
                     overstyrGebyr = request.overstyrGebyr,
                     ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,

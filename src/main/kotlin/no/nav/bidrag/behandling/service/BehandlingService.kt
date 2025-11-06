@@ -119,6 +119,7 @@ class BehandlingService(
                     behandling.søknadsbarn
                         .filter { it.forholdsmessigFordeling!!.søknaderUnderBehandling.any { it.søknadsid == søknadsid } }
                 forholdsmessigFordelingService!!.slettBarnEllerBehandling(barnSomSkalSlettes, behandling, søknadsid)
+                behandling.bidragspliktig?.fjernGebyr(søknadsid)
             }
         } else {
             logiskSlettBehandling(behandling)

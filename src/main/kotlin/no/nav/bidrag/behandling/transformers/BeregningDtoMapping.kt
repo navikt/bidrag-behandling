@@ -123,10 +123,16 @@ import java.time.YearMonth
 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
 
-fun BeregnGebyrResultat.tilDto(rolle: Rolle): GebyrRolleDto {
-    val erManueltOverstyrt = rolle.manueltOverstyrtGebyr?.overstyrGebyr == true
+fun BeregnGebyrResultat.tilDto(
+    rolle: Rolle,
+    søknadsid: Long,
+): GebyrRolleDto {
+    val gebyr = rolle.hentEllerOpprettGebyr().gebyrForSøknad(søknadsid, rolle.saksnummer)
+    val erManueltOverstyrt = gebyr.manueltOverstyrtGebyr?.overstyrGebyr == true
 
     return GebyrRolleDto(
+        søknadsid = søknadsid,
+        saksnummer = rolle.saksnummer,
         inntekt =
             GebyrRolleDto.GebyrInntektDto(
                 skattepliktigInntekt = skattepliktigInntekt,

@@ -169,6 +169,8 @@ data class GebyrDto(
 )
 
 data class GebyrRolleDto(
+    val søknadsid: Long?,
+    val saksnummer: String? = null,
     val inntekt: GebyrInntektDto,
     val beløpGebyrsats: BigDecimal,
     val beregnetIlagtGebyr: Boolean,

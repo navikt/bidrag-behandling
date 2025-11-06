@@ -2,7 +2,7 @@ package no.nav.bidrag.behandling.dto.v2.gebyr
 
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -15,7 +15,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, null, true)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, null, true)
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(1)
         resultat.first().manglerBegrunnelse shouldBe true
@@ -28,7 +28,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, null, null)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, null, null)
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(1)
         resultat.first().manglerBegrunnelse shouldBe true
@@ -41,7 +41,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(0)
     }
@@ -52,7 +52,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(0)
     }
@@ -63,7 +63,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(false, null, null)
+        bm.manueltOverstyrtGebyr = GebyrRolle(false, null, null)
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(0)
     }

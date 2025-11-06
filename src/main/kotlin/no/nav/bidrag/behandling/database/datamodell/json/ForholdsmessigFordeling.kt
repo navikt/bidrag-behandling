@@ -28,7 +28,6 @@ data class ForholdsmessigFordelingRolle(
     val harLøpendeBidrag: Boolean = true,
     val løperBidragFra: YearMonth? = null,
     var behandlingsid: Long? = null,
-    var søknadsidUtenInnkreving: Long? = null,
     var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
 ) {
@@ -53,5 +52,7 @@ data class ForholdsmessigFordelingSøknadBarn(
     val omgjørVedtaksid: Int? = null,
     val innkreving: Boolean = true,
     val enhet: String = "9999",
+    // TODO: Er dette nødvendig? Kan BM/Barn være i flere saker?
+    val saksnummer: String? = null,
     var status: Behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
 )

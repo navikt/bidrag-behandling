@@ -1259,10 +1259,12 @@ class Dtomapper(
         if (roller.any { it.harGebyrsøknad }) {
             GebyrDto(
                 gebyrRoller =
-                    roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->
-                        vedtakGrunnlagMapper
-                            .beregnGebyr(this, rolle)
-                            .tilDto(rolle)
+                    roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.flatMap { rolle ->
+                        rolle.gebyrSøknader.map {
+                            vedtakGrunnlagMapper
+                                .beregnGebyr(this, rolle)
+                                .tilDto(rolle, it.søknadsid)
+                        }
                     },
                 valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
             )

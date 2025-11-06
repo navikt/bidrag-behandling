@@ -7,8 +7,8 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
@@ -119,7 +119,7 @@ class GebyrServiceTest {
     fun `skal fjerne manuelt overstyrt gebyr`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(overstyrGebyr = true, ilagtGebyr = true, beregnetIlagtGebyr = false, begrunnelse = "Begrunnelse")
+        bm.manueltOverstyrtGebyr = GebyrRolle(overstyrGebyr = true, ilagtGebyr = true, beregnetIlagtGebyr = false, begrunnelse = "Begrunnelse")
         gebyrService.oppdaterManueltOverstyrtGebyr(
             behandling,
             OppdaterGebyrDto(
@@ -158,7 +158,7 @@ class GebyrServiceTest {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, null, true)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, null, true)
         gebyrService.oppdaterManueltOverstyrtGebyr(
             behandling,
             OppdaterGebyrDto(
@@ -213,7 +213,7 @@ class GebyrServiceTest {
     fun `skal oppdatere gebyr når det endres til ikke avslag`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse", true)
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
@@ -227,7 +227,7 @@ class GebyrServiceTest {
     fun `skal oppdatere gebyr når det endres til ikke avslag hvis overstyrt`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse", true)
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
@@ -241,7 +241,7 @@ class GebyrServiceTest {
     fun `skal oppdatere gebyr når det endres til ikke avslag og sette ilagtGebyr basert på beregning`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(1000000000))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", beregnetIlagtGebyr = true)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse", beregnetIlagtGebyr = true)
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
         bm.manueltOverstyrtGebyr.shouldNotBeNull()
@@ -257,7 +257,7 @@ class GebyrServiceTest {
         val bp = behandling.bidragspliktig
         bp!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse", true)
         val resultat = gebyrService.rekalkulerGebyr(behandling)
 
         resultat shouldBe false
@@ -274,7 +274,7 @@ class GebyrServiceTest {
         val bp = behandling.bidragspliktig
         bp!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse", true)
         val resultat = gebyrService.rekalkulerGebyr(behandling)
 
         resultat shouldBe true

@@ -33,18 +33,18 @@ class GebyrController(
         request: OppdaterGebyrDto,
     ): GebyrRolleDto {
         gebyrService.oppdaterManueltOverstyrtGebyr(behandlingService.hentBehandlingById(behandlingsid), request)
-        return tilRespons(behandlingsid, request.rolleId)
+        return tilRespons(behandlingsid, request)
     }
 
     private fun tilRespons(
         behandlingsId: Long,
-        rolleId: Long,
+        request: OppdaterGebyrDto,
     ): GebyrRolleDto {
         val behandling = behandlingService.hentBehandlingById(behandlingsId)
-        return behandling.roller.find { it.id == rolleId }!!.let { rolle ->
+        return behandling.roller.find { it.id == request.rolleId }!!.let { rolle ->
             vedtakGrunnlagMapper
                 .beregnGebyr(behandling, rolle)
-                .tilDto(rolle)
+                .tilDto(rolle, request.søknadsid ?: behandling.soknadsid!!)
         }
     }
 }

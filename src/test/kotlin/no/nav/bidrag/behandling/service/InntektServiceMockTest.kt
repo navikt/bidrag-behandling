@@ -8,8 +8,8 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.controller.v2.BehandlingControllerV2
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
@@ -500,7 +500,7 @@ class InntektServiceMockTest {
 
         behandling.bidragsmottaker!!.harGebyrsøknad = true
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
-            RolleManueltOverstyrtGebyr(
+            GebyrRolle(
                 overstyrGebyr = false,
                 ilagtGebyr = false,
                 beregnetIlagtGebyr = false,
@@ -545,7 +545,7 @@ class InntektServiceMockTest {
 
         behandling.bidragsmottaker!!.harGebyrsøknad = true
         behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
-            RolleManueltOverstyrtGebyr(
+            GebyrRolle(
                 overstyrGebyr = true,
                 ilagtGebyr = false,
                 beregnetIlagtGebyr = true,

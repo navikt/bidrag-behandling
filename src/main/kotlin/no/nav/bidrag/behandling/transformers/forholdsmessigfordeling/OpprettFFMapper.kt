@@ -3,11 +3,14 @@ package no.nav.bidrag.behandling.transformers.forholdsmessigfordeling
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
@@ -91,6 +94,7 @@ fun Behandling.tilFFBarnDetaljer() =
         omgjørSøknadsid = omgjøringsdetaljer?.soknadRefId,
         omgjørVedtaksid = omgjøringsdetaljer?.omgjørVedtakId,
         enhet = behandlerEnhet,
+        saksnummer = saksnummer,
     )
 
 fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
@@ -105,6 +109,7 @@ fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
         innkreving = innkreving,
         enhet = behandlerenhet ?: "9999",
         omgjørSøknadsid = referertSøknadsid,
+        saksnummer = saksnummer,
     )
 
 fun opprettRolle(
@@ -112,19 +117,34 @@ fun opprettRolle(
     rolletype: Rolletype,
     fødselsnummer: String,
     stønadstype: Stønadstype = Stønadstype.BIDRAG,
-    harGebyrSøknad: Boolean = false,
+    harGebyrSøknad: GebyrRolleSøknad? = null,
     innbetaltBeløp: BigDecimal? = null,
     ffDetaljer: ForholdsmessigFordelingRolle,
     innkrevesFraDato: YearMonth? = null,
     medInnkreving: Boolean? = null,
 ): Rolle {
     behandling.roller.find { it.ident == fødselsnummer }?.let {
+        if (harGebyrSøknad != null) {
+            val gebyr = it.hentEllerOpprettGebyr()
+            it.harGebyrsøknad = true
+            it.manueltOverstyrtGebyr =
+                gebyr.let {
+                    it.gebyrSøknader.add(harGebyrSøknad)
+                    it
+                }
+        }
+
         return it
     }
     val erBarn = rolletype == Rolletype.BARN
     val rolle =
         Rolle(
-            harGebyrsøknad = harGebyrSøknad,
+            harGebyrsøknad = harGebyrSøknad != null,
+            manueltOverstyrtGebyr =
+                GebyrRolle(
+                    overstyrGebyr = false,
+                    gebyrSøknader = listOfNotNull(harGebyrSøknad).toMutableSet(),
+                ),
             innkrevesFraDato = innkrevesFraDato?.atDay(1),
             innkrevingstype =
                 if (medInnkreving == null) {
@@ -203,7 +223,7 @@ fun Rolle.kopierRolle(
     virkningstidspunkt = virkningstidspunkt ?: hovedbehandling.globalVirkningstidspunkt,
     grunnlagFraVedtakListe = grunnlagFraVedtakListe,
     opphørsdato = opphørsdato ?: hovedbehandling.globalOpphørsdato,
-    manueltOverstyrtGebyr = manueltOverstyrtGebyr,
+    manueltOverstyrtGebyr = hentEllerOpprettGebyr(),
     harGebyrsøknad = harGebyrsøknad,
     opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
     beregnTil = beregnTil,

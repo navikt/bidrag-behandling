@@ -3,13 +3,13 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
@@ -546,7 +546,7 @@ internal fun List<GrunnlagDto>.oppdaterRolleGebyr(behandling: Behandling) =
                     grunnlag.first(),
                 ).firstOrNull()?.innholdTilObjekt<ManueltOverstyrtGebyr>()
             rolle.manueltOverstyrtGebyr =
-                RolleManueltOverstyrtGebyr(
+                GebyrRolle(
                     manueltOverstyrtGebyr != null,
                     sluttberegning.ilagtGebyr,
                     manueltOverstyrtGebyr?.begrunnelse,

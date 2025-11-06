@@ -12,8 +12,8 @@ fun Behandling.validerGebyr() =
             GebyrValideringsfeilDto(
                 gjelder = it.tilDto(),
                 manglerBegrunnelse =
-                    if (it.manueltOverstyrtGebyr?.overstyrGebyr == true) {
-                        it.manueltOverstyrtGebyr?.begrunnelse.isNullOrEmpty()
+                    if (it.hentEllerOpprettGebyr().overstyrGebyr) {
+                        it.hentEllerOpprettGebyr().begrunnelse.isNullOrEmpty()
                     } else {
                         false
                     },

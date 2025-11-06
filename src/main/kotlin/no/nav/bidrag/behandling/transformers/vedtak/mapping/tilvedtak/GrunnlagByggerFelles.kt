@@ -133,7 +133,7 @@ private fun opprettGrunnlagNotat(
 fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
     roller
         .filter { it.harGebyrsøknad }
-        .filter { it.manueltOverstyrtGebyr != null && it.manueltOverstyrtGebyr?.overstyrGebyr == true }
+        .filter { it.hentEllerOpprettGebyr().overstyrGebyr }
         .map {
             GrunnlagDto(
                 referanse = "${Grunnlagstype.MANUELT_OVERSTYRT_GEBYR}_${it.tilGrunnlagsreferanse()}",
