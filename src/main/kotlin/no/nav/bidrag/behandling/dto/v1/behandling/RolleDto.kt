@@ -15,4 +15,5 @@ data class RolleDto(
     val erRevurdering: Boolean?,
     val stønadstype: Stønadstype?,
     val saksnummer: String,
+    val bidragsmottaker: String? = null,
 )
