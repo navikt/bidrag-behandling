@@ -9,6 +9,7 @@ import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
@@ -274,15 +275,24 @@ class GebyrServiceTest {
         val bp = behandling.bidragspliktig
         bp!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse", true)
+        bm.oppdaterGebyr(
+            behandling.soknadsid!!,
+            RolleManueltOverstyrtGebyr(
+                overstyrGebyr = true,
+                ilagtGebyr = false,
+                beregnetIlagtGebyr = true,
+                begrunnelse = "Begrunnelse",
+            ),
+        )
         val resultat = gebyrService.rekalkulerGebyr(behandling)
 
         resultat shouldBe true
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        val gebyr = bm.gebyrForSøknad(behandling.soknadsid!!)
+        gebyr.manueltOverstyrtGebyr.shouldNotBeNull()
+        gebyr.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
+        gebyr.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        gebyr.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
+        gebyr.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
     }
 }
 

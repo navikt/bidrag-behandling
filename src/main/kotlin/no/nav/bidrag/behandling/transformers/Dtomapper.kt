@@ -1261,6 +1261,7 @@ class Dtomapper(
     fun Behandling.mapGebyrV2() =
         if (roller.any { it.harGebyrsøknad }) {
             GebyrDtoV2(
+                harFlereSøknader = roller.flatMap { it.gebyrSøknader.map { it.søknadsid } }.distinct().size > 1,
                 gebyrRoller =
                     roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->
                         GebyrRolleDto(
@@ -1277,6 +1278,7 @@ class Dtomapper(
             )
         } else {
             GebyrDtoV2(
+                harFlereSøknader = false,
                 gebyrRoller = emptyList(),
             )
         }

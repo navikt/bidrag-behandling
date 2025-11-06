@@ -163,6 +163,22 @@ open class Rolle(
         return manueltOverstyrtGebyr!!
     }
 
+    fun oppdaterGebyr(
+        søknadsid: Long,
+        manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr,
+    ) {
+        if (!manueltOverstyrtGebyr.overstyrGebyr) {
+            manueltOverstyrtGebyr.begrunnelse = null
+        }
+        val gebyr = hentEllerOpprettGebyr()
+        val gebyrSøknad = gebyr.gebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
+        gebyrSøknad.manueltOverstyrtGebyr = manueltOverstyrtGebyr
+        gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
+        gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
+        gebyr.begrunnelse = manueltOverstyrtGebyr.begrunnelse
+        gebyr.ilagtGebyr = manueltOverstyrtGebyr.ilagtGebyr
+    }
+
     fun fjernGebyr(søknadsid: Long) {
         val gebyr = hentEllerOpprettGebyr()
         gebyr.gebyrSøknader =
@@ -173,6 +189,8 @@ open class Rolle(
             harGebyrsøknad = false
         }
     }
+
+    fun gebyrForSøknad(søknadsid: Long): GebyrRolleSøknad = hentEllerOpprettGebyr().gebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
 
     fun hentEllerOpprettGebyr() =
         manueltOverstyrtGebyr?.let {
@@ -220,10 +238,10 @@ data class GrunnlagFraVedtak(
 )
 
 data class GebyrRolle(
-    val overstyrGebyr: Boolean = true,
-    val ilagtGebyr: Boolean? = false,
-    val begrunnelse: String? = null,
-    val beregnetIlagtGebyr: Boolean? = false,
+    var overstyrGebyr: Boolean = true,
+    var ilagtGebyr: Boolean? = false,
+    var begrunnelse: String? = null,
+    var beregnetIlagtGebyr: Boolean? = false,
     var gebyrSøknader: MutableSet<GebyrRolleSøknad> = mutableSetOf(),
 ) {
     fun gebyrForSøknad(
@@ -253,7 +271,7 @@ data class GebyrRolleSøknad(
 data class RolleManueltOverstyrtGebyr(
     val overstyrGebyr: Boolean = true,
     val ilagtGebyr: Boolean? = false,
-    val begrunnelse: String? = null,
+    var begrunnelse: String? = null,
     val beregnetIlagtGebyr: Boolean? = false,
 )
 

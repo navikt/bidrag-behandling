@@ -166,6 +166,7 @@ data class BehandlingDtoV2(
 }
 
 data class GebyrDtoV2(
+    val harFlereSøknader: Boolean,
     val gebyrRoller: List<GebyrRolleDto>,
 )
 

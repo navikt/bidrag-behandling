@@ -95,26 +95,36 @@ class GebyrService(
         val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
         val søknadsid = request.søknadsid ?: behandling.soknadsid!!
         behandling.validerOppdatering(request)
-        rolle.manueltOverstyrtGebyr =
-            rolle.hentEllerOpprettGebyr().let {
-                val gebyrSøknad = it.gebyrForSøknad(søknadsid, rolle.saksnummer)
-                gebyrSøknad.manueltOverstyrtGebyr =
-                    RolleManueltOverstyrtGebyr(
-                        overstyrGebyr = request.overstyrGebyr,
-                        ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
-                        beregnetIlagtGebyr = beregning.ilagtGebyr,
-                        begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
-                    )
-                it.gebyrSøknader.add(gebyrSøknad)
-//                it.gebyrSøknad = it.gebyrSøknad.removeDuplicates()
-                // TODO: Fjern meg etterpå
-                it.copy(
-                    overstyrGebyr = request.overstyrGebyr,
-                    ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
-                    beregnetIlagtGebyr = beregning.ilagtGebyr,
-                    begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
-                )
-            }
+        rolle.oppdaterGebyr(
+            søknadsid,
+            RolleManueltOverstyrtGebyr(
+                overstyrGebyr = request.overstyrGebyr,
+                ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+                beregnetIlagtGebyr = beregning.ilagtGebyr,
+                begrunnelse = request.begrunnelse,
+            ),
+        )
+//        rolle.manueltOverstyrtGebyr =
+//            rolle.hentEllerOpprettGebyr().let {
+//                val gebyrSøknad = it.gebyrForSøknad(søknadsid, rolle.sakForSøknad(søknadsid))
+//                gebyrSøknad.manueltOverstyrtGebyr =
+//
+//                    RolleManueltOverstyrtGebyr(
+//                        overstyrGebyr = request.overstyrGebyr,
+//                        ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+//                        beregnetIlagtGebyr = beregning.ilagtGebyr,
+//                        begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
+//                    )
+//                it.gebyrSøknader.add(gebyrSøknad)
+// //                it.gebyrSøknad = it.gebyrSøknad.removeDuplicates()
+//                // TODO: Fjern meg etterpå
+//                it.copy(
+//                    overstyrGebyr = request.overstyrGebyr,
+//                    ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+//                    beregnetIlagtGebyr = beregning.ilagtGebyr,
+//                    begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
+//                )
+//            }
     }
 
     private fun Behandling.validerOppdatering(request: OppdaterGebyrDto) {
