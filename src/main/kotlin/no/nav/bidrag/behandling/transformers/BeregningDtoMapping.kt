@@ -129,7 +129,7 @@ fun BeregnGebyrResultat.tilDto(
     søknadsid: Long,
 ): GebyrDetaljerDto {
     val saksnummer = rolle.sakForSøknad(søknadsid)
-    val gebyr = rolle.hentEllerOpprettGebyr().gebyrForSøknad(søknadsid, saksnummer)
+    val gebyr = rolle.hentEllerOpprettGebyr().finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
     val erManueltOverstyrt = gebyr.manueltOverstyrtGebyr?.overstyrGebyr == true
 
     return GebyrDetaljerDto(

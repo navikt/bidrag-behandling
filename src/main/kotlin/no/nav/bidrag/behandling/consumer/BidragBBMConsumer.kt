@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
-import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningBBMConsumer
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
@@ -9,9 +9,12 @@ import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadR
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadsBarnRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderResponse
+import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknadRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknadResponse
 import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterReferanseGebyrRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadResponse
 import org.springframework.beans.factory.annotation.Qualifier
@@ -124,5 +127,16 @@ class BidragBBMConsumer(
         postForNonNullEntity(
             bidragBBMUri.pathSegment("apnesoknader").build().toUri(),
             HentBPsÅpneSøknaderRequest(bidragspliktig),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun hentSøknad(søknadsid: Long): HentSøknadResponse =
+        postForNonNullEntity(
+            bidragBBMUri.pathSegment("hentsoknad").build().toUri(),
+            HentSøknadRequest(søknadsid),
         )
 }

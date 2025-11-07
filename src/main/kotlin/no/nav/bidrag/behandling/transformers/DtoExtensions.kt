@@ -88,7 +88,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
                                 saksnummer = behandling.saksnummer,
                                 søknadsid = behandling.soknadsid!!,
                                 behandlingid = behandling.id,
-                                null,
+                                referanse = referanseGebyr,
                             ),
                         )
                     } else {

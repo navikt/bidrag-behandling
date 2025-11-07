@@ -205,7 +205,9 @@ class ForholdsmessigFordelingService(
 
         giSakTilgangTilEnhet(behandling, behandlerEnhet)
         opprettSamværOgUnderholdForBarn(behandling)
+        behandling.syncGebyrSøknadReferanse()
         behandlingService.lagreBehandling(behandling)
+
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
     }
 
@@ -239,6 +241,7 @@ class ForholdsmessigFordelingService(
                                         GebyrRolleSøknad(
                                             søknadsid = it.søknadsid,
                                             saksnummer = it.saksnummer,
+                                            referanse = rolleISøknad.referanseGebyr,
                                             manueltOverstyrtGebyr = null,
                                         )
                                     } else {
@@ -467,6 +470,7 @@ class ForholdsmessigFordelingService(
                                 GebyrRolleSøknad(
                                     saksnummer = saksnummer,
                                     søknadsid = søknadsid,
+                                    referanse = nyRolle.referanseGebyr,
                                 ),
                             )
                             eksisterendeRolle.manueltOverstyrtGebyr = gebyr
@@ -797,6 +801,20 @@ class ForholdsmessigFordelingService(
                 compareByDescending<ÅpenSøknadDto> { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
                     .thenBy { it.søknadFomDato },
             )
+
+    private fun Behandling.syncGebyrSøknadReferanse() {
+        roller.forEach { rolle ->
+            rolle.hentEllerOpprettGebyr().gebyrSøknader.forEach { gebyrSøknad ->
+                if (gebyrSøknad.referanse.isNullOrEmpty()) {
+                    val søknad = bbmConsumer.hentSøknad(gebyrSøknad.søknadsid)
+                    gebyrSøknad.referanse =
+                        søknad.søknad.partISøknadListe
+                            .find { rolle.ident == it.personident }
+                            ?.referanseGebyr
+                }
+            }
+        }
+    }
 
     @Transactional
     fun overførÅpneBehandlingTilHovedbehandling(

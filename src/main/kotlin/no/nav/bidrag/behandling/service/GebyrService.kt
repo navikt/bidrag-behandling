@@ -104,27 +104,6 @@ class GebyrService(
                 begrunnelse = request.begrunnelse,
             ),
         )
-//        rolle.manueltOverstyrtGebyr =
-//            rolle.hentEllerOpprettGebyr().let {
-//                val gebyrSøknad = it.gebyrForSøknad(søknadsid, rolle.sakForSøknad(søknadsid))
-//                gebyrSøknad.manueltOverstyrtGebyr =
-//
-//                    RolleManueltOverstyrtGebyr(
-//                        overstyrGebyr = request.overstyrGebyr,
-//                        ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
-//                        beregnetIlagtGebyr = beregning.ilagtGebyr,
-//                        begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
-//                    )
-//                it.gebyrSøknader.add(gebyrSøknad)
-// //                it.gebyrSøknad = it.gebyrSøknad.removeDuplicates()
-//                // TODO: Fjern meg etterpå
-//                it.copy(
-//                    overstyrGebyr = request.overstyrGebyr,
-//                    ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
-//                    beregnetIlagtGebyr = beregning.ilagtGebyr,
-//                    begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
-//                )
-//            }
     }
 
     private fun Behandling.validerOppdatering(request: OppdaterGebyrDto) {
@@ -135,6 +114,13 @@ class GebyrService(
         val rolle =
             roller.find { it.id == request.rolleId }
                 ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId} i behandling $id")
+
+        if (request.søknadsid != null) {
+            feilListe.validerSann(
+                rolle.hentEllerOpprettGebyr().finnGebyrForSøknad(request.søknadsid) != null,
+                "Fant ikke gebyr for søknad ${request.søknadsid} for rolle ${rolle.id} i behandling $id",
+            )
+        }
 
         feilListe.validerSann(
             rolle.harGebyrsøknad,

@@ -15,7 +15,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
@@ -171,7 +170,7 @@ open class Rolle(
             manueltOverstyrtGebyr.begrunnelse = null
         }
         val gebyr = hentEllerOpprettGebyr()
-        val gebyrSøknad = gebyr.gebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
+        val gebyrSøknad = gebyr.finnEllerOpprettGebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
         gebyrSøknad.manueltOverstyrtGebyr = manueltOverstyrtGebyr
         gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
         gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
@@ -190,7 +189,8 @@ open class Rolle(
         }
     }
 
-    fun gebyrForSøknad(søknadsid: Long): GebyrRolleSøknad = hentEllerOpprettGebyr().gebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
+    fun gebyrForSøknad(søknadsid: Long): GebyrRolleSøknad =
+        hentEllerOpprettGebyr().finnEllerOpprettGebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
 
     fun hentEllerOpprettGebyr() =
         manueltOverstyrtGebyr?.let {
@@ -244,17 +244,20 @@ data class GebyrRolle(
     var beregnetIlagtGebyr: Boolean? = false,
     var gebyrSøknader: MutableSet<GebyrRolleSøknad> = mutableSetOf(),
 ) {
-    fun gebyrForSøknad(
+    fun finnGebyrForSøknad(søknadsid: Long): GebyrRolleSøknad? = gebyrSøknader.find { it.søknadsid == søknadsid }
+
+    fun finnEllerOpprettGebyrForSøknad(
         søknadsid: Long,
         saksnummer: String,
     ): GebyrRolleSøknad =
-        gebyrSøknader.find { it.søknadsid == søknadsid }
-            ?: GebyrRolleSøknad(saksnummer = saksnummer, søknadsid = søknadsid, null, RolleManueltOverstyrtGebyr())
+        finnGebyrForSøknad(søknadsid)
+            ?: GebyrRolleSøknad(saksnummer = saksnummer, søknadsid = søknadsid, null, null, RolleManueltOverstyrtGebyr())
 }
 
 data class GebyrRolleSøknad(
     val saksnummer: String,
     val søknadsid: Long,
+    var referanse: String? = null,
     val behandlingid: Long? = null,
     var manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,
 ) {
