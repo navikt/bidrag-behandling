@@ -1799,7 +1799,7 @@ fun opprettLøpendeBidragGrunnlag(
     barnId: Long,
 ) = LøpendeBidrag(
     gjelderBarn = gjelderBarn.tilRolle(id = barnId).tilGrunnlagPerson().referanse,
-    stønadstype = stønadstype,
+    type = stønadstype,
     løpendeBeløp = BigDecimal(5123),
     faktiskBeløp = BigDecimal(6555),
     samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
