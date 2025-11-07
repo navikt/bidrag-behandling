@@ -25,6 +25,7 @@ class GebyrService(
                 val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
                 val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: GebyrRolle()
                 val beregnetGebyrErEndret = manueltOverstyrtGebyr.beregnetIlagtGebyr != beregning.ilagtGebyr
+                // TODO: FF - Rekalkuler gebyr slik at det blir manuelt overstyrt slik at BP bare får gebyr for ett av søknadene
                 if (beregnetGebyrErEndret) {
                     rolle.manueltOverstyrtGebyr =
                         rolle.hentEllerOpprettGebyr().let {

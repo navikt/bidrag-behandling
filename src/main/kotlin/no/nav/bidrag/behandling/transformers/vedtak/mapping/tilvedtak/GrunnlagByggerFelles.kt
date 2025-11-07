@@ -130,23 +130,33 @@ private fun opprettGrunnlagNotat(
         ),
 )
 
+fun Rolle.byggGrunnlagManueltOverstyrtGebyrRolle(søknadsid: Long): GrunnlagDto? {
+    val gebyr = gebyrForSøknad(søknadsid)
+    if (gebyr.manueltOverstyrtGebyr == null) {
+        return null
+    }
+    return GrunnlagDto(
+        referanse = "${Grunnlagstype.MANUELT_OVERSTYRT_GEBYR}_${tilGrunnlagsreferanse()}_${gebyr.referanse}",
+        type = Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
+        gjelderReferanse = tilGrunnlagsreferanse(),
+        innhold =
+            POJONode(
+                ManueltOverstyrtGebyr(
+                    begrunnelse = gebyr.manueltOverstyrtGebyr!!.begrunnelse!!,
+                    ilagtGebyr = gebyr.manueltOverstyrtGebyr!!.ilagtGebyr!!,
+                ),
+            ),
+    )
+}
+
 fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
     roller
         .filter { it.harGebyrsøknad }
         .filter { it.hentEllerOpprettGebyr().overstyrGebyr }
-        .map {
-            GrunnlagDto(
-                referanse = "${Grunnlagstype.MANUELT_OVERSTYRT_GEBYR}_${it.tilGrunnlagsreferanse()}",
-                type = Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
-                gjelderReferanse = it.tilGrunnlagsreferanse(),
-                innhold =
-                    POJONode(
-                        ManueltOverstyrtGebyr(
-                            begrunnelse = it.manueltOverstyrtGebyr!!.begrunnelse!!,
-                            ilagtGebyr = it.manueltOverstyrtGebyr!!.ilagtGebyr!!,
-                        ),
-                    ),
-            )
+        .flatMap { rolle ->
+            rolle.gebyrSøknader.mapNotNull {
+                rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid)
+            }
         }.toSet()
 
 fun Behandling.byggGrunnlagSøknad() =

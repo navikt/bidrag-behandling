@@ -700,46 +700,24 @@ class BehandlingTilVedtakMapping(
 
     private fun Behandling.mapEngangsbeløpGebyr(grunnlagsliste: List<GrunnlagDto>): GebyrResulat {
         val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
-        val grunnlagslisteGebyr = grunnlagsliste + byggGrunnlagForGebyr()
         val barnMedGebyr = søknadsbarn.filter { it.harGebyrsøknad }
         val bmMedGebyr = alleBidragsmottakere.filter { it.harGebyrsøknad }
         val gebyrMottakere =
-            (bmMedGebyr + barnMedGebyr).map {
-                val beregning = mapper.beregnGebyr(this, it, grunnlagslisteGebyr)
-                gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
-                val ilagtGebyr = beregning.ilagtGebyr
-                val skyldner = Personident(it.ident!!)
-                OpprettEngangsbeløpRequestDto(
-                    type = Engangsbeløptype.GEBYR_MOTTAKER,
-                    beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
-                    betaltBeløp = null,
-                    resultatkode = beregning.resultatkode.name,
-                    referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
-                    eksternReferanse = null,
-                    beslutning = Beslutningstype.ENDRING,
-                    grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
-                    innkreving = Innkrevingstype.MED_INNKREVING,
-                    skyldner = skyldner,
-                    kravhaver = personIdentNav,
-                    mottaker = personIdentNav,
-                    valutakode = if (ilagtGebyr) "NOK" else null,
-                    sak = Saksnummer(saksnummer),
-                )
-            }
-        val gebyrBp =
-            listOfNotNull(
-                bidragspliktig!!.harGebyrsøknad.ifTrue {
-                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyr)
+            (bmMedGebyr + barnMedGebyr).flatMap { rolle ->
+                rolle.gebyrSøknader.map {
+                    val grunnlagslisteGebyrRolle = grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
+                    val beregning = mapper.beregnGebyr(this, rolle, grunnlagslisteGebyrRolle)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     val ilagtGebyr = beregning.ilagtGebyr
-                    val skyldner = Personident(bidragspliktig!!.ident!!)
+                    val skyldner = Personident(rolle.ident!!)
                     OpprettEngangsbeløpRequestDto(
-                        type = Engangsbeløptype.GEBYR_SKYLDNER,
+                        type = Engangsbeløptype.GEBYR_MOTTAKER,
                         beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
                         betaltBeløp = null,
                         resultatkode = beregning.resultatkode.name,
+                        referanse = it.referanse!!,
+                        // ?: hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
                         eksternReferanse = null,
-                        referanse = hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_SKYLDNER, skyldner),
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
                         innkreving = Innkrevingstype.MED_INNKREVING,
@@ -749,8 +727,39 @@ class BehandlingTilVedtakMapping(
                         valutakode = if (ilagtGebyr) "NOK" else null,
                         sak = Saksnummer(saksnummer),
                     )
-                },
-            )
+                }
+            }
+        val gebyrBp =
+            if (bidragspliktig!!.harGebyrsøknad) {
+                val rolle = bidragspliktig!!
+                rolle.gebyrSøknader.map {
+                    val grunnlagslisteGebyrRolle =
+                        grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
+                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyrRolle)
+                    gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
+                    val ilagtGebyr = beregning.ilagtGebyr
+                    val skyldner = Personident(bidragspliktig!!.ident!!)
+                    OpprettEngangsbeløpRequestDto(
+                        type = Engangsbeløptype.GEBYR_SKYLDNER,
+                        beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
+                        betaltBeløp = null,
+                        resultatkode = beregning.resultatkode.name,
+                        eksternReferanse = null,
+                        referanse = it.referanse!!,
+                        // hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_SKYLDNER, skyldner),
+                        beslutning = Beslutningstype.ENDRING,
+                        grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
+                        innkreving = Innkrevingstype.MED_INNKREVING,
+                        skyldner = skyldner,
+                        kravhaver = personIdentNav,
+                        mottaker = personIdentNav,
+                        valutakode = if (ilagtGebyr) "NOK" else null,
+                        sak = Saksnummer(saksnummer),
+                    )
+                }
+            } else {
+                emptyList()
+            }
         return GebyrResulat(gebyrBp + gebyrMottakere, gebyrGrunnlagsliste)
     }
 
