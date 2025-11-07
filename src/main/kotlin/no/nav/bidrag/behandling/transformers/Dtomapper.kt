@@ -319,29 +319,31 @@ class Dtomapper(
     ): BeregnetPrivatAvtaleDto {
         val privatAvtaleBeregning = vedtakGrunnlagMapper.tilBeregnetPrivatAvtale(this, gjelderBarn)
 
-        val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }!!.referanse
+        val gjelderBarnReferanse = privatAvtaleBeregning.hentAllePersoner().find { it.personIdent == gjelderBarn.ident }?.referanse
         return BeregnetPrivatAvtaleDto(
             gjelderBarn = gjelderBarn.tilPersoninfoDto(),
-            privatAvtaleBeregning
-                .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
-                .filter {
-                    !filtrerFraVirkningstidspunkt || it.periode.til == null ||
-                        it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
-                }.map {
-                    BeregnetPrivatAvtalePeriodeDto(
-                        periode =
-                            if (filtrerFraVirkningstidspunkt) {
-                                Datoperiode(
-                                    maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
-                                    it.periode.til,
-                                )
-                            } else {
-                                Datoperiode(it.periode.fom, it.periode.til)
-                            },
-                        beløp = it.beløp,
-                        indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
-                    )
-                },
+            gjelderBarnReferanse?.let {
+                privatAvtaleBeregning
+                    .finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse)
+                    .filter {
+                        !filtrerFraVirkningstidspunkt || it.periode.til == null ||
+                            it.periode.fom.isAfter(gjelderBarn.virkningstidspunkt!!.toYearMonth())
+                    }.map {
+                        BeregnetPrivatAvtalePeriodeDto(
+                            periode =
+                                if (filtrerFraVirkningstidspunkt) {
+                                    Datoperiode(
+                                        maxOf(it.periode.fom.atDay(1), gjelderBarn.virkningstidspunkt!!).toYearMonth(),
+                                        it.periode.til,
+                                    )
+                                } else {
+                                    Datoperiode(it.periode.fom, it.periode.til)
+                                },
+                            beløp = it.beløp,
+                            indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
+                        )
+                    }
+            } ?: emptyList(),
         )
     }
 
