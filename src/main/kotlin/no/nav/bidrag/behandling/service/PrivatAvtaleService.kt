@@ -6,19 +6,16 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import kotlin.text.compareTo
 
 private val log = KotlinLogging.logger {}
 
@@ -157,7 +154,7 @@ class PrivatAvtaleService(
                     beløp = request.beløp,
                     fom = request.periode.fom,
                     tom = request.periode.tom,
-                    valutakode = request.valuta,
+                    valutakode = request.valutakode,
                     samværsklasse = request.samværsklasse,
                 )
             privatAvtale.perioder.add(nyPeriode)
@@ -175,7 +172,7 @@ class PrivatAvtaleService(
             eksisterendePeriode.beløp = request.beløp
             eksisterendePeriode.fom = request.periode.fom
             eksisterendePeriode.tom = request.periode.tom
-            eksisterendePeriode.valutakode = request.valuta
+            eksisterendePeriode.valutakode = request.valutakode
             eksisterendePeriode.samværsklasse = request.samværsklasse
         }
     }
