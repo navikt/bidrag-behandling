@@ -645,6 +645,7 @@ class BehandlingService(
                     val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
                     val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
                     gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
+                    gebyrDetaljer.gebyrSøknader.add(gebyr)
                     eksisterendeRolle.manueltOverstyrtGebyr = gebyrDetaljer
                 }
             }
