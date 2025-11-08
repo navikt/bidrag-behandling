@@ -562,7 +562,7 @@ class BehandlingService(
                 )
             }
 
-        behandling.oppdaterEksisterendeRoller(request.søknadsid!!, oppdaterRollerNyesteIdent)
+        behandling.oppdaterEksisterendeRoller(request.søknadsid!!, request.saksnummer ?: behandling.saksnummer, oppdaterRollerNyesteIdent)
 
         val rollerSomLeggesTil =
             oppdaterRollerNyesteIdent
@@ -632,6 +632,7 @@ class BehandlingService(
 
     private fun Behandling.oppdaterEksisterendeRoller(
         søknadsid: Long,
+        saksnummer: String,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ) {
         oppdaterRollerListe
@@ -641,8 +642,10 @@ class BehandlingService(
                 roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
                     eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
-                    val gebyr = eksisterendeRolle.gebyrForSøknad(søknadsid)
+                    val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
+                    val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
                     gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
+                    eksisterendeRolle.manueltOverstyrtGebyr = gebyrDetaljer
                 }
             }
     }
