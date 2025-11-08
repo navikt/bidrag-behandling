@@ -416,7 +416,7 @@ class DtoMapperMockTest {
                 id = 1,
             ),
         )
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
@@ -483,8 +483,8 @@ class DtoMapperMockTest {
             ),
         )
 
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(false, false, "Begrunnelse")
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = GebyrRolle(true, true, null)
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(false, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, null)
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()

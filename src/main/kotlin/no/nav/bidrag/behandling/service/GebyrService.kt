@@ -23,11 +23,11 @@ class GebyrService(
             .filter { it.harGebyrsøknad }
             .map { rolle ->
                 val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: GebyrRolle()
+                val manueltOverstyrtGebyr = rolle.gebyr ?: GebyrRolle()
                 val beregnetGebyrErEndret = manueltOverstyrtGebyr.beregnetIlagtGebyr != beregning.ilagtGebyr
                 // TODO: FF - Rekalkuler gebyr slik at det blir manuelt overstyrt slik at BP bare får gebyr for ett av søknadene
                 if (beregnetGebyrErEndret) {
-                    rolle.manueltOverstyrtGebyr =
+                    rolle.gebyr =
                         rolle.hentEllerOpprettGebyr().let {
                             it.copy(
                                 overstyrGebyr = false,
@@ -60,7 +60,7 @@ class GebyrService(
             .filter { it.harGebyrsøknad }
             .forEach { rolle ->
                 val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                rolle.manueltOverstyrtGebyr =
+                rolle.gebyr =
                     rolle.hentEllerOpprettGebyr().let {
                         it.copy(
                             overstyrGebyr = beregning.ilagtGebyr,

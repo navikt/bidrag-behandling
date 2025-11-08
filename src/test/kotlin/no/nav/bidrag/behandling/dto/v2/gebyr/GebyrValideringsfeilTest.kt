@@ -15,7 +15,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = GebyrRolle(true, false, null, true)
+        bm.gebyr = GebyrRolle(true, false, null, true)
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(1)
         resultat.first().manglerBegrunnelse shouldBe true
@@ -28,7 +28,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = GebyrRolle(true, null, null)
+        bm.gebyr = GebyrRolle(true, null, null)
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(1)
         resultat.first().manglerBegrunnelse shouldBe true
@@ -41,7 +41,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
+        bm.gebyr = GebyrRolle(true, true, "Begrunnelse")
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(0)
     }
@@ -52,7 +52,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
+        bm.gebyr = GebyrRolle(true, true, "Begrunnelse")
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(0)
     }
@@ -63,7 +63,7 @@ class GebyrValideringsfeilTest {
         behandling.bidragspliktig!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
         bm.harGebyrsøknad = true
-        bm.manueltOverstyrtGebyr = GebyrRolle(false, null, null)
+        bm.gebyr = GebyrRolle(false, null, null)
         val resultat = behandling.validerGebyr()
         resultat.shouldHaveSize(0)
     }

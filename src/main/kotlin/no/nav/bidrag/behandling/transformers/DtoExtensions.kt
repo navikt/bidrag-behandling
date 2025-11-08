@@ -79,7 +79,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
             },
         innbetaltBeløp = innbetaltBeløp,
         harGebyrsøknad = harGebyrsøknad,
-        manueltOverstyrtGebyr =
+        gebyr =
             GebyrRolle(
                 gebyrSøknader =
                     if (harGebyrsøknad) {

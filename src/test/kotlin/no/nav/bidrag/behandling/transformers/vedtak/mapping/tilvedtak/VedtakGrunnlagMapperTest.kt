@@ -189,7 +189,7 @@ class VedtakGrunnlagMapperTest {
                 ),
             )
 
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "test")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, true, "test")
         val resultat = vedtakGrunnlagMapper.beregnGebyr(behandling, behandling.bidragsmottaker!!)
         assertSoftly(resultat) {
             ilagtGebyr shouldBe false

@@ -473,7 +473,7 @@ class ForholdsmessigFordelingService(
                                     referanse = nyRolle.referanseGebyr,
                                 ),
                             )
-                            eksisterendeRolle.manueltOverstyrtGebyr = gebyr
+                            eksisterendeRolle.gebyr = gebyr
                             eksisterendeRolle.harGebyrsøknad = true
                         }
                         eksisterendeRolle
@@ -841,7 +841,7 @@ class ForholdsmessigFordelingService(
                     behandling.roller.add(
                         rolle.kopierRolle(behandling, null, åpneBehandlinger = behandlingerRolle),
                     )
-                } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.manueltOverstyrtGebyr != null) {
+                } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.gebyr != null) {
                     eksisterendeRolle.leggTilGebyr(rolle)
                 }
             }
@@ -861,7 +861,7 @@ class ForholdsmessigFordelingService(
                             behandlingerRolle,
                         ),
                     )
-                } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.manueltOverstyrtGebyr != null) {
+                } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.gebyr != null) {
                     eksisterendeRolle.leggTilGebyr(rolle)
                 }
             }

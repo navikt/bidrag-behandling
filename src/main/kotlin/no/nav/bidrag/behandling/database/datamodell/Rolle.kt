@@ -63,10 +63,10 @@ open class Rolle(
     open val navn: String? = null,
     open val deleted: Boolean = false,
     open var harGebyrsøknad: Boolean = false,
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "jsonb", name = "manuelt_overstyrt_gebyr")
     @ColumnTransformer(write = "?::jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    open var manueltOverstyrtGebyr: GebyrRolle? = null,
+    open var gebyr: GebyrRolle? = null,
     open var innbetaltBeløp: BigDecimal? = null,
     @Column(name = "forrige_sivilstandshistorikk", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
@@ -134,17 +134,17 @@ open class Rolle(
     val saksnummer get() = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer
     val gebyrSøknader get() =
         if (harGebyrsøknad) {
-            manueltOverstyrtGebyr?.gebyrSøknader
+            gebyr?.gebyrSøknader
                 ?: setOf(
                     GebyrRolleSøknad(
                         saksnummer = behandling.saksnummer,
                         søknadsid = behandling.soknadsid!!,
                         manueltOverstyrtGebyr =
                             RolleManueltOverstyrtGebyr(
-                                overstyrGebyr = manueltOverstyrtGebyr?.overstyrGebyr == true,
-                                ilagtGebyr = manueltOverstyrtGebyr?.ilagtGebyr,
-                                begrunnelse = manueltOverstyrtGebyr?.begrunnelse,
-                                beregnetIlagtGebyr = manueltOverstyrtGebyr?.beregnetIlagtGebyr,
+                                overstyrGebyr = gebyr?.overstyrGebyr == true,
+                                ilagtGebyr = gebyr?.ilagtGebyr,
+                                begrunnelse = gebyr?.begrunnelse,
+                                beregnetIlagtGebyr = gebyr?.beregnetIlagtGebyr,
                             ),
                     ),
                 )
@@ -153,13 +153,13 @@ open class Rolle(
         }.toMutableSet()
 
     fun opppdaterGebyrTilNyVersjon(): GebyrRolle {
-        manueltOverstyrtGebyr = manueltOverstyrtGebyr?.let {
+        gebyr = gebyr?.let {
             if (it.gebyrSøknader.isEmpty()) {
                 it.gebyrSøknader = gebyrSøknader
             }
             it
         } ?: GebyrRolle(gebyrSøknader = gebyrSøknader)
-        return manueltOverstyrtGebyr!!
+        return gebyr!!
     }
 
     fun oppdaterGebyr(
@@ -193,7 +193,7 @@ open class Rolle(
         hentEllerOpprettGebyr().finnEllerOpprettGebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
 
     fun hentEllerOpprettGebyr() =
-        manueltOverstyrtGebyr?.let {
+        gebyr?.let {
             opppdaterGebyrTilNyVersjon()
         } ?: GebyrRolle()
 
@@ -244,6 +244,11 @@ data class GebyrRolle(
     var beregnetIlagtGebyr: Boolean? = false,
     var gebyrSøknader: MutableSet<GebyrRolleSøknad> = mutableSetOf(),
 ) {
+    fun leggTilGebyr(gebyrSøknad: GebyrRolleSøknad) {
+        gebyrSøknader.removeIf { it.søknadsid == gebyrSøknad.søknadsid }
+        gebyrSøknader.add(gebyrSøknad)
+    }
+
     fun finnGebyrForSøknad(søknadsid: Long): GebyrRolleSøknad? = gebyrSøknader.find { it.søknadsid == søknadsid }
 
     fun finnEllerOpprettGebyrForSøknad(
@@ -251,7 +256,13 @@ data class GebyrRolle(
         saksnummer: String,
     ): GebyrRolleSøknad =
         finnGebyrForSøknad(søknadsid)
-            ?: GebyrRolleSøknad(saksnummer = saksnummer, søknadsid = søknadsid, null, null, RolleManueltOverstyrtGebyr())
+            ?: GebyrRolleSøknad(
+                saksnummer = saksnummer,
+                søknadsid = søknadsid,
+                null,
+                null,
+                RolleManueltOverstyrtGebyr(overstyrGebyr = false),
+            )
 }
 
 data class GebyrRolleSøknad(
@@ -294,8 +305,8 @@ fun Collection<GebyrRolleSøknad>.removeDuplicates(): MutableSet<GebyrRolleSøkn
         .toMutableSet()
 
 fun Rolle.leggTilGebyr(fraRolle: Rolle) {
-    val gebyr = manueltOverstyrtGebyr ?: GebyrRolle()
-    manueltOverstyrtGebyr =
+    val gebyr = gebyr ?: GebyrRolle()
+    this@leggTilGebyr.gebyr =
         gebyr.let {
             it.gebyrSøknader.addAll(
                 fraRolle.gebyrSøknader,
@@ -307,7 +318,7 @@ fun Rolle.leggTilGebyr(fraRolle: Rolle) {
 
 fun Rolle.leggTilGebyr(gebyrSøknader: List<GebyrRolleSøknad>) {
     val gebyr = hentEllerOpprettGebyr()
-    manueltOverstyrtGebyr =
+    this@leggTilGebyr.gebyr =
         gebyr.let {
             it.gebyrSøknader.addAll(
                 gebyrSøknader,

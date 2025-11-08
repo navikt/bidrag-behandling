@@ -10,7 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
@@ -137,7 +136,7 @@ fun opprettRolle(
         if (harGebyrSøknad != null) {
             val gebyr = it.hentEllerOpprettGebyr()
             it.harGebyrsøknad = true
-            it.manueltOverstyrtGebyr =
+            it.gebyr =
                 gebyr.let {
                     it.gebyrSøknader.add(harGebyrSøknad)
                     it
@@ -150,7 +149,7 @@ fun opprettRolle(
     val rolle =
         Rolle(
             harGebyrsøknad = harGebyrSøknad != null,
-            manueltOverstyrtGebyr =
+            gebyr =
                 GebyrRolle(
                     overstyrGebyr = false,
                     gebyrSøknader = listOfNotNull(harGebyrSøknad).toMutableSet(),
@@ -233,7 +232,7 @@ fun Rolle.kopierRolle(
     virkningstidspunkt = virkningstidspunkt ?: hovedbehandling.globalVirkningstidspunkt,
     grunnlagFraVedtakListe = grunnlagFraVedtakListe,
     opphørsdato = opphørsdato ?: hovedbehandling.globalOpphørsdato,
-    manueltOverstyrtGebyr = hentEllerOpprettGebyr(),
+    gebyr = hentEllerOpprettGebyr(),
     harGebyrsøknad = harGebyrsøknad,
     opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
     beregnTil = beregnTil,

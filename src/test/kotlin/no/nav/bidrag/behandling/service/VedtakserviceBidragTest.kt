@@ -837,8 +837,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         val søknadsbarn = behandling.søknadsbarn.first()
         søknadsbarn.fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
         søknadsbarn.opphørsdato = opphørsdato
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -968,8 +968,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         val søknadsbarn = behandling.søknadsbarn.first()
         søknadsbarn.fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
         søknadsbarn.opphørsdato = opphørsdato
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -2018,7 +2018,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
 
         vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
@@ -2415,8 +2415,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak med direkte avslag`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -2564,8 +2564,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 id = 1,
             ),
         )
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -2649,8 +2649,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak med direkte avslag med reel mottaker`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,

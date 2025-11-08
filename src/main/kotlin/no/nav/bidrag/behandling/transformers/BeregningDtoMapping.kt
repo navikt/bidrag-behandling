@@ -140,10 +140,10 @@ fun BeregnGebyrResultat.tilDto(
                 maksBarnetillegg = maksBarnetillegg,
             ),
         beregnetIlagtGebyr = ilagtGebyr,
-        begrunnelse = if (erManueltOverstyrt) rolle.manueltOverstyrtGebyr?.begrunnelse else null,
+        begrunnelse = if (erManueltOverstyrt) rolle.gebyr?.begrunnelse else null,
         endeligIlagtGebyr =
             if (erManueltOverstyrt) {
-                rolle.manueltOverstyrtGebyr!!.ilagtGebyr == true
+                rolle.gebyr!!.ilagtGebyr == true
             } else {
                 ilagtGebyr
             },

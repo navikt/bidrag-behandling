@@ -545,7 +545,7 @@ internal fun List<GrunnlagDto>.oppdaterRolleGebyr(behandling: Behandling) =
                     Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
                     grunnlag.first(),
                 ).firstOrNull()?.innholdTilObjekt<ManueltOverstyrtGebyr>()
-            rolle.manueltOverstyrtGebyr =
+            rolle.gebyr =
                 GebyrRolle(
                     manueltOverstyrtGebyr != null,
                     sluttberegning.ilagtGebyr,

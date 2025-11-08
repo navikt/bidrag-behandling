@@ -499,7 +499,7 @@ class InntektServiceMockTest {
         behandling.roller = oppretteBehandlingRoller(behandling, generateId = true)
 
         behandling.bidragsmottaker!!.harGebyrsøknad = true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
+        behandling.bidragsmottaker!!.gebyr =
             GebyrRolle(
                 overstyrGebyr = false,
                 ilagtGebyr = false,
@@ -533,7 +533,7 @@ class InntektServiceMockTest {
             )
 
         response.beregnetGebyrErEndret shouldBe true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
+        behandling.bidragsmottaker!!.gebyr!!.beregnetIlagtGebyr shouldBe true
     }
 
     @Test
@@ -544,7 +544,7 @@ class InntektServiceMockTest {
         behandling.roller = oppretteBehandlingRoller(behandling, generateId = true)
 
         behandling.bidragsmottaker!!.harGebyrsøknad = true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
+        behandling.bidragsmottaker!!.gebyr =
             GebyrRolle(
                 overstyrGebyr = true,
                 ilagtGebyr = false,
@@ -579,8 +579,8 @@ class InntektServiceMockTest {
             )
 
         response.beregnetGebyrErEndret shouldBe false
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
+        behandling.bidragsmottaker!!.gebyr!!.beregnetIlagtGebyr shouldBe true
+        behandling.bidragsmottaker!!.gebyr!!.overstyrGebyr shouldBe true
     }
 
     @Test
