@@ -147,10 +147,11 @@ class BehandlingService(
     fun lagreBehandling(
         behandling: Behandling,
         opprettForsendelse: Boolean = false,
+        forceSave: Boolean = false,
     ): Behandling {
         val oppretterBehandling = behandling.id == null
         val lagretBehandling =
-            if (oppretterBehandling) {
+            if (oppretterBehandling || forceSave) {
                 behandlingRepository.save(behandling)
             } else {
                 behandling
@@ -606,7 +607,7 @@ class BehandlingService(
 
         // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
-        lagreBehandling(behandling)
+        lagreBehandling(behandling, forceSave = true)
 
         if (behandling.søknadsbarn.isEmpty()) {
             log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
@@ -642,7 +643,6 @@ class BehandlingService(
                     eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
                     val gebyr = eksisterendeRolle.gebyrForSøknad(søknadsid)
                     gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
-//                    eksisterendeRolle.manueltOverstyrtGebyr!!.gebyrSøknader.add(gebyr)
                 }
             }
     }
