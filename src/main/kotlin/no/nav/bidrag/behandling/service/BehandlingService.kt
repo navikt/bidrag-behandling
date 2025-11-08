@@ -642,10 +642,12 @@ class BehandlingService(
                 roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
                     eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
-                    val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
-                    val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
-                    gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
-                    gebyrDetaljer.leggTilGebyr(gebyr)
+                    if (it.harGebyrsøknad || !it.referanseGebyr.isNullOrEmpty()) {
+                        val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
+                        val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
+                        gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
+                        gebyrDetaljer.leggTilGebyr(gebyr)
+                    }
                 }
             }
     }
