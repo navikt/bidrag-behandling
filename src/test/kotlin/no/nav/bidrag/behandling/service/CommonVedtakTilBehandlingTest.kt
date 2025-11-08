@@ -85,6 +85,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         stubVedtakConsumer(vedtakConsumer)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
+        hentLøpendeBidragService = HentLøpendeBidragService(vedtakServiceBeregning)
         bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, hentLøpendeBidragService)
 
         validerBeregning = ValiderBeregning()

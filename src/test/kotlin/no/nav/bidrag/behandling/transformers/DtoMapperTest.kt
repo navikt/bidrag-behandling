@@ -318,7 +318,10 @@ class DtoMapperTest : TestContainerRunner() {
                 periode shouldBe
                     DatoperiodeDto(
                         LocalDate.now().minusYears(1),
-                        LocalDate.now().minusMonths(6).minusDays(1),
+                        LocalDate
+                            .now()
+                            .minusMonths(6)
+                            .minusDays(1),
                     )
                 tilsynstype shouldBe null
                 skolealder shouldBe Skolealder.UNDER
@@ -331,7 +334,11 @@ class DtoMapperTest : TestContainerRunner() {
                 periode shouldBe
                     DatoperiodeDto(
                         LocalDate.now().minusMonths(6),
-                        LocalDate.now().minusMonths(4).minusDays(1),
+                        LocalDate
+                            .now()
+                            .minusMonths(3)
+                            .withDayOfMonth(1)
+                            .minusDays(1),
                     )
                 kilde shouldBe Kilde.OFFENTLIG
             }
