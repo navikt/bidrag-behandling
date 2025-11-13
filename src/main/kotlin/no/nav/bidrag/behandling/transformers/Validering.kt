@@ -71,7 +71,7 @@ val resultatkoderSomKreverBegrunnelseVirkningstidspunkt = listOf(Resultatkode.PA
 fun Behandling.kanSkriveVurderingAvSkolegangAlle() = søknadsbarn.any { kanSkriveVurderingAvSkolegang(it) }
 
 fun Behandling.kanSkriveVurderingAvSkolegang(rolle: Rolle) =
-    stonadstype == Stønadstype.BIDRAG18AAR &&
+    (rolle.stønadstype ?: stonadstype) == Stønadstype.BIDRAG18AAR &&
         vedtakstype != Vedtakstype.OPPHØR &&
         (rolle.avslag == null || listOf(Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG).contains(rolle.avslag))
 
