@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
+import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonIgnore
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
@@ -29,6 +31,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholds
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Sluttberegning
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
@@ -190,6 +193,7 @@ data class ResultatBidragsberegningBarnDto(
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val forsendelseDistribueresAutomatisk: Boolean = false,
     val erAvvisning: Boolean = false,
+    val perioderSlåttUtTilFF: List<ÅrMånedsperiode> = emptyList(),
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val delvedtak: List<DelvedtakDto> = emptyList(),
 )
@@ -201,6 +205,7 @@ data class DelvedtakDto(
     val delvedtak: Boolean,
     val beregnet: Boolean,
     val indeksår: Int,
+    val erForholdsmessigFordeling: Boolean = false,
     val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val grunnlagFraVedtak: List<GrunnlagFraVedtak> = emptyList(),
@@ -297,6 +302,17 @@ data class ResultatBarnebidragsberegningPeriodeDto(
         }
 }
 
+data class ForholdsmessigFordelingBeregningsdetaljer(
+    val sumBidragTilFordeling: BigDecimal,
+    val sumPrioriterteBidragTilFordeling: BigDecimal,
+    val bidragTilFordelingForBarnet: BigDecimal,
+    val andelAvSumBidragTilFordelingFaktor: BigDecimal,
+    val andelAvEvneBeløp: BigDecimal,
+    val bidragEtterFordeling: BigDecimal,
+    val harBPFullEvne: Boolean,
+    val erKompletteGrunnlagForAlleLøpendeBidrag: Boolean,
+)
+
 data class KlageOmgjøringDetaljer(
     val resultatFraVedtak: Int? = null,
     val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
@@ -321,7 +337,9 @@ data class BidragPeriodeBeregningsdetaljer(
     val delberegningBidragsevne: DelberegningBidragsevneDto? = null,
     val samværsfradrag: BeregningsdetaljerSamværsfradrag? = null,
     val endringUnderGrense: DelberegningEndringSjekkGrensePeriode? = null,
-    val sluttberegning: SluttberegningBarnebidrag? = null,
+    val sluttberegning1: SluttberegningBarnebidrag? = null,
+    val sluttberegning: SluttberegningBarnebidrag2? = null,
+    val forholdsmessigFordeling: ForholdsmessigFordelingBeregningsdetaljer? = null,
     val sluttberegningAldersjustering: SluttberegningBarnebidragAldersjustering? = null,
     val delberegningUnderholdskostnad: DelberegningUnderholdskostnad? = null,
     val indeksreguleringDetaljer: IndeksreguleringDetaljer? = null,
@@ -338,10 +356,80 @@ data class BidragPeriodeBeregningsdetaljer(
             sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
 }
 
+data class SluttberegningBarnebidrag2(
+    val beregnetBeløp: BigDecimal?,
+    val resultatBeløp: BigDecimal?,
+    val uMinusNettoBarnetilleggBM: BigDecimal,
+    val bruttoBidragEtterBarnetilleggBM: BigDecimal,
+    val nettoBidragEtterBarnetilleggBM: BigDecimal,
+    val bruttoBidragJustertForEvneOg25Prosent: BigDecimal,
+    val bruttoBidragEtterBegrensetRevurdering: BigDecimal = BigDecimal.ZERO,
+    val bruttoBidragEtterBarnetilleggBP: BigDecimal,
+    val nettoBidragEtterSamværsfradrag: BigDecimal,
+    val bpAndelAvUVedDeltBostedFaktor: BigDecimal,
+    val bpAndelAvUVedDeltBostedBeløp: BigDecimal,
+    val løpendeForskudd: BigDecimal? = null,
+    val løpendeBidrag: BigDecimal? = null,
+    val barnetErSelvforsørget: Boolean = false,
+    val bidragJustertForDeltBosted: Boolean = false,
+    val bidragJustertForNettoBarnetilleggBP: Boolean = false,
+    val bidragJustertForNettoBarnetilleggBM: Boolean = false,
+    val bidragJustertNedTilEvne: Boolean = false,
+    val bidragJustertNedTil25ProsentAvInntekt: Boolean = false,
+    val bidragJustertTilForskuddssats: Boolean = false,
+    val bidragJustertManueltTilForskuddssats: Boolean = false,
+    val begrensetRevurderingUtført: Boolean = false,
+    val ikkeOmsorgForBarnet: Boolean = false,
+    // Brukes bare ved overføring av bisys vedtak
+    val tilleggsbidrag: BigDecimal? = null,
+    // Brukes bare ved overføring av bisys vedtak
+    val forsvaretsBarnetillegg: Boolean? = null,
+    // Beregnet evne til BP etter FF
+    val bpEvneVedForholdsmessigFordeling: BigDecimal? = null,
+    // Andel av U basert på fordeling fra FF
+    val bpAndelAvUVedForholdsmessigFordelingFaktor: BigDecimal? = null,
+    val bpSumAndelAvU: BigDecimal? = null,
+) {
+    @get:JsonIgnore
+    val resultat
+        get() =
+            // Rekkefølgen bestemmer hvilken som slår ut for sluttresultatet. Øverste har høyest prioritet.
+            when {
+                ikkeOmsorgForBarnet -> SluttberegningBarnebidrag::ikkeOmsorgForBarnet.name
+                bidragJustertForNettoBarnetilleggBP -> SluttberegningBarnebidrag::bidragJustertForNettoBarnetilleggBP.name
+                bidragJustertManueltTilForskuddssats -> SluttberegningBarnebidrag::bidragJustertManueltTilForskuddssats.name
+                bidragJustertTilForskuddssats -> SluttberegningBarnebidrag::bidragJustertTilForskuddssats.name
+                barnetErSelvforsørget -> SluttberegningBarnebidrag::barnetErSelvforsørget.name
+                bidragJustertForDeltBosted && bidragJustertNedTilEvne -> SluttberegningBarnebidrag::bidragJustertNedTilEvne.name
+                bidragJustertForDeltBosted && bidragJustertNedTil25ProsentAvInntekt ->
+                    SluttberegningBarnebidrag::bidragJustertNedTil25ProsentAvInntekt.name
+
+                bidragJustertForDeltBosted -> SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
+                bidragJustertNedTilEvne -> SluttberegningBarnebidrag::bidragJustertNedTilEvne.name
+                bidragJustertNedTil25ProsentAvInntekt -> SluttberegningBarnebidrag::bidragJustertNedTil25ProsentAvInntekt.name
+                bidragJustertForNettoBarnetilleggBM -> SluttberegningBarnebidrag::bidragJustertForNettoBarnetilleggBM.name
+                else -> "kostnadsberegnet"
+            }
+
+    @get:JsonIgnore
+    val resultatVisningsnavn get() = lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")[resultat]
+}
+
 data class IndeksreguleringDetaljer(
     val sluttberegning: SluttberegningIndeksregulering?,
     val faktor: BigDecimal,
 )
+
+fun List<GrunnlagDto>.finnEndeligBeregning(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
+    find {
+        listOf(
+            Grunnlagstype.DELBEREGNING_ENDELIG_BIDRAG_BEREGNET,
+        ).contains(it.type) &&
+            grunnlagsreferanseListe.contains(it.referanse)
+    }
+
+fun List<GrunnlagDto>.finnSluttberegningIReferanserFF(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
+    finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: finnEndeligBeregning(grunnlagsreferanseListe)
 
 fun List<GrunnlagDto>.finnSluttberegningIReferanser(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
     find {

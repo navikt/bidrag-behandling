@@ -660,7 +660,7 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                 gjennomsnittligSamværPerMåned = it.gjennomsnittligSamværPerMåned,
                             )
                         },
-                    sluttberegning = it.sluttberegning,
+                    sluttberegning = it.sluttberegning1,
                     delberegningUnderholdskostnad = it.delberegningUnderholdskostnad,
                     delberegningBidragspliktigesBeregnedeTotalBidrag =
                         it.delberegningBidragspliktigesBeregnedeTotalBidrag
