@@ -44,6 +44,7 @@ import no.nav.bidrag.behandling.transformers.hentEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegang
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
@@ -336,7 +337,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerVurderingAvSkolegang =
             if (kanSkriveVurderingAvSkolegangAlle() && !erKlageEllerOmgjøring) {
-                søknadsbarn.any {
+                søknadsbarn.filter { kanSkriveVurderingAvSkolegang(it) }.any {
                     NotatService
                         .henteNotatinnhold(
                             this,
