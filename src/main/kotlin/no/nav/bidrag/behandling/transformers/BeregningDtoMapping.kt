@@ -1271,18 +1271,11 @@ fun List<GrunnlagDto>.perioderSlåttUtTilFF(): List<ÅrMånedsperiode> {
         )
 
     return andelBidragsevne
-        .filter { !it.innhold.harBPFullEvne }
+        .filter { !it.innhold.harBPFullEvne && it.innhold.andelAvSumBidragTilFordelingFaktor < BigDecimal.ONE }
         .map { it.innhold.periode }
 }
 
-fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(): Boolean {
-    val andelBidragsevne =
-        filtrerOgKonverterBasertPåFremmedReferanse<DelberegningAndelAvBidragsevne>(
-            Grunnlagstype.DELBEREGNING_ANDEL_AV_BIDRAGSEVNE,
-        )
-
-    return if (andelBidragsevne.isEmpty()) false else andelBidragsevne.any { it.innhold.harBPFullEvne }
-}
+fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(): Boolean = perioderSlåttUtTilFF().isNotEmpty()
 
 fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
@@ -1314,6 +1307,7 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         andelAvSumBidragTilFordelingFaktor = andelAvBidragsevne.innhold.andelAvSumBidragTilFordelingFaktor,
         bidragEtterFordeling = andelAvBidragsevne.innhold.bidragEtterFordeling,
         harBPFullEvne = andelAvBidragsevne.innhold.harBPFullEvne,
+        erForholdsmessigFordelt = harSlåttUtTilForholdsmessigFordeling(),
     )
 }
 

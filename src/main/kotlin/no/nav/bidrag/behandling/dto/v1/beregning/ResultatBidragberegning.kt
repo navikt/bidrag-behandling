@@ -311,6 +311,7 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val bidragEtterFordeling: BigDecimal,
     val harBPFullEvne: Boolean,
     val erKompletteGrunnlagForAlleLøpendeBidrag: Boolean,
+    val erForholdsmessigFordelt: Boolean,
 )
 
 data class KlageOmgjøringDetaljer(

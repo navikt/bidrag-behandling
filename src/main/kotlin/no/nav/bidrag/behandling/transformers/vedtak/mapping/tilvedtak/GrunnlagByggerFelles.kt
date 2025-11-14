@@ -132,7 +132,7 @@ private fun opprettGrunnlagNotat(
 
 fun Rolle.byggGrunnlagManueltOverstyrtGebyrRolle(søknadsid: Long): GrunnlagDto? {
     val gebyr = gebyrForSøknad(søknadsid)
-    if (gebyr.manueltOverstyrtGebyr == null) {
+    if (gebyr.manueltOverstyrtGebyr == null || !gebyr.manueltOverstyrtGebyr!!.overstyrGebyr) {
         return null
     }
     return GrunnlagDto(
