@@ -41,6 +41,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGeby
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.bo.AndelAvBidragsevneBeregningGrunnlag
+import no.nav.bidrag.beregn.barnebidrag.bo.SamværsfradragPeriodeGrunnlag
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
@@ -1382,6 +1383,12 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
             Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL,
             sluttberegning.grunnlagsreferanseListe,
         ).firstOrNull() ?: return null
+    val samværsfradrag =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningSamværsfradrag>(
+            Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG,
+            sluttberegning.grunnlagsreferanseListe,
+        ).firstOrNull() ?: return null
+    val nettoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bidragTilFordeling.subtract(samværsfradrag.innhold.beløp)
     return SluttberegningBarnebidrag2(
         bidragJustertNedTilEvne = !andelAvBidragsevne.innhold.harBPFullEvne,
         nettoBidragEtterSamværsfradrag = beregnetBeløp ?: BigDecimal.ZERO,
@@ -1395,9 +1402,9 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
         barnetErSelvforsørget = bpsAndel.innhold.barnetErSelvforsørget,
         beregnetBeløp = beregnetBeløp,
         resultatBeløp = resultatBeløp,
-        nettoBidragEtterBarnetilleggBM = BigDecimal.ZERO,
-        bruttoBidragEtterBarnetilleggBM = BigDecimal.ZERO,
-        bidragJustertForNettoBarnetilleggBM = false,
+        nettoBidragEtterBarnetilleggBM = nettoBidragEtterBarnetilleggBM,
+        bruttoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bidragTilFordeling,
+        bidragJustertForNettoBarnetilleggBM = bidragTilFordeling.innhold.uMinusNettoBarnetilleggBM == nettoBidragEtterBarnetilleggBM,
     )
 }
 
