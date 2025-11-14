@@ -562,7 +562,7 @@ class BehandlingService(
                 )
             }
 
-        behandling.oppdaterEksisterendeRoller(request.søknadsid!!, request.saksnummer ?: behandling.saksnummer!!, oppdaterRollerNyesteIdent)
+        behandling.oppdaterEksisterendeRoller(request.søknadsid!!, request.saksnummer ?: behandling.saksnummer, oppdaterRollerNyesteIdent)
 
         val rollerSomLeggesTil =
             oppdaterRollerNyesteIdent
