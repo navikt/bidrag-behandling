@@ -217,7 +217,7 @@ class BeregningService(
                         else -> Beregningstype.BIDRAG
                     },
                 beregningBarn =
-                    grunnlagslisteBarn.map {
+                    grunnlagslisteBarn.sortedBy { it.beregnGrunnlag.stønadstype }.map {
                         BeregningGrunnlagV2(
                             søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                             periode = it.beregnGrunnlag.periode,
@@ -261,7 +261,8 @@ class BeregningService(
                             resultat.grunnlagListe.hentPersonMedReferanse(it.gjelderReferanse)?.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER
                         it.gjelderBarnReferanse == null || !gjelderErBm ||
                             grunnlagSøknadsbarn.personObjekt.bidragsmottaker == null ||
-                            it.gjelderReferanse == grunnlagSøknadsbarn.personObjekt.bidragsmottaker
+                            it.gjelderReferanse == grunnlagSøknadsbarn.personObjekt.bidragsmottaker ||
+                            it.gjelderBarnReferanse == grunnlagSøknadsbarn.referanse
                     }
                 val endeligResultat =
                     resultatBarn.resultatVedtakListe.find {

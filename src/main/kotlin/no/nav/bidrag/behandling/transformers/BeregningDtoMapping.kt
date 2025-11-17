@@ -21,7 +21,6 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.SluttberegningBarnebidrag2
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
-import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanserFF
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -73,7 +72,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelDeltBosted
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndeligBidragBeregnet
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEvne25ProsentAvInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
@@ -104,12 +102,15 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonMaksTilsynPerio
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningNyStruktur
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
@@ -119,8 +120,10 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentBeregnetBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentResultatBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
@@ -748,7 +751,10 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
                     BidragPeriodeBeregningsdetaljer(
                         delberegningBidragsevne = delberegningBPsEvne,
                         forholdsmessigFordeling = forholdsmessigFordeling,
-                        sluttberegning1 = sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidrag>(),
+                        sluttberegning1 =
+                            sluttberegningGrunnlag
+                                ?.takeIf { it.erSluttberegningGammelStruktur() }
+                                ?.innholdTilObjekt<SluttberegningBarnebidrag>(),
                         endringUnderGrense = delberegningGrensePeriode?.innhold,
                         barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),
                         barnetilleggBP = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSPLIKTIG),
@@ -870,7 +876,7 @@ fun List<GrunnlagDto>.finnAntallBarnIHusstanden(grunnlagsreferanseListe: List<Gr
 fun List<GrunnlagDto>.finnDelberegningBidragspliktigesAndel(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
 ): DelberegningBidragspliktigesAndel? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
     val delberegningBidragspliktigesAndel =
         finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
             Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL,
@@ -938,7 +944,7 @@ fun List<GrunnlagDto>.finnDelberegningBPsBeregnedeTotalbidrag(
 }
 
 fun List<GrunnlagDto>.finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
 
     val delberegningBidragspliktigesAndel =
         finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull()
@@ -957,7 +963,7 @@ fun List<GrunnlagDto>.finnEnesteVoksenIHusstandenErEgetBarn(grunnlagsreferanseLi
 }
 
 fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Boolean? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
 
     val delberegningBidragspliktigesAndel =
         finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_VOKSNE_I_HUSSTAND, sluttberegning).firstOrNull()
@@ -966,7 +972,7 @@ fun List<GrunnlagDto>.finnBorMedAndreVoksne(grunnlagsreferanseListe: List<Grunnl
 }
 
 fun List<GrunnlagDto>.finnDelberegningUtgift(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUtgift? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
     val delberegningBidragspliktigesAndelReferanser =
         find {
             it.type == Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL &&
@@ -1011,7 +1017,7 @@ fun List<GrunnlagDto>.finnAldersjusteringDelberegningSamværsfradrag(
 fun List<GrunnlagDto>.finnDelberegningSamværsfradrag(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
 ): BidragPeriodeBeregningsdetaljer.BeregningsdetaljerSamværsfradrag? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
     val delberegningSamværsfradragGrunnlag =
         finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
             Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG,
@@ -1224,7 +1230,7 @@ fun List<GrunnlagDto>.finnBarnetillegg(
     personGrunnlagstype: Grunnlagstype,
 ): DelberegningBarnetilleggDto {
     val personGrunnlag = find { it.type == personGrunnlagstype } ?: return DelberegningBarnetilleggDto()
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return DelberegningBarnetilleggDto()
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return DelberegningBarnetilleggDto()
     val nettoBarnetillegg =
         finnOgKonverterGrunnlagSomErReferertAv<DelberegningNettoBarnetillegg>(
             Grunnlagstype.DELBEREGNING_NETTO_BARNETILLEGG,
@@ -1281,7 +1287,7 @@ fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(): Boolean = periode
 fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
 ): ForholdsmessigFordelingBeregningsdetaljer? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
 
     val sumBidragTilBeregning =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningSumBidragTilFordeling>(
@@ -1319,8 +1325,8 @@ fun List<GrunnlagDto>.finnGrunnlag25ProsentAvInntekt(grunnlagsreferanseListe: Li
     ).firstOrNull()
 
 fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnlagsreferanse>): SluttberegningBarnebidrag2? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
-    if (sluttberegning.type == Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG) {
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
+    if (sluttberegning.erSluttberegningGammelStruktur()) {
         val sbInnhold = sluttberegning.innholdTilObjekt<SluttberegningBarnebidrag>()
         return SluttberegningBarnebidrag2(
             bidragJustertNedTilEvne = sbInnhold.bidragJustertNedTilEvne,
@@ -1340,18 +1346,8 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
             bidragJustertForNettoBarnetilleggBM = sbInnhold.bidragJustertForNettoBarnetilleggBM,
         )
     }
-    val beregnetBeløp =
-        if (sluttberegning.type == Grunnlagstype.DELBEREGNING_ENDELIG_BIDRAG_BEREGNET) {
-            sluttberegning.innholdTilObjekt<DelberegningEndeligBidragBeregnet>().beregnetBeløp
-        } else {
-            sluttberegning.innholdTilObjekt<SluttberegningBarnebidrag>().beregnetBeløp
-        }
-    val resultatBeløp =
-        if (sluttberegning.type == Grunnlagstype.DELBEREGNING_ENDELIG_BIDRAG_BEREGNET) {
-            sluttberegning.innholdTilObjekt<DelberegningEndeligBidragBeregnet>().resultatBeløp
-        } else {
-            sluttberegning.innholdTilObjekt<SluttberegningBarnebidrag>().resultatBeløp
-        }
+    val beregnetBeløp = sluttberegning.hentBeregnetBeløp()
+    val resultatBeløp = sluttberegning.hentResultatBeløp()
     val andelDeltBosted =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningBidragspliktigesAndelDeltBosted>(
             Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_DELT_BOSTED,
@@ -1409,7 +1405,7 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
 }
 
 fun List<GrunnlagDto>.finnDelberegningUnderholdskostnad(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningUnderholdskostnad? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
     val delberegningUnderholdskostnad =
         finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
             Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD,
@@ -1419,7 +1415,7 @@ fun List<GrunnlagDto>.finnDelberegningUnderholdskostnad(grunnlagsreferanseListe:
 }
 
 fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<Grunnlagsreferanse>): DelberegningBidragsevneDto? {
-    val sluttberegning = finnSluttberegningIReferanserFF(grunnlagsreferanseListe) ?: return null
+    val sluttberegning = finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: return null
 
     val delberegningBidragspliktigesAndel =
         finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_BIDRAGSEVNE, sluttberegning)
@@ -1476,7 +1472,7 @@ fun List<GrunnlagDto>.finnDelberegningBidragsevne(grunnlagsreferanseListe: List<
 
 fun List<GrunnlagDto>.finnForskuddssats(grunnlagsreferanseListe: List<Grunnlagsreferanse>): BigDecimal {
     val sluttberegning =
-        finnSluttberegningIReferanserFF(grunnlagsreferanseListe)
+        finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
     return finnGrunnlagSomErReferertAv(Grunnlagstype.SJABLON_SJABLONTALL, sluttberegning)
         .find { it.innholdTilObjekt<SjablonSjablontallPeriode>().sjablon == SjablonTallNavn.FORSKUDDSSATS_BELØP }
@@ -1489,7 +1485,7 @@ fun List<GrunnlagDto>.finnTotalInntektForRolle(
     rolletype: Rolletype? = null,
 ): BigDecimal {
     val sluttberegning =
-        finnSluttberegningIReferanserFF(grunnlagsreferanseListe)
+        finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
     val gjelderReferanse = hentAllePersoner().find { it.type == rolletype?.tilGrunnlagstype() }?.referanse
     val delberegningSumInntekter = finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SUM_INNTEKT, sluttberegning)

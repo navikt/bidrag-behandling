@@ -86,8 +86,9 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (rolle != null && rolle.rolletype != Rolletype.BARN) {
         feilliste.add("Opphørsdato kan kun settes for barn")
     }
+    val stønadstype = rolle?.stønadstype ?: behandling.stonadstype
     if (rolle != null &&
-        behandling.stonadstype == Stønadstype.BIDRAG &&
+        stønadstype == Stønadstype.BIDRAG &&
         rolle.rolletype == Rolletype.BARN &&
         opphørsdato.isAfter(rolle.fødselsdato.plusYears(18).plusMonths(1))
     ) {

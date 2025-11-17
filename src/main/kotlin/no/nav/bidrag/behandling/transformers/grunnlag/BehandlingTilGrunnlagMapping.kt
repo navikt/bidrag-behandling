@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
@@ -28,6 +29,18 @@ fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
                 Person(
                     ident = ident.takeIf { !it.isNullOrEmpty() }?.let { hentNyesteIdent(it) },
                     navn = if (ident.isNullOrEmpty()) navn ?: hentPersonVisningsnavn(ident) else null,
+                    bidragsmottaker =
+                        if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
+                            bidragsmottaker?.tilGrunnlagsreferanse()
+                        } else {
+                            null
+                        },
+                    delAvOpprinneligBehandling =
+                        if (forholdsmessigFordeling != null) {
+                            forholdsmessigFordeling!!.delAvOpprinneligBehandling
+                        } else {
+                            true
+                        },
                     fødselsdato =
                         finnFødselsdato(
                             ident,

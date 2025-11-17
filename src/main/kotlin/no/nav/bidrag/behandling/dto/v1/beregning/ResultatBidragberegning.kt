@@ -421,17 +421,6 @@ data class IndeksreguleringDetaljer(
     val faktor: BigDecimal,
 )
 
-fun List<GrunnlagDto>.finnEndeligBeregning(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
-    find {
-        listOf(
-            Grunnlagstype.DELBEREGNING_ENDELIG_BIDRAG_BEREGNET,
-        ).contains(it.type) &&
-            grunnlagsreferanseListe.contains(it.referanse)
-    }
-
-fun List<GrunnlagDto>.finnSluttberegningIReferanserFF(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
-    finnSluttberegningIReferanser(grunnlagsreferanseListe) ?: finnEndeligBeregning(grunnlagsreferanseListe)
-
 fun List<GrunnlagDto>.finnSluttberegningIReferanser(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
     find {
         listOf(

@@ -204,7 +204,8 @@ class VirkningstidspunktService(
                 request.rolleId?.let { rolleId ->
                     it.søknadsbarn.find { it.id == rolleId }
                 }
-            if (it.stonadstype == Stønadstype.BIDRAG18AAR) {
+            val stønadstype = gjelderBarnRolle?.stønadstype ?: it.stonadstype
+            if (stønadstype == Stønadstype.BIDRAG18AAR) {
                 request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
                     gjelderBarnRolle?.let { rolle ->
                         notatService.oppdatereNotat(

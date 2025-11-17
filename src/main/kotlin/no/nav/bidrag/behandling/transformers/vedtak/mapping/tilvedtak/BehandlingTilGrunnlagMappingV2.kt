@@ -330,6 +330,18 @@ class BehandlingTilGrunnlagMappingV2(
                     Person(
                         ident = if (!ident.isNullOrEmpty()) Personident(ident!!) else null,
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
+                        bidragsmottaker =
+                            if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
+                                rolle?.bidragsmottaker?.tilGrunnlagsreferanse()
+                            } else {
+                                null
+                            },
+                        delAvOpprinneligBehandling =
+                            if (rolle?.forholdsmessigFordeling != null) {
+                                rolle?.forholdsmessigFordeling!!.delAvOpprinneligBehandling
+                            } else {
+                                true
+                            },
                         fødselsdato =
                             finnFødselsdato(
                                 ident,
