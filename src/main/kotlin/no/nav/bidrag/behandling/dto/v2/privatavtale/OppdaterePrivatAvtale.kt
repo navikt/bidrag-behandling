@@ -36,7 +36,7 @@ data class OppdaterePrivatAvtaleRequest(
     )
     val begrunnelse: String? = null,
     val avtaleType: PrivatAvtaleType? = null,
-    val gjelderUtland: Boolean? = false,
+    val gjelderUtland: Boolean? = null,
     val oppdaterPeriode: OppdaterePrivatAvtalePeriodeDto? = null,
     val slettePeriodeId: Long? = null,
 )
