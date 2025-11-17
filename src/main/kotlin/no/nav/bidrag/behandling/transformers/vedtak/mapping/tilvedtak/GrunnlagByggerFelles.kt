@@ -623,12 +623,25 @@ fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
 
 fun Behandling.tilBehandlingreferanseListe() =
     tilBehandlingreferanseListeUtenSøknad() +
-        listOfNotNull(
-            OpprettBehandlingsreferanseRequestDto(
-                kilde = BehandlingsrefKilde.BISYS_SØKNAD,
-                referanse = soknadsid.toString(),
-            ),
-        )
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn
+                .map { it.forholdsmessigFordeling!!.søknaderUnderBehandling }
+                .flatMap {
+                    it.filter { it.søknadsid != null }.map { søknad ->
+                        OpprettBehandlingsreferanseRequestDto(
+                            kilde = BehandlingsrefKilde.BISYS_SØKNAD,
+                            referanse = søknad.søknadsid!!.toString(),
+                        )
+                    }
+                }
+        } else {
+            listOfNotNull(
+                OpprettBehandlingsreferanseRequestDto(
+                    kilde = BehandlingsrefKilde.BISYS_SØKNAD,
+                    referanse = soknadsid.toString(),
+                ),
+            )
+        }
 
 internal fun Inntekt.tilGrunnlagreferanse(
     gjelder: GrunnlagDto,

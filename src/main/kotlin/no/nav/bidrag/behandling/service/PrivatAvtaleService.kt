@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
@@ -23,6 +24,7 @@ private val log = KotlinLogging.logger {}
 class PrivatAvtaleService(
     val behandlingService: BehandlingService,
     val notatService: NotatService,
+    val personRepository: PersonRepository,
 ) {
     private fun lagrePrivatAvtale(
         behandling: Behandling,
@@ -184,7 +186,7 @@ class PrivatAvtaleService(
     ): PrivatAvtale {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         behandling.privatAvtale
-            .find { it.rolle?.ident == gjelderBarn.personident?.verdi }
+            .find { it.rolle?.ident == gjelderBarn.personident?.verdi || it.person?.ident == gjelderBarn.personident?.verdi }
             ?.let {
                 ugyldigForespørsel("Privat avtale for barn med personident ${gjelderBarn.personident?.verdi} finnes allerede")
             }
@@ -193,15 +195,16 @@ class PrivatAvtaleService(
                 lagrePrivatAvtale(behandling, it)
             }
         } ?: run {
+            val person =
+                gjelderBarn.personident?.let { personRepository.findFirstByIdent(it.verdi) } ?: Person(
+                    navn = gjelderBarn.navn,
+                    fødselsdato =
+                        gjelderBarn.fødselsdato ?: hentPersonFødselsdato(gjelderBarn.personident!!.verdi)!!,
+                    ident = gjelderBarn.personident?.verdi,
+                )
             lagrePrivatAvtale(
                 behandling,
-                person =
-                    Person(
-                        navn = gjelderBarn.navn,
-                        fødselsdato =
-                            gjelderBarn.fødselsdato ?: hentPersonFødselsdato(gjelderBarn.personident!!.verdi)!!,
-                        ident = gjelderBarn.personident?.verdi,
-                    ),
+                person = person,
             )
         }
     }
