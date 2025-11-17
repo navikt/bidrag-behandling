@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
+import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
 import no.nav.bidrag.behandling.transformers.tilGrunnlagsdatatypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilStønadsid
@@ -153,7 +154,7 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
 
 fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
-        stønadsendringListe.map { stønadsendring ->
+        stønadsendringListe.sortedBy { it.kravhaver.fødselsdato() }.map { stønadsendring ->
             val barnIdent = stønadsendring.kravhaver
             val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
             val barn = barnGrunnlag?.innholdTilObjekt<Person>()
@@ -175,6 +176,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                 indeksår = stønadsendring.førsteIndeksreguleringsår,
                 delvedtak = hentDelvedtak(stønadsendring),
                 innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
+                perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
                 perioder =
                     vedtakBeregning?.let {
                         val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
