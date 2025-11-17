@@ -133,7 +133,7 @@ data class PrivatAvtalePeriodeDto(
     val periode: DatoperiodeDto,
     val beløp: BigDecimal,
     val samværsklasse: Samværsklasse? = null,
-    val valuta: Valutakode? = null,
+    val valutakode: Valutakode? = null,
 )
 
 data class PrivatAvtaleValideringsfeilDto(

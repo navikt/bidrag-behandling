@@ -1366,7 +1366,7 @@ class Dtomapper(
                             no.nav.bidrag.behandling.dto.v2.behandling
                                 .DatoperiodeDto(it.fom, it.tom),
                         beløp = it.beløp,
-                        valuta = it.valutakode,
+                        valutakode = it.valutakode,
                         samværsklasse = it.samværsklasse,
                     )
                 },
@@ -1428,7 +1428,7 @@ class Dtomapper(
                             no.nav.bidrag.behandling.dto.v2.behandling
                                 .DatoperiodeDto(it.fom, it.tom),
                         beløp = it.beløp,
-                        valuta = it.valutakode,
+                        valutakode = it.valutakode,
                         samværsklasse = it.samværsklasse,
                     )
                 },
