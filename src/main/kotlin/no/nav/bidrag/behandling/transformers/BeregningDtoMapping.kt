@@ -126,7 +126,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentResultatBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSøknadGrunnlag
@@ -1344,6 +1346,8 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
             nettoBidragEtterBarnetilleggBM = sbInnhold.nettoBidragEtterBarnetilleggBM,
             bruttoBidragEtterBarnetilleggBM = sbInnhold.bruttoBidragEtterBarnetilleggBM,
             bidragJustertForNettoBarnetilleggBM = sbInnhold.bidragJustertForNettoBarnetilleggBM,
+            resultat = resultatSluttberegning(grunnlagsreferanseListe),
+            resultatVisningsnavn = sbInnhold.resultatVisningsnavn,
         )
     }
     val beregnetBeløp = sluttberegning.hentBeregnetBeløp()
@@ -1401,6 +1405,8 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
         nettoBidragEtterBarnetilleggBM = nettoBidragEtterBarnetilleggBM,
         bruttoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bidragTilFordeling,
         bidragJustertForNettoBarnetilleggBM = bidragTilFordeling.innhold.uMinusNettoBarnetilleggBM == nettoBidragEtterBarnetilleggBM,
+        resultat = resultatSluttberegning(grunnlagsreferanseListe),
+        resultatVisningsnavn = tilResultatVisningsnavn(grunnlagsreferanseListe),
     )
 }
 

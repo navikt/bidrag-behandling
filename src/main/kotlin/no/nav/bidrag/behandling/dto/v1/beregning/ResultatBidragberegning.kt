@@ -19,6 +19,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.domene.util.Visningsnavn
 import no.nav.bidrag.domene.util.lastVisningsnavnFraFil
 import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.domene.util.visningsnavnIntern
@@ -354,7 +355,7 @@ data class BidragPeriodeBeregningsdetaljer(
 
     val deltBosted get() =
         sluttberegning?.bidragJustertForDeltBosted == true ||
-            sluttberegning?.resultat == SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
+            sluttberegning?.resultat == Resultatkode.BIDRAG_JUSTERT_FOR_DELT_BOSTED
 }
 
 data class SluttberegningBarnebidrag2(
@@ -390,31 +391,9 @@ data class SluttberegningBarnebidrag2(
     // Andel av U basert på fordeling fra FF
     val bpAndelAvUVedForholdsmessigFordelingFaktor: BigDecimal? = null,
     val bpSumAndelAvU: BigDecimal? = null,
-) {
-    @get:JsonIgnore
-    val resultat
-        get() =
-            // Rekkefølgen bestemmer hvilken som slår ut for sluttresultatet. Øverste har høyest prioritet.
-            when {
-                ikkeOmsorgForBarnet -> SluttberegningBarnebidrag::ikkeOmsorgForBarnet.name
-                bidragJustertForNettoBarnetilleggBP -> SluttberegningBarnebidrag::bidragJustertForNettoBarnetilleggBP.name
-                bidragJustertManueltTilForskuddssats -> SluttberegningBarnebidrag::bidragJustertManueltTilForskuddssats.name
-                bidragJustertTilForskuddssats -> SluttberegningBarnebidrag::bidragJustertTilForskuddssats.name
-                barnetErSelvforsørget -> SluttberegningBarnebidrag::barnetErSelvforsørget.name
-                bidragJustertForDeltBosted && bidragJustertNedTilEvne -> SluttberegningBarnebidrag::bidragJustertNedTilEvne.name
-                bidragJustertForDeltBosted && bidragJustertNedTil25ProsentAvInntekt ->
-                    SluttberegningBarnebidrag::bidragJustertNedTil25ProsentAvInntekt.name
-
-                bidragJustertForDeltBosted -> SluttberegningBarnebidrag::bidragJustertForDeltBosted.name
-                bidragJustertNedTilEvne -> SluttberegningBarnebidrag::bidragJustertNedTilEvne.name
-                bidragJustertNedTil25ProsentAvInntekt -> SluttberegningBarnebidrag::bidragJustertNedTil25ProsentAvInntekt.name
-                bidragJustertForNettoBarnetilleggBM -> SluttberegningBarnebidrag::bidragJustertForNettoBarnetilleggBM.name
-                else -> "kostnadsberegnet"
-            }
-
-    @get:JsonIgnore
-    val resultatVisningsnavn get() = lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")[resultat]
-}
+    val resultat: Resultatkode?,
+    val resultatVisningsnavn: Visningsnavn?,
+)
 
 data class IndeksreguleringDetaljer(
     val sluttberegning: SluttberegningIndeksregulering?,
