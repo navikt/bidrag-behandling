@@ -28,6 +28,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
@@ -35,6 +36,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -262,24 +264,9 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
     val grunnlagListe = grunnlagListe.toSet()
     val periodeliste =
         beregnetBarnebidragPeriodeListe.map {
-            val sluttberegningGrunnlag =
-                grunnlagListe
-                    .toList()
-                    .finnSluttberegningIReferanser(
-                        it.grunnlagsreferanseListe,
-                    )
-            val ikkeOmsorgForBarnet =
-                if (sluttberegningGrunnlag?.type == Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG) {
-                    sluttberegningGrunnlag.innholdTilObjekt<SluttberegningBarnebidrag>().ikkeOmsorgForBarnet
-                } else {
-                    false
-                }
-            val barnetErSelvforsørget =
-                if (sluttberegningGrunnlag?.type == Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG) {
-                    sluttberegningGrunnlag.innholdTilObjekt<SluttberegningBarnebidrag>().barnetErSelvforsørget
-                } else {
-                    false
-                }
+            val resultatSluttberegning = grunnlagListe.toList().resultatSluttberegning(it.grunnlagsreferanseListe)
+            val ikkeOmsorgForBarnet = resultatSluttberegning == Resultatkode.IKKE_OMSORG
+            val barnetErSelvforsørget = resultatSluttberegning == Resultatkode.BARNET_ER_SELVFORSØRGET
             val erResultatIngenEndringUnderGrense = grunnlagListe.toList().erResultatEndringUnderGrense(søknadsbarn.tilGrunnlagsreferanse())
             val erIndeksregulering =
                 grunnlagListe
