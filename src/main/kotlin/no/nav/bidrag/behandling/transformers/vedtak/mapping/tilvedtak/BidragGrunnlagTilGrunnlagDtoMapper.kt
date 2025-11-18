@@ -56,12 +56,14 @@ import java.time.LocalDateTime
 
 fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(
     innhentetReferanse: Grunnlagsreferanse,
-    referanse: Grunnlagsreferanse? = null,
+    gjelderReferanse: String,
 ): GrunnlagDto {
     val personnavn = navn ?: hentPersonVisningsnavn(gjelderPersonId)
 
+    val referanse = opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER, fødselsdato!!, gjelderPersonId, navn)
     return GrunnlagDto(
-        referanse = opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER, fødselsdato!!, gjelderPersonId, navn),
+        referanse = referanse,
+        gjelderReferanse = gjelderReferanse,
         grunnlagsreferanseListe = listOf(innhentetReferanse),
         type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
         innhold =
@@ -88,12 +90,14 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
             val ident = hentNyesteIdent(it)
             if (ident == null && !erBarn) Personident(it) else ident
         }
+    val referanse =
+        Grunnlagstype.PERSON_HUSSTANDSMEDLEM.tilPersonreferanse(
+            (fødselsdato?.toCompactString() ?: LocalDate.MIN.toCompactString()) + "_innhentet",
+            (gjelderPersonId + 1).hashCode(),
+        )
     return GrunnlagDto(
-        referanse =
-            Grunnlagstype.PERSON_HUSSTANDSMEDLEM.tilPersonreferanse(
-                (fødselsdato?.toCompactString() ?: LocalDate.MIN.toCompactString()) + "_innhentet",
-                (gjelderPersonId + 1).hashCode(),
-            ),
+        referanse = referanse,
+        gjelderReferanse = referanse,
         type = Grunnlagstype.PERSON_HUSSTANDSMEDLEM,
         innhold =
             POJONode(

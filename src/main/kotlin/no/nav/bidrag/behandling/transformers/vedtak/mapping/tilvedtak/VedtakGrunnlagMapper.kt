@@ -469,13 +469,15 @@ class VedtakGrunnlagMapper(
             val fødselsdato = personService.hentPersonFødselsdato(kravhaver.verdi) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
             val nyesteIdent = (personService.hentNyesteIdent(kravhaver.verdi) ?: kravhaver)
 
+            val referanse =
+                Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
+                    fødselsdato.toCompactString(),
+                    (kravhaver.verdi + 1).hashCode(),
+                )
             return GrunnlagDto(
-                referanse =
-                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
-                        fødselsdato.toCompactString(),
-                        (kravhaver.verdi + 1).hashCode(),
-                    ),
+                referanse = referanse,
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
+                gjelderReferanse = referanse,
                 innhold =
                     POJONode(
                         Person(

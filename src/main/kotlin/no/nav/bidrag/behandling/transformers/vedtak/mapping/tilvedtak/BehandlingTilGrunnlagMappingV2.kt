@@ -130,6 +130,7 @@ class BehandlingTilGrunnlagMappingV2(
         return GrunnlagDto(
             referanse = tilGrunnlagsreferanse(),
             type = grunnlagstype,
+            gjelderReferanse = tilGrunnlagsreferanse(),
             innhold =
                 POJONode(
                     Person(
@@ -194,10 +195,11 @@ class BehandlingTilGrunnlagMappingV2(
     ): Set<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
-        fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto =
-            GrunnlagDto(
-                referanse =
-                    rolle!!.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG),
+        fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto {
+            val referanse = rolle!!.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
+            return GrunnlagDto(
+                referanse = referanse,
+                gjelderReferanse = referanse,
                 grunnlagsreferanseListe = emptyList(),
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
                 innhold =
@@ -209,6 +211,7 @@ class BehandlingTilGrunnlagMappingV2(
                         ).valider(),
                     ),
             )
+        }
 
         fun PrivatAvtale.opprettPersonGrunnlag(): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag()
@@ -318,6 +321,11 @@ class BehandlingTilGrunnlagMappingV2(
     fun Husstandsmedlem.tilGrunnlagPerson(): GrunnlagDto {
         val rolle = behandling.roller.find { it.ident == ident }
         val grunnlagstype = rolle?.rolletype?.tilGrunnlagstype() ?: Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+        val referanse =
+            grunnlagstype.tilPersonreferanse(
+                rolle?.fødselsdato?.toCompactString() ?: fødselsdato.toCompactString(),
+                (rolle?.id ?: id!!).toInt(),
+            )
         return GrunnlagDto(
             referanse =
                 grunnlagstype.tilPersonreferanse(
@@ -325,6 +333,7 @@ class BehandlingTilGrunnlagMappingV2(
                     (rolle?.id ?: id!!).toInt(),
                 ),
             type = grunnlagstype,
+            gjelderReferanse = referanse,
             innhold =
                 POJONode(
                     Person(
@@ -390,15 +399,17 @@ class BehandlingTilGrunnlagMappingV2(
     fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(personobjekter: Set<GrunnlagDto> = emptySet()): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
-        fun Underholdskostnad.tilPersonGrunnlag(underholdRolle: Rolle?): GrunnlagDto =
-            GrunnlagDto(
-                referanse =
-                    opprettPersonBarnBPBMReferanse(
-                        type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
-                        personFødselsdato,
-                        personIdent,
-                        personNavn,
-                    ),
+        fun Underholdskostnad.tilPersonGrunnlag(underholdRolle: Rolle?): GrunnlagDto {
+            val referanse =
+                opprettPersonBarnBPBMReferanse(
+                    type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
+                    personFødselsdato,
+                    personIdent,
+                    personNavn,
+                )
+            return GrunnlagDto(
+                referanse = referanse,
+                gjelderReferanse = underholdRolle?.bidragsmottaker?.tilGrunnlagsreferanse(),
                 grunnlagsreferanseListe =
                     if (kilde == Kilde.OFFENTLIG) {
                         listOf(
@@ -420,6 +431,7 @@ class BehandlingTilGrunnlagMappingV2(
                         ).valider(),
                     ),
             )
+        }
 
         fun Underholdskostnad.opprettPersonGrunnlag(underholdRolle: Rolle?): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag(underholdRolle)

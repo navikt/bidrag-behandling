@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
-import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
@@ -24,15 +23,12 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -61,9 +57,9 @@ fun Behandling.opprettMidlertidligPersonobjekterBMsbarn(personobjekter: Set<Grun
                 ) {
                     return@mapNotNull null
                 }
-                val bidragsmottakerReferanse = bidragsmottaker!!.tilGrunnlagsreferanse()
+                val bidragsmottakerReferanse = grunnlag.rolle.tilGrunnlagsreferanse()
                 val referanse = opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(bidragsmottakerReferanse)
-                barn.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse, eksisterendeGrunnlag?.referanse)
+                barn.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse, bidragsmottakerReferanse)
             }
         }.toMutableSet()
 

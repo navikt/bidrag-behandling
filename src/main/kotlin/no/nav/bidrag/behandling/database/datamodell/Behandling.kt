@@ -220,6 +220,7 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    val saker get() = if (erIForholdsmessigFordeling) søknadsbarn.map { it.forholdsmessigFordeling!!.tilhørerSak } else listOf(saksnummer)
     val erIForholdsmessigFordeling get() = forholdsmessigFordeling != null
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }

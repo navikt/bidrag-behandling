@@ -39,8 +39,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
-import no.nav.bidrag.beregn.barnebidrag.bo.AndelAvBidragsevneBeregningGrunnlag
-import no.nav.bidrag.beregn.barnebidrag.bo.SamværsfradragPeriodeGrunnlag
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
@@ -91,9 +89,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnholdMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.KopiDelberegningBidragspliktigesAndel
-import no.nav.bidrag.transport.behandling.felles.grunnlag.KopiDelberegningUnderholdskostnad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.KopiSamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsklassePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonBidragsevnePeriode
@@ -102,15 +100,14 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonMaksTilsynPerio
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
-import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningNyStruktur
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
@@ -292,7 +289,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                                     resultat.ugyldigBeregning,
                                     grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
                                     resultat.vedtakstype,
-                                    resultat.barn.ident,
+                                    resultat.barn.ident!!,
                                 )
                             }
                         },
@@ -398,7 +395,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 resultat.ugyldigBeregning,
                                 grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse, p.grunnlagsreferanseListe),
                                 delvedtak?.vedtakstype ?: rv.vedtakstype,
-                                resultat.barn.ident,
+                                resultat.barn.ident!!,
                                 erEndeligVedtak = erEndeligVedtak,
                             ).copy(
                                 erDirekteAvslag = resultat.avslagskode?.erDirekteAvslag() == true,
@@ -550,21 +547,24 @@ fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
         )
     }
 
-fun List<GrunnlagDto>.byggResultatSærbidragInntekter(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =
-    ResultatBeregningInntekterDto(
-        inntektBarn = finnTotalInntektForRolle(grunnlagsreferanseListe, Rolletype.BARN),
-        barnEndeligInntekt = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)?.barnEndeligInntekt,
-        inntektBP =
-            finnTotalInntektForRolle(
-                grunnlagsreferanseListe,
-                Rolletype.BIDRAGSPLIKTIG,
-            ),
-        inntektBM =
-            finnTotalInntektForRolle(
-                grunnlagsreferanseListe,
-                Rolletype.BIDRAGSMOTTAKER,
-            ),
-    )
+fun List<GrunnlagDto>.byggResultatInntekter(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+    bidragsmottakerReferanse: Grunnlagsreferanse? = null,
+) = ResultatBeregningInntekterDto(
+    inntektBarn = finnTotalInntektForRolle(grunnlagsreferanseListe, Rolletype.BARN),
+    barnEndeligInntekt = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)?.barnEndeligInntekt,
+    inntektBP =
+        finnTotalInntektForRolle(
+            grunnlagsreferanseListe,
+            Rolletype.BIDRAGSPLIKTIG,
+        ),
+    inntektBM =
+        finnTotalInntektForRolle(
+            grunnlagsreferanseListe,
+            Rolletype.BIDRAGSMOTTAKER,
+            bidragsmottakerReferanse,
+        ),
+)
 
 fun List<GrunnlagDto>.byggResultatBidragsberegning(
     periode: ÅrMånedsperiode,
@@ -574,58 +574,17 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     ugyldigBeregning: UgyldigBeregningDto?,
     erResultatEndringUnderGrense: Boolean,
     vedtakstype: Vedtakstype,
-    barnIdent: Personident? = null,
+    barnIdent: Personident,
     erEndeligVedtak: Boolean = false,
 ): ResultatBarnebidragsberegningPeriodeDto {
     if (vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringBisysVedtak()) {
-        val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel()!!
-        val aldersjusteringDetaljer = finnAldersjusteringDetaljerGrunnlag()
-        val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
-        val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
-        val sluttberegning =
-            sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidragAldersjustering>()
-        val bpsAndel =
-            DelberegningBidragspliktigesAndel(
-                periode = periode,
-                andelBeløp = sluttberegning!!.bpAndelBeløp,
-                endeligAndelFaktor =
-                    if (sluttberegning.deltBosted) {
-                        sluttberegning.bpAndelFaktorVedDeltBosted!!
-                    } else {
-                        bpsAndelKopi.endeligAndelFaktor
-                    },
-                beregnetAndelFaktor = bpsAndelKopi.endeligAndelFaktor,
-                barnetErSelvforsørget = false,
-                barnEndeligInntekt = BigDecimal.ZERO,
-            )
-        return ResultatBarnebidragsberegningPeriodeDto(
-            vedtakstype = vedtakstype,
-            periode = periode,
-            ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
-            underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
-            faktiskBidrag = resultat ?: BigDecimal.ZERO,
-            resultatKode = Resultatkode.BEREGNET_BIDRAG,
-            beregnetBidrag = sluttberegning.beregnetBeløp,
-            samværsfradrag = finnSamværsfradrag(grunnlagsreferanseListe),
-            bpsAndelU = bpsAndel.endeligAndelFaktor,
-            bpsAndelBeløp = sluttberegning.bpAndelBeløp,
-            aldersjusteringDetaljer = aldersjusteringDetaljer,
-            endeligVedtak = erEndeligVedtak,
-            erOpphør = resultat == null,
-            beregningsdetaljer =
-                run {
-                    BidragPeriodeBeregningsdetaljer(
-                        samværsfradrag =
-                            finnAldersjusteringDelberegningSamværsfradrag(
-                                grunnlagsreferanseListe,
-                            ),
-                        delberegningUnderholdskostnad = delberegningUnderholdskostnad,
-                        bpsAndel = bpsAndel,
-                        sluttberegningAldersjustering = sluttberegning,
-                        bpHarEvne = false,
-                        forskuddssats = BigDecimal.ZERO,
-                    )
-                },
+        return byggPeriodeBeregningDtoForAldersjustering(
+            grunnlagsreferanseListe,
+            periode,
+            vedtakstype,
+            ugyldigBeregning,
+            resultat,
+            erEndeligVedtak,
         )
     } else if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
         val sjablonIndeksfaktor =
@@ -653,137 +612,229 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         val erinnkrevingsgrunnlag = finnSøknadGrunnlag() != null && finnSøknadGrunnlag()!!.innkrevingsgrunnlag
         if (!erinnkrevingsgrunnlag) {
             finnResultatFraAnnenVedtak(grunnlagsreferanseListe)?.let {
-                if (it.vedtakstype == Vedtakstype.OPPHØR && it.vedtaksid == null) {
-                    return ResultatBarnebidragsberegningPeriodeDto(
-                        vedtakstype = Vedtakstype.OPPHØR,
-                        periode = periode,
-                        faktiskBidrag = BigDecimal.ZERO,
-                        erOpphør = true,
-                        resultatKode = Resultatkode.OPPHØR,
-                    )
-                }
-                val vedtak = hentVedtak(it.vedtaksid)
-                val vedtakPeriode =
-                    vedtak!!
-                        .stønadsendringListe
-                        .find {
-                            it.kravhaver == barnIdent
-                        }!!
-                        .periodeListe
-                        .find { it.periode.inneholder(periode) }!!
-                val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
-                val vedtakstype = if (vedtakstype == Vedtakstype.INNKREVING) vedtakstype else vedtak.type
-                return vedtak.grunnlagListe
-                    .byggResultatBidragsberegning(
-                        periode,
-                        vedtakPeriode.beløp,
-                        Resultatkode.fraKode(vedtakPeriode.resultatkode),
-                        vedtakPeriode.grunnlagReferanseListe,
-                        null,
-                        barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
-                        vedtakstype,
-                        barnIdent,
-                    ).copy(
-                        klageOmgjøringDetaljer =
-                            KlageOmgjøringDetaljer(
-                                omgjøringsvedtak = it.omgjøringsvedtak,
-                            ),
-                    )
+                return byggPeriodeBeregningDtoForResultatFraAnnenVedtak(it, periode, barnIdent, vedtakstype)
             }
         }
-        val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
-        val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
-        val sluttberegningGrunnlag =
-            finnSluttberegningIReferanser(grunnlagsreferanseListe)?.takeIf {
-                it.type ==
-                    Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG
-            }
-        val sluttberegning = byggSluttberegningV2(grunnlagsreferanseListe)
-
-        val delberegningGrensePeriode =
-            if (vedtakstype == Vedtakstype.OPPHØR || resultatkode?.erDirekteAvslag() == true || barnIdent == null) {
-                null
-            } else {
-                hentPersonNyesteIdent(barnIdent.verdi)?.let { barn ->
-                    finnDelberegningSjekkGrensePeriode(periode, barn.referanse)
-                        ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), barn.referanse)
-                }
-            }
-        return ResultatBarnebidragsberegningPeriodeDto(
-            vedtakstype = vedtakstype,
-            periode = periode,
-            ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
-            underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
-            faktiskBidrag = resultat ?: BigDecimal.ZERO,
-            erOpphør = resultat == null,
-            resultatKode =
-                if (erResultatEndringUnderGrense) {
-                    Resultatkode.INGEN_ENDRING_UNDER_GRENSE
-                } else {
-                    resultatkode
-                },
-            beregnetBidrag = sluttberegning?.beregnetBeløp ?: BigDecimal.ZERO,
-            samværsfradrag = finnSamværsfradrag(grunnlagsreferanseListe),
-            bpsAndelU =
-                if (sluttberegning?.bidragJustertForDeltBosted == true) {
-                    sluttberegning.bpAndelAvUVedDeltBostedFaktor
-                } else {
-                    bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO
-                },
-            bpsAndelBeløp = bpsAndel?.andelBeløp ?: BigDecimal.ZERO,
-            erDirekteAvslag = resultatkode?.erDirekteAvslag() ?: false,
-            erEndringUnderGrense = erResultatEndringUnderGrense,
-            erBeregnetAvslag =
-                sluttberegning != null &&
-                    (sluttberegning.barnetErSelvforsørget || sluttberegning.ikkeOmsorgForBarnet),
-            beregningsdetaljer =
-                if (vedtakstype == Vedtakstype.INNKREVING) {
-                    null
-                } else if (resultatkode?.erAvslag() == true) {
-                    BidragPeriodeBeregningsdetaljer(
-                        forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
-                        barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),
-                        barnetilleggBP = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSPLIKTIG),
-                        sluttberegning = sluttberegning,
-                        bpHarEvne = false,
-                    )
-                } else {
-                    val delberegningBPsEvne = finnDelberegningBidragsevne(grunnlagsreferanseListe)
-                    val forholdsmessigFordeling = byggGrunnlagForholdsmessigFordeling(grunnlagsreferanseListe)
-                    BidragPeriodeBeregningsdetaljer(
-                        delberegningBidragsevne = delberegningBPsEvne,
-                        forholdsmessigFordeling = forholdsmessigFordeling,
-                        sluttberegning1 =
-                            sluttberegningGrunnlag
-                                ?.takeIf { it.erSluttberegningGammelStruktur() }
-                                ?.innholdTilObjekt<SluttberegningBarnebidrag>(),
-                        endringUnderGrense = delberegningGrensePeriode?.innhold,
-                        barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),
-                        barnetilleggBP = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSPLIKTIG),
-                        samværsfradrag =
-                            finnDelberegningSamværsfradrag(
-                                grunnlagsreferanseListe,
-                            ),
-                        delberegningUnderholdskostnad = delberegningUnderholdskostnad,
-                        forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
-                        delberegningBidragspliktigesBeregnedeTotalBidrag =
-                            finnDelberegningBPsBeregnedeTotalbidrag(
-                                grunnlagsreferanseListe,
-                            ),
-                        bpsAndel = bpsAndel,
-                        sluttberegning = sluttberegning,
-                        antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
-                        inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
-                        voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
-                        enesteVoksenIHusstandenErEgetBarn =
-                            finnEnesteVoksenIHusstandenErEgetBarn(
-                                grunnlagsreferanseListe,
-                            ),
-                        bpHarEvne = delberegningBPsEvne?.let { it.bidragsevne > BigDecimal.ZERO } ?: false,
-                    )
-                },
+        return byggPeriodeBeregningDto(
+            grunnlagsreferanseListe,
+            vedtakstype,
+            resultatkode,
+            barnIdent,
+            periode,
+            ugyldigBeregning,
+            resultat,
+            erResultatEndringUnderGrense,
         )
     }
+}
+
+private fun byggPeriodeBeregningDtoForResultatFraAnnenVedtak(
+    grunnlag: ResultatFraVedtakGrunnlag,
+    periode: ÅrMånedsperiode,
+    barnIdent: Personident?,
+    vedtakstype: Vedtakstype,
+): ResultatBarnebidragsberegningPeriodeDto {
+    var vedtakstype1 = vedtakstype
+    if (grunnlag.vedtakstype == Vedtakstype.OPPHØR && grunnlag.vedtaksid == null) {
+        return ResultatBarnebidragsberegningPeriodeDto(
+            vedtakstype = Vedtakstype.OPPHØR,
+            periode = periode,
+            faktiskBidrag = BigDecimal.ZERO,
+            erOpphør = true,
+            resultatKode = Resultatkode.OPPHØR,
+        )
+    }
+    val vedtak = hentVedtak(grunnlag.vedtaksid)
+    val vedtakPeriode =
+        vedtak!!
+            .stønadsendringListe
+            .find {
+                it.kravhaver == barnIdent
+            }!!
+            .periodeListe
+            .find { it.periode.inneholder(periode) }!!
+    val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
+    val vedtakstype = if (vedtakstype1 == Vedtakstype.INNKREVING) vedtakstype1 else vedtak.type
+    return vedtak.grunnlagListe
+        .byggResultatBidragsberegning(
+            periode,
+            vedtakPeriode.beløp,
+            Resultatkode.fraKode(vedtakPeriode.resultatkode),
+            vedtakPeriode.grunnlagReferanseListe,
+            null,
+            barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
+            vedtakstype,
+            barnIdent,
+        ).copy(
+            klageOmgjøringDetaljer =
+                KlageOmgjøringDetaljer(
+                    omgjøringsvedtak = grunnlag.omgjøringsvedtak,
+                ),
+        )
+}
+
+private fun List<GrunnlagDto>.byggPeriodeBeregningDtoForAldersjustering(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+    periode: ÅrMånedsperiode,
+    vedtakstype: Vedtakstype,
+    ugyldigBeregning: UgyldigBeregningDto?,
+    resultat: BigDecimal?,
+    erEndeligVedtak: Boolean,
+): ResultatBarnebidragsberegningPeriodeDto {
+    val bpsAndelKopi = finnKopiDelberegningBidragspliktigesAndel()!!
+    val aldersjusteringDetaljer = finnAldersjusteringDetaljerGrunnlag()
+    val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
+    val sluttberegningGrunnlag = finnSluttberegningIReferanser(grunnlagsreferanseListe)
+    val sluttberegning =
+        sluttberegningGrunnlag?.innholdTilObjekt<SluttberegningBarnebidragAldersjustering>()
+    val bpsAndel =
+        DelberegningBidragspliktigesAndel(
+            periode = periode,
+            andelBeløp = sluttberegning!!.bpAndelBeløp,
+            endeligAndelFaktor =
+                if (sluttberegning.deltBosted) {
+                    sluttberegning.bpAndelFaktorVedDeltBosted!!
+                } else {
+                    bpsAndelKopi.endeligAndelFaktor
+                },
+            beregnetAndelFaktor = bpsAndelKopi.endeligAndelFaktor,
+            barnetErSelvforsørget = false,
+            barnEndeligInntekt = BigDecimal.ZERO,
+        )
+    return ResultatBarnebidragsberegningPeriodeDto(
+        vedtakstype = vedtakstype,
+        periode = periode,
+        ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
+        underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
+        faktiskBidrag = resultat ?: BigDecimal.ZERO,
+        resultatKode = Resultatkode.BEREGNET_BIDRAG,
+        beregnetBidrag = sluttberegning.beregnetBeløp,
+        samværsfradrag = finnSamværsfradrag(grunnlagsreferanseListe),
+        bpsAndelU = bpsAndel.endeligAndelFaktor,
+        bpsAndelBeløp = sluttberegning.bpAndelBeløp,
+        aldersjusteringDetaljer = aldersjusteringDetaljer,
+        endeligVedtak = erEndeligVedtak,
+        erOpphør = resultat == null,
+        beregningsdetaljer =
+            run {
+                BidragPeriodeBeregningsdetaljer(
+                    samværsfradrag =
+                        finnAldersjusteringDelberegningSamværsfradrag(
+                            grunnlagsreferanseListe,
+                        ),
+                    delberegningUnderholdskostnad = delberegningUnderholdskostnad,
+                    bpsAndel = bpsAndel,
+                    sluttberegningAldersjustering = sluttberegning,
+                    bpHarEvne = false,
+                    forskuddssats = BigDecimal.ZERO,
+                )
+            },
+    )
+}
+
+private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
+    grunnlagsreferanseListe: List<Grunnlagsreferanse>,
+    vedtakstype: Vedtakstype,
+    resultatkode: Resultatkode?,
+    barnIdent: Personident,
+    periode: ÅrMånedsperiode,
+    ugyldigBeregning: UgyldigBeregningDto?,
+    resultat: BigDecimal?,
+    erResultatEndringUnderGrense: Boolean,
+): ResultatBarnebidragsberegningPeriodeDto {
+    val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
+    val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
+    val sluttberegningGrunnlag =
+        finnSluttberegningIReferanser(grunnlagsreferanseListe)?.takeIf {
+            it.type ==
+                Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG
+        }
+    val sluttberegning = byggSluttberegningV2(grunnlagsreferanseListe)
+    val personobjekt = hentPerson(barnIdent.verdi)
+
+    val delberegningGrensePeriode =
+        if (vedtakstype == Vedtakstype.OPPHØR || resultatkode?.erDirekteAvslag() == true) {
+            null
+        } else {
+            hentPersonNyesteIdent(barnIdent.verdi)?.let { barn ->
+                finnDelberegningSjekkGrensePeriode(periode, barn.referanse)
+                    ?: finnDelberegningSjekkGrensePeriode(ÅrMånedsperiode(periode.fom, null), barn.referanse)
+            }
+        }
+    return ResultatBarnebidragsberegningPeriodeDto(
+        vedtakstype = vedtakstype,
+        periode = periode,
+        ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
+        underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
+        faktiskBidrag = resultat ?: BigDecimal.ZERO,
+        erOpphør = resultat == null,
+        resultatKode =
+            if (erResultatEndringUnderGrense) {
+                Resultatkode.INGEN_ENDRING_UNDER_GRENSE
+            } else {
+                resultatkode
+            },
+        beregnetBidrag = sluttberegning?.beregnetBeløp ?: BigDecimal.ZERO,
+        samværsfradrag = finnSamværsfradrag(grunnlagsreferanseListe),
+        bpsAndelU =
+            if (sluttberegning?.bidragJustertForDeltBosted == true) {
+                sluttberegning.bpAndelAvUVedDeltBostedFaktor
+            } else {
+                bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO
+            },
+        bpsAndelBeløp = bpsAndel?.andelBeløp ?: BigDecimal.ZERO,
+        erDirekteAvslag = resultatkode?.erDirekteAvslag() ?: false,
+        erEndringUnderGrense = erResultatEndringUnderGrense,
+        erBeregnetAvslag =
+            sluttberegning != null &&
+                (sluttberegning.barnetErSelvforsørget || sluttberegning.ikkeOmsorgForBarnet),
+        beregningsdetaljer =
+            if (vedtakstype == Vedtakstype.INNKREVING) {
+                null
+            } else if (resultatkode?.erAvslag() == true) {
+                BidragPeriodeBeregningsdetaljer(
+                    forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
+                    barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),
+                    barnetilleggBP = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSPLIKTIG),
+                    sluttberegning = sluttberegning,
+                    bpHarEvne = false,
+                )
+            } else {
+                val delberegningBPsEvne = finnDelberegningBidragsevne(grunnlagsreferanseListe)
+                val forholdsmessigFordeling = byggGrunnlagForholdsmessigFordeling(grunnlagsreferanseListe)
+                BidragPeriodeBeregningsdetaljer(
+                    delberegningBidragsevne = delberegningBPsEvne,
+                    forholdsmessigFordeling = forholdsmessigFordeling,
+                    sluttberegning1 =
+                        sluttberegningGrunnlag
+                            ?.takeIf { it.erSluttberegningGammelStruktur() }
+                            ?.innholdTilObjekt<SluttberegningBarnebidrag>(),
+                    endringUnderGrense = delberegningGrensePeriode?.innhold,
+                    barnetilleggBM = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSMOTTAKER),
+                    barnetilleggBP = finnBarnetillegg(grunnlagsreferanseListe, Grunnlagstype.PERSON_BIDRAGSPLIKTIG),
+                    samværsfradrag =
+                        finnDelberegningSamværsfradrag(
+                            grunnlagsreferanseListe,
+                        ),
+                    delberegningUnderholdskostnad = delberegningUnderholdskostnad,
+                    forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
+                    delberegningBidragspliktigesBeregnedeTotalBidrag =
+                        finnDelberegningBPsBeregnedeTotalbidrag(
+                            grunnlagsreferanseListe,
+                        ),
+                    bpsAndel = bpsAndel,
+                    sluttberegning = sluttberegning,
+                    antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
+                    inntekter = byggResultatInntekter(grunnlagsreferanseListe, personobjekt?.bidragsmottakerReferanse),
+                    voksenIHusstanden = finnBorMedAndreVoksne(grunnlagsreferanseListe),
+                    enesteVoksenIHusstandenErEgetBarn =
+                        finnEnesteVoksenIHusstandenErEgetBarn(
+                            grunnlagsreferanseListe,
+                        ),
+                    bpHarEvne = delberegningBPsEvne?.let { it.bidragsevne > BigDecimal.ZERO } ?: false,
+                )
+            },
+    )
 }
 
 fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
@@ -807,7 +858,7 @@ fun List<GrunnlagDto>.byggResultatSærbidragsberegning(
     forskuddssats = finnForskuddssats(grunnlagsreferanseListe),
     bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe),
     antallBarnIHusstanden = finnAntallBarnIHusstanden(grunnlagsreferanseListe),
-    inntekter = byggResultatSærbidragInntekter(grunnlagsreferanseListe),
+    inntekter = byggResultatInntekter(grunnlagsreferanseListe),
     utgiftsposter = utgiftsposter,
     maksGodkjentBeløp = maksGodkjentBeløp,
     delberegningUtgift = finnDelberegningUtgift(grunnlagsreferanseListe),
@@ -1489,11 +1540,12 @@ fun List<GrunnlagDto>.finnForskuddssats(grunnlagsreferanseListe: List<Grunnlagsr
 fun List<GrunnlagDto>.finnTotalInntektForRolle(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,
     rolletype: Rolletype? = null,
+    gjelderReferanse: String? = null,
 ): BigDecimal {
     val sluttberegning =
         finnSluttberegningIReferanser(grunnlagsreferanseListe)
             ?: return BigDecimal.ZERO
-    val gjelderReferanse = hentAllePersoner().find { it.type == rolletype?.tilGrunnlagstype() }?.referanse
+    val gjelderReferanse = gjelderReferanse ?: hentAllePersoner().find { it.type == rolletype?.tilGrunnlagstype() }?.referanse
     val delberegningSumInntekter = finnGrunnlagSomErReferertAv(Grunnlagstype.DELBEREGNING_SUM_INNTEKT, sluttberegning)
     val delberegningSumInntektForRolle =
         if (gjelderReferanse.isNullOrEmpty()) {

@@ -620,7 +620,7 @@ class BehandlingTilVedtakMapping(
 
     private fun Behandling.byggOpprettVedtakRequestBidrag(enhet: String? = null): OpprettVedtakRequestDto {
         val behandling = this
-        val sak = sakConsumer.hentSak(saksnummer)
+        val behandlingSaker = saker.associateWith { sakConsumer.hentSak(it) }
         val beregning = beregningService.beregneBidrag(id!!)
 
         if (beregning.any { it.ugyldigBeregning != null }) {
@@ -648,6 +648,7 @@ class BehandlingTilVedtakMapping(
             return byggOpprettVedtakRequestObjekt(enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map { periode ->
+                        val sak = behandlingSaker.getValue(periode.barn.saksnummer)
                         val sistePeriode = periode.perioder.filter { it.resultatkode != Resultatkode.OPPHØR.name }.maxBy { it.periode.fom }
                         val søknadsbarnReferanse = periode.barn.tilGrunnlagsreferanse()
                         val stønadsendringerBarn =
@@ -687,7 +688,7 @@ class BehandlingTilVedtakMapping(
                         )
                     },
                 engangsbeløpListe =
-                    engangsbeløpGebyr.engangsbeløp + mapEngangsbeløpDirekteOppgjør(sak),
+                    engangsbeløpGebyr.engangsbeløp + mapEngangsbeløpDirekteOppgjør(behandlingSaker),
                 grunnlagListe =
                     (grunnlagListe + engangsbeløpGebyr.grunnlagsliste + grunnlagVirkningstidspunkt).toSet().map(
                         BaseGrunnlag::tilOpprettRequestDto,
@@ -763,13 +764,14 @@ class BehandlingTilVedtakMapping(
         return GebyrResulat(gebyrBp + gebyrMottakere, gebyrGrunnlagsliste)
     }
 
-    private fun Behandling.mapEngangsbeløpDirekteOppgjør(sak: BidragssakDto) =
+    private fun Behandling.mapEngangsbeløpDirekteOppgjør(behandlingSaker: Map<String, BidragssakDto>) =
         søknadsbarn
             .filter {
                 it.innbetaltBeløp != null &&
                     it.innbetaltBeløp!! > BigDecimal.ZERO
             }.map {
                 mapper.run {
+                    val sak = behandlingSaker.getValue(it.saksnummer)
                     val kravhaver = it.tilNyestePersonident() ?: rolleManglerIdent(Rolletype.BARN, id!!)
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.DIREKTE_OPPGJØR,
