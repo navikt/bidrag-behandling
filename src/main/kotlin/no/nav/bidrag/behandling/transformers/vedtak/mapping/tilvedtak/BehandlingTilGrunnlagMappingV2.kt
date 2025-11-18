@@ -130,7 +130,7 @@ class BehandlingTilGrunnlagMappingV2(
         return GrunnlagDto(
             referanse = tilGrunnlagsreferanse(),
             type = grunnlagstype,
-            gjelderReferanse = tilGrunnlagsreferanse(),
+//            gjelderReferanse = tilGrunnlagsreferanse(),
             innhold =
                 POJONode(
                     Person(
@@ -327,13 +327,9 @@ class BehandlingTilGrunnlagMappingV2(
                 (rolle?.id ?: id!!).toInt(),
             )
         return GrunnlagDto(
-            referanse =
-                grunnlagstype.tilPersonreferanse(
-                    rolle?.fødselsdato?.toCompactString() ?: fødselsdato.toCompactString(),
-                    (rolle?.id ?: id!!).toInt(),
-                ),
+            referanse = referanse,
             type = grunnlagstype,
-            gjelderReferanse = referanse,
+//            gjelderReferanse = referanse,
             innhold =
                 POJONode(
                     Person(
