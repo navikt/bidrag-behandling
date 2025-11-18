@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ForholdsmessigFordelingBeregningsdetaljer
+import no.nav.bidrag.behandling.dto.v1.beregning.ForholdsmessigFordelingBidragTilFordelingAnnenBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.IndeksreguleringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
@@ -30,11 +31,13 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.UnderholdskostnadPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
+import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
@@ -123,7 +126,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentResultatBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
+import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
@@ -229,8 +234,14 @@ fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List
         }
 }
 
-fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
-    ResultatBidragberegningDto(
+fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto {
+    val grunnlagslisteAlle =
+        flatMap {
+            it.resultat.grunnlagListe.toList() +
+                (it.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList())
+        }
+    return ResultatBidragberegningDto(
+        minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling(),
         resultatBarn =
             sortedBy { it.barn.fødselsdato }.map { resultat ->
                 val delvedtakListe = opprettDelvedtak(resultat)
@@ -245,7 +256,6 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                     innkrevesFraDato = resultat.innkrevesFraDato,
                     ugyldigBeregning = resultat.ugyldigBeregning,
                     erAvvisning = resultat.avslagskode?.erAvvisning() == true,
-                    perioderSlåttUtTilFF = grunnlagsListe.perioderSlåttUtTilFF(),
                     forsendelseDistribueresAutomatisk =
                         resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,
                     resultatUtenBeregning =
@@ -296,6 +306,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto =
                 )
             },
     )
+}
 
 private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<DelvedtakDto> =
     resultat.resultatVedtak?.resultatVedtakListe?.map { rv ->
@@ -764,6 +775,7 @@ private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
     return ResultatBarnebidragsberegningPeriodeDto(
         vedtakstype = vedtakstype,
         periode = periode,
+        periodeHarSlåttUtTilFF = perioderSlåttUtTilFF().contains(periode),
         ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
         underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
         faktiskBidrag = resultat ?: BigDecimal.ZERO,
@@ -1358,6 +1370,13 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
             Grunnlagstype.DELBEREGNING_ANDEL_AV_BIDRAGSEVNE,
             sluttberegning.grunnlagsreferanseListe,
         ).firstOrNull() ?: return null
+    val bidragTilFordelingAndreBarn =
+        filtrerOgKonverterBasertPåEgenReferanse<DelberegningBidragTilFordeling>(
+            Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING,
+        ).filter {
+            it.innhold.periode == bidragTilFordeling.innhold.periode
+        }.distinctBy { it.referanse }
+            .sortedBy { it.gjelderBarnReferanse == bidragTilFordeling.gjelderBarnReferanse }
     return ForholdsmessigFordelingBeregningsdetaljer(
         sumBidragTilFordeling = sumBidragTilBeregning.innhold.sumBidragTilFordeling,
         sumPrioriterteBidragTilFordeling = sumBidragTilBeregning.innhold.sumPrioriterteBidragTilFordeling,
@@ -1367,7 +1386,16 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         andelAvSumBidragTilFordelingFaktor = andelAvBidragsevne.innhold.andelAvSumBidragTilFordelingFaktor,
         bidragEtterFordeling = andelAvBidragsevne.innhold.bidragEtterFordeling,
         harBPFullEvne = andelAvBidragsevne.innhold.harBPFullEvne,
-        erForholdsmessigFordelt = harSlåttUtTilForholdsmessigFordeling(),
+        erForholdsmessigFordelt = perioderSlåttUtTilFF().contains(sluttberegning.sluttberegningPeriode()),
+        bidragTilFordelingAndreBarn =
+            bidragTilFordelingAndreBarn.map {
+                val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+                ForholdsmessigFordelingBidragTilFordelingAnnenBarn(
+                    barn =
+                        PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                    bidragTilFordeling = it.innhold.bidragTilFordeling,
+                )
+            },
     )
 }
 

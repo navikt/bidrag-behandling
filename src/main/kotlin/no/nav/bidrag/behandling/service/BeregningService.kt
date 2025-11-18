@@ -262,7 +262,8 @@ class BeregningService(
                         it.gjelderBarnReferanse == null || !gjelderErBm ||
                             grunnlagSøknadsbarn.personObjekt.bidragsmottaker == null ||
                             it.gjelderReferanse == grunnlagSøknadsbarn.personObjekt.bidragsmottaker ||
-                            it.gjelderBarnReferanse == grunnlagSøknadsbarn.referanse
+                            it.gjelderBarnReferanse == grunnlagSøknadsbarn.referanse ||
+                            it.type == Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING
                     }
                 val endeligResultat =
                     resultatBarn.resultatVedtakListe.find {

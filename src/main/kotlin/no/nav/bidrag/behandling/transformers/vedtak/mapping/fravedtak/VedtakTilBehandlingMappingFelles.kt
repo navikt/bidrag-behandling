@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
@@ -154,36 +155,37 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
 
 fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
-        stønadsendringListe.sortedBy { it.kravhaver.fødselsdato() }.map { stønadsendring ->
-            val barnIdent = stønadsendring.kravhaver
-            val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
-            val barn = barnGrunnlag?.innholdTilObjekt<Person>()
-            val erResultatUtenBeregning =
-                stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
-                    type == Vedtakstype.INNKREVING
-            val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
-            ResultatBidragsberegningBarnDto(
-                resultatUtenBeregning = erResultatUtenBeregning,
-                barn =
-                    ResultatRolle(
-                        barn?.ident ?: stønadsendring.kravhaver,
-                        hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
-                        barn?.fødselsdato ?: LocalDate.now(),
-                        hentDirekteOppgjørBeløp(barnIdent.verdi),
-                        referanse = barnGrunnlag?.referanse ?: "",
-                    ),
-                erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
-                indeksår = stønadsendring.førsteIndeksreguleringsår,
-                delvedtak = hentDelvedtak(stønadsendring),
-                innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
-                perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
-                perioder =
-                    vedtakBeregning?.let {
-                        val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
-                        it.hentBeregningsperioder(stønadsendringBeregning)
-                    } ?: hentBeregningsperioder(stønadsendring),
-            )
-        },
+        minstEnPeriodeHarSlåttUtTilFF = grunnlagListe.harSlåttUtTilForholdsmessigFordeling(),
+        resultatBarn =
+            stønadsendringListe.sortedBy { it.kravhaver.fødselsdato() }.map { stønadsendring ->
+                val barnIdent = stønadsendring.kravhaver
+                val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
+                val barn = barnGrunnlag?.innholdTilObjekt<Person>()
+                val erResultatUtenBeregning =
+                    stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
+                        type == Vedtakstype.INNKREVING
+                val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
+                ResultatBidragsberegningBarnDto(
+                    resultatUtenBeregning = erResultatUtenBeregning,
+                    barn =
+                        ResultatRolle(
+                            barn?.ident ?: stønadsendring.kravhaver,
+                            hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
+                            barn?.fødselsdato ?: LocalDate.now(),
+                            hentDirekteOppgjørBeløp(barnIdent.verdi),
+                            referanse = barnGrunnlag?.referanse ?: "",
+                        ),
+                    erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
+                    indeksår = stønadsendring.førsteIndeksreguleringsår,
+                    delvedtak = hentDelvedtak(stønadsendring),
+                    innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
+                    perioder =
+                        vedtakBeregning?.let {
+                            val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
+                            it.hentBeregningsperioder(stønadsendringBeregning)
+                        } ?: hentBeregningsperioder(stønadsendring),
+                )
+            },
     )
 
 fun VedtakDto.erVedtakUtenBeregning() =

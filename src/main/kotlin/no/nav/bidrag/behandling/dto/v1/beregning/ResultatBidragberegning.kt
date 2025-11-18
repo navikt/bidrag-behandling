@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.EtterfølgendeVedtakSomOverlapper
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
@@ -183,6 +184,7 @@ data class UgyldigBeregningDto(
 }
 
 data class ResultatBidragberegningDto(
+    val minstEnPeriodeHarSlåttUtTilFF: Boolean = false,
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
 )
 
@@ -194,7 +196,6 @@ data class ResultatBidragsberegningBarnDto(
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val forsendelseDistribueresAutomatisk: Boolean = false,
     val erAvvisning: Boolean = false,
-    val perioderSlåttUtTilFF: List<ÅrMånedsperiode> = emptyList(),
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val delvedtak: List<DelvedtakDto> = emptyList(),
 )
@@ -230,6 +231,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val endeligVedtak: Boolean = false,
     val erBeregnetAvslag: Boolean = false,
     val erEndringUnderGrense: Boolean = false,
+    val periodeHarSlåttUtTilFF: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
     val vedtakstype: Vedtakstype,
     val klageOmgjøringDetaljer: KlageOmgjøringDetaljer? = null,
@@ -313,6 +315,12 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val harBPFullEvne: Boolean,
     val erKompletteGrunnlagForAlleLøpendeBidrag: Boolean,
     val erForholdsmessigFordelt: Boolean,
+    val bidragTilFordelingAndreBarn: List<ForholdsmessigFordelingBidragTilFordelingAnnenBarn> = emptyList(),
+)
+
+data class ForholdsmessigFordelingBidragTilFordelingAnnenBarn(
+    val bidragTilFordeling: BigDecimal,
+    val barn: PersoninfoDto,
 )
 
 data class KlageOmgjøringDetaljer(

@@ -160,12 +160,13 @@ fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
         }.toSet()
 
 fun Behandling.byggGrunnlagSøknad() =
-    if (erIForholdsmessigFordeling && erBisysVedtak) {
+    if (erIForholdsmessigFordeling || erBisysVedtak) {
         søknadsbarn.map {
             val ffEldsteSøknad = it.forholdsmessigFordeling!!.eldsteSøknad
             GrunnlagDto(
                 referanse = "søknad_${it.tilGrunnlagsreferanse()}",
                 type = Grunnlagstype.SØKNAD,
+                gjelderReferanse = it.bidragsmottaker?.tilGrunnlagsreferanse(),
                 gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
                 innhold =
                     POJONode(
