@@ -633,7 +633,8 @@ fun Behandling.tilBehandlingreferanseListe() =
                             referanse = søknad.søknadsid!!.toString(),
                         )
                     }
-                }
+                }.toSet()
+                .toList()
         } else {
             listOfNotNull(
                 OpprettBehandlingsreferanseRequestDto(
