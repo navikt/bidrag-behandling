@@ -24,7 +24,7 @@ fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
     return GrunnlagDto(
         referanse = tilGrunnlagsreferanse(),
         type = grunnlagstype,
-//        gjelderReferanse = tilGrunnlagsreferanse(),
+        gjelderReferanse = tilGrunnlagsreferanse(),
         innhold =
             POJONode(
                 Person(

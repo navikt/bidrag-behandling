@@ -130,7 +130,7 @@ class BehandlingTilGrunnlagMappingV2(
         return GrunnlagDto(
             referanse = tilGrunnlagsreferanse(),
             type = grunnlagstype,
-//            gjelderReferanse = tilGrunnlagsreferanse(),
+            gjelderReferanse = tilGrunnlagsreferanse(),
             innhold =
                 POJONode(
                     Person(
@@ -329,7 +329,7 @@ class BehandlingTilGrunnlagMappingV2(
         return GrunnlagDto(
             referanse = referanse,
             type = grunnlagstype,
-//            gjelderReferanse = referanse,
+            gjelderReferanse = referanse,
             innhold =
                 POJONode(
                     Person(
