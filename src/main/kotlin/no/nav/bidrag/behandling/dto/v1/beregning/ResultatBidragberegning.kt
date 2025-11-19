@@ -315,10 +315,12 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val harBPFullEvne: Boolean,
     val erKompletteGrunnlagForAlleLøpendeBidrag: Boolean,
     val erForholdsmessigFordelt: Boolean,
-    val bidragTilFordelingAndreBarn: List<ForholdsmessigFordelingBidragTilFordelingAnnenBarn> = emptyList(),
+    val bidragTilFordelingAlle: List<ForholdsmessigFordelingBidragTilFordelingBarn> = emptyList(),
 )
 
-data class ForholdsmessigFordelingBidragTilFordelingAnnenBarn(
+data class ForholdsmessigFordelingBidragTilFordelingBarn(
+    val prioritertBidrag: Boolean,
+    val privatAvtale: Boolean,
     val bidragTilFordeling: BigDecimal,
     val barn: PersoninfoDto,
 )

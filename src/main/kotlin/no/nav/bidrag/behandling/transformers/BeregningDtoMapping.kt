@@ -8,7 +8,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ForholdsmessigFordelingBeregningsdetaljer
-import no.nav.bidrag.behandling.dto.v1.beregning.ForholdsmessigFordelingBidragTilFordelingAnnenBarn
+import no.nav.bidrag.behandling.dto.v1.beregning.ForholdsmessigFordelingBidragTilFordelingBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.IndeksreguleringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
@@ -1370,13 +1370,13 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
             Grunnlagstype.DELBEREGNING_ANDEL_AV_BIDRAGSEVNE,
             sluttberegning.grunnlagsreferanseListe,
         ).firstOrNull() ?: return null
-    val bidragTilFordelingAndreBarn =
-        filtrerOgKonverterBasertPåEgenReferanse<DelberegningBidragTilFordeling>(
+
+    // TODO: Legg til også privat avtale og utlandskbidrag
+    val bidragTilFordelingAlle =
+        finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragTilFordeling>(
             Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING,
-        ).filter {
-            it.innhold.periode == bidragTilFordeling.innhold.periode
-        }.distinctBy { it.referanse }
-            .sortedBy { it.gjelderBarnReferanse == bidragTilFordeling.gjelderBarnReferanse }
+            sumBidragTilBeregning.grunnlag,
+        ).sortedBy { it.gjelderBarnReferanse == bidragTilFordeling.gjelderBarnReferanse }
     return ForholdsmessigFordelingBeregningsdetaljer(
         sumBidragTilFordeling = sumBidragTilBeregning.innhold.sumBidragTilFordeling,
         sumPrioriterteBidragTilFordeling = sumBidragTilBeregning.innhold.sumPrioriterteBidragTilFordeling,
@@ -1387,10 +1387,12 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         bidragEtterFordeling = andelAvBidragsevne.innhold.bidragEtterFordeling,
         harBPFullEvne = andelAvBidragsevne.innhold.harBPFullEvne,
         erForholdsmessigFordelt = perioderSlåttUtTilFF().contains(sluttberegning.sluttberegningPeriode()),
-        bidragTilFordelingAndreBarn =
-            bidragTilFordelingAndreBarn.map {
+        bidragTilFordelingAlle =
+            bidragTilFordelingAlle.map {
                 val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
-                ForholdsmessigFordelingBidragTilFordelingAnnenBarn(
+                ForholdsmessigFordelingBidragTilFordelingBarn(
+                    prioritertBidrag = false,
+                    privatAvtale = false,
                     barn =
                         PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
                     bidragTilFordeling = it.innhold.bidragTilFordeling,
