@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ForholdsmessigFordelingBeregnin
 import no.nav.bidrag.behandling.dto.v1.beregning.ForholdsmessigFordelingBidragTilFordelingBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.IndeksreguleringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
+import no.nav.bidrag.behandling.dto.v1.beregning.PeriodeSlåttUtTilFF
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningInntekterDto
@@ -31,13 +32,11 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.UnderholdskostnadPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
-import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
-import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
@@ -242,6 +241,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto {
         }
     return ResultatBidragberegningDto(
         minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling(),
+        perioderSlåttUtTilFF = grunnlagslisteAlle.perioderSlåttUtTilFF(),
         resultatBarn =
             sortedBy { it.barn.fødselsdato }.map { resultat ->
                 val delvedtakListe = opprettDelvedtak(resultat)
@@ -775,7 +775,7 @@ private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
     return ResultatBarnebidragsberegningPeriodeDto(
         vedtakstype = vedtakstype,
         periode = periode,
-        periodeHarSlåttUtTilFF = perioderSlåttUtTilFF().contains(periode),
+        periodeHarSlåttUtTilFF = periodeHarSlåttUtTilFF(periode),
         ugyldigBeregning = ugyldigBeregning?.resultatPeriode?.find { it.periode == periode },
         underholdskostnad = delberegningUnderholdskostnad?.underholdskostnad ?: BigDecimal.ZERO,
         faktiskBidrag = resultat ?: BigDecimal.ZERO,
@@ -1336,7 +1336,9 @@ fun List<GrunnlagDto>.finnBarnetillegg(
     )
 }
 
-fun List<GrunnlagDto>.perioderSlåttUtTilFF(): List<ÅrMånedsperiode> {
+fun List<GrunnlagDto>.periodeHarSlåttUtTilFF(periode: ÅrMånedsperiode) = perioderSlåttUtTilFF().map { it.periode }.contains(periode)
+
+fun List<GrunnlagDto>.perioderSlåttUtTilFF(): List<PeriodeSlåttUtTilFF> {
     val andelBidragsevne =
         filtrerOgKonverterBasertPåFremmedReferanse<DelberegningAndelAvBidragsevne>(
             Grunnlagstype.DELBEREGNING_ANDEL_AV_BIDRAGSEVNE,
@@ -1344,7 +1346,13 @@ fun List<GrunnlagDto>.perioderSlåttUtTilFF(): List<ÅrMånedsperiode> {
 
     return andelBidragsevne
         .filter { !it.innhold.harBPFullEvne && it.innhold.andelAvSumBidragTilFordelingFaktor < BigDecimal.ONE }
-        .map { it.innhold.periode }
+        .map {
+            val grunnlag25ProsentAvInntekt = finnGrunnlag25ProsentAvInntekt(it.grunnlag.grunnlagsreferanseListe)
+            PeriodeSlåttUtTilFF(
+                it.innhold.periode,
+                grunnlag25ProsentAvInntekt?.innhold?.erEvneJustertNedTil25ProsentAvInntekt == true,
+            )
+        }
 }
 
 fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(): Boolean = perioderSlåttUtTilFF().isNotEmpty()
@@ -1386,7 +1394,7 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         andelAvSumBidragTilFordelingFaktor = andelAvBidragsevne.innhold.andelAvSumBidragTilFordelingFaktor,
         bidragEtterFordeling = andelAvBidragsevne.innhold.bidragEtterFordeling,
         harBPFullEvne = andelAvBidragsevne.innhold.harBPFullEvne,
-        erForholdsmessigFordelt = perioderSlåttUtTilFF().contains(sluttberegning.sluttberegningPeriode()),
+        erForholdsmessigFordelt = periodeHarSlåttUtTilFF(sluttberegning.sluttberegningPeriode()),
         bidragTilFordelingAlle =
             bidragTilFordelingAlle.map {
                 val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt

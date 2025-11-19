@@ -156,6 +156,7 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
 fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
         minstEnPeriodeHarSlåttUtTilFF = grunnlagListe.harSlåttUtTilForholdsmessigFordeling(),
+        perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
         resultatBarn =
             stønadsendringListe.sortedBy { it.kravhaver.fødselsdato() }.map { stønadsendring ->
                 val barnIdent = stønadsendring.kravhaver

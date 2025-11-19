@@ -1,7 +1,5 @@
 package no.nav.bidrag.behandling.dto.v1.beregning
 
-import com.fasterxml.jackson.annotation.JsonAlias
-import com.fasterxml.jackson.annotation.JsonIgnore
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
@@ -33,7 +31,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholds
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.Sluttberegning
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
@@ -186,6 +183,7 @@ data class UgyldigBeregningDto(
 data class ResultatBidragberegningDto(
     val minstEnPeriodeHarSlåttUtTilFF: Boolean = false,
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
+    val perioderSlåttUtTilFF: List<PeriodeSlåttUtTilFF>,
 )
 
 data class ResultatBidragsberegningBarnDto(
@@ -304,6 +302,11 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             else -> beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern
         }
 }
+
+data class PeriodeSlåttUtTilFF(
+    val periode: ÅrMånedsperiode,
+    val erEvneJustertNedTil25ProsentAvInntekt: Boolean,
+)
 
 data class ForholdsmessigFordelingBeregningsdetaljer(
     val sumBidragTilFordeling: BigDecimal,
