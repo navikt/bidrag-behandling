@@ -830,7 +830,7 @@ class Dtomapper(
                 erKlageEllerOmgjøring = erKlageEllerOmgjøring,
                 opprettetTidspunkt = opprettetTidspunkt,
                 erVedtakFattet = vedtaksid != null,
-                erDelvedtakFattet = vedtakDetaljer?.fattetDelvedtak?.isNotEmpty() == true,
+                erDelvedtakFattet = vedtakDetaljer?.fattetVedtak?.isNotEmpty() == true,
                 søktFomDato = søktFomDato,
                 mottattdato = mottattdato,
                 klageMottattdato = omgjøringsdetaljer?.klageMottattdato,

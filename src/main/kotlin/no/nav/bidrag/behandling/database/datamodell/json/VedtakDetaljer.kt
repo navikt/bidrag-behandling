@@ -1,8 +1,8 @@
 package no.nav.bidrag.behandling.database.datamodell.json
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import jakarta.persistence.Converter
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -16,10 +16,11 @@ data class VedtakDetaljer(
     val vedtakstidspunkt: LocalDateTime? = null,
     val vedtakFattetAv: String? = null,
     val unikreferanse: String? = null,
-    val fattetDelvedtak: Set<FattetDelvedtak> = emptySet(),
+    @JsonAlias("fattetDelvedtak")
+    val fattetVedtak: Set<FattetVedtak> = emptySet(),
 )
 
-data class FattetDelvedtak(
+data class FattetVedtak(
     val fattetTidspunkt: ZonedDateTime = ZonedDateTime.now(ZoneId.of("Europe/Oslo")),
     val vedtaksid: Int,
     val vedtakstype: Vedtakstype? = null,

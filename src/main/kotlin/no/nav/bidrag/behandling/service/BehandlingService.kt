@@ -9,7 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
-import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
+import no.nav.bidrag.behandling.database.datamodell.json.FattetVedtak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
@@ -392,7 +392,7 @@ class BehandlingService(
     fun oppdaterDelvedtakFattetStatus(
         behandlingsid: Long,
         fattetAvEnhet: String,
-        resultat: FattetDelvedtak,
+        resultat: FattetVedtak,
     ) {
         behandlingRepository
             .finnAlleRelaterteBehandlinger(behandlingsid)
@@ -406,8 +406,8 @@ class BehandlingService(
                     eksisterendeDetaljer
                         .copy(
                             vedtakFattetAvEnhet = fattetAvEnhet,
-                            fattetDelvedtak =
-                                (eksisterendeDetaljer.fattetDelvedtak + setOf(resultat)).toSet(),
+                            fattetVedtak =
+                                (eksisterendeDetaljer.fattetVedtak + setOf(resultat)).toSet(),
                         )
             }
     }
@@ -437,6 +437,7 @@ class BehandlingService(
                                     ?: TokenUtils.hentApplikasjonsnavn(),
                         )
 
+                // TODO: Fjern disse verdiene når migreringen er over
                 it.vedtaksid = vedtaksid
                 it.vedtakFattetAvEnhet = fattetAvEnhet
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()

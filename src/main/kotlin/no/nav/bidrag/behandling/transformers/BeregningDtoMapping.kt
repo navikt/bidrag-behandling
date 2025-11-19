@@ -1478,6 +1478,8 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
             sluttberegning.grunnlagsreferanseListe,
         ).firstOrNull() ?: return null
     val nettoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bidragTilFordeling.subtract(samværsfradrag.innhold.beløp)
+    val bruttoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bruttoBidragEtterBarnetilleggBM
+    val evneJustertFor25ProsentAvInntekt = evne25prosentAvInntekt.innhold.evneJustertFor25ProsentAvInntekt
     return SluttberegningBarnebidrag2(
         bidragJustertNedTilEvne = !andelAvBidragsevne.innhold.harBPFullEvne,
         nettoBidragEtterSamværsfradrag = beregnetBeløp ?: BigDecimal.ZERO,
