@@ -54,8 +54,8 @@ spring:
 BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
 #BIDRAG_PERSON_URL: https://bidrag-person-feature.dev.adeo.no
 #BIDRAG_FORSENDELSE_URL: http://localhost:8999
-BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-stonad-q2.intern.dev.nav.no
-BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-stonad-q2
+BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-belopshistorikk-q2.intern.dev.nav.no
+BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-belopshistorikk-q2
 BIDRAG_BBM_URL: https://bidrag-bbm.dev-fss-pub.nais.io
 BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm
 BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
@@ -81,8 +81,8 @@ spring:
     activate:
       on-profile: q2
 BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse
-BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-stonad-q2.intern.dev.nav.no
-BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-stonad-q2
+BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-belopshistorikk-q2.intern.dev.nav.no
+BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-belopshistorikk-q2
 BIDRAG_BBM_URL: https://bidrag-bbm.dev-fss-pub.nais.io
 BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm
 BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse.intern.dev.nav.no
@@ -107,8 +107,8 @@ spring:
     activate:
       on-profile: q1
 BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
-BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-stonad-q1.intern.dev.nav.no
-BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-stonad-q1
+BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-belopshistorikk-q1.intern.dev.nav.no
+BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-belopshistorikk-q1
 BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
 BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
 BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse-feature.intern.dev.nav.no
@@ -133,8 +133,8 @@ spring:
     activate:
       on-profile: localdevq1
 BIDRAG_FORSENDELSE_SCOPE: dev-gcp.bidrag.bidrag-dokument-forsendelse-feature
-BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-stonad-q1.intern.dev.nav.no
-BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-stonad-q1
+BIDRAG_BELOPSHISTORIKK_URL: https://bidrag-belopshistorikk-q1.intern.dev.nav.no
+BIDRAG_BELOPSHISTORIKK_SCOPE: dev-gcp.bidrag.bidrag-belopshistorikk-q1
 BIDRAG_BBM_URL: https://bidrag-bbm-feature.dev-fss-pub.nais.io
 BIDRAG_BBM_SCOPE: dev-fss.bidrag.bidrag-bbm-feature
 BIDRAG_FORSENDELSE_URL: https://bidrag-dokument-forsendelse-feature.intern.dev.nav.no
