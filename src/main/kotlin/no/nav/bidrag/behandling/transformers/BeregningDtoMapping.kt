@@ -255,6 +255,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto {
                     barn = resultat.barn,
                     innkrevesFraDato = resultat.innkrevesFraDato,
                     ugyldigBeregning = resultat.ugyldigBeregning,
+                    erAvvistRevurdering = resultat.erAvvistRevurdering,
                     erAvvisning = resultat.avslagskode?.erAvvisning() == true,
                     forsendelseDistribueresAutomatisk =
                         resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,

@@ -150,6 +150,7 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
+    val erAvvistRevurdering: Boolean = false,
     val vedtakstype: Vedtakstype,
     val beregningInnkrevingsgrunnlag: Boolean = false,
     val resultat: BeregnetBarnebidragResultat,
@@ -193,6 +194,7 @@ data class ResultatBidragsberegningBarnDto(
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val forsendelseDistribueresAutomatisk: Boolean = false,
+    val erAvvistRevurdering: Boolean = false,
     val erAvvisning: Boolean = false,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
     val delvedtak: List<DelvedtakDto> = emptyList(),

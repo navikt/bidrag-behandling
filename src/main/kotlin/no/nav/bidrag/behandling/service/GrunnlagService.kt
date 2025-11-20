@@ -1983,9 +1983,7 @@ class GrunnlagService(
                     " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
                     "Automatisk aktiverer ny innhentet grunnlag."
             }
-            ikkeAktiveGrunnlag
-                .hentGrunnlagForType(type, rolleInhentetFor.ident!!)
-                .oppdaterStatusTilAktiv(LocalDateTime.now())
+            aktivereYtelserOgInntekter(behandling, type, rolleInhentetFor)
         }
     }
 
