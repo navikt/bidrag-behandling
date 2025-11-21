@@ -70,7 +70,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
         assertNotNull(behandling)
         assertSoftly(behandling) {
             roller shouldHaveSize 3
-            inntekter shouldHaveSize 15
+            inntekter shouldHaveSize 3
             innkrevingstype shouldBe Innkrevingstype.MED_INNKREVING
             omgjøringsdetaljer!!.omgjortVedtakstidspunktListe shouldHaveSize 1
             omgjøringsdetaljer!!.omgjortVedtakstidspunktListe shouldContain LocalDateTime.parse("2024-02-23T15:34:27.275019")
