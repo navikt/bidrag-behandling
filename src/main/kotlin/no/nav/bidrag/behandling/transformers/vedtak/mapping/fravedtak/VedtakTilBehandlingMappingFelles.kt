@@ -93,6 +93,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
+import no.nav.bidrag.transport.behandling.vedtak.response.erVedtakAvvistRevurderingsøknad
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
@@ -176,6 +177,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                             hentDirekteOppgjørBeløp(barnIdent.verdi),
                             referanse = barnGrunnlag?.referanse ?: "",
                         ),
+                    erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),
                     erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
                     indeksår = stønadsendring.førsteIndeksreguleringsår,
                     delvedtak = hentDelvedtak(stønadsendring),
@@ -191,10 +193,12 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
 
 fun VedtakDto.erVedtakUtenBeregning() =
     type == Vedtakstype.INDEKSREGULERING ||
-        stønadsendringListe.all {
-            it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
-                erOrkestrertVedtak && type == Vedtakstype.INNKREVING
-        }
+        !this.erVedtakAvvistRevurderingsøknad() &&
+        stønadsendringListe
+            .all {
+                it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
+                    erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+            }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver

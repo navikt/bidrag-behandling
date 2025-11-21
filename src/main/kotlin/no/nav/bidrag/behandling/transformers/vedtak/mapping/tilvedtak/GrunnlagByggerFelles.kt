@@ -82,8 +82,8 @@ fun opprettGrunnlagsreferanseVirkningstidspunkt(
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
-fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
-    val grunnlagListe = (byggGrunnlagNotater() + byggGrunnlagSøknad()).toMutableSet()
+fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
+    val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     when (tilType()) {
         TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
         TypeBehandling.SÆRBIDRAG ->
@@ -159,7 +159,7 @@ fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
             }
         }.toSet()
 
-fun Behandling.byggGrunnlagSøknad() =
+fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn) =
     if (erIForholdsmessigFordeling || erBisysVedtak) {
         søknadsbarn.map {
             val ffEldsteSøknad = it.forholdsmessigFordeling!!.eldsteSøknad
@@ -482,7 +482,7 @@ fun Behandling.byggGrunnlagNotaterInnkreving(): Set<GrunnlagDto> {
     return (virkningstidspunktGrunnlag + notatVurderingAvSkolegang + notatPrivatAvtale).toSet()
 }
 
-fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
+fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
     val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt()
     val notatGrunnlag =
         setOf(
@@ -622,7 +622,7 @@ fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
         },
     )
 
-fun Behandling.tilBehandlingreferanseListe() =
+fun Behandling.tilBehandlingreferanseListe(søknadsbarn: List<Rolle> = this.søknadsbarn) =
     tilBehandlingreferanseListeUtenSøknad() +
         if (erIForholdsmessigFordeling) {
             søknadsbarn

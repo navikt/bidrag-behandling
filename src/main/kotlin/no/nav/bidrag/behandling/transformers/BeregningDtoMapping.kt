@@ -1478,17 +1478,8 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
             Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG,
             sluttberegning.grunnlagsreferanseListe,
         ).firstOrNull() ?: return null
-    val bidragsevneGrunnlag =
-        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningBidragsevne>(
-            Grunnlagstype.DELBEREGNING_BIDRAGSEVNE,
-            sluttberegning.grunnlagsreferanseListe,
-        ).firstOrNull() ?: return null
+
     val nettoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bidragTilFordeling.subtract(samværsfradrag.innhold.beløp)
-    val bruttoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bruttoBidragEtterBarnetilleggBM
-    val evneJustertFor25ProsentAvInntekt = evne25prosentAvInntekt.innhold.evneJustertFor25ProsentAvInntekt
-//    val bpsAndelBeløp = maxOf(bpsAndel.innhold.andelBeløp - samværsfradrag.innhold.beløp, BigDecimal.ZERO)
-    val bidragsevne = bidragsevneGrunnlag.innhold.beløp
-    val bruttoBidragJustertForEvneOg25Prosent = minOf(bruttoBidragEtterBarnetilleggBM, bidragsevne, evneJustertFor25ProsentAvInntekt)
 
     return SluttberegningBarnebidrag2(
         bidragJustertNedTilEvne = !andelAvBidragsevne.innhold.harBPFullEvne,
@@ -1499,7 +1490,7 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
         bidragJustertForNettoBarnetilleggBP = bpsBarnetillegg.innhold.erBidragJustertTilNettoBarnetilleggBP,
         bruttoBidragEtterBarnetilleggBP = bpsBarnetillegg.innhold.bidragJustertForNettoBarnetilleggBP,
         bidragJustertNedTil25ProsentAvInntekt = evne25prosentAvInntekt.innhold.erEvneJustertNedTil25ProsentAvInntekt,
-        bruttoBidragJustertForEvneOg25Prosent = bruttoBidragJustertForEvneOg25Prosent,
+        bruttoBidragJustertForEvneOg25Prosent = andelAvBidragsevne.innhold.bruttoBidragJustertForEvneOg25Prosent,
         barnetErSelvforsørget = bpsAndel.innhold.barnetErSelvforsørget,
         beregnetBeløp = beregnetBeløp,
         resultatBeløp = resultatBeløp,

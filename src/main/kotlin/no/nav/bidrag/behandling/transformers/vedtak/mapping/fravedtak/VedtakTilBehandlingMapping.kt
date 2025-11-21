@@ -143,6 +143,7 @@ class VedtakTilBehandlingMapping(
             Behandling(
                 id = if (lesemodus) 1 else null,
                 søknadstype = søknadstype,
+                vedtaksid = vedtaksid,
                 behandlingstema = behandlingstema,
                 vedtakstype = vedtakType ?: type,
                 virkningstidspunkt = omgjortVedtakVirkningstidspunkt,
@@ -161,7 +162,6 @@ class VedtakTilBehandlingMapping(
                 // TODO: Er dette riktig? Hva skjer hvis det finnes flere stønadsendringer/engangsbeløp? Fungerer for Forskudd men todo fram fremtiden
                 stonadstype = stønadsendringstype,
                 engangsbeloptype = if (stønadsendringstype == null) engangsbeløpListe.firstOrNull()?.type else null,
-                vedtaksid = null,
                 behandlerEnhet = enhet ?: enhetsnummer?.verdi!!,
                 opprettetAv = opprettetAv,
                 opprettetAvNavn = opprettetAvNavn,

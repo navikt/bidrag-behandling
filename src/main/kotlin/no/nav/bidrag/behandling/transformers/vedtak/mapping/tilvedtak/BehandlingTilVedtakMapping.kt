@@ -37,6 +37,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -46,7 +47,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetBidragPerBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
@@ -73,7 +73,6 @@ import java.time.YearMonth
 import kotlin.collections.any
 import kotlin.collections.plus
 import kotlin.collections.toSet
-import kotlin.compareTo
 
 data class ResultatDelvedtak(
     val vedtaksid: Int?,
@@ -170,16 +169,10 @@ class BehandlingTilVedtakMapping(
                                 it.gjelderBarnReferanse ==
                                     søknadsbarnGrunnlag.referanse
                             }
-                        OpprettStønadsendringRequestDto(
-                            type = stønad.type,
+                        opprettStønadsendringEndring(sak, søknadsbarnRolle, stønad.type).copy(
                             sak = stønad.sak,
                             kravhaver = stønad.kravhaver,
                             skyldner = stønad.skyldner,
-                            mottaker =
-                                roller
-                                    .reelMottakerEllerBidragsmottaker(
-                                        sak.hentRolleMedFnr(søknadsbarnRolle.ident!!),
-                                    ),
                             beslutning = if (erAldersjustert) Beslutningstype.ENDRING else Beslutningstype.AVVIST,
                             grunnlagReferanseListe =
                                 listOfNotNull(beregningGrunnlagsliste.finnAldersjusteringDetaljerReferanse()) +
@@ -678,27 +671,35 @@ class BehandlingTilVedtakMapping(
                 }.groupBy { (søknad, _) -> søknad }
                 .map { it.value.first().first to it.value.map { (_, barn) -> barn } }
                 .associate { it.first to it.second }
+                .entries
+                .sortedByDescending { it.value.size }
+                .associate { it.key to it.value }
 
-        val rollerOpprettetVedtak = mutableSetOf<String>()
+        val søknadsbarnSomDetHarBlittOpprettVedtakFor = mutableSetOf<String>()
 
-        groupedBarnSøknader.map {
+        return groupedBarnSøknader.mapNotNull {
             val søknadsid = it.key
-            val søknadsbarn = it.value
+            val søknadsbarn = it.value.filter { !søknadsbarnSomDetHarBlittOpprettVedtakFor.contains(it.ident) }
+            if (søknadsbarn.isEmpty()) return@mapNotNull null
+
+            søknadsbarnSomDetHarBlittOpprettVedtakFor.addAll(søknadsbarn.mapNotNull { it.ident })
             val førsteSøknadsbarn = søknadsbarn.first()
-            val erRevurdering = søknadsbarn.any { it.forholdsmessigFordeling?.erRevurdering == true }
+            val erRevurderingsbarn = førsteSøknadsbarn.forholdsmessigFordeling?.erRevurdering == true
+            val sak = behandlingSaker.getValue(førsteSøknadsbarn.saksnummer)
 
             val innkreving =
-                søknadsbarn.any {
-                    it.forholdsmessigFordeling?.søknaderUnderBehandling?.any {
-                        it.søknadsid == søknadsid && it.innkreving
-                    } == true
-                }
+                førsteSøknadsbarn.forholdsmessigFordeling?.søknaderUnderBehandling?.any {
+                    it.søknadsid == søknadsid && it.innkreving
+                } == true
+
             mapper.run {
                 val stønadsendringPerioder =
-                    if (erRevurdering) {
+                    if (erRevurderingsbarn) {
                         emptyList()
                     } else {
-                        beregning.map { it.resultat.byggStønadsendringerForVedtak(behandling, it.barn) }
+                        beregning
+                            .filter { b -> søknadsbarn.any { it.ident == b.barn.ident?.verdi } }
+                            .map { it.resultat.byggStønadsendringerForVedtak(behandling, it.barn) }
                     }
                 val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
 
@@ -708,57 +709,78 @@ class BehandlingTilVedtakMapping(
 
                 val grunnlagListe =
                     (grunnlagListeVedtak + stønadsendringGrunnlag + stønadsendringGrunnlagListe).toSet()
-                val engangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
+                val engangsbeløpGebyr =
+                    mapEngangsbeløpGebyr(grunnlagListe.toList(), sak.saksnummer.verdi)
                 val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt()
 
-                byggOpprettVedtakRequestObjekt(enhet).copy(
+                byggOpprettVedtakRequestObjekt(enhet, søknadsbarn).copy(
+                    unikReferanse = opprettUnikReferanse("søknad_$søknadsid"),
                     stønadsendringListe =
-                        stønadsendringPerioder.map { periode ->
-                            val sak = behandlingSaker.getValue(periode.barn.saksnummer)
-                            val sistePeriode =
-                                periode.perioder
-                                    .filter {
-                                        it.resultatkode != Resultatkode.OPPHØR.name
-                                    }.maxBy { it.periode.fom }
-                            val søknadsbarnReferanse = periode.barn.tilGrunnlagsreferanse()
-                            val stønadsendringerBarn =
-                                stønadsendringGrunnlagListe.filter {
-                                    it.gjelderBarnReferanse == null ||
-                                        it.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
-                                }
-                            OpprettStønadsendringRequestDto(
-                                innkreving = if (innkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING,
-                                skyldner = tilSkyldner(),
-                                omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
-                                kravhaver =
-                                    periode.barn.tilNyestePersonident()
-                                        ?: rolleManglerIdent(Rolletype.BARN, id!!),
-                                mottaker =
-                                    roller
-                                        .reelMottakerEllerBidragsmottaker(
-                                            sak.hentRolleMedFnr(periode.barn.ident!!),
+                        if (erRevurderingsbarn) {
+                            søknadsbarn.map { barn ->
+                                val grunnlagVirkningstidspunkt =
+                                    grunnlagVirkningstidspunkt
+                                        .find { vt -> vt.gjelderBarnReferanse == barn.tilGrunnlagsreferanse() }!!
+                                        .referanse
+                                val søknadsbarnReferanse = barn.tilGrunnlagsreferanse()
+                                val stønadsendringerBarn =
+                                    stønadsendringGrunnlagListe.filter {
+                                        it.gjelderBarnReferanse == null ||
+                                            it.gjelderBarnReferanse == søknadsbarnReferanse
+                                    }
+                                val stønadstype = barn.stønadstype ?: behandling.stonadstype!!
+                                behandling.opprettStønadsendringEndring(sak, barn, stønadstype).copy(
+                                    innkreving = Innkrevingstype.UTEN_INNKREVING,
+                                    omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
+                                    beslutning = Beslutningstype.AVVIST,
+                                    grunnlagReferanseListe =
+                                        stønadsendringerBarn.map(GrunnlagDto::referanse) + grunnlagVirkningstidspunkt,
+                                    periodeListe = emptyList(),
+                                    førsteIndeksreguleringsår = null,
+                                )
+                            }
+                        } else {
+                            stønadsendringPerioder.map { periode ->
+                                val sistePeriode =
+                                    periode.perioder
+                                        .filter {
+                                            it.resultatkode != Resultatkode.OPPHØR.name
+                                        }.maxBy { it.periode.fom }
+                                val søknadsbarnReferanse = periode.barn.tilGrunnlagsreferanse()
+                                val stønadsendringerBarn =
+                                    stønadsendringGrunnlagListe.filter {
+                                        it.gjelderBarnReferanse == null ||
+                                            it.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
+                                    }
+                                val stønadstype = førsteSøknadsbarn.stønadstype ?: behandling.stonadstype!!
+                                behandling.opprettStønadsendringEndring(sak, periode.barn, stønadstype).copy(
+                                    innkreving = if (innkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING,
+                                    omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
+                                    beslutning = Beslutningstype.ENDRING,
+                                    grunnlagReferanseListe =
+                                        stønadsendringerBarn.map(GrunnlagDto::referanse) +
+                                            grunnlagVirkningstidspunkt
+                                                .find { vt ->
+                                                    vt.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
+                                                }!!
+                                                .referanse,
+                                    periodeListe = periode.perioder,
+                                    førsteIndeksreguleringsår =
+                                        grunnlagListe.toList().finnIndeksår(
+                                            søknadsbarnReferanse,
+                                            sistePeriode.periode,
+                                            sistePeriode.grunnlagReferanseListe,
                                         ),
-                                sak = Saksnummer(periode.barn.saksnummer),
-                                type = førsteSøknadsbarn.stønadstype ?: behandling.stonadstype!!,
-                                beslutning = Beslutningstype.ENDRING,
-                                grunnlagReferanseListe =
-                                    stønadsendringerBarn.map(GrunnlagDto::referanse) +
-                                        grunnlagVirkningstidspunkt
-                                            .find { vt ->
-                                                vt.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
-                                            }!!
-                                            .referanse,
-                                periodeListe = periode.perioder,
-                                førsteIndeksreguleringsår =
-                                    grunnlagListe.toList().finnIndeksår(
-                                        søknadsbarnReferanse,
-                                        sistePeriode.periode,
-                                        sistePeriode.grunnlagReferanseListe,
-                                    ),
-                            )
+                                )
+                            }
                         },
                     engangsbeløpListe =
-                        engangsbeløpGebyr.engangsbeløp + mapEngangsbeløpDirekteOppgjør(behandlingSaker),
+                        if (erRevurderingsbarn) {
+                            emptyList()
+                        } else {
+                            engangsbeløpGebyr.engangsbeløp +
+                                mapEngangsbeløpDirekteOppgjør(behandlingSaker)
+                        },
                     grunnlagListe =
                         (grunnlagListe + engangsbeløpGebyr.grunnlagsliste + grunnlagVirkningstidspunkt)
                             .toSet()
@@ -766,60 +788,6 @@ class BehandlingTilVedtakMapping(
                 )
             }
         }
-        return emptyList()
-    }
-
-    private fun Behandling.opprettStønadsendring(
-        søknadsbarn: Rolle,
-        behandlingSaker: Map<String, BidragssakDto>,
-        periode: StønadsendringPeriode,
-        grunnlagListe: List<GrunnlagDto>,
-        stønadsendringGrunnlagListe: List<GrunnlagDto>,
-    ) {
-        val innkreving = false
-        val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt()
-        val sak = behandlingSaker.getValue(periode.barn.saksnummer)
-        val sistePeriode =
-            periode.perioder
-                .filter {
-                    it.resultatkode != Resultatkode.OPPHØR.name
-                }.maxBy { it.periode.fom }
-        val søknadsbarnReferanse = periode.barn.tilGrunnlagsreferanse()
-        val stønadsendringerBarn =
-            stønadsendringGrunnlagListe.filter {
-                it.gjelderBarnReferanse == null ||
-                    it.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
-            }
-        OpprettStønadsendringRequestDto(
-            innkreving = if (innkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING,
-            skyldner = tilSkyldner(),
-            omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
-            kravhaver =
-                periode.barn.tilNyestePersonident()
-                    ?: rolleManglerIdent(Rolletype.BARN, id!!),
-            mottaker =
-                roller
-                    .reelMottakerEllerBidragsmottaker(
-                        sak.hentRolleMedFnr(periode.barn.ident!!),
-                    ),
-            sak = Saksnummer(saksnummer),
-            type = søknadsbarn.stønadstype ?: stonadstype!!,
-            beslutning = Beslutningstype.ENDRING,
-            grunnlagReferanseListe =
-                stønadsendringerBarn.map(GrunnlagDto::referanse) +
-                    grunnlagVirkningstidspunkt
-                        .find { vt ->
-                            vt.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
-                        }!!
-                        .referanse,
-            periodeListe = periode.perioder,
-            førsteIndeksreguleringsår =
-                grunnlagListe.toList().finnIndeksår(
-                    søknadsbarnReferanse,
-                    sistePeriode.periode,
-                    sistePeriode.grunnlagReferanseListe,
-                ),
-        )
     }
 
     private fun Behandling.byggOpprettVedtakRequestFF(
@@ -857,21 +825,11 @@ class BehandlingTilVedtakMapping(
                                 it.gjelderBarnReferanse == null ||
                                     it.gjelderBarnReferanse == periode.barn.tilGrunnlagsreferanse()
                             }
-                        OpprettStønadsendringRequestDto(
-                            innkreving = innkrevingstype!!,
-                            skyldner = tilSkyldner(),
+                        val stønadstype = periode.barn.stønadstype ?: behandling.stonadstype!!
+
+                        behandling.opprettStønadsendringEndring(sak, periode.barn, stønadstype).copy(
+                            innkreving = periode.barn.innkrevingstype ?: innkrevingstype!!,
                             omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
-                            kravhaver =
-                                periode.barn.tilNyestePersonident()
-                                    ?: rolleManglerIdent(Rolletype.BARN, id!!),
-                            mottaker =
-                                roller
-                                    .reelMottakerEllerBidragsmottaker(
-                                        sak.hentRolleMedFnr(periode.barn.ident!!),
-                                    ),
-                            sak = Saksnummer(saksnummer),
-                            type = stonadstype!!,
-                            beslutning = Beslutningstype.ENDRING,
                             grunnlagReferanseListe =
                                 stønadsendringerBarn.map(GrunnlagDto::referanse) +
                                     grunnlagVirkningstidspunkt
@@ -900,37 +858,45 @@ class BehandlingTilVedtakMapping(
 
     private fun Behandling.byggGrunnlagForGebyr(): Set<GrunnlagDto> = byggGrunnlagManueltOverstyrtGebyr()
 
-    private fun Behandling.mapEngangsbeløpGebyr(grunnlagsliste: List<GrunnlagDto>): GebyrResulat {
+    private fun Behandling.mapEngangsbeløpGebyr(
+        grunnlagsliste: List<GrunnlagDto>,
+        sak: String? = null,
+    ): GebyrResulat {
         val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
         val barnMedGebyr = søknadsbarn.filter { it.harGebyrsøknad }
         val bmMedGebyr = alleBidragsmottakere.filter { it.harGebyrsøknad }
         val gebyrMottakere =
-            (bmMedGebyr + barnMedGebyr).flatMap { rolle ->
-                rolle.gebyrSøknader.map {
-                    val grunnlagslisteGebyrRolle = grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
-                    val beregning = mapper.beregnGebyr(this, rolle, grunnlagslisteGebyrRolle)
-                    gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
-                    val ilagtGebyr = beregning.ilagtGebyr
-                    val skyldner = Personident(rolle.ident!!)
-                    OpprettEngangsbeløpRequestDto(
-                        type = Engangsbeløptype.GEBYR_MOTTAKER,
-                        beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
-                        betaltBeløp = null,
-                        resultatkode = beregning.resultatkode.name,
-                        referanse = it.referanse!!,
-                        // ?: hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
-                        eksternReferanse = null,
-                        beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
-                        innkreving = Innkrevingstype.MED_INNKREVING,
-                        skyldner = skyldner,
-                        kravhaver = personIdentNav,
-                        mottaker = personIdentNav,
-                        valutakode = if (ilagtGebyr) "NOK" else null,
-                        sak = Saksnummer(saksnummer),
-                    )
+            (bmMedGebyr + barnMedGebyr)
+                .filter {
+                    sak == null || it.forholdsmessigFordeling == null ||
+                        it.forholdsmessigFordeling!!.tilhørerSak == sak
+                }.flatMap { rolle ->
+                    rolle.gebyrSøknader.map {
+                        val grunnlagslisteGebyrRolle =
+                            grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
+                        val beregning = mapper.beregnGebyr(this, rolle, grunnlagslisteGebyrRolle)
+                        gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
+                        val ilagtGebyr = beregning.ilagtGebyr
+                        val skyldner = Personident(rolle.ident!!)
+                        OpprettEngangsbeløpRequestDto(
+                            type = Engangsbeløptype.GEBYR_MOTTAKER,
+                            beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
+                            betaltBeløp = null,
+                            resultatkode = beregning.resultatkode.name,
+                            referanse = it.referanse!!,
+                            // ?: hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
+                            eksternReferanse = null,
+                            beslutning = Beslutningstype.ENDRING,
+                            grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
+                            innkreving = Innkrevingstype.MED_INNKREVING,
+                            skyldner = skyldner,
+                            kravhaver = personIdentNav,
+                            mottaker = personIdentNav,
+                            valutakode = if (ilagtGebyr) "NOK" else null,
+                            sak = Saksnummer(saksnummer),
+                        )
+                    }
                 }
-            }
         val gebyrBp =
             if (bidragspliktig!!.harGebyrsøknad) {
                 val rolle = bidragspliktig!!
@@ -995,7 +961,7 @@ class BehandlingTilVedtakMapping(
                                 ),
                         valutakode = "NOK",
                         omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
-                        sak = Saksnummer(saksnummer),
+                        sak = sak.saksnummer,
                     )
                 }
             }
@@ -1294,14 +1260,41 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    private fun Behandling.byggOpprettVedtakRequestObjekt(enhet: String?): OpprettVedtakRequestDto =
+    private fun Behandling.opprettStønadsendringEndring(
+        sak: BidragssakDto,
+        barn: Rolle,
+        stønadstype: Stønadstype,
+    ) = OpprettStønadsendringRequestDto(
+        innkreving = Innkrevingstype.MED_INNKREVING,
+        skyldner = tilSkyldner(),
+        omgjørVedtakId = null,
+        kravhaver =
+            barn.tilNyestePersonident()
+                ?: rolleManglerIdent(Rolletype.BARN, id!!),
+        mottaker =
+            roller
+                .reelMottakerEllerBidragsmottaker(
+                    sak.hentRolleMedFnr(barn.ident!!),
+                ),
+        sak = sak.saksnummer,
+        type = stønadstype,
+        beslutning = Beslutningstype.ENDRING,
+        grunnlagReferanseListe = emptyList(),
+        periodeListe = emptyList(),
+        førsteIndeksreguleringsår = null,
+    )
+
+    private fun Behandling.byggOpprettVedtakRequestObjekt(
+        enhet: String?,
+        søknadsbarn: List<Rolle> = this.søknadsbarn,
+    ): OpprettVedtakRequestDto =
         OpprettVedtakRequestDto(
             enhetsnummer = Enhetsnummer(enhet ?: behandlerEnhet),
             vedtakstidspunkt = LocalDateTime.now(),
             type = vedtakstype,
             stønadsendringListe = emptyList(),
             engangsbeløpListe = emptyList(),
-            behandlingsreferanseListe = tilBehandlingreferanseListe(),
+            behandlingsreferanseListe = tilBehandlingreferanseListe(søknadsbarn),
             grunnlagListe = emptyList(),
             kilde = Vedtakskilde.MANUELT,
             fastsattILand = null,
