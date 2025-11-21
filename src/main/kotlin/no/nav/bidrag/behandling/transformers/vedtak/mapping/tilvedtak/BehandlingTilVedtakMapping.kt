@@ -640,13 +640,14 @@ class BehandlingTilVedtakMapping(
         val minstEnPeriodeErFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling()
 
         return if (minstEnPeriodeErFF || byggEttVedtak || !behandling.erIForholdsmessigFordeling) {
-            listOf(byggOpprettVedtakRequestFF(beregning, behandlingSaker, enhet))
+            listOf(byggOpprettVedtakRequest(beregning, behandlingSaker, enhet))
         } else {
-            byggOpprettVedtakRequestIkkeFF(beregning, behandlingSaker, enhet)
+            byggOpprettVedtakRequestSplittetFF(beregning, behandlingSaker, enhet)
         }
     }
 
-    private fun Behandling.byggOpprettVedtakRequestIkkeFF(
+    // Fatte vedetak når forholdsmessig fordeling ikke går til FF
+    private fun Behandling.byggOpprettVedtakRequestSplittetFF(
         beregning: List<ResultatBidragsberegningBarn>,
         behandlingSaker: Map<String, BidragssakDto>,
         enhet: String?,
@@ -790,7 +791,7 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    private fun Behandling.byggOpprettVedtakRequestFF(
+    private fun Behandling.byggOpprettVedtakRequest(
         beregning: List<ResultatBidragsberegningBarn>,
         behandlingSaker: Map<String, BidragssakDto>,
         enhet: String?,
@@ -814,11 +815,8 @@ class BehandlingTilVedtakMapping(
                 stønadsendringListe =
                     stønadsendringPerioder.map { periode ->
                         val sak = behandlingSaker.getValue(periode.barn.saksnummer)
-                        val sistePeriode =
-                            periode.perioder
-                                .filter {
-                                    it.resultatkode != Resultatkode.OPPHØR.name
-                                }.maxBy { it.periode.fom }
+                        val erAvvisning = periode.perioder.isEmpty() || periode.barn.avslag?.erAvvisning() == true
+
                         val søknadsbarnReferanse = periode.barn.tilGrunnlagsreferanse()
                         val stønadsendringerBarn =
                             stønadsendringGrunnlagListe.filter {
@@ -830,6 +828,7 @@ class BehandlingTilVedtakMapping(
                         behandling.opprettStønadsendringEndring(sak, periode.barn, stønadstype).copy(
                             innkreving = periode.barn.innkrevingstype ?: innkrevingstype!!,
                             omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
+                            beslutning = if (erAvvisning) Beslutningstype.AVVIST else Beslutningstype.ENDRING,
                             grunnlagReferanseListe =
                                 stønadsendringerBarn.map(GrunnlagDto::referanse) +
                                     grunnlagVirkningstidspunkt
@@ -839,11 +838,20 @@ class BehandlingTilVedtakMapping(
                                         .referanse,
                             periodeListe = periode.perioder,
                             førsteIndeksreguleringsår =
-                                grunnlagListe.toList().finnIndeksår(
-                                    søknadsbarnReferanse,
-                                    sistePeriode.periode,
-                                    sistePeriode.grunnlagReferanseListe,
-                                ),
+                                if (!erAvvisning) {
+                                    val sistePeriode =
+                                        periode.perioder
+                                            .filter {
+                                                it.resultatkode != Resultatkode.OPPHØR.name
+                                            }.maxBy { it.periode.fom }
+                                    grunnlagListe.toList().finnIndeksår(
+                                        søknadsbarnReferanse,
+                                        sistePeriode.periode,
+                                        sistePeriode.grunnlagReferanseListe,
+                                    )
+                                } else {
+                                    null
+                                },
                         )
                     },
                 engangsbeløpListe =

@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell.json
 
 import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jakarta.persistence.Converter
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -19,6 +20,7 @@ data class ForholdsmessigFordeling(
     var erHovedbehandling: Boolean = false,
 )
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class ForholdsmessigFordelingRolle(
     var tilhørerSak: String,
     @JsonAlias("eierfogd")
@@ -41,6 +43,7 @@ data class ForholdsmessigFordelingRolle(
     val søknadsid get() = eldsteSøknad.søknadsid
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class ForholdsmessigFordelingSøknadBarn(
     val mottattDato: LocalDate,
     var søknadFomDato: LocalDate? = null,

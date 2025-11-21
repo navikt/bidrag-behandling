@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -218,6 +219,7 @@ open class Rolle(
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class GrunnlagFraVedtak(
     @Schema(
         description =
@@ -237,6 +239,7 @@ data class GrunnlagFraVedtak(
     val perioder: List<VedtakPeriodeDto> = emptyList(),
 )
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class GebyrRolle(
     var overstyrGebyr: Boolean = true,
     var ilagtGebyr: Boolean? = false,
@@ -265,6 +268,7 @@ data class GebyrRolle(
             )
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class GebyrRolleSøknad(
     val saksnummer: String,
     val søknadsid: Long,
@@ -282,6 +286,7 @@ data class GebyrRolleSøknad(
     override fun hashCode(): Int = saksnummer.hashCode() * 31 + søknadsid.hashCode() + (behandlingid?.hashCode() ?: 0)
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class RolleManueltOverstyrtGebyr(
     val overstyrGebyr: Boolean = true,
     val ilagtGebyr: Boolean? = false,
