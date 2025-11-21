@@ -219,9 +219,16 @@ class BeregningService(
                     },
                 beregningBarn =
                     grunnlagslisteBarn.sortedBy { it.beregnGrunnlag.stønadstype }.map {
+                        val søknadsbarn =
+                            behandling.søknadsbarn.find { sb ->
+                                sb.tilGrunnlagsreferanse() ==
+                                    it.beregnGrunnlag.søknadsbarnReferanse
+                            }
                         BeregningGrunnlagV2(
                             søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                             periode = it.beregnGrunnlag.periode,
+                            beregningsperiode = it.beregnGrunnlag.periode,
+                            virkningstidspunkt = søknadsbarn?.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
                             opphørsdato = it.beregnGrunnlag.opphørsdato,
                             stønadstype = it.beregnGrunnlag.stønadstype,
                             omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
@@ -367,11 +374,18 @@ class BeregningService(
                     },
                 beregningBarn =
                     grunnlagslisteBarn.map {
+                        val søknadsbarn =
+                            behandling.søknadsbarn.find { sb ->
+                                sb.tilGrunnlagsreferanse() ==
+                                    it.beregnGrunnlag.søknadsbarnReferanse
+                            }
                         BeregningGrunnlagV2(
                             søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                             periode = it.beregnGrunnlag.periode,
+                            beregningsperiode = it.beregnGrunnlag.periode,
                             opphørsdato = it.beregnGrunnlag.opphørsdato,
                             stønadstype = it.beregnGrunnlag.stønadstype,
+                            virkningstidspunkt = søknadsbarn?.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
                             omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
                         )
                     },
