@@ -1129,12 +1129,12 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             it.vedtaksid shouldBe vedtakidsOrkestrering
             it.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
             it.vedtakFattetAvEnhet shouldBe "4806"
-            it.fattetDelvedtak shouldHaveSize 2
-            val klagevedtak = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidKlage }
+            it.fattetVedtak shouldHaveSize 2
+            val klagevedtak = it.fattetVedtak.find { it.vedtaksid == vedtaksidKlage }
             klagevedtak.shouldNotBeNull()
             klagevedtak.vedtakstype shouldBe Vedtakstype.KLAGE
 
-            val indeksreg = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidIndeks }
+            val indeksreg = it.fattetVedtak.find { it.vedtaksid == vedtaksidIndeks }
             indeksreg.shouldNotBeNull()
             indeksreg.vedtakstype shouldBe Vedtakstype.INDEKSREGULERING
         }
@@ -1487,12 +1487,12 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             it.vedtaksid shouldBe vedtakidsOrkestrering
             it.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
             it.vedtakFattetAvEnhet shouldBe "4806"
-            it.fattetDelvedtak shouldHaveSize 2
-            val klagevedtak = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidKlage }
+            it.fattetVedtak shouldHaveSize 2
+            val klagevedtak = it.fattetVedtak.find { it.vedtaksid == vedtaksidKlage }
             klagevedtak.shouldNotBeNull()
             klagevedtak.vedtakstype shouldBe Vedtakstype.KLAGE
 
-            val indeksreg = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidIndeks }
+            val indeksreg = it.fattetVedtak.find { it.vedtaksid == vedtaksidIndeks }
             indeksreg.shouldNotBeNull()
             indeksreg.vedtakstype shouldBe Vedtakstype.INDEKSREGULERING
         }
@@ -2138,12 +2138,12 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             it.vedtaksid shouldBe vedtakidsOrkestrering
             it.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
             it.vedtakFattetAvEnhet shouldBe "4806"
-            it.fattetDelvedtak shouldHaveSize 2
-            val klagevedtak = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidKlage }
+            it.fattetVedtak shouldHaveSize 2
+            val klagevedtak = it.fattetVedtak.find { it.vedtaksid == vedtaksidKlage }
             klagevedtak.shouldNotBeNull()
             klagevedtak.vedtakstype shouldBe Vedtakstype.KLAGE
 
-            val innkreving = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidinnkreving }
+            val innkreving = it.fattetVedtak.find { it.vedtaksid == vedtaksidinnkreving }
             innkreving.shouldNotBeNull()
             innkreving.vedtakstype shouldBe Vedtakstype.INNKREVING
         }
@@ -2380,12 +2380,12 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             it.vedtaksid shouldBe vedtakidsOrkestrering
             it.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
             it.vedtakFattetAvEnhet shouldBe "4806"
-            it.fattetDelvedtak shouldHaveSize 2
-            val klagevedtak = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidKlage }
+            it.fattetVedtak shouldHaveSize 2
+            val klagevedtak = it.fattetVedtak.find { it.vedtaksid == vedtaksidKlage }
             klagevedtak.shouldNotBeNull()
             klagevedtak.vedtakstype shouldBe Vedtakstype.KLAGE
 
-            val innkreving = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidinnkreving }
+            val innkreving = it.fattetVedtak.find { it.vedtaksid == vedtaksidinnkreving }
             innkreving.shouldNotBeNull()
             innkreving.vedtakstype shouldBe Vedtakstype.INNKREVING
         }
@@ -2606,12 +2606,12 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
             it.vedtaksid shouldBe vedtakidsOrkestrering
             it.vedtakFattetAv shouldBe SAKSBEHANDLER_IDENT
             it.vedtakFattetAvEnhet shouldBe "4806"
-            it.fattetDelvedtak shouldHaveSize 2
-            val klagevedtak = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidKlage }
+            it.fattetVedtak shouldHaveSize 2
+            val klagevedtak = it.fattetVedtak.find { it.vedtaksid == vedtaksidKlage }
             klagevedtak.shouldNotBeNull()
             klagevedtak.vedtakstype shouldBe Vedtakstype.KLAGE
 
-            val indeksreg = it.fattetDelvedtak.find { it.vedtaksid == vedtaksidIndeks }
+            val indeksreg = it.fattetVedtak.find { it.vedtaksid == vedtaksidIndeks }
             indeksreg.shouldNotBeNull()
             indeksreg.vedtakstype shouldBe Vedtakstype.INDEKSREGULERING
         }

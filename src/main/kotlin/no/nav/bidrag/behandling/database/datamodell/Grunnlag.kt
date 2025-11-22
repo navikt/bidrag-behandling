@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -65,6 +66,11 @@ fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filt
 
 fun Set<Grunnlag>.hentAlleAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv != null }
 
+fun Set<Grunnlag>.hentSisteGrunnlagBpsBarnUtenBidragsak() =
+    hentSisteAktiv()
+        .find { it.type == Grunnlagsdatatype.BARN_TIL_BP_UTEN_BIDRAGSAK && !it.erBearbeidet }
+        .konvertereData<List<BpsBarnUtenBidragsakEllerLøpendeBidrag>>()
+
 fun Set<Grunnlag>.henteNyesteGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolleInnhentetFor: Rolle,
@@ -99,7 +105,7 @@ fun Set<Grunnlag>.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle(rolleInnhen
         ?.toSet()
 
 fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
-    gjelderBarnIdent: String,
+    gjelderBarnIdent: String?,
     type: Grunnlagsdatatype,
     grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
 ) = hentSisteAktiv(true)

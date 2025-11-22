@@ -8,8 +8,8 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.controller.v2.BehandlingControllerV2
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
@@ -78,6 +78,9 @@ class InntektServiceMockTest {
     lateinit var virkningstidspunktService: VirkningstidspunktService
 
     @MockK
+    lateinit var ffservice: ForholdsmessigFordelingService
+
+    @MockK
     lateinit var validerBeregning: ValiderBeregning
 
     @MockK
@@ -128,6 +131,7 @@ class InntektServiceMockTest {
                 validerBehandlingService = validerBehandlingService,
                 virkningstidspunktService = virkningstidspunktService,
                 dtomapper = dtomapper,
+                forholdsmessigFordelingService = ffservice,
             )
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }
@@ -495,8 +499,8 @@ class InntektServiceMockTest {
         behandling.roller = oppretteBehandlingRoller(behandling, generateId = true)
 
         behandling.bidragsmottaker!!.harGebyrsøknad = true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
-            RolleManueltOverstyrtGebyr(
+        behandling.bidragsmottaker!!.gebyr =
+            GebyrRolle(
                 overstyrGebyr = false,
                 ilagtGebyr = false,
                 beregnetIlagtGebyr = false,
@@ -529,7 +533,7 @@ class InntektServiceMockTest {
             )
 
         response.beregnetGebyrErEndret shouldBe true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
+        behandling.bidragsmottaker!!.gebyr!!.beregnetIlagtGebyr shouldBe true
     }
 
     @Test
@@ -540,8 +544,8 @@ class InntektServiceMockTest {
         behandling.roller = oppretteBehandlingRoller(behandling, generateId = true)
 
         behandling.bidragsmottaker!!.harGebyrsøknad = true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr =
-            RolleManueltOverstyrtGebyr(
+        behandling.bidragsmottaker!!.gebyr =
+            GebyrRolle(
                 overstyrGebyr = true,
                 ilagtGebyr = false,
                 beregnetIlagtGebyr = true,
@@ -575,8 +579,8 @@ class InntektServiceMockTest {
             )
 
         response.beregnetGebyrErEndret shouldBe false
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
+        behandling.bidragsmottaker!!.gebyr!!.beregnetIlagtGebyr shouldBe true
+        behandling.bidragsmottaker!!.gebyr!!.overstyrGebyr shouldBe true
     }
 
     @Test

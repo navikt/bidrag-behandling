@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.databind.node.POJONode
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
@@ -19,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.finnDelberegningerPrivatAvtale
 import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSøknad
@@ -177,12 +179,14 @@ class BeregningService(
             beregnBidragAldersjustering(behandling)
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
+        } else if (UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled && UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled) {
+            beregneBarnebidragV2FF(behandling, endeligBeregning)
         } else {
-            beregneBarnebidrag(behandling, endeligBeregning)
+            beregneBarnebidragV1(behandling, endeligBeregning)
         }
     }
 
-    fun beregneBarnebidrag(
+    fun beregneBarnebidragV2FF(
         behandling: Behandling,
         endeligBeregning: Boolean = true,
     ): List<ResultatBidragsberegningBarn> {
@@ -190,7 +194,7 @@ class BeregningService(
             behandling.søknadsbarn.filter { it.avslag == null || !it.avslag!!.erAvvisning() }.map { søknasdbarn ->
                 mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
             }
-        val beregnFraDato = behandling.globalVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+        val beregnFraDato = behandling.eldsteVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
         val beregningTilDato = behandling.finnBeregnTilDato()
         val beregningsperiode =
             ÅrMånedsperiode(
@@ -200,7 +204,162 @@ class BeregningService(
         val grunnlagBeregning =
             BidragsberegningOrkestratorRequestV2(
                 beregningsperiode = beregningsperiode,
-                grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe },
+                grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList(),
+                erDirekteAvslag = behandling.erDirekteAvslag(),
+                beregningstype =
+                    when {
+                        behandling.erKlageEllerOmgjøring ->
+                            if (endeligBeregning) {
+                                Beregningstype.OMGJØRING_ENDELIG
+                            } else {
+                                Beregningstype.OMGJØRING
+                            }
+
+                        else -> Beregningstype.BIDRAG
+                    },
+                beregningBarn =
+                    grunnlagslisteBarn.sortedBy { it.beregnGrunnlag.stønadstype }.map {
+                        val søknadsbarn =
+                            behandling.søknadsbarn.find { sb ->
+                                sb.tilGrunnlagsreferanse() ==
+                                    it.beregnGrunnlag.søknadsbarnReferanse
+                            }
+                        BeregningGrunnlagV2(
+                            søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
+                            periode = it.beregnGrunnlag.periode,
+                            beregningsperiode = it.beregnGrunnlag.periode,
+                            virkningstidspunkt = søknadsbarn?.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
+                            opphørsdato = it.beregnGrunnlag.opphørsdato,
+                            stønadstype = it.beregnGrunnlag.stønadstype,
+                            omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
+                        )
+                    },
+            )
+        val resultatAvvisning =
+            behandling.søknadsbarn.filter { it.avslag?.erAvvisning() == true }.map { søknasdbarn ->
+                ResultatBidragsberegningBarn(
+                    ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                    barn = søknasdbarn.mapTilResultatBarn(),
+                    vedtakstype = behandling.vedtakstype,
+                    avslagskode = søknasdbarn.avslag,
+                    resultat = BeregnetBarnebidragResultat(),
+                    opphørsdato = null,
+                )
+            }
+
+        return try {
+            val resultat =
+                beregnBarnebidrag
+                    .utførBidragsberegningV3(grunnlagBeregning)
+
+            val slåttUtTilFF = resultat.grunnlagListe.harSlåttUtTilForholdsmessigFordeling()
+
+            resultat.resultat.map { resultatBarn ->
+                val søknadsbarn = behandling.søknadsbarn.find { resultatBarn.søknadsbarnreferanse == it.tilGrunnlagsreferanse() }!!
+                val forholdsmessigFordelingDetaljer = søknadsbarn.forholdsmessigFordeling
+                if (resultatBarn.beregningsfeil != null) {
+                    return@map håndterBeregningsfeil(
+                        søknadsbarn = søknadsbarn,
+                        beregning = grunnlagBeregning,
+                        feil = resultatBarn.beregningsfeil!!,
+                        behandling = behandling,
+                    )
+                }
+                val erAvvistRevurdering =
+                    forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering && !slåttUtTilFF
+                val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
+                val grunnlagBarn =
+                    resultat.grunnlagListe.filter {
+                        val gjelderErBm =
+                            resultat.grunnlagListe.hentPersonMedReferanse(it.gjelderReferanse)?.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER
+                        it.gjelderBarnReferanse == null || !gjelderErBm ||
+                            grunnlagSøknadsbarn.personObjekt.bidragsmottaker == null ||
+                            it.gjelderReferanse == grunnlagSøknadsbarn.personObjekt.bidragsmottaker ||
+                            it.gjelderBarnReferanse == grunnlagSøknadsbarn.referanse ||
+                            it.type == Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING
+                    }
+                val endeligResultat =
+                    resultatBarn.resultatVedtakListe.find {
+                        behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak || !behandling.erKlageEllerOmgjøring
+                    }
+                ResultatBidragsberegningBarn(
+                    ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                    barn = søknadsbarn.mapTilResultatBarn(),
+                    erAvvistRevurdering = erAvvistRevurdering,
+                    vedtakstype = behandling.vedtakstype,
+                    avslagskode = søknadsbarn.avslag,
+                    resultatVedtak =
+                        BidragsberegningOrkestratorResponse(
+                            resultatVedtakListe =
+                                if (erAvvistRevurdering) {
+                                    emptyList()
+                                } else {
+                                    resultatBarn.resultatVedtakListe.map {
+                                        ResultatVedtak(
+                                            vedtakstype = it.vedtakstype,
+                                            delvedtak = it.delvedtak,
+                                            omgjøringsvedtak = it.omgjøringsvedtak,
+                                            beregnet = it.beregnet,
+                                            beregnetFraDato = it.beregnetFraDato,
+                                            resultat =
+                                                BeregnetBarnebidragResultat(
+                                                    beregnetBarnebidragPeriodeListe = it.periodeListe,
+                                                    grunnlagListe =
+                                                        if (it.omgjøringsvedtak) {
+                                                            grunnlagBarn + grunnlagBeregning.grunnlagsliste
+                                                        } else if (it.delvedtak) {
+                                                            it.grunnlagslisteDelvedtak
+                                                        } else {
+                                                            grunnlagBarn
+                                                        },
+                                                ),
+                                        )
+                                    }
+                                },
+                        ),
+                    omgjøringsdetaljer = behandling.omgjøringsdetaljer,
+                    beregnTilDato =
+                        behandling
+                            .finnBeregnTilDatoBehandling(søknadsbarn)
+                            ?.toYearMonth(),
+                    innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
+                    opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
+                    resultat =
+                        if (endeligResultat != null && !erAvvistRevurdering) {
+                            BeregnetBarnebidragResultat(
+                                beregnetBarnebidragPeriodeListe = endeligResultat.periodeListe,
+                                grunnlagListe = grunnlagBarn + grunnlagBeregning.grunnlagsliste,
+                            )
+                        } else {
+                            BeregnetBarnebidragResultat()
+                        },
+                )
+            } + resultatAvvisning
+        } catch (e: Exception) {
+            LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, e.message!!)
+        }
+    }
+
+    fun beregneBarnebidragV1(
+        behandling: Behandling,
+        endeligBeregning: Boolean = true,
+    ): List<ResultatBidragsberegningBarn> {
+        val grunnlagslisteBarn =
+            behandling.søknadsbarn.filter { it.avslag == null || !it.avslag!!.erAvvisning() }.map { søknasdbarn ->
+                mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
+            }
+        val beregnFraDato = behandling.eldsteVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+        val beregningTilDato = behandling.finnBeregnTilDato()
+        val beregningsperiode =
+            ÅrMånedsperiode(
+                beregnFraDato,
+                beregningTilDato,
+            )
+        val grunnlagBeregning =
+            BidragsberegningOrkestratorRequestV2(
+                beregningsperiode = beregningsperiode,
+                grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList(),
                 erDirekteAvslag = behandling.erDirekteAvslag(),
                 beregningstype =
                     when {
@@ -215,11 +374,18 @@ class BeregningService(
                     },
                 beregningBarn =
                     grunnlagslisteBarn.map {
+                        val søknadsbarn =
+                            behandling.søknadsbarn.find { sb ->
+                                sb.tilGrunnlagsreferanse() ==
+                                    it.beregnGrunnlag.søknadsbarnReferanse
+                            }
                         BeregningGrunnlagV2(
                             søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                             periode = it.beregnGrunnlag.periode,
+                            beregningsperiode = it.beregnGrunnlag.periode,
                             opphørsdato = it.beregnGrunnlag.opphørsdato,
                             stønadstype = it.beregnGrunnlag.stønadstype,
+                            virkningstidspunkt = søknadsbarn?.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
                             omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
                         )
                     },
@@ -490,7 +656,7 @@ class BeregningService(
 
             ResultatBidragsberegningBarn(
                 pa.rolle!!.mapTilResultatBarn(),
-                behandling.vedtakstype,
+                vedtakstype = behandling.vedtakstype,
                 opphørsdato = pa.rolle!!.opphørsdato?.toYearMonth(),
                 beregningInnkrevingsgrunnlag = true,
                 resultat =

@@ -10,11 +10,13 @@ import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioder
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.ugyldigSluttperiode
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.felles.toLocalDate
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
@@ -75,7 +77,7 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
             perioder
                 .map { it.tilDatoperiode() }
                 .finnHullIPerioder(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    rolle.finnBeregnFra().toLocalDate(),
                     rolle.opphørsdato,
                 ).filter {
                     it.til !=

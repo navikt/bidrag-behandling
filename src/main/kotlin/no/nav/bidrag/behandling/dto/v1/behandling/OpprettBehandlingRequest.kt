@@ -64,6 +64,10 @@ fun OpprettBehandlingRequest.erSærbidrag() = tilType() == TypeBehandling.SÆRBI
 
 fun OpprettBehandlingRequest.erForskudd() = tilType() == TypeBehandling.FORSKUDD
 
+fun OpprettBehandlingRequest.erBidrag() = tilType() == TypeBehandling.BIDRAG || tilType() == TypeBehandling.BIDRAG_18_ÅR
+
+fun OpprettBehandlingRequest.erKlage() = vedtakstype == Vedtakstype.KLAGE
+
 data class OpprettKategoriRequestDto(
     @Schema(required = true)
     val kategori: String,

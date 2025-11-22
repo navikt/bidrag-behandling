@@ -482,11 +482,11 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 it.navn shouldBe null
                 it.deleted shouldBe false
                 it.harGebyrsøknad shouldBe true
-                it.manueltOverstyrtGebyr.shouldNotBeNull()
-                it.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
-                it.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-                it.manueltOverstyrtGebyr!!.begrunnelse shouldBe "test"
-                it.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
+                it.gebyr.shouldNotBeNull()
+                it.gebyr!!.overstyrGebyr shouldBe true
+                it.gebyr!!.ilagtGebyr shouldBe false
+                it.gebyr!!.begrunnelse shouldBe "test"
+                it.gebyr!!.beregnetIlagtGebyr shouldBe true
             }
             val bidragspliktig = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
             bidragspliktig shouldNotBe null
@@ -496,11 +496,11 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 it.navn shouldBe null
                 it.deleted shouldBe false
                 it.harGebyrsøknad shouldBe true
-                it.manueltOverstyrtGebyr.shouldNotBeNull()
-                it.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-                it.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
-                it.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
-                it.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
+                it.gebyr.shouldNotBeNull()
+                it.gebyr!!.overstyrGebyr shouldBe false
+                it.gebyr!!.ilagtGebyr shouldBe true
+                it.gebyr!!.begrunnelse shouldBe null
+                it.gebyr!!.beregnetIlagtGebyr shouldBe true
             }
             val søknadsbarn = roller.find { it.rolletype == Rolletype.BARN }
 

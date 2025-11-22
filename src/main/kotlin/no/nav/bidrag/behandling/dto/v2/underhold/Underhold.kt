@@ -38,6 +38,7 @@ enum class Underholdselement { BARN, FAKTISK_TILSYNSUTGIFT, STØNAD_TIL_BARNETIL
 data class BarnDto(
     @Parameter(description = "Unik databaseid for person. Skal være null ved opprettelse av underholdskostand for nytt barn")
     val id: Long? = null,
+    val bidragsmottaker: Personident? = null,
     @Parameter(description = "Personident til barnet som skal legges til underholdskostnad. Kan ikke oppgis sammen med navn.")
     val personident: Personident? = null,
     @Parameter(description = "Navn på barnet som skal legges til underholdskostnad. Kan ikke oppgis sammen med personident.")
@@ -66,8 +67,13 @@ data class OppdatereUnderholdRequest(
 )
 
 data class OppdatereBegrunnelseRequest(
-    @Schema(description = "Id til underhold begrunnelsen gjelder for hvis søknadsbarn. Null for andre barn.")
+    @Schema(
+        description =
+            "Id til underhold begrunnelsen gjelder for hvis søknadsbarn. " +
+                "Bidragsmottaker må være satt for andre barn hvis det finnes flere BMer",
+    )
     val underholdsid: Long? = null,
+    val bidragsmottakerIdent: String? = null,
     val begrunnelse: String,
 )
 

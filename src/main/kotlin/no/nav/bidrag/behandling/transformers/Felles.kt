@@ -35,6 +35,9 @@ import java.time.Period
 import java.time.Year
 import java.time.YearMonth
 
+val vedtakstyperIkkeBeregning =
+    listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
+
 fun Vedtakstype.opprettForsendelse() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
 
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(this)
@@ -185,6 +188,19 @@ fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
         Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
         else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
     }
+
+fun Behandling.finnPeriodeLøperBidragFra(rolle: Rolle): YearMonth? {
+    val førstePeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
+    val førstePeriodePrivatAvtale =
+        privatAvtale
+            .find {
+                it.rolle?.ident == rolle.ident
+            }?.perioderInnkreving
+            ?.minByOrNull { it.fom }
+            ?.fom
+            ?.toYearMonth()
+    return minOfNullable(førstePeriodePrivatAvtale, førstePeriodeLøperBidrag)
+}
 
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
     val eksisterendeVedtak =

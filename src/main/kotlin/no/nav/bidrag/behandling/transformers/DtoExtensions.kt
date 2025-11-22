@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
@@ -44,7 +46,9 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         behandling = behandling,
         behandlingstema = behandlingstema,
         behandlingstatus = behandlingstatus,
+        innkrevingstype = behandling.innkrevingstype,
         rolletype = rolletype,
+        stønadstype = behandling.stonadstype,
         ident = ident?.verdi,
         fødselsdato = fødselsdatoPerson,
         navn = navn,
@@ -75,6 +79,22 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
             },
         innbetaltBeløp = innbetaltBeløp,
         harGebyrsøknad = harGebyrsøknad,
+        gebyr =
+            GebyrRolle(
+                gebyrSøknader =
+                    if (harGebyrsøknad) {
+                        mutableSetOf(
+                            GebyrRolleSøknad(
+                                saksnummer = behandling.saksnummer,
+                                søknadsid = behandling.soknadsid!!,
+                                behandlingid = behandling.id,
+                                referanse = referanseGebyr,
+                            ),
+                        )
+                    } else {
+                        mutableSetOf()
+                    },
+            ),
     )
 }
 

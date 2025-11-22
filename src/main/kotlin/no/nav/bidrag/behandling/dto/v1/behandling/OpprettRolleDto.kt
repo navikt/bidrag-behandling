@@ -32,6 +32,7 @@ data class OpprettRolleDto(
     val erSlettet: Boolean = false,
     val erUkjent: Boolean = false,
     val harGebyrsøknad: Boolean = false,
+    val referanseGebyr: String? = null,
     val behandlingstatus: Behandlingstatus? = null,
     val behandlingstema: Behandlingstema? = null,
 )

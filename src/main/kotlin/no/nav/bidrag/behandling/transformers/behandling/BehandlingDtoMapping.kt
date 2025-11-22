@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Notat
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynAktiveGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
@@ -42,6 +44,7 @@ import no.nav.bidrag.behandling.transformers.hentEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegang
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
@@ -78,6 +81,7 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -103,13 +107,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         roller =
             roller
                 .map {
-                    RolleDto(
-                        it.id!!,
-                        it.rolletype,
-                        it.ident,
-                        it.navn ?: hentPersonVisningsnavn(it.ident),
-                        it.fødselsdato,
-                    )
+                    it.tilDto()
                 }.toSet(),
         søknadRefId = omgjøringsdetaljer?.soknadRefId,
         vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
@@ -128,6 +126,31 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
+fun Person.tilRolle(behandling: Behandling) =
+    Rolle(
+        behandling,
+        Rolletype.BARN,
+        ident,
+        fødselsdato,
+        LocalDateTime.now(),
+        -1,
+        navn ?: hentPersonVisningsnavn(ident),
+    )
+
+fun Person.tilDto(stønadstype: Stønadstype? = null) =
+    RolleDto(
+        id!!,
+        Rolletype.BARN,
+        ident,
+        navn ?: hentPersonVisningsnavn(ident),
+        fødselsdato,
+        harInnvilgetTilleggsstønad = false,
+        delAvOpprinneligBehandling = false,
+        erRevurdering = false,
+        stønadstype = stønadstype,
+        saksnummer = "",
+    )
+
 fun Rolle.tilDto() =
     RolleDto(
         id!!,
@@ -135,8 +158,32 @@ fun Rolle.tilDto() =
         ident,
         navn ?: hentPersonVisningsnavn(ident),
         fødselsdato,
-        this.harInnvilgetTilleggsstønad(),
+        harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
+        delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == true,
+        erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
+        stønadstype = stønadstype ?: behandling.stonadstype,
+        saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
+        bidragsmottaker =
+            if (rolletype == Rolletype.BARN) {
+                forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker.ident
+            } else {
+                null
+            },
     )
+
+fun Rolle.tilSøknadsdetaljerDto(søknadsid: Long): SøknadDetaljerDto {
+    val søknadsdetaljer = forholdsmessigFordeling?.søknaderUnderBehandling?.find { it.søknadsid == søknadsid }
+    val barn = behandling.søknadsbarnForSøknad(søknadsid)
+    return SøknadDetaljerDto(
+        søknadsid = søknadsid,
+        saksnummer = sakForSøknad(søknadsid),
+        barn = if (rolletype != Rolletype.BARN) barn.map { it.tilDto() } else emptyList(),
+        søktFomDato = søknadsdetaljer?.søknadFomDato ?: behandling.søktFomDato,
+        mottattDato = søknadsdetaljer?.mottattDato ?: behandling.mottattdato,
+        søktAvType = søknadsdetaljer?.søktAvType ?: behandling.soknadFra,
+        behandlingstype = søknadsdetaljer?.behandlingstype ?: behandling.søknadstype,
+    )
+}
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
     val tilleggsstønad =
@@ -290,7 +337,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerVurderingAvSkolegang =
             if (kanSkriveVurderingAvSkolegangAlle() && !erKlageEllerOmgjøring) {
-                søknadsbarn.any {
+                søknadsbarn.filter { kanSkriveVurderingAvSkolegang(it) }.any {
                     NotatService
                         .henteNotatinnhold(
                             this,

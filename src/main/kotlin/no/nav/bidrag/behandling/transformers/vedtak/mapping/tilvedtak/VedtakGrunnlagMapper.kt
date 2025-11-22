@@ -14,6 +14,8 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
+import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidragFra
+import no.nav.bidrag.behandling.transformers.finnPerioderHvorDetLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -77,9 +79,23 @@ fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
 
 fun Behandling.finnBeregnTilDato() =
     if (erBidrag()) {
-        søknadsbarn.minOf { finnBeregnTilDatoBehandling(it) }
+        søknadsbarn.maxOf { finnBeregnTilDatoBehandling(it) }
     } else {
         finnBeregnTilDatoBehandling()
+    }
+
+fun Rolle.finnBeregnFra(): YearMonth =
+    if (behandling.erBidrag()) {
+        if (behandling.erIForholdsmessigFordeling) {
+            behandling
+                .finnPeriodeLøperBidragFra(this)
+                ?.let { maxOf(it, virkningstidspunktRolle.toYearMonth()) }
+                ?: virkningstidspunktRolle.toYearMonth()
+        } else {
+            virkningstidspunktRolle.toYearMonth()
+        }
+    } else {
+        behandling.virkningstidspunktEllerSøktFomDato.toYearMonth()
     }
 
 fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): LocalDate {
@@ -115,7 +131,7 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
     } else if (erForskudd()) {
         utledBeregnTilDato(virkningstidspunkt!!)
     } else {
-        utledBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        utledBeregnTilDato(søknadsbarnRolle?.virkningstidspunkt ?: virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
     }
 }
 
@@ -233,7 +249,7 @@ class VedtakGrunnlagMapper(
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
             if (behandling.privatAvtale
-                    .find { it.rolle!!.ident == gjelderBarn.ident }
+                    .find { it.personIdent == gjelderBarn.ident }
                     ?.perioderInnkreving
                     ?.isEmpty() == true
             ) {
@@ -355,7 +371,7 @@ class VedtakGrunnlagMapper(
                         }
                         BeregnGrunnlag(
                             periode = beregningsperiode,
-                            stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                            stønadstype = søknadsbarnRolle.stønadstype ?: stonadstype ?: Stønadstype.BIDRAG,
                             opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
                             søknadsbarnReferanse = søknadsbarn.referanse,
                             grunnlagListe = grunnlagsliste.toSet().toList(),
@@ -469,13 +485,15 @@ class VedtakGrunnlagMapper(
             val fødselsdato = personService.hentPersonFødselsdato(kravhaver.verdi) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
             val nyesteIdent = (personService.hentNyesteIdent(kravhaver.verdi) ?: kravhaver)
 
+            val referanse =
+                Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
+                    fødselsdato.toCompactString(),
+                    (kravhaver.verdi + 1).hashCode(),
+                )
             return GrunnlagDto(
-                referanse =
-                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
-                        fødselsdato.toCompactString(),
-                        (kravhaver.verdi + 1).hashCode(),
-                    ),
+                referanse = referanse,
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
+                gjelderReferanse = referanse,
                 innhold =
                     POJONode(
                         Person(

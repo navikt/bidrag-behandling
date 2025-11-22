@@ -3,13 +3,13 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
@@ -35,8 +35,10 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
+import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
 import no.nav.bidrag.behandling.transformers.tilGrunnlagsdatatypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilStønadsid
@@ -91,6 +93,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.erOrkestrertVedtak
+import no.nav.bidrag.transport.behandling.vedtak.response.erVedtakAvvistRevurderingsøknad
 import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetaljer
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
@@ -153,43 +156,49 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
 
 fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatBidragberegningDto =
     ResultatBidragberegningDto(
-        stønadsendringListe.map { stønadsendring ->
-            val barnIdent = stønadsendring.kravhaver
-            val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
-            val barn = barnGrunnlag?.innholdTilObjekt<Person>()
-            val erResultatUtenBeregning =
-                stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
-                    type == Vedtakstype.INNKREVING
-            val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
-            ResultatBidragsberegningBarnDto(
-                resultatUtenBeregning = erResultatUtenBeregning,
-                barn =
-                    ResultatRolle(
-                        barn?.ident ?: stønadsendring.kravhaver,
-                        hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
-                        barn?.fødselsdato ?: LocalDate.now(),
-                        hentDirekteOppgjørBeløp(barnIdent.verdi),
-                        referanse = barnGrunnlag?.referanse ?: "",
-                    ),
-                erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
-                indeksår = stønadsendring.førsteIndeksreguleringsår,
-                delvedtak = hentDelvedtak(stønadsendring),
-                innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
-                perioder =
-                    vedtakBeregning?.let {
-                        val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
-                        it.hentBeregningsperioder(stønadsendringBeregning)
-                    } ?: hentBeregningsperioder(stønadsendring),
-            )
-        },
+        minstEnPeriodeHarSlåttUtTilFF = grunnlagListe.harSlåttUtTilForholdsmessigFordeling(),
+        perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
+        resultatBarn =
+            stønadsendringListe.sortedBy { it.kravhaver.fødselsdato() }.map { stønadsendring ->
+                val barnIdent = stønadsendring.kravhaver
+                val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
+                val barn = barnGrunnlag?.innholdTilObjekt<Person>()
+                val erResultatUtenBeregning =
+                    stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
+                        type == Vedtakstype.INNKREVING
+                val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
+                ResultatBidragsberegningBarnDto(
+                    resultatUtenBeregning = erResultatUtenBeregning,
+                    barn =
+                        ResultatRolle(
+                            barn?.ident ?: stønadsendring.kravhaver,
+                            hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
+                            barn?.fødselsdato ?: LocalDate.now(),
+                            hentDirekteOppgjørBeløp(barnIdent.verdi),
+                            referanse = barnGrunnlag?.referanse ?: "",
+                        ),
+                    erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),
+                    erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
+                    indeksår = stønadsendring.førsteIndeksreguleringsår,
+                    delvedtak = hentDelvedtak(stønadsendring),
+                    innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
+                    perioder =
+                        vedtakBeregning?.let {
+                            val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
+                            it.hentBeregningsperioder(stønadsendringBeregning)
+                        } ?: hentBeregningsperioder(stønadsendring),
+                )
+            },
     )
 
 fun VedtakDto.erVedtakUtenBeregning() =
     type == Vedtakstype.INDEKSREGULERING ||
-        stønadsendringListe.all {
-            it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
-                erOrkestrertVedtak && type == Vedtakstype.INNKREVING
-        }
+        !this.erVedtakAvvistRevurderingsøknad() &&
+        stønadsendringListe
+            .all {
+                it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
+                    erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+            }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
     val barnIdent = stønadsendring.kravhaver
@@ -545,8 +554,8 @@ internal fun List<GrunnlagDto>.oppdaterRolleGebyr(behandling: Behandling) =
                     Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
                     grunnlag.first(),
                 ).firstOrNull()?.innholdTilObjekt<ManueltOverstyrtGebyr>()
-            rolle.manueltOverstyrtGebyr =
-                RolleManueltOverstyrtGebyr(
+            rolle.gebyr =
+                GebyrRolle(
                     manueltOverstyrtGebyr != null,
                     sluttberegning.ilagtGebyr,
                     manueltOverstyrtGebyr?.begrunnelse,
@@ -837,7 +846,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
 
             val grunnlagsdatatype =
                 if (behandling.tilType() != TypeBehandling.FORSKUDD &&
-                    innhentetForIdent == behandling.bidragsmottaker?.ident
+                    behandling.alleBidragsmottakere.any { it.ident == innhentetForIdent }
                 ) {
                     Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN
                 } else {

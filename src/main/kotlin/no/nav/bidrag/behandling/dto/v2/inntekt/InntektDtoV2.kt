@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -110,7 +111,9 @@ data class OppdatereInntektResponse(
     @Deprecated("Bruk heller inntekter")
     val inntekt: InntektDtoV2?,
     val inntekter: InntekterDtoV2,
+    @Schema(deprecated = true)
     val gebyr: GebyrDto? = null,
+    val gebyrV2: GebyrDtoV2? = null,
     val beregnetGebyrErEndret: Boolean = false,
     @Schema(description = "Periodiserte inntekter")
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),

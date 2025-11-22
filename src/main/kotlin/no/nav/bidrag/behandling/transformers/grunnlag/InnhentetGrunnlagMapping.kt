@@ -84,8 +84,11 @@ fun List<Grunnlag>.tilInnhentetSivilstand(personobjekter: Set<GrunnlagDto>): Set
 fun List<Grunnlag>.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> {
     val personobjekterInnhentetAndreBarnTilBidragsmottaker = mutableSetOf<GrunnlagDto>()
 
-    fun RelatertPersonGrunnlagDto.opprettPersonGrunnlag(referanse: Grunnlagsreferanse): GrunnlagDto {
-        val relatertPersonGrunnlag = tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse)
+    fun RelatertPersonGrunnlagDto.opprettPersonGrunnlag(
+        referanse: Grunnlagsreferanse,
+        gjelderReferanse: Grunnlagsreferanse,
+    ): GrunnlagDto {
+        val relatertPersonGrunnlag = tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse, gjelderReferanse)
         personobjekterInnhentetAndreBarnTilBidragsmottaker.add(relatertPersonGrunnlag)
         return relatertPersonGrunnlag
     }
@@ -112,7 +115,7 @@ fun List<Grunnlag>.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter: Set<G
                                         val relatertPersonObjekt =
                                             (personobjekter + personobjekterInnhentetAndreBarnTilBidragsmottaker)
                                                 .hentPerson(it.gjelderPersonId)
-                                                ?: it.opprettPersonGrunnlag(referanse)
+                                                ?: it.opprettPersonGrunnlag(referanse, gjelder.referanse)
                                         InnhentetAndreBarnTilBidragsmottaker.AndreBarnTilBidragsmottakerPDL(
                                             gjelderPerson = relatertPersonObjekt.referanse,
                                             relasjon = it.relasjon,
