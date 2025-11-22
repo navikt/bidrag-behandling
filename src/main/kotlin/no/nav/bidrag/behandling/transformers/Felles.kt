@@ -189,6 +189,19 @@ fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
         else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
     }
 
+fun Behandling.finnPeriodeLøperBidragFra(rolle: Rolle): YearMonth? {
+    val førstePeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
+    val førstePeriodePrivatAvtale =
+        privatAvtale
+            .find {
+                it.rolle?.ident == rolle.ident
+            }?.perioderInnkreving
+            ?.minByOrNull { it.fom }
+            ?.fom
+            ?.toYearMonth()
+    return minOfNullable(førstePeriodePrivatAvtale, førstePeriodeLøperBidrag)
+}
+
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
     val eksisterendeVedtak =
         grunnlag.hentSisteGrunnlagSomGjelderBarn(

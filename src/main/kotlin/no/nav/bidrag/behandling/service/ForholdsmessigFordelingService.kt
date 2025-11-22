@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
+import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidragFra
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnEldsteSøktFomDato
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnSøktFomRevurderingSøknad
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøknad
@@ -609,23 +610,35 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun sjekkSkalOppretteForholdsmessigFordeling(behandlingId: Long): SjekkForholdmessigFordelingResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        val finnesLøpendeBidragSomOverlapperMedElsteVirkning =
+            behandling.søknadsbarn.any {
+                val periodeLøperFra = behandling.finnPeriodeLøperBidragFra(it)
+                periodeLøperFra != null && periodeLøperFra < it.virkningstidspunkt!!.toYearMonth() &&
+                    periodeLøperFra > behandling.eldsteVirkningstidspunkt.toYearMonth()
+            }
         val behandlesAvEnhet = finnEnhetForBarnIBehandling(behandling)
 
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
-        val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling).filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
+        val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
+        val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
-            relevanteKravhavere
-                .toSet()
+            if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && finnesLøpendeBidragSomOverlapperMedElsteVirkning) {
+                relevanteKravhavere
+            } else {
+                relevanteKravhavereIkkeSøknadsbarn
+            }.toSet()
                 .map { lb ->
                     val sak = lb.saksnummer?.let { sakConsumer.hentSak(it) }
                     lb.mapSakKravhaverTilForholdsmessigFordelingDto(sak, behandling, lb.løperBidragFra != null)
                 }
         return SjekkForholdmessigFordelingResponse(
-            behandlesAvEnhet,
-            bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty(),
-            false, // TODO: Simuler beregning
+            skalBehandlesAvEnhet = behandlesAvEnhet,
+            kanOppretteForholdsmessigFordeling =
+                bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
+                    finnesLøpendeBidragSomOverlapperMedElsteVirkning,
+            måOppretteForholdsmessigFordeling = finnesLøpendeBidragSomOverlapperMedElsteVirkning, // TODO: Simuler beregning
             eldsteSøktFraDato = relevanteKravhavere.finnEldsteSøktFomDato(behandling),
-            bpsBarnMedLøpendeBidragEllerPrivatAvtale,
+            barn = bpsBarnMedLøpendeBidragEllerPrivatAvtale,
         )
     }
 

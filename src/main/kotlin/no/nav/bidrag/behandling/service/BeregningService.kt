@@ -194,7 +194,7 @@ class BeregningService(
             behandling.søknadsbarn.filter { it.avslag == null || !it.avslag!!.erAvvisning() }.map { søknasdbarn ->
                 mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
             }
-        val beregnFraDato = behandling.globalVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+        val beregnFraDato = behandling.eldsteVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
         val beregningTilDato = behandling.finnBeregnTilDato()
         val beregningsperiode =
             ÅrMånedsperiode(
@@ -349,7 +349,7 @@ class BeregningService(
             behandling.søknadsbarn.filter { it.avslag == null || !it.avslag!!.erAvvisning() }.map { søknasdbarn ->
                 mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning)
             }
-        val beregnFraDato = behandling.globalVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+        val beregnFraDato = behandling.eldsteVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
         val beregningTilDato = behandling.finnBeregnTilDato()
         val beregningsperiode =
             ÅrMånedsperiode(

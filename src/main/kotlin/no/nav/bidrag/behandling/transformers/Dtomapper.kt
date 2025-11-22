@@ -854,7 +854,7 @@ class Dtomapper(
                     VirkningstidspunktDtoV3(
                         false,
                         erAvslagForAlle,
-                        globalVirkningstidspunkt.toYearMonth(),
+                        eldsteVirkningstidspunkt.toYearMonth(),
                         emptyList(),
                     ),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
@@ -871,7 +871,7 @@ class Dtomapper(
                 VirkningstidspunktDtoV3(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
                     erAvslagForAlle = erAvslagForAlle,
-                    eldsteVirkningstidspunkt = globalVirkningstidspunkt.toYearMonth(),
+                    eldsteVirkningstidspunkt = eldsteVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarn2(),
                 ),
             virkningstidspunkt =

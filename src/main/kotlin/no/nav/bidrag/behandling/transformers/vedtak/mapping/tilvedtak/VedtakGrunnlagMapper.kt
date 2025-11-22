@@ -14,6 +14,8 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
+import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidragFra
+import no.nav.bidrag.behandling.transformers.finnPerioderHvorDetLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -80,6 +82,20 @@ fun Behandling.finnBeregnTilDato() =
         søknadsbarn.maxOf { finnBeregnTilDatoBehandling(it) }
     } else {
         finnBeregnTilDatoBehandling()
+    }
+
+fun Rolle.finnBeregnFra(): YearMonth =
+    if (behandling.erBidrag()) {
+        if (behandling.erIForholdsmessigFordeling) {
+            behandling
+                .finnPeriodeLøperBidragFra(this)
+                ?.let { maxOf(it, virkningstidspunktRolle.toYearMonth()) }
+                ?: virkningstidspunktRolle.toYearMonth()
+        } else {
+            virkningstidspunktRolle.toYearMonth()
+        }
+    } else {
+        behandling.virkningstidspunktEllerSøktFomDato.toYearMonth()
     }
 
 fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): LocalDate {

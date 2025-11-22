@@ -173,7 +173,7 @@ fun opprettRolle(
                 if (erBarn) {
                     maxOf(
                         hentPersonFødselsdato(fødselsnummer)!!.plusMonths(1).withDayOfMonth(1),
-                        ffDetaljer.eldsteSøknad.søknadFomDato ?: behandling.globalVirkningstidspunkt,
+                        ffDetaljer.eldsteSøknad.søknadFomDato ?: behandling.eldsteVirkningstidspunkt,
                     )
                 } else {
                     null
@@ -229,7 +229,7 @@ fun Rolle.kopierRolle(
     ident = ident,
     årsak = årsak ?: behandling.årsak,
     avslag = avslag ?: behandling.avslag,
-    virkningstidspunkt = virkningstidspunkt ?: hovedbehandling.globalVirkningstidspunkt,
+    virkningstidspunkt = virkningstidspunkt ?: hovedbehandling.eldsteVirkningstidspunkt,
     grunnlagFraVedtakListe = grunnlagFraVedtakListe,
     opphørsdato = opphørsdato ?: hovedbehandling.globalOpphørsdato,
     gebyr = hentEllerOpprettGebyr(),

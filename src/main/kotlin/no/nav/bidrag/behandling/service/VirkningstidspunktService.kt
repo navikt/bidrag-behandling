@@ -20,7 +20,6 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
@@ -445,7 +444,7 @@ class VirkningstidspunktService(
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
         val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
         oppdaterOpphørsdato(OppdaterOpphørsdatoRequestDto(null, behandling.globalOpphørsdato), behandling)
-        oppdaterVirkningstidspunkt(null, behandling.globalVirkningstidspunkt, behandling)
+        oppdaterVirkningstidspunkt(null, behandling.eldsteVirkningstidspunkt, behandling)
         oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(årsak = yngsteBarn.årsak, avslag = yngsteBarn.avslag))
         oppdaterBeregnTilDato(OppdaterBeregnTilDatoRequestDto(null, yngsteBarn.beregnTil), behandling)
         var nyNotat = yngsteBarn.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""

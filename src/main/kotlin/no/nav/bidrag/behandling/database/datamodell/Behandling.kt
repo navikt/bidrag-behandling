@@ -1,13 +1,9 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.core.type.TypeReference
-import io.hypersistence.utils.hibernate.type.ImmutableType
-import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
-import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
-import jakarta.persistence.Converter
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -58,11 +54,6 @@ import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import org.hibernate.annotations.Type
-import org.hibernate.engine.spi.SessionFactoryImplementor
-import org.hibernate.engine.spi.SharedSessionContractImplementor
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.Types
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -255,7 +246,7 @@ open class Behandling(
                 it.beregnTil != null && it.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED
         }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
-    val globalVirkningstidspunkt get() =
+    val eldsteVirkningstidspunkt get() =
         søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt ?: søktFomDato
     val erAvslagForAlle get() =
         søknadsbarn.all { it.avslag != null }

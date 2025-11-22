@@ -77,7 +77,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.ifTrue
-import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -1114,7 +1113,7 @@ class BoforholdService(
 
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.globalVirkningstidspunkt,
+                behandling.eldsteVirkningstidspunkt,
                 rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(rolle),
                 behandling.tilTypeBoforhold(),
@@ -1133,7 +1132,7 @@ class BoforholdService(
 
         val borMedAndreVoksneperioder =
             BoforholdApi.beregnBoforholdAndreVoksne(
-                behandling.globalVirkningstidspunkt,
+                behandling.eldsteVirkningstidspunkt,
                 periodiseringsrequest,
                 behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
