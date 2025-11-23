@@ -14,8 +14,7 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
-import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidragFra
-import no.nav.bidrag.behandling.transformers.finnPerioderHvorDetLøperBidrag
+import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -88,7 +87,8 @@ fun Rolle.finnBeregnFra(): YearMonth =
     if (behandling.erBidrag()) {
         if (behandling.erIForholdsmessigFordeling) {
             behandling
-                .finnPeriodeLøperBidragFra(this)
+                .finnPeriodeLøperBidrag(this)
+                ?.fom
                 ?.let { maxOf(it, virkningstidspunktRolle.toYearMonth()) }
                 ?: virkningstidspunktRolle.toYearMonth()
         } else {

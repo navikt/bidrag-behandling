@@ -133,6 +133,20 @@ fun Behandling.tilStønadsid(søknadsbarn: Rolle) =
         Saksnummer(saksnummer),
     )
 
+fun <T : Comparable<T>> maxOfNullable(
+    a: T?,
+    b: T?,
+): T? =
+    if (a == null && b == null) {
+        null
+    } else if (a == null) {
+        b
+    } else if (b == null) {
+        a
+    } else {
+        maxOf(a, b)
+    }
+
 fun <T : Comparable<T>> minOfNullable(
     a: T?,
     b: T?,
@@ -189,9 +203,10 @@ fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
         else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
     }
 
-fun Behandling.finnPeriodeLøperBidragFra(rolle: Rolle): YearMonth? {
-    val førstePeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
-    val førstePeriodePrivatAvtale =
+fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
+    val fraPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
+    val tilPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).maxByOrNull { it.fom }?.til
+    val fraPeriodePrivatAvtale =
         privatAvtale
             .find {
                 it.rolle?.ident == rolle.ident
@@ -199,7 +214,17 @@ fun Behandling.finnPeriodeLøperBidragFra(rolle: Rolle): YearMonth? {
             ?.minByOrNull { it.fom }
             ?.fom
             ?.toYearMonth()
-    return minOfNullable(førstePeriodePrivatAvtale, førstePeriodeLøperBidrag)
+    val tilPeriodePrivatAvtale =
+        privatAvtale
+            .find {
+                it.rolle?.ident == rolle.ident
+            }?.perioderInnkreving
+            ?.minByOrNull { it.fom }
+            ?.fom
+            ?.toYearMonth()
+    return minOfNullable(fraPeriodeLøperBidrag, fraPeriodePrivatAvtale)?.let {
+        ÅrMånedsperiode(it, maxOfNullable(tilPeriodeLøperBidrag, tilPeriodePrivatAvtale))
+    }
 }
 
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {

@@ -246,7 +246,7 @@ fun Set<Grunnlag>.tilBarnetilsynAktiveGrunnlagDto(): StønadTilBarnetilsynAktive
 
 fun Behandling.tilInntektDtoV2(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList(),
-    inkluderHistoriskeInntekter: Boolean = false,
+    inkluderHistoriskeInntekter: Boolean = true,
 ) = InntekterDtoV2(
     barnetillegg =
         inntekter

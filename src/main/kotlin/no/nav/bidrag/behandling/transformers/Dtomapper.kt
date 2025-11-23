@@ -167,9 +167,8 @@ class Dtomapper(
 ) {
     fun tilDto(
         behandling: Behandling,
-        inkluderHistoriskeInntekter: Boolean = false,
         lesemodus: Boolean = false,
-    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), inkluderHistoriskeInntekter, lesemodus)
+    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), lesemodus)
 
     fun hentManuelleVedtakForBehandling(
         behandling: Behandling,
@@ -753,7 +752,6 @@ class Dtomapper(
     @Suppress("ktlint:standard:value-argument-comment")
     private fun Behandling.tilDto(
         ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
-        inkluderHistoriskeInntekter: Boolean,
         lesemodus: Boolean = false,
     ): BehandlingDtoV2 {
         val kanIkkeBehandlesBegrunnelse =
@@ -900,7 +898,6 @@ class Dtomapper(
             inntekter =
                 tilInntektDtoV2(
                     grunnlag.hentSisteAktiv(),
-                    inkluderHistoriskeInntekter = inkluderHistoriskeInntekter,
                 ),
             underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),

@@ -473,9 +473,14 @@ class BehandlingService(
     }
 
     @Transactional
-    fun henteBehandling(behandlingsid: Long): Behandling {
+    fun henteBehandling(
+        behandlingsid: Long,
+        ikkeHentGrunnlag: Boolean = false,
+    ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
-        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        if (!ikkeHentGrunnlag) {
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        }
         virkningstidspunktService.run {
             behandling.oppdatereVirkningstidspunktSærbidrag()
         }

@@ -90,12 +90,11 @@ class BehandlingControllerV2(
     )
     fun vedtakLesemodus(
         @PathVariable vedtakId: Int,
-        @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
         val resultat =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return dtomapper.tilDto(resultat, inkluderHistoriskeInntekter, true)
+        return dtomapper.tilDto(resultat, true)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")
@@ -319,9 +318,10 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
+        @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
     ): BehandlingDtoV2 {
-        val behandling = behandlingService.henteBehandling(behandlingsid)
-        return dtomapper.tilDto(behandling, true)
+        val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
+        return dtomapper.tilDto(behandling)
     }
 
     @Suppress("unused")

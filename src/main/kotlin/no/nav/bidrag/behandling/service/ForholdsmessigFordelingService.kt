@@ -19,7 +19,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
-import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidragFra
+import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnEldsteSøktFomDato
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnSøktFomRevurderingSøknad
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøknad
@@ -36,6 +36,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDe
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBM
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBP
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
+import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -49,6 +50,7 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
@@ -84,6 +86,11 @@ val behandlingstyperSomIkkeSkalInkluderesIFF =
         Behandlingstype.INDEKSREGULERING,
     )
 
+data class FFBeregningResultat(
+    val harSlåttUtTilFF: Boolean,
+    val beregningManglerGrunnlag: Boolean,
+)
+
 data class SakKravhaver(
     val saksnummer: String?,
     val kravhaver: String,
@@ -113,6 +120,7 @@ class ForholdsmessigFordelingService(
     private val grunnlagService: GrunnlagService,
     private val bbmConsumer: BidragBBMConsumer,
     private val forsendelseService: ForsendelseService,
+    private val beregningService: BeregningService,
 ) {
     @Transactional
     fun lukkAllFFSaker(behandlingsid: Long) {
@@ -607,14 +615,29 @@ class ForholdsmessigFordelingService(
         }
     }
 
+    private fun sjekkBeregningKreverForholdsmessigFordeling(behandling: Behandling): FFBeregningResultat =
+        try {
+            val resultat = beregningService.beregneBidrag(behandling, true)
+            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
+            FFBeregningResultat(
+                grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
+                // TODO: Simuler beregning
+                grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
+            )
+        } catch (e: Exception) {
+            // Valideringsfeil
+            FFBeregningResultat(false, false)
+        }
+
     @Transactional
     fun sjekkSkalOppretteForholdsmessigFordeling(behandlingId: Long): SjekkForholdmessigFordelingResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         val finnesLøpendeBidragSomOverlapperMedElsteVirkning =
             behandling.søknadsbarn.any {
-                val periodeLøperFra = behandling.finnPeriodeLøperBidragFra(it)
-                periodeLøperFra != null && periodeLøperFra < it.virkningstidspunkt!!.toYearMonth() &&
-                    periodeLøperFra > behandling.eldsteVirkningstidspunkt.toYearMonth()
+                val periodeLøperBidrag = behandling.finnPeriodeLøperBidrag(it)
+                val periodeBeregning = ÅrMånedsperiode(behandling.eldsteVirkningstidspunkt.toYearMonth(), it.opphørsdato?.toYearMonth())
+                periodeLøperBidrag != null && periodeLøperBidrag.fom < it.virkningstidspunktRolle.toYearMonth() &&
+                    periodeLøperBidrag.overlapper(periodeBeregning)
             }
         val behandlesAvEnhet = finnEnhetForBarnIBehandling(behandling)
 
@@ -631,12 +654,14 @@ class ForholdsmessigFordelingService(
                     val sak = lb.saksnummer?.let { sakConsumer.hentSak(it) }
                     lb.mapSakKravhaverTilForholdsmessigFordelingDto(sak, behandling, lb.løperBidragFra != null)
                 }
+        val resultat = sjekkBeregningKreverForholdsmessigFordeling(behandling)
         return SjekkForholdmessigFordelingResponse(
             skalBehandlesAvEnhet = behandlesAvEnhet,
             kanOppretteForholdsmessigFordeling =
                 bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
                     finnesLøpendeBidragSomOverlapperMedElsteVirkning,
-            måOppretteForholdsmessigFordeling = finnesLøpendeBidragSomOverlapperMedElsteVirkning, // TODO: Simuler beregning
+            måOppretteForholdsmessigFordeling = resultat.beregningManglerGrunnlag,
+            harSlåttUtTilForholdsmessigFordeling = resultat.harSlåttUtTilFF,
             eldsteSøktFraDato = relevanteKravhavere.finnEldsteSøktFomDato(behandling),
             barn = bpsBarnMedLøpendeBidragEllerPrivatAvtale,
         )

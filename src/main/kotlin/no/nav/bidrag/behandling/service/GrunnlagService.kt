@@ -148,6 +148,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
 import java.time.LocalDateTime
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 
@@ -590,7 +591,7 @@ class GrunnlagService(
                 BpsBarnUtenBidragsakEllerLøpendeBidrag(
                     Personident(barn),
                     hentPersonVisningsnavn(barn),
-                    hentPersonFødselsdato(barn)!!,
+                    hentPersonFødselsdato(barn) ?: LocalDate.now(),
                     sak?.eierfogd?.verdi ?: EnhetProvider.hentGeografiskTilknytningPerson(barn),
                     sak?.saksnummer?.verdi,
                 )
