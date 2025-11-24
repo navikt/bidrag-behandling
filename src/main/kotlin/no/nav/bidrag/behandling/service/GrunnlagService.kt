@@ -1938,7 +1938,7 @@ class GrunnlagService(
             nyesteGrunnlag(behandling, innhentetForRolle, grunnlagstype, gjelderPerson)
 
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, innhentetForRolle, gjelderPerson)
-        val erFørstegangsinnhenting = nyesteGrunnlag == null || behandling.inntekter.isEmpty()
+        val erFørstegangsinnhenting = nyesteGrunnlag == null
 
         val erGrunnlagEndret =
             erGrunnlagEndret(
