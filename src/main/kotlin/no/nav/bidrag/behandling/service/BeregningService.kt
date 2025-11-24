@@ -179,7 +179,7 @@ class BeregningService(
             beregnBidragAldersjustering(behandling)
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
-        } else if (UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled && UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled) {
+        } else if (UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled) {
             beregneBarnebidragV2FF(behandling, endeligBeregning)
         } else {
             beregneBarnebidragV1(behandling, endeligBeregning)

@@ -130,6 +130,7 @@ import no.nav.bidrag.transport.dokumentmaler.notat.NotatVirkningstidspunktBarnDt
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatVirkningstidspunktDto
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteret
+import no.nav.bidrag.transport.dokumentmaler.notat.PeriodeSlåttUtTilFF
 import no.nav.bidrag.transport.dokumentmaler.notat.VedtakNotatDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -604,6 +605,14 @@ class NotatOpplysningerService(
                                     barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
                                     indeksår = beregning.indeksår ?: Year.now().value,
                                     innkrevesFraDato = beregning.innkrevesFraDato,
+                                    minstEnPeriodeHarSlåttUtTilFF = it.minstEnPeriodeHarSlåttUtTilFF,
+                                    perioderSlåttUtTilFF =
+                                        it.perioderSlåttUtTilFF.map {
+                                            PeriodeSlåttUtTilFF(
+                                                periode = it.periode,
+                                                erEvneJustertNedTil25ProsentAvInntekt = it.erEvneJustertNedTil25ProsentAvInntekt,
+                                            )
+                                        },
                                     orkestrertVedtak =
                                         beregning.delvedtak.find { it.endeligVedtak }?.let {
                                             EndeligOrkestrertVedtak(
