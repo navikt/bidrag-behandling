@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeli
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSøknad
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
@@ -224,10 +225,15 @@ class BeregningService(
                                 sb.tilGrunnlagsreferanse() ==
                                     it.beregnGrunnlag.søknadsbarnReferanse
                             }
+                        val beregningsperiode =
+                            ÅrMånedsperiode(
+                                søknadsbarn!!.finnBeregnFra(),
+                                behandling.finnBeregnTilDatoBehandling(søknadsbarn, beregningTilDato).toYearMonth(),
+                            )
                         BeregningGrunnlagV2(
                             søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                             periode = it.beregnGrunnlag.periode,
-                            beregningsperiode = it.beregnGrunnlag.periode,
+                            beregningsperiode = beregningsperiode,
                             virkningstidspunkt = søknadsbarn?.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
                             opphørsdato = it.beregnGrunnlag.opphørsdato,
                             stønadstype = it.beregnGrunnlag.stønadstype,

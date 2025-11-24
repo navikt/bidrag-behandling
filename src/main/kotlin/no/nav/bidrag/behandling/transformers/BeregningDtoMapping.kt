@@ -107,6 +107,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erBidragJustertNedTil25ProsentAvInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
@@ -1481,6 +1482,7 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
 
     val nettoBidragEtterBarnetilleggBM = bidragTilFordeling.innhold.bidragTilFordeling.subtract(samværsfradrag.innhold.beløp)
 
+    val bidragJustertNedTil25ProsentAvInntekt = erBidragJustertNedTil25ProsentAvInntekt(grunnlagsreferanseListe)
     return SluttberegningBarnebidrag2(
         bidragJustertNedTilEvne = !andelAvBidragsevne.innhold.harBPFullEvne,
         nettoBidragEtterSamværsfradrag = beregnetBeløp ?: BigDecimal.ZERO,
@@ -1489,7 +1491,7 @@ fun List<GrunnlagDto>.byggSluttberegningV2(grunnlagsreferanseListe: List<Grunnla
         bpAndelAvUVedDeltBostedFaktor = andelDeltBosted?.innhold?.bpAndelAvUVedDeltBostedFaktor ?: BigDecimal.ZERO,
         bidragJustertForNettoBarnetilleggBP = bpsBarnetillegg.innhold.erBidragJustertTilNettoBarnetilleggBP,
         bruttoBidragEtterBarnetilleggBP = bpsBarnetillegg.innhold.bidragJustertForNettoBarnetilleggBP,
-        bidragJustertNedTil25ProsentAvInntekt = evne25prosentAvInntekt.innhold.erEvneJustertNedTil25ProsentAvInntekt,
+        bidragJustertNedTil25ProsentAvInntekt = bidragJustertNedTil25ProsentAvInntekt,
         bruttoBidragJustertForEvneOg25Prosent = andelAvBidragsevne.innhold.bruttoBidragJustertForEvneOg25Prosent,
         barnetErSelvforsørget = bpsAndel.innhold.barnetErSelvforsørget,
         beregnetBeløp = beregnetBeløp,
