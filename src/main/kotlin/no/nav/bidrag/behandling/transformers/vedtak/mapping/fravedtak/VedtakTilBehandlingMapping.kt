@@ -143,7 +143,7 @@ class VedtakTilBehandlingMapping(
             Behandling(
                 id = if (lesemodus) 1 else null,
                 søknadstype = søknadstype,
-                vedtaksid = vedtaksid,
+                vedtaksid = if (lesemodus) vedtaksid else null,
                 behandlingstema = behandlingstema,
                 vedtakstype = vedtakType ?: type,
                 virkningstidspunkt = omgjortVedtakVirkningstidspunkt,

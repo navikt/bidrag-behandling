@@ -188,6 +188,13 @@ class BehandlingService(
                 )
             }
         }
+        val søknadsid =
+            if (opprettBehandling.opprettSøknad && opprettBehandling.søknadsid == null) {
+                // TODO: Opprett søknad
+                1
+            } else {
+                opprettBehandling.søknadsid!!
+            }
 
         if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
@@ -195,7 +202,7 @@ class BehandlingService(
                 val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
                 val søknadsdetaljer =
                     ForholdsmessigFordelingSøknadBarn(
-                        søknadsid = opprettBehandling.søknadsid,
+                        søknadsid = søknadsid,
                         søknadFomDato = opprettBehandling.søktFomDato,
                         søktAvType = opprettBehandling.søknadFra,
                         innkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
@@ -208,7 +215,7 @@ class BehandlingService(
                     opprettBehandling.roller.toList(),
                     emptyList(),
                     behandling,
-                    opprettBehandling.søknadsid,
+                    søknadsid,
                     opprettBehandling.saksnummer,
                     bm?.ident?.verdi,
                     behandlerenhet = opprettBehandling.behandlerenhet,
@@ -218,8 +225,8 @@ class BehandlingService(
                 return OpprettBehandlingResponse(behandling.id!!)
             }
         }
-        behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
-            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
+        behandlingRepository.findFirstBySoknadsid(søknadsid)?.let {
+            log.info { "Fant eksisterende behandling ${it.id} for søknadsId $søknadsid. Oppretter ikke ny behandling" }
             return OpprettBehandlingResponse(it.id!!)
         }
 

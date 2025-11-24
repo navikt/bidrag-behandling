@@ -18,6 +18,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
 data class OpprettBehandlingRequest(
+    val opprettSøknad: Boolean = false,
     val søknadstype: Behandlingstype? = null,
     val behandlingstype: Behandlingstype? = null,
     val behandlingstema: Behandlingstema? = null,
@@ -40,8 +41,7 @@ data class OpprettBehandlingRequest(
     var stønadstype: Stønadstype? = null,
     @Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
-    @Schema(required = true)
-    val søknadsid: Long,
+    val søknadsid: Long? = null,
     val vedtaksid: Int? = null,
     val søknadsreferanseid: Long? = null,
     val kategori: OpprettKategoriRequestDto? = null,

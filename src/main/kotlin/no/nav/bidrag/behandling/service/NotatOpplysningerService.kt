@@ -88,7 +88,7 @@ import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegning
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.IndeksreguleringDetaljer
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.NotatBeregningsdetaljerSamværsfradrag
-import no.nav.bidrag.transport.dokumentmaler.NotatSluttberegningBarnebidragDetaljer
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalSluttberegningBarnebidragDetaljer
 import no.nav.bidrag.transport.dokumentmaler.notat.Arbeidsforhold
 import no.nav.bidrag.transport.dokumentmaler.notat.EndeligOrkestrertVedtak
 import no.nav.bidrag.transport.dokumentmaler.notat.InntekterPerRolle
@@ -742,7 +742,7 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                         },
                     sluttberegning =
                         it.sluttberegning?.let {
-                            NotatSluttberegningBarnebidragDetaljer(
+                            DokumentmalSluttberegningBarnebidragDetaljer(
                                 beregnetBeløp = it.beregnetBeløp,
                                 resultatBeløp = it.resultatBeløp,
                                 uMinusNettoBarnetilleggBM = it.uMinusNettoBarnetilleggBM,
