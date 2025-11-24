@@ -1398,10 +1398,10 @@ class GrunnlagService(
                     grunnlag.barnetilsynListe.groupBy { it.barnPersonId }.forEach { barnetilsyn ->
                         behandling.underholdskostnader
                             .find { it.rolle?.personident?.verdi == barnetilsyn.key }
-                            ?.apply {
-                                if (this.barnetilsyn.isEmpty()) {
-                                    this.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(this))
-                                    this.harTilsynsordning = true
+                            ?.let {
+                                if (it.barnetilsyn.isEmpty()) {
+                                    it.barnetilsyn.addAll(barnetilsyn.value.toSet().tilBarnetilsyn(it))
+                                    it.harTilsynsordning = true
                                 }
                             }
                     }
@@ -1482,7 +1482,7 @@ class GrunnlagService(
             }
         }
 
-        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunktEllerSøktFomDato) }.forEach { barn ->
+        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunkt!!) }.forEach { barn ->
             if (behandling.underholdskostnader.none { u -> u.personIdent == barn.gjelderPersonId }) {
                 secureLogger.debug { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
                 underholdService.oppretteUnderholdskostnad(
@@ -1800,7 +1800,9 @@ class GrunnlagService(
                     " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
                     "Automatisk aktiverer ny innhentet grunnlag."
             }
-            aktivereYtelserOgInntekter(behandling, type, rolleInhentetFor)
+            ikkeAktiveGrunnlag
+                .hentGrunnlagForType(type, rolleInhentetFor.ident!!)
+                .oppdaterStatusTilAktiv(LocalDateTime.now())
         }
     }
 
