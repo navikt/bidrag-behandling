@@ -1803,6 +1803,7 @@ class GrunnlagService(
             ikkeAktiveGrunnlag
                 .hentGrunnlagForType(type, rolleInhentetFor.ident!!)
                 .oppdaterStatusTilAktiv(LocalDateTime.now())
+            inntektService.rekalkulerPerioderInntekter(behandling)
         }
     }
 
@@ -1937,7 +1938,7 @@ class GrunnlagService(
             nyesteGrunnlag(behandling, innhentetForRolle, grunnlagstype, gjelderPerson)
 
         val nyesteGrunnlag = behandling.henteNyesteGrunnlag(grunnlagstype, innhentetForRolle, gjelderPerson)
-        val erFørstegangsinnhenting = nyesteGrunnlag == null
+        val erFørstegangsinnhenting = nyesteGrunnlag == null || behandling.inntekter.isEmpty()
 
         val erGrunnlagEndret =
             erGrunnlagEndret(
