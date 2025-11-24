@@ -537,6 +537,7 @@ class Dtomapper(
                 Saksnummer(this.behandling.saksnummer),
                 true,
             )
+        val søknadsbarn = behandling.søknadsbarn.find { it.ident == tilgangskontrollertPersoninfo.ident?.verdi }
         return BoforholdBarn(
             gjelder =
                 DokumentmalPersonDto(
@@ -545,7 +546,9 @@ class Dtomapper(
                     fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
                     ident = tilgangskontrollertPersoninfo.ident,
                     erBeskyttet = tilgangskontrollertPersoninfo.erBeskyttet,
-                    null,
+                    revurdering = søknadsbarn?.forholdsmessigFordeling?.erRevurdering == true,
+                    saksnummer = søknadsbarn?.saksnummer,
+                    bidragsmottakerIdent = søknadsbarn?.bidragsmottaker?.ident,
                 ),
             kilde = kilde,
             medIBehandling = behandling.roller.any { it.ident == this.ident },

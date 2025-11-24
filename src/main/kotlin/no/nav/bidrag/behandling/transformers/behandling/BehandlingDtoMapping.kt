@@ -182,6 +182,7 @@ fun Rolle.tilSøknadsdetaljerDto(søknadsid: Long): SøknadDetaljerDto {
         mottattDato = søknadsdetaljer?.mottattDato ?: behandling.mottattdato,
         søktAvType = søknadsdetaljer?.søktAvType ?: behandling.soknadFra,
         behandlingstype = søknadsdetaljer?.behandlingstype ?: behandling.søknadstype,
+        behandlingstema = søknadsdetaljer?.behandlingstema ?: behandling.behandlingstema,
     )
 }
 

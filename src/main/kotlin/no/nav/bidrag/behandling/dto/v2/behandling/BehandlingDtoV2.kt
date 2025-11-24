@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -183,6 +184,7 @@ data class SøknadDetaljerDto(
     val mottattDato: LocalDate,
     val søktAvType: SøktAvType,
     val behandlingstype: Behandlingstype?,
+    val behandlingstema: Behandlingstema?,
 )
 
 data class GebyrRolleDto(

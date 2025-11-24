@@ -365,6 +365,18 @@ class NotatOpplysningerService(
                                 gebyrDetaljer =
                                     rolle.gebyrDetaljer.map {
                                         NotatGebyrDetaljerDto(
+                                            søknad =
+                                                it.søknad?.let {
+                                                    NotatGebyrDetaljerDto.NotatGebyrSøknadDetaljerDto(
+                                                        søknadsid = it.søknadsid,
+                                                        mottattDato = it.mottattDato,
+                                                        saksnummer = it.saksnummer,
+                                                        søktAvType = it.søktAvType,
+                                                        søknadFomDato = it.søktFomDato,
+                                                        behandlingstype = it.behandlingstype,
+                                                        behandlingstema = it.behandlingstema,
+                                                    )
+                                                },
                                             inntekt =
                                                 NotatGebyrInntektDto(
                                                     skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
@@ -1047,6 +1059,7 @@ private fun Rolle.tilNotatRolle() =
         innbetaltBeløp = innbetaltBeløp,
         saksnummer = saksnummer,
         bidragsmottakerIdent = bidragsmottaker?.ident,
+        revurdering = forholdsmessigFordeling?.erRevurdering == true,
     )
 
 private fun Inntekt.tilNotatInntektDto() =
