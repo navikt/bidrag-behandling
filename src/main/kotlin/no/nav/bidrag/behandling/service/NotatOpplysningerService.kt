@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
@@ -174,8 +175,13 @@ class NotatOpplysningerService(
                 datoDokument = oppdaterDatoDokument.ifTrue { behandling.vedtakstidspunkt },
                 journalposttype = JournalpostType.NOTAT,
                 journalførendeEnhet = behandling.behandlerEnhet,
-                tilknyttSaker = listOf(behandling.saksnummer),
-                gjelderIdent = behandling.bidragsmottaker!!.ident,
+                tilknyttSaker = behandling.saker,
+                gjelderIdent =
+                    if (behandling.erForskudd()) {
+                        behandling.bidragsmottaker.ident
+                    } else {
+                        behandling.bidragspliktig!!.ident
+                    },
                 referanseId = behandling.tilReferanseId(),
                 saksbehandlerIdent = behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
                 dokumenter =
