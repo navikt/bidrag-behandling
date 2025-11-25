@@ -82,7 +82,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
@@ -93,7 +92,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
-import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
@@ -439,16 +437,11 @@ internal fun List<GrunnlagDto>.mapRoller(
                         perioder = stønadsendring.periodeListe,
                     )
                 }
-            val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
-            val søknadGrunnlag = if (harSlåttUtTilForholdsmessigFordeling()) hentSøknad(rolle.referanse) else null
-            val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
             rolle.tilRolle(
                 behandling,
                 if (lesemodus) i.toLong() else null,
-                virkningstidspunktGrunnlag,
-                søknadGrunnlag,
+                this,
                 stønadsendring,
-                aldersjustering,
                 opprinneligVirkningstidspunkt,
                 lesemodus,
                 resultatFraVedtak,
@@ -473,9 +466,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                 bpGrunnlag.tilRolle(
                     behandling,
                     if (lesemodus) 1 else null,
-                    null,
-                    null,
-                    null,
+                    this,
                     null,
                     opprinneligVirkningstidspunkt,
                     lesemodus,
@@ -483,6 +474,7 @@ internal fun List<GrunnlagDto>.mapRoller(
             )
 
             val bmIdent = vedtak.stønadsendringListe.firstOrNull()?.mottaker ?: vedtak.engangsbeløpListe.first().mottaker
+            val stønadsendring = vedtak.stønadsendringListe.find { it.mottaker.verdi == bmIdent.verdi }
             val bmGrunnlag =
                 GrunnlagDto(
                     type = Grunnlagstype.PERSON_BIDRAGSMOTTAKER,
@@ -499,10 +491,8 @@ internal fun List<GrunnlagDto>.mapRoller(
                 bmGrunnlag.tilRolle(
                     behandling,
                     if (lesemodus) 2 else null,
-                    null,
-                    null,
-                    null,
-                    null,
+                    this,
+                    stønadsendring,
                     opprinneligVirkningstidspunkt,
                     lesemodus,
                 ),
@@ -523,15 +513,11 @@ internal fun List<GrunnlagDto>.mapRoller(
                                 ),
                         )
 
-                    val virkningstidspunktGrunnlag = hentVirkningstidspunkt(baGrunnlag.referanse)
-                    val aldersjustering = hentAldersjusteringDetaljerForBarn(baGrunnlag.referanse)
                     baGrunnlag.tilRolle(
                         behandling,
                         if (lesemodus) (i + 2).toLong() else null,
-                        virkningstidspunktGrunnlag,
-                        null,
-                        null,
-                        aldersjustering,
+                        this,
+                        it,
                         opprinneligVirkningstidspunkt,
                         lesemodus,
                     )
@@ -1071,10 +1057,11 @@ internal fun List<GrunnlagDto>.hentAldersjusteringDetaljerForBarn(gjelderBarnRef
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
         ?.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
 
-internal fun List<GrunnlagDto>.hentSøknad(gjelderBarnReferanse: String? = null): SøknadGrunnlag? =
+internal fun List<GrunnlagDto>.hentSøknader(gjelderReferanse: String? = null): List<SøknadGrunnlag> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
-        .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
-        ?.innholdTilObjekt<SøknadGrunnlag>()
+        .filter {
+            gjelderReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderReferanse || it.gjelderReferanse == gjelderReferanse
+        }.map { it.innholdTilObjekt<SøknadGrunnlag>() }
 
 internal fun List<GrunnlagDto>.hentVirkningstidspunkt(gjelderBarnReferanse: String? = null): VirkningstidspunktGrunnlag? =
     filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
@@ -1239,15 +1226,16 @@ private fun BaseGrunnlag.tilInntekt(
 private fun GrunnlagDto.tilRolle(
     behandling: Behandling,
     id: Long? = null,
-    virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
-    søknadGrunnlag: SøknadGrunnlag?,
+    grunnlagsliste: List<GrunnlagDto>,
     stønadsendring: StønadsendringDto?,
-    aldersjustering: AldersjusteringDetaljerGrunnlag?,
     opprinneligVirkningstidspunkt: LocalDate,
     lesemodus: Boolean,
     resultatFraVedtakVedInnkrevingsgrunnlag: GrunnlagFraVedtak? = null,
-): Rolle =
-    Rolle(
+): Rolle {
+    val virkningstidspunktGrunnlag = grunnlagsliste.hentVirkningstidspunkt(referanse)
+    val søknader = if (grunnlagsliste.harSlåttUtTilForholdsmessigFordeling()) grunnlagsliste.hentSøknader(referanse) else null
+    val aldersjustering = grunnlagsliste.hentAldersjusteringDetaljerForBarn(referanse)
+    return Rolle(
         behandling,
         id = id,
         rolletype =
@@ -1271,8 +1259,8 @@ private fun GrunnlagDto.tilRolle(
         behandlingstema = behandling.behandlingstema,
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         forholdsmessigFordeling =
-            if (søknadGrunnlag != null && stønadsendring != null) {
-                val erRevurdering = søknadGrunnlag.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
+            if (søknader != null && søknader.isNotEmpty() && stønadsendring != null) {
+                val erRevurdering = søknader.all { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
                 ForholdsmessigFordelingRolle(
                     tilhørerSak = stønadsendring.sak.verdi,
                     behandlerenhet = behandling.behandlerEnhet,
@@ -1280,16 +1268,22 @@ private fun GrunnlagDto.tilRolle(
                     erRevurdering = erRevurdering,
                     bidragsmottaker = stønadsendring.mottaker.verdi,
                     søknader =
-                        mutableSetOf(
-                            ForholdsmessigFordelingSøknadBarn(
-                                søknadsid = 1,
-                                søknadFomDato = søknadGrunnlag.søktFraDato,
-                                mottattDato = søknadGrunnlag.mottattDato,
-                                søktAvType = søknadGrunnlag.søktAv,
-                                behandlingstype = behandling.søknadstype,
-                                behandlingstema = stønadsendring.type.tilBehandlingstema(),
-                            ),
-                        ),
+                        if (lesemodus) {
+                            søknader
+                                .map { søknadGrunnlag ->
+                                    ForholdsmessigFordelingSøknadBarn(
+                                        søknadsid = søknadGrunnlag.søknadsid,
+                                        søknadFomDato = søknadGrunnlag.søktFraDato,
+                                        mottattDato = søknadGrunnlag.mottattDato,
+                                        søktAvType = søknadGrunnlag.søktAv,
+                                        behandlingstype = søknadGrunnlag.behandlingstype,
+                                        behandlingstema = stønadsendring.type.tilBehandlingstema(),
+                                    )
+                                }.toMutableSet()
+                        } else {
+                            // TODO: Hva skjer ved FF når det er klage?
+                            mutableSetOf()
+                        },
                 )
             } else {
                 null
@@ -1314,6 +1308,7 @@ private fun GrunnlagDto.tilRolle(
                 resultatFraVedtakVedInnkrevingsgrunnlag,
             ),
     )
+}
 
 private fun Inntekt.copy(
     type: Inntektsrapportering? = null,
