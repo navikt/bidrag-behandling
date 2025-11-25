@@ -363,7 +363,7 @@ class BehandlingService(
             no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = behandling.saksnummer,
                 enhet = behandling.behandlerEnhet,
-                roller = behandling.tilForsendelseRolleDto(),
+                roller = behandling.tilForsendelseRolleDto(behandling.saksnummer),
                 behandlingInfo =
                     BehandlingInfoDto(
                         behandlingId = behandling.id?.toString(),

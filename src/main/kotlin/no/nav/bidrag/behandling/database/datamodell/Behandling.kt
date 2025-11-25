@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadat
 import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingConverter
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
 import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
@@ -211,6 +212,25 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    fun søknadForSak(saksnummer: String) =
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn
+                .filter { it.saksnummer == saksnummer }
+                .flatMap { it.forholdsmessigFordeling!!.søknaderUnderBehandling }
+        } else {
+            listOf(
+                ForholdsmessigFordelingSøknadBarn(
+                    mottattDato = mottattdato,
+                    søknadFomDato = søktFomDato,
+                    søktAvType = soknadFra,
+                    behandlingstema = behandlingstema,
+                    behandlingstype = søknadstype,
+                    søknadsid = soknadsid,
+                    saksnummer = saksnummer,
+                ),
+            )
+        }
+
     val saker get() =
         if (erIForholdsmessigFordeling) {
             søknadsbarn
