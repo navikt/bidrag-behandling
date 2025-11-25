@@ -11,6 +11,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
@@ -49,7 +51,9 @@ import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -78,6 +82,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
@@ -88,6 +93,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
+import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
@@ -434,11 +440,14 @@ internal fun List<GrunnlagDto>.mapRoller(
                     )
                 }
             val virkningstidspunktGrunnlag = hentVirkningstidspunkt(rolle.referanse)
+            val søknadGrunnlag = if (harSlåttUtTilForholdsmessigFordeling()) hentSøknad(rolle.referanse) else null
             val aldersjustering = hentAldersjusteringDetaljerForBarn(rolle.referanse)
             rolle.tilRolle(
                 behandling,
                 if (lesemodus) i.toLong() else null,
                 virkningstidspunktGrunnlag,
+                søknadGrunnlag,
+                stønadsendring,
                 aldersjustering,
                 opprinneligVirkningstidspunkt,
                 lesemodus,
@@ -466,6 +475,8 @@ internal fun List<GrunnlagDto>.mapRoller(
                     if (lesemodus) 1 else null,
                     null,
                     null,
+                    null,
+                    null,
                     opprinneligVirkningstidspunkt,
                     lesemodus,
                 ),
@@ -488,6 +499,8 @@ internal fun List<GrunnlagDto>.mapRoller(
                 bmGrunnlag.tilRolle(
                     behandling,
                     if (lesemodus) 2 else null,
+                    null,
+                    null,
                     null,
                     null,
                     opprinneligVirkningstidspunkt,
@@ -516,6 +529,8 @@ internal fun List<GrunnlagDto>.mapRoller(
                         behandling,
                         if (lesemodus) (i + 2).toLong() else null,
                         virkningstidspunktGrunnlag,
+                        null,
+                        null,
                         aldersjustering,
                         opprinneligVirkningstidspunkt,
                         lesemodus,
@@ -1056,6 +1071,11 @@ internal fun List<GrunnlagDto>.hentAldersjusteringDetaljerForBarn(gjelderBarnRef
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
         ?.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
 
+internal fun List<GrunnlagDto>.hentSøknad(gjelderBarnReferanse: String? = null): SøknadGrunnlag? =
+    filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
+        .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
+        ?.innholdTilObjekt<SøknadGrunnlag>()
+
 internal fun List<GrunnlagDto>.hentVirkningstidspunkt(gjelderBarnReferanse: String? = null): VirkningstidspunktGrunnlag? =
     filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
@@ -1220,6 +1240,8 @@ private fun GrunnlagDto.tilRolle(
     behandling: Behandling,
     id: Long? = null,
     virkningstidspunktGrunnlag: VirkningstidspunktGrunnlag?,
+    søknadGrunnlag: SøknadGrunnlag?,
+    stønadsendring: StønadsendringDto?,
     aldersjustering: AldersjusteringDetaljerGrunnlag?,
     opprinneligVirkningstidspunkt: LocalDate,
     lesemodus: Boolean,
@@ -1248,6 +1270,30 @@ private fun GrunnlagDto.tilRolle(
         fødselsdato = personObjekt.fødselsdato,
         behandlingstema = behandling.behandlingstema,
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
+        forholdsmessigFordeling =
+            if (søknadGrunnlag != null && stønadsendring != null) {
+                val erRevurdering = søknadGrunnlag.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
+                ForholdsmessigFordelingRolle(
+                    tilhørerSak = stønadsendring.sak.verdi,
+                    behandlerenhet = behandling.behandlerEnhet,
+                    delAvOpprinneligBehandling = !erRevurdering,
+                    erRevurdering = erRevurdering,
+                    bidragsmottaker = stønadsendring.mottaker.verdi,
+                    søknader =
+                        mutableSetOf(
+                            ForholdsmessigFordelingSøknadBarn(
+                                søknadsid = 1,
+                                søknadFomDato = søknadGrunnlag.søktFraDato,
+                                mottattDato = søknadGrunnlag.mottattDato,
+                                søktAvType = søknadGrunnlag.søktAv,
+                                behandlingstype = behandling.søknadstype,
+                                behandlingstema = stønadsendring.type.tilBehandlingstema(),
+                            ),
+                        ),
+                )
+            } else {
+                null
+            },
         beregnTil =
             if (lesemodus) {
                 virkningstidspunktGrunnlag?.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED

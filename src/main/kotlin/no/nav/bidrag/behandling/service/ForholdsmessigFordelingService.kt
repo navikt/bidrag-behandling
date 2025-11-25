@@ -658,8 +658,11 @@ class ForholdsmessigFordelingService(
         return SjekkForholdmessigFordelingResponse(
             skalBehandlesAvEnhet = behandlesAvEnhet,
             kanOppretteForholdsmessigFordeling =
-                bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
-                    finnesLøpendeBidragSomOverlapperMedElsteVirkning,
+                !behandling.erIForholdsmessigFordeling &&
+                    (
+                        bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
+                            finnesLøpendeBidragSomOverlapperMedElsteVirkning
+                    ),
             måOppretteForholdsmessigFordeling = resultat.beregningManglerGrunnlag,
             harSlåttUtTilForholdsmessigFordeling = resultat.harSlåttUtTilFF,
             eldsteSøktFraDato = relevanteKravhavere.finnEldsteSøktFomDato(behandling),

@@ -161,39 +161,42 @@ fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
 
 fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn) =
     if (erIForholdsmessigFordeling || erBisysVedtak) {
-        søknadsbarn.map {
-            val ffEldsteSøknad = it.forholdsmessigFordeling!!.eldsteSøknad
-            GrunnlagDto(
-                referanse = "søknad_${it.tilGrunnlagsreferanse()}",
-                type = Grunnlagstype.SØKNAD,
-                gjelderReferanse = it.bidragsmottaker?.tilGrunnlagsreferanse(),
-                gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
-                innhold =
-                    POJONode(
-                        SøknadGrunnlag(
-                            klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
-                            mottattDato = ffEldsteSøknad.mottattDato,
-                            søktFraDato = ffEldsteSøknad.søknadFomDato ?: søktFomDato,
-                            søktAv = ffEldsteSøknad.søktAvType,
-                            begrensetRevurdering = ffEldsteSøknad.behandlingstype?.erBegrensetRevurdering() == true,
-                            innkrevingsgrunnlag = erInnkreving,
-                            egetTiltak =
-                                listOf(
-                                    Behandlingstype.BEGRENSET_REVURDERING,
-                                    Behandlingstype.EGET_TILTAK,
-                                    Behandlingstype.PARAGRAF_35_C,
-                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
-                                ).contains(ffEldsteSøknad.behandlingstype),
-                            opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
-                            privatAvtale = ffEldsteSøknad.behandlingstype == Behandlingstype.PRIVAT_AVTALE,
-                            paragraf35c =
-                                listOf(
-                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
-                                    Behandlingstype.PARAGRAF_35_C,
-                                ).contains(ffEldsteSøknad.behandlingstype),
+        søknadsbarn.flatMap {
+            it.forholdsmessigFordeling!!.søknaderUnderBehandling.map { søknad ->
+                GrunnlagDto(
+                    referanse = "søknad_${it.tilGrunnlagsreferanse()}_${søknad.søknadsid}",
+                    type = Grunnlagstype.SØKNAD,
+                    gjelderReferanse = it.bidragsmottaker?.tilGrunnlagsreferanse(),
+                    gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
+                    innhold =
+                        POJONode(
+                            SøknadGrunnlag(
+                                klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
+                                mottattDato = søknad.mottattDato,
+                                søktFraDato = søknad.søknadFomDato ?: søktFomDato,
+                                søktAv = søknad.søktAvType,
+                                begrensetRevurdering = søknad.behandlingstype?.erBegrensetRevurdering() == true,
+                                innkrevingsgrunnlag = erInnkreving,
+                                egetTiltak =
+                                    listOf(
+                                        Behandlingstype.BEGRENSET_REVURDERING,
+                                        Behandlingstype.EGET_TILTAK,
+                                        Behandlingstype.PARAGRAF_35_C,
+                                        Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                    ).contains(søknad.behandlingstype),
+                                opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
+                                behandlingstype = søknad.behandlingstype,
+                                søknadsid = søknad.søknadsid,
+                                privatAvtale = søknad.behandlingstype == Behandlingstype.PRIVAT_AVTALE,
+                                paragraf35c =
+                                    listOf(
+                                        Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                        Behandlingstype.PARAGRAF_35_C,
+                                    ).contains(søknad.behandlingstype),
+                            ),
                         ),
-                    ),
-            )
+                )
+            }
         }
     } else {
         setOf(

@@ -219,8 +219,10 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
             .find {
                 it.rolle?.ident == rolle.ident
             }?.perioderInnkreving
-            ?.minByOrNull { it.fom }
-            ?.fom
+            ?.maxByOrNull { it.fom }
+            ?.tom
+            ?.plusMonths(1)
+            ?.withDayOfMonth(1)
             ?.toYearMonth()
     return minOfNullable(fraPeriodeLøperBidrag, fraPeriodePrivatAvtale)?.let {
         ÅrMånedsperiode(it, maxOfNullable(tilPeriodeLøperBidrag, tilPeriodePrivatAvtale))
