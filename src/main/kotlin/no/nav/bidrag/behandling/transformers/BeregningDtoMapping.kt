@@ -179,7 +179,12 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                 finnBeregnTilDatoBehandling(),
             ),
         opphørsdato = rolle.opphørsdatoYearMonth ?: globalOpphørsdatoYearMonth,
-        barnIdentListe = søknadsbarn.map { Personident(it.ident!!) },
+        barnIdentListe =
+            søknadsbarn
+                .filter {
+                    rolle.rolletype != Rolletype.BIDRAGSMOTTAKER || it.bidragsmottaker?.ident == null ||
+                        it.bidragsmottaker?.ident == rolle.ident
+                }.map { Personident(it.ident!!) },
         gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =
             inntekter
