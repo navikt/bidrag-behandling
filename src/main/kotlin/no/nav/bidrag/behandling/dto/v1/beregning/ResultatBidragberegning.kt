@@ -182,6 +182,7 @@ data class UgyldigBeregningDto(
 }
 
 data class ResultatBidragberegningDto(
+    val kanFatteVedtak: Boolean = true,
     val minstEnPeriodeHarSlåttUtTilFF: Boolean = false,
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
     val perioderSlåttUtTilFF: List<PeriodeSlåttUtTilFF>,

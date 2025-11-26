@@ -239,13 +239,14 @@ fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List
         }
 }
 
-fun List<ResultatBidragsberegningBarn>.tilDto(): ResultatBidragberegningDto {
+fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtak: Boolean): ResultatBidragberegningDto {
     val grunnlagslisteAlle =
         flatMap {
             it.resultat.grunnlagListe.toList() +
                 (it.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList())
         }
     return ResultatBidragberegningDto(
+        kanFatteVedtak = kanFatteVedtak,
         minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling(),
         perioderSlåttUtTilFF = grunnlagslisteAlle.perioderSlåttUtTilFF(),
         resultatBarn =
