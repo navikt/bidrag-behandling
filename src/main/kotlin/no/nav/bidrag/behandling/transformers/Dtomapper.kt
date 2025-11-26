@@ -1073,8 +1073,8 @@ class Dtomapper(
                         ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
                 manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
                 etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
-                årsak = it.årsak ?: årsak,
-                avslag = it.avslag ?: avslag,
+                årsak = it.årsak,
+                avslag = it.avslag,
                 grunnlagFraVedtak =
                     it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
                 kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
