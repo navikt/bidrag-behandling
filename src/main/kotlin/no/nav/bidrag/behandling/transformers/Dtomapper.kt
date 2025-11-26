@@ -873,7 +873,7 @@ class Dtomapper(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
                     erAvslagForAlle = erAvslagForAlle,
                     eldsteVirkningstidspunkt = eldsteVirkningstidspunkt.toYearMonth(),
-                    barn = mapVirkningstidspunktAlleBarn2(),
+                    barn = mapVirkningstidspunktAlleBarnV3(),
                 ),
             virkningstidspunkt =
                 VirkningstidspunktDto(
@@ -1055,7 +1055,7 @@ class Dtomapper(
         return PrivatAvtaleDtoV3(søknadsbarn = søknadsbarnPA, andreBarn)
     }
 
-    private fun Behandling.mapVirkningstidspunktAlleBarn2(): List<VirkningstidspunktBarnDtoV2> =
+    private fun Behandling.mapVirkningstidspunktAlleBarnV3(): List<VirkningstidspunktBarnDtoV2> =
         søknadsbarn.sortedBy { it.fødselsdato }.map {
             val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
             val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
@@ -1073,8 +1073,8 @@ class Dtomapper(
                         ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
                 manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
                 etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
-                årsak = it.årsak,
-                avslag = it.avslag,
+                årsak = if (it.årsak == null && it.avslag == null) årsak else it.årsak,
+                avslag = if (it.årsak == null && it.avslag == null) avslag else it.avslag,
                 grunnlagFraVedtak =
                     it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
                 kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
@@ -1142,8 +1142,8 @@ class Dtomapper(
                             ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
                     manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
                     etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
-                    årsak = it.årsak ?: årsak,
-                    avslag = it.avslag ?: avslag,
+                    årsak = if (it.årsak == null && it.avslag == null) årsak else it.årsak,
+                    avslag = if (it.årsak == null && it.avslag == null) avslag else it.avslag,
                     grunnlagFraVedtak =
                         it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
                     kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),

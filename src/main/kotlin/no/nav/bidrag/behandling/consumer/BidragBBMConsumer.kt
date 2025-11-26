@@ -48,6 +48,12 @@ class BidragBBMConsumer(
             request,
         )
 
+    override fun hentAlleBeregninger(request: BidragBeregningRequestDto): BidragBeregningResponsDto =
+        postForNonNullEntity(
+            bidragBBMUri.pathSegment("alleberegningerogsamvar").build().toUri(),
+            request,
+        )
+
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,
