@@ -274,7 +274,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                 } else if (klageOmgjøringDetaljer?.omgjøringsvedtak == true && resultatKode != null) {
                     resultatKode.visningsnavn.intern
                 } else {
-                    "Opphør"
+                    resultatKode?.visningsnavn?.intern ?: "Opphør"
                 }
             vedtakstype == Vedtakstype.INNKREVING -> "Innkreving"
 
