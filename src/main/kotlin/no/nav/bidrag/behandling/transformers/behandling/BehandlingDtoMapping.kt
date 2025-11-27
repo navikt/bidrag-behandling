@@ -167,7 +167,7 @@ fun Rolle.tilDto() =
         erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
         stønadstype = stønadstype ?: behandling.stonadstype,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
-        beregnFraDato = finnBeregnFra(),
+        beregnFraDato = if (rolletype == Rolletype.BARN) finnBeregnFra() else null,
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker.ident
