@@ -84,8 +84,8 @@ class UnderholdService(
                         "Bidragsmottaker ident må settes hvis det finnes flere BMer i saken",
                     )
                 }
-                bm ?: behandling.bidragsmottaker
-            }
+                bm
+            } ?: behandling.bidragsmottaker
 
         if (request.underholdsid == null) {
             val underholdHarAndreBarn =
