@@ -560,6 +560,7 @@ class ForholdsmessigFordelingService(
                     OpprettSøknadRequest(
                         saksnummer = barn.forholdsmessigFordeling!!.tilhørerSak,
                         behandlingsid = behandling.id,
+                        behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
                         behandlerenhet = behandling.behandlerEnhet,
                         behandlingstema =
                             if (barn.stønadstype ==
@@ -1110,6 +1111,7 @@ class ForholdsmessigFordelingService(
                     søknadFomDato = søktFomDato,
                     barnListe = opprettSøknader,
                     innkreving = medInnkreving,
+                    behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
                 ),
             )
 
