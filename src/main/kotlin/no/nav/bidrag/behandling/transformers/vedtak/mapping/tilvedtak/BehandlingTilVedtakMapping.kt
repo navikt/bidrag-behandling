@@ -535,6 +535,8 @@ class BehandlingTilVedtakMapping(
                     stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
                 }
             } else if (resultatVedtak.delvedtak) {
+                // Fjern eksisterende virkningstpunkt grunnlag før det legges på ny
+                stønadsendringGrunnlagListe.removeIf { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT }
                 stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarnReferanse))
             } else if (resultatVedtak.endeligVedtak) {
                 grunnlagsliste.addAll(behandling.tilPersonobjekter())
