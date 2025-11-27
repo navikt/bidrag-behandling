@@ -54,6 +54,7 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -166,6 +167,7 @@ fun Rolle.tilDto() =
         erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
         stønadstype = stønadstype ?: behandling.stonadstype,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
+        beregnFraDato = finnBeregnFra(),
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker.ident
@@ -561,10 +563,22 @@ fun Behandling.henteRolleForNotat(
     forRolle: Rolle?,
 ): Rolle =
     when (notattype) {
-        Notattype.BOFORHOLD -> Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
-        Notattype.UTGIFTER -> this.bidragsmottaker!!
-        Notattype.VIRKNINGSTIDSPUNKT -> forRolle ?: this.bidragsmottaker!!
-        Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG -> forRolle ?: this.bidragsmottaker!!
+        Notattype.BOFORHOLD -> {
+            Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
+        }
+
+        Notattype.UTGIFTER -> {
+            this.bidragsmottaker!!
+        }
+
+        Notattype.VIRKNINGSTIDSPUNKT -> {
+            forRolle ?: this.bidragsmottaker!!
+        }
+
+        Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG -> {
+            forRolle ?: this.bidragsmottaker!!
+        }
+
         Notattype.INNTEKT -> {
             if (forRolle == null) {
                 log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
@@ -574,45 +588,91 @@ fun Behandling.henteRolleForNotat(
             }
         }
 
-        Notattype.UNDERHOLDSKOSTNAD ->
+        Notattype.UNDERHOLDSKOSTNAD -> {
             if (forRolle == null) {
                 log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
                 this.bidragsmottaker!!
             } else {
                 forRolle
             }
+        }
 
-        Notattype.SAMVÆR -> forRolle!!
-        Notattype.PRIVAT_AVTALE ->
+        Notattype.SAMVÆR -> {
+            forRolle!!
+        }
+
+        Notattype.PRIVAT_AVTALE -> {
             if (forRolle == null) {
                 log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
                 this.bidragspliktig!!
             } else {
                 forRolle
             }
+        }
     }
 
 fun Behandling.notatTittel(): String {
     val prefiks =
         when (stonadstype) {
-            Stønadstype.FORSKUDD -> "Bidragsforskudd"
-            Stønadstype.BIDRAG -> "Barnebidrag"
-            Stønadstype.BIDRAG18AAR -> "Barnebidrag 18 år"
-            Stønadstype.EKTEFELLEBIDRAG -> "Ektefellebidrag"
-            Stønadstype.OPPFOSTRINGSBIDRAG -> "Oppfostringbidrag"
-            Stønadstype.MOTREGNING -> "Motregning"
-            else ->
+            Stønadstype.FORSKUDD -> {
+                "Bidragsforskudd"
+            }
+
+            Stønadstype.BIDRAG -> {
+                "Barnebidrag"
+            }
+
+            Stønadstype.BIDRAG18AAR -> {
+                "Barnebidrag 18 år"
+            }
+
+            Stønadstype.EKTEFELLEBIDRAG -> {
+                "Ektefellebidrag"
+            }
+
+            Stønadstype.OPPFOSTRINGSBIDRAG -> {
+                "Oppfostringbidrag"
+            }
+
+            Stønadstype.MOTREGNING -> {
+                "Motregning"
+            }
+
+            else -> {
                 when (engangsbeloptype) {
-                    Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRTILSKUDD, Engangsbeløptype.SAERTILSKUDD ->
+                    Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRTILSKUDD, Engangsbeløptype.SAERTILSKUDD -> {
                         "Særbidrag ${kategoriTilTittel()}".trim()
-                    Engangsbeløptype.DIREKTE_OPPGJØR, Engangsbeløptype.DIREKTE_OPPGJØR -> "Direkte oppgjør"
-                    Engangsbeløptype.ETTERGIVELSE -> "Ettergivelse"
-                    Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> "Ettergivelse tilbakekreving"
-                    Engangsbeløptype.GEBYR_MOTTAKER -> "Gebyr"
-                    Engangsbeløptype.GEBYR_SKYLDNER -> "Gebyr"
-                    Engangsbeløptype.TILBAKEKREVING -> "Tilbakekreving"
-                    else -> null
+                    }
+
+                    Engangsbeløptype.DIREKTE_OPPGJØR, Engangsbeløptype.DIREKTE_OPPGJØR -> {
+                        "Direkte oppgjør"
+                    }
+
+                    Engangsbeløptype.ETTERGIVELSE -> {
+                        "Ettergivelse"
+                    }
+
+                    Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> {
+                        "Ettergivelse tilbakekreving"
+                    }
+
+                    Engangsbeløptype.GEBYR_MOTTAKER -> {
+                        "Gebyr"
+                    }
+
+                    Engangsbeløptype.GEBYR_SKYLDNER -> {
+                        "Gebyr"
+                    }
+
+                    Engangsbeløptype.TILBAKEKREVING -> {
+                        "Tilbakekreving"
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
+            }
         }
     return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
 }

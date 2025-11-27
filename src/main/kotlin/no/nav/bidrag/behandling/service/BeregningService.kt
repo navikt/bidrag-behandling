@@ -210,14 +210,17 @@ class BeregningService(
                 erDirekteAvslag = behandling.erDirekteAvslag(),
                 beregningstype =
                     when {
-                        behandling.erKlageEllerOmgjøring ->
+                        behandling.erKlageEllerOmgjøring -> {
                             if (endeligBeregning) {
                                 Beregningstype.OMGJØRING_ENDELIG
                             } else {
                                 Beregningstype.OMGJØRING
                             }
+                        }
 
-                        else -> Beregningstype.BIDRAG
+                        else -> {
+                            Beregningstype.BIDRAG
+                        }
                     },
                 beregningBarn =
                     grunnlagslisteBarn.sortedBy { it.beregnGrunnlag.stønadstype }.map {
@@ -235,7 +238,7 @@ class BeregningService(
                             søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                             periode = it.beregnGrunnlag.periode,
                             beregningsperiode = beregningsperiode,
-                            virkningstidspunkt = søknadsbarn?.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
+                            virkningstidspunkt = søknadsbarn.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
                             opphørsdato = it.beregnGrunnlag.opphørsdato,
                             stønadstype = it.beregnGrunnlag.stønadstype,
                             omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
@@ -409,14 +412,17 @@ class BeregningService(
                 erDirekteAvslag = behandling.erDirekteAvslag(),
                 beregningstype =
                     when {
-                        behandling.erKlageEllerOmgjøring ->
+                        behandling.erKlageEllerOmgjøring -> {
                             if (endeligBeregning) {
                                 Beregningstype.OMGJØRING_ENDELIG
                             } else {
                                 Beregningstype.OMGJØRING
                             }
+                        }
 
-                        else -> Beregningstype.BIDRAG
+                        else -> {
+                            Beregningstype.BIDRAG
+                        }
                     },
                 beregningBarn =
                     grunnlagslisteBarn.map {
@@ -555,6 +561,7 @@ class BeregningService(
                         ),
                 )
             }
+
             is FinnesEtterfølgendeVedtakMedVirkningstidspunktFørOmgjortVedtak -> {
                 val beregnTilDato =
                     søknadsbarn
@@ -577,6 +584,7 @@ class BeregningService(
                     resultat = BeregnetBarnebidragResultat(),
                 )
             }
+
             is BegrensetRevurderingLøpendeForskuddManglerException -> {
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning = feil.opprettBegrunnelse(),
