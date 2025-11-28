@@ -61,7 +61,7 @@ database:
   dbname: bidrag-behandling-q1
   autoResize: true
   tier: db-f1-micro
-  auditlog: "off"
+  auditlog: "on"
 outbound-access-apps:
   - bidrag-belopshistorikk-q1
   - bidrag-vedtak-q1
