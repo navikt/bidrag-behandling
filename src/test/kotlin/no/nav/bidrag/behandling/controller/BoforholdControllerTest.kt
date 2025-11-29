@@ -46,7 +46,7 @@ class BoforholdControllerTest : KontrollerTestRunner() {
 
     private fun opprettBehandling(): Behandling {
         val behandling = oppretteTestbehandling()
-        behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
+        behandling.oppdaterVirkningstidspunktForAlle(LocalDate.parse("2023-01-01"))
         behandling.husstandsmedlem.clear()
         behandling.husstandsmedlem.addAll(
             setOf(

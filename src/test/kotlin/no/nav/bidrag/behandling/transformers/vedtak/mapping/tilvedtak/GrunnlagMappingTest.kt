@@ -123,7 +123,7 @@ class GrunnlagMappingTest {
 
     val grunnlagBm =
         Rolle(
-            behandling = oppretteTestbehandling(),
+            behandling = oppretteTestbehandling(setteDatabaseider = true),
             ident = testdataBM.ident,
             rolletype = Rolletype.BIDRAGSMOTTAKER,
             fødselsdato = testdataBM.fødselsdato,
@@ -131,7 +131,7 @@ class GrunnlagMappingTest {
         ).tilGrunnlagPerson()
     val grunnlagBp =
         Rolle(
-            behandling = oppretteTestbehandling(),
+            behandling = oppretteTestbehandling(setteDatabaseider = true),
             ident = testdataBP.ident,
             rolletype = Rolletype.BIDRAGSPLIKTIG,
             fødselsdato = testdataBP.fødselsdato,
@@ -139,7 +139,7 @@ class GrunnlagMappingTest {
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag1 =
         Rolle(
-            behandling = oppretteTestbehandling(),
+            behandling = oppretteTestbehandling(setteDatabaseider = true),
             ident = testdataBarn1.ident,
             rolletype = Rolletype.BARN,
             fødselsdato = testdataBarn1.fødselsdato,
@@ -147,7 +147,7 @@ class GrunnlagMappingTest {
         ).tilGrunnlagPerson()
     val søknadsbarnGrunnlag2 =
         Rolle(
-            behandling = oppretteTestbehandling(),
+            behandling = oppretteTestbehandling(setteDatabaseider = true),
             ident = testdataBarn2.ident,
             rolletype = Rolletype.BARN,
             fødselsdato = testdataBarn2.fødselsdato,
@@ -632,7 +632,7 @@ class GrunnlagMappingTest {
         @Test
         fun `skal mappe rolle til grunnlag`(): Unit =
             behandlingTilGrunnlagMapping.run {
-                val behandling = oppretteTestbehandling()
+                val behandling = oppretteTestbehandling(setteDatabaseider = true)
                 assertSoftly(
                     Rolle(
                         behandling = behandling,

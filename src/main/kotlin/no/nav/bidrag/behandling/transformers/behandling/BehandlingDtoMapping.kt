@@ -170,7 +170,7 @@ fun Rolle.tilDto() =
         beregnFraDato = if (rolletype == Rolletype.BARN) finnBeregnFra() else null,
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
-                forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker.ident
+                forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
             } else {
                 null
             },

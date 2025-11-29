@@ -78,7 +78,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-11-18")
             omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
+            vedtaksid shouldBe 1
             omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"
@@ -194,7 +194,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-05-01")
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
+            vedtaksid shouldBe 1
             omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             soknadsid shouldBe 22233233433323L
             opprettetAv shouldBe "Z994977"

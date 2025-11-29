@@ -1447,11 +1447,11 @@ class Dtomapper(
                 BoforholdValideringsfeil(
                     andreVoksneIHusstanden =
                         behandling.husstandsmedlem.voksneIHusstanden
-                            ?.validereAndreVoksneIHusstanden(behandling.virkningstidspunktEllerSøktFomDato),
+                            ?.validereAndreVoksneIHusstanden(behandling.eldsteVirkningstidspunkt),
                     husstandsmedlem =
                         behandling.husstandsmedlem.barn
                             .toSet()
-                            .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                            .validerBoforhold(behandling.eldsteVirkningstidspunkt)
                             .filter { it.harFeil },
                 ),
             beregnetBoforhold = behandling.tilBeregnetBoforhold(),
@@ -1563,7 +1563,7 @@ class Dtomapper(
                 it.fødselsdato == null ||
                     it.fødselsdato!!
                         .withDayOfMonth(1)
-                        .isBefore(behandling.virkningstidspunktEllerSøktFomDato.minusYears(18))
+                        .isBefore(behandling.eldsteVirkningstidspunkt.minusYears(18))
             }?.filter {
                 it.borISammeHusstandDtoListe.any { p ->
                     val periodeBorHosBP =

@@ -410,7 +410,7 @@ class BehandlingTilGrunnlagMappingV2(
                     if (kilde == Kilde.OFFENTLIG) {
                         listOf(
                             opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(
-                                (underholdRolle ?: behandling.bidragsmottaker).tilGrunnlagsreferanse(),
+                                (underholdRolle ?: behandling.bidragsmottaker)!!.tilGrunnlagsreferanse(),
                             ),
                         )
                     } else {
@@ -423,7 +423,7 @@ class BehandlingTilGrunnlagMappingV2(
                             ident = personIdent?.let { Personident(it) },
                             navn = if (personIdent.isNullOrEmpty()) personNavn else null,
                             fødselsdato = personFødselsdato,
-                            bidragsmottaker = (underholdRolle ?: behandling.bidragsmottaker).tilGrunnlagsreferanse(),
+                            bidragsmottaker = (underholdRolle ?: behandling.bidragsmottaker)!!.tilGrunnlagsreferanse(),
                         ).valider(),
                     ),
             )

@@ -173,6 +173,8 @@ class GrunnlagMockService {
         unleash.enableAll()
         grunnlagService =
             GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, vedtakConsumer)
+        grunnlagService.grenseInnhentingBeløpshistorikk = "60"
+        grunnlagService.grenseInnhenting = "60"
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         stubHusstandrepository(husstandsmedlemRepository)
@@ -933,7 +935,7 @@ class GrunnlagMockService {
         grunnlagsliste shouldHaveSize 0
         val grunnlagsfeil = behandling.grunnlagsinnhentingFeiletMap()
 
-        grunnlagsfeil.size shouldBe 2
+        grunnlagsfeil.size shouldBe 3
         val bidragFeilBidrag = grunnlagsfeil[Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG]
         bidragFeilBidrag.shouldNotBeNull()
         bidragFeilBidrag.feiltype shouldBe HentGrunnlagFeiltype.TEKNISK_FEIL

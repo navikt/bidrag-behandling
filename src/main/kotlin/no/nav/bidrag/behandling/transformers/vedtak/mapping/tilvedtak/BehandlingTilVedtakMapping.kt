@@ -569,11 +569,18 @@ class BehandlingTilVedtakMapping(
 
             val referansePostfix =
                 when {
-                    resultatVedtak.omgjøringsvedtak && beslutningstype == Beslutningstype.ENDRING -> "omgjøring"
-                    resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak ->
+                    resultatVedtak.omgjøringsvedtak && beslutningstype == Beslutningstype.ENDRING -> {
+                        "omgjøring"
+                    }
+
+                    resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak -> {
                         "Delvedtak_${resultatVedtak.vedtakstype}" +
                             "_${resultatVedtak.beregnetFraDato.toCompactString()}"
-                    else -> "endeligvedtak"
+                    }
+
+                    else -> {
+                        "endeligvedtak"
+                    }
                 }
             return behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
                 unikReferanse = behandling.opprettUnikReferanse(referansePostfix),
@@ -587,9 +594,13 @@ class BehandlingTilVedtakMapping(
                             skyldner = behandling.tilSkyldner(),
                             omgjørVedtakId =
                                 when {
-                                    resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak ->
+                                    resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak -> {
                                         behandling.omgjøringsdetaljer?.omgjørVedtakId
-                                    else -> null
+                                    }
+
+                                    else -> {
+                                        null
+                                    }
                                 },
                             kravhaver =
                                 it.barn.tilNyestePersonident()
@@ -893,8 +904,8 @@ class BehandlingTilVedtakMapping(
                             beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
                             betaltBeløp = null,
                             resultatkode = beregning.resultatkode.name,
-                            referanse = it.referanse,
-                            // ?: hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
+                            referanse =
+                                it.referanse ?: hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
                             eksternReferanse = null,
                             beslutning = Beslutningstype.ENDRING,
                             grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
@@ -923,8 +934,12 @@ class BehandlingTilVedtakMapping(
                         betaltBeløp = null,
                         resultatkode = beregning.resultatkode.name,
                         eksternReferanse = null,
-                        referanse = it.referanse,
-                        // hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_SKYLDNER, skyldner),
+                        referanse =
+                            it.referanse ?: hentUnikReferanseEngangsbeløp(
+                                personIdentNav,
+                                Engangsbeløptype.GEBYR_SKYLDNER,
+                                skyldner,
+                            ),
                         beslutning = Beslutningstype.ENDRING,
                         grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
                         innkreving = Innkrevingstype.MED_INNKREVING,
@@ -1241,30 +1256,36 @@ class BehandlingTilVedtakMapping(
         mapper.validering.run {
             val request =
                 when (tilType()) {
-                    TypeBehandling.SÆRBIDRAG ->
+                    TypeBehandling.SÆRBIDRAG -> {
                         if (erDirekteAvslagUtenBeregning()) {
                             byggOpprettVedtakRequestAvslagForSærbidrag()
                         } else {
                             byggOpprettVedtakRequestSærbidrag()
                         }
+                    }
 
-                    TypeBehandling.FORSKUDD ->
+                    TypeBehandling.FORSKUDD -> {
                         if (avslag != null) {
                             byggOpprettVedtakRequestAvslagForForskudd()
                         } else {
                             byggOpprettVedtakRequestForskudd()
                         }
-                    TypeBehandling.BIDRAG ->
+                    }
+
+                    TypeBehandling.BIDRAG -> {
                         if (avslag != null) {
                             byggOpprettVedtakRequestAvslagForBidrag()
                         } else {
                             byggOpprettVedtakRequestBidragAlle(byggEttVedtak = true).first()
                         }
+                    }
 
-                    else -> throw HttpClientErrorException(
-                        HttpStatus.BAD_REQUEST,
-                        "Behandlingstype ${tilType()} støttes ikke",
-                    )
+                    else -> {
+                        throw HttpClientErrorException(
+                            HttpStatus.BAD_REQUEST,
+                            "Behandlingstype ${tilType()} støttes ikke",
+                        )
+                    }
                 }
             return request.tilVedtakDto()
         }

@@ -247,7 +247,7 @@ class BehandlingService(
         val årsak = hentDefaultÅrsak(opprettBehandling.tilType(), opprettBehandling.vedtakstype)
         val avslag =
             when (opprettBehandling.tilType()) {
-                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
+                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
                     if (opprettBehandling.vedtakstype == Vedtakstype.OPPHØR) {
                         if (opprettBehandling.stønadstype == Stønadstype.BIDRAG18AAR) {
                             Resultatkode.AVSLUTTET_SKOLEGANG
@@ -257,8 +257,11 @@ class BehandlingService(
                     } else {
                         null
                     }
+                }
 
-                TypeBehandling.SÆRBIDRAG -> null
+                TypeBehandling.SÆRBIDRAG -> {
+                    null
+                }
             }
         val behandling =
             Behandling(
@@ -575,7 +578,9 @@ class BehandlingService(
                 )
             }
 
-        behandling.oppdaterEksisterendeRoller(request.søknadsid!!, request.saksnummer ?: behandling.saksnummer, oppdaterRollerNyesteIdent)
+        if (request.søknadsid != null) {
+            behandling.oppdaterEksisterendeRoller(request.søknadsid, request.saksnummer ?: behandling.saksnummer, oppdaterRollerNyesteIdent)
+        }
 
         val rollerSomLeggesTil =
             oppdaterRollerNyesteIdent

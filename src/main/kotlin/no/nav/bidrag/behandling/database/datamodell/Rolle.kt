@@ -195,10 +195,7 @@ open class Rolle(
     fun gebyrForSøknad(søknadsid: Long): GebyrRolleSøknad =
         hentEllerOpprettGebyr().finnEllerOpprettGebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
 
-    fun hentEllerOpprettGebyr() =
-        gebyr?.let {
-            opppdaterGebyrTilNyVersjon()
-        } ?: GebyrRolle()
+    fun hentEllerOpprettGebyr() = opppdaterGebyrTilNyVersjon()
 
     val bidragsmottaker get() =
         behandling.alleBidragsmottakere.find {

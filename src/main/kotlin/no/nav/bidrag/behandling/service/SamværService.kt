@@ -213,9 +213,9 @@ class SamværService(
         forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        val virkningstidspunkt = behandling.virkningstidspunkt ?: return
 
         behandling.samvær.forEach {
+            val virkningstidspunkt = it.rolle.virkningstidspunkt ?: behandling.virkningstidspunkt!!
             // Antar at opphørsdato er måneden perioden skal opphøre
             val beregnTil = behandling.finnBeregnTilDatoBehandling(it.rolle)
             val opphørsdato = it.rolle.opphørsdato

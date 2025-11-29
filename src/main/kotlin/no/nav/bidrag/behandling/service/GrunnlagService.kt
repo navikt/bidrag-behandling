@@ -505,11 +505,15 @@ class GrunnlagService(
                         Resultatkode.PRIVAT_AVTALE,
                         Resultatkode.MANGLER_BIDRAGSEVNE,
                         Resultatkode.INNVILGET_VEDTAK,
-                        -> Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
-                        else ->
+                        -> {
+                            Resultatkode.fraKode(sistePeriode.resultatkode)!!.visningsnavn.intern
+                        }
+
+                        else -> {
                             sluttberegningSistePeriode?.resultatVisningsnavn?.intern
                                 ?: Resultatkode.fraKode(sistePeriode.resultatkode)?.visningsnavn?.intern
                                 ?: sistePeriode.resultatkode
+                        }
                     }
                 ManuellVedtakGrunnlag(
                     it.vedtaksid,
@@ -833,14 +837,16 @@ class GrunnlagService(
     ) {
         val rolleGrunnlagErInnhentetFor =
             when (request.grunnlagstype) {
-                Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN ->
+                Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
                     request.grunnlagstype.innhentesForRolle(
                         behandling,
                     )
+                }
 
-                else ->
+                else -> {
                     behandling.roller.find { request.personident == it.personident }
                         ?: request.grunnlagstype.innhentesForRolle(behandling)
+                }
             }
 
         if (!listOf(Grunnlagsdatatype.BARNETILSYN, Grunnlagsdatatype.BOFORHOLD).contains(request.grunnlagstype)) {
@@ -1392,12 +1398,22 @@ class GrunnlagService(
         antallMinutter: Long,
     ): Boolean =
         when {
-            behandling.erVedtakFattet -> false
-            behandling.grunnlagSistInnhentet == null -> true
-            behandling.grunnlagsinnhentingFeilet != null && antallMinutter > 10 ->
+            behandling.erVedtakFattet -> {
+                false
+            }
+
+            behandling.grunnlagSistInnhentet == null -> {
+                true
+            }
+
+            behandling.grunnlagsinnhentingFeilet != null && antallMinutter > 10 -> {
                 LocalDateTime.now().minusMinutes(10) >
                     behandling.grunnlagSistInnhentet
-            else -> LocalDateTime.now().minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
+            }
+
+            else -> {
+                LocalDateTime.now().minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
+            }
         }
 
     private fun lagreGrunnlag(
@@ -1984,7 +2000,9 @@ class GrunnlagService(
                     " i behandling ${behandling.id} har ingen endringer som må bekreftes av saksbehandler. " +
                     "Automatisk aktiverer ny innhentet grunnlag."
             }
-            aktivereYtelserOgInntekter(behandling, type, rolleInhentetFor)
+            ikkeAktiveGrunnlag
+                .hentGrunnlagForType(type, rolleInhentetFor.ident!!)
+                .oppdaterStatusTilAktiv(LocalDateTime.now())
         }
     }
 
@@ -1993,13 +2011,14 @@ class GrunnlagService(
         type: Grunnlagsdatatype,
     ): SummerteInntekter<*>? =
         when (type) {
-            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER ->
+            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter = sammenstilteInntekter.summertMånedsinntektListe,
                 )
+            }
 
-            Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
+            Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter =
@@ -2008,33 +2027,40 @@ class GrunnlagService(
                                 summertSkattegrunnlagstyper.contains(it.inntektRapportering)
                             },
                 )
+            }
 
-            Grunnlagsdatatype.BARNETILLEGG ->
+            Grunnlagsdatatype.BARNETILLEGG -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { BARNETILLEGG == it.inntektRapportering },
                 )
+            }
 
-            Grunnlagsdatatype.KONTANTSTØTTE ->
+            Grunnlagsdatatype.KONTANTSTØTTE -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { KONTANTSTØTTE == it.inntektRapportering },
                 )
+            }
 
-            Grunnlagsdatatype.SMÅBARNSTILLEGG ->
+            Grunnlagsdatatype.SMÅBARNSTILLEGG -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { SMÅBARNSTILLEGG == it.inntektRapportering },
                 )
+            }
 
-            Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
+            Grunnlagsdatatype.UTVIDET_BARNETRYGD -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
                     inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { UTVIDET_BARNETRYGD == it.inntektRapportering },
                 )
+            }
 
             // Ikke-tilgjengelig kode
-            else -> null
+            else -> {
+                null
+            }
         }
 
     private fun opprett(
@@ -2263,7 +2289,9 @@ class GrunnlagService(
                         }
                     }
 
-                    else -> it.aktiv = LocalDateTime.now()
+                    else -> {
+                        it.aktiv = LocalDateTime.now()
+                    }
                 }
             }
         }
@@ -2445,25 +2473,28 @@ class GrunnlagService(
         innhentetGrunnlag: HentGrunnlagDto,
     ): FeilrapporteringDto? =
         when (grunnlagsdatatype) {
-            Grunnlagsdatatype.ARBEIDSFORHOLD ->
+            Grunnlagsdatatype.ARBEIDSFORHOLD -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.ARBEIDSFORHOLD,
                     innhentetFor,
                 )
+            }
 
-            Grunnlagsdatatype.BARNETILLEGG ->
+            Grunnlagsdatatype.BARNETILLEGG -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.BARNETILLEGG,
                     innhentetFor,
                 )
+            }
 
-            Grunnlagsdatatype.SMÅBARNSTILLEGG ->
+            Grunnlagsdatatype.SMÅBARNSTILLEGG -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
                     innhentetFor,
                 )
+            }
 
-            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
+            Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER, Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SKATTEGRUNNLAG,
                     innhentetFor,
@@ -2471,46 +2502,60 @@ class GrunnlagService(
                     GrunnlagRequestType.AINNTEKT,
                     innhentetFor,
                 )
+            }
 
-            Grunnlagsdatatype.KONTANTSTØTTE ->
+            Grunnlagsdatatype.KONTANTSTØTTE -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.KONTANTSTØTTE,
                     innhentetFor,
                 )
+            }
 
-            Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
+            Grunnlagsdatatype.UTVIDET_BARNETRYGD -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG,
                     innhentetFor,
                 )
+            }
 
-            Grunnlagsdatatype.BOFORHOLD ->
+            Grunnlagsdatatype.BOFORHOLD -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
                     innhentetFor,
                 )
-            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN ->
+            }
+
+            Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.HUSSTANDSMEDLEMMER_OG_EGNE_BARN,
                     innhentetFor,
                 )
-            Grunnlagsdatatype.SIVILSTAND ->
+            }
+
+            Grunnlagsdatatype.SIVILSTAND -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.SIVILSTAND,
                     innhentetFor,
                 )
+            }
 
-            Grunnlagsdatatype.BARNETILSYN ->
+            Grunnlagsdatatype.BARNETILSYN -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.BARNETILSYN,
                     innhentetFor,
                 )
-            Grunnlagsdatatype.TILLEGGSSTØNAD ->
+            }
+
+            Grunnlagsdatatype.TILLEGGSSTØNAD -> {
                 innhentetGrunnlag.hentFeilFor(
                     GrunnlagRequestType.TILLEGGSSTØNAD,
                     innhentetFor,
                 )
-            else -> null
+            }
+
+            else -> {
+                null
+            }
         }
 
     private fun HentGrunnlagDto.hentFeilFor(
@@ -2572,6 +2617,7 @@ class GrunnlagService(
                         }.toSet(),
                 )
             }
+
             Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN -> {
                 lagreGrunnlagHvisEndret(
                     behandling,
@@ -2635,6 +2681,7 @@ class GrunnlagService(
                     innhentetGrunnlag.utvidetBarnetrygdListe.toSet(),
                 )
             }
+
             Grunnlagsdatatype.ANDRE_BARN -> {
                 lagreGrunnlagHvisEndret(
                     behandling,

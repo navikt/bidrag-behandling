@@ -2633,7 +2633,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
 
         behandling.søknadsbarn.first().grunnlagFraVedtak = 1
         every { vedtakConsumer.hentVedtak(any()) } returns originalVedtak
-        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        every { behandlingRepository.finnAlleRelaterteBehandlinger(any()) } returns listOf(behandling)
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
     }

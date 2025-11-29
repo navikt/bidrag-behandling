@@ -212,6 +212,13 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    fun oppdaterVirkningstidspunktForAlle(nyVirkningstidspunkt: LocalDate) {
+        virkningstidspunkt = nyVirkningstidspunkt
+        søknadsbarn.forEach {
+            it.virkningstidspunkt = nyVirkningstidspunkt
+        }
+    }
+
     fun søknadForSak(saksnummer: String) =
         if (erIForholdsmessigFordeling) {
             søknadsbarn
@@ -246,7 +253,7 @@ open class Behandling(
         roller.find {
             it.rolletype == Rolletype.BIDRAGSMOTTAKER &&
                 (it.forholdsmessigFordeling == null || it.forholdsmessigFordeling?.tilhørerSak == saksnummer)
-        } ?: alleBidragsmottakere.first()
+        } ?: alleBidragsmottakere.firstOrNull()
     val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
 
     fun søknadsbarnForSøknad(søknadsid: Long) =

@@ -74,7 +74,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-01-15")
             omgjøringsdetaljer?.klageMottattdato shouldBe null
             vedtakstype shouldBe Vedtakstype.ENDRING
-            vedtaksid shouldBe null
+            vedtaksid shouldBe 1
             omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
@@ -161,7 +161,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-05-01")
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.ENDRING
-            vedtaksid shouldBe null
+            vedtaksid shouldBe 1
             omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe "ANNET"
             kategoriBeskrivelse shouldBe "Utstyr til høreapparat"
@@ -255,7 +255,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-05-01")
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
+            vedtaksid shouldBe 2
             omgjøringsdetaljer?.omgjørVedtakId shouldBe null
             omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
@@ -339,7 +339,7 @@ class VedtakTilBehandlingSærbidragTest : CommonVedtakTilBehandlingTest() {
             mottattdato shouldBe LocalDate.parse("2024-05-01")
             omgjøringsdetaljer?.klageMottattdato shouldBe LocalDate.parse("2024-03-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
+            vedtaksid shouldBe 1
             omgjøringsdetaljer?.opprinneligVedtakId shouldBe 2
             kategori shouldBe Særbidragskategori.TANNREGULERING.name
             kategoriBeskrivelse shouldBe null
