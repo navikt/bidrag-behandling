@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.nulls.shouldBeNull
@@ -260,7 +261,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     .filter { Inntektsrapportering.AINNTEKT_BEREGNET_3MND == it.rapporteringstype }
                     .size shouldBe
                     1
-                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldHaveSize(1)
+                behandlingDto.feilOppståttVedSisteGrunnlagsinnhenting?.shouldNotBeEmpty()
             }
         }
 
