@@ -36,16 +36,17 @@ class BidragGrunnlagConsumer(
             val behandlingstype = behandling.tilType()
 
             val requestobjekterGrunnlag: MutableMap<Personident, List<GrunnlagRequestDto>> =
-                mutableMapOf(
-                    Personident(
-                        behandling.bidragsmottaker!!.ident!!,
-                    ) to
-                        oppretteGrunnlagsobjekter(
-                            Personident(behandling.bidragsmottaker!!.ident!!),
-                            Rolletype.BIDRAGSMOTTAKER,
-                            behandling,
-                        ),
-                )
+                behandling.alleBidragsmottakere
+                    .associate {
+                        Personident(
+                            it.ident!!,
+                        ) to
+                            oppretteGrunnlagsobjekter(
+                                Personident(it.ident!!),
+                                Rolletype.BIDRAGSMOTTAKER,
+                                behandling,
+                            )
+                    }.toMutableMap()
 
             if (listOf(TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG).contains(behandlingstype)) {
                 requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =

@@ -10,7 +10,8 @@ import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDe
 import java.math.BigDecimal
 
 data class OppdaterSamværDto(
-    val gjelderBarn: String?,
+    val sammeForAlle: Boolean = false,
+    val gjelderBarn: String,
     @field:Valid
     val periode: OppdaterSamværsperiodeDto? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")

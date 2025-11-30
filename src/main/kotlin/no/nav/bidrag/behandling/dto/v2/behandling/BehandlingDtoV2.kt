@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v2.behandling
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
@@ -11,11 +12,15 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
+import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDtoV3
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
@@ -24,6 +29,8 @@ import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -92,6 +99,7 @@ data class LesemodusVedtak(
     val erAvvist: Boolean,
     val opprettetAvBatch: Boolean,
     val erOrkestrertVedtak: Boolean,
+    val fattetTidspunkt: LocalDateTime,
 )
 
 data class BehandlingDtoV2(
@@ -99,6 +107,7 @@ data class BehandlingDtoV2(
     val type: TypeBehandling,
     val lesemodus: LesemodusVedtak? = null,
     val erBisysVedtak: Boolean,
+    val forholdsmessigFordeling: ForholdmessigFordelingDetaljerDto?,
     val erVedtakUtenBeregning: Boolean = false,
     val grunnlagFraVedtaksid: Int? = null,
     val medInnkreving: Boolean,
@@ -133,12 +142,14 @@ data class BehandlingDtoV2(
     val sisteVedtakBeregnetUtNåværendeMåned: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
+    val bpsBarnUtenLøpendeBidrag: Set<BpsBarnUtenLøpendeBidragDto>,
     val virkningstidspunktV2: List<VirkningstidspunktBarnDtoV2> = emptyList(),
     val virkningstidspunktV3: VirkningstidspunktDtoV3,
     val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
     val boforhold: BoforholdDtoV2,
     val gebyr: GebyrDto? = null,
+    val gebyrV2: GebyrDtoV2? = null,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
@@ -147,23 +158,49 @@ data class BehandlingDtoV2(
     @Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
     val samvær: List<SamværBarnDto>? = null,
     val samværV2: SamværDtoV2? = null,
-    val privatAvtale: List<PrivatAvtaleDto>? = null,
+    val privatAvtale: List<PrivatAvtaleBarnDto>? = null,
+    val privatAvtaleV2: PrivatAvtaleDto? = null,
+    val privatAvtaleV3: PrivatAvtaleDtoV3? = null,
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
 }
 
-data class GebyrDto(
+data class GebyrDtoV2(
+    val harFlereSøknader: Boolean,
     val gebyrRoller: List<GebyrRolleDto>,
+)
+
+data class GebyrDto(
+    val gebyrRoller: List<GebyrDetaljerDto>,
     val valideringsfeil: List<GebyrValideringsfeilDto>? = null,
 )
 
+data class SøknadDetaljerDto(
+    val søknadsid: Long,
+    val saksnummer: String,
+    val barn: List<RolleDto>,
+    val søktFomDato: LocalDate,
+    val mottattDato: LocalDate,
+    val søktAvType: SøktAvType,
+    val behandlingstype: Behandlingstype?,
+    val behandlingstema: Behandlingstema?,
+)
+
 data class GebyrRolleDto(
+    val rolle: RolleDto,
+    val gebyrDetaljer: List<GebyrDetaljerDto>,
+    val valideringsfeil: List<GebyrValideringsfeilDto>? = null,
+)
+
+data class GebyrDetaljerDto(
+    val søknad: SøknadDetaljerDto? = null,
     val inntekt: GebyrInntektDto,
     val beløpGebyrsats: BigDecimal,
     val beregnetIlagtGebyr: Boolean,
     val endeligIlagtGebyr: Boolean,
     val begrunnelse: String? = null,
+    @Schema(deprecated = true)
     val rolle: RolleDto,
 ) {
     val erManueltOverstyrt get() = beregnetIlagtGebyr != endeligIlagtGebyr
@@ -432,6 +469,9 @@ enum class Grunnlagsdatatype(
     val behandlingstypeMotRolletyper: Map<TypeBehandling, Set<Rolletype>> = emptyMap(),
     val erGjeldende: Boolean = true,
 ) {
+    @JsonEnumDefaultValue
+    UKJENT,
+
     ARBEIDSFORHOLD(
         mapOf(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BIDRAGSPLIKTIG, Rolletype.BARN),
@@ -471,6 +511,9 @@ enum class Grunnlagsdatatype(
             TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
             TypeBehandling.SÆRBIDRAG to setOf(Rolletype.BIDRAGSPLIKTIG),
         ),
+    ),
+    BARN_TIL_BP_UTEN_BIDRAGSAK(
+        mapOf(),
     ),
     KONTANTSTØTTE(
         mapOf(
@@ -619,16 +662,3 @@ fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
 
         else -> null
     }
-
-data class HentÅpneBehandlingerRequest(
-    val barnIdent: String,
-)
-
-data class HentÅpneBehandlingerRespons(
-    val åpneBehandling: List<ÅpenBehandling>,
-)
-
-data class ÅpenBehandling(
-    val stønadstype: Stønadstype,
-    val behandlingId: Long,
-)

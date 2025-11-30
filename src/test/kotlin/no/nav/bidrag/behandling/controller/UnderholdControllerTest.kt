@@ -220,7 +220,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             val underholdsid = behandling.underholdskostnader.first().id!!
             lagretBehandling.underholdskostnader.find { it.id == underholdsid }?.harTilsynsordning shouldNotBe true
 
-            val request = OppdatereBegrunnelseRequest(underholdsid, "Oppretter begrunnelse for søknadsbarn")
+            val request = OppdatereBegrunnelseRequest(underholdsid, null, "Oppretter begrunnelse for søknadsbarn")
 
             // hvis
             val svar =

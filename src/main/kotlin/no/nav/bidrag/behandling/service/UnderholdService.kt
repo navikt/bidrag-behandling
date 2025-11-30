@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentNyesteGrunnlagForIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
@@ -75,6 +76,18 @@ class UnderholdService(
                 henteOgValidereUnderholdskostnad(behandling, it).rolle
             }
 
+        val rolleBm =
+            request.bidragsmottakerIdent?.let { bmIdent ->
+                val bm = behandling.alleBidragsmottakere.find { it.ident == bmIdent }
+                if (behandling.alleBidragsmottakere.size > 1 && bm == null) {
+                    throw HttpClientErrorException(
+                        HttpStatus.BAD_REQUEST,
+                        "Bidragsmottaker ident må settes hvis det finnes flere BMer i saken",
+                    )
+                }
+                bm
+            } ?: behandling.bidragsmottaker
+
         if (request.underholdsid == null) {
             val underholdHarAndreBarn =
                 behandling.underholdskostnader.find { it.rolle == null } != null
@@ -90,7 +103,7 @@ class UnderholdService(
             behandling,
             Notattype.UNDERHOLDSKOSTNAD,
             request.begrunnelse,
-            rolleSøknadsbarn ?: behandling.bidragsmottaker!!,
+            rolleSøknadsbarn ?: rolleBm!!,
         )
     }
 
@@ -179,14 +192,16 @@ class UnderholdService(
             )
         }
 
+        val søknadsbarn = behandling.søknadsbarn.find { it.ident == gjelderSøknadsbarn.verdi }
+
         val data =
             behandling.grunnlag
                 .hentAlleIkkeAktiv()
                 .filter { it.gjelder == gjelderSøknadsbarn.verdi }
                 .toSet()
                 .hentAlleBearbeidaBarnetilsyn(
-                    behandling.virkningstidspunktEllerSøktFomDato,
-                    behandling.bidragsmottaker!!,
+                    søknadsbarn!!.virkningstidspunktRolle,
+                    søknadsbarn!!.bidragsmottaker!!,
                 )
 
         val u = behandling.underholdskostnader.find { it.personIdent == gjelderSøknadsbarn.verdi }
@@ -403,19 +418,27 @@ class UnderholdService(
         val underholdskostnad = behandling.underholdskostnader.find { request.idUnderhold == it.id }!!
 
         when (request.type) {
-            Underholdselement.BARN -> sletteUnderholdskostnad(behandling, underholdskostnad)
-            Underholdselement.FAKTISK_TILSYNSUTGIFT ->
+            Underholdselement.BARN -> {
+                sletteUnderholdskostnad(behandling, underholdskostnad)
+            }
+
+            Underholdselement.FAKTISK_TILSYNSUTGIFT -> {
                 sletteFaktiskTilsynsutgift(
                     underholdskostnad,
                     request.idElement,
                 )
+            }
 
-            Underholdselement.TILLEGGSSTØNAD -> sletteTilleggsstønad(underholdskostnad, request.idElement)
-            Underholdselement.STØNAD_TIL_BARNETILSYN ->
+            Underholdselement.TILLEGGSSTØNAD -> {
+                sletteTilleggsstønad(underholdskostnad, request.idElement)
+            }
+
+            Underholdselement.STØNAD_TIL_BARNETILSYN -> {
                 sletteStønadTilBarnetilsyn(
                     underholdskostnad,
                     request.idElement,
                 )
+            }
         }
     }
 
@@ -517,8 +540,8 @@ class UnderholdService(
     private fun tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
         val sisteAktiveGrunnlag =
-            behandling.henteNyesteIkkeAktiveGrunnlag(
-                Grunnlagstype(grunnlagsdatatype, false),
+            behandling.hentNyesteGrunnlagForIkkeAktiv(
+                grunnlagsdatatype,
                 grunnlagsdatatype.innhentesForRolle(behandling)!!,
             ) ?: run {
                 log.warn { "Fant ingen aktive barnetilsynsgrunnlag som må tilpasses nytt virkingstidspunkt." }

@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
+import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -77,12 +78,30 @@ fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
 
 fun Behandling.finnBeregnTilDato() =
     if (erBidrag()) {
-        søknadsbarn.minOf { finnBeregnTilDatoBehandling(it) }
+        søknadsbarn.maxOf { finnBeregnTilDatoBehandling(it) }
     } else {
         finnBeregnTilDatoBehandling()
     }
 
-fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): LocalDate {
+fun Rolle.finnBeregnFra(): YearMonth =
+    if (behandling.erBidrag()) {
+        if (behandling.erIForholdsmessigFordeling) {
+            behandling
+                .finnPeriodeLøperBidrag(this)
+                ?.fom
+                ?.let { maxOf(it, virkningstidspunktRolle.toYearMonth()) }
+                ?: virkningstidspunktRolle.toYearMonth()
+        } else {
+            virkningstidspunktRolle.toYearMonth()
+        }
+    } else {
+        behandling.virkningstidspunktEllerSøktFomDato.toYearMonth()
+    }
+
+fun Behandling.finnBeregnTilDatoBehandling(
+    søknadsbarnRolle: Rolle? = null,
+    senesteBeregnTil: LocalDate? = null,
+): LocalDate {
     val opphørsdato = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
     return if (tilType() == TypeBehandling.SÆRBIDRAG) {
         virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
@@ -94,7 +113,7 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
         val opprinneligVedtakstidspunktBeregnTil = opprinneligVedtakstidspunkt.plusMonths(1).withDayOfMonth(1).toLocalDate()
         val omgjortVedtakstidspunktBeregnTil = omgjortVedtakVedtakstidspunkt.plusMonths(1).withDayOfMonth(1).toLocalDate()
         when (søknadsbarnRolle?.beregnTil) {
-            BeregnTil.INNEVÆRENDE_MÅNED -> utledBeregnTilDato(virkningstidspunkt!!, opphørsdato)
+            BeregnTil.INNEVÆRENDE_MÅNED -> utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, senesteBeregnTil = senesteBeregnTil)
             BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
                 val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
                 if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
@@ -108,14 +127,23 @@ fun Behandling.finnBeregnTilDatoBehandling(søknadsbarnRolle: Rolle? = null): Lo
                 if (virkningstidspunkt >= opprinneligVedtakstidspunktBeregnTil) {
                     virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
                 } else {
-                    utledBeregnTilDato(virkningstidspunkt, opphørsdato ?: globalOpphørsdatoYearMonth, opprinneligVedtakstidspunktBeregnTil)
+                    utledBeregnTilDato(
+                        virkningstidspunkt,
+                        opphørsdato ?: globalOpphørsdatoYearMonth,
+                        opprinneligVedtakstidspunktBeregnTil,
+                        senesteBeregnTil = senesteBeregnTil,
+                    )
                 }
             }
         }
     } else if (erForskudd()) {
         utledBeregnTilDato(virkningstidspunkt!!)
     } else {
-        utledBeregnTilDato(virkningstidspunkt!!, opphørsdato ?: globalOpphørsdatoYearMonth)
+        utledBeregnTilDato(
+            søknadsbarnRolle?.virkningstidspunkt ?: virkningstidspunkt!!,
+            opphørsdato ?: globalOpphørsdatoYearMonth,
+            senesteBeregnTil = senesteBeregnTil,
+        )
     }
 }
 
@@ -123,9 +151,11 @@ private fun utledBeregnTilDato(
     virkningstidspunkt: LocalDate,
     opphørsdato: YearMonth? = null,
     opprinneligVedtakstidspunkt: LocalDate? = null,
+    senesteBeregnTil: LocalDate? = null,
 ): LocalDate =
     if (opphørsdato == null || opphørsdato.isAfter(YearMonth.now().plusMonths(1))) {
-        opprinneligVedtakstidspunkt ?: maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+        opprinneligVedtakstidspunkt
+            ?: maxOf(senesteBeregnTil ?: YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
     } else if (opprinneligVedtakstidspunkt != null) {
         minOf(opprinneligVedtakstidspunkt, opphørsdato.atDay(1))
     } else {
@@ -233,7 +263,7 @@ class VedtakGrunnlagMapper(
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
             if (behandling.privatAvtale
-                    .find { it.rolle!!.ident == gjelderBarn.ident }
+                    .find { it.personIdent == gjelderBarn.ident }
                     ?.perioderInnkreving
                     ?.isEmpty() == true
             ) {
@@ -355,7 +385,7 @@ class VedtakGrunnlagMapper(
                         }
                         BeregnGrunnlag(
                             periode = beregningsperiode,
-                            stønadstype = stonadstype ?: Stønadstype.BIDRAG,
+                            stønadstype = søknadsbarnRolle.stønadstype ?: stonadstype ?: Stønadstype.BIDRAG,
                             opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
                             søknadsbarnReferanse = søknadsbarn.referanse,
                             grunnlagListe = grunnlagsliste.toSet().toList(),
@@ -469,13 +499,15 @@ class VedtakGrunnlagMapper(
             val fødselsdato = personService.hentPersonFødselsdato(kravhaver.verdi) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
             val nyesteIdent = (personService.hentNyesteIdent(kravhaver.verdi) ?: kravhaver)
 
+            val referanse =
+                Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
+                    fødselsdato.toCompactString(),
+                    (kravhaver.verdi + 1).hashCode(),
+                )
             return GrunnlagDto(
-                referanse =
-                    Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
-                        fødselsdato.toCompactString(),
-                        (kravhaver.verdi + 1).hashCode(),
-                    ),
+                referanse = referanse,
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
+                gjelderReferanse = referanse,
                 innhold =
                     POJONode(
                         Person(

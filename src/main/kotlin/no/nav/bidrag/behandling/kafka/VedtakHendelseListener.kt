@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -100,24 +101,28 @@ class VedtakHendelseListener(
         behandling: Behandling,
     ) {
         if (vedtak.type == Vedtakstype.ALDERSJUSTERING) return
-        forsendelseService.slettEllerOpprettForsendelse(
-            InitalizeForsendelseRequest(
-                saksnummer = vedtak.saksnummer!!,
-                enhet = vedtak.enhetsnummer?.verdi,
-                behandlingInfo =
-                    BehandlingInfoDto(
-                        soknadId = (vedtak.søknadId ?: behandling.soknadsid).toString(),
-                        vedtakId = vedtak.id.toString(),
-                        behandlingId = behandling.id!!.toString(),
-                        soknadFra = behandling.soknadFra,
-                        stonadType = vedtak.stønadstype,
-                        engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,
-                        erFattetBeregnet = true,
-                        vedtakType = vedtak.type,
-                    ),
-                roller = behandling.tilForsendelseRolleDto(),
-            ),
-        )
+        behandling.saker.forEach { sak ->
+            val søknader = behandling.søknadForSak(sak)
+            val opprettForSøknad = søknader.minByOrNull { it.behandlingstype != Behandlingstype.FORHOLDSMESSIG_FORDELING }!!
+            forsendelseService.slettEllerOpprettForsendelse(
+                InitalizeForsendelseRequest(
+                    saksnummer = sak,
+                    enhet = sak,
+                    behandlingInfo =
+                        BehandlingInfoDto(
+                            soknadId = opprettForSøknad.søknadsid.toString(),
+                            vedtakId = vedtak.id.toString(),
+                            behandlingId = behandling.id!!.toString(),
+                            soknadFra = opprettForSøknad.søktAvType,
+                            stonadType = vedtak.stønadstype,
+                            engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,
+                            erFattetBeregnet = true,
+                            vedtakType = vedtak.type,
+                        ),
+                    roller = behandling.tilForsendelseRolleDto(sak),
+                ),
+            )
+        }
     }
 
     private fun parseVedtakHendelse(melding: ConsumerRecord<String, String>): VedtakHendelse {

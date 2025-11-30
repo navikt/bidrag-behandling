@@ -82,8 +82,8 @@ fun opprettGrunnlagsreferanseVirkningstidspunkt(
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
-fun Behandling.byggGrunnlagGenerelt(): Set<GrunnlagDto> {
-    val grunnlagListe = (byggGrunnlagNotater() + byggGrunnlagSøknad()).toMutableSet()
+fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
+    val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     when (tilType()) {
         TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
         TypeBehandling.SÆRBIDRAG ->
@@ -130,57 +130,107 @@ private fun opprettGrunnlagNotat(
         ),
 )
 
+fun Rolle.byggGrunnlagManueltOverstyrtGebyrRolle(søknadsid: Long): GrunnlagDto? {
+    val gebyr = gebyrForSøknad(søknadsid)
+    if (gebyr.manueltOverstyrtGebyr == null || !gebyr.manueltOverstyrtGebyr!!.overstyrGebyr) {
+        return null
+    }
+    return GrunnlagDto(
+        referanse = "${Grunnlagstype.MANUELT_OVERSTYRT_GEBYR}_${tilGrunnlagsreferanse()}_${gebyr.referanse}",
+        type = Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
+        gjelderReferanse = tilGrunnlagsreferanse(),
+        innhold =
+            POJONode(
+                ManueltOverstyrtGebyr(
+                    begrunnelse = gebyr.manueltOverstyrtGebyr!!.begrunnelse!!,
+                    ilagtGebyr = gebyr.manueltOverstyrtGebyr!!.ilagtGebyr!!,
+                ),
+            ),
+    )
+}
+
 fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
     roller
         .filter { it.harGebyrsøknad }
-        .filter { it.manueltOverstyrtGebyr != null && it.manueltOverstyrtGebyr?.overstyrGebyr == true }
-        .map {
-            GrunnlagDto(
-                referanse = "${Grunnlagstype.MANUELT_OVERSTYRT_GEBYR}_${it.tilGrunnlagsreferanse()}",
-                type = Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
-                gjelderReferanse = it.tilGrunnlagsreferanse(),
-                innhold =
-                    POJONode(
-                        ManueltOverstyrtGebyr(
-                            begrunnelse = it.manueltOverstyrtGebyr!!.begrunnelse!!,
-                            ilagtGebyr = it.manueltOverstyrtGebyr!!.ilagtGebyr!!,
-                        ),
-                    ),
-            )
+        .filter { it.hentEllerOpprettGebyr().overstyrGebyr }
+        .flatMap { rolle ->
+            rolle.gebyrSøknader.mapNotNull {
+                rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid)
+            }
         }.toSet()
 
-fun Behandling.byggGrunnlagSøknad() =
-    setOf(
-        GrunnlagDto(
-            referanse = "søknad",
-            type = Grunnlagstype.SØKNAD,
-            innhold =
-                POJONode(
-                    SøknadGrunnlag(
-                        klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
-                        mottattDato = mottattdato,
-                        søktFraDato = søktFomDato,
-                        søktAv = soknadFra,
-                        begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
-                        innkrevingsgrunnlag = erInnkreving,
-                        egetTiltak =
-                            listOf(
-                                Behandlingstype.BEGRENSET_REVURDERING,
-                                Behandlingstype.EGET_TILTAK,
-                                Behandlingstype.PARAGRAF_35_C,
-                                Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
-                            ).contains(søknadstype),
-                        opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
-                        privatAvtale = søknadstype == Behandlingstype.PRIVAT_AVTALE,
-                        paragraf35c =
-                            listOf(
-                                Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
-                                Behandlingstype.PARAGRAF_35_C,
-                            ).contains(søknadstype),
+fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn) =
+    if (erIForholdsmessigFordeling || erBisysVedtak) {
+        søknadsbarn.flatMap {
+            it.forholdsmessigFordeling!!.søknaderUnderBehandling.map { søknad ->
+                GrunnlagDto(
+                    referanse = "søknad_${it.tilGrunnlagsreferanse()}_${søknad.søknadsid}",
+                    type = Grunnlagstype.SØKNAD,
+                    gjelderReferanse = it.bidragsmottaker?.tilGrunnlagsreferanse(),
+                    gjelderBarnReferanse = it.tilGrunnlagsreferanse(),
+                    innhold =
+                        POJONode(
+                            SøknadGrunnlag(
+                                klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
+                                mottattDato = søknad.mottattDato,
+                                søktFraDato = søknad.søknadFomDato ?: søktFomDato,
+                                søktAv = søknad.søktAvType,
+                                begrensetRevurdering = søknad.behandlingstype?.erBegrensetRevurdering() == true,
+                                innkrevingsgrunnlag = erInnkreving,
+                                egetTiltak =
+                                    listOf(
+                                        Behandlingstype.BEGRENSET_REVURDERING,
+                                        Behandlingstype.EGET_TILTAK,
+                                        Behandlingstype.PARAGRAF_35_C,
+                                        Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                    ).contains(søknad.behandlingstype),
+                                opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
+                                behandlingstype = søknad.behandlingstype,
+                                søknadsid = søknad.søknadsid,
+                                privatAvtale = søknad.behandlingstype == Behandlingstype.PRIVAT_AVTALE,
+                                paragraf35c =
+                                    listOf(
+                                        Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                        Behandlingstype.PARAGRAF_35_C,
+                                    ).contains(søknad.behandlingstype),
+                            ),
+                        ),
+                )
+            }
+        }
+    } else {
+        setOf(
+            GrunnlagDto(
+                referanse = "søknad",
+                type = Grunnlagstype.SØKNAD,
+                innhold =
+                    POJONode(
+                        SøknadGrunnlag(
+                            klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
+                            mottattDato = mottattdato,
+                            søktFraDato = søktFomDato,
+                            søktAv = soknadFra,
+                            begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
+                            innkrevingsgrunnlag = erInnkreving,
+                            egetTiltak =
+                                listOf(
+                                    Behandlingstype.BEGRENSET_REVURDERING,
+                                    Behandlingstype.EGET_TILTAK,
+                                    Behandlingstype.PARAGRAF_35_C,
+                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                ).contains(søknadstype),
+                            opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
+                            privatAvtale = søknadstype == Behandlingstype.PRIVAT_AVTALE,
+                            paragraf35c =
+                                listOf(
+                                    Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
+                                    Behandlingstype.PARAGRAF_35_C,
+                                ).contains(søknadstype),
+                        ),
                     ),
-                ),
-        ),
-    )
+            ),
+        )
+    }
 
 fun Behandling.byggGrunnlaggEtterfølgendeManuelleVedtak(grunnlagFraBeregning: List<GrunnlagDto>): Set<GrunnlagDto> =
     søknadsbarn
@@ -435,7 +485,7 @@ fun Behandling.byggGrunnlagNotaterInnkreving(): Set<GrunnlagDto> {
     return (virkningstidspunktGrunnlag + notatVurderingAvSkolegang + notatPrivatAvtale).toSet()
 }
 
-fun Behandling.byggGrunnlagNotater(): Set<GrunnlagDto> {
+fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
     val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt()
     val notatGrunnlag =
         setOf(
@@ -575,14 +625,28 @@ fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
         },
     )
 
-fun Behandling.tilBehandlingreferanseListe() =
+fun Behandling.tilBehandlingreferanseListe(søknadsbarn: List<Rolle> = this.søknadsbarn) =
     tilBehandlingreferanseListeUtenSøknad() +
-        listOfNotNull(
-            OpprettBehandlingsreferanseRequestDto(
-                kilde = BehandlingsrefKilde.BISYS_SØKNAD,
-                referanse = soknadsid.toString(),
-            ),
-        )
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn
+                .map { it.forholdsmessigFordeling!!.søknaderUnderBehandling }
+                .flatMap {
+                    it.filter { it.søknadsid != null }.map { søknad ->
+                        OpprettBehandlingsreferanseRequestDto(
+                            kilde = BehandlingsrefKilde.BISYS_SØKNAD,
+                            referanse = søknad.søknadsid!!.toString(),
+                        )
+                    }
+                }.toSet()
+                .toList()
+        } else {
+            listOfNotNull(
+                OpprettBehandlingsreferanseRequestDto(
+                    kilde = BehandlingsrefKilde.BISYS_SØKNAD,
+                    referanse = soknadsid.toString(),
+                ),
+            )
+        }
 
 internal fun Inntekt.tilGrunnlagreferanse(
     gjelder: GrunnlagDto,

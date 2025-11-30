@@ -116,8 +116,7 @@ private fun List<BaseGrunnlag>.validerGrunnlagsreferanse(
         feilListe.add("Grunnlaget med referanse \"$referanse\" referert av \"$referertAv\" finnes ikke i grunnlagslisten")
     }
     grunnlag.forEach {
-        val grunnlagsreferanser =
-            it.grunnlagsreferanseListe + listOf(it.gjelderReferanse).filterNotNull()
+        val grunnlagsreferanser = it.grunnlagsreferanseListe
 
         if (grunnlagsreferanser.contains(referertAv)) {
             feilListe.add(

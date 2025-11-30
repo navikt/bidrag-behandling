@@ -64,7 +64,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             behandlerEnhet shouldBe "4806"
             mottattdato shouldBe LocalDate.parse("2023-01-01")
             vedtakstype shouldBe Vedtakstype.FASTSETTELSE
-            vedtaksid shouldBe null
+            vedtaksid shouldBe -1
             omgjøringsdetaljer?.opprinneligVedtakId shouldBe -1
             soknadsid shouldBe 101
             opprettetAv shouldBe "Z994977"

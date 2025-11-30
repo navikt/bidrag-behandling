@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 
 @Entity
 open class Samvær(
@@ -35,6 +36,7 @@ open class Samvær(
     open var perioder: MutableSet<Samværsperiode> = mutableSetOf(),
 ) {
     fun erLik(other: Samvær): Boolean {
+        if (rolle.finnBeregnFra() != other.rolle.finnBeregnFra()) return false
         if (this === other) return true
         if (perioder.size != other.perioder.size) return false
         if (!perioder.all { periode -> other.perioder.any { otherPeriode -> periode.erLik(otherPeriode) } }) return false

@@ -7,6 +7,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
@@ -70,11 +71,11 @@ class GebyrServiceTest {
             ),
         )
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe true
+        bm.gebyr!!.ilagtGebyr shouldBe false
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe true
+        bm.gebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
     @Test
@@ -108,18 +109,18 @@ class GebyrServiceTest {
             ),
         )
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe true
+        bm.gebyr!!.ilagtGebyr shouldBe true
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.gebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
     @Test
     fun `skal fjerne manuelt overstyrt gebyr`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(overstyrGebyr = true, ilagtGebyr = true, beregnetIlagtGebyr = false, begrunnelse = "Begrunnelse")
+        bm.gebyr = GebyrRolle(overstyrGebyr = true, ilagtGebyr = true, beregnetIlagtGebyr = false, begrunnelse = "Begrunnelse")
         gebyrService.oppdaterManueltOverstyrtGebyr(
             behandling,
             OppdaterGebyrDto(
@@ -128,11 +129,11 @@ class GebyrServiceTest {
             ),
         )
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe false
+        bm.gebyr!!.ilagtGebyr shouldBe false
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.gebyr!!.begrunnelse shouldBe null
     }
 
     @Test
@@ -158,7 +159,7 @@ class GebyrServiceTest {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, null, true)
+        bm.gebyr = GebyrRolle(true, false, null, true)
         gebyrService.oppdaterManueltOverstyrtGebyr(
             behandling,
             OppdaterGebyrDto(
@@ -167,11 +168,11 @@ class GebyrServiceTest {
             ),
         )
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe false
+        bm.gebyr!!.ilagtGebyr shouldBe false
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.gebyr!!.begrunnelse shouldBe null
     }
 
     @Test
@@ -188,11 +189,11 @@ class GebyrServiceTest {
             ),
         )
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe true
+        bm.gebyr!!.ilagtGebyr shouldBe true
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.gebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
     @Test
@@ -202,53 +203,53 @@ class GebyrServiceTest {
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe false
+        bm.gebyr!!.ilagtGebyr shouldBe false
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.gebyr!!.begrunnelse shouldBe null
     }
 
     @Test
     fun `skal oppdatere gebyr når det endres til ikke avslag`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.gebyr = GebyrRolle(true, false, "Begrunnelse", true)
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe false
+        bm.gebyr!!.ilagtGebyr shouldBe false
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.gebyr!!.begrunnelse shouldBe null
     }
 
     @Test
     fun `skal oppdatere gebyr når det endres til ikke avslag hvis overstyrt`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(100))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.gebyr = GebyrRolle(true, false, "Begrunnelse", true)
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe false
+        bm.gebyr!!.ilagtGebyr shouldBe false
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe false
+        bm.gebyr!!.begrunnelse shouldBe null
     }
 
     @Test
     fun `skal oppdatere gebyr når det endres til ikke avslag og sette ilagtGebyr basert på beregning`() {
         val behandling = opprettBehandlingForGebyrberegning(BigDecimal(1000000000))
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", beregnetIlagtGebyr = true)
+        bm.gebyr = GebyrRolle(true, false, "Begrunnelse", beregnetIlagtGebyr = true)
         gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
 
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe false
+        bm.gebyr!!.ilagtGebyr shouldBe true
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe true
+        bm.gebyr!!.begrunnelse shouldBe null
     }
 
     @Test
@@ -257,15 +258,15 @@ class GebyrServiceTest {
         val bp = behandling.bidragspliktig
         bp!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.gebyr = GebyrRolle(true, false, "Begrunnelse", true)
         val resultat = gebyrService.rekalkulerGebyr(behandling)
 
         resultat shouldBe false
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe true
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe "Begrunnelse"
+        bm.gebyr.shouldNotBeNull()
+        bm.gebyr!!.overstyrGebyr shouldBe true
+        bm.gebyr!!.ilagtGebyr shouldBe false
+        bm.gebyr!!.beregnetIlagtGebyr shouldBe true
+        bm.gebyr!!.begrunnelse shouldBe "Begrunnelse"
     }
 
     @Test
@@ -274,15 +275,24 @@ class GebyrServiceTest {
         val bp = behandling.bidragspliktig
         bp!!.harGebyrsøknad = false
         val bm = behandling.bidragsmottaker!!
-        bm.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse", true)
+        bm.oppdaterGebyr(
+            behandling.soknadsid!!,
+            RolleManueltOverstyrtGebyr(
+                overstyrGebyr = true,
+                ilagtGebyr = false,
+                beregnetIlagtGebyr = true,
+                begrunnelse = "Begrunnelse",
+            ),
+        )
         val resultat = gebyrService.rekalkulerGebyr(behandling)
 
         resultat shouldBe true
-        bm.manueltOverstyrtGebyr.shouldNotBeNull()
-        bm.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
-        bm.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
+        val gebyr = bm.gebyrForSøknad(behandling.soknadsid!!)
+        gebyr.manueltOverstyrtGebyr.shouldNotBeNull()
+        gebyr.manueltOverstyrtGebyr!!.overstyrGebyr shouldBe false
+        gebyr.manueltOverstyrtGebyr!!.ilagtGebyr shouldBe false
+        gebyr.manueltOverstyrtGebyr!!.beregnetIlagtGebyr shouldBe false
+        gebyr.manueltOverstyrtGebyr!!.begrunnelse shouldBe null
     }
 }
 

@@ -7,17 +7,16 @@ import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import kotlin.text.compareTo
 
 private val log = KotlinLogging.logger {}
 
@@ -25,6 +24,7 @@ private val log = KotlinLogging.logger {}
 class PrivatAvtaleService(
     val behandlingService: BehandlingService,
     val notatService: NotatService,
+    val personRepository: PersonRepository,
 ) {
     private fun lagrePrivatAvtale(
         behandling: Behandling,
@@ -35,6 +35,17 @@ class PrivatAvtaleService(
             PrivatAvtale(behandling = behandling, rolle = rolle, person = person, avtaleType = PrivatAvtaleType.PRIVAT_AVTALE)
         behandling.privatAvtale.add(privatAvtale)
         return privatAvtale
+    }
+
+    @Transactional
+    fun oppdaterPrivatAvtaleBegrunnelse(
+        behandlingsid: Long,
+        request: OppdaterePrivatAvtaleBegrunnelseRequest,
+    ) {
+        log.info { "Oppdaterer privatavtale begrunnelse ${request.privatavtaleid} i behandling $behandlingsid" }
+        request.begrunnelse?.let {
+            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request.privatavtaleid, request.barnIdent, it)
+        }
     }
 
     @Transactional
@@ -52,6 +63,7 @@ class PrivatAvtaleService(
         privatAvtale.avtaleDato = request.avtaleDato ?: privatAvtale.avtaleDato
         privatAvtale.avtaleType = request.avtaleType ?: privatAvtale.avtaleType
         privatAvtale.skalIndeksreguleres = request.skalIndeksreguleres ?: privatAvtale.skalIndeksreguleres
+        privatAvtale.utenlandsk = request.gjelderUtland ?: privatAvtale.utenlandsk
         request.oppdaterPeriode?.let {
             oppdaterPrivatAvtaleAvtalePeriode(behandlingsid, privatavtaleId, it)
         }
@@ -61,7 +73,7 @@ class PrivatAvtaleService(
         }
 
         request.begrunnelse?.let {
-            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, privatavtaleId, it)
+            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, privatavtaleId, null, it)
         }
     }
 
@@ -80,19 +92,25 @@ class PrivatAvtaleService(
     @Transactional
     fun oppdaterPrivatAvtaleBegrunnelse(
         behandlingsid: Long,
-        privatavtaleId: Long,
+        privatavtaleId: Long?,
+        barnIdent: String?,
         nyBegrunnelse: String,
     ) {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val rolle = behandling.roller.find { it.ident == barnIdent }
         val privatAvtale =
-            behandling.privatAvtale.find { it.id == privatavtaleId }
-                ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
+            if (privatavtaleId != null) {
+                behandling.privatAvtale.find { it.id == privatavtaleId }
+                    ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
+            } else {
+                null
+            }
 
         notatService.oppdatereNotat(
             behandling,
             NotatGrunnlag.NotatType.PRIVAT_AVTALE,
             nyBegrunnelse,
-            privatAvtale.rolle ?: behandling.bidragspliktig!!,
+            rolle ?: privatAvtale?.rolle ?: behandling.bidragspliktig!!,
         )
     }
 
@@ -138,6 +156,8 @@ class PrivatAvtaleService(
                     beløp = request.beløp,
                     fom = request.periode.fom,
                     tom = request.periode.tom,
+                    valutakode = request.valutakode,
+                    samværsklasse = request.samværsklasse,
                 )
             privatAvtale.perioder.add(nyPeriode)
             // Adjust the new period's tom if there's a period coming after
@@ -154,6 +174,8 @@ class PrivatAvtaleService(
             eksisterendePeriode.beløp = request.beløp
             eksisterendePeriode.fom = request.periode.fom
             eksisterendePeriode.tom = request.periode.tom
+            eksisterendePeriode.valutakode = request.valutakode
+            eksisterendePeriode.samværsklasse = request.samværsklasse
         }
     }
 
@@ -164,7 +186,7 @@ class PrivatAvtaleService(
     ): PrivatAvtale {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         behandling.privatAvtale
-            .find { it.rolle?.ident == gjelderBarn.personident?.verdi }
+            .find { it.rolle?.ident == gjelderBarn.personident?.verdi || it.person?.ident == gjelderBarn.personident?.verdi }
             ?.let {
                 ugyldigForespørsel("Privat avtale for barn med personident ${gjelderBarn.personident?.verdi} finnes allerede")
             }
@@ -173,9 +195,16 @@ class PrivatAvtaleService(
                 lagrePrivatAvtale(behandling, it)
             }
         } ?: run {
+            val person =
+                gjelderBarn.personident?.let { personRepository.findFirstByIdent(it.verdi) } ?: Person(
+                    navn = gjelderBarn.navn,
+                    fødselsdato =
+                        gjelderBarn.fødselsdato ?: hentPersonFødselsdato(gjelderBarn.personident!!.verdi)!!,
+                    ident = gjelderBarn.personident?.verdi,
+                )
             lagrePrivatAvtale(
                 behandling,
-                person = Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
+                person = person,
             )
         }
     }

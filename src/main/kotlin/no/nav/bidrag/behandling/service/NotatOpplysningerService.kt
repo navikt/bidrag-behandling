@@ -31,10 +31,12 @@ import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnla
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforholdTilBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
@@ -78,6 +80,8 @@ import no.nav.bidrag.transport.dokument.OpprettJournalpostRequest
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalDelberegningBarnetilleggDto
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalDelberegningBidragsevneDto
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalDelberegningBidragspliktigesBeregnedeTotalbidragDto
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalForholdsmessigFordelingBeregningsdetaljer
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalForholdsmessigFordelingBidragTilFordelingBarn
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalManuellVedtak
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalPersonDto
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBeregningInntekterDto
@@ -86,6 +90,7 @@ import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegning
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.IndeksreguleringDetaljer
 import no.nav.bidrag.transport.dokumentmaler.DokumentmalResultatBidragsberegningBarnDto.ResultatBarnebidragsberegningPeriodeDto.BidragPeriodeBeregningsdetaljer.NotatBeregningsdetaljerSamværsfradrag
+import no.nav.bidrag.transport.dokumentmaler.DokumentmalSluttberegningBarnebidragDetaljer
 import no.nav.bidrag.transport.dokumentmaler.notat.Arbeidsforhold
 import no.nav.bidrag.transport.dokumentmaler.notat.EndeligOrkestrertVedtak
 import no.nav.bidrag.transport.dokumentmaler.notat.InntekterPerRolle
@@ -95,8 +100,10 @@ import no.nav.bidrag.transport.dokumentmaler.notat.NotatBeregnetInntektDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatBeregnetPrivatAvtalePeriodeDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatBoforholdDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatBoforholdTilBMMedSøknadsbarn
-import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrRolleDto
-import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrRolleDto.NotatGebyrInntektDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrDetaljerDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrDetaljerDto.NotatGebyrInntektDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrRolleV2Dto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrV2Dto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntektDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntekterDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntektspostDto
@@ -125,6 +132,7 @@ import no.nav.bidrag.transport.dokumentmaler.notat.NotatVirkningstidspunktBarnDt
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatVirkningstidspunktDto
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerBruktTilBeregning
 import no.nav.bidrag.transport.dokumentmaler.notat.OpplysningerFraFolkeregisteret
+import no.nav.bidrag.transport.dokumentmaler.notat.PeriodeSlåttUtTilFF
 import no.nav.bidrag.transport.dokumentmaler.notat.VedtakNotatDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -168,8 +176,13 @@ class NotatOpplysningerService(
                 datoDokument = oppdaterDatoDokument.ifTrue { behandling.vedtakstidspunkt },
                 journalposttype = JournalpostType.NOTAT,
                 journalførendeEnhet = behandling.behandlerEnhet,
-                tilknyttSaker = listOf(behandling.saksnummer),
-                gjelderIdent = behandling.bidragsmottaker!!.ident,
+                tilknyttSaker = behandling.saker,
+                gjelderIdent =
+                    if (behandling.erForskudd()) {
+                        behandling.bidragsmottaker!!.ident
+                    } else {
+                        behandling.bidragspliktig!!.ident
+                    },
                 referanseId = behandling.tilReferanseId(),
                 saksbehandlerIdent = behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
                 dokumenter =
@@ -211,12 +224,12 @@ class NotatOpplysningerService(
         val opplysningerBoforholdBM =
             behandling.grunnlag
                 .hentSisteAktiv()
-                .hentAlleBearbeidaBoforholdTilBMSøknadsbarn(behandling.virkningstidspunktEllerSøktFomDato)
+                .hentAlleBearbeidaBoforholdTilBMSøknadsbarn(behandling.eldsteVirkningstidspunkt)
         val opplysningerBoforhold =
             behandling.grunnlag
                 .hentSisteAktiv()
                 .hentAlleBearbeidaBoforhold(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.eldsteVirkningstidspunkt,
                     behandling.husstandsmedlem,
                     Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                 )
@@ -226,7 +239,7 @@ class NotatOpplysningerService(
                 .hentSisteAktiv()
                 .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
                 ?.konvertereData<List<SivilstandGrunnlagDto>>()
-                ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
+                ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.eldsteVirkningstidspunkt)
                 ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
@@ -252,7 +265,11 @@ class NotatOpplysningerService(
                 TokenUtils
                     .hentSaksbehandlerIdent()
                     ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
-            virkningstidspunkt = behandling.tilVirkningstidspunkt(),
+            virkningstidspunkt =
+                NotatVirkningstidspunktDto(
+                    erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
+                    barn = behandling.tilVirkningstidspunktBarn(),
+                ),
             virkningstidspunktV2 =
                 NotatVirkningstidspunktDto(
                     erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
@@ -265,7 +282,7 @@ class NotatOpplysningerService(
                     offentligeOpplysninger = behandling.tilUnderholdOpplysning(),
                     offentligeOpplysningerV2 = behandling.tilUnderholdOpplysningV2(),
                     underholdskostnaderBarn =
-                        mapper.run { behandling.underholdskostnader.tilDtos() }.map {
+                        mapper.run { behandling.underholdskostnader.tilDtos() }.sortedBy { it.gjelderBarn.fødselsdato }.map {
                             NotatUnderholdBarnDto(
                                 gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
                                 harTilsynsordning = it.harTilsynsordning,
@@ -346,9 +363,45 @@ class NotatOpplysningerService(
                             )
                         },
                 ),
+            gebyrV2 =
+                NotatGebyrV2Dto(
+                    gebyrRoller =
+                        mapper.run { behandling.mapGebyrV2() }.gebyrRoller.sortedBy { it.rolle.fødselsdato }.map { rolle ->
+                            NotatGebyrRolleV2Dto(
+                                rolle = rolle.rolle.tilNotatRolle(),
+                                gebyrDetaljer =
+                                    rolle.gebyrDetaljer.map {
+                                        NotatGebyrDetaljerDto(
+                                            søknad =
+                                                it.søknad?.let {
+                                                    NotatGebyrDetaljerDto.NotatGebyrSøknadDetaljerDto(
+                                                        søknadsid = it.søknadsid,
+                                                        mottattDato = it.mottattDato,
+                                                        saksnummer = it.saksnummer,
+                                                        søktAvType = it.søktAvType,
+                                                        søknadFomDato = it.søktFomDato,
+                                                        behandlingstype = it.behandlingstype,
+                                                        behandlingstema = it.behandlingstema,
+                                                    )
+                                                },
+                                            inntekt =
+                                                NotatGebyrInntektDto(
+                                                    skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
+                                                    maksBarnetillegg = it.inntekt.maksBarnetillegg,
+                                                ),
+                                            beregnetIlagtGebyr = it.beregnetIlagtGebyr,
+                                            beløpGebyrsats = it.beløpGebyrsats,
+                                            endeligIlagtGebyr = it.endeligIlagtGebyr,
+                                            begrunnelse = it.begrunnelse,
+                                            rolle = rolle.rolle.tilNotatRolle(),
+                                        )
+                                    },
+                            )
+                        },
+                ),
             gebyr =
-                mapper.run { behandling.mapGebyr() }?.gebyrRoller?.map {
-                    NotatGebyrRolleDto(
+                mapper.run { behandling.mapGebyr() }.gebyrRoller?.map {
+                    NotatGebyrDetaljerDto(
                         rolle = it.rolle.tilNotatRolle(),
                         inntekt =
                             NotatGebyrInntektDto(
@@ -391,13 +444,13 @@ class NotatOpplysningerService(
                             .sortert()
                             .map { mapper.tilBoforholdBarn(it, opplysningerBoforhold) },
                 ),
-            personer = behandling.roller.map(Rolle::tilNotatRolle),
+            personer = behandling.roller.sortedBy { it.fødselsdato }.map(Rolle::tilNotatRolle),
             inntekter =
                 NotatInntekterDto(
                     notat = behandling.tilNotatInntekt(behandling.bidragsmottaker!!),
                     notatPerRolle = behandling.roller.map { r -> behandling.tilNotatInntekt(r) }.toSet(),
                     inntekterPerRolle =
-                        behandling.roller.map { rolle ->
+                        behandling.roller.sortedBy { it.fødselsdato }.map { rolle ->
                             behandling.hentInntekterForIdent(
                                 rolle.ident!!,
                                 rolle,
@@ -406,7 +459,7 @@ class NotatOpplysningerService(
                             )
                         },
                     offentligeInntekterPerRolle =
-                        behandling.roller.map { rolle ->
+                        behandling.roller.sortedBy { it.fødselsdato }.map { rolle ->
                             behandling.hentInntekterForIdent(
                                 rolle.ident!!,
                                 rolle,
@@ -418,45 +471,57 @@ class NotatOpplysningerService(
             vedtak = behandling.hentBeregning(),
             erOrkestrertVedtak = behandling.erKlageEllerOmgjøring && behandling.erBidrag(),
             privatavtale =
-                mapper.run {
-                    behandling.privatAvtale.map { it.tilDto() }.map {
-                        NotatPrivatAvtaleDto(
-                            gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
-                            begrunnelse = NotatBegrunnelseDto(it.begrunnelse, it.begrunnelseFraOpprinneligVedtak),
-                            avtaleDato = it.avtaleDato,
-                            avtaleType = it.avtaleType,
-                            skalIndeksreguleres = it.skalIndeksreguleres,
-                            vedtakslisteUtenInnkreving =
-                                it.manuelleVedtakUtenInnkreving?.map {
-                                    DokumentmalManuellVedtak(
-                                        valgt = it.valgt,
-                                        fattetTidspunkt = it.fattetTidspunkt,
-                                        virkningsDato = it.virkningsDato,
-                                        vedtakstype = it.vedtakstype,
-                                        resultatSistePeriode = it.resultatSistePeriode,
-                                        privatAvtale = it.privatAvtale,
-                                        begrensetRevurdering = it.begrensetRevurdering,
-                                    )
-                                } ?: emptyList(),
-                            perioder =
-                                it.perioder.map {
-                                    NotatPrivatAvtalePeriodeDto(
-                                        periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
-                                        beløp = it.beløp,
-                                    )
-                                },
-                            beregnetPrivatAvtalePerioder =
-                                it.beregnetPrivatAvtale?.let {
-                                    it.perioder.map {
-                                        NotatBeregnetPrivatAvtalePeriodeDto(
-                                            periode = DatoperiodeDto(it.periode.fom, it.periode.til),
-                                            beløp = it.beløp,
-                                            indeksfaktor = it.indeksprosent,
-                                        )
-                                    }
-                                } ?: emptyList(),
-                        )
+                if (behandling.erBidrag()) {
+                    mapper.run {
+                        behandling
+                            .tilPrivatAvtaleDtoV3()
+                            .søknadsbarn
+                            .sortedBy { it.gjelderBarn.fødselsdato }
+                            .filter { it.privatAvtale != null }
+                            .map {
+                                NotatPrivatAvtaleDto(
+                                    gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
+                                    begrunnelse = NotatBegrunnelseDto(it.begrunnelse, it.begrunnelseFraOpprinneligVedtak),
+                                    avtaleDato = it.privatAvtale!!.avtaleDato,
+                                    avtaleType = it.privatAvtale.avtaleType,
+                                    skalIndeksreguleres = it.privatAvtale.skalIndeksreguleres,
+                                    utlandsbidrag = it.privatAvtale.gjelderUtland,
+                                    vedtakslisteUtenInnkreving =
+                                        it.privatAvtale.manuelleVedtakUtenInnkreving?.map {
+                                            DokumentmalManuellVedtak(
+                                                valgt = it.valgt,
+                                                fattetTidspunkt = it.fattetTidspunkt,
+                                                virkningsDato = it.virkningsDato,
+                                                vedtakstype = it.vedtakstype,
+                                                resultatSistePeriode = it.resultatSistePeriode,
+                                                privatAvtale = it.privatAvtale,
+                                                begrensetRevurdering = it.begrensetRevurdering,
+                                            )
+                                        } ?: emptyList(),
+                                    perioder =
+                                        it.privatAvtale.perioder.map {
+                                            NotatPrivatAvtalePeriodeDto(
+                                                periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
+                                                beløp = it.beløp,
+                                                samværsklasse = it.samværsklasse,
+                                                valutakode = it.valutakode,
+                                            )
+                                        },
+                                    beregnetPrivatAvtalePerioder =
+                                        it.privatAvtale.beregnetPrivatAvtale?.let {
+                                            it.perioder.map {
+                                                NotatBeregnetPrivatAvtalePeriodeDto(
+                                                    periode = DatoperiodeDto(it.periode.fom, it.periode.til),
+                                                    beløp = it.beløp,
+                                                    indeksfaktor = it.indeksprosent,
+                                                )
+                                            }
+                                        } ?: emptyList(),
+                                )
+                            }
                     }
+                } else {
+                    emptyList()
                 },
         )
     }
@@ -500,7 +565,7 @@ class NotatOpplysningerService(
         val resultat =
             try {
                 when (tilType()) {
-                    TypeBehandling.FORSKUDD ->
+                    TypeBehandling.FORSKUDD -> {
                         beregningService.beregneForskudd(this).tilDto().map { beregning ->
                             NotatResultatForskuddBeregningBarnDto(
                                 barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
@@ -519,8 +584,9 @@ class NotatOpplysningerService(
                                     },
                             )
                         }
+                    }
 
-                    TypeBehandling.SÆRBIDRAG ->
+                    TypeBehandling.SÆRBIDRAG -> {
                         beregningService.beregneSærbidrag(this).tilDto(this).let {
                             listOf(
                                 NotatResultatSærbidragsberegningDto(
@@ -561,31 +627,45 @@ class NotatOpplysningerService(
                                 ),
                             )
                         }
-                    TypeBehandling.BIDRAG ->
-                        beregningService.beregneBidrag(this).tilDto().let {
-                            it.resultatBarn.map { beregning ->
+                    }
+
+                    TypeBehandling.BIDRAG -> {
+                        beregningService.beregneBidrag(this).tilDto(this.kanFatteVedtak()).let {
+                            it.resultatBarn.sortedBy { it.barn.fødselsdato }.map { beregning ->
                                 DokumentmalResultatBidragsberegningBarnDto(
                                     barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
                                     indeksår = beregning.indeksår ?: Year.now().value,
                                     innkrevesFraDato = beregning.innkrevesFraDato,
+                                    minstEnPeriodeHarSlåttUtTilFF = it.minstEnPeriodeHarSlåttUtTilFF,
+                                    perioderSlåttUtTilFF =
+                                        it.perioderSlåttUtTilFF.map {
+                                            PeriodeSlåttUtTilFF(
+                                                periode = it.periode,
+                                                erEvneJustertNedTil25ProsentAvInntekt = it.erEvneJustertNedTil25ProsentAvInntekt,
+                                            )
+                                        },
                                     orkestrertVedtak =
                                         beregning.delvedtak.find { it.endeligVedtak }?.let {
                                             EndeligOrkestrertVedtak(
                                                 type = it.type,
                                                 perioder =
                                                     it.perioder.map {
-                                                        it.mapTilNotat()
+                                                        it.mapTilNotat(this)
                                                     },
                                             )
                                         },
                                     perioder =
                                         beregning.perioder.map {
-                                            it.mapTilNotat()
+                                            it.mapTilNotat(this)
                                         },
                                 )
                             }
                         }
-                    else -> emptyList()
+                    }
+
+                    else -> {
+                        emptyList()
+                    }
                 }
             } catch (e: Exception) {
                 emptyList()
@@ -599,7 +679,7 @@ class NotatOpplysningerService(
     }
 }
 
-private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto.mapTilNotat() =
+private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto.mapTilNotat(behandling: Behandling) =
     ResultatBarnebidragsberegningPeriodeDto(
         periode = periode,
         underholdskostnad = underholdskostnad,
@@ -660,7 +740,62 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                 gjennomsnittligSamværPerMåned = it.gjennomsnittligSamværPerMåned,
                             )
                         },
-                    sluttberegning = it.sluttberegning,
+                    forholdsmessigFordelingBeregningsdetaljer =
+                        it.forholdsmessigFordeling?.let {
+                            DokumentmalForholdsmessigFordelingBeregningsdetaljer(
+                                sumBidragTilFordeling = it.sumBidragTilFordeling,
+                                sumPrioriterteBidragTilFordeling = it.sumPrioriterteBidragTilFordeling,
+                                bidragTilFordelingForBarnet = it.bidragTilFordelingForBarnet,
+                                andelAvSumBidragTilFordelingFaktor = it.andelAvSumBidragTilFordelingFaktor,
+                                andelAvEvneBeløp = it.andelAvEvneBeløp,
+                                bidragEtterFordeling = it.bidragEtterFordeling,
+                                harBPFullEvne = it.harBPFullEvne,
+                                erKompletteGrunnlagForAlleLøpendeBidrag = it.erKompletteGrunnlagForAlleLøpendeBidrag,
+                                erForholdsmessigFordelt = it.erForholdsmessigFordelt,
+                                bidragTilFordelingAlle =
+                                    it.bidragTilFordelingAlle.map {
+                                        DokumentmalForholdsmessigFordelingBidragTilFordelingBarn(
+                                            prioritertBidrag = it.prioritertBidrag,
+                                            privatAvtale = it.privatAvtale,
+                                            bidragTilFordeling = it.bidragTilFordeling,
+                                            barn = it.barn.tilNotatRolle(behandling),
+                                        )
+                                    },
+                            )
+                        },
+                    sluttberegning =
+                        it.sluttberegning?.let {
+                            DokumentmalSluttberegningBarnebidragDetaljer(
+                                beregnetBeløp = it.beregnetBeløp,
+                                resultatBeløp = it.resultatBeløp,
+                                uMinusNettoBarnetilleggBM = it.uMinusNettoBarnetilleggBM,
+                                bruttoBidragEtterBarnetilleggBM = it.bruttoBidragEtterBarnetilleggBM,
+                                nettoBidragEtterBarnetilleggBM = it.nettoBidragEtterBarnetilleggBM,
+                                bruttoBidragJustertForEvneOg25Prosent = it.bruttoBidragJustertForEvneOg25Prosent,
+                                bruttoBidragEtterBegrensetRevurdering = it.bruttoBidragEtterBegrensetRevurdering,
+                                bruttoBidragEtterBarnetilleggBP = it.bruttoBidragEtterBarnetilleggBP,
+                                nettoBidragEtterSamværsfradrag = it.nettoBidragEtterSamværsfradrag,
+                                bpAndelAvUVedDeltBostedFaktor = it.bpAndelAvUVedDeltBostedFaktor,
+                                bpAndelAvUVedDeltBostedBeløp = it.bpAndelAvUVedDeltBostedBeløp,
+                                løpendeForskudd = it.løpendeForskudd,
+                                løpendeBidrag = it.løpendeBidrag,
+                                barnetErSelvforsørget = it.barnetErSelvforsørget,
+                                bidragJustertForDeltBosted = it.bidragJustertForDeltBosted,
+                                bidragJustertForNettoBarnetilleggBP = it.bidragJustertForNettoBarnetilleggBP,
+                                bidragJustertForNettoBarnetilleggBM = it.bidragJustertForNettoBarnetilleggBM,
+                                bidragJustertNedTilEvne = it.bidragJustertNedTilEvne,
+                                bidragJustertNedTil25ProsentAvInntekt = it.bidragJustertNedTil25ProsentAvInntekt,
+                                bidragJustertTilForskuddssats = it.bidragJustertTilForskuddssats,
+                                bidragJustertManueltTilForskuddssats = it.bidragJustertManueltTilForskuddssats,
+                                begrensetRevurderingUtført = it.begrensetRevurderingUtført,
+                                ikkeOmsorgForBarnet = it.ikkeOmsorgForBarnet,
+                                bpEvneVedForholdsmessigFordeling = it.bpEvneVedForholdsmessigFordeling,
+                                bpAndelAvUVedForholdsmessigFordelingFaktor = it.bpAndelAvUVedForholdsmessigFordelingFaktor,
+                                bpSumAndelAvU = it.bpSumAndelAvU,
+                                resultat = it.resultat,
+                                resultatVisningsnavn = it.resultatVisningsnavn,
+                            )
+                        },
                     delberegningUnderholdskostnad = it.delberegningUnderholdskostnad,
                     delberegningBidragspliktigesBeregnedeTotalBidrag =
                         it.delberegningBidragspliktigesBeregnedeTotalBidrag
@@ -880,7 +1015,7 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
     )
 
 private fun Behandling.tilVirkningstidspunktBarn() =
-    søknadsbarn.map {
+    søknadsbarn.sortedBy { it.fødselsdato }.map {
         NotatVirkningstidspunktBarnDto(
             rolle = it.tilNotatRolle(),
             søknadstype = vedtakstype.name,
@@ -925,6 +1060,8 @@ private fun RolleDto.tilNotatRolle() =
         navn = navn,
         fødselsdato = fødselsdato,
         ident = ident?.let { Personident(ident) },
+        saksnummer = saksnummer,
+        bidragsmottakerIdent = bidragsmottaker,
     )
 
 private fun PersoninfoDto.tilNotatRolle(behandling: Behandling) =
@@ -943,6 +1080,9 @@ private fun Rolle.tilNotatRolle() =
         opphørsdato = opphørsdato,
         ident = ident?.let { Personident(it) },
         innbetaltBeløp = innbetaltBeløp,
+        saksnummer = saksnummer,
+        bidragsmottakerIdent = bidragsmottaker?.ident,
+        revurdering = forholdsmessigFordeling?.erRevurdering == true,
     )
 
 private fun Inntekt.tilNotatInntektDto() =

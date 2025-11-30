@@ -878,17 +878,19 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         @Test
         fun `skal oppdatere virkningstidspunkt og opphørsdato når begge er fram i tid`() {
             val behandling = opprettGyldigBehandlingForBeregningOgVedtak(typeBehandling = TypeBehandling.BIDRAG, generateId = true)
+            behandling.virkningstidspunkt = LocalDate.now().plusMonths(4).withDayOfMonth(1)
             val søknadsbarn2 =
                 Rolle(
                     ident = testdataBarn2.ident,
                     rolletype = Rolletype.BARN,
                     behandling = behandling,
                     fødselsdato = testdataBarn2.fødselsdato,
+                    virkningstidspunkt = behandling.virkningstidspunkt,
                     id = 5,
                 )
             val søknadsbarn = behandling.søknadsbarn.first()
+            søknadsbarn.virkningstidspunkt = behandling.virkningstidspunkt
             behandling.roller.add(søknadsbarn2)
-            behandling.virkningstidspunkt = LocalDate.now().plusMonths(4).withDayOfMonth(1)
 
             val samværBarn1 =
                 Samvær(

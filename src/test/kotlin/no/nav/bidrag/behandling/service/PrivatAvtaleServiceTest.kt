@@ -45,7 +45,7 @@ class PrivatAvtaleServiceTest {
     @BeforeEach
     fun setUp() {
         personRepository = stubPersonRepository()
-        privatAvtaleService = PrivatAvtaleService(behandlingService, notatService)
+        privatAvtaleService = PrivatAvtaleService(behandlingService, notatService, personRepository)
     }
 
     @Test

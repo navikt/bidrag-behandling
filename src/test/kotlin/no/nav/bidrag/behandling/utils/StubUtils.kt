@@ -886,13 +886,17 @@ class StubUtils {
         var barnNummer = 1
         behandling.roller.forEach {
             when (it.rolletype) {
-                Rolletype.BIDRAGSMOTTAKER -> stubHenteGrunnlag(it.ident, grunnlagNede)
-                Rolletype.BIDRAGSPLIKTIG ->
+                Rolletype.BIDRAGSMOTTAKER -> {
+                    stubHenteGrunnlag(it.ident, grunnlagNede)
+                }
+
+                Rolletype.BIDRAGSPLIKTIG -> {
                     stubHenteGrunnlag(
                         rolleIdent = it.ident,
                         navnResponsfil = "hente-grunnlagrespons-sb-bp.json",
                         grunnlagNede = grunnlagNede,
                     )
+                }
 
                 Rolletype.BARN -> {
                     stubHenteGrunnlag(
@@ -1006,7 +1010,7 @@ class StubUtils {
         ) {
             val verify =
                 WireMock.getRequestedFor(
-                    urlMatching("/sak/sak/$saksnummer"),
+                    urlMatching("/sak/bidrag-sak/sak/$saksnummer"),
                 )
             WireMock.verify(antall, verify)
         }

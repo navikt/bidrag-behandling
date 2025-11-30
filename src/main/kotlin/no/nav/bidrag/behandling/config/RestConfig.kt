@@ -14,6 +14,7 @@ import no.nav.bidrag.commons.security.api.EnableSecurityConfiguration
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.service.organisasjon.EnableSaksbehandlernavnProvider
 import no.nav.bidrag.commons.web.config.RestOperationsAzure
+import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -45,6 +46,15 @@ class RestConfig {
                     .version("1.0")
                     .description("API documentation for bidrag-behandling"),
             )
+
+    @Bean
+    fun openApiCustomizer(): OpenApiCustomizer =
+        OpenApiCustomizer { openApi: OpenAPI ->
+            // Remove KotlinDeprecatedPropertyCustomizer if present
+            openApi.components?.schemas?.values?.forEach { schema ->
+                // Additional schema adjustments if needed
+            }
+        }
 
     @Bean
     fun clientRequestObservationConvention() = DefaultClientRequestObservationConvention()

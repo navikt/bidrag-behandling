@@ -1,10 +1,13 @@
 package no.nav.bidrag.behandling.service
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.validerSann
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -22,16 +25,11 @@ class GebyrService(
             .filter { it.harGebyrsøknad }
             .map { rolle ->
                 val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                val manueltOverstyrtGebyr = rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()
+                val manueltOverstyrtGebyr = rolle.gebyr ?: GebyrRolle()
                 val beregnetGebyrErEndret = manueltOverstyrtGebyr.beregnetIlagtGebyr != beregning.ilagtGebyr
+                // TODO: FF - Rekalkuler gebyr slik at det blir manuelt overstyrt slik at BP bare får gebyr for ett av søknadene
                 if (beregnetGebyrErEndret) {
-                    rolle.manueltOverstyrtGebyr =
-                        manueltOverstyrtGebyr.copy(
-                            overstyrGebyr = false,
-                            ilagtGebyr = beregning.ilagtGebyr,
-                            beregnetIlagtGebyr = beregning.ilagtGebyr,
-                            begrunnelse = null,
-                        )
+                    resettGebyr(rolle, behandling, beregning)
                 }
                 beregnetGebyrErEndret
             }.any { it }
@@ -42,14 +40,37 @@ class GebyrService(
             .roller
             .filter { it.harGebyrsøknad }
             .forEach { rolle ->
-                val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
-                rolle.manueltOverstyrtGebyr =
-                    (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).copy(
-                        overstyrGebyr = false,
-                        ilagtGebyr = beregning.ilagtGebyr,
-                        beregnetIlagtGebyr = beregning.ilagtGebyr,
-                        begrunnelse = null,
-                    )
+                resettGebyr(rolle, behandling)
+            }
+    }
+
+    private fun resettGebyr(
+        rolle: Rolle,
+        behandling: Behandling,
+        beregningInput: BeregnGebyrResultat? = null,
+    ) {
+        val beregning = beregningInput ?: vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+        rolle.gebyr =
+            rolle.hentEllerOpprettGebyr().let {
+                it.copy(
+                    overstyrGebyr = false,
+                    ilagtGebyr = beregning.ilagtGebyr,
+                    beregnetIlagtGebyr = beregning.ilagtGebyr,
+                    begrunnelse = null,
+                    gebyrSøknader =
+                        it.gebyrSøknader
+                            .map {
+                                it.copy(
+                                    manueltOverstyrtGebyr =
+                                        RolleManueltOverstyrtGebyr(
+                                            overstyrGebyr = false,
+                                            ilagtGebyr = beregning.ilagtGebyr,
+                                            beregnetIlagtGebyr = beregning.ilagtGebyr,
+                                            begrunnelse = null,
+                                        ),
+                                )
+                            }.toMutableSet(),
+                )
             }
     }
 
@@ -62,16 +83,17 @@ class GebyrService(
             behandling.roller.find { it.id == request.rolleId }
                 ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId} i behandling ${behandling.id}")
         val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+        val søknadsid = request.søknadsid ?: behandling.soknadsid!!
         behandling.validerOppdatering(request)
-        rolle.manueltOverstyrtGebyr =
-            (rolle.manueltOverstyrtGebyr ?: RolleManueltOverstyrtGebyr()).let {
-                it.copy(
-                    overstyrGebyr = request.overstyrGebyr,
-                    ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
-                    beregnetIlagtGebyr = beregning.ilagtGebyr,
-                    begrunnelse = if (!request.overstyrGebyr) null else request.begrunnelse ?: it.begrunnelse,
-                )
-            }
+        rolle.oppdaterGebyr(
+            søknadsid,
+            RolleManueltOverstyrtGebyr(
+                overstyrGebyr = request.overstyrGebyr,
+                ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+                beregnetIlagtGebyr = beregning.ilagtGebyr,
+                begrunnelse = request.begrunnelse,
+            ),
+        )
     }
 
     private fun Behandling.validerOppdatering(request: OppdaterGebyrDto) {
@@ -82,6 +104,13 @@ class GebyrService(
         val rolle =
             roller.find { it.id == request.rolleId }
                 ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId} i behandling $id")
+
+        if (request.søknadsid != null) {
+            feilListe.validerSann(
+                rolle.hentEllerOpprettGebyr().finnGebyrForSøknad(request.søknadsid) != null,
+                "Fant ikke gebyr for søknad ${request.søknadsid} for rolle ${rolle.id} i behandling $id",
+            )
+        }
 
         feilListe.validerSann(
             rolle.harGebyrsøknad,

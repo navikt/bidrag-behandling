@@ -276,7 +276,7 @@ class VedtakHendelseTest : TestContainerRunner() {
         Behandling(
             søktFomDato = LocalDate.now(),
             saksnummer = SAKSNUMMER,
-            soknadsid = 123123L,
+            soknadsid = SOKNAD_ID.toLong(),
             behandlerEnhet = "4806",
             opprettetAv = "Z99999",
             opprettetAvNavn = "Saksbehandler Navn",

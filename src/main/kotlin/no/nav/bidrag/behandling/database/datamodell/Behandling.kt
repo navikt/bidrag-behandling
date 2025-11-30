@@ -1,13 +1,9 @@
 package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.core.type.TypeReference
-import io.hypersistence.utils.hibernate.type.ImmutableType
-import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
-import jakarta.persistence.AttributeConverter
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
-import jakarta.persistence.Converter
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -22,6 +18,7 @@ import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadat
 import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingConverter
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillinger
 import no.nav.bidrag.behandling.database.datamodell.json.ForsendelseBestillingerConverter
 import no.nav.bidrag.behandling.database.datamodell.json.KlageDetaljerConverter
@@ -58,11 +55,6 @@ import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import org.hibernate.annotations.Type
-import org.hibernate.engine.spi.SessionFactoryImplementor
-import org.hibernate.engine.spi.SharedSessionContractImplementor
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.Types
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -220,10 +212,62 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    fun oppdaterVirkningstidspunktForAlle(nyVirkningstidspunkt: LocalDate) {
+        virkningstidspunkt = nyVirkningstidspunkt
+        søknadsbarn.forEach {
+            it.virkningstidspunkt = nyVirkningstidspunkt
+        }
+    }
+
+    fun søknadForSak(saksnummer: String) =
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn
+                .filter { it.saksnummer == saksnummer }
+                .flatMap { it.forholdsmessigFordeling!!.søknaderUnderBehandling }
+        } else {
+            listOf(
+                ForholdsmessigFordelingSøknadBarn(
+                    mottattDato = mottattdato,
+                    søknadFomDato = søktFomDato,
+                    søktAvType = soknadFra,
+                    behandlingstema = behandlingstema,
+                    behandlingstype = søknadstype,
+                    søknadsid = soknadsid,
+                    saksnummer = saksnummer,
+                ),
+            )
+        }
+
+    val saker get() =
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn
+                .map { it.forholdsmessigFordeling!!.tilhørerSak }
+                .distinct()
+        } else {
+            listOf(saksnummer)
+        }
+    val erIForholdsmessigFordeling get() = forholdsmessigFordeling != null
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
-    val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+    val bidragsmottaker get() =
+        roller.find {
+            it.rolletype == Rolletype.BIDRAGSMOTTAKER &&
+                (it.forholdsmessigFordeling == null || it.forholdsmessigFordeling?.tilhørerSak == saksnummer)
+        } ?: alleBidragsmottakere.firstOrNull()
     val alleBidragsmottakere get() = roller.filter { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+
+    fun søknadsbarnForSøknad(søknadsid: Long) =
+        if (forholdsmessigFordeling == null) {
+            søknadsbarn
+        } else {
+            søknadsbarn.filter {
+                it.forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.søknadsid == søknadsid } ==
+                    true
+            }
+        }
+
+    fun bidragsmottakerForSak(saksnummer: String) = alleBidragsmottakere.find { it.forholdsmessigFordeling?.tilhørerSak == saksnummer }
+
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
     val erVedtakFattet get() = vedtaksid != null
@@ -236,7 +280,7 @@ open class Behandling(
                 it.beregnTil != null && it.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED
         }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
-    val globalVirkningstidspunkt get() =
+    val eldsteVirkningstidspunkt get() =
         søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt ?: søktFomDato
     val erAvslagForAlle get() =
         søknadsbarn.all { it.avslag != null }
@@ -252,30 +296,40 @@ open class Behandling(
     val opphørSistePeriode get() = opphørTilDato != null
 
     val sammeVirkningstidspunktForAlle get() =
-        søknadsbarn.all { sb1 ->
-            søknadsbarn.all {
-                sb1.virkningstidspunkt == it.virkningstidspunkt &&
-                    sb1.opphørsdato == it.opphørsdato &&
-                    sb1.beregnTil == it.beregnTil &&
-                    sb1.avslag == it.avslag &&
-                    sb1.årsak == it.årsak &&
-                    sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ==
-                    it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold &&
-                    sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold ==
-                    it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold
+        forholdsmessigFordeling == null &&
+            søknadsbarn.all { sb1 ->
+                søknadsbarn.all {
+                    sb1.virkningstidspunkt == it.virkningstidspunkt &&
+                        sb1.opphørsdato == it.opphørsdato &&
+                        sb1.beregnTil == it.beregnTil &&
+                        sb1.avslag == it.avslag &&
+                        sb1.årsak == it.årsak &&
+                        sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ==
+                        it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold &&
+                        sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold ==
+                        it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold
+                }
             }
-        }
 
     val sammeSamværForAlle get() =
-        samvær.all { sb1 ->
-            samvær.all {
-                sb1.erLik(it)
+        forholdsmessigFordeling == null &&
+            samvær.all { sb1 ->
+                samvær.all {
+                    sb1.erLik(it)
+                }
             }
-        }
+
+    fun tilStønadsid(person: Person) =
+        Stønadsid(
+            stonadstype!!,
+            Personident(person.ident!!),
+            Personident(bidragspliktig!!.ident!!),
+            Saksnummer(saksnummer),
+        )
 
     fun tilStønadsid(søknadsbarn: Rolle) =
         Stønadsid(
-            stonadstype!!,
+            søknadsbarn.stønadstype ?: stonadstype!!,
             Personident(søknadsbarn.ident!!),
             Personident(bidragspliktig!!.ident!!),
             Saksnummer(saksnummer),
