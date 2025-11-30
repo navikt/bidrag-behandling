@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEl
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
@@ -153,6 +154,33 @@ fun List<Grunnlag>.henteBearbeidaInntekterForType(
     it.type == type && it.erBearbeidet && it.rolle.ident == ident
 }.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
 
+fun Behandling.hentNyesteGrunnlagForIkkeAktiv(
+    grunnlagsdatatype: Grunnlagsdatatype,
+    hentesForRolle: Rolle? = null,
+): Grunnlag? {
+    val grunnlag =
+        henteNyesteIkkeAktiveGrunnlag(
+            Grunnlagstype(grunnlagsdatatype, false),
+            hentesForRolle ?: grunnlagsdatatype.innhentesForRolle(this)!!,
+        )
+
+    if (grunnlag == null) {
+        val grunnlagIkkeAktivBearbeidet =
+            henteNyesteIkkeAktiveGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, true),
+                hentesForRolle ?: grunnlagsdatatype.innhentesForRolle(this)!!,
+            )
+        // Hent bare nyeste aktiv hvis det finnes en ikke-aktiv bearbeidet grunnlag
+        if (grunnlagIkkeAktivBearbeidet != null) {
+            return henteNyesteAktiveGrunnlag(
+                Grunnlagstype(grunnlagsdatatype, false),
+                hentesForRolle ?: grunnlagsdatatype.innhentesForRolle(this)!!,
+            )
+        }
+    }
+    return grunnlag
+}
+
 fun Behandling.henteNyesteIkkeAktiveGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolleInnhentetFor: Rolle,
@@ -169,14 +197,13 @@ fun Behandling.henteNyesteIkkeAktiveGrunnlag(
 fun Behandling.henteNyesteAktiveGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolleInnhentetFor: Rolle,
-): Grunnlag? =
-    grunnlag
-        .filter {
-            it.type == grunnlagstype.type &&
-                it.rolle.id == rolleInnhentetFor.id &&
-                grunnlagstype.erBearbeidet == it.erBearbeidet &&
-                it.aktiv != null
-        }.toSet()
-        .maxByOrNull { it.innhentet }
+) = grunnlag
+    .filter {
+        it.type == grunnlagstype.type &&
+            it.rolle.id == rolleInnhentetFor.id &&
+            grunnlagstype.erBearbeidet == it.erBearbeidet &&
+            it.aktiv != null
+    }.toSet()
+    .maxByOrNull { it.innhentet }
 
 inline fun <reified T> Grunnlag?.konvertereData(): T? = this?.data?.let { objectmapper.readValue(it) }

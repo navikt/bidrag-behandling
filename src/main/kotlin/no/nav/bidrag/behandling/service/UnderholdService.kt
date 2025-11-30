@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
+import no.nav.bidrag.behandling.database.datamodell.hentNyesteGrunnlagForIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
@@ -199,7 +200,7 @@ class UnderholdService(
                 .filter { it.gjelder == gjelderSøknadsbarn.verdi }
                 .toSet()
                 .hentAlleBearbeidaBarnetilsyn(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    søknadsbarn!!.virkningstidspunktRolle,
                     søknadsbarn!!.bidragsmottaker!!,
                 )
 
@@ -417,19 +418,27 @@ class UnderholdService(
         val underholdskostnad = behandling.underholdskostnader.find { request.idUnderhold == it.id }!!
 
         when (request.type) {
-            Underholdselement.BARN -> sletteUnderholdskostnad(behandling, underholdskostnad)
-            Underholdselement.FAKTISK_TILSYNSUTGIFT ->
+            Underholdselement.BARN -> {
+                sletteUnderholdskostnad(behandling, underholdskostnad)
+            }
+
+            Underholdselement.FAKTISK_TILSYNSUTGIFT -> {
                 sletteFaktiskTilsynsutgift(
                     underholdskostnad,
                     request.idElement,
                 )
+            }
 
-            Underholdselement.TILLEGGSSTØNAD -> sletteTilleggsstønad(underholdskostnad, request.idElement)
-            Underholdselement.STØNAD_TIL_BARNETILSYN ->
+            Underholdselement.TILLEGGSSTØNAD -> {
+                sletteTilleggsstønad(underholdskostnad, request.idElement)
+            }
+
+            Underholdselement.STØNAD_TIL_BARNETILSYN -> {
                 sletteStønadTilBarnetilsyn(
                     underholdskostnad,
                     request.idElement,
                 )
+            }
         }
     }
 
@@ -531,8 +540,8 @@ class UnderholdService(
     private fun tilpasseIkkeaktiveBarnetilsynsgrunnlagEtterVirkningsdato(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BARNETILSYN
         val sisteAktiveGrunnlag =
-            behandling.henteNyesteIkkeAktiveGrunnlag(
-                Grunnlagstype(grunnlagsdatatype, false),
+            behandling.hentNyesteGrunnlagForIkkeAktiv(
+                grunnlagsdatatype,
                 grunnlagsdatatype.innhentesForRolle(behandling)!!,
             ) ?: run {
                 log.warn { "Fant ingen aktive barnetilsynsgrunnlag som må tilpasses nytt virkingstidspunkt." }

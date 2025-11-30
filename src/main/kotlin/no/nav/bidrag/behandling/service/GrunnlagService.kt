@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
+import no.nav.bidrag.behandling.database.datamodell.hentNyesteGrunnlagForIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
@@ -924,7 +925,7 @@ class GrunnlagService(
         val sivilstandBeregnet = sisteAktiveGrunnlag.konvertereData<Set<SivilstandGrunnlagDto>>()!!
         val sivilstandPeriodisert =
             SivilstandApi.beregnV2(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 sivilstandBeregnet.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
             )
         val nyesteAktiveGrunnlag =
@@ -943,8 +944,8 @@ class GrunnlagService(
     fun oppdatereIkkeAktivSivilstandEtterEndretVirkningsdato(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.SIVILSTAND
         val sisteIkkeAktiveGrunnlag =
-            behandling.henteNyesteIkkeAktiveGrunnlag(
-                Grunnlagstype(grunnlagsdatatype, false),
+            behandling.hentNyesteGrunnlagForIkkeAktiv(
+                grunnlagsdatatype,
                 behandling.bidragsmottaker!!,
             ) ?: run {
                 log.debug { "Fant ingen ikke-aktive sivilstandsgrunnlag. Gjør ingen endringer" }
@@ -954,7 +955,7 @@ class GrunnlagService(
         val sivilstand = sisteIkkeAktiveGrunnlag.konvertereData<Set<SivilstandGrunnlagDto>>()!!
         val periodisertHistorikk =
             SivilstandApi.beregnV2(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 sivilstand.tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
             )
 
@@ -986,10 +987,7 @@ class GrunnlagService(
     fun oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD
         val sisteIkkeAktiveGrunnlag =
-            behandling.henteNyesteIkkeAktiveGrunnlag(
-                Grunnlagstype(grunnlagsdatatype, false),
-                grunnlagsdatatype.innhentesForRolle(behandling)!!,
-            ) ?: run {
+            behandling.hentNyesteGrunnlagForIkkeAktiv(grunnlagsdatatype) ?: run {
                 log.debug { "Fant ingen ikke-aktive boforholdsgrunnlag. Gjør ingen endringer" }
                 return
             }
@@ -1043,8 +1041,8 @@ class GrunnlagService(
     fun oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN
         val sisteIkkeAktiveGrunnlag =
-            behandling.henteNyesteIkkeAktiveGrunnlag(
-                Grunnlagstype(grunnlagsdatatype, false),
+            behandling.hentNyesteGrunnlagForIkkeAktiv(
+                grunnlagsdatatype,
                 grunnlagsdatatype.innhentesForRolle(behandling)!!,
             ) ?: run {
                 log.debug { "Fant ingen ikke-aktive andre voksne i husstanden grunnlag. Gjør ingen endringer" }
@@ -1066,7 +1064,7 @@ class GrunnlagService(
         val boforhold = konvertereData<Set<RelatertPersonGrunnlagDto>>()!!
         val andreVoksneIHusstandenPeriodisert =
             BoforholdApi.beregnBoforholdAndreVoksne(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 boforhold.tilBoforholdVoksneRequest(behandling),
                 opphørsdato = behandling.globalOpphørsdato,
                 beregnTilDato = behandling.finnBeregnTilDatoBehandling(),
@@ -1083,7 +1081,7 @@ class GrunnlagService(
         val boforhold = konvertereData<List<RelatertPersonGrunnlagDto>>()!!
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
@@ -1102,7 +1100,7 @@ class GrunnlagService(
         val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
@@ -1632,7 +1630,7 @@ class GrunnlagService(
         val sivilstandPeriodisert =
             SivilstandApi
                 .beregnV2(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.eldsteVirkningstidspunkt,
                     innhentetGrunnlag.sivilstandListe
                         .toSet()
                         .tilSivilstandRequest(fødselsdatoBm = behandling.bidragsmottaker!!.fødselsdato),
@@ -1682,7 +1680,7 @@ class GrunnlagService(
             }
         }
 
-        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.virkningstidspunktEllerSøktFomDato) }.forEach { barn ->
+        andreBarnIkkeIBehandling.filter { it.erBarnTilBMUnder12År(behandling.eldsteVirkningstidspunkt) }.forEach { barn ->
             if (behandling.underholdskostnader.none { u -> u.personIdent == barn.gjelderPersonId }) {
                 secureLogger.debug { "$barn er annen barn til BM. Oppretter underholdskostnad med kilde OFFENTLIG" }
                 underholdService.oppretteUnderholdskostnad(
@@ -1710,7 +1708,7 @@ class GrunnlagService(
         val andreVoksneIHusstanden =
             BoforholdApi
                 .beregnBoforholdAndreVoksne(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.eldsteVirkningstidspunkt,
                     husstandsmedlemmerOgEgneBarn.tilBoforholdVoksneRequest(behandling),
                     behandling.globalOpphørsdato,
                     behandling.finnBeregnTilDatoBehandling(),
@@ -1751,7 +1749,7 @@ class GrunnlagService(
     ) {
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
@@ -1870,7 +1868,7 @@ class GrunnlagService(
         val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
         val endringerSomMåBekreftes =
-            ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.virkningstidspunktEllerSøktFomDato)
+            ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.eldsteVirkningstidspunkt)
 
         if (endringerSomMåBekreftes == null) {
             val ikkeAktiverteSivilstandsgrunnlag =
@@ -2227,18 +2225,18 @@ class GrunnlagService(
                     .toList()
                     .filtrerPerioderEtterVirkningstidspunkt(
                         behandling.husstandsmedlem,
-                        behandling.virkningstidspunktEllerSøktFomDato,
+                        behandling.eldsteVirkningstidspunkt,
                     ).toSet()
             val nyttGrunnlagFiltrert =
                 (nyttGrunnlag as Set<BoforholdResponseV2>)
                     .toList()
                     .filtrerPerioderEtterVirkningstidspunkt(
                         behandling.husstandsmedlem,
-                        behandling.virkningstidspunktEllerSøktFomDato,
+                        behandling.eldsteVirkningstidspunkt,
                     ).toSet()
             aktivtGrunnlagFiltrert
                 .finnEndringerBoforhold(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.eldsteVirkningstidspunkt,
                     nyttGrunnlagFiltrert,
                 ).isNotEmpty()
         } else if (grunnlagstype.type == Grunnlagsdatatype.SIVILSTAND) {
@@ -2249,11 +2247,11 @@ class GrunnlagService(
                 val nyinnhentetGrunnlag =
                     (nyttGrunnlag as Set<Sivilstand>)
                         .toList()
-                        .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(behandling.virkningstidspunktEllerSøktFomDato)
+                        .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(behandling.eldsteVirkningstidspunkt)
                 val aktiveGrunnlag =
                     (aktivtGrunnlag as Set<Sivilstand>)
                         .toList()
-                        .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(behandling.virkningstidspunktEllerSøktFomDato)
+                        .filtrerSivilstandBeregnetEtterVirkningstidspunktV2(behandling.eldsteVirkningstidspunkt)
                 !nyinnhentetGrunnlag.erDetSammeSom(aktiveGrunnlag)
             } catch (e: Exception) {
                 log.error(e) { "Det skjedde en feil ved sjekk mot sivilstand diff ved grunnlagsinnhenting" }

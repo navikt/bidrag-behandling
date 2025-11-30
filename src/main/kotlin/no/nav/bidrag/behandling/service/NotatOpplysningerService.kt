@@ -224,12 +224,12 @@ class NotatOpplysningerService(
         val opplysningerBoforholdBM =
             behandling.grunnlag
                 .hentSisteAktiv()
-                .hentAlleBearbeidaBoforholdTilBMSøknadsbarn(behandling.virkningstidspunktEllerSøktFomDato)
+                .hentAlleBearbeidaBoforholdTilBMSøknadsbarn(behandling.eldsteVirkningstidspunkt)
         val opplysningerBoforhold =
             behandling.grunnlag
                 .hentSisteAktiv()
                 .hentAlleBearbeidaBoforhold(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.eldsteVirkningstidspunkt,
                     behandling.husstandsmedlem,
                     Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
                 )
@@ -239,7 +239,7 @@ class NotatOpplysningerService(
                 .hentSisteAktiv()
                 .find { it.rolle.id == behandling.bidragsmottaker!!.id && it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }
                 ?.konvertereData<List<SivilstandGrunnlagDto>>()
-                ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.virkningstidspunktEllerSøktFomDato)
+                ?.filtrerSivilstandGrunnlagEtterVirkningstidspunkt(behandling.eldsteVirkningstidspunkt)
                 ?: emptyList()
 
         val alleArbeidsforhold: List<ArbeidsforholdGrunnlagDto> =
