@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.validering.FatteVedtakFeil
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.dto.OrkestrertVedtak
@@ -335,8 +336,11 @@ class VedtakService(
         behandling.validerKanFatteVedtak()
         return when (behandling.tilType()) {
             TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling, request)
+
             TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling, request)
+
             TypeBehandling.BIDRAG -> fatteVedtakBidrag(behandling, request)
+
             else -> throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Fatte vedtak av behandlingstype ${behandling.tilType()} støttes ikke",
@@ -623,6 +627,9 @@ class VedtakService(
     ): Int {
         if (behandling.erKlageEllerOmgjøring) return fatteVedtakBidragOmgjøring(behandling, request)
         if (behandling.erInnkreving) return fatteInnkreving(behandling, request)
+        if (!behandling.kanFatteVedtak()) {
+            ugyldigForespørsel("Kan ikke fatte vedtak for behandling ${behandling.id}")
+        }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 
