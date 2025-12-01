@@ -813,7 +813,10 @@ class BehandlingTilVedtakMapping(
         mapper.run {
             val stønadsendringPerioder =
                 beregning.map { it.resultat.byggStønadsendringerForVedtak(behandling, it.barn) }
-            val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
+            val stønadsendringGrunnlag =
+                stønadsendringPerioder
+                    .flatMap(StønadsendringPeriode::grunnlag)
+                    .filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
 
             val grunnlagListeVedtak =
                 byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
