@@ -63,7 +63,7 @@ class SamværService(
             }
         }
 
-        return behandling.samvær.first()
+        return samværBarn
     }
 
     @Transactional

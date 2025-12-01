@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
@@ -38,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetalj
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -133,6 +135,10 @@ class ForholdsmessigFordelingService(
 
     @Transactional
     fun opprettEllerOppdaterForholdsmessigFordeling(behandlingId: Long) {
+        if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
+            LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
+            ugyldigForespørsel("Opprettelse av forholdsmessig fordeling er deaktivert")
+        }
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
 
         val originalBM = behandling.bidragsmottaker!!.ident
