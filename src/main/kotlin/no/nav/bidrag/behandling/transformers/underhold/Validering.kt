@@ -20,9 +20,11 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfei
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.transport.felles.toLocalDate
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
@@ -174,7 +176,7 @@ fun Set<Barnetilsyn>.validerePerioderBarnetilsyn() =
         overlappendePerioder = barnetilsynTilDatoperioder().finneOverlappendePerioder(),
         fremtidigePerioder =
             barnetilsynTilDatoperioder().finneFremtidigePerioder(
-                firstOrNull()?.underholdskostnad?.behandling?.virkningstidspunkt,
+                firstOrNull()?.underholdskostnad?.beregnFraDato,
             ),
         ugyldigPerioder =
             filter { it.omfang == Tilsynstype.IKKE_ANGITT || it.under_skolealder == null }.map {
@@ -189,7 +191,7 @@ fun Set<FaktiskTilsynsutgift>.validerePerioderFaktiskTilsynsutgift(): Underholds
     UnderholdskostnadValideringsfeilTabell(
         fremtidigePerioder =
             tilsynsutgiftTilDatoperioder().finneFremtidigePerioder(
-                firstOrNull()?.underholdskostnad?.behandling?.virkningstidspunkt,
+                firstOrNull()?.underholdskostnad?.beregnFraDato,
             ),
     )
 
@@ -236,7 +238,7 @@ fun Set<Tilleggsstønad>.validerePerioderTilleggsstønad() =
     UnderholdskostnadValideringsfeilTabell(
         fremtidigePerioder =
             tilleggsstønadTilDatoperioder().finneFremtidigePerioder(
-                firstOrNull()?.underholdskostnad?.behandling?.virkningstidspunkt,
+                firstOrNull()?.underholdskostnad?.beregnFraDato,
             ),
         overlappendePerioder = tilleggsstønadTilUnderholdsperioder().finneOverlappendePerioder(),
     )

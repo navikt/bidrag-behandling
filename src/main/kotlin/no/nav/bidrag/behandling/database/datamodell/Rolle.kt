@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -63,10 +64,10 @@ open class Rolle(
     open val navn: String? = null,
     open val deleted: Boolean = false,
     open var harGebyrsøknad: Boolean = false,
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "jsonb", name = "manuelt_overstyrt_gebyr")
     @ColumnTransformer(write = "?::jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    open var manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,
+    open var gebyr: GebyrRolle? = null,
     open var innbetaltBeløp: BigDecimal? = null,
     @Column(name = "forrige_sivilstandshistorikk", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
@@ -116,16 +117,90 @@ open class Rolle(
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", name = "grunnlag_fra_vedtak_json")
     open var grunnlagFraVedtakListe: List<GrunnlagFraVedtak> = emptyList(),
+    @Enumerated(EnumType.STRING)
     open var innkrevingstype: Innkrevingstype? = null,
+    open var innkrevesFraDato: LocalDate? = null,
     @Enumerated(EnumType.STRING)
     open var stønadstype: Stønadstype? = null,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
+
+    fun sakForSøknad(søknadsid: Long) =
+        forholdsmessigFordeling
+            ?.søknader
+            ?.find { it.søknadsid == søknadsid }
+            ?.saksnummer ?: saksnummer
+
+    val saksnummer get() = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer
+    val gebyrSøknader get() =
+        if (harGebyrsøknad) {
+            gebyr?.gebyrSøknader?.takeIf { it.isNotEmpty() }
+                ?: setOf(
+                    GebyrRolleSøknad(
+                        saksnummer = behandling.saksnummer,
+                        søknadsid = behandling.soknadsid!!,
+                        manueltOverstyrtGebyr =
+                            RolleManueltOverstyrtGebyr(
+                                overstyrGebyr = gebyr?.overstyrGebyr == true,
+                                ilagtGebyr = gebyr?.ilagtGebyr,
+                                begrunnelse = gebyr?.begrunnelse,
+                                beregnetIlagtGebyr = gebyr?.beregnetIlagtGebyr,
+                            ),
+                    ),
+                )
+        } else {
+            emptySet()
+        }.toMutableSet()
+
+    fun opppdaterGebyrTilNyVersjon(): GebyrRolle {
+        gebyr = gebyr?.let {
+            if (it.gebyrSøknader.isEmpty()) {
+                it.gebyrSøknader = gebyrSøknader
+            }
+            it
+        } ?: GebyrRolle(gebyrSøknader = gebyrSøknader)
+        return gebyr!!
+    }
+
+    fun oppdaterGebyr(
+        søknadsid: Long,
+        manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr,
+    ) {
+        if (!manueltOverstyrtGebyr.overstyrGebyr) {
+            manueltOverstyrtGebyr.begrunnelse = null
+        }
+        val gebyr = hentEllerOpprettGebyr()
+        val gebyrSøknad = gebyr.finnEllerOpprettGebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
+        gebyrSøknad.manueltOverstyrtGebyr = manueltOverstyrtGebyr
+        gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
+        gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
+        gebyr.begrunnelse = manueltOverstyrtGebyr.begrunnelse
+        gebyr.ilagtGebyr = manueltOverstyrtGebyr.ilagtGebyr
+    }
+
+    fun fjernGebyr(søknadsid: Long) {
+        val gebyr = hentEllerOpprettGebyr()
+        gebyr.gebyrSøknader =
+            gebyr.gebyrSøknader
+                .filter { it.søknadsid != søknadsid }
+                .toMutableSet()
+        if (gebyr.gebyrSøknader.isEmpty()) {
+            harGebyrsøknad = false
+        }
+    }
+
+    fun gebyrForSøknad(søknadsid: Long): GebyrRolleSøknad =
+        hentEllerOpprettGebyr().finnEllerOpprettGebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
+
+    fun hentEllerOpprettGebyr() = opppdaterGebyrTilNyVersjon()
+
     val bidragsmottaker get() =
         behandling.alleBidragsmottakere.find {
-            it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
+            forholdsmessigFordeling?.bidragsmottaker != null && it.ident == forholdsmessigFordeling?.bidragsmottaker ||
+                it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
                 forholdsmessigFordeling == null && it.forholdsmessigFordeling == null ||
                 forholdsmessigFordeling?.tilhørerSak == behandling.saksnummer && it.forholdsmessigFordeling == null
         }
@@ -143,6 +218,7 @@ open class Rolle(
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class GrunnlagFraVedtak(
     @Schema(
         description =
@@ -162,10 +238,58 @@ data class GrunnlagFraVedtak(
     val perioder: List<VedtakPeriodeDto> = emptyList(),
 )
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class GebyrRolle(
+    var overstyrGebyr: Boolean = true,
+    var ilagtGebyr: Boolean? = false,
+    var begrunnelse: String? = null,
+    var beregnetIlagtGebyr: Boolean? = false,
+    var gebyrSøknader: MutableSet<GebyrRolleSøknad> = mutableSetOf(),
+) {
+    fun leggTilGebyr(gebyrSøknad: GebyrRolleSøknad) {
+        gebyrSøknader.removeIf { it.søknadsid == gebyrSøknad.søknadsid }
+        gebyrSøknader.add(gebyrSøknad)
+    }
+
+    fun finnGebyrForSøknad(søknadsid: Long): GebyrRolleSøknad? = gebyrSøknader.find { it.søknadsid == søknadsid }
+
+    fun finnEllerOpprettGebyrForSøknad(
+        søknadsid: Long,
+        saksnummer: String,
+    ): GebyrRolleSøknad =
+        finnGebyrForSøknad(søknadsid)
+            ?: GebyrRolleSøknad(
+                saksnummer = saksnummer,
+                søknadsid = søknadsid,
+                null,
+                null,
+                RolleManueltOverstyrtGebyr(overstyrGebyr = false),
+            )
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class GebyrRolleSøknad(
+    val saksnummer: String,
+    val søknadsid: Long,
+    var referanse: String? = null,
+    val behandlingid: Long? = null,
+    var manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as GebyrRolleSøknad
+        return saksnummer == other.saksnummer && søknadsid == other.søknadsid && behandlingid == other.behandlingid
+    }
+
+    override fun hashCode(): Int = saksnummer.hashCode() * 31 + søknadsid.hashCode() + (behandlingid?.hashCode() ?: 0)
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class RolleManueltOverstyrtGebyr(
     val overstyrGebyr: Boolean = true,
     val ilagtGebyr: Boolean? = false,
-    val begrunnelse: String? = null,
+    var begrunnelse: String? = null,
     val beregnetIlagtGebyr: Boolean? = false,
 )
 
@@ -177,6 +301,35 @@ fun Rolle.hentNavn() = navn ?: hentPersonVisningsnavn(ident) ?: ""
 
 fun Rolle.lagreSivilstandshistorikk(historikk: Set<Sivilstand>) {
     forrigeSivilstandshistorikk = commonObjectmapper.writeValueAsString(historikk.tilSerialiseringsformat())
+}
+
+fun Collection<GebyrRolleSøknad>.removeDuplicates(): MutableSet<GebyrRolleSøknad> =
+    sortedByDescending { it.manueltOverstyrtGebyr != null }
+        .distinctBy { Pair(it.saksnummer, it.søknadsid) }
+        .toMutableSet()
+
+fun Rolle.leggTilGebyr(fraRolle: Rolle) {
+    val gebyr = gebyr ?: GebyrRolle()
+    this@leggTilGebyr.gebyr =
+        gebyr.let {
+            it.gebyrSøknader.addAll(
+                fraRolle.gebyrSøknader,
+            )
+            it.gebyrSøknader = it.gebyrSøknader.removeDuplicates()
+            it
+        }
+}
+
+fun Rolle.leggTilGebyr(gebyrSøknader: List<GebyrRolleSøknad>) {
+    val gebyr = hentEllerOpprettGebyr()
+    this@leggTilGebyr.gebyr =
+        gebyr.let {
+            it.gebyrSøknader.addAll(
+                gebyrSøknader,
+            )
+            it.gebyrSøknader = it.gebyrSøknader.removeDuplicates()
+            it
+        }
 }
 
 fun Set<Sivilstand>.tilSerialiseringsformat() =

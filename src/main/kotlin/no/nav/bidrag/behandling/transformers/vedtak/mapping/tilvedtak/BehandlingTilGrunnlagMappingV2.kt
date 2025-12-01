@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
@@ -63,11 +64,14 @@ class BehandlingTilGrunnlagMappingV2(
         val søknadsbarnListe =
             søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
                 ?: søknadsbarn.map { it.tilGrunnlagPerson() }
+
+        val privatavtaleBarnSimulert = privatAvtale.filter { it.rolle == null }.map { it.person!!.tilRolle(this).tilGrunnlagPerson() }
+        val bidragsmottakere = alleBidragsmottakere.map { it.tilGrunnlagPerson() }
         return (
-            listOf(
-                bidragsmottaker?.tilGrunnlagPerson(),
-                bidragspliktig?.tilGrunnlagPerson(),
-            ) + søknadsbarnListe
+            bidragsmottakere +
+                listOf(
+                    bidragspliktig?.tilGrunnlagPerson(),
+                ) + søknadsbarnListe + privatavtaleBarnSimulert
         ).filterNotNull().toMutableSet()
     }
 
@@ -126,11 +130,24 @@ class BehandlingTilGrunnlagMappingV2(
         return GrunnlagDto(
             referanse = tilGrunnlagsreferanse(),
             type = grunnlagstype,
+            gjelderReferanse = tilGrunnlagsreferanse(),
             innhold =
                 POJONode(
                     Person(
                         ident = ident.takeIf { !it.isNullOrEmpty() }?.let { personService.hentNyesteIdent(it) ?: Personident(it) },
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
+                        bidragsmottaker =
+                            if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
+                                bidragsmottaker?.tilGrunnlagsreferanse()
+                            } else {
+                                null
+                            },
+                        delAvOpprinneligBehandling =
+                            if (forholdsmessigFordeling != null) {
+                                forholdsmessigFordeling!!.delAvOpprinneligBehandling
+                            } else {
+                                true
+                            },
                         fødselsdato =
                             finnFødselsdato(
                                 ident,
@@ -178,10 +195,11 @@ class BehandlingTilGrunnlagMappingV2(
     ): Set<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
-        fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto =
-            GrunnlagDto(
-                referanse =
-                    rolle!!.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG),
+        fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto {
+            val referanse = rolle!!.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
+            return GrunnlagDto(
+                referanse = referanse,
+                gjelderReferanse = referanse,
                 grunnlagsreferanseListe = emptyList(),
                 type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
                 innhold =
@@ -193,6 +211,7 @@ class BehandlingTilGrunnlagMappingV2(
                         ).valider(),
                     ),
             )
+        }
 
         fun PrivatAvtale.opprettPersonGrunnlag(): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag()
@@ -201,13 +220,13 @@ class BehandlingTilGrunnlagMappingV2(
         }
 
         return privatAvtale
-            .find { it.perioderInnkreving.isNotEmpty() && it.rolle!!.ident == gjelderBarnIdent }
+            .find { it.perioderInnkreving.isNotEmpty() && it.personIdent == gjelderBarnIdent }
             ?.let { pa ->
                 val underholdRolle = pa.rolle
                 val gjelderBarn =
                     underholdRolle?.tilGrunnlagPerson()?.also {
                         grunnlagslistePersoner.add(it)
-                    } ?: personobjekter.hentPerson(pa.rolle!!.ident) ?: pa.opprettPersonGrunnlag()
+                    } ?: personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()
                 val gjelderBarnReferanse = gjelderBarn.referanse
                 val grunnlag =
                     pa.perioderInnkreving.map {
@@ -272,14 +291,19 @@ class BehandlingTilGrunnlagMappingV2(
                 val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
                 innhold
                     .filter {
-                        søknadsbarn == null &&
-                            (
-                                it.gjelderBarn.isNullOrEmpty() ||
-                                    // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
-                                    alleSøknadsbarnIdenter.contains(it.gjelderBarn)
-                            ) ||
-                            søknadsbarn != null &&
-                            (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                        if (søknadsbarn == null) {
+                            it.gjelderBarn.isNullOrEmpty() ||
+                                // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
+                                alleSøknadsbarnIdenter.contains(it.gjelderBarn)
+                        } else {
+                            val inntektTilhørerBarn =
+                                if (gjelder.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER) {
+                                    gjelder.referanse == søknadsbarn.innholdTilObjekt<Person>().bidragsmottaker
+                                } else {
+                                    true
+                                }
+                            inntektTilhørerBarn && (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                        }
                     }.groupBy { it.gjelderBarn }
                     .map { (gjelderBarn, innhold) ->
                         val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)
@@ -297,18 +321,32 @@ class BehandlingTilGrunnlagMappingV2(
     fun Husstandsmedlem.tilGrunnlagPerson(): GrunnlagDto {
         val rolle = behandling.roller.find { it.ident == ident }
         val grunnlagstype = rolle?.rolletype?.tilGrunnlagstype() ?: Grunnlagstype.PERSON_HUSSTANDSMEDLEM
+        val referanse =
+            grunnlagstype.tilPersonreferanse(
+                rolle?.fødselsdato?.toCompactString() ?: fødselsdato.toCompactString(),
+                (rolle?.id ?: id!!).toInt(),
+            )
         return GrunnlagDto(
-            referanse =
-                grunnlagstype.tilPersonreferanse(
-                    rolle?.fødselsdato?.toCompactString() ?: fødselsdato.toCompactString(),
-                    (rolle?.id ?: id!!).toInt(),
-                ),
+            referanse = referanse,
             type = grunnlagstype,
+            gjelderReferanse = referanse,
             innhold =
                 POJONode(
                     Person(
                         ident = if (!ident.isNullOrEmpty()) Personident(ident!!) else null,
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
+                        bidragsmottaker =
+                            if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
+                                rolle?.bidragsmottaker?.tilGrunnlagsreferanse()
+                            } else {
+                                null
+                            },
+                        delAvOpprinneligBehandling =
+                            if (rolle?.forholdsmessigFordeling != null) {
+                                rolle?.forholdsmessigFordeling!!.delAvOpprinneligBehandling
+                            } else {
+                                true
+                            },
                         fødselsdato =
                             finnFødselsdato(
                                 ident,
@@ -357,20 +395,22 @@ class BehandlingTilGrunnlagMappingV2(
     fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(personobjekter: Set<GrunnlagDto> = emptySet()): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
-        fun Underholdskostnad.tilPersonGrunnlag(): GrunnlagDto =
-            GrunnlagDto(
-                referanse =
-                    opprettPersonBarnBPBMReferanse(
-                        type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
-                        personFødselsdato,
-                        personIdent,
-                        personNavn,
-                    ),
+        fun Underholdskostnad.tilPersonGrunnlag(underholdRolle: Rolle?): GrunnlagDto {
+            val referanse =
+                opprettPersonBarnBPBMReferanse(
+                    type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
+                    personFødselsdato,
+                    personIdent,
+                    personNavn,
+                )
+            return GrunnlagDto(
+                referanse = referanse,
+                gjelderReferanse = underholdRolle?.bidragsmottaker?.tilGrunnlagsreferanse(),
                 grunnlagsreferanseListe =
                     if (kilde == Kilde.OFFENTLIG) {
                         listOf(
                             opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(
-                                behandling.bidragsmottaker!!.tilGrunnlagsreferanse(),
+                                (underholdRolle ?: behandling.bidragsmottaker)!!.tilGrunnlagsreferanse(),
                             ),
                         )
                     } else {
@@ -383,12 +423,14 @@ class BehandlingTilGrunnlagMappingV2(
                             ident = personIdent?.let { Personident(it) },
                             navn = if (personIdent.isNullOrEmpty()) personNavn else null,
                             fødselsdato = personFødselsdato,
+                            bidragsmottaker = (underholdRolle ?: behandling.bidragsmottaker)!!.tilGrunnlagsreferanse(),
                         ).valider(),
                     ),
             )
+        }
 
-        fun Underholdskostnad.opprettPersonGrunnlag(): GrunnlagDto {
-            val relatertPersonGrunnlag = tilPersonGrunnlag()
+        fun Underholdskostnad.opprettPersonGrunnlag(underholdRolle: Rolle?): GrunnlagDto {
+            val relatertPersonGrunnlag = tilPersonGrunnlag(underholdRolle)
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
         }
@@ -397,7 +439,7 @@ class BehandlingTilGrunnlagMappingV2(
             underholdskostnader
                 .filter { it.rolle == null && it.faktiskeTilsynsutgifter.isEmpty() }
                 .map { u ->
-                    personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag()
+                    personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag(u.rolle)
                 }
         return (
             underholdskostnader
@@ -412,7 +454,7 @@ class BehandlingTilGrunnlagMappingV2(
                                     .sortedByDescending {
                                         listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type)
                                     }.hentPerson(u.personIdent)
-                                ?: u.opprettPersonGrunnlag()
+                                ?: u.opprettPersonGrunnlag(underholdRolle)
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),

@@ -14,9 +14,9 @@ import io.mockk.slot
 import io.mockk.verify
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
@@ -38,6 +38,7 @@ import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetillegg
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
+import no.nav.bidrag.behandling.utils.testdata.leggTilGebyrSøknad
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagManuelleVedtak
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
@@ -269,6 +270,9 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en bidrag behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.bidragsmottaker!!.leggTilGebyrSøknad(behandling.soknadsid!!, "REFERANSE_BM_GEBYR")
+        behandling.bidragspliktig!!.leggTilGebyrSøknad(behandling.soknadsid!!, "REFERANSE_BP_GEBYR")
+        behandling.søknadsbarn.first()!!.leggTilGebyrSøknad(behandling.soknadsid!!, "REFERANSE_BA_GEBYR")
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
         behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
@@ -402,7 +406,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 186
+                request.grunnlagListe shouldHaveSize 188
             }
         }
 
@@ -447,12 +451,12 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             }
         }
         assertSoftly(opprettVedtakRequest.engangsbeløpListe) {
-            shouldHaveSize(2)
+            shouldHaveSize(3)
             val gebyrMottaker = it.find { it.type == Engangsbeløptype.GEBYR_MOTTAKER }!!
 
             gebyrMottaker.beløp shouldBe null
             gebyrMottaker.valutakode shouldBe null
-            gebyrMottaker.referanse shouldNotBe null
+            gebyrMottaker.referanse shouldBe "REFERANSE_BM_GEBYR"
             gebyrMottaker.kravhaver shouldBe Personident("NAV")
             gebyrMottaker.mottaker shouldBe Personident("NAV")
             gebyrMottaker.innkreving shouldBe Innkrevingstype.MED_INNKREVING
@@ -471,7 +475,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             gebyrSkyldner.valutakode shouldBe "NOK"
             gebyrSkyldner.kravhaver shouldBe Personident("NAV")
             gebyrSkyldner.mottaker shouldBe Personident("NAV")
-            gebyrSkyldner.referanse shouldNotBe null
+            gebyrSkyldner.referanse shouldBe "REFERANSE_BP_GEBYR"
 
             gebyrSkyldner.innkreving shouldBe Innkrevingstype.MED_INNKREVING
             gebyrSkyldner.resultatkode shouldBe Resultatkode.GEBYR_ILAGT.name
@@ -512,8 +516,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 }
             }
             validerNotater(behandling)
-            hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
+            hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 15
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 27
             hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
@@ -837,8 +841,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         val søknadsbarn = behandling.søknadsbarn.first()
         søknadsbarn.fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
         søknadsbarn.opphørsdato = opphørsdato
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -968,8 +972,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         val søknadsbarn = behandling.søknadsbarn.first()
         søknadsbarn.fødselsdato = LocalDate.now().minusYears(18).minusMonths(1)
         søknadsbarn.opphørsdato = opphørsdato
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -2018,7 +2022,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
 
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
 
         vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
 
@@ -2415,8 +2419,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak med direkte avslag`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -2564,8 +2568,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 id = 1,
             ),
         )
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, false, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, false, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,
@@ -2649,8 +2653,8 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak med direkte avslag med reel mottaker`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        behandling.bidragspliktig!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
-        behandling.bidragsmottaker!!.manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(true, true, "Begrunnelse")
+        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
         behandling.leggTilNotat(
             "Virkningstidspunkt kun i notat",
             NotatType.VIRKNINGSTIDSPUNKT,

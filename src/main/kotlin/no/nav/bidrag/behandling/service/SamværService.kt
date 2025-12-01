@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværsperiodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.dto.v2.samvær.valider
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -20,11 +21,14 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværsklasse
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.springframework.context.annotation.Import
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
@@ -44,17 +48,22 @@ class SamværService(
     ): Samvær {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         secureLogger.debug { "Oppdaterer samvær for behandling $behandlingsid, forespørsel=$request" }
-        if (request.gjelderBarn.isNullOrEmpty()) {
-            behandling.samvær.forEach { oppdaterSamvær ->
-                oppdaterSamvær(request, oppdaterSamvær)
+        if (request.sammeForAlle && !behandling.sammeSamværForAlle) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Ugyldig data ved oppdatering av samvær: Kan ikke oppdatere til samme for alle når det ikke valgt til å være samme",
+            )
+        }
+        val samværBarn = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+        oppdaterSamvær(request, samværBarn)
+
+        if (request.sammeForAlle) {
+            behandling.samvær.filter { it.id != samværBarn.id }.forEach { oppdaterSamvær ->
+                kopierSamværPerioderOgBegrunnelse(samværBarn, oppdaterSamvær)
             }
-        } else {
-            val samværBarn = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
-            oppdaterSamvær(request, samværBarn)
-            return samværBarn
         }
 
-        return behandling.samvær.first()
+        return samværBarn
     }
 
     @Transactional
@@ -84,12 +93,38 @@ class SamværService(
                     Samværsperiode(fom = it.fom, tom = it.tom, samvær = samværBarn, samværsklasse = it.samværsklasse)
                 }
             samværBarn.perioder.clear()
-            samværBarn.perioder = perioderKopiert.toMutableSet()
+            samværBarn.perioder.addAll(perioderKopiert.toMutableSet())
         }
         behandling.søknadsbarn.forEach {
             notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.SAMVÆR, nyNotat, it)
         }
         return behandling
+    }
+
+    private fun kopierSamværPerioderOgBegrunnelse(
+        fraSamvær: Samvær,
+        oppdaterSamvær: Samvær,
+    ) {
+        val begrunnelseFraSamvær = henteNotatinnhold(fraSamvær.behandling, NotatType.SAMVÆR, fraSamvær.rolle, true)
+        val nyePerioder =
+            fraSamvær.perioder.map {
+                Samværsperiode(
+                    oppdaterSamvær,
+                    it.fom,
+                    it.tom,
+                    it.samværsklasse,
+                    beregningJson = it.beregningJson,
+                )
+            }
+
+        oppdaterSamvær.perioder.clear()
+        oppdaterSamvær.perioder.addAll(nyePerioder)
+        notatService.oppdatereNotat(
+            oppdaterSamvær.behandling,
+            NotatType.SAMVÆR,
+            begrunnelseFraSamvær,
+            oppdaterSamvær.rolle,
+        )
     }
 
     private fun oppdaterSamvær(
@@ -178,9 +213,9 @@ class SamværService(
         forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        val virkningstidspunkt = behandling.virkningstidspunkt ?: return
 
         behandling.samvær.forEach {
+            val virkningstidspunkt = it.rolle.virkningstidspunkt ?: behandling.virkningstidspunkt!!
             // Antar at opphørsdato er måneden perioden skal opphøre
             val beregnTil = behandling.finnBeregnTilDatoBehandling(it.rolle)
             val opphørsdato = it.rolle.opphørsdato

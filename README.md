@@ -14,7 +14,7 @@ Et lokalt Dockermiljø må være tilgjengelig for lokal kjøring. Forebredelsess
 
 > colima start \
 > docker-compose build \
-> docker-compose up 
+> docker-compose up 2
 
 #### Bygge applikasjonen
 

@@ -35,6 +35,9 @@ import java.time.Period
 import java.time.Year
 import java.time.YearMonth
 
+val vedtakstyperIkkeBeregning =
+    listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
+
 fun Vedtakstype.opprettForsendelse() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
 
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(this)
@@ -130,6 +133,20 @@ fun Behandling.tilStønadsid(søknadsbarn: Rolle) =
         Saksnummer(saksnummer),
     )
 
+fun <T : Comparable<T>> maxOfNullable(
+    a: T?,
+    b: T?,
+): T? =
+    if (a == null && b == null) {
+        null
+    } else if (a == null) {
+        b
+    } else if (b == null) {
+        a
+    } else {
+        maxOf(a, b)
+    }
+
 fun <T : Comparable<T>> minOfNullable(
     a: T?,
     b: T?,
@@ -185,6 +202,32 @@ fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
         Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
         else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
     }
+
+fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
+    val fraPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
+    val tilPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).maxByOrNull { it.fom }?.til
+    val fraPeriodePrivatAvtale =
+        privatAvtale
+            .find {
+                it.rolle?.ident == rolle.ident
+            }?.perioderInnkreving
+            ?.minByOrNull { it.fom }
+            ?.fom
+            ?.toYearMonth()
+    val tilPeriodePrivatAvtale =
+        privatAvtale
+            .find {
+                it.rolle?.ident == rolle.ident
+            }?.perioderInnkreving
+            ?.maxByOrNull { it.fom }
+            ?.tom
+            ?.plusMonths(1)
+            ?.withDayOfMonth(1)
+            ?.toYearMonth()
+    return minOfNullable(fraPeriodeLøperBidrag, fraPeriodePrivatAvtale)?.let {
+        ÅrMånedsperiode(it, maxOfNullable(tilPeriodeLøperBidrag, tilPeriodePrivatAvtale))
+    }
+}
 
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
     val eksisterendeVedtak =

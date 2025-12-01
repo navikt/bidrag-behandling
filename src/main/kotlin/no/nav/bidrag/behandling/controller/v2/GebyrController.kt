@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.controller.v2
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
-import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.OppdaterGebyrDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GebyrService
@@ -31,20 +31,20 @@ class GebyrController(
         @Valid
         @RequestBody(required = true)
         request: OppdaterGebyrDto,
-    ): GebyrRolleDto {
+    ): GebyrDetaljerDto {
         gebyrService.oppdaterManueltOverstyrtGebyr(behandlingService.hentBehandlingById(behandlingsid), request)
-        return tilRespons(behandlingsid, request.rolleId)
+        return tilRespons(behandlingsid, request)
     }
 
     private fun tilRespons(
         behandlingsId: Long,
-        rolleId: Long,
-    ): GebyrRolleDto {
+        request: OppdaterGebyrDto,
+    ): GebyrDetaljerDto {
         val behandling = behandlingService.hentBehandlingById(behandlingsId)
-        return behandling.roller.find { it.id == rolleId }!!.let { rolle ->
+        return behandling.roller.find { it.id == request.rolleId }!!.let { rolle ->
             vedtakGrunnlagMapper
                 .beregnGebyr(behandling, rolle)
-                .tilDto(rolle)
+                .tilDto(rolle, request.søknadsid ?: behandling.soknadsid!!)
         }
     }
 }

@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.VedtakService
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
 import no.nav.bidrag.behandling.transformers.tilDto
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -186,7 +187,7 @@ class BehandlingBeregnController(
             )
         }
 
-        return beregningService.beregneBidrag(behandling.id!!, endeligBeregning).tilDto()
+        return beregningService.beregneBidrag(behandling.id!!, endeligBeregning).tilDto(behandling.kanFatteVedtak())
     }
 
     @Suppress("unused")

@@ -2,32 +2,33 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.behandlingNotFoundException
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
-import no.nav.bidrag.behandling.database.datamodell.json.FattetDelvedtak
-import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.database.datamodell.json.FattetVedtak
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.VedtakDetaljer
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerStatus
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.erBidrag
 import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.ÅpenBehandling
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.kafka.BehandlingEndringHendelse
 import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -40,7 +41,7 @@ import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.security.utils.TokenUtils
-import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -50,14 +51,15 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.organisasjon.Enhetsnummer
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandling
+import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarn
+import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarnSøknad
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
-import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -65,6 +67,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.jvm.optionals.getOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -79,10 +82,15 @@ class BehandlingService(
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
     private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
+    @Lazy
+    private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
 //    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
-    fun slettBehandling(behandlingId: Long) {
+    fun slettBehandling(
+        behandlingId: Long,
+        søknadsid: Long? = null,
+    ) {
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
@@ -91,12 +99,47 @@ class BehandlingService(
             )
         }
 
-        log.debug { "Logisk sletter behandling $behandlingId" }
-        behandlingRepository.logiskSlett(behandling.id!!)
+        slettBehandling(behandling, søknadsid)
+    }
+
+    fun slettBehandling(
+        behandling: Behandling,
+        søknadsid: Long? = null,
+    ) {
+        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            if (søknadsid == null) {
+                forholdsmessigFordelingService!!.avsluttForholdsmessigFordeling(
+                    behandling,
+                    behandling.søknadsbarnForSøknad(behandling.soknadsid!!),
+                    behandling.soknadsid!!,
+                )
+                logiskSlettBehandling(behandling)
+            } else {
+                val barnSomSkalSlettes =
+                    behandling.søknadsbarn
+                        .filter { it.forholdsmessigFordeling!!.søknaderUnderBehandling.any { it.søknadsid == søknadsid } }
+                forholdsmessigFordelingService!!.slettBarnEllerBehandling(barnSomSkalSlettes, behandling, søknadsid)
+                behandling.bidragspliktig?.fjernGebyr(søknadsid)
+            }
+        } else {
+            logiskSlettBehandling(behandling)
+        }
+    }
+
+    fun sendOppdatertHendelse(
+        behandlingId: Long,
+        slettet: Boolean,
+    ) {
         behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandling.id!!,
-            BehandlingHendelseType.AVSLUTTET,
+            behandlingId,
+            if (slettet) BehandlingHendelseType.AVSLUTTET else BehandlingHendelseType.ENDRET,
         )
+    }
+
+    fun logiskSlettBehandling(behandling: Behandling) {
+        log.debug { "Logisk sletter behandling ${behandling.id}" }
+        behandlingRepository.logiskSlett(behandling.id!!)
+        sendOppdatertHendelse(behandling.id!!, true)
     }
 
     fun hentEksisteredenBehandling(søknadsid: Long): Behandling? = behandlingRepository.findFirstBySoknadsid(søknadsid)
@@ -104,10 +147,11 @@ class BehandlingService(
     fun lagreBehandling(
         behandling: Behandling,
         opprettForsendelse: Boolean = false,
+        forceSave: Boolean = false,
     ): Behandling {
         val oppretterBehandling = behandling.id == null
         val lagretBehandling =
-            if (oppretterBehandling) {
+            if (oppretterBehandling || forceSave) {
                 behandlingRepository.save(behandling)
             } else {
                 behandling
@@ -144,9 +188,45 @@ class BehandlingService(
                 )
             }
         }
+        val søknadsid =
+            if (opprettBehandling.opprettSøknad && opprettBehandling.søknadsid == null) {
+                // TODO: Opprett søknad
+                1
+            } else {
+                opprettBehandling.søknadsid!!
+            }
 
-        behandlingRepository.findFirstBySoknadsid(opprettBehandling.søknadsid)?.let {
-            log.info { "Fant eksisterende behandling ${it.id} for søknadsId ${opprettBehandling.søknadsid}. Oppretter ikke ny behandling" }
+        if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+            behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
+                val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+                val søknadsdetaljer =
+                    ForholdsmessigFordelingSøknadBarn(
+                        søknadsid = søknadsid,
+                        søknadFomDato = opprettBehandling.søktFomDato,
+                        søktAvType = opprettBehandling.søknadFra,
+                        innkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                        mottattDato = opprettBehandling.mottattdato,
+                        behandlingstema = opprettBehandling.behandlingstema,
+                        behandlingstype = opprettBehandling.behandlingstype,
+                        enhet = opprettBehandling.behandlerenhet,
+                    )
+                forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
+                    opprettBehandling.roller.toList(),
+                    emptyList(),
+                    behandling,
+                    søknadsid,
+                    opprettBehandling.saksnummer,
+                    bm?.ident?.verdi,
+                    behandlerenhet = opprettBehandling.behandlerenhet,
+                    erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
+                    søknadsdetaljer,
+                )
+                return OpprettBehandlingResponse(behandling.id!!)
+            }
+        }
+        behandlingRepository.findFirstBySoknadsid(søknadsid)?.let {
+            log.info { "Fant eksisterende behandling ${it.id} for søknadsId $søknadsid. Oppretter ikke ny behandling" }
             return OpprettBehandlingResponse(it.id!!)
         }
 
@@ -158,29 +238,16 @@ class BehandlingService(
         val opprettetAvNavn =
             TokenUtils
                 .hentSaksbehandlerIdent()
-                ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) }
+                ?.let { EnhetProvider.hentSaksbehandlernavn(it) }
         val virkningstidspunkt =
             when (opprettBehandling.tilType()) {
                 TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> opprettBehandling.søktFomDato
                 TypeBehandling.SÆRBIDRAG -> LocalDate.now().withDayOfMonth(1)
             }
-        val årsak =
-            when (opprettBehandling.tilType()) {
-                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
-                    if (opprettBehandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-                        VirkningstidspunktÅrsakstype.AUTOMATISK_JUSTERING
-                    } else if (opprettBehandling.vedtakstype !=
-                        Vedtakstype.OPPHØR
-                    ) {
-                        VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-                    } else {
-                        null
-                    }
-                TypeBehandling.SÆRBIDRAG -> null
-            }
+        val årsak = hentDefaultÅrsak(opprettBehandling.tilType(), opprettBehandling.vedtakstype)
         val avslag =
             when (opprettBehandling.tilType()) {
-                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
+                TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
                     if (opprettBehandling.vedtakstype == Vedtakstype.OPPHØR) {
                         if (opprettBehandling.stønadstype == Stønadstype.BIDRAG18AAR) {
                             Resultatkode.AVSLUTTET_SKOLEGANG
@@ -190,8 +257,11 @@ class BehandlingService(
                     } else {
                         null
                     }
+                }
 
-                TypeBehandling.SÆRBIDRAG -> null
+                TypeBehandling.SÆRBIDRAG -> {
+                    null
+                }
             }
         val behandling =
             Behandling(
@@ -296,7 +366,7 @@ class BehandlingService(
             no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = behandling.saksnummer,
                 enhet = behandling.behandlerEnhet,
-                roller = behandling.tilForsendelseRolleDto(),
+                roller = behandling.tilForsendelseRolleDto(behandling.saksnummer),
                 behandlingInfo =
                     BehandlingInfoDto(
                         behandlingId = behandling.id?.toString(),
@@ -316,9 +386,7 @@ class BehandlingService(
         behandlingsid: Long,
         request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 {
-        behandlingRepository
-            .findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
+        hentBehandlingById(behandlingsid)
             .let {
                 log.info { "Aktiverer grunnlag for $behandlingsid med type ${request.grunnlagstype}" }
                 secureLogger.debug {
@@ -334,12 +402,11 @@ class BehandlingService(
     fun oppdaterDelvedtakFattetStatus(
         behandlingsid: Long,
         fattetAvEnhet: String,
-        resultat: FattetDelvedtak,
+        resultat: FattetVedtak,
     ) {
         behandlingRepository
-            .findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
-            .let {
+            .finnAlleRelaterteBehandlinger(behandlingsid)
+            .forEach {
                 log.info {
                     "Oppdaterer behandling $behandlingsid med fattet delvedtak ${resultat.vedtaksid} - $resultat"
                 }
@@ -349,8 +416,8 @@ class BehandlingService(
                     eksisterendeDetaljer
                         .copy(
                             vedtakFattetAvEnhet = fattetAvEnhet,
-                            fattetDelvedtak =
-                                (eksisterendeDetaljer.fattetDelvedtak + setOf(resultat)).toSet(),
+                            fattetVedtak =
+                                (eksisterendeDetaljer.fattetVedtak + setOf(resultat)).toSet(),
                         )
             }
     }
@@ -363,9 +430,8 @@ class BehandlingService(
         unikreferanse: String? = null,
     ) {
         behandlingRepository
-            .findBehandlingById(behandlingsid)
-            .orElseThrow { behandlingNotFoundException(behandlingsid) }
-            .let {
+            .finnAlleRelaterteBehandlinger(behandlingsid)
+            .forEach {
                 log.info { "Oppdaterer vedtaksid til $vedtaksid for behandling $behandlingsid" }
 
                 val eksisterendeDetaljer = it.vedtakDetaljer ?: VedtakDetaljer()
@@ -381,6 +447,7 @@ class BehandlingService(
                                     ?: TokenUtils.hentApplikasjonsnavn(),
                         )
 
+                // TODO: Fjern disse verdiene når migreringen er over
                 it.vedtaksid = vedtaksid
                 it.vedtakFattetAvEnhet = fattetAvEnhet
                 it.vedtakstidspunkt = it.vedtakstidspunkt ?: LocalDateTime.now()
@@ -416,9 +483,14 @@ class BehandlingService(
     }
 
     @Transactional
-    fun henteBehandling(behandlingsid: Long): Behandling {
+    fun henteBehandling(
+        behandlingsid: Long,
+        ikkeHentGrunnlag: Boolean = false,
+    ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
-        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        if (!ikkeHentGrunnlag) {
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        }
         virkningstidspunktService.run {
             behandling.oppdatereVirkningstidspunktSærbidrag()
         }
@@ -426,17 +498,58 @@ class BehandlingService(
     }
 
     @Transactional(readOnly = true)
+    fun hentÅpneBehandlingerMedFF(bpIdent: String): List<ÅpenBehandling> =
+        behandlingRepository
+            .finnÅpneBidragsbehandlingerForBpMedFF(bpIdent)
+            .filter { it.stonadstype != null }
+            .map {
+                ÅpenBehandling(
+                    it.stonadstype!!,
+                    it.id!!,
+                    it.søknadsbarn.map {
+                        ÅpenBehandlingBarn(
+                            saksnummer = it.forholdsmessigFordeling!!.tilhørerSak,
+                            ident = it.ident!!,
+                            bidragsmottakerIdent = it.bidragsmottaker?.ident!!,
+                            søknader =
+                                it.forholdsmessigFordeling!!.søknaderUnderBehandling.map {
+                                    ÅpenBehandlingBarnSøknad(
+                                        mottattDato = it.mottattDato,
+                                        søknadsid = it.søknadsid!!,
+                                        søktAvType = it.søktAvType,
+                                        søktFraDato = it.søknadFomDato,
+                                        behandlingstema = it.behandlingstema,
+                                        behandlingstype = it.behandlingstype,
+                                    )
+                                },
+                        )
+                    },
+                )
+            }
+
+    @Transactional(readOnly = true)
     fun hentÅpneBehandlinger(barnIdent: String): List<ÅpenBehandling> =
         behandlingRepository
             .finnÅpneBidragsbehandlingerForBarn(barnIdent)
             .filter { it.stonadstype != null }
-            .map { ÅpenBehandling(it.stonadstype!!, it.id!!) }
+            .map { ÅpenBehandling(it.stonadstype!!, it.id!!, emptyList()) }
 
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
+                .let {
+                    if (it.forholdsmessigFordeling != null &&
+                        it.forholdsmessigFordeling?.erHovedbehandling == false
+                    ) {
+                        behandlingRepository.findBehandlingById(it.forholdsmessigFordeling!!.behandlesAvBehandling!!).getOrNull()
+                            ?: behandlingNotFoundException(behandlingId)
+                    } else {
+                        it
+                    }
+                }
+
         tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.deleted) behandlingNotFoundException(behandlingId)
         return behandling
@@ -445,8 +558,9 @@ class BehandlingService(
     @Transactional
     fun oppdaterRoller(
         behandlingId: Long,
-        oppdaterRollerListe: List<OpprettRolleDto>,
+        request: OppdaterRollerRequest,
     ): OppdaterRollerResponse {
+        val oppdaterRollerListe = request.roller
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
@@ -464,7 +578,9 @@ class BehandlingService(
                 )
             }
 
-        behandling.oppdaterEksisterendeRoller(oppdaterRollerNyesteIdent)
+        if (request.søknadsid != null) {
+            behandling.oppdaterEksisterendeRoller(request.søknadsid, request.saksnummer ?: behandling.saksnummer, oppdaterRollerNyesteIdent)
+        }
 
         val rollerSomLeggesTil =
             oppdaterRollerNyesteIdent
@@ -479,19 +595,29 @@ class BehandlingService(
                 } til behandling $behandlingId"
             }
         }
-        behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
 
         val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
-        behandling.roller.removeIf { r ->
-            val skalSlettes = identerSomSkalSlettes.contains(r.ident)
-            skalSlettes.ifTrue {
-                log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
+                rollerSomLeggesTil,
+                rollerSomSkalSlettes,
+                behandling,
+                request.søknadsid ?: behandling.soknadsid!!,
+                request.saksnummer ?: behandling.saksnummer,
+            )
+        } else {
+            behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
+            behandling.roller.removeIf { r ->
+                val skalSlettes = identerSomSkalSlettes.contains(r.ident)
+                skalSlettes.ifTrue {
+                    log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+                }
+                skalSlettes
             }
-            skalSlettes
         }
 
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
@@ -499,11 +625,11 @@ class BehandlingService(
 
         // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
-        lagreBehandling(behandling)
+        lagreBehandling(behandling, forceSave = true)
 
         if (behandling.søknadsbarn.isEmpty()) {
             log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
-            slettBehandling(behandling.id!!)
+            logiskSlettBehandling(behandling)
             return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
 
@@ -522,7 +648,11 @@ class BehandlingService(
         return nyIdent
     }
 
-    private fun Behandling.oppdaterEksisterendeRoller(oppdaterRollerListe: List<OpprettRolleDto>) {
+    private fun Behandling.oppdaterEksisterendeRoller(
+        søknadsid: Long,
+        saksnummer: String,
+        oppdaterRollerListe: List<OpprettRolleDto>,
+    ) {
         oppdaterRollerListe
             .filter { !it.erSlettet }
             .filter { roller.any { br -> br.ident == it.ident?.verdi } }
@@ -530,6 +660,12 @@ class BehandlingService(
                 roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
                     eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
+                    if (it.harGebyrsøknad || !it.referanseGebyr.isNullOrEmpty()) {
+                        val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
+                        val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
+                        gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
+                        gebyrDetaljer.leggTilGebyr(gebyr)
+                    }
                 }
             }
     }

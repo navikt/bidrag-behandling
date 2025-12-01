@@ -20,7 +20,6 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
@@ -30,8 +29,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 private val log = KotlinLogging.logger {}
-val vedtakstyperIkkeBeregning =
-    listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
 
 @Service
 class VirkningstidspunktService(
@@ -90,34 +87,54 @@ class VirkningstidspunktService(
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
-        behandling.søknadsbarn
-            .find {
-                it.id == request.barnId
-            }!!
-            .let {
-                it.grunnlagFraVedtak = request.vedtaksid
-                val grunnlagFraVedtakListe =
-                    it.grunnlagFraVedtakListe
-                        .filter { it.aldersjusteringForÅr != request.aldersjusteringForÅr }
-                it.grunnlagFraVedtakListe =
-                    grunnlagFraVedtakListe +
-                    listOf(
+        if (request.barnId == null) {
+            behandling.privatAvtale.find { it.rolle == null && it.personIdent == request.barnIdent }?.let {
+                it.grunnlagFraVedtak =
+                    if (request.vedtaksid != null) {
                         GrunnlagFraVedtak(
                             aldersjusteringForÅr = request.aldersjusteringForÅr,
                             vedtak = request.vedtaksid,
                             grunnlagFraOmgjøringsvedtak = request.grunnlagFraOmgjøringsvedtak ?: false,
-                            perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
+                            perioder = hentPerioderVedtak(behandling, request),
                             vedtakstidspunkt =
-                                if (behandling.erInnkreving) {
-                                    request.vedtaksid?.let {
-                                        hentVedtak(it)?.vedtakstidspunkt
-                                    }
-                                } else {
-                                    null
+                                request.vedtaksid?.let {
+                                    hentVedtak(it)?.vedtakstidspunkt
                                 },
-                        ),
-                    )
+                        )
+                    } else {
+                        null
+                    }
             }
+        } else {
+            behandling.søknadsbarn
+                .find {
+                    it.id == request.barnId
+                }!!
+                .let {
+                    it.grunnlagFraVedtak = request.vedtaksid
+                    val grunnlagFraVedtakListe =
+                        it.grunnlagFraVedtakListe
+                            .filter { it.aldersjusteringForÅr != request.aldersjusteringForÅr }
+                    it.grunnlagFraVedtakListe =
+                        grunnlagFraVedtakListe +
+                        listOf(
+                            GrunnlagFraVedtak(
+                                aldersjusteringForÅr = request.aldersjusteringForÅr,
+                                vedtak = request.vedtaksid,
+                                grunnlagFraOmgjøringsvedtak = request.grunnlagFraOmgjøringsvedtak ?: false,
+                                perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
+                                vedtakstidspunkt =
+                                    if (behandling.erInnkreving) {
+                                        request.vedtaksid?.let {
+                                            hentVedtak(it)?.vedtakstidspunkt
+                                        }
+                                    } else {
+                                        null
+                                    },
+                            ),
+                        )
+                }
+        }
     }
 
     private fun hentPerioderVedtak(
@@ -125,9 +142,21 @@ class VirkningstidspunktService(
         request: OppdaterManuellVedtakRequest,
     ): List<VedtakPeriodeDto> {
         if (request.vedtaksid == null) return emptyList()
-        val søknadsbarn = behandling.søknadsbarn.first { it.id == request.barnId }
+        val stønadsid =
+            if (request.barnId == null) {
+                val personPrivatAvtale =
+                    behandling.privatAvtale
+                        .find { it.rolle == null && it.personIdent == request.barnIdent }!!
+                        .person!!
+                behandling.tilStønadsid(personPrivatAvtale)
+            } else {
+                val søknadsbarn =
+                    behandling.søknadsbarn.first { it.id == request.barnId }
+                behandling.tilStønadsid(søknadsbarn)
+            }
+
         val vedtak = hentVedtak(request.vedtaksid)!!
-        val stønadsendring = vedtak.finnStønadsendring(behandling.tilStønadsid(søknadsbarn))
+        val stønadsendring = vedtak.finnStønadsendring(stønadsid)
         return stønadsendring!!.periodeListe
     }
 
@@ -174,7 +203,8 @@ class VirkningstidspunktService(
                 request.rolleId?.let { rolleId ->
                     it.søknadsbarn.find { it.id == rolleId }
                 }
-            if (it.stonadstype == Stønadstype.BIDRAG18AAR) {
+            val stønadstype = gjelderBarnRolle?.stønadstype ?: it.stonadstype
+            if (stønadstype == Stønadstype.BIDRAG18AAR) {
                 request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
                     gjelderBarnRolle?.let { rolle ->
                         notatService.oppdatereNotat(
@@ -414,7 +444,7 @@ class VirkningstidspunktService(
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
         val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
         oppdaterOpphørsdato(OppdaterOpphørsdatoRequestDto(null, behandling.globalOpphørsdato), behandling)
-        oppdaterVirkningstidspunkt(null, behandling.globalVirkningstidspunkt, behandling)
+        oppdaterVirkningstidspunkt(null, behandling.eldsteVirkningstidspunkt, behandling)
         oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(årsak = yngsteBarn.årsak, avslag = yngsteBarn.avslag))
         oppdaterBeregnTilDato(OppdaterBeregnTilDatoRequestDto(null, yngsteBarn.beregnTil), behandling)
         var nyNotat = yngsteBarn.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""

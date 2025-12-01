@@ -29,7 +29,7 @@ data class Omgjøringsdetaljer(
     val omgjortVedtaksliste: Set<PåklagetVedtak> = setOf(),
     var opprinneligVedtakstype: Vedtakstype? = null,
     var innkrevingstype: Innkrevingstype? = null,
-    val fattetDelvedtak: List<FattetDelvedtak> = emptyList(),
+    val fattetDelvedtak: List<FattetVedtak> = emptyList(),
     val paragraf35c: List<OpprettParagraf35C> = emptyList(),
 ) {
     val minsteVedtakstidspunkt get() = omgjortVedtakstidspunktListe.minOrNull()

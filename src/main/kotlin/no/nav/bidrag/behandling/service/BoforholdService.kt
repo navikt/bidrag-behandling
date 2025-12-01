@@ -77,7 +77,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnl
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.ifTrue
-import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -120,7 +119,7 @@ class BoforholdService(
                 BoforholdValideringsfeil(
                     husstandsmedlem =
                         behandling.husstandsmedlem
-                            .validerBoforhold(behandling.virkningstidspunktEllerSøktFomDato)
+                            .validerBoforhold(behandling.eldsteVirkningstidspunkt)
                             .filter { it.harFeil },
                 ),
         )
@@ -248,7 +247,7 @@ class BoforholdService(
 
             val borMedAndreVoksneperioder =
                 BoforholdApi.beregnBoforholdAndreVoksne(
-                    behandling.virkningstidspunktEllerSøktFomDato,
+                    behandling.eldsteVirkningstidspunkt,
                     periodiseringsrequest.copy(
                         innhentedeOffentligeOpplysninger =
                             ikkeaktivertGrunnlag.tilHusstandsmedlemmer().filtrerUtUrelevantePerioder(
@@ -332,7 +331,7 @@ class BoforholdService(
                 personalia.personident?.let {
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV3(
-                            behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.eldsteVirkningstidspunkt,
                             behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(),
                             behandling.tilTypeBoforhold(),
@@ -354,7 +353,7 @@ class BoforholdService(
                         Bostatusperiode(
                             husstandsmedlem = husstandsmedlem,
                             bostatus = Bostatuskode.MED_FORELDER,
-                            datoFom = behandling.virkningstidspunktEllerSøktFomDato,
+                            datoFom = behandling.eldsteVirkningstidspunkt,
                             datoTom = null,
                             kilde = Kilde.MANUELL,
                         ),
@@ -571,7 +570,7 @@ class BoforholdService(
                                     behandling.sivilstand.filter { Kilde.MANUELL == it.kilde }.toSet(),
                                     behandling.bidragsmottaker!!.fødselsdato,
                                 )
-                        SivilstandApi.beregnV2(behandling.virkningstidspunktEllerSøktFomDato, request).toSet()
+                        SivilstandApi.beregnV2(behandling.eldsteVirkningstidspunkt, request).toSet()
                     }
                 }
             }
@@ -610,7 +609,7 @@ class BoforholdService(
                         .tilSivilstandDto(),
                 valideringsfeil =
                     BoforholdValideringsfeil(
-                        sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
+                        sivilstand = behandling.sivilstand.validereSivilstand(behandling.eldsteVirkningstidspunkt),
                     ),
             )
         }
@@ -623,7 +622,7 @@ class BoforholdService(
                     sivilstandRepository.saveAll(behandling.sivilstand).toSet().tilSivilstandDto(),
                 valideringsfeil =
                     BoforholdValideringsfeil(
-                        sivilstand = behandling.sivilstand.validereSivilstand(behandling.virkningstidspunktEllerSøktFomDato),
+                        sivilstand = behandling.sivilstand.validereSivilstand(behandling.eldsteVirkningstidspunkt),
                     ),
             )
         }
@@ -712,7 +711,7 @@ class BoforholdService(
                 } // Kjør ny periodisering for å oppdatere kilde på periodene basert på nye opplysninger
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
-                            behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.eldsteVirkningstidspunkt,
                             eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(eksisterendeHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
@@ -776,7 +775,7 @@ class BoforholdService(
                 val periodisertBoforhold =
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
-                            behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.eldsteVirkningstidspunkt,
                             offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
@@ -784,7 +783,7 @@ class BoforholdService(
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
-                            behandling.virkningstidspunktEllerSøktFomDato,
+                            behandling.eldsteVirkningstidspunkt,
                             offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
@@ -835,7 +834,7 @@ class BoforholdService(
         private fun Husstandsmedlem.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
             Bostatusperiode(
                 husstandsmedlem = this,
-                datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato),
+                datoFom = maxOf(behandling.eldsteVirkningstidspunkt, fødselsdato ?: rolle!!.fødselsdato),
                 datoTom = null,
                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
                 kilde = Kilde.OFFENTLIG,
@@ -844,7 +843,7 @@ class BoforholdService(
         fun Husstandsmedlem.opprettDefaultPeriodeForAndreVoksneIHusstand() =
             Bostatusperiode(
                 husstandsmedlem = this,
-                datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato),
+                datoFom = maxOf(behandling.eldsteVirkningstidspunkt, fødselsdato ?: rolle!!.fødselsdato),
                 datoTom = null,
                 bostatus = Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE,
                 kilde = Kilde.OFFENTLIG,
@@ -1045,7 +1044,7 @@ class BoforholdService(
                 this.bidragsmottaker!!.fødselsdato,
                 this,
             )
-        val resultat = SivilstandApi.beregnV2(this.virkningstidspunktEllerSøktFomDato, request).toSet()
+        val resultat = SivilstandApi.beregnV2(this.eldsteVirkningstidspunkt, request).toSet()
         this.overskriveMedBearbeidaSivilstandshistorikk(resultat)
     }
 
@@ -1114,7 +1113,7 @@ class BoforholdService(
 
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(rolle),
                 behandling.tilTypeBoforhold(),
@@ -1133,7 +1132,7 @@ class BoforholdService(
 
         val borMedAndreVoksneperioder =
             BoforholdApi.beregnBoforholdAndreVoksne(
-                behandling.virkningstidspunktEllerSøktFomDato,
+                behandling.eldsteVirkningstidspunkt,
                 periodiseringsrequest,
                 behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),

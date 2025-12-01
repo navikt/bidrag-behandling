@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.domene.ident.Personident
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class GrunnlagsdataDto(
@@ -19,4 +20,12 @@ data class GrunnlagsdataDto(
 data class GrunnlagsdataEndretDto(
     val nyeData: GrunnlagsdataDto,
     val endringerINyeData: Set<Grunnlagsdatatype>,
+)
+
+data class BpsBarnUtenLøpendeBidragDto(
+    val ident: String? = null,
+    val navn: String? = null,
+    val fødselsdato: LocalDate? = null,
+    val enhet: String? = null,
+    val saksnummer: String? = null,
 )

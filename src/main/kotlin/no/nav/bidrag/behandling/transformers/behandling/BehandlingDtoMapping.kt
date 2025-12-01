@@ -1,11 +1,13 @@
 package no.nav.bidrag.behandling.transformers.behandling
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Notat
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
@@ -20,6 +22,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynAktiveGrunnlagDto
+import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
@@ -28,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.service.NotatService
+import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
@@ -42,6 +46,7 @@ import no.nav.bidrag.behandling.transformers.hentEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegang
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
@@ -50,6 +55,7 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -78,10 +84,28 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
+
+fun Behandling.kanFatteVedtak(): Boolean {
+    if (!erBidrag()) {
+        return true
+    }
+    if (søknadsbarn.size > 1 && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
+        return false
+    }
+
+    val stønaderBp = hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident!!) ?: return søknadsbarn.size == 1
+    val harBPStønadForFlereBarn =
+        stønaderBp
+            .stønader
+            .filter { it.kravhaver.verdi != søknadsbarn.first().ident }
+            .any { it.type != Stønadstype.FORSKUDD }
+    return !harBPStønadForFlereBarn || UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled
+}
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(
@@ -103,13 +127,7 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
         roller =
             roller
                 .map {
-                    RolleDto(
-                        it.id!!,
-                        it.rolletype,
-                        it.ident,
-                        it.navn ?: hentPersonVisningsnavn(it.ident),
-                        it.fødselsdato,
-                    )
+                    it.tilDto()
                 }.toSet(),
         søknadRefId = omgjøringsdetaljer?.soknadRefId,
         vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
@@ -128,6 +146,31 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
+fun Person.tilRolle(behandling: Behandling) =
+    Rolle(
+        behandling,
+        Rolletype.BARN,
+        ident,
+        fødselsdato,
+        LocalDateTime.now(),
+        -1,
+        navn ?: hentPersonVisningsnavn(ident),
+    )
+
+fun Person.tilDto(stønadstype: Stønadstype? = null) =
+    RolleDto(
+        id!!,
+        Rolletype.BARN,
+        ident,
+        navn ?: hentPersonVisningsnavn(ident),
+        fødselsdato,
+        harInnvilgetTilleggsstønad = false,
+        delAvOpprinneligBehandling = false,
+        erRevurdering = false,
+        stønadstype = stønadstype,
+        saksnummer = "",
+    )
+
 fun Rolle.tilDto() =
     RolleDto(
         id!!,
@@ -135,8 +178,34 @@ fun Rolle.tilDto() =
         ident,
         navn ?: hentPersonVisningsnavn(ident),
         fødselsdato,
-        this.harInnvilgetTilleggsstønad(),
+        harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
+        delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == true,
+        erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
+        stønadstype = stønadstype ?: behandling.stonadstype,
+        saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
+        beregnFraDato = if (rolletype == Rolletype.BARN) finnBeregnFra() else null,
+        bidragsmottaker =
+            if (rolletype == Rolletype.BARN) {
+                forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
+            } else {
+                null
+            },
     )
+
+fun Rolle.tilSøknadsdetaljerDto(søknadsid: Long): SøknadDetaljerDto {
+    val søknadsdetaljer = forholdsmessigFordeling?.søknaderUnderBehandling?.find { it.søknadsid == søknadsid }
+    val barn = behandling.søknadsbarnForSøknad(søknadsid)
+    return SøknadDetaljerDto(
+        søknadsid = søknadsid,
+        saksnummer = sakForSøknad(søknadsid),
+        barn = if (rolletype != Rolletype.BARN) barn.map { it.tilDto() } else emptyList(),
+        søktFomDato = søknadsdetaljer?.søknadFomDato ?: behandling.søktFomDato,
+        mottattDato = søknadsdetaljer?.mottattDato ?: behandling.mottattdato,
+        søktAvType = søknadsdetaljer?.søktAvType ?: behandling.soknadFra,
+        behandlingstype = søknadsdetaljer?.behandlingstype ?: behandling.søknadstype,
+        behandlingstema = søknadsdetaljer?.behandlingstema ?: behandling.behandlingstema,
+    )
+}
 
 fun Rolle.harInnvilgetTilleggsstønad(): Boolean? {
     val tilleggsstønad =
@@ -199,7 +268,7 @@ fun Set<Grunnlag>.tilBarnetilsynAktiveGrunnlagDto(): StønadTilBarnetilsynAktive
 
 fun Behandling.tilInntektDtoV2(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList(),
-    inkluderHistoriskeInntekter: Boolean = false,
+    inkluderHistoriskeInntekter: Boolean = true,
 ) = InntekterDtoV2(
     barnetillegg =
         inntekter
@@ -290,7 +359,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerVurderingAvSkolegang =
             if (kanSkriveVurderingAvSkolegangAlle() && !erKlageEllerOmgjøring) {
-                søknadsbarn.any {
+                søknadsbarn.filter { kanSkriveVurderingAvSkolegang(it) }.any {
                     NotatService
                         .henteNotatinnhold(
                             this,
@@ -510,10 +579,22 @@ fun Behandling.henteRolleForNotat(
     forRolle: Rolle?,
 ): Rolle =
     when (notattype) {
-        Notattype.BOFORHOLD -> Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
-        Notattype.UTGIFTER -> this.bidragsmottaker!!
-        Notattype.VIRKNINGSTIDSPUNKT -> forRolle ?: this.bidragsmottaker!!
-        Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG -> forRolle ?: this.bidragsmottaker!!
+        Notattype.BOFORHOLD -> {
+            Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
+        }
+
+        Notattype.UTGIFTER -> {
+            this.bidragsmottaker!!
+        }
+
+        Notattype.VIRKNINGSTIDSPUNKT -> {
+            forRolle ?: this.bidragsmottaker!!
+        }
+
+        Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG -> {
+            forRolle ?: this.bidragsmottaker!!
+        }
+
         Notattype.INNTEKT -> {
             if (forRolle == null) {
                 log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
@@ -523,45 +604,91 @@ fun Behandling.henteRolleForNotat(
             }
         }
 
-        Notattype.UNDERHOLDSKOSTNAD ->
+        Notattype.UNDERHOLDSKOSTNAD -> {
             if (forRolle == null) {
                 log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
                 this.bidragsmottaker!!
             } else {
                 forRolle
             }
+        }
 
-        Notattype.SAMVÆR -> forRolle!!
-        Notattype.PRIVAT_AVTALE ->
+        Notattype.SAMVÆR -> {
+            forRolle!!
+        }
+
+        Notattype.PRIVAT_AVTALE -> {
             if (forRolle == null) {
                 log.warn { "Notattype $notattype krever spesifisering av hvilken rolle notatet gjelder." }
                 this.bidragspliktig!!
             } else {
                 forRolle
             }
+        }
     }
 
 fun Behandling.notatTittel(): String {
     val prefiks =
         when (stonadstype) {
-            Stønadstype.FORSKUDD -> "Bidragsforskudd"
-            Stønadstype.BIDRAG -> "Barnebidrag"
-            Stønadstype.BIDRAG18AAR -> "Barnebidrag 18 år"
-            Stønadstype.EKTEFELLEBIDRAG -> "Ektefellebidrag"
-            Stønadstype.OPPFOSTRINGSBIDRAG -> "Oppfostringbidrag"
-            Stønadstype.MOTREGNING -> "Motregning"
-            else ->
+            Stønadstype.FORSKUDD -> {
+                "Bidragsforskudd"
+            }
+
+            Stønadstype.BIDRAG -> {
+                "Barnebidrag"
+            }
+
+            Stønadstype.BIDRAG18AAR -> {
+                "Barnebidrag 18 år"
+            }
+
+            Stønadstype.EKTEFELLEBIDRAG -> {
+                "Ektefellebidrag"
+            }
+
+            Stønadstype.OPPFOSTRINGSBIDRAG -> {
+                "Oppfostringbidrag"
+            }
+
+            Stønadstype.MOTREGNING -> {
+                "Motregning"
+            }
+
+            else -> {
                 when (engangsbeloptype) {
-                    Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRTILSKUDD, Engangsbeløptype.SAERTILSKUDD ->
+                    Engangsbeløptype.SÆRBIDRAG, Engangsbeløptype.SÆRTILSKUDD, Engangsbeløptype.SAERTILSKUDD -> {
                         "Særbidrag ${kategoriTilTittel()}".trim()
-                    Engangsbeløptype.DIREKTE_OPPGJØR, Engangsbeløptype.DIREKTE_OPPGJØR -> "Direkte oppgjør"
-                    Engangsbeløptype.ETTERGIVELSE -> "Ettergivelse"
-                    Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> "Ettergivelse tilbakekreving"
-                    Engangsbeløptype.GEBYR_MOTTAKER -> "Gebyr"
-                    Engangsbeløptype.GEBYR_SKYLDNER -> "Gebyr"
-                    Engangsbeløptype.TILBAKEKREVING -> "Tilbakekreving"
-                    else -> null
+                    }
+
+                    Engangsbeløptype.DIREKTE_OPPGJØR, Engangsbeløptype.DIREKTE_OPPGJØR -> {
+                        "Direkte oppgjør"
+                    }
+
+                    Engangsbeløptype.ETTERGIVELSE -> {
+                        "Ettergivelse"
+                    }
+
+                    Engangsbeløptype.ETTERGIVELSE_TILBAKEKREVING -> {
+                        "Ettergivelse tilbakekreving"
+                    }
+
+                    Engangsbeløptype.GEBYR_MOTTAKER -> {
+                        "Gebyr"
+                    }
+
+                    Engangsbeløptype.GEBYR_SKYLDNER -> {
+                        "Gebyr"
+                    }
+
+                    Engangsbeløptype.TILBAKEKREVING -> {
+                        "Tilbakekreving"
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
+            }
         }
     return "${prefiks?.let { "$prefiks, " }}Saksbehandlingsnotat"
 }

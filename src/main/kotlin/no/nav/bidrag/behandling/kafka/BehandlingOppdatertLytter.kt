@@ -2,12 +2,11 @@ package no.nav.bidrag.behandling.kafka
 
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.config.UnleashFeatures
-import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.commons.security.utils.TokenUtils
-import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -19,8 +18,6 @@ import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.dokument.Sporingsdata
 import no.nav.bidrag.transport.felles.toCompactString
 import org.springframework.stereotype.Component
-import org.springframework.transaction.event.TransactionPhase
-import org.springframework.transaction.event.TransactionalEventListener
 import java.time.LocalDateTime
 import kotlin.collections.filter
 
@@ -57,26 +54,43 @@ class BehandlingOppdatertLytter(
                 mottattDato = behandling.mottattdato,
                 behandlerEnhet = behandling.behandlerEnhet,
                 barn =
-                    roller.filter { it.rolletype == Rolletype.BARN }.map {
-                        BehandlingHendelseBarn(
-                            søktAv = it.forholdsmessigFordeling?.søktAvType ?: behandling.soknadFra,
-                            søktFraDato = it.forholdsmessigFordeling?.søknadFomDato ?: behandling.søktFomDato,
-                            ident = it.ident!!,
-                            stønadstype = it.stønadstype ?: behandling.stonadstype,
-                            engangsbeløptype = behandling.engangsbeloptype,
-                            behandlingstema = it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
-                            søknadsid = it.forholdsmessigFordeling?.søknadsid ?: behandling.soknadsid,
-                            behandlerEnhet = it.forholdsmessigFordeling?.behandlerEnhet?.verdi ?: behandling.behandlerEnhet,
-                            saksnummer = it.forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
-                            behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
-                            særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,
-                            status =
-                                when {
-                                    it.deleted -> Behandlingstatus.FEILREGISTRERT
-                                    erVedtakFattet -> Behandlingstatus.VEDTAK_FATTET
-                                    else -> it.behandlingstatus ?: Behandlingstatus.UNDER_BEHANDLING
-                                },
-                        )
+                    roller.filter { it.rolletype == Rolletype.BARN }.flatMap { barn ->
+                        val ff = barn.forholdsmessigFordeling
+                        val hendelseBarn =
+                            BehandlingHendelseBarn(
+                                søktAv = behandling.soknadFra,
+                                søktFraDato = behandling.søktFomDato,
+                                ident = barn.ident!!,
+                                stønadstype = barn.stønadstype ?: behandling.stonadstype,
+                                engangsbeløptype = behandling.engangsbeloptype,
+                                behandlingstema = barn.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
+                                søknadsid = behandling.soknadsid,
+                                omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
+                                behandlerEnhet = ff?.behandlerenhet ?: behandling.behandlerEnhet,
+                                saksnummer = ff?.tilhørerSak ?: behandling.saksnummer,
+                                behandlingstype = behandling.søknadstype ?: Behandlingstype.SØKNAD,
+                                særbidragskategori = if (behandling.erSærbidrag()) behandling.særbidragKategori else null,
+                                status =
+                                    when {
+                                        barn.deleted -> Behandlingstatus.FEILREGISTRERT
+                                        erVedtakFattet -> Behandlingstatus.VEDTAK_FATTET
+                                        else -> barn.behandlingstatus ?: Behandlingstatus.UNDER_BEHANDLING
+                                    },
+                            )
+                        barn.forholdsmessigFordeling?.søknader?.map {
+                            hendelseBarn.copy(
+                                søktAv = it.søktAvType,
+                                søktFraDato = it.søknadFomDato ?: behandling.søktFomDato,
+                                søknadsid = it.søknadsid ?: behandling.soknadsid,
+                                omgjørSøknadsid = it.omgjørSøknadsid,
+                                medInnkreving = it.innkreving,
+                                mottattDato = it.mottattDato,
+                                status = it.status,
+                                behandlingstype = it.behandlingstype ?: behandling.søknadstype!!,
+                                behandlingstema =
+                                    barn.behandlingstema ?: it.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
+                            )
+                        } ?: listOf(hendelseBarn)
                     },
                 sporingsdata =
                     Sporingsdata(
@@ -85,7 +99,7 @@ class BehandlingOppdatertLytter(
                         enhetsnummer = behandling.behandlerEnhet,
                         saksbehandlersNavn =
                             TokenUtils.hentSaksbehandlerIdent()?.let {
-                                SaksbehandlernavnProvider.hentSaksbehandlernavn(it)
+                                EnhetProvider.hentSaksbehandlernavn(it)
                             },
                     ),
                 status =

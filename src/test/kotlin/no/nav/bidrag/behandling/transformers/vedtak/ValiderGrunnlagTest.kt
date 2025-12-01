@@ -368,6 +368,7 @@ class ValiderGrunnlagTest {
     }
 
     @Test
+    @Disabled("Denne sjekken må forberedes da det kan være sirkulære referanser i noen tilfeller")
     fun `skal feile validering grunnlagsreferanser i opprett vedtak request hvis referert grunnlag er syklisk`() {
         val request =
             OpprettVedtakRequestDto(

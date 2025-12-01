@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.controller
 
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -7,6 +8,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorFerietype
 import no.nav.bidrag.domene.enums.samværskalkulator.SamværskalkulatorNetterFrekvens
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -38,5 +40,7 @@ class VisningsnavnController {
             Engangsbeløptype.entries.associate { it.name to it.visningsnavn.intern } +
             Utgiftstype.entries.associate { it.name to it.visningsnavn.intern } +
             PrivatAvtaleType.entries.associate { it.name to it.visningsnavn.intern } +
-            BeregnTil.entries.associate { it.name to it.visningsnavn.intern }
+            BeregnTil.entries.associate { it.name to it.visningsnavn.intern } +
+            Behandlingstype.entries.associate { it.name to it.visningsnavn.intern } +
+            Valutakode.entries.associate { it.name to it.visningsnavn }
 }

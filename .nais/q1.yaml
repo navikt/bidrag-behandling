@@ -24,7 +24,7 @@ env:
   BIDRAG_DOKUMENT_PRODUKSJON_SCOPE: dev-gcp.bidrag.bidrag-dokument-produksjon
   BIDRAG_DOKUMENT_URL: https://bidrag-dokument-feature.dev-fss-pub.nais.io/bidrag-dokument
   BIDRAG_DOKUMENT_SCOPE: dev-fss.bidrag.bidrag-dokument-feature
-  BIDRAG_SAK_URL: https://bidrag-sak-q1.dev-fss-pub.nais.io/bidrag-sak
+  BIDRAG_SAK_URL: https://bidrag-sak-q1.dev-fss-pub.nais.io
   BIDRAG_SAK_SCOPE: dev-fss.bidrag.bidrag-sak-q1
   TOPIC_VEDTAK: bidrag.vedtak-q1
   TOPIC_JOURNALPOST: bidrag.journalpost-feature
@@ -61,7 +61,7 @@ database:
   dbname: bidrag-behandling-q1
   autoResize: true
   tier: db-f1-micro
-  auditlog: "off"
+  auditlog: "on"
 outbound-access-apps:
   - bidrag-belopshistorikk-q1
   - bidrag-vedtak-q1

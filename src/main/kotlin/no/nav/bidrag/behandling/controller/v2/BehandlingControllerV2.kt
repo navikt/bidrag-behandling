@@ -20,8 +20,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.HentÅpneBehandlingerRequest
-import no.nav.bidrag.behandling.dto.v2.behandling.HentÅpneBehandlingerRespons
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
@@ -33,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BoforholdService
+import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GebyrService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.NotatService
@@ -48,6 +47,8 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRequest
+import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRespons
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -70,6 +71,7 @@ class BehandlingControllerV2(
     private val validerBehandlingService: ValiderBehandlingService,
     private val dtomapper: Dtomapper,
     private val virkningstidspunktService: VirkningstidspunktService,
+    private val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -88,12 +90,11 @@ class BehandlingControllerV2(
     )
     fun vedtakLesemodus(
         @PathVariable vedtakId: Int,
-        @RequestParam("inkluderHistoriskeInntekter") inkluderHistoriskeInntekter: Boolean = false,
     ): BehandlingDtoV2 {
         val resultat =
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
-        return dtomapper.tilDto(resultat, inkluderHistoriskeInntekter, true)
+        return dtomapper.tilDto(resultat, true)
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")
@@ -137,6 +138,7 @@ class BehandlingControllerV2(
                     inkluderHistoriskeInntekter = true,
                 ),
             gebyr = dtomapper.run { behandling.mapGebyr() },
+            gebyrV2 = dtomapper.run { behandling.mapGebyrV2() },
             beregnetGebyrErEndret = beregnetGebyrErEndret,
             beregnetInntekter =
                 behandling.roller
@@ -316,9 +318,10 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
+        @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
     ): BehandlingDtoV2 {
-        val behandling = behandlingService.henteBehandling(behandlingsid)
-        return dtomapper.tilDto(behandling, true)
+        val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
+        return dtomapper.tilDto(behandling)
     }
 
     @Suppress("unused")
@@ -336,6 +339,23 @@ class BehandlingControllerV2(
     fun slettBehandling(
         @PathVariable behandlingsid: Long,
     ) = behandlingService.slettBehandling(behandlingsid)
+
+    @Suppress("unused")
+    @DeleteMapping("/behandling/{behandlingsid}/{søknadsid}")
+    @Operation(
+        description = "Logisk slett en behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Slettet behandling"),
+            ApiResponse(responseCode = "400", description = "Kan ikke slette behandling"),
+        ],
+    )
+    fun slettBehandlingFraSøknad(
+        @PathVariable behandlingsid: Long,
+        @PathVariable søknadsid: Long,
+    ) = behandlingService.slettBehandling(behandlingsid, søknadsid)
 
     @Suppress("unused")
     @PostMapping("/behandling/vedtak/{refVedtaksId}")
@@ -406,7 +426,7 @@ class BehandlingControllerV2(
     fun oppdaterRoller(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
-    ) = behandlingService.oppdaterRoller(behandlingId, request.roller)
+    ) = behandlingService.oppdaterRoller(behandlingId, request)
 
     @PutMapping("/behandling/{behandlingsid}/aktivere")
     @Operation(
@@ -436,6 +456,27 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 = behandlingService.aktivereGrunnlag(behandlingsid, request)
+
+    @PostMapping("/behandling/kanFattes/{behandlingsid}")
+    @Operation(
+        description = "Sjekk om behandling kan fattes i ny løsning",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun kanFattesINyLøsning(
+        @PathVariable behandlingsid: Long,
+    ): ResponseEntity<Void> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        validerBehandlingService.validerKanFattesINyLøsning(behandling)
+        return ResponseEntity.accepted().build()
+    }
 
     @PostMapping("/behandling/kanBehandles")
     @Operation(
@@ -474,6 +515,23 @@ class BehandlingControllerV2(
         @RequestBody request: HentÅpneBehandlingerRequest,
     ) = HentÅpneBehandlingerRespons(behandlingService.hentÅpneBehandlinger(request.barnIdent))
 
+    @PostMapping("/behandling/apnebehandlinger/forholdsmessigfordeling")
+    @Operation(
+        description = "Hent åpne behandlinger",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun hentÅpneBehandlingerMedFF(
+        @RequestBody request: HentÅpneBehandlingerRequest,
+    ) = HentÅpneBehandlingerRespons(behandlingService.hentÅpneBehandlingerMedFF(request.barnIdent))
+
     @PostMapping("/behandling/kanBehandles/{behandlingsid}")
     @Operation(
         description = "Sjekk om behandling kan behandles i ny løsning",
@@ -492,6 +550,27 @@ class BehandlingControllerV2(
     ): ResponseEntity<Void> {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
+        return ResponseEntity.accepted().build()
+    }
+
+    @PostMapping("/behandling/kanBehandles/bisys/{behandlingsid}")
+    @Operation(
+        description = "Sjekk om behandling kan behandles i ny løsning",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun kanBehandlingBehandlesINyBisys(
+        @PathVariable behandlingsid: Long,
+    ): ResponseEntity<Void> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        validerBehandlingService.validerKanBehandlesIBisys(behandling)
         return ResponseEntity.accepted().build()
     }
 }

@@ -5,10 +5,14 @@ management:
         include: "prometheus,health"
 spring:
   mandatory-file-encoding: UTF-8
-logging.level:
-  secureLogger: DEBUG
-logging.level.no.nav.bidrag: DEBUG
 
+logging.level.secureLogger: DEBUG
+logging.level.no.nav.bidrag: DEBUG
+bidrag:
+  rest:
+    connect:
+      timeout:
+        seconds: 30
 springdoc:
   packages-to-scan: no.nav.bidrag.behandling.controller
   paths-to-match: "/api/**"
@@ -21,6 +25,7 @@ spring.main.banner-mode: off
 egenskaper:
   grunnlag:
     min-antall-minutter-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING}
+    min-antall-minutter-siden-forrige-innhenting-belophistorikk: ${GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING_BELOPSHISTORIKK}
 management.metrics.distribution.percentiles-histogram.http.server.requests: true
 management.metrics.distribution.percentiles-histogram.http.client.requests: true
 UNLEASH_INSTANCE_ID: ${OTEL_RESOURCE_ATTRIBUTES_POD_NAME:bidrag-behandling-q1-78df9cf6f5-tmllb}

@@ -49,6 +49,9 @@ abstract class CommonMockServiceTest {
     lateinit var grunnlagConsumer: BidragGrunnlagConsumer
 
     @MockK
+    lateinit var ffservice: ForholdsmessigFordelingService
+
+    @MockK
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
     lateinit var boforholdService: BoforholdService
@@ -172,6 +175,7 @@ abstract class CommonMockServiceTest {
                 validerBehandlingService,
                 dtomapper,
                 virkningstidspunktService,
+                ffservice,
             )
     }
 }

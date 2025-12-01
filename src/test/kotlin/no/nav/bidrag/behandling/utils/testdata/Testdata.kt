@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
@@ -881,6 +882,7 @@ fun Behandling.oppretteHusstandsmedlem(
                     ),
                 )
         }
+
         else -> {
             husstandsmedlem.perioder =
                 mutableSetOf(
@@ -941,6 +943,7 @@ fun opprettAlleAktiveGrunnlagFraFil(
                 ).flatten(),
             )
         }
+
         TypeBehandling.BIDRAG -> {
             grunnlagListe.addAll(
                 listOf(
@@ -1283,7 +1286,9 @@ fun oppretteTestbehandling(
             behandling.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
         }
 
-        else -> throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
+        else -> {
+            throw IllegalStateException("Behandlingstype $behandlingstype er foreløpig ikke støttet")
+        }
     }
 
     val parterIBehandlingen = hashMapOf(1 to testdataBM, 2 to testdataBarn1, 3 to testdataBarn2)
@@ -2012,6 +2017,23 @@ fun Behandling.leggTilGrunnlagBeløpshistorikk(
                         periodeListe = periodeListe,
                     ),
                 ),
+        ),
+    )
+}
+
+fun Rolle.leggTilGebyrSøknad(
+    søknadsid: Long,
+    referanse: String? = null,
+) {
+    val gebyr = hentEllerOpprettGebyr()
+    harGebyrsøknad = true
+    gebyr.gebyrSøknader.clear()
+    gebyr.gebyrSøknader.add(
+        GebyrRolleSøknad(
+            saksnummer = SAKSNUMMER,
+            søknadsid = søknadsid,
+            referanse = referanse,
+            behandlingid = behandling.id,
         ),
     )
 }

@@ -4,9 +4,14 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
+import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -70,7 +75,9 @@ class ValiderBehandlingService(
         val erInnkreving =
             listOf(Behandlingstype.INNKREVINGSGRUNNLAG, Behandlingstype.PRIVAT_AVTALE).contains(request.søknadstype) ||
                 request.vedtakstype == Vedtakstype.INNKREVING
-        if (request.søknadsbarn.size > 1 && !erInnkreving) return "Behandlingen har flere enn ett søknadsbarn"
+        if (request.søknadsbarn.size > 1 && !erInnkreving && !UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            return "Behandlingen har flere enn ett søknadsbarn"
+        }
 
         if (request.søknadstype == Behandlingstype.PRIVAT_AVTALE && !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled) {
             return "Kan ikke behandle privat avtale"
@@ -104,7 +111,12 @@ class ValiderBehandlingService(
                 .stønader
                 .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
                 .any { it.type != Stønadstype.FORSKUDD }
-        if (harBPStønadForFlereBarn && !(erInnkreving && UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled)) {
+        if (harBPStønadForFlereBarn &&
+            !(
+                erInnkreving && UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled ||
+                    UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
+            )
+        ) {
             return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
         }
 
@@ -114,6 +126,38 @@ class ValiderBehandlingService(
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
         }
         return null
+    }
+
+    fun validerKanBehandlesIBisys(behandling: Behandling) {
+        if (!behandling.erBidrag()) return
+
+        if (behandling.forholdsmessigFordeling != null) {
+            log.debug {
+                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi det har blitt opprettet forholdsmessig fordeling"
+            }
+            throw HttpClientErrorException(
+                HttpStatus.PRECONDITION_FAILED,
+                "Behandling kan ikke behandles i Bisys",
+                commonObjectmapper.writeValueAsBytes(
+                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling er opprettet i ny løsning")),
+                ),
+                Charsets.UTF_8,
+            )
+        }
+    }
+
+    fun validerKanFattesINyLøsning(behandling: Behandling) {
+        kanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
+        if (!behandling.kanFatteVedtak()) {
+            throw HttpClientErrorException(
+                HttpStatus.PRECONDITION_FAILED,
+                "Behandling kan ikke fattes i ny løsning",
+                commonObjectmapper.writeValueAsBytes(
+                    commonObjectmapper.writeValueAsBytes(KanBehandlesINyLøsningResponse(emptyList())),
+                ),
+                Charsets.UTF_8,
+            )
+        }
     }
 
     fun validerKanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest) {

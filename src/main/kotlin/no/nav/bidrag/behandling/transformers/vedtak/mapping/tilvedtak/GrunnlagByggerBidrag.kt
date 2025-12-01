@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
-import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
@@ -24,17 +23,16 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -59,9 +57,9 @@ fun Behandling.opprettMidlertidligPersonobjekterBMsbarn(personobjekter: Set<Grun
                 ) {
                     return@mapNotNull null
                 }
-                val bidragsmottakerReferanse = bidragsmottaker!!.tilGrunnlagsreferanse()
+                val bidragsmottakerReferanse = grunnlag.rolle.tilGrunnlagsreferanse()
                 val referanse = opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(bidragsmottakerReferanse)
-                barn.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse, eksisterendeGrunnlag?.referanse)
+                barn.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse, bidragsmottakerReferanse)
             }
         }.toMutableSet()
 
@@ -83,12 +81,13 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
                             ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
                     val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                     val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
+                    val bidragsmottaker = underholdRolle.bidragsmottaker
                     listOf(
                         underholdRolleGrunnlagobjekt,
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseBarnetilsyn(gjelderBarnReferanse),
                             type = Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE,
-                            gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                            gjelderReferanse = underholdRolle.bidragsmottaker!!.tilGrunnlagsreferanse(),
                             gjelderBarnReferanse = gjelderBarnReferanse,
                             grunnlagsreferanseListe =
                                 if (it.kilde == Kilde.OFFENTLIG) {
@@ -123,6 +122,7 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                 val underholdRolle =
                     u.rolle
                         ?: ugyldigForespørsel("Fant ikke person for underholdskostnad i behandlingen")
+                val bidragsmottaker = underholdRolle.bidragsmottaker
                 val underholdRolleGrunnlagobjekt = underholdRolle.tilGrunnlagPerson()
                 val gjelderBarnReferanse = underholdRolleGrunnlagobjekt.referanse
                 listOf(
@@ -260,24 +260,9 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
     val grunnlagListe = grunnlagListe.toSet()
     val periodeliste =
         beregnetBarnebidragPeriodeListe.map {
-            val sluttberegningGrunnlag =
-                grunnlagListe
-                    .toList()
-                    .finnSluttberegningIReferanser(
-                        it.grunnlagsreferanseListe,
-                    )
-            val ikkeOmsorgForBarnet =
-                if (sluttberegningGrunnlag?.type == Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG) {
-                    sluttberegningGrunnlag.innholdTilObjekt<SluttberegningBarnebidrag>().ikkeOmsorgForBarnet
-                } else {
-                    false
-                }
-            val barnetErSelvforsørget =
-                if (sluttberegningGrunnlag?.type == Grunnlagstype.SLUTTBEREGNING_BARNEBIDRAG) {
-                    sluttberegningGrunnlag.innholdTilObjekt<SluttberegningBarnebidrag>().barnetErSelvforsørget
-                } else {
-                    false
-                }
+            val resultatSluttberegning = grunnlagListe.toList().resultatSluttberegning(it.grunnlagsreferanseListe)
+            val ikkeOmsorgForBarnet = resultatSluttberegning == Resultatkode.IKKE_OMSORG
+            val barnetErSelvforsørget = resultatSluttberegning == Resultatkode.BARNET_ER_SELVFORSØRGET
             val erResultatIngenEndringUnderGrense = grunnlagListe.toList().erResultatEndringUnderGrense(søknadsbarn.tilGrunnlagsreferanse())
             val erIndeksregulering =
                 grunnlagListe

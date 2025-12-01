@@ -7,28 +7,17 @@ import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.sak.Stønadsid
-import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
-import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
-import java.time.LocalDateTime
 
-fun hentSisteBeløpshistorikk(stønadsid: Stønadsid): StønadDto? =
+fun hentAlleStønaderForBidragspliktig(bp: Personident): SkyldnerStønaderResponse? =
     try {
-        AppContext.getBean(BidragBeløpshistorikkConsumer::class.java).hentHistoriskeStønader(
-            HentStønadHistoriskRequest(
-                type = stønadsid.type,
-                sak = stønadsid.sak,
-                kravhaver = stønadsid.kravhaver,
-                skyldner = stønadsid.skyldner,
-                gyldigTidspunkt = LocalDateTime.now(),
-            ),
-        )
+        AppContext.getBean(BidragBeløpshistorikkConsumer::class.java).hentAlleStønaderForBidragspliktig(bp)
     } catch (e: Exception) {
-        secureLogger.debug(e) { "Feil ved henting av beløpshistorikk $stønadsid" }
+        secureLogger.debug(e) { "Feil ved henting av beløpshistorikk $bp" }
         null
     }
 

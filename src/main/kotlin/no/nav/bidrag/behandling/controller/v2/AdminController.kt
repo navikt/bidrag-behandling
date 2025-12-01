@@ -6,10 +6,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -23,15 +25,118 @@ import org.springframework.web.bind.annotation.RequestBody
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
+import kotlin.jvm.optionals.getOrNull
 
 private val log = KotlinLogging.logger {}
 
 @BehandlingRestControllerV2
 class AdminController(
     private val sakConsumer: BidragSakConsumer,
+    private val behandlingRepository: BehandlingRepository,
     private val behandlingService: BehandlingService,
+    private val forholsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
+    @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
+    @Operation(
+        description =
+            "Opprett aldersjustering behandling for sak",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun resetFattetVedtak(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
+
+        behandling.vedtakFattetAv = null
+        behandling.vedtakDetaljer = null
+        behandling.vedtaksid = null
+        behandling.vedtakstidspunkt = null
+        behandling.opprettetTidspunkt = LocalDateTime.now().minusSeconds(900)
+        behandlingRepository.save(behandling)
+    }
+
+    @PostMapping("/admin/avslutt/ff/{behandlingId}")
+    @Operation(
+        description =
+            "Opprett aldersjustering behandling for sak",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun avsluttFFSøknad(
+        @PathVariable behandlingId: Long,
+    ) {
+        forholsmessigFordelingService.lukkAllFFSaker(behandlingId)
+    }
+
+    @PostMapping("/admin/grunnlag/ignorer/{behandlingId}")
+    @Operation(
+        description =
+            "Opprett aldersjustering behandling for sak",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun ignorerHentGrunnlag(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
+
+        behandling.grunnlagSistInnhentet = LocalDateTime.now().plusDays(1000)
+        behandling.grunnlagsinnhentingFeilet = null
+        behandlingRepository.save(behandling)
+    }
+
+    @PostMapping("/admin/grunnlag/reset/{behandlingId}")
+    @Operation(
+        description =
+            "Opprett aldersjustering behandling for sak",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun resetHentGrunnlag(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
+
+        behandling.grunnlagSistInnhentet = null
+        behandling.grunnlagsinnhentingFeilet = null
+        behandlingRepository.save(behandling)
+    }
+
     @PostMapping("/admin/opprett/aldersjustering/{saksnummer}")
     @Operation(
         description =

@@ -13,11 +13,15 @@ enum class UnleashFeatures(
     // Dette er for å unngå de slettes ved grunnlagsinnhenting
     GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK("behandling.grunnlag_behandle_funksjonell_feil_som_teknisk", false),
     FATTE_VEDTAK("behandling.fattevedtak_klage", false),
+    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN("behandling.fattevedtak_flere_barn", false),
     BIDRAG_KLAGE("behandling.bidrag_klage", false),
     BEGRENSET_REVURDERING("behandling.begrenset_revurdering", false),
     VEDTAKSSPERRE("vedtakssperre", false),
     AKTIVERE_GRUNNLAG_HVIS_INGEN_ENDRINGER("behandling.automatisk_aktiver_grunnlag", false),
     TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG("behandling.behandle_innkrevingsgrunnlag", false),
+    TILGANG_BEHANDLE_BIDRAG_FLERE_BARN("behandling.behandle_bidrag_flere_barn", false),
+    BIDRAG_BEREGNING_V2("behandling.bidrag_beregning_v2", false),
+    TILGANG_OPPRETTE_FF("behandling.opprette_ff", false),
     SEND_BEHANDLING_HENDELSE("bisys.send_behandling_hendelse", false),
     ;
 

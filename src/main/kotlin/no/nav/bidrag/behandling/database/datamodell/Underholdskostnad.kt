@@ -11,7 +11,9 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.transport.felles.toLocalDate
 import org.hibernate.annotations.JoinFormula
 import java.time.LocalDate
 
@@ -58,6 +60,7 @@ open class Underholdskostnad(
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde? = null,
 ) {
+    val beregnFraDato get() = rolle?.finnBeregnFra()?.toLocalDate() ?: behandling.virkningstidspunktEllerSøktFomDato
     val personNavn: String? get() = person?.navn ?: rolle?.navn
     val personIdent: String? get() = person?.ident ?: rolle?.ident
     val personFødselsdato: LocalDate get() = person?.fødselsdato ?: rolle?.fødselsdato!!
