@@ -277,7 +277,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.SÆRBIDRAG,
                 )
-            behandling.virkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
+            behandling.oppdaterVirkningstidspunktForAlle(LocalDate.now().minusMonths(1).withDayOfMonth(1))
             behandling.omgjøringsdetaljer =
                 Omgjøringsdetaljer(
                     omgjørVedtakId = 2,
@@ -333,7 +333,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.SÆRBIDRAG,
                 )
-            behandling.virkningstidspunkt = LocalDate.now().minusMonths(1).withDayOfMonth(1)
+            behandling.oppdaterVirkningstidspunktForAlle(LocalDate.now().minusMonths(1).withDayOfMonth(1))
             stubUtils.stubbeGrunnlagsinnhentingForBehandling(behandling)
             stubPersonConsumer()
             grunnlagService.oppdatereGrunnlagForBehandling(behandling)
