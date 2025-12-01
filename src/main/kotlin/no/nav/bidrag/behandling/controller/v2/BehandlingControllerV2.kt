@@ -457,6 +457,27 @@ class BehandlingControllerV2(
         @Valid @RequestBody(required = true) request: AktivereGrunnlagRequestV2,
     ): AktivereGrunnlagResponseV2 = behandlingService.aktivereGrunnlag(behandlingsid, request)
 
+    @PostMapping("/behandling/kanFattes/{behandlingsid}")
+    @Operation(
+        description = "Sjekk om behandling kan fattes i ny løsning",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "202",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    fun kanFattesINyLøsning(
+        @PathVariable behandlingsid: Long,
+    ): ResponseEntity<Void> {
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        validerBehandlingService.validerKanFattesINyLøsning(behandling)
+        return ResponseEntity.accepted().build()
+    }
+
     @PostMapping("/behandling/kanBehandles")
     @Operation(
         description = "Sjekk om behandling kan behandles i ny løsning",

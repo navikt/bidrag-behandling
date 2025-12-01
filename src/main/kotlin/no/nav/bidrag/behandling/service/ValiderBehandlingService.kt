@@ -8,6 +8,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
+import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.util.secureLogger
@@ -138,6 +140,20 @@ class ValiderBehandlingService(
                 "Behandling kan ikke behandles i Bisys",
                 commonObjectmapper.writeValueAsBytes(
                     KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling er opprettet i ny løsning")),
+                ),
+                Charsets.UTF_8,
+            )
+        }
+    }
+
+    fun validerKanFattesINyLøsning(behandling: Behandling) {
+        kanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
+        if (!behandling.kanFatteVedtak()) {
+            throw HttpClientErrorException(
+                HttpStatus.PRECONDITION_FAILED,
+                "Behandling kan ikke fattes i ny løsning",
+                commonObjectmapper.writeValueAsBytes(
+                    commonObjectmapper.writeValueAsBytes(KanBehandlesINyLøsningResponse(emptyList())),
                 ),
                 Charsets.UTF_8,
             )
