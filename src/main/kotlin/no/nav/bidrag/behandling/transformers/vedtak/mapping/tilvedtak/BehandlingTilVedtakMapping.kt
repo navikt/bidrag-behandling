@@ -544,6 +544,7 @@ class BehandlingTilVedtakMapping(
 
             if (!resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak) {
                 // Fjern eksisterende virkningstpunkt grunnlag før det legges på ny
+                grunnlagsliste.removeIf { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT }
                 stønadsendringGrunnlagListe.removeIf { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT }
                 val virkningstidspunktGrunnlag = behandling.byggGrunnlagVirkningsttidspunkt()
                 grunnlagsliste.addAll(virkningstidspunktGrunnlag)
