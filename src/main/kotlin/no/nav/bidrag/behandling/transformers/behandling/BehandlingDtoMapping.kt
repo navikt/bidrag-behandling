@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.service.NotatService
+import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
@@ -89,7 +90,22 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 
 private val log = KotlinLogging.logger {}
 
-fun Behandling.kanFatteVedtak() = !erBidrag() || søknadsbarn.size == 1 || UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled
+fun Behandling.kanFatteVedtak(): Boolean {
+    if (!erBidrag()) {
+        return true
+    }
+    if (søknadsbarn.size > 1 && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
+        return false
+    }
+
+    val stønaderBp = hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident!!) ?: return søknadsbarn.size == 1
+    val harBPStønadForFlereBarn =
+        stønaderBp
+            .stønader
+            .filter { it.kravhaver.verdi != søknadsbarn.first().ident }
+            .any { it.type != Stønadstype.FORSKUDD }
+    return !harBPStønadForFlereBarn || UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled
+}
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(
