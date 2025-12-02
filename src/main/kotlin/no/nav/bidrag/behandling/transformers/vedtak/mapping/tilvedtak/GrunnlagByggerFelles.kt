@@ -85,9 +85,13 @@ fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlags
 fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     when (tilType()) {
-        TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
-        TypeBehandling.SÆRBIDRAG ->
+        TypeBehandling.FORSKUDD -> {
+            grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
+        }
+
+        TypeBehandling.SÆRBIDRAG -> {
             grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
+        }
 
         else -> {}
     }
@@ -328,7 +332,14 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                             VirkningstidspunktGrunnlag(
                                 virkningstidspunkt = sb.virkningstidspunkt ?: virkningstidspunkt!!,
                                 opphørsdato = sb.opphørsdato,
-                                årsak = årsak,
+                                årsak =
+                                    if (sb.forholdsmessigFordeling != null &&
+                                        sb.forholdsmessigFordeling!!.erRevurdering
+                                    ) {
+                                        VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+                                    } else {
+                                        årsak
+                                    },
                                 beregnTil = sb.beregnTil,
                                 beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
                                 avslag = (årsak == null).ifTrue { avslag },
@@ -605,10 +616,14 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
 
 fun Behandling.tilSkyldner() =
     when (stonadstype) {
-        Stønadstype.FORSKUDD -> personIdentNav
-        else ->
+        Stønadstype.FORSKUDD -> {
+            personIdentNav
+        }
+
+        else -> {
             bidragspliktig?.tilNyestePersonident()
                 ?: rolleManglerIdent(Rolletype.BIDRAGSPLIKTIG, id!!)
+        }
     }
 
 fun Behandling.tilBehandlingreferanseListeUtenSøknad() =
