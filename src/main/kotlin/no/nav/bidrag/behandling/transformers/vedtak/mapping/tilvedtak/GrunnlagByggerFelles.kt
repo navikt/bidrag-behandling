@@ -332,14 +332,7 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                             VirkningstidspunktGrunnlag(
                                 virkningstidspunkt = sb.virkningstidspunkt ?: virkningstidspunkt!!,
                                 opphørsdato = sb.opphørsdato,
-                                årsak =
-                                    if (sb.forholdsmessigFordeling != null &&
-                                        sb.forholdsmessigFordeling!!.erRevurdering
-                                    ) {
-                                        VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
-                                    } else {
-                                        årsak
-                                    },
+                                årsak = årsak,
                                 beregnTil = sb.beregnTil,
                                 beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
                                 avslag = (årsak == null).ifTrue { avslag },
