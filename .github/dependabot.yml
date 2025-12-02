@@ -20,8 +20,6 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Oslo"
-    cooldown:
-      default-days: 7
     commit-message:
       prefix: "[dependency] "
   - package-ecosystem: "docker"
@@ -34,6 +32,8 @@ updates:
     commit-message:
       prefix: "[docker] "
   - package-ecosystem: "github-actions"
+    cooldown:
+      default-days: 7
     directory: "/"
     schedule:
       interval: "weekly"

@@ -228,7 +228,7 @@ fun List<GrunnlagDto>.hentSmåbarnstilleggListe() =
                 SmåbarnstilleggGrunnlagDto(
                     personId = gjelder.personIdent!!,
                     periodeFra = it.periode.fom,
-                    periodeTil = it.periode.til!!,
+                    periodeTil = it.periode.til,
                     beløp = it.beløp,
                     manueltBeregnet = it.manueltBeregnet,
                 )
@@ -244,7 +244,7 @@ fun List<GrunnlagDto>.hentUtvidetbarnetrygdListe() =
                 UtvidetBarnetrygdGrunnlagDto(
                     personId = gjelder.personIdent!!,
                     periodeFra = it.periode.fom,
-                    periodeTil = it.periode.til!!,
+                    periodeTil = it.periode.til,
                     beløp = it.beløp,
                     manueltBeregnet = it.manueltBeregnet,
                 )
