@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilV2Dto
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -346,6 +347,59 @@ fun Behandling.tilInntektDtoV2(
             }.toSet(),
     valideringsfeil = hentInntekterValideringsfeil(),
 )
+
+fun Behandling.hentVirkningstidspunktValideringsfeilV2(): List<VirkningstidspunktFeilV2Dto> =
+    søknadsbarn
+        .map {
+            val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+                erKlageEllerOmgjøring &&
+                    omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
+                    it.virkningstidspunkt?.isAfter(omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
+            val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
+
+            VirkningstidspunktFeilV2Dto(
+                gjelder = it.tilDto(),
+                manglerÅrsakEllerAvslag = it.avslag == null && it.årsak == null,
+                manglerVirkningstidspunkt = it.virkningstidspunkt == null,
+                manglerVurderingAvSkolegang =
+                    if (kanSkriveVurderingAvSkolegang(it) && !erKlageEllerOmgjøring) {
+                        NotatService
+                            .henteNotatinnhold(
+                                this,
+                                rolle = it,
+                                notattype = NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                            ).isEmpty()
+                    } else {
+                        false
+                    },
+                manglerOpphørsdato =
+                    if (it.stønadstype == Stønadstype.BIDRAG18AAR && it.avslag == null) {
+                        it.opphørsdato != null
+                    } else {
+                        false
+                    },
+                kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
+                    if (it.avslag == null && erKlageEllerOmgjøring) {
+                        val etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it)
+                        val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
+                        it.opphørsdato != null && it.opphørsdato!!.toYearMonth() > virkningstidspunktEtterfølgendeVedtak
+                    } else {
+                        false
+                    },
+                manglerBegrunnelse =
+                    if (vedtakstype == Vedtakstype.OPPHØR || it.avslag != null) {
+                        begrunnelseVirkningstidspunkt.isEmpty()
+                    } else {
+                        false
+                    },
+                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig =
+                    if (erKlageEllerOmgjøring && erBidrag()) {
+                        false
+                    } else {
+                        erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt
+                    },
+            )
+        }.filter { it.harFeil }
 
 fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDto {
     val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
