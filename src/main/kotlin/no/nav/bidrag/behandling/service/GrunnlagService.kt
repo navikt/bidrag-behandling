@@ -1391,6 +1391,21 @@ class GrunnlagService(
         }
     }
 
+    fun reperiodiserOgLagreBoforhold(behandling: Behandling) {
+        val rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!
+        val nyesteGrunnlag =
+            behandling.henteNyesteGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
+                rolle,
+                null,
+            )
+        val husstandsmedlemmer = nyesteGrunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()
+        periodisereOgLagreBoforhold(
+            behandling,
+            husstandsmedlemmer!!.toSet(),
+        )
+    }
+
     private fun foretaNyGrunnlagsinnhenting(
         behandling: Behandling,
         antallMinutter: Long,
