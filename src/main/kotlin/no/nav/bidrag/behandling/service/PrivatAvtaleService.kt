@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.PrivatavtaleRepository
+import no.nav.bidrag.behandling.database.repository.RolleRepository
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
@@ -28,17 +29,23 @@ class PrivatAvtaleService(
     val notatService: NotatService,
     val personRepository: PersonRepository,
     val privatavtaleRepository: PrivatavtaleRepository? = null,
+    val rolleRepository: RolleRepository? = null,
 ) {
     @Transactional
     fun fiksReferanserPrivatAvtale() {
         val privatAvtaler = privatavtaleRepository!!.hentPrivatAvtalerMedFeilReferanse()
 
         secureLogger.info { "Fant ${privatAvtaler.size} som har feil referanse i rolle" }
-        privatAvtaler.forEach { privatAvtale ->
-
-            val behandling = privatAvtale.behandling
-            val rolle = behandling.roller.find { it.ident == privatAvtale.rolle?.ident }
-            privatAvtale.rolle = rolle
+        privatAvtaler.filter { it.rolle != null }.forEach { privatAvtale ->
+            val riktigRolle =
+                rolleRepository!!.findRolleIdByBehandlingIdAndRolleIdent(
+                    privatAvtale.behandling.id!!,
+                    privatAvtale.rolle!!.ident!!,
+                )
+            secureLogger.info {
+                "Oppdaterer privatavtale ${privatAvtale.id} i behandling ${privatAvtale.behandling.id} som hadde rolle ${privatAvtale.rolle!!.id} men som burde ha rolleId ${riktigRolle!!.id}"
+            }
+            privatAvtale.rolle = riktigRolle
         }
     }
 

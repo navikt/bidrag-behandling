@@ -7,4 +7,10 @@ import org.springframework.data.repository.CrudRepository
 interface RolleRepository : CrudRepository<Rolle, Long> {
     @Query("select r from rolle r where r.behandling.id = :behandlingId")
     fun findRollerByBehandlingId(behandlingId: Long): List<Rolle>
+
+    @Query("select r from rolle r where r.behandling.id = :behandlingId and r.ident = :rolleIdent")
+    fun findRolleIdByBehandlingIdAndRolleIdent(
+        behandlingId: Long,
+        rolleIdent: String,
+    ): Rolle?
 }
