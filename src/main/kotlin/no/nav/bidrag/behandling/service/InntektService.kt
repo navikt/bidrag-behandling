@@ -7,6 +7,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
+import no.nav.bidrag.behandling.database.datamodell.henteBearbeidaInntekterForType
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -17,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsdataType
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntektspost
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
@@ -56,6 +59,46 @@ class InntektService(
     private val inntektRepository: InntektRepository,
     private val notatService: NotatService,
 ) {
+    @Transactional
+    fun justerOffentligePerioderEtterSisteGrunnlag(behandling: Behandling) {
+        behandling.roller.forEach { rolle ->
+            val inntekterRolle =
+                behandling.inntekter.filter {
+                    it.ident == rolle.ident && eksplisitteYtelser.contains(it.type) &&
+                        it.kilde == Kilde.OFFENTLIG
+                }
+            eksplisitteYtelser.forEach { type ->
+                val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+
+                val summerteInntekter = ikkeAktiveGrunnlag.henteBearbeidaInntekterForType(type.tilGrunnlagsdataType(), rolle.ident!!)
+                if (summerteInntekter != null) {
+                    val finnesMinstEnPeriodeMedAvvik =
+                        summerteInntekter.inntekter.any { inntekt ->
+                            val finnesMatchendeInntekt =
+                                inntekterRolle.any {
+                                    it.type == type && it.opprinneligFom == inntekt.periode.fom.atDay(1) &&
+                                        it.opprinneligTom == inntekt.periode.til?.atEndOfMonth()
+                                }
+                            if (!finnesMatchendeInntekt) {
+                                secureLogger.info {
+                                    "Avvikshåndtering!!!: Fant inntekter som ikke matcher med siste innhentet offentlige opplysninger for type=$type rolle=${rolle.ident}, inntekt=${inntekt.periode}. Justerer periodene"
+                                }
+                            }
+                            return@any !finnesMatchendeInntekt
+                        }
+                    if (finnesMinstEnPeriodeMedAvvik) {
+                        oppdatereAutomatiskInnhentaOffentligeInntekter(
+                            behandling,
+                            rolle,
+                            summerteInntekter.inntekter,
+                            type.tilGrunnlagsdataType(),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     @Transactional
     fun rekalkulerPerioderInntekter(
         behandlingsid: Long,

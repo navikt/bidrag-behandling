@@ -38,6 +38,7 @@ env:
   TOPIC_BEHANDLING: bidrag.behandling
   BIDRAG_SAMHANDLER_URL: http://bidrag-samhandler
   BIDRAG_SAMHANDLER_SCOPE: prod-gcp.bidrag.bidrag-samhandler-q1
+  JAVA_TOOL_OPTIONS: -Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=80.0
 kafka:
   pool: nav-prod
 azure_access_inbound:
@@ -59,7 +60,7 @@ azure_access_inbound:
 database:
   dbname: bidrag-behandling
   autoResize: true
-  tier: db-custom-6-5120
+  tier: db-custom-8-7680
   auditlog: "on"
 outbound-access-apps:
   - bidrag-grunnlag
