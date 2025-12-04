@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
@@ -38,6 +39,7 @@ class AdminController(
     private val sakConsumer: BidragSakConsumer,
     private val behandlingRepository: BehandlingRepository,
     private val behandlingService: BehandlingService,
+    private val grunnlagService: GrunnlagService,
     private val inntektService: InntektService,
     private val privatAvtaleService: PrivatAvtaleService,
     private val forholsmessigFordelingService: ForholdsmessigFordelingService,
@@ -254,6 +256,29 @@ class AdminController(
         val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
 
         inntektService.justerOffentligePerioderEtterSisteGrunnlag(behandling)
+    }
+
+    @PostMapping("/admin/grunnlag/oppdater/boforhold/{behandlingId}")
+    @Operation(
+        description =
+            "Oppdater husstandsmedlemmer etter nyeste grunnlagsdata",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun revaliderGrunnlag(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
+
+        grunnlagService.reperiodiserOgLagreBoforhold(behandling)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
