@@ -6,7 +6,9 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
+import no.nav.bidrag.behandling.database.repository.PrivatavtaleRepository
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
@@ -25,7 +27,21 @@ class PrivatAvtaleService(
     val behandlingService: BehandlingService,
     val notatService: NotatService,
     val personRepository: PersonRepository,
+    val privatavtaleRepository: PrivatavtaleRepository? = null,
 ) {
+    @Transactional
+    fun fiksReferanserPrivatAvtale() {
+        val privatAvtaler = privatavtaleRepository!!.hentPrivatAvtalerMedFeilReferanse()
+
+        secureLogger.info { "Fant ${privatAvtaler.size} som har feil referanse i rolle" }
+        privatAvtaler.forEach { privatAvtale ->
+
+            val behandling = privatAvtale.behandling
+            val rolle = behandling.roller.find { it.ident == privatAvtale.rolle?.ident }
+            privatAvtale.rolle = rolle
+        }
+    }
+
     private fun lagrePrivatAvtale(
         behandling: Behandling,
         rolle: Rolle? = null,

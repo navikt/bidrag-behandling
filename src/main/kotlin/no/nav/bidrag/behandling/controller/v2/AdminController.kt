@@ -12,6 +12,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
+import no.nav.bidrag.behandling.service.InntektService
+import no.nav.bidrag.behandling.service.PrivatAvtaleService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -36,6 +38,8 @@ class AdminController(
     private val sakConsumer: BidragSakConsumer,
     private val behandlingRepository: BehandlingRepository,
     private val behandlingService: BehandlingService,
+    private val inntektService: InntektService,
+    private val privatAvtaleService: PrivatAvtaleService,
     private val forholsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
     @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
@@ -208,6 +212,48 @@ class AdminController(
                     ),
             )
         return behandlingService.opprettBehandling(request)
+    }
+
+    @PostMapping("/admin/feilfiks/referanser")
+    @Operation(
+        description =
+            "Fikse feil i referanser ",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun feilfiksReferanser() {
+        privatAvtaleService.fiksReferanserPrivatAvtale()
+    }
+
+    @PostMapping("/admin/grunnlag/inntekt/oppdater/{behandlingId}")
+    @Operation(
+        description =
+            "Oppdater offentlige ytelser basert på nyeste grunnlag ",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun oppdaterOffentligeInntekter(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
+
+        inntektService.justerOffentligePerioderEtterSisteGrunnlag(behandling)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years

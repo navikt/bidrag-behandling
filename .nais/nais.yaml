@@ -63,9 +63,9 @@ spec:
     path: /actuator/prometheus
   resources:
     limits:
-      memory: 3500Mi
+      memory: 2500Mi
     requests:
-      memory: 3000Mi
+      memory: 1500Mi
       cpu: 800m
   ingresses:
   {{#each ingresses as |url|}}
