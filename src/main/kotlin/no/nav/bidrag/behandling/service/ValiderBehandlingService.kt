@@ -111,11 +111,13 @@ class ValiderBehandlingService(
                 .stønader
                 .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
                 .any { it.type != Stønadstype.FORSKUDD }
+        val kanBehandleInnkreving = erInnkreving && UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled
+        val kanBehandleFlereBarn =
+            UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled && request.vedtakstype != Vedtakstype.KLAGE ||
+                request.vedtakstype == Vedtakstype.KLAGE && UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
+                UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
         if (harBPStønadForFlereBarn &&
-            !(
-                erInnkreving && UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled ||
-                    UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
-            )
+            !(kanBehandleInnkreving || kanBehandleFlereBarn)
         ) {
             return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
         }
