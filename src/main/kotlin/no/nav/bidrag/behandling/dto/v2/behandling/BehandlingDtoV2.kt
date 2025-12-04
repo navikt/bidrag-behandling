@@ -104,6 +104,7 @@ data class LesemodusVedtak(
 
 data class BehandlingDtoV2(
     val id: Long,
+    val kanFatteVedtak: Boolean = true,
     val type: TypeBehandling,
     val lesemodus: LesemodusVedtak? = null,
     val erBisysVedtak: Boolean,
@@ -602,13 +603,16 @@ enum class Grunnlagsdatatype(
             rolletype: Rolletype? = null,
         ): Set<Grunnlagsdatatype> =
             when (rolletype != null) {
-                true ->
+                true -> {
                     entries
                         .filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }
                         .filter { it.behandlingstypeMotRolletyper[behandlingstype]?.any { it == rolletype } == true }
                         .toSet()
+                }
 
-                false -> entries.filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
+                false -> {
+                    entries.filter { it.behandlingstypeMotRolletyper.keys.contains(behandlingstype) }.toSet()
+                }
             }
 
         @OptIn(ExperimentalStdlibApi::class)
@@ -623,6 +627,7 @@ fun Grunnlagsdatatype.getOrMigrate() =
         -> Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER
 
         Grunnlagsdatatype.HUSSTANDSMEDLEMMER, Grunnlagsdatatype.BOFORHOLD_BEARBEIDET -> Grunnlagsdatatype.BOFORHOLD
+
         else -> this
     }
 
@@ -654,11 +659,15 @@ fun Grunnlagsdatatype.innhentesForRolle(behandling: Behandling) =
                 }
             }
         }
-        Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN ->
+
+        Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN -> {
             when (behandling.tilType()) {
                 TypeBehandling.BIDRAG -> behandling.bidragsmottaker
                 else -> null
             }
+        }
 
-        else -> null
+        else -> {
+            null
+        }
     }
