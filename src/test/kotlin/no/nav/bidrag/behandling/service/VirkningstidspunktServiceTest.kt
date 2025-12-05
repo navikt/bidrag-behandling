@@ -816,7 +816,8 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 )
             val søknadsbarn = behandling.søknadsbarn.first()
             behandling.roller.add(søknadsbarn2)
-            behandling.virkningstidspunkt = LocalDate.now().plusMonths(6).withDayOfMonth(1)
+            behandling.oppdaterVirkningstidspunktForAlle(LocalDate.now().plusMonths(6).withDayOfMonth(1))
+
             søknadsbarn.opphørsdato = LocalDate.now().plusMonths(9).withDayOfMonth(1)
             val opphørsdato = LocalDate.now().plusMonths(8).withDayOfMonth(1)
 
@@ -1349,7 +1350,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 )
             val søknadsbarn = behandling.søknadsbarn.first()
             behandling.roller.add(søknadsbarn2)
-            behandling.virkningstidspunkt = YearMonth.now().plusMonths(8).atDay(1)
+            behandling.oppdaterVirkningstidspunktForAlle(YearMonth.now().plusMonths(8).atDay(1))
 
             val underholdskostnadBarn1 =
                 Underholdskostnad(
