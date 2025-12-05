@@ -678,12 +678,12 @@ class DtoMapperMockTest {
         val dto = dtomapper.tilDto(behandling)
 
         assertSoftly(dto) {
-            it.privatAvtale.shouldNotBeNull()
-            it.privatAvtale!!.shouldHaveSize(2)
-            val pa1 = it.privatAvtale!!.find { it.gjelderBarn.ident?.verdi == barn1.ident }!!
-            val pa2 = it.privatAvtale!!.find { it.gjelderBarn.ident?.verdi == barn2.ident }!!
+            it.privatAvtaleV3.shouldNotBeNull()
+            it.privatAvtaleV3!!.søknadsbarn.shouldHaveSize(2)
+            val pa1 = it.privatAvtaleV3.søknadsbarn!!.find { it.gjelderBarn.ident?.verdi == barn1.ident }!!
+            val pa2 = it.privatAvtaleV3.søknadsbarn!!.find { it.gjelderBarn.ident?.verdi == barn2.ident }!!
 
-            assertSoftly(pa1) {
+            assertSoftly(pa1.privatAvtale!!) {
                 it.beregnetPrivatAvtale.shouldNotBeNull()
                 it.beregnetPrivatAvtale!!.perioder.shouldHaveSize(3)
                 it.avtaleDato shouldBe LocalDate.parse("2024-01-01")
