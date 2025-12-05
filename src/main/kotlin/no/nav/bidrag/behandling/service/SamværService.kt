@@ -207,14 +207,12 @@ class SamværService(
             ?: ugyldigForespørsel("Fant ikke samværsperiode med id $id i samvær $id")
 
     fun rekalkulerPerioderSamvær(
-        behandlingsid: Long,
+        behandling: Behandling,
         opphørSlettet: Boolean = false,
         forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
-        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-
         behandling.samvær.forEach {
-            val virkningstidspunkt = it.rolle.virkningstidspunkt ?: behandling.virkningstidspunkt!!
+            val virkningstidspunkt = it.rolle.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
             // Antar at opphørsdato er måneden perioden skal opphøre
             val beregnTil = behandling.finnBeregnTilDatoBehandling(it.rolle)
             val opphørsdato = it.rolle.opphørsdato

@@ -263,37 +263,21 @@ class BoforholdService(
     }
 
     @Transactional
-    fun rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandlingsid: Long) {
-        val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
-
+    fun rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling: Behandling) {
         behandling.husstandsmedlem
             .voksneIHusstanden
             ?.let { andreVoksneIHusstanden ->
                 andreVoksneIHusstanden.lagreEksisterendePerioder()
                 andreVoksneIHusstanden.oppdaterePerioderVoksne(behandling.bidragspliktig!!)
-
-                behandling.husstandsmedlem.remove(behandling.husstandsmedlem.voksneIHusstanden)
-                behandling.husstandsmedlem.add(husstandsmedlemRepository.save(andreVoksneIHusstanden))
             }
     }
 
     @Transactional
-    fun rekalkulerOgLagreHusstandsmedlemPerioder(behandlingsid: Long) {
-        val behandling =
-            behandlingRepository
-                .findBehandlingById(behandlingsid)
-                .orElseThrow { behandlingNotFoundException(behandlingsid) }
-        val oppdaterHusstandsmedlemmer =
-            behandling.husstandsmedlem.barn.map { husstandsmedlem ->
-                husstandsmedlem.lagreEksisterendePerioder()
-                husstandsmedlem.oppdaterePerioder()
-                husstandsmedlemRepository.save(husstandsmedlem)
-            }
-        behandling.husstandsmedlem.removeAll(behandling.husstandsmedlem.barn.toSet())
-        behandling.husstandsmedlem.addAll(oppdaterHusstandsmedlemmer)
+    fun rekalkulerOgLagreHusstandsmedlemPerioder(behandling: Behandling) {
+        behandling.husstandsmedlem.barn.forEach { husstandsmedlem ->
+            husstandsmedlem.lagreEksisterendePerioder()
+            husstandsmedlem.oppdaterePerioder()
+        }
     }
 
     @Transactional
