@@ -67,7 +67,7 @@ class SamværService(
     }
 
     @Transactional
-    fun brukSammeSamværForAlleBarn(behandlingId: Long): Behandling {
+    fun brukSammeSamværForAlleBarn(behandlingId: Long) {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
 
@@ -98,7 +98,6 @@ class SamværService(
         behandling.søknadsbarn.forEach {
             notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.SAMVÆR, nyNotat, it)
         }
-        return behandling
     }
 
     private fun kopierSamværPerioderOgBegrunnelse(

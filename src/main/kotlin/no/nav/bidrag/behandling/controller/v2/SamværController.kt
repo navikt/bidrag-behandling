@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværDto
 import no.nav.bidrag.behandling.dto.v2.samvær.OppdaterSamværResponsDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
+import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.SamværService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody
 
 @BehandlingRestControllerV2
 class SamværController(
+    private val behandlingService: BehandlingService,
     private val samværService: SamværService,
     private val dtomapper: Dtomapper,
 ) {
@@ -48,8 +50,8 @@ class SamværController(
     ): BehandlingDtoV2 {
         secureLogger.info { "Sett sammen virkningstidspunkt for alle barne for behandling $behandlingsid" }
 
-        val behandling = samværService.brukSammeSamværForAlleBarn(behandlingsid)
-
+        samværService.brukSammeSamværForAlleBarn(behandlingsid)
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return dtomapper.tilDto(behandling)
     }
 
