@@ -24,6 +24,7 @@ class CacheConfig {
         const val STØNAD_HISTORIKK_CACHE_2 = "STØNAD_HISTORIKK_CACHE_2"
         const val STØNAD_HISTORIKK_CACHE = "STØNAD_HISTORIKK_CACHE"
         const val BBM_BEREGNING_CACHE = "BBM_BEREGNING_CACHE"
+        const val BBM_ALLE_BEREGNINGER_CACHE = "BBM_ALLE_BEREGNINGER_CACHE"
         const val VEDTAK_FOR_STØNAD_CACHE = "VEDTAK_FOR_STØNAD_CACHE"
         const val VEDTAK_CACHE = "VEDTAK_CACHE"
         const val STØNAD_LØPENDE_BIDRAG_CACHE = "STØNAD_LØPENDE_BIDRAG_CACHE"
@@ -64,7 +65,11 @@ class CacheConfig {
             Caffeine.newBuilder().expireAfterAccess(1, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(TILGANG_TEMA_CACHE, Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build())
-        caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build())
+        caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build())
+        caffeineCacheManager.registerCustomCache(
+            BBM_ALLE_BEREGNINGER_CACHE,
+            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build(),
+        )
         caffeineCacheManager.registerCustomCache(
             STØNAD_LØPENDE_BIDRAG_CACHE,
             Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),

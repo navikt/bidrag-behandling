@@ -1,6 +1,9 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_ALLE_BEREGNINGER_CACHE
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BEREGNING_CACHE
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningBBMConsumer
+import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
@@ -36,7 +39,7 @@ class BidragBBMConsumer(
     private val bidragBBMUri
         get() = UriComponentsBuilder.fromUri(bidragBBMurl).pathSegment("api", "beregning")
 
-    //    @BrukerCacheable(BBM_BEREGNING_CACHE)
+    @BrukerCacheable(BBM_BEREGNING_CACHE)
     @Retryable(
         value = [Exception::class],
         maxAttempts = 3,
@@ -48,6 +51,7 @@ class BidragBBMConsumer(
             request,
         )
 
+    @BrukerCacheable(BBM_ALLE_BEREGNINGER_CACHE)
     override fun hentAlleBeregninger(request: BidragBeregningRequestDto): BidragBeregningResponsDto =
         postForNonNullEntity(
             bidragBBMUri.pathSegment("alleberegningerogsamvar").build().toUri(),
