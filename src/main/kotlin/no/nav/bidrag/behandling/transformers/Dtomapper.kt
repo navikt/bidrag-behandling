@@ -929,43 +929,6 @@ class Dtomapper(
                 } else {
                     null
                 },
-            privatAvtaleV2 =
-                if (erBidrag() && bidragspliktig != null) {
-                    PrivatAvtaleDto(
-                        barn = privatAvtale.filter { it.rolle != null }.sortedBy { it.rolle!!.fødselsdato }.map { it.tilDto() },
-                        andreBarn =
-                            PrivatAvtaleAndreBarnDto(
-                                manglerBegrunnelse = manglerPrivatAvtaleBegrunnelseAndreBarn(),
-                                barn =
-                                    privatAvtale
-                                        .filter { it.rolle == null }
-                                        .sortedBy { it.person?.fødselsdato ?: LocalDate.now() }
-                                        .map { it.tilDto() },
-                                begrunnelse =
-                                    henteNotatinnhold(
-                                        this,
-                                        NotatType.PRIVAT_AVTALE,
-                                        bidragspliktig!!,
-                                        true,
-                                    ),
-                                begrunnelseFraOpprinneligVedtak =
-                                    if (erKlageEllerOmgjøring) {
-                                        henteNotatinnhold(
-                                            this,
-                                            NotatType.PRIVAT_AVTALE,
-                                            bidragspliktig!!,
-                                            false,
-                                        ).takeIfNotNullOrEmpty { it }
-                                    } else {
-                                        null
-                                    },
-                            ),
-                    )
-                } else {
-                    null
-                },
-            privatAvtale =
-                privatAvtale.sortedBy { it.rolle?.fødselsdato ?: LocalDate.now() }.map { it.tilDto() },
         )
     }
 

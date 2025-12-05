@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.HENT_ALLE_STØNADER_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_HISTORIKK_CACHE_2
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.STØNAD_LØPENDE_BIDRAG_CACHE
@@ -57,6 +58,7 @@ class BidragBeløpshistorikkConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
+    @BrukerCacheable(HENT_ALLE_STØNADER_CACHE)
     fun hentAlleStønaderForBidragspliktig(personidentBidragspliktig: Personident): SkyldnerStønaderResponse =
         postForNonNullEntity(
             bidragBeløpshistorikkUri.pathSegment("hent-alle-stonader-for-skyldner").build().toUri(),

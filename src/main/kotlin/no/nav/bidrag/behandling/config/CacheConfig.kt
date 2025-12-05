@@ -27,6 +27,8 @@ class CacheConfig {
         const val VEDTAK_FOR_STØNAD_CACHE = "VEDTAK_FOR_STØNAD_CACHE"
         const val VEDTAK_CACHE = "VEDTAK_CACHE"
         const val STØNAD_LØPENDE_BIDRAG_CACHE = "STØNAD_LØPENDE_BIDRAG_CACHE"
+
+        const val HENT_ALLE_STØNADER_CACHE = "hentAlleStønaderForBidragspliktig"
         const val SAK_CACHE = "SAK_CACHE"
         const val SAK_PERSON_CACHE = "SAK_PERSON_CACHE"
         const val TILGANG_TEMA_CACHE = "TILGANG_TEMA_CACHE"
@@ -89,6 +91,10 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_CACHE,
+            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
+        )
+        caffeineCacheManager.registerCustomCache(
+            HENT_ALLE_STØNADER_CACHE,
             Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
         )
 
