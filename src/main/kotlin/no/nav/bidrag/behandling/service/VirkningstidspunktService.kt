@@ -241,6 +241,7 @@ class VirkningstidspunktService(
     fun oppdaterAvslagÅrsak(
         behandling: Behandling,
         request: OppdatereVirkningstidspunkt,
+        tvingEndring: Boolean = false,
     ) {
         fun oppdaterGebyr() {
             log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
@@ -249,7 +250,7 @@ class VirkningstidspunktService(
         val forRolle = request.rolleId?.let { behandling.roller.find { it.id == request.rolleId } }
         val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
-        val erAvslagÅrsakEndret = request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
+        val erAvslagÅrsakEndret = tvingEndring || request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
 
         if (erAvslagÅrsakEndret) {
             behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
@@ -278,6 +279,7 @@ class VirkningstidspunktService(
                         }
                     }
                 }
+
                 else -> {}
             }
         }
@@ -288,14 +290,16 @@ class VirkningstidspunktService(
         rolleId: Long?,
         nyVirkningstidspunkt: LocalDate?,
         behandling: Behandling,
+        tvingEndring: Boolean = false,
+        rekalkulerOpplysningerVedEndring: Boolean = true,
     ) {
         val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
-        val forrigeVirkningstidspunkt = gjelderBarn?.virkningstidspunkt ?: behandling.virkningstidspunkt
-        val erVirkningstidspunktEndret = nyVirkningstidspunkt != forrigeVirkningstidspunkt
+        val forrigeVirkningstidspunkt = gjelderBarn?.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
+        val erVirkningstidspunktEndret = tvingEndring || nyVirkningstidspunkt != forrigeVirkningstidspunkt
 
         fun oppdatereUnderhold() {
             log.info { "Tilpasse perioder for underhold til ny virkningsdato i behandling ${behandling.id}" }
-            underholdService.tilpasseUnderholdEtterVirkningsdato(behandling, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt!!)
+            underholdService.tilpasseUnderholdEtterVirkningsdato(behandling, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
         }
 
         fun oppdaterBoforhold() {
@@ -304,7 +308,7 @@ class VirkningstidspunktService(
             grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
-            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
             grunnlagService.aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         }
@@ -319,19 +323,19 @@ class VirkningstidspunktService(
 
         fun oppdaterSamvær() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
-            samværService.rekalkulerPerioderSamvær(behandling.id!!, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
+            samværService.rekalkulerPerioderSamvær(behandling, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
         }
 
         fun oppdaterInntekter() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
-            inntektService.rekalkulerPerioderInntekter(behandling.id!!, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
+            inntektService.rekalkulerPerioderInntekter(behandling, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
         }
 
         fun oppdaterAndreVoksneIHusstanden() {
             log.info { "Virkningstidspunkt er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
-            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
+            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling)
             grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
         }
 
@@ -344,28 +348,29 @@ class VirkningstidspunktService(
                 }
             }
 
-            val lavesteVirkningstidspunkt = behandling.søknadsbarn.mapNotNull { it.virkningstidspunkt }.minOrNull() ?: nyVirkningstidspunkt
-            behandling.virkningstidspunkt = lavesteVirkningstidspunkt ?: behandling.virkningstidspunkt
+            behandling.virkningstidspunkt = behandling.eldsteVirkningstidspunkt
 
-            when (behandling.tilType()) {
-                TypeBehandling.FORSKUDD -> {
-                    oppdaterBoforhold()
-                    oppdaterSivilstand()
-                    oppdaterInntekter()
-                }
+            if (rekalkulerOpplysningerVedEndring) {
+                when (behandling.tilType()) {
+                    TypeBehandling.FORSKUDD -> {
+                        oppdaterBoforhold()
+                        oppdaterSivilstand()
+                        oppdaterInntekter()
+                    }
 
-                TypeBehandling.SÆRBIDRAG -> {
-                    oppdaterBoforhold()
-                    oppdaterAndreVoksneIHusstanden()
-                    oppdaterInntekter()
-                }
+                    TypeBehandling.SÆRBIDRAG -> {
+                        oppdaterBoforhold()
+                        oppdaterAndreVoksneIHusstanden()
+                        oppdaterInntekter()
+                    }
 
-                TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
-                    oppdaterBoforhold()
-                    oppdaterAndreVoksneIHusstanden()
-                    oppdaterInntekter()
-                    oppdatereUnderhold()
-                    oppdaterSamvær()
+                    TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
+                        oppdaterBoforhold()
+                        oppdaterAndreVoksneIHusstanden()
+                        oppdaterInntekter()
+                        oppdatereUnderhold()
+                        oppdaterSamvær()
+                    }
                 }
             }
         }
@@ -375,11 +380,13 @@ class VirkningstidspunktService(
     fun oppdaterBeregnTilDato(
         request: OppdaterBeregnTilDatoRequestDto,
         behandling: Behandling,
+        tvingEndring: Boolean = false,
+        rekalkulerOpplysningerVedEndring: Boolean = true,
     ) {
         val requestBeregnTil = request.beregnTil
         val rolle = behandling.roller.find { it.id == request.idRolle }
         val nåværendeBeregnTil = rolle?.beregnTil
-        val erBeregnTilDatoEndret = requestBeregnTil != nåværendeBeregnTil
+        val erBeregnTilDatoEndret = tvingEndring || requestBeregnTil != nåværendeBeregnTil
         val forrigeBeregnTilDato = behandling.finnBeregnTilDatoBehandling(rolle)
 
         val erBeregnTilEndretTilInneværende =
@@ -400,14 +407,14 @@ class VirkningstidspunktService(
             grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
-            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
             grunnlagService.aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         }
 
         fun oppdaterSamvær() {
             log.info { "Opphørsdato er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
-            samværService.rekalkulerPerioderSamvær(behandling.id!!, erBeregnTilEndretTilInneværende)
+            samværService.rekalkulerPerioderSamvær(behandling, erBeregnTilEndretTilInneværende)
         }
 
         fun oppdaterInntekter() {
@@ -417,7 +424,7 @@ class VirkningstidspunktService(
 
         fun oppdaterAndreVoksneIHusstanden() {
             log.info { "Opphørsdato er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
-            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
+            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling)
         }
 
         if (erBeregnTilDatoEndret) {
@@ -428,28 +435,52 @@ class VirkningstidspunktService(
                     it.beregnTil = request.beregnTil
                 }
             }
-            oppdaterBoforhold()
-            oppdaterAndreVoksneIHusstanden()
-            oppdaterInntekter()
-            oppdatereUnderhold()
-            oppdaterSamvær()
+            if (rekalkulerOpplysningerVedEndring) {
+                oppdaterBoforhold()
+                oppdaterAndreVoksneIHusstanden()
+                oppdaterInntekter()
+                oppdatereUnderhold()
+                oppdaterSamvær()
+            }
         }
     }
 
     @Transactional
-    fun brukSammeVirkningstidspunktForAlleBarn(behandlingId: Long): Behandling {
+    fun brukSammeVirkningstidspunktForAlleBarn(behandlingId: Long) {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
-        val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
-        oppdaterOpphørsdato(OppdaterOpphørsdatoRequestDto(null, behandling.globalOpphørsdato), behandling)
-        oppdaterVirkningstidspunkt(null, behandling.eldsteVirkningstidspunkt, behandling)
-        oppdaterAvslagÅrsak(behandling, OppdatereVirkningstidspunkt(årsak = yngsteBarn.årsak, avslag = yngsteBarn.avslag))
-        oppdaterBeregnTilDato(OppdaterBeregnTilDatoRequestDto(null, yngsteBarn.beregnTil), behandling)
-        var nyNotat = yngsteBarn.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""
+        val barnMedEldstVirkningstidspunkt = behandling.søknadsbarn.minBy { it.virkningstidspunktRolle }
+
+        oppdaterOpphørsdato(
+            OppdaterOpphørsdatoRequestDto(null, behandling.globalOpphørsdato),
+            behandling,
+            tvingEndring = true,
+            rekalkulerOpplysningerVedEndring = false,
+        )
+        oppdaterVirkningstidspunkt(
+            null,
+            barnMedEldstVirkningstidspunkt.virkningstidspunkt,
+            behandling,
+            tvingEndring = true,
+            rekalkulerOpplysningerVedEndring = false,
+        )
+        oppdaterAvslagÅrsak(
+            behandling,
+            OppdatereVirkningstidspunkt(årsak = barnMedEldstVirkningstidspunkt.årsak, avslag = barnMedEldstVirkningstidspunkt.avslag),
+            tvingEndring = true,
+        )
+
+        oppdaterBeregnTilDato(
+            OppdaterBeregnTilDatoRequestDto(null, barnMedEldstVirkningstidspunkt.beregnTil),
+            behandling,
+            tvingEndring = true,
+            rekalkulerOpplysningerVedEndring = true,
+        )
+        var nyNotat = barnMedEldstVirkningstidspunkt.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""
         behandling.søknadsbarn.forEach {
-            if (it.id != yngsteBarn.id) {
+            if (it.id != barnMedEldstVirkningstidspunkt.id) {
                 val begrunnelse = it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ?: ""
                 nyNotat +=
                     begrunnelse.replace(nyNotat, "").let {
@@ -464,18 +495,19 @@ class VirkningstidspunktService(
         behandling.søknadsbarn.forEach {
             notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, nyNotat, it)
         }
-        return behandling
     }
 
     @Transactional
     fun oppdaterOpphørsdato(
         request: OppdaterOpphørsdatoRequestDto,
         behandling: Behandling,
+        tvingEndring: Boolean = false,
+        rekalkulerOpplysningerVedEndring: Boolean = true,
     ) {
         val requestOpphørsmåned = request.opphørsdato?.withDayOfMonth(1)
         val rolle = behandling.roller.find { it.id == request.idRolle }
         val forrigeOpphørsdato = rolle?.opphørsdato ?: behandling.globalOpphørsdato
-        val erOpphørsdatoEndret = requestOpphørsmåned != forrigeOpphørsdato || request.simulerEndring
+        val erOpphørsdatoEndret = tvingEndring || requestOpphørsmåned != forrigeOpphørsdato || request.simulerEndring
         val erOpphørSlettet = requestOpphørsmåned == null && forrigeOpphørsdato != null
 
         fun oppdatereUnderhold() {
@@ -489,14 +521,14 @@ class VirkningstidspunktService(
             grunnlagService.oppdaterIkkeAktiveBoforholdEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdaterIkkeAktiveBoforholdBMEtterEndretVirkningstidspunkt(behandling)
-            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling.id!!)
+            boforholdService.rekalkulerOgLagreHusstandsmedlemPerioder(behandling)
             grunnlagService.aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
             grunnlagService.aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         }
 
         fun oppdaterSamvær() {
             log.info { "Opphørsdato er endret. Oppdaterer perioder på samvær for behandling ${behandling.id}" }
-            samværService.rekalkulerPerioderSamvær(behandling.id!!, erOpphørSlettet)
+            samværService.rekalkulerPerioderSamvær(behandling, erOpphørSlettet)
         }
 
         fun oppdaterInntekter() {
@@ -508,7 +540,7 @@ class VirkningstidspunktService(
             log.info { "Opphørsdato er endret. Beregner andre voksne i husstanden perioder på nytt for behandling ${behandling.id}" }
             grunnlagService.oppdatereAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
             grunnlagService.oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling)
-            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling.id!!)
+            boforholdService.rekalkulerOgLagreAndreVoksneIHusstandPerioder(behandling)
             grunnlagService.aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
         }
 
@@ -520,11 +552,13 @@ class VirkningstidspunktService(
                     it.opphørsdato = requestOpphørsmåned
                 }
             }
-            oppdaterBoforhold()
-            oppdaterAndreVoksneIHusstanden()
-            oppdaterInntekter()
-            oppdatereUnderhold()
-            oppdaterSamvær()
+            if (rekalkulerOpplysningerVedEndring) {
+                oppdaterBoforhold()
+                oppdaterAndreVoksneIHusstanden()
+                oppdaterInntekter()
+                oppdatereUnderhold()
+                oppdaterSamvær()
+            }
         }
     }
 

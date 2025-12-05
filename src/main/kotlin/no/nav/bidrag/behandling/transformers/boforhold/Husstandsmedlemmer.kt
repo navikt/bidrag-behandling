@@ -103,13 +103,14 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
         BoforholdBarnRequestV3(
             innhentedeOffentligeOpplysninger =
                 when (g.borISammeHusstandDtoListe.isNotEmpty()) {
-                    true ->
+                    true -> {
                         g.borISammeHusstandDtoListe.tilBostatus(
                             Bostatuskode.MED_FORELDER,
                             Kilde.OFFENTLIG,
                         )
+                    }
 
-                    false ->
+                    false -> {
                         listOf(
                             Bostatus(
                                 bostatus = Bostatuskode.IKKE_MED_FORELDER,
@@ -122,6 +123,7 @@ fun List<RelatertPersonGrunnlagDto>.tilBoforholdBarnRequest(
                                 periodeTom = null,
                             ),
                         )
+                    }
                 },
             relasjon =
                 if (behandling.husstandsmedlem.find {
@@ -256,7 +258,9 @@ fun List<BorISammeHusstandDto>.tilBostatus(
                 }
             }
 
-            else -> null
+            else -> {
+                null
+            }
         }
 
     return this.map {

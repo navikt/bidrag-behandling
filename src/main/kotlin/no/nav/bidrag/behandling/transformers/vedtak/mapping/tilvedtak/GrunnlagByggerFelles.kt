@@ -85,9 +85,13 @@ fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlags
 fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     when (tilType()) {
-        TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
-        TypeBehandling.SÆRBIDRAG ->
+        TypeBehandling.FORSKUDD -> {
+            grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
+        }
+
+        TypeBehandling.SÆRBIDRAG -> {
             grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
+        }
 
         else -> {}
     }
@@ -605,10 +609,14 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
 
 fun Behandling.tilSkyldner() =
     when (stonadstype) {
-        Stønadstype.FORSKUDD -> personIdentNav
-        else ->
+        Stønadstype.FORSKUDD -> {
+            personIdentNav
+        }
+
+        else -> {
             bidragspliktig?.tilNyestePersonident()
                 ?: rolleManglerIdent(Rolletype.BIDRAGSPLIKTIG, id!!)
+        }
     }
 
 fun Behandling.tilBehandlingreferanseListeUtenSøknad() =

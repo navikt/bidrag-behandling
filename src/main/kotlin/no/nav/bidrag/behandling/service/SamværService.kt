@@ -67,7 +67,7 @@ class SamværService(
     }
 
     @Transactional
-    fun brukSammeSamværForAlleBarn(behandlingId: Long): Behandling {
+    fun brukSammeSamværForAlleBarn(behandlingId: Long) {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
 
@@ -98,7 +98,6 @@ class SamværService(
         behandling.søknadsbarn.forEach {
             notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.SAMVÆR, nyNotat, it)
         }
-        return behandling
     }
 
     private fun kopierSamværPerioderOgBegrunnelse(
@@ -208,14 +207,12 @@ class SamværService(
             ?: ugyldigForespørsel("Fant ikke samværsperiode med id $id i samvær $id")
 
     fun rekalkulerPerioderSamvær(
-        behandlingsid: Long,
+        behandling: Behandling,
         opphørSlettet: Boolean = false,
         forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
-        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-
         behandling.samvær.forEach {
-            val virkningstidspunkt = it.rolle.virkningstidspunkt ?: behandling.virkningstidspunkt!!
+            val virkningstidspunkt = it.rolle.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
             // Antar at opphørsdato er måneden perioden skal opphøre
             val beregnTil = behandling.finnBeregnTilDatoBehandling(it.rolle)
             val opphørsdato = it.rolle.opphørsdato
