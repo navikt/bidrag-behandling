@@ -72,8 +72,9 @@ class VirkningstidspunktController(
     ): BehandlingDtoV2 {
         secureLogger.info { "Sett sammen virkningstidspunkt for alle barne for behandling $behandlingsid" }
 
-        val behandling = virkningstidspunktService.brukSammeVirkningstidspunktForAlleBarn(behandlingsid)
+        virkningstidspunktService.brukSammeVirkningstidspunktForAlleBarn(behandlingsid)
 
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return dtomapper.tilDto(behandling)
     }
 

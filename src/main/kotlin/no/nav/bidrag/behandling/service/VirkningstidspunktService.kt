@@ -278,6 +278,7 @@ class VirkningstidspunktService(
                         }
                     }
                 }
+
                 else -> {}
             }
         }
@@ -437,7 +438,7 @@ class VirkningstidspunktService(
     }
 
     @Transactional
-    fun brukSammeVirkningstidspunktForAlleBarn(behandlingId: Long): Behandling {
+    fun brukSammeVirkningstidspunktForAlleBarn(behandlingId: Long) {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingId)
@@ -464,7 +465,6 @@ class VirkningstidspunktService(
         behandling.søknadsbarn.forEach {
             notatService.oppdatereNotat(behandling, NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT, nyNotat, it)
         }
-        return behandling
     }
 
     @Transactional
