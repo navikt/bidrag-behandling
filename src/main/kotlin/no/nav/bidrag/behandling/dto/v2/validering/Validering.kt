@@ -25,6 +25,30 @@ import org.springframework.web.client.HttpClientErrorException
 import java.nio.charset.Charset
 import java.time.LocalDate
 
+data class VirkningstidspunktFeilV2Dto(
+    val gjelder: RolleDto,
+    val manglerVirkningstidspunkt: Boolean = false,
+    val manglerOpphørsdato: Boolean = false,
+    val kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak: Boolean = false,
+    val manglerÅrsakEllerAvslag: Boolean = false,
+    val måVelgeVedtakForBeregning: Boolean = false,
+    val manglerBegrunnelse: Boolean = false,
+    val manglerVurderingAvSkolegang: Boolean = false,
+    val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean = false,
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            manglerBegrunnelse ||
+                måVelgeVedtakForBeregning ||
+                manglerOpphørsdato ||
+                kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak ||
+                manglerVurderingAvSkolegang ||
+                manglerVirkningstidspunkt ||
+                manglerÅrsakEllerAvslag ||
+                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
+}
+
 data class VirkningstidspunktFeilDto(
     val manglerVirkningstidspunkt: Boolean = false,
     val manglerOpphørsdato: List<RolleDto> = emptyList(),
@@ -251,6 +275,7 @@ data class FatteVedtakFeil(
 
 data class BeregningValideringsfeil(
     val virkningstidspunkt: VirkningstidspunktFeilDto? = null,
+    val virkningstidspunktV2: List<VirkningstidspunktFeilV2Dto>? = null,
     val utgift: UtgiftValideringsfeilDto? = null,
     val inntekter: InntektValideringsfeilDto? = null,
     val privatAvtale: List<PrivatAvtaleValideringsfeilDto>? = null,

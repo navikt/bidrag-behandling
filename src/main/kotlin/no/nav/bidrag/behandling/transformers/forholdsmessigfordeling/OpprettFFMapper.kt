@@ -33,6 +33,7 @@ import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -179,7 +180,14 @@ fun opprettRolle(
                     null
                 },
             opphørsdato = if (erBarn) behandling.globalOpphørsdato else null,
-            årsak = if (erBarn)hentDefaultÅrsak(behandling.tilType(), behandling.vedtakstype) else null,
+            årsak =
+                if (erBarn && ffDetaljer.erRevurdering) {
+                    VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+                } else if (erBarn) {
+                    hentDefaultÅrsak(behandling.tilType(), behandling.vedtakstype)
+                } else {
+                    null
+                },
             avslag = if (erBarn) behandling.avslag else null,
             beregnTil =
                 if (behandling.vedtakstype == Vedtakstype.KLAGE) {

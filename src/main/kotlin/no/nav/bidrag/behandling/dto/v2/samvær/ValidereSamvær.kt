@@ -26,11 +26,11 @@ data class SamværValideringsfeilDto(
     val samværId: Long,
     @JsonIgnore
     val gjelderRolle: Rolle,
-    val manglerBegrunnelse: Boolean,
-    val ingenLøpendeSamvær: Boolean,
-    val manglerSamvær: Boolean,
-    val ugyldigSluttperiode: Boolean,
-    val overlappendePerioder: Set<OverlappendePeriode>,
+    val manglerBegrunnelse: Boolean = false,
+    val ingenLøpendeSamvær: Boolean = false,
+    val manglerSamvær: Boolean = false,
+    val ugyldigSluttperiode: Boolean = false,
+    val overlappendePerioder: Set<OverlappendePeriode> = emptySet(),
     @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
 ) {
@@ -57,6 +57,9 @@ fun Samvær.mapValideringsfeil(): SamværValideringsfeilDto {
     val notatSæmvær = behandling.notater.find { it.type == NotatGrunnlag.NotatType.SAMVÆR && it.rolle.id == rolle.id }
     val perioder = perioder
     val opphørsdato = rolle.opphørsdato
+    if (rolle.avslag != null) {
+        return SamværValideringsfeilDto(id!!, rolle)
+    }
     return SamværValideringsfeilDto(
         samværId = id!!,
         gjelderRolle = rolle,
