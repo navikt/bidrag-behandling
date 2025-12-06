@@ -362,10 +362,11 @@ class Dtomapper(
                                     opphørsdato = it.opphørsdatoYearMonth,
                                 )
 
-                        beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag)
+                        beregnBarnebidragApi.beregnNettoTilsynsutgiftOgUnderholdskostnad(grunnlag) +
+                            grunnlag.grunnlagListe.hentAllePersoner()
                     } else {
                         grunnlagslisteFraVedtak!!
-                    }
+                    } as List<GrunnlagDto>
 
                 BeregnetUnderholdskostnad(
                     it.tilPersoninfoDto(),
