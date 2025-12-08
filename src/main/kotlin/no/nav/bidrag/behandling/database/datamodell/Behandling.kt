@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.objectmapper
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.vedtak.ifFalse
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -283,7 +284,7 @@ open class Behandling(
     val eldsteVirkningstidspunkt get() =
         søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt ?: søktFomDato
     val erAvslagForAlle get() =
-        søknadsbarn.all { it.avslag != null }
+        if (erBidrag()) søknadsbarn.all { it.avslag != null } else avslag != null
 
     val globalOpphørsdato get() =
         if (søknadsbarn.any { it.opphørsdato == null }) {
