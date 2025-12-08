@@ -60,10 +60,16 @@ class BehandlingTilGrunnlagMappingV2(
     val personService: PersonService,
     private val beregnSamværsklasseApi: BeregnSamværsklasseApi,
 ) {
-    fun Behandling.tilPersonobjekter(søknadsbarnRolle: Rolle? = null): MutableSet<GrunnlagDto> {
+    fun Behandling.tilPersonobjekter(
+        søknadsbarnRolle: Rolle? = null,
+        inkluderAlleSøknadsbarn: Boolean = false,
+    ): MutableSet<GrunnlagDto> {
         val søknadsbarnListe =
-            søknadsbarnRolle?.let { listOf(it.tilGrunnlagPerson()) }
-                ?: søknadsbarn.map { it.tilGrunnlagPerson() }
+            if (søknadsbarnRolle != null && !inkluderAlleSøknadsbarn) {
+                listOf(søknadsbarnRolle.tilGrunnlagPerson())
+            } else {
+                søknadsbarn.map { it.tilGrunnlagPerson() }
+            }
 
         val privatavtaleBarnSimulert = privatAvtale.filter { it.rolle == null }.map { it.person!!.tilRolle(this).tilGrunnlagPerson() }
         val bidragsmottakere = alleBidragsmottakere.map { it.tilGrunnlagPerson() }
