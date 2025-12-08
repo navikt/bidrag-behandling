@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.AndreVoksneIHusstandenPeriodes
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.SivilstandPeriodeseringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilV2Dto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
@@ -109,6 +110,7 @@ data class VirkningstidspunktBarnDtoV2(
     val etterfølgendeVedtak: EtterfølgendeVedtakDto? = null,
     val manuelleVedtak: List<ManuellVedtakDto> = emptyList(),
     val valideringsfeil: VirkningstidspunktFeilDto?,
+    val valideringsfeilV2: VirkningstidspunktFeilV2Dto? = null,
     val vedtakstype: Vedtakstype,
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")

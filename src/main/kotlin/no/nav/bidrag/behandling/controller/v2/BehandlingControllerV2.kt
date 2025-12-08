@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
@@ -42,7 +43,9 @@ import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -131,12 +134,22 @@ class BehandlingControllerV2(
         val oppdatertInntekt = inntektService.oppdatereInntektManuelt(behandlingsid, request)
         val beregnetGebyrErEndret = gebyrService.rekalkulerGebyr(behandling)
         return OppdatereInntektResponse(
-            inntekt = oppdatertInntekt,
             inntekter =
                 behandling.tilInntektDtoV2(
                     behandling.grunnlag.hentSisteAktiv(),
                     inkluderHistoriskeInntekter = true,
                 ),
+            inntekterV2 =
+                behandling.roller.map {
+                    InntekterDtoRolle(
+                        gjelder = it.tilDto(),
+                        inntekter =
+                            behandling.tilInntektDtoV3(
+                                behandling.grunnlag.hentSisteAktiv(),
+                                it,
+                            ),
+                    )
+                },
             gebyr = dtomapper.run { behandling.mapGebyr() },
             gebyrV2 = dtomapper.run { behandling.mapGebyrV2() },
             beregnetGebyrErEndret = beregnetGebyrErEndret,
@@ -318,7 +331,7 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
-        @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
+        @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = true,
     ): BehandlingDtoV2 {
         val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
         return dtomapper.tilDto(behandling)

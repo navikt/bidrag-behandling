@@ -90,9 +90,9 @@ data class MaksGodkjentBeløpValideringsfeil(
 }
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: Set<InntektValideringsfeil>? = emptySet(),
+    val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
     val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
-    val kontantstøtte: Set<InntektValideringsfeil>? = emptySet(),
+    val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
     val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
@@ -274,8 +274,7 @@ data class FatteVedtakFeil(
 }
 
 data class BeregningValideringsfeil(
-    val virkningstidspunkt: VirkningstidspunktFeilDto? = null,
-    val virkningstidspunktV2: List<VirkningstidspunktFeilV2Dto>? = null,
+    val virkningstidspunkt: List<VirkningstidspunktFeilV2Dto>? = null,
     val utgift: UtgiftValideringsfeilDto? = null,
     val inntekter: InntektValideringsfeilDto? = null,
     val privatAvtale: List<PrivatAvtaleValideringsfeilDto>? = null,

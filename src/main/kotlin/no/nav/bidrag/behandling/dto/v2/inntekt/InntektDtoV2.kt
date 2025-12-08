@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.inntekt
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
@@ -60,6 +61,31 @@ data class InntektDtoV2(
             }
 }
 
+data class InntekterDtoRolle(
+    val gjelder: RolleDto,
+    val inntekter: InntekterDtoV3,
+)
+
+data class InntektBarn(
+    val gjelderBarn: RolleDto,
+    val inntekter: Set<InntektDtoV2> = emptySet(),
+)
+
+data class InntekterDtoV3(
+    val barnetillegg: Collection<InntektBarn> = emptySet(),
+    val utvidetBarnetrygd: Set<InntektDtoV2> = emptySet(),
+    val kontantstøtte: Collection<InntektBarn> = emptySet(),
+    val månedsinntekter: Set<InntektDtoV2> = emptySet(),
+    val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
+    @Schema(name = "årsinntekter")
+    val årsinntekter: Set<InntektDtoV2> = emptySet(),
+    val beregnetInntekt: BeregnetInntekterDto,
+    @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
+    val begrunnelse: BegrunnelseDto? = null,
+    val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
+    val valideringsfeil: InntektValideringsfeilDto,
+)
+
 data class InntekterDtoV2(
     val barnetillegg: Set<InntektDtoV2> = emptySet(),
     val utvidetBarnetrygd: Set<InntektDtoV2> = emptySet(),
@@ -107,10 +133,8 @@ data class OppdatereInntektRequest(
 }
 
 data class OppdatereInntektResponse(
-    @Schema(description = "Inntekt som ble oppdatert")
-    @Deprecated("Bruk heller inntekter")
-    val inntekt: InntektDtoV2?,
     val inntekter: InntekterDtoV2,
+    val inntekterV2: List<InntekterDtoRolle>,
     @Schema(deprecated = true)
     val gebyr: GebyrDto? = null,
     val gebyrV2: GebyrDtoV2? = null,

@@ -58,7 +58,7 @@ class ValiderBeregningForskuddTest {
                 inntekter shouldBe null
                 sivilstand shouldBe null
                 husstandsmedlem shouldBe null
-                assertSoftly(virkningstidspunkt!!) {
+                assertSoftly(virkningstidspunkt!!.first()) {
                     harFeil shouldBe true
                     manglerVirkningstidspunkt shouldBe true
                     manglerÅrsakEllerAvslag shouldBe true
@@ -82,7 +82,7 @@ class ValiderBeregningForskuddTest {
                 inntekter shouldBe null
                 sivilstand shouldBe null
                 husstandsmedlem shouldBe null
-                assertSoftly(virkningstidspunkt!!) {
+                assertSoftly(virkningstidspunkt!!.first()) {
                     harFeil shouldBe true
                     manglerVirkningstidspunkt shouldBe true
                     manglerÅrsakEllerAvslag shouldBe false

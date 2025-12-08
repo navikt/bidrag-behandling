@@ -310,7 +310,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
                 val andreVoksneIHusstanden = s.voksneIHusstanden
                 andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual opprinneligVirkningstidspunkt
-                barn.forEach {
+                this.barn.forEach {
                     it.perioder.first().datoFom!! shouldBeEqual opprinneligVirkningstidspunkt
                 }
             }
@@ -361,7 +361,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
                 val andreVoksneIHusstanden = s.voksneIHusstanden
                 andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
-                barn.forEach {
+                this.barn.forEach {
                     it.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
                 }
             }
@@ -1805,7 +1805,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
                 val andreVoksneIHusstanden = s.voksneIHusstanden
                 andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
-                barn.forEach {
+                this.barn.forEach {
                     it.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
                 }
             }

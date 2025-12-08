@@ -52,16 +52,17 @@ import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFord
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
+import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndreBarnDetaljerDtoV2
-import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndreBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleAndreBarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnInfoDto
-import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDtoV3
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
@@ -85,6 +86,7 @@ import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeilRolle
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
@@ -95,6 +97,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilBarnetilsynAktiveGrun
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
+import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
@@ -862,6 +865,17 @@ class Dtomapper(
                         emptyList(),
                     ),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
+                inntekterV2 =
+                    roller.map {
+                        InntekterDtoRolle(
+                            gjelder = it.tilDto(),
+                            inntekter =
+                                InntekterDtoV3(
+                                    valideringsfeil = InntektValideringsfeilDto(),
+                                    beregnetInntekt = BeregnetInntekterDto(it.personident!!, it.rolletype, emptyList()),
+                                ),
+                        )
+                    },
                 boforhold = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
                 aktiveGrunnlagsdata = AktiveGrunnlagsdata(),
                 ikkeAktiverteEndringerIGrunnlagsdata = IkkeAktiveGrunnlagsdata(),
@@ -905,6 +919,17 @@ class Dtomapper(
                 tilInntektDtoV2(
                     grunnlag.hentSisteAktiv(),
                 ),
+            inntekterV2 =
+                roller.map {
+                    InntekterDtoRolle(
+                        gjelder = it.tilDto(),
+                        inntekter =
+                            tilInntektDtoV3(
+                                grunnlag.hentSisteAktiv(),
+                                it,
+                            ),
+                    )
+                },
             underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
@@ -1074,6 +1099,7 @@ class Dtomapper(
                 opphørsdato = it.opphørsdato,
                 globalOpphørsdato = globalOpphørsdato,
                 valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                valideringsfeilV2 = it.hentVirkningstidspunktValideringsfeilRolle(),
                 vedtakstype =
                     eldsteSøknad?.behandlingstype?.tilVedtakstype() ?: it.behandling.vedtakstype,
                 mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
@@ -1143,6 +1169,7 @@ class Dtomapper(
                     opphørsdato = it.opphørsdato,
                     globalOpphørsdato = globalOpphørsdato,
                     valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                    valideringsfeilV2 = it.hentVirkningstidspunktValideringsfeilRolle(),
                     mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
                     søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
                     søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,

@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
-import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.samvær.mapValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BeregningValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.BoforholdPeriodeseringsfeil
@@ -31,7 +30,6 @@ import no.nav.bidrag.beregn.særbidrag.ValiderSærbidragForBeregningService
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
-import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -85,8 +83,7 @@ class ValiderBeregning(
                 måBekrefteOpplysninger.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
-                        virkningstidspunkt = virkningstidspunktFeil,
-                        virkningstidspunktV2 = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
+                        virkningstidspunkt = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
                         inntekter = inntekterFeil,
                         husstandsmedlem = husstandsmedlemsfeil,
                         sivilstand = sivilstandFeil,
@@ -94,7 +91,7 @@ class ValiderBeregning(
                     )
                 }
             } else if (virkningstidspunktFeil != null) {
-                BeregningValideringsfeil(virkningstidspunktFeil)
+                BeregningValideringsfeil(virkningstidspunktFeilV2)
             } else {
                 null
             }
@@ -183,8 +180,7 @@ class ValiderBeregning(
                 val harFeil = virkningstidspunktFeil != null || gebyrValideringsfeil.isNotEmpty() || virkningstidspunktFeilV2.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
-                        virkningstidspunkt = virkningstidspunktFeil,
-                        virkningstidspunktV2 = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
+                        virkningstidspunkt = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
                         gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
                     )
                 }
@@ -206,7 +202,6 @@ class ValiderBeregning(
 
     fun Behandling.validerForBeregningBidragIkkeAvslag(): BeregningValideringsfeil? {
         val gebyrValideringsfeil = validerGebyr()
-        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
         val virkningstidspunktFeilV2 = hentVirkningstidspunktValideringsfeilV2()
         val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
         val andreVoksneIHusstandenFeil =
@@ -263,7 +258,6 @@ class ValiderBeregning(
             inntekterFeil != null ||
                 husstandsmedlemsfeil.isNotEmpty() ||
                 privatAvtaleValideringsfeil.isNotEmpty() ||
-                virkningstidspunktFeil != null ||
                 andreVoksneIHusstandenFeil != null ||
                 samværValideringsfeil.isNotEmpty() ||
                 gebyrValideringsfeil.isNotEmpty() ||
@@ -277,8 +271,7 @@ class ValiderBeregning(
                 husstandsmedlem = husstandsmedlemsfeil.takeIf { it.isNotEmpty() },
                 andreVoksneIHusstanden = andreVoksneIHusstandenFeil,
                 måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
-                virkningstidspunkt = virkningstidspunktFeil,
-                virkningstidspunktV2 = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
+                virkningstidspunkt = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
                 gebyr = gebyrValideringsfeil.takeIf { it.isNotEmpty() }?.toSet(),
                 samvær = samværValideringsfeil.takeIf { it.isNotEmpty() },
                 underholdskostnad = underholdValideringsfeil.takeIf { it.isNotEmpty() },
@@ -293,8 +286,7 @@ class ValiderBeregning(
         val harFeil = virkningstidspunktFeil != null || privatAvtaleValideringsfeil.isNotEmpty() || virkningstidspunktFeilV2.isNotEmpty()
         return harFeil.ifTrue {
             BeregningValideringsfeil(
-                virkningstidspunkt = virkningstidspunktFeil,
-                virkningstidspunktV2 = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
+                virkningstidspunkt = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
                 privatAvtale = privatAvtaleValideringsfeil,
             )
         }
@@ -302,7 +294,7 @@ class ValiderBeregning(
 
     fun Behandling.validerForBeregningAldersjusteringBidrag(): BeregningValideringsfeil? =
         BeregningValideringsfeil(
-            virkningstidspunktV2 =
+            virkningstidspunkt =
                 søknadsbarn
                     .mapNotNull {
                         VirkningstidspunktFeilV2Dto(
@@ -310,15 +302,6 @@ class ValiderBeregning(
                             måVelgeVedtakForBeregning = it.grunnlagFraVedtak == null,
                         ).takeIf { it.harFeil }
                     }.takeIf { it.isNotEmpty() },
-            virkningstidspunkt =
-                VirkningstidspunktFeilDto(
-                    måVelgeVedtakForBeregning =
-                        søknadsbarn
-                            .filter {
-                                it.grunnlagFraVedtak ==
-                                    null
-                            }.map { it.tilDto() },
-                ).takeIf { it.harFeil },
         ).takeIf { it.virkningstidspunkt != null }
 
     fun Behandling.validerForBeregningSærbidrag() {

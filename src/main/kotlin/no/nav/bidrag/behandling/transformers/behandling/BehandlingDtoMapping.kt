@@ -25,7 +25,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.StønadTilBarnetilsynAktiveGru
 import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektBarn
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
@@ -43,7 +45,6 @@ import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
 import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
-import no.nav.bidrag.behandling.transformers.hentEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
@@ -267,6 +268,105 @@ fun Set<Grunnlag>.tilBarnetilsynAktiveGrunnlagDto(): StønadTilBarnetilsynAktive
     )
 }
 
+fun Behandling.tilInntektDtoV3(
+    gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList(),
+    rolle: Rolle,
+) = InntekterDtoV3(
+    barnetillegg =
+        rolle.barn.map { barn ->
+            InntektBarn(
+                gjelderBarn = barn.tilDto(),
+                inntekter =
+                    inntekter
+                        .filter { it.type == Inntektsrapportering.BARNETILLEGG }
+                        .filter { it.gjelderBarn == barn.ident }
+                        .sorterEtterDatoOgBarn()
+                        .ekskluderYtelserFørVirkningstidspunkt()
+                        .tilInntektDtoV2()
+                        .toSet(),
+            )
+        },
+    utvidetBarnetrygd =
+        inntekter
+            .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
+            .filter { it.ident == rolle.ident }
+            .sorterEtterDato()
+            .ekskluderYtelserFørVirkningstidspunkt()
+            .tilInntektDtoV2()
+            .toSet(),
+    kontantstøtte =
+        rolle.barn.map { barn ->
+            InntektBarn(
+                gjelderBarn = barn.tilDto(),
+                inntekter =
+                    inntekter
+                        .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+                        .filter { it.gjelderBarn == barn.ident }
+                        .sorterEtterDatoOgBarn()
+                        .ekskluderYtelserFørVirkningstidspunkt()
+                        .tilInntektDtoV2()
+                        .toSet(),
+            )
+        },
+    småbarnstillegg =
+        inntekter
+            .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
+            .filter { it.ident == rolle.ident }
+            .sorterEtterDato()
+            .ekskluderYtelserFørVirkningstidspunkt()
+            .tilInntektDtoV2()
+            .toSet(),
+    månedsinntekter =
+        gjeldendeAktiveGrunnlagsdata
+            .filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
+            .flatMap { grunnlag ->
+                grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
+                    it.tilInntektDtoV2(
+                        grunnlag.rolle.ident!!,
+                    )
+                } ?: emptyList()
+            }.filter { it.ident.verdi == rolle.ident }
+            .toSet(),
+    årsinntekter =
+        inntekter
+            .filter { it.ident == rolle.ident }
+            .toSet()
+            .årsinntekterSortert(inkluderHistoriskeInntekter = true)
+            .tilInntektDtoV2()
+            .toSet(),
+    beregnetInntekt =
+        BeregnetInntekterDto(
+            rolle.tilPersonident()!!,
+            rolle.rolletype,
+            hentBeregnetInntekterForRolle(rolle),
+        ),
+    begrunnelse =
+        NotatService.henteInntektsnotat(this, rolle.id!!)?.let {
+            BegrunnelseDto(
+                innhold = it,
+                gjelder = rolle.tilDto(),
+            )
+        },
+    begrunnelseFraOpprinneligVedtak =
+        NotatService.henteInntektsnotat(this, rolle.id!!, false).takeIfNotNullOrEmpty {
+            BegrunnelseDto(
+                innhold = it,
+                gjelder = rolle.tilDto(),
+            )
+        },
+    valideringsfeil = hentInntekterValideringsfeil(rolle),
+)
+
+fun List<Inntekt>.filtrerInntektGjelderBarn(rolle: Rolle?) =
+    filter { rolle == null || it.ident == rolle.ident }
+        .filter {
+            if (rolle == null || rolle.rolletype != Rolletype.BIDRAGSMOTTAKER) {
+                true
+            } else {
+                it.gjelderSøknadsbarn?.bidragsmottaker?.ident == rolle.ident
+            }
+        }
+
 fun Behandling.tilInntektDtoV2(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList(),
     inkluderHistoriskeInntekter: Boolean = true,
@@ -348,57 +448,61 @@ fun Behandling.tilInntektDtoV2(
     valideringsfeil = hentInntekterValideringsfeil(),
 )
 
+fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2Dto {
+    val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+        behandling.erKlageEllerOmgjøring &&
+            behandling.omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
+            virkningstidspunkt?.isAfter(behandling.omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
+    val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, this)
+
+    return VirkningstidspunktFeilV2Dto(
+        gjelder = tilDto(),
+        manglerÅrsakEllerAvslag = avslag == null && årsak == null,
+        manglerVirkningstidspunkt = virkningstidspunkt == null,
+        manglerVurderingAvSkolegang =
+            if (behandling.kanSkriveVurderingAvSkolegang(this) && !behandling.erKlageEllerOmgjøring) {
+                NotatService
+                    .henteNotatinnhold(
+                        behandling,
+                        rolle = this,
+                        notattype = NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                    ).isEmpty()
+            } else {
+                false
+            },
+        manglerOpphørsdato =
+            if (stønadstype == Stønadstype.BIDRAG18AAR && avslag == null) {
+                opphørsdato == null
+            } else {
+                false
+            },
+        kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
+            if (avslag == null && behandling.erKlageEllerOmgjøring) {
+                val etterfølgendeVedtak = behandling.hentNesteEtterfølgendeVedtak(this)
+                val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
+                opphørsdato != null && opphørsdato!!.toYearMonth() > virkningstidspunktEtterfølgendeVedtak
+            } else {
+                false
+            },
+        manglerBegrunnelse =
+            if (behandling.vedtakstype == Vedtakstype.OPPHØR || avslag != null) {
+                begrunnelseVirkningstidspunkt.isEmpty()
+            } else {
+                false
+            },
+        virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig =
+            if (behandling.erKlageEllerOmgjøring && behandling.erBidrag()) {
+                false
+            } else {
+                erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt
+            },
+    )
+}
+
 fun Behandling.hentVirkningstidspunktValideringsfeilV2(): List<VirkningstidspunktFeilV2Dto> =
     søknadsbarn
         .map {
-            val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
-                erKlageEllerOmgjøring &&
-                    omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
-                    it.virkningstidspunkt?.isAfter(omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
-            val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
-
-            VirkningstidspunktFeilV2Dto(
-                gjelder = it.tilDto(),
-                manglerÅrsakEllerAvslag = it.avslag == null && it.årsak == null,
-                manglerVirkningstidspunkt = it.virkningstidspunkt == null,
-                manglerVurderingAvSkolegang =
-                    if (kanSkriveVurderingAvSkolegang(it) && !erKlageEllerOmgjøring) {
-                        NotatService
-                            .henteNotatinnhold(
-                                this,
-                                rolle = it,
-                                notattype = NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                            ).isEmpty()
-                    } else {
-                        false
-                    },
-                manglerOpphørsdato =
-                    if (it.stønadstype == Stønadstype.BIDRAG18AAR && it.avslag == null) {
-                        it.opphørsdato != null
-                    } else {
-                        false
-                    },
-                kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
-                    if (it.avslag == null && erKlageEllerOmgjøring) {
-                        val etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it)
-                        val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
-                        it.opphørsdato != null && it.opphørsdato!!.toYearMonth() > virkningstidspunktEtterfølgendeVedtak
-                    } else {
-                        false
-                    },
-                manglerBegrunnelse =
-                    if (vedtakstype == Vedtakstype.OPPHØR || it.avslag != null) {
-                        begrunnelseVirkningstidspunkt.isEmpty()
-                    } else {
-                        false
-                    },
-                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig =
-                    if (erKlageEllerOmgjøring && erBidrag()) {
-                        false
-                    } else {
-                        erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt
-                    },
-            )
+            it.hentVirkningstidspunktValideringsfeilRolle()
         }.filter { it.harFeil }
 
 fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDto {
@@ -457,24 +561,41 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     )
 }
 
-fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
+fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValideringsfeilDto =
     InntektValideringsfeilDto(
         årsinntekter =
             inntekter
+                .filter { rolle == null || it.ident == rolle.ident }
                 .mapValideringsfeilForÅrsinntekter(
                     virkningstidspunktEllerSøktFomDato,
                     roller,
                     tilType(),
                 ).takeIf { it.isNotEmpty() },
         barnetillegg =
-            inntekter
-                .mapValideringsfeilForYtelseSomGjelderBarn(
-                    Inntektsrapportering.BARNETILLEGG,
-                    virkningstidspunktEllerSøktFomDato,
-                    roller,
-                ).takeIf { it.isNotEmpty() },
+            if (rolle != null) {
+                rolle.barn
+                    .mapNotNull { barn ->
+                        inntekter
+                            .filter { it.gjelderBarn == barn.ident }
+                            .mapValideringsfeilForYtelseSomGjelderBarn(
+                                Inntektsrapportering.BARNETILLEGG,
+                                virkningstidspunktEllerSøktFomDato,
+                                roller,
+                            ).takeIf { it.isNotEmpty() }
+                    }.flatMap { it }
+            } else {
+                inntekter
+                    .toList()
+                    .filtrerInntektGjelderBarn(rolle)
+                    .mapValideringsfeilForYtelseSomGjelderBarn(
+                        Inntektsrapportering.BARNETILLEGG,
+                        virkningstidspunktEllerSøktFomDato,
+                        roller,
+                    ).takeIf { it.isNotEmpty() }
+            },
         småbarnstillegg =
             inntekter
+                .filter { rolle == null || it.ident == rolle.ident }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.SMÅBARNSTILLEGG,
                     virkningstidspunktEllerSøktFomDato,
@@ -483,21 +604,37 @@ fun Behandling.hentInntekterValideringsfeil(): InntektValideringsfeilDto =
         // Det er bare bidragsmottaker småbarnstillegg og utvidetbarnetrygd er relevant for. Antar derfor det alltid gjelder BM og velger derfor den første i listen
         utvidetBarnetrygd =
             inntekter
+                .filter { rolle == null || it.ident == rolle.ident }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.UTVIDET_BARNETRYGD,
                     virkningstidspunktEllerSøktFomDato,
                     roller,
                 ).firstOrNull(),
         kontantstøtte =
-            inntekter
-                .mapValideringsfeilForYtelseSomGjelderBarn(
-                    Inntektsrapportering.KONTANTSTØTTE,
-                    virkningstidspunktEllerSøktFomDato,
-                    roller,
-                ).takeIf { it.isNotEmpty() },
+            if (rolle != null) {
+                rolle.barn
+                    .mapNotNull { barn ->
+                        inntekter
+                            .filter { it.gjelderBarn == barn.ident }
+                            .mapValideringsfeilForYtelseSomGjelderBarn(
+                                Inntektsrapportering.KONTANTSTØTTE,
+                                virkningstidspunktEllerSøktFomDato,
+                                roller,
+                            ).takeIf { it.isNotEmpty() }
+                    }.flatMap { it }
+            } else {
+                inntekter
+                    .toList()
+                    .filtrerInntektGjelderBarn(rolle)
+                    .mapValideringsfeilForYtelseSomGjelderBarn(
+                        Inntektsrapportering.KONTANTSTØTTE,
+                        virkningstidspunktEllerSøktFomDato,
+                        roller,
+                    ).takeIf { it.isNotEmpty() }
+            },
     )
 
-fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
+fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
     behandlingType: TypeBehandling = TypeBehandling.FORSKUDD,
@@ -550,7 +687,7 @@ fun Set<Inntekt>.mapValideringsfeilForÅrsinntekter(
         .toSet()
 }
 
-fun Set<Inntekt>.mapValideringsfeilForYtelse(
+fun List<Inntekt>.mapValideringsfeilForYtelse(
     type: Inntektsrapportering,
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
@@ -573,14 +710,14 @@ fun Set<Inntekt>.mapValideringsfeilForYtelse(
         ).takeIf { it.harFeil }
     }
 
-fun Set<Inntekt>.mapValideringsfeilForYtelseSomGjelderBarn(
+fun Collection<Inntekt>.mapValideringsfeilForYtelseSomGjelderBarn(
     type: Inntektsrapportering,
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
 ) = filter { inntekstrapporteringerSomKreverGjelderBarn.contains(type) }
     .groupBy { it.gjelderBarn }
     .flatMap { (gjelderBarn, inntekter) ->
-        inntekter.toSet().mapValideringsfeilForYtelse(
+        inntekter.mapValideringsfeilForYtelse(
             type,
             virkningstidspunkt,
             roller,
