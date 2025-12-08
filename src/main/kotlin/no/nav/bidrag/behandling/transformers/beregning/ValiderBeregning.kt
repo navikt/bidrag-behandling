@@ -78,7 +78,6 @@ class ValiderBeregning(
                     inntekterFeil != null ||
                         sivilstandFeil != null ||
                         husstandsmedlemsfeil != null ||
-                        virkningstidspunktFeil != null ||
                         virkningstidspunktFeilV2.isNotEmpty()
                 måBekrefteOpplysninger.isNotEmpty()
                 harFeil.ifTrue {
@@ -202,6 +201,7 @@ class ValiderBeregning(
 
     fun Behandling.validerForBeregningBidragIkkeAvslag(): BeregningValideringsfeil? {
         val gebyrValideringsfeil = validerGebyr()
+        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil()
         val virkningstidspunktFeilV2 = hentVirkningstidspunktValideringsfeilV2()
         val inntekterFeil = hentInntekterValideringsfeil().takeIf { it.harFeil }
         val andreVoksneIHusstandenFeil =

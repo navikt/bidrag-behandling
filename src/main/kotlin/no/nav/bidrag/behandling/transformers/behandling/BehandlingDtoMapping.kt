@@ -500,10 +500,50 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
 }
 
 fun Behandling.hentVirkningstidspunktValideringsfeilV2(): List<VirkningstidspunktFeilV2Dto> =
-    søknadsbarn
-        .map {
-            it.hentVirkningstidspunktValideringsfeilRolle()
-        }.filter { it.harFeil }
+    if (erBidrag()) {
+        søknadsbarn
+            .map {
+                it.hentVirkningstidspunktValideringsfeilRolle()
+            }.filter { it.harFeil }
+    } else {
+        val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)
+        val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
+            erKlageEllerOmgjøring &&
+                omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
+                virkningstidspunkt?.isAfter(omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
+        listOf(
+            VirkningstidspunktFeilV2Dto(
+                gjelder = bidragsmottaker!!.tilDto(),
+                manglerÅrsakEllerAvslag = avslag == null && årsak == null,
+                manglerVirkningstidspunkt = virkningstidspunkt == null,
+                manglerVurderingAvSkolegang =
+                    if (kanSkriveVurderingAvSkolegangAlle() && !erKlageEllerOmgjøring) {
+                        søknadsbarn.filter { kanSkriveVurderingAvSkolegang(it) }.any {
+                            NotatService
+                                .henteNotatinnhold(
+                                    this,
+                                    rolle = it,
+                                    notattype = NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                                ).isEmpty()
+                        }
+                    } else {
+                        false
+                    },
+                manglerBegrunnelse =
+                    if (vedtakstype == Vedtakstype.OPPHØR || avslag != null) {
+                        begrunnelseVirkningstidspunkt.isEmpty()
+                    } else {
+                        false
+                    },
+                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig =
+                    if (erKlageEllerOmgjøring && erBidrag()) {
+                        false
+                    } else {
+                        erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt
+                    },
+            ),
+        )
+    }
 
 fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDto {
     val erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt =
