@@ -48,7 +48,6 @@ class ValiderBeregning(
     val særbidragValidering: ValiderSærbidragForBeregningService = ValiderSærbidragForBeregningService(),
 ) {
     fun Behandling.validerForBeregningForskudd() {
-        val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
         val virkningstidspunktFeilV2 = hentVirkningstidspunktValideringsfeilV2()
 
         val feil =
@@ -89,7 +88,7 @@ class ValiderBeregning(
                         måBekrefteNyeOpplysninger = måBekrefteOpplysninger,
                     )
                 }
-            } else if (virkningstidspunktFeil != null) {
+            } else if (virkningstidspunktFeilV2.isNotEmpty()) {
                 BeregningValideringsfeil(virkningstidspunktFeilV2)
             } else {
                 null

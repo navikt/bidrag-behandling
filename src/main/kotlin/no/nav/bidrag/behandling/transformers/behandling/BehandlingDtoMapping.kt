@@ -542,7 +542,7 @@ fun Behandling.hentVirkningstidspunktValideringsfeilV2(): List<Virkningstidspunk
                         erVirkningstidspunktSenereEnnOpprinnerligVirknignstidspunkt
                     },
             ),
-        )
+        ).filter { it.harFeil }
     }
 
 fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDto {
