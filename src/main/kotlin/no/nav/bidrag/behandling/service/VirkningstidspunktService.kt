@@ -256,7 +256,8 @@ class VirkningstidspunktService(
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
         val erAvslagÅrsakEndret = tvingEndring || request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
 
-        if (forRolle != null && forrigeAvslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && behandling.erBidrag()) {
+        val erBidragFlereBarn = behandling.erBidrag() && behandling.søknadsbarn.size > 1
+        if (forRolle != null && forrigeAvslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && erBidragFlereBarn) {
             log.info {
                 "Avslag endret bort fra ${Resultatkode.BIDRAGSPLIKTIG_ER_DØD}, fjerner avslagsgrunn for alle barn ${behandling.id}"
             }
@@ -270,7 +271,7 @@ class VirkningstidspunktService(
             )
             return
         }
-        if (forRolle != null && request.avslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && behandling.erBidrag()) {
+        if (forRolle != null && request.avslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && erBidragFlereBarn) {
             log.info {
                 "Avslag er satt til ${Resultatkode.BIDRAGSPLIKTIG_ER_DØD} for ene barnet, setter automatisk samme avslag for alle barn ${behandling.id}"
             }
