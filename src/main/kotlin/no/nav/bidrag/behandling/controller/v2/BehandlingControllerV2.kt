@@ -331,7 +331,7 @@ class BehandlingControllerV2(
     )
     fun henteBehandlingV2(
         @PathVariable behandlingsid: Long,
-        @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = true,
+        @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
     ): BehandlingDtoV2 {
         val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
         return dtomapper.tilDto(behandling)

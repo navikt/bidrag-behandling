@@ -22,6 +22,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
@@ -250,10 +251,25 @@ class VirkningstidspunktService(
             gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
         }
         val forRolle = request.rolleId?.let { behandling.roller.find { it.id == request.rolleId } }
+
         val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
         val erAvslagÅrsakEndret = tvingEndring || request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
 
+        if (forRolle != null && forrigeAvslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && behandling.erBidrag()) {
+            log.info {
+                "Avslag endret bort fra ${Resultatkode.BIDRAGSPLIKTIG_ER_DØD}, fjerner avslagsgrunn for alle barn ${behandling.id}"
+            }
+            oppdaterAvslagÅrsak(behandling, request.copy(rolleId = null), true)
+            oppdaterVirkningstidspunkt(
+                null,
+                behandling.eldsteVirkningstidspunkt,
+                behandling,
+                tvingEndring = true,
+                rekalkulerOpplysningerVedEndring = true,
+            )
+            return
+        }
         if (forRolle != null && request.avslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && behandling.erBidrag()) {
             log.info {
                 "Avslag er satt til ${Resultatkode.BIDRAGSPLIKTIG_ER_DØD} for ene barnet, setter automatisk samme avslag for alle barn ${behandling.id}"
@@ -277,8 +293,14 @@ class VirkningstidspunktService(
                 forRolle.avslag = if (request.årsak != null) null else request.avslag ?: forRolle.avslag
             } else {
                 behandling.søknadsbarn.forEach {
-                    it.årsak = if (request.avslag != null) null else request.årsak ?: it.årsak
-                    it.avslag = if (request.årsak != null) null else request.avslag ?: it.avslag
+                    val nyÅrsak =
+                        if (request.årsak != null && it.forholdsmessigFordeling?.erRevurdering == true) {
+                            VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+                        } else {
+                            request.årsak
+                        }
+                    it.årsak = if (request.avslag != null) null else nyÅrsak ?: it.årsak
+                    it.avslag = if (nyÅrsak != null) null else request.avslag ?: it.avslag
                 }
             }
 
@@ -358,10 +380,14 @@ class VirkningstidspunktService(
 
         if (erVirkningstidspunktEndret) {
             if (gjelderBarn != null) {
-                gjelderBarn.virkningstidspunkt = nyVirkningstidspunkt ?: gjelderBarn.virkningstidspunkt
+                val eldsteSøktFomDato = gjelderBarn.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: behandling.søktFomDato
+                gjelderBarn.virkningstidspunkt =
+                    maxOf(eldsteSøktFomDato, nyVirkningstidspunkt ?: gjelderBarn.virkningstidspunkt ?: behandling.søktFomDato)
             } else {
-                behandling.søknadsbarn.forEach {
-                    it.virkningstidspunkt = nyVirkningstidspunkt ?: it.virkningstidspunkt
+                behandling.søknadsbarn.forEach { gjelderBarn ->
+                    val eldsteSøktFomDato = gjelderBarn.forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: behandling.søktFomDato
+                    gjelderBarn.virkningstidspunkt =
+                        maxOf(eldsteSøktFomDato, nyVirkningstidspunkt ?: gjelderBarn.virkningstidspunkt ?: behandling.søktFomDato)
                 }
             }
 

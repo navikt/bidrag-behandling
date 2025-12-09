@@ -453,7 +453,9 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
         behandling.erKlageEllerOmgjøring &&
             behandling.omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
             virkningstidspunkt?.isAfter(behandling.omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
-    val begrunnelseVirkningstidspunkt = NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, this)
+    val begrunnelseVirkningstidspunkt =
+        NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, this).takeIf { it.isNotEmpty() }
+            ?: NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
 
     return VirkningstidspunktFeilV2Dto(
         gjelder = tilDto(),
@@ -480,7 +482,8 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
             if (avslag == null && behandling.erKlageEllerOmgjøring) {
                 val etterfølgendeVedtak = behandling.hentNesteEtterfølgendeVedtak(this)
                 val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
-                opphørsdato != null && opphørsdato!!.toYearMonth() > virkningstidspunktEtterfølgendeVedtak
+                virkningstidspunktEtterfølgendeVedtak != null && opphørsdato != null &&
+                    opphørsdato!!.toYearMonth() > virkningstidspunktEtterfølgendeVedtak
             } else {
                 false
             },

@@ -261,6 +261,7 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                     barn = søknasdbarn.mapTilResultatBarn(),
+                    erAvvistRevurdering = søknasdbarn.forholdsmessigFordeling?.erRevurdering == true,
                     vedtakstype = behandling.vedtakstype,
                     avslagskode = søknasdbarn.avslag,
                     resultat =
