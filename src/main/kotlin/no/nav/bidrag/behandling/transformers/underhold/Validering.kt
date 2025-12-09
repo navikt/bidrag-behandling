@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.felles.toLocalDate
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
@@ -91,7 +92,7 @@ fun SletteUnderholdselement.validere(behandling: Behandling) {
                 ugyldigForespørsel("Barn med person.id ${this.idElement} er hentet fra offentlige registre og kan derfor ikke slettes.")
             }
             val rolle = underhold.rolle
-            if (rolle != null) {
+            if (rolle != null && rolle.rolletype == Rolletype.BARN) {
                 ugyldigForespørsel(
                     "Barn med person.id ${this.idElement} har rolle ${rolle.rolletype} i behandling ${behandling.id}. Barnet kan derfor ikke slettes.",
                 )

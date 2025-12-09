@@ -460,14 +460,19 @@ class BehandlingTilGrunnlagMappingV2(
                         val uBidragsmottaker = u.hentBidragsmottaker()
                         val underholdRolle = u.rolle?.takeIf { it.rolletype == Rolletype.BARN }
                         val gjelderBarn =
-                            underholdRolle?.tilGrunnlagPerson()?.also {
-                                grunnlagslistePersoner.add(it)
-                            }
-                                ?: personobjekter
+                            if (underholdRolle != null) {
+                                underholdRolle.tilGrunnlagPerson().also {
+                                    grunnlagslistePersoner.add(it)
+                                }
+                            } else if (u.personIdent != null) {
+                                personobjekter
                                     .sortedByDescending {
                                         listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type)
-                                    }.hentPerson(u.personIdent)
-                                ?: u.opprettPersonGrunnlag(uBidragsmottaker)
+                                    }.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag(uBidragsmottaker)
+                            } else {
+                                u.opprettPersonGrunnlag(uBidragsmottaker)
+                            }
+
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
