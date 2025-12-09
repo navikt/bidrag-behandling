@@ -68,11 +68,11 @@ class CacheConfig {
         caffeineCacheManager.registerCustomCache(BBM_BEREGNING_CACHE, Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build())
         caffeineCacheManager.registerCustomCache(
             BBM_ALLE_BEREGNINGER_CACHE,
-            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterAccess(30, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             STØNAD_LØPENDE_BIDRAG_CACHE,
-            Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_FOR_STØNAD_CACHE,
@@ -84,7 +84,7 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             SAK_CACHE,
-            Caffeine.newBuilder().expireAfterAccess(5, TimeUnit.SECONDS).build(),
+            Caffeine.newBuilder().expireAfterAccess(30, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(
             SAK_PERSON_CACHE,
