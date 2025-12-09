@@ -11,6 +11,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelse
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseBarn
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
@@ -61,6 +62,7 @@ class BehandlingOppdatertLytter(
                                 søktAv = behandling.soknadFra,
                                 søktFraDato = behandling.søktFomDato,
                                 ident = barn.ident!!,
+                                medInnkreving = barn.innkrevingstype == Innkrevingstype.MED_INNKREVING,
                                 stønadstype = barn.stønadstype ?: behandling.stonadstype,
                                 engangsbeløptype = behandling.engangsbeloptype,
                                 behandlingstema = barn.behandlingstema ?: behandling.behandlingstema ?: Behandlingstema.BIDRAG,
