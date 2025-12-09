@@ -144,8 +144,10 @@ class UnderholdService(
             if (rolleSøknadsbarn != null) {
                 lagreUnderholdskostnad(behandling, null, rolleSøknadsbarn, null)
             } else {
+                val bidragsmottaker =
+                    behandling.alleBidragsmottakere.find { it.ident == gjelderBarn.bidragsmottaker?.verdi } ?: behandling.bidragsmottaker!!
                 personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
-                    lagreUnderholdskostnad(behandling, eksisterendePerson, rolleSøknadsbarn, kilde)
+                    lagreUnderholdskostnad(behandling, eksisterendePerson, bidragsmottaker, kilde)
                 } ?: run {
                     val person =
                         Person(
@@ -156,13 +158,16 @@ class UnderholdService(
                         )
                     person.rolle.forEach { it.person = person }
 
-                    lagreUnderholdskostnad(behandling, person, rolleSøknadsbarn, kilde = kilde)
+                    lagreUnderholdskostnad(behandling, person, bidragsmottaker, kilde = kilde)
                 }
             }
         } ?: run {
+            val bidragsmottaker =
+                behandling.alleBidragsmottakere.find { it.ident == gjelderBarn.bidragsmottaker?.verdi } ?: behandling.bidragsmottaker!!
             lagreUnderholdskostnad(
                 behandling,
                 Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
+                rolle = bidragsmottaker,
                 kilde = Kilde.MANUELL,
             )
         }

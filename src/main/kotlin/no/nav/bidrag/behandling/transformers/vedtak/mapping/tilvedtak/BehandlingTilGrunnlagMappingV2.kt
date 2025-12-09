@@ -25,6 +25,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -40,7 +41,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnla
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -401,7 +401,7 @@ class BehandlingTilGrunnlagMappingV2(
     fun Behandling.tilGrunnlagFaktiskeTilsynsutgifter(personobjekter: Set<GrunnlagDto> = emptySet()): List<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
-        fun Underholdskostnad.tilPersonGrunnlag(underholdRolle: Rolle?): GrunnlagDto {
+        fun Underholdskostnad.tilPersonGrunnlag(bidragsmottaker: Rolle): GrunnlagDto {
             val referanse =
                 opprettPersonBarnBPBMReferanse(
                     type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
@@ -411,12 +411,12 @@ class BehandlingTilGrunnlagMappingV2(
                 )
             return GrunnlagDto(
                 referanse = referanse,
-                gjelderReferanse = underholdRolle?.bidragsmottaker?.tilGrunnlagsreferanse(),
+                gjelderReferanse = bidragsmottaker?.tilGrunnlagsreferanse(),
                 grunnlagsreferanseListe =
                     if (kilde == Kilde.OFFENTLIG) {
                         listOf(
                             opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(
-                                (underholdRolle ?: behandling.bidragsmottaker)!!.tilGrunnlagsreferanse(),
+                                bidragsmottaker!!.tilGrunnlagsreferanse(),
                             ),
                         )
                     } else {
@@ -429,29 +429,36 @@ class BehandlingTilGrunnlagMappingV2(
                             ident = personIdent?.let { Personident(it) },
                             navn = if (personIdent.isNullOrEmpty()) personNavn else null,
                             fødselsdato = personFødselsdato,
-                            bidragsmottaker = (underholdRolle ?: behandling.bidragsmottaker)!!.tilGrunnlagsreferanse(),
+                            bidragsmottaker = bidragsmottaker!!.tilGrunnlagsreferanse(),
                         ).valider(),
                     ),
             )
         }
 
-        fun Underholdskostnad.opprettPersonGrunnlag(underholdRolle: Rolle?): GrunnlagDto {
-            val relatertPersonGrunnlag = tilPersonGrunnlag(underholdRolle)
+        fun Underholdskostnad.opprettPersonGrunnlag(bidragsmottaker: Rolle): GrunnlagDto {
+            val relatertPersonGrunnlag = tilPersonGrunnlag(bidragsmottaker)
             grunnlagslistePersoner.add(relatertPersonGrunnlag)
             return relatertPersonGrunnlag
         }
 
+        fun Underholdskostnad.hentBidragsmottaker() =
+            if (rolle != null && rolle?.rolletype == Rolletype.BIDRAGSMOTTAKER) {
+                rolle
+            } else {
+                rolle?.bidragsmottaker ?: bidragsmottaker
+            }!!
         val barnUtenPerioder =
             underholdskostnader
-                .filter { it.rolle == null && it.faktiskeTilsynsutgifter.isEmpty() }
+                .filter { (it.rolle == null || it.rolle?.rolletype == Rolletype.BIDRAGSMOTTAKER) && it.faktiskeTilsynsutgifter.isEmpty() }
                 .map { u ->
-                    personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag(u.rolle)
+                    personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag(u.hentBidragsmottaker())
                 }
         return (
             underholdskostnader
                 .flatMap { u ->
                     u.faktiskeTilsynsutgifter.map {
-                        val underholdRolle = u.rolle
+                        val uBidragsmottaker = u.hentBidragsmottaker()
+                        val underholdRolle = u.rolle?.takeIf { it.rolletype == Rolletype.BARN }
                         val gjelderBarn =
                             underholdRolle?.tilGrunnlagPerson()?.also {
                                 grunnlagslistePersoner.add(it)
@@ -460,12 +467,12 @@ class BehandlingTilGrunnlagMappingV2(
                                     .sortedByDescending {
                                         listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type)
                                     }.hentPerson(u.personIdent)
-                                ?: u.opprettPersonGrunnlag(underholdRolle)
+                                ?: u.opprettPersonGrunnlag(uBidragsmottaker)
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
                             referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
                             type = Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
-                            gjelderReferanse = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                            gjelderReferanse = uBidragsmottaker!!.tilGrunnlagsreferanse(),
                             gjelderBarnReferanse = gjelderBarnReferanse,
                             innhold =
                                 POJONode(

@@ -272,7 +272,11 @@ class Dtomapper(
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
         // Vil aldri ha flere enn èn rolle per behandling
-        val rolleSøknadsbarn = this.rolle
+        val rolleSøknadsbarn = this.rolle?.takeIf { it.rolletype == Rolletype.BARN }
+        val rolleBidragsmottaker =
+            this.rolle?.takeIf { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+                ?: rolleSøknadsbarn?.bidragsmottaker
+                ?: behandling.bidragsmottaker
         val beregnetUnderholdskostnad =
             if (behandling.erDirekteAvslag()) {
                 emptySet()
@@ -294,14 +298,14 @@ class Dtomapper(
             begrunnelse =
                 NotatService.henteUnderholdsnotat(
                     this.behandling,
-                    rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
+                    rolleSøknadsbarn ?: rolleBidragsmottaker!!,
                 ),
             begrunnelseFraOpprinneligVedtak =
                 if (behandling.erKlageEllerOmgjøring) {
                     NotatService
                         .henteUnderholdsnotat(
                             this.behandling,
-                            rolleSøknadsbarn ?: this.behandling.bidragsmottaker!!,
+                            rolleSøknadsbarn ?: rolleBidragsmottaker!!,
                             false,
                         ).takeIfNotNullOrEmpty { it }
                 } else {
