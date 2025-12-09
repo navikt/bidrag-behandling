@@ -449,7 +449,7 @@ class BehandlingTilGrunnlagMappingV2(
             }!!
         val barnUtenPerioder =
             underholdskostnader
-                .filter { (it.rolle == null || it.rolle?.rolletype == Rolletype.BIDRAGSMOTTAKER) && it.faktiskeTilsynsutgifter.isEmpty() }
+                .filter { it.gjelderAndreBarn && it.faktiskeTilsynsutgifter.isEmpty() }
                 .map { u ->
                     personobjekter.hentPerson(u.personIdent) ?: u.opprettPersonGrunnlag(u.hentBidragsmottaker())
                 }

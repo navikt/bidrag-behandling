@@ -90,7 +90,7 @@ class UnderholdService(
 
         if (request.underholdsid == null) {
             val underholdHarAndreBarn =
-                behandling.underholdskostnader.find { it.rolle == null } != null
+                behandling.underholdskostnader.find { it.gjelderAndreBarn } != null
             if (!underholdHarAndreBarn) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
@@ -490,7 +490,7 @@ class UnderholdService(
         val personUnderhold = underholdskostnad.person
         if (personUnderhold != null) {
             personUnderhold.underholdskostnad.remove(underholdskostnad)
-            if (personUnderhold.underholdskostnad.isEmpty() && underholdskostnad.rolle == null) {
+            if (personUnderhold.underholdskostnad.isEmpty() && underholdskostnad.gjelderAndreBarn) {
                 personRepository.deleteById(personUnderhold.id!!)
                 if (!behandling.harAndreBarnIUnderhold()) {
                     notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)

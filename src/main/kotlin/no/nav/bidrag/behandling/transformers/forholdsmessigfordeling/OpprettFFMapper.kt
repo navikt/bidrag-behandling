@@ -376,7 +376,7 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
                     dagsats = it.dagsats,
                 )
             }.toMutableSet()
-    val rolleNotat = if (underholdskostnad.rolle == null) bmFraOverførtBehandling else underholdskostnad.rolle
+    val rolleNotat = if (underholdskostnad.gjelderAndreBarn) bmFraOverførtBehandling else underholdskostnad.rolle
     val notatUnderhold =
         rolleNotat!!
             .notat

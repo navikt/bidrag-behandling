@@ -108,7 +108,7 @@ data class UnderholdskostnadValideringsfeil(
                         gjelderUnderholdskostnad.personNavn ?: hentPersonVisningsnavn(gjelderUnderholdskostnad.personIdent),
                     ident = gjelderUnderholdskostnad.personIdent,
                     fødselsdato = gjelderUnderholdskostnad.personFødselsdato,
-                    medIBehandlingen = gjelderUnderholdskostnad.rolle != null,
+                    medIBehandlingen = !gjelderUnderholdskostnad.gjelderAndreBarn,
                     kilde = gjelderUnderholdskostnad.kilde,
                     id = gjelderUnderholdskostnad.person?.id,
                 )

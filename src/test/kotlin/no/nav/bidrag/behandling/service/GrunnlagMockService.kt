@@ -4,7 +4,6 @@ import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.FakeUnleash
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -286,7 +285,8 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.rolle shouldBe null
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
     }
 
@@ -371,7 +371,8 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.rolle.shouldBeNull()
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarn1.ident }) {
             it.shouldNotBeNull()
@@ -386,7 +387,8 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.rolle shouldBe null
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
     }
 
@@ -422,6 +424,7 @@ class GrunnlagMockService {
                 id = 3,
                 behandling = behandling,
                 kilde = Kilde.OFFENTLIG,
+                rolle = behandling.bidragsmottaker,
                 person = Person(id = 1, ident = testdataBarnBm.ident, fødselsdato = testdataBarnBm.fødselsdato),
             ),
         )
@@ -437,12 +440,14 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.rolle shouldBe null
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.MANUELL
-            it.rolle shouldBe null
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
     }
 
@@ -496,6 +501,7 @@ class GrunnlagMockService {
                 id = 3,
                 behandling = behandling,
                 kilde = Kilde.MANUELL,
+                rolle = behandling.bidragsmottaker,
                 person = Person(id = 1, ident = barnOver13Ident, fødselsdato = LocalDate.now().minusYears(16)),
             ),
         )
@@ -504,6 +510,7 @@ class GrunnlagMockService {
                 id = 3,
                 behandling = behandling,
                 kilde = Kilde.MANUELL,
+                rolle = behandling.bidragsmottaker,
                 person = Person(id = 1, ident = testdataBarnBm.ident, fødselsdato = testdataBarnBm.fødselsdato),
             ),
         )
@@ -519,17 +526,20 @@ class GrunnlagMockService {
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm2.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.rolle shouldBe null
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.rolle shouldBe null
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == barnOver13Ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
-            it.rolle shouldBe null
+            it.rolle.shouldNotBeNull()
+            it.rolle!!.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
         }
     }
 

@@ -1708,7 +1708,7 @@ class GrunnlagService(
 
         val andreBarnIdenter = andreBarnIkkeIBehandling.map { it.gjelderPersonId }
         behandling.underholdskostnader
-            .filter { it.rolle == null }
+            .filter { it.gjelderAndreBarn }
             .filter { !andreBarnIdenter.contains(it.personIdent) }
             .forEach {
                 secureLogger.debug { "$it er ikke lenger barn til BM i følge offentlige opplysninger. Endrer kilde til Manuell" }

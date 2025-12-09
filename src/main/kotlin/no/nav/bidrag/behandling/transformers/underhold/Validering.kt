@@ -228,7 +228,7 @@ fun Underholdskostnad.manglerBegrunnelse(): Boolean {
 
 fun Underholdskostnad.manglerPerioderForTilsynsordning(): Boolean {
     val harOffentligeOpplysninger = hentSisteBearbeidetBarnetilsyn()?.isNotEmpty() == true
-    if (harOffentligeOpplysninger || rolle == null) return false
+    if (harOffentligeOpplysninger || gjelderAndreBarn) return false
     return this.harTilsynsordning == true &&
         this.barnetilsyn.isEmpty() &&
         this.faktiskeTilsynsutgifter.isEmpty() &&
