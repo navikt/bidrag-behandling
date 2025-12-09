@@ -35,13 +35,6 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
             ?: rolleManglerFødselsdato(rolletype)
 
-    val barnErOver18 =
-        rolletype == Rolletype.BARN &&
-            Period
-                .between(fødselsdatoPerson, LocalDate.now().withDayOfMonth(1))
-                .years >= 18
-
-    val skalOpphørVed18År = (behandling.stonadstype == Stønadstype.BIDRAG || behandling.stonadstype == Stønadstype.FORSKUDD)
     return Rolle(
         behandling = behandling,
         behandlingstema = behandlingstema,

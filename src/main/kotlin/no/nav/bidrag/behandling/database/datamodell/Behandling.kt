@@ -281,8 +281,20 @@ open class Behandling(
                 it.beregnTil != null && it.beregnTil != BeregnTil.INNEVÆRENDE_MÅNED
         }
     val globalOpphørsdatoYearMonth get() = globalOpphørsdato?.let { YearMonth.from(it) }
+
+    val barnMedEldstVirkningstidspunkt get() =
+        if (erAvslagForAlle) {
+            søknadsbarn.minByOrNull { it.virkningstidspunktRolle }
+        } else {
+            søknadsbarn.filter { it.avslag == null }.minByOrNull { it.virkningstidspunktRolle }
+        }
     val eldsteVirkningstidspunkt get() =
-        søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it } ?: virkningstidspunkt ?: søktFomDato
+        if (erAvslagForAlle) {
+            søknadsbarn.mapNotNull { it.virkningstidspunkt }.minByOrNull { it }
+        } else {
+            søknadsbarn.filter { it.avslag == null }.mapNotNull { it.virkningstidspunkt }.minByOrNull { it }
+        } ?: virkningstidspunkt ?: søktFomDato
+
     val erAvslagForAlle get() =
         if (erBidrag()) søknadsbarn.all { it.avslag != null } else avslag != null
 

@@ -13,11 +13,13 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
@@ -251,6 +253,21 @@ class VirkningstidspunktService(
         val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
         val erAvslagÅrsakEndret = tvingEndring || request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
+
+        if (forRolle != null && request.avslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && behandling.erBidrag()) {
+            log.info {
+                "Avslag er satt til ${Resultatkode.BIDRAGSPLIKTIG_ER_DØD} for ene barnet, setter automatisk samme avslag for alle barn ${behandling.id}"
+            }
+            oppdaterAvslagÅrsak(behandling, request.copy(rolleId = null), true)
+            oppdaterVirkningstidspunkt(
+                null,
+                behandling.eldsteVirkningstidspunkt,
+                behandling,
+                tvingEndring = true,
+                rekalkulerOpplysningerVedEndring = true,
+            )
+            return
+        }
 
         if (erAvslagÅrsakEndret) {
             behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
