@@ -206,7 +206,7 @@ class BeregningServiceTest {
 
             val inntekter =
                 it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
-            inntekter shouldHaveSize 3
+            inntekter shouldHaveSize 4
         }
     }
 
