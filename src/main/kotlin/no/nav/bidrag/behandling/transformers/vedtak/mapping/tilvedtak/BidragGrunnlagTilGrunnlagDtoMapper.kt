@@ -71,6 +71,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(
                 Person(
                     ident = gjelderPersonId?.let { Personident(it) },
                     navn = if (gjelderPersonId.isNullOrEmpty()) personnavn else null,
+                    bidragsmottaker = gjelderReferanse,
                     fødselsdato =
                         finnFødselsdato(
                             gjelderPersonId,

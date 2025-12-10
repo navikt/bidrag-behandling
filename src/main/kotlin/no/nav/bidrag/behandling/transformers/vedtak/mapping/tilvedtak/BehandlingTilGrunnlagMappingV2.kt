@@ -411,12 +411,12 @@ class BehandlingTilGrunnlagMappingV2(
                 )
             return GrunnlagDto(
                 referanse = referanse,
-                gjelderReferanse = bidragsmottaker?.tilGrunnlagsreferanse(),
+                gjelderReferanse = bidragsmottaker.tilGrunnlagsreferanse(),
                 grunnlagsreferanseListe =
                     if (kilde == Kilde.OFFENTLIG) {
                         listOf(
                             opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse(
-                                bidragsmottaker!!.tilGrunnlagsreferanse(),
+                                bidragsmottaker.tilGrunnlagsreferanse(),
                             ),
                         )
                     } else {
@@ -429,7 +429,7 @@ class BehandlingTilGrunnlagMappingV2(
                             ident = personIdent?.let { Personident(it) },
                             navn = if (personIdent.isNullOrEmpty()) personNavn else null,
                             fødselsdato = personFødselsdato,
-                            bidragsmottaker = bidragsmottaker!!.tilGrunnlagsreferanse(),
+                            bidragsmottaker = bidragsmottaker.tilGrunnlagsreferanse(),
                         ).valider(),
                     ),
             )
