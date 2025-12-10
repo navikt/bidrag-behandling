@@ -376,8 +376,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     behandling.underholdskostnader.shouldHaveSize(5)
-                    val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle != null }
-                    val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.rolle == null }
+                    val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { !it.gjelderAndreBarn }
+                    val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.gjelderAndreBarn }
                     andreBarnUnderholdskostnader.shouldHaveSize(3)
                     søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                     søknadsbarnUnderholdskostnader.first().kilde shouldBe null
