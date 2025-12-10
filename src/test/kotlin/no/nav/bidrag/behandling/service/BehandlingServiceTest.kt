@@ -818,7 +818,8 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
             assertSoftly(opprettetBehandling.underholdskostnader.find { it.kilde == Kilde.OFFENTLIG }) {
                 it.shouldNotBeNull()
-                it.rolle shouldBe null
+                it.rolle.shouldNotBeNull()
+                it.rolle!!.rolletype.shouldBe(Rolletype.BIDRAGSMOTTAKER)
                 it.faktiskeTilsynsutgifter.shouldBeEmpty()
                 it.personIdent.shouldBe(testdataBarn2.ident)
             }
