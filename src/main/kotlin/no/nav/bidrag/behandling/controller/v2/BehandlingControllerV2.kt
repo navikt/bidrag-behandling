@@ -9,6 +9,7 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
@@ -75,6 +76,7 @@ class BehandlingControllerV2(
     private val dtomapper: Dtomapper,
     private val virkningstidspunktService: VirkningstidspunktService,
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService,
+    private val behandlingRepository: BehandlingRepository,
 ) {
     @Suppress("unused")
     @GetMapping("/behandling/vedtak/{vedtakId}")
@@ -486,7 +488,7 @@ class BehandlingControllerV2(
     fun kanFattesINyLøsning(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         validerBehandlingService.validerKanFattesINyLøsning(behandling)
         return ResponseEntity.accepted().build()
     }
@@ -561,7 +563,7 @@ class BehandlingControllerV2(
     fun kanBehandlingBehandlesINyLøsning(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         return ResponseEntity.accepted().build()
     }
@@ -582,7 +584,7 @@ class BehandlingControllerV2(
     fun kanBehandlingBehandlesINyBisys(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
-        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val behandling = behandlingRepository.findBehandlingSimple(behandlingsid)
         validerBehandlingService.validerKanBehandlesIBisys(behandling)
         return ResponseEntity.accepted().build()
     }

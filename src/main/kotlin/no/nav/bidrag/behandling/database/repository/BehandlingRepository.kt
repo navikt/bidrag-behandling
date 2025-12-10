@@ -4,6 +4,7 @@ package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
@@ -13,6 +14,9 @@ import java.util.Optional
 
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
+    @Query("select b.id, b.stonadstype as stønadstype, b.engangsbeloptype as engangsbeløptype, b.forholdsmessigFordeling from behandling b where b.id = :id")
+    fun findBehandlingSimple(id: Long): BehandlingSimple
+
     fun findBehandlingById(id: Long): Optional<Behandling>
 
     fun findFirstBySoknadsid(soknadsId: Long): Behandling?
