@@ -151,7 +151,7 @@ class ValiderBehandlingService(
         }
     }
 
-    fun validerKanFattesINyLøsning(behandling: Behandling) {
+    fun validerKanFattesINyLøsning(behandling: BehandlingSimple) {
         kanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         if (!behandling.kanFatteVedtak()) {
             throw HttpClientErrorException(

@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.transformers.behandling.toSimple
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -488,7 +489,8 @@ class BehandlingControllerV2(
     fun kanFattesINyLøsning(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
-        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
+        val behandling =
+            behandlingRepository.findBehandlingSimple(behandlingsid)
         validerBehandlingService.validerKanFattesINyLøsning(behandling)
         return ResponseEntity.accepted().build()
     }
@@ -584,7 +586,8 @@ class BehandlingControllerV2(
     fun kanBehandlingBehandlesINyBisys(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
-        val behandling = behandlingRepository.findBehandlingSimple(behandlingsid)
+        val behandling =
+            behandlingRepository.findBehandlingSimple(behandlingsid)
         validerBehandlingService.validerKanBehandlesIBisys(behandling)
         return ResponseEntity.accepted().build()
     }

@@ -10,6 +10,8 @@ import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
+import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
@@ -92,7 +94,22 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 
 private val log = KotlinLogging.logger {}
 
-fun Behandling.kanFatteVedtak(): Boolean {
+fun Behandling.toSimple() =
+    BehandlingSimple(
+        id = id!!,
+        søktFomDato = søktFomDato,
+        mottattdato = mottattdato,
+        saksnummer = saksnummer,
+        vedtakstype = vedtakstype,
+        søknadstype = søknadstype,
+        omgjøringsdetaljer = omgjøringsdetaljer,
+        stønadstype = stonadstype,
+        engangsbeløptype = engangsbeloptype,
+        forholdsmessigFordeling = forholdsmessigFordeling,
+        roller = roller.map { RolleSimple(it.rolletype, it.ident!!) },
+    )
+
+fun BehandlingSimple.kanFatteVedtak(): Boolean {
     if (!erBidrag()) {
         return true
     }
@@ -100,7 +117,7 @@ fun Behandling.kanFatteVedtak(): Boolean {
         return false
     }
 
-    val stønaderBp = hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident!!) ?: return søknadsbarn.size == 1
+    val stønaderBp = hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident) ?: return søknadsbarn.size == 1
     val harBPStønadForFlereBarn =
         stønaderBp
             .stønader
@@ -108,6 +125,8 @@ fun Behandling.kanFatteVedtak(): Boolean {
             .any { it.type != Stønadstype.FORSKUDD }
     return !harBPStønadForFlereBarn || UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled
 }
+
+fun Behandling.kanFatteVedtak(): Boolean = toSimple().kanFatteVedtak()
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(
@@ -1085,6 +1104,26 @@ fun Set<Grunnlag>.hentAlleBearbeidaBarnetilsyn(
         virkniningstidspunkt,
     ).sortedBy { it.periodeFra }
     .toSet()
+
+fun BehandlingSimple.tilKanBehandlesINyLøsningRequest() =
+    KanBehandlesINyLøsningRequest(
+        engangsbeløpstype = engangsbeløptype,
+        stønadstype = stønadstype,
+        saksnummer = saksnummer,
+        vedtakstype = vedtakstype,
+        søknadstype = søknadstype,
+        harReferanseTilAnnenBehandling = omgjøringsdetaljer != null,
+        søktFomDato = søktFomDato,
+        mottattdato = mottattdato,
+        roller =
+            roller.map {
+                SjekkRolleDto(
+                    rolletype = it.rolletype,
+                    ident = Personident(it.ident),
+                    erUkjent = false,
+                )
+            },
+    )
 
 fun Behandling.tilKanBehandlesINyLøsningRequest() =
     KanBehandlesINyLøsningRequest(
