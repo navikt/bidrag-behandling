@@ -561,7 +561,7 @@ class BehandlingService(
         request: OppdaterRollerRequest,
     ): OppdaterRollerResponse {
         val oppdaterRollerListe = request.roller
-        val behandling = hentBehandlingById(behandlingId)
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
