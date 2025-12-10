@@ -53,7 +53,9 @@ class UtgiftService(
                 behandling.bidragsmottaker!!,
             )
         }
-        behandling.avslag = request.avslag
+        if (request.oppdatereBegrunnelse == null) {
+            behandling.avslag = request.avslag
+        }
         if (request.nyEllerEndretUtgift != null) {
             utgift.lagreHistorikk()
             val nyUtgiftspost = request.nyEllerEndretUtgift.tilUtgiftspost(utgift)
