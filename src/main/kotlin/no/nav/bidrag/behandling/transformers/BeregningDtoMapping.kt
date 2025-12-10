@@ -141,6 +141,7 @@ import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
+import kotlin.collections.forEach
 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
 
@@ -241,11 +242,16 @@ fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List
 }
 
 fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtak: Boolean): ResultatBidragberegningDto {
-    val grunnlagslisteAlle =
+    val grunnlagsliste =
         flatMap {
-            it.resultat.grunnlagListe.toList() +
-                (it.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList())
-        }
+            it.resultat.grunnlagListe
+        }.toSet()
+
+    val grunnlagslisteDelvedtak =
+        flatMap {
+            it.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList()
+        }.toSet()
+    val grunnlagslisteAlle = (grunnlagsliste + grunnlagslisteDelvedtak).toList()
     return ResultatBidragberegningDto(
         kanFatteVedtak = kanFatteVedtak,
         minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling(),
@@ -255,8 +261,7 @@ fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtak: Boolean): Resultat
                 val delvedtakListe = opprettDelvedtak(resultat)
                 val endeligVedtak = delvedtakListe.find { it.endeligVedtak }
                 val grunnlagsListe =
-                    resultat.resultat.grunnlagListe.toList() +
-                        (resultat.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList())
+                    (resultat.resultat.grunnlagListe.toSet() + grunnlagslisteDelvedtak).toList()
                 val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag()
 
                 ResultatBidragsberegningBarnDto(
