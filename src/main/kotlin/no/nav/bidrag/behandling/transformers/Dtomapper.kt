@@ -859,8 +859,6 @@ class Dtomapper(
                 opprinneligVedtakId = omgjøringsdetaljer?.opprinneligVedtakId,
                 sisteVedtakBeregnetUtNåværendeMåned =
                     omgjøringsdetaljer?.sisteVedtakBeregnetUtNåværendeMåned ?: omgjøringsdetaljer?.opprinneligVedtakId,
-                virkningstidspunktV2 = emptyList(),
-                virkningstidspunkt = VirkningstidspunktDto(begrunnelse = BegrunnelseDto("")),
                 virkningstidspunktV3 =
                     VirkningstidspunktDtoV3(
                         false,
@@ -896,28 +894,6 @@ class Dtomapper(
                     eldsteVirkningstidspunkt = eldsteVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarnV3(),
                 ),
-            virkningstidspunkt =
-                VirkningstidspunktDto(
-                    virkningstidspunkt = virkningstidspunkt,
-                    opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                    årsak = årsak,
-                    avslag = avslag,
-                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-                    harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
-                    opphør =
-                        OpphørsdetaljerDto(
-                            opphørsdato = globalOpphørsdato,
-                            opphørRoller =
-                                søknadsbarn.map {
-                                    OpphørsdetaljerRolleDto(
-                                        rolle = it.tilDto(),
-                                        opphørsdato = it.opphørsdato,
-                                        eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
-                                    )
-                                },
-                        ),
-                ),
-            virkningstidspunktV2 = mapVirkningstidspunktAlleBarn(),
             boforhold = tilBoforholdV2(),
             inntekter =
                 tilInntektDtoV2(
