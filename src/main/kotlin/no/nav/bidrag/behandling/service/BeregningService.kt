@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDeta
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
+import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSøknad
@@ -297,6 +298,7 @@ class BeregningService(
                             .utførBidragsberegningV3(grunnlagBeregning)
 
                     val slåttUtTilFF = resultat.grunnlagListe.harSlåttUtTilForholdsmessigFordeling()
+                    val perioderSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().map { it.periode }
 
                     resultat.resultat.map { resultatBarn ->
                         val søknadsbarn = behandling.søknadsbarn.find { resultatBarn.søknadsbarnreferanse == it.tilGrunnlagsreferanse() }!!
@@ -309,8 +311,11 @@ class BeregningService(
                                 behandling = behandling,
                             )
                         }
+                        val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
+                        val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.inneholder(pb) } }
                         val erAvvistRevurdering =
-                            forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering && !slåttUtTilFF
+                            forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
+                                !minstEnPeriodeSlåttUtTilFF
                         val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
                         val grunnlagBarn =
                             resultat.grunnlagListe.filter {
