@@ -176,6 +176,7 @@ abstract class CommonMockServiceTest {
                 dtomapper,
                 virkningstidspunktService,
                 ffservice,
+                behandlingRepository,
             )
     }
 }

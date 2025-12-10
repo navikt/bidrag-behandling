@@ -4,6 +4,8 @@ package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
+import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
@@ -13,6 +15,41 @@ import java.util.Optional
 
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
+    @Query(
+        """
+    SELECT new no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple(
+        b.id,
+        b.søktFomDato,
+        b.mottattdato,
+        b.saksnummer,
+        b.vedtakstype,
+        b.søknadstype,
+        b.omgjøringsdetaljer,
+        b.stonadstype,
+        b.engangsbeloptype,
+        b.forholdsmessigFordeling
+    )
+    FROM behandling b
+
+    WHERE b.id = :id
+"""
+    )
+    fun findBehandlingSimpleData(id: Long): BehandlingSimple
+
+    @Query(
+        """
+    SELECT new no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple(r.rolletype, r.ident) FROM rolle r WHERE r.behandling.id= :id
+"""
+    )
+    fun findRolleSimpleData(id: Long): List<RolleSimple>
+
+
+    fun findBehandlingSimple(id: Long): BehandlingSimple {
+        val behandling = findBehandlingSimpleData(id)
+        val roller = findRolleSimpleData(id)
+        return behandling.copy(roller = roller)
+    }
+
     fun findBehandlingById(id: Long): Optional<Behandling>
 
     fun findFirstBySoknadsid(soknadsId: Long): Behandling?

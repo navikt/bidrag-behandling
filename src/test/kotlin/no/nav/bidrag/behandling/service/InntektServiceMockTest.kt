@@ -132,6 +132,7 @@ class InntektServiceMockTest {
                 virkningstidspunktService = virkningstidspunktService,
                 dtomapper = dtomapper,
                 forholdsmessigFordelingService = ffservice,
+                behandlingRepository = behandlingRepository,
             )
         every { inntektRepository.saveAll<Inntekt>(any()) } answers { firstArg() }
     }

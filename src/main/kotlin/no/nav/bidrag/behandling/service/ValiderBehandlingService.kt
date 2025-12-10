@@ -5,6 +5,8 @@ import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
@@ -38,6 +40,7 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 class ValiderBehandlingService(
     private val bidragBeløpshistorikkConsumer: BidragBeløpshistorikkConsumer,
     private val bidragSakConsumer: BidragSakConsumer,
+    private val behandlingRepository: BehandlingRepository,
 ) {
     fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         val sak = bidragSakConsumer.hentSak(request.saksnummer)
@@ -130,7 +133,7 @@ class ValiderBehandlingService(
         return null
     }
 
-    fun validerKanBehandlesIBisys(behandling: Behandling) {
+    fun validerKanBehandlesIBisys(behandling: BehandlingSimple) {
         if (!behandling.erBidrag()) return
 
         if (behandling.forholdsmessigFordeling != null) {
@@ -148,7 +151,7 @@ class ValiderBehandlingService(
         }
     }
 
-    fun validerKanFattesINyLøsning(behandling: Behandling) {
+    fun validerKanFattesINyLøsning(behandling: BehandlingSimple) {
         kanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         if (!behandling.kanFatteVedtak()) {
             throw HttpClientErrorException(

@@ -14,6 +14,7 @@ import io.mockk.mockkObject
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
@@ -52,8 +53,9 @@ import java.time.LocalDate
 class ValiderBehandlingServiceTest {
     val bidragStønadConsumer: BidragBeløpshistorikkConsumer = mockkClass(BidragBeløpshistorikkConsumer::class)
     val bidragSakConsumer: BidragSakConsumer = mockkClass(BidragSakConsumer::class)
+    val behandlingRepository: BehandlingRepository = mockkClass(BehandlingRepository::class)
 
-    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, bidragSakConsumer)
+    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, bidragSakConsumer, behandlingRepository)
 
     @BeforeEach
     fun initMock() {
