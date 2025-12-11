@@ -284,7 +284,9 @@ data class GebyrRolleSøknad(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as GebyrRolleSøknad
-        return saksnummer == other.saksnummer && søknadsid == other.søknadsid && behandlingid == other.behandlingid
+        return saksnummer == other.saksnummer && søknadsid == other.søknadsid &&
+            behandlingid == other.behandlingid &&
+            manueltOverstyrtGebyr == other.manueltOverstyrtGebyr
     }
 
     override fun hashCode(): Int = saksnummer.hashCode() * 31 + søknadsid.hashCode() + (behandlingid?.hashCode() ?: 0)

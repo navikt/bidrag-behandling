@@ -451,13 +451,13 @@ class NotatOpplysningerService(
                     notat = behandling.tilNotatInntekt(behandling.bidragsmottaker!!),
                     notatPerRolle =
                         behandling.roller
-                            .filter { it.rolletype != Rolletype.BARN || it.avslag != null }
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
                             .map { r ->
                                 behandling.tilNotatInntekt(r)
                             }.toSet(),
                     inntekterPerRolle =
                         behandling.roller
-                            .filter { it.rolletype != Rolletype.BARN || it.avslag != null }
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
                             .sortedBy { it.fødselsdato }
                             .map { rolle ->
                                 behandling.hentInntekterForIdent(
@@ -469,7 +469,7 @@ class NotatOpplysningerService(
                             },
                     offentligeInntekterPerRolle =
                         behandling.roller
-                            .filter { it.rolletype != Rolletype.BARN || it.avslag != null }
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
                             .sortedBy { it.fødselsdato }
                             .map { rolle ->
                                 behandling.hentInntekterForIdent(
@@ -964,7 +964,7 @@ private fun Behandling.tilUnderholdOpplysning(): List<NotatOffentligeOpplysninge
             .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.TILLEGGSSTØNAD && !it.erBearbeidet }
             ?.konvertereData<List<TilleggsstønadGrunnlagDto>>()
             ?: emptyList()
-    return søknadsbarn.filter { it.avslag != null }.map { rolle ->
+    return søknadsbarn.filter { it.avslag == null }.map { rolle ->
         NotatOffentligeOpplysningerUnderholdBarn(
             gjelder = rolle.behandling.bidragsmottaker!!.tilNotatRolle(),
             gjelderBarn = rolle.tilNotatRolle(),
