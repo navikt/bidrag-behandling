@@ -183,6 +183,7 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
         opphørsdato = rolle.opphørsdatoYearMonth ?: globalOpphørsdatoYearMonth,
         barnIdentListe =
             søknadsbarn
+                .filter { it.avslag != null }
                 .filter {
                     rolle.rolletype != Rolletype.BIDRAGSMOTTAKER || it.bidragsmottaker?.ident == null ||
                         it.bidragsmottaker?.ident == rolle.ident
