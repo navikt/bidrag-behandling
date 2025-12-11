@@ -644,7 +644,14 @@ class Dtomapper(
 
     private fun Behandling.ikkeAktiveGrunnlagsdata(): IkkeAktiveGrunnlagsdata {
         val behandling = this
-        val roller = behandling.roller.sortedBy { if (it.rolletype == Rolletype.BARN) 1 else -1 }
+        val roller =
+            behandling.roller.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.sortedBy {
+                if (it.rolletype == Rolletype.BARN) {
+                    1
+                } else {
+                    -1
+                }
+            }
         val inntekter = behandling.inntekter
         val sisteInnhentedeIkkeAktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteAktiv()
@@ -901,7 +908,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                 ),
             inntekterV2 =
-                roller.map {
+                roller.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
                     InntekterDtoRolle(
                         gjelder = it.tilDto(),
                         inntekter =
