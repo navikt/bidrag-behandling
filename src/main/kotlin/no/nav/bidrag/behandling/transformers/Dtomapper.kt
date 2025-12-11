@@ -263,6 +263,7 @@ class Dtomapper(
 
     fun Set<Underholdskostnad>.tilDtos() =
         this
+            .filter { it.rolle == null || it.gjelderAndreBarn || it.rolle?.avslag != null }
             .map { it.tilDto() }
             .sortedWith(
                 compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
@@ -437,7 +438,7 @@ class Dtomapper(
 
     fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
-            samvær.map { it.tilDto() }
+            samvær.filter { it.rolle.avslag != null }.map { it.tilDto() }
         } else {
             null
         }

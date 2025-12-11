@@ -61,6 +61,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -448,25 +449,36 @@ class NotatOpplysningerService(
             inntekter =
                 NotatInntekterDto(
                     notat = behandling.tilNotatInntekt(behandling.bidragsmottaker!!),
-                    notatPerRolle = behandling.roller.map { r -> behandling.tilNotatInntekt(r) }.toSet(),
+                    notatPerRolle =
+                        behandling.roller
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag != null }
+                            .map { r ->
+                                behandling.tilNotatInntekt(r)
+                            }.toSet(),
                     inntekterPerRolle =
-                        behandling.roller.sortedBy { it.fødselsdato }.map { rolle ->
-                            behandling.hentInntekterForIdent(
-                                rolle.ident!!,
-                                rolle,
-                                alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
-                                bareMedIBeregning = true,
-                            )
-                        },
+                        behandling.roller
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag != null }
+                            .sortedBy { it.fødselsdato }
+                            .map { rolle ->
+                                behandling.hentInntekterForIdent(
+                                    rolle.ident!!,
+                                    rolle,
+                                    alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
+                                    bareMedIBeregning = true,
+                                )
+                            },
                     offentligeInntekterPerRolle =
-                        behandling.roller.sortedBy { it.fødselsdato }.map { rolle ->
-                            behandling.hentInntekterForIdent(
-                                rolle.ident!!,
-                                rolle,
-                                alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
-                                filtrerBareOffentlige = true,
-                            )
-                        },
+                        behandling.roller
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag != null }
+                            .sortedBy { it.fødselsdato }
+                            .map { rolle ->
+                                behandling.hentInntekterForIdent(
+                                    rolle.ident!!,
+                                    rolle,
+                                    alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
+                                    filtrerBareOffentlige = true,
+                                )
+                            },
                 ),
             vedtak = behandling.hentBeregning(),
             erOrkestrertVedtak = behandling.erKlageEllerOmgjøring && behandling.erBidrag(),
@@ -644,6 +656,7 @@ class NotatOpplysningerService(
                                                 erEvneJustertNedTil25ProsentAvInntekt = it.erEvneJustertNedTil25ProsentAvInntekt,
                                             )
                                         },
+                                    erAvvistRevurdering = beregning.erAvvistRevurdering,
                                     orkestrertVedtak =
                                         beregning.delvedtak.find { it.endeligVedtak }?.let {
                                             EndeligOrkestrertVedtak(
@@ -951,7 +964,7 @@ private fun Behandling.tilUnderholdOpplysning(): List<NotatOffentligeOpplysninge
             .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.TILLEGGSSTØNAD && !it.erBearbeidet }
             ?.konvertereData<List<TilleggsstønadGrunnlagDto>>()
             ?: emptyList()
-    return søknadsbarn.map { rolle ->
+    return søknadsbarn.filter { it.avslag != null }.map { rolle ->
         NotatOffentligeOpplysningerUnderholdBarn(
             gjelder = rolle.behandling.bidragsmottaker!!.tilNotatRolle(),
             gjelderBarn = rolle.tilNotatRolle(),
