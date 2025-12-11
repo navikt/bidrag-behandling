@@ -327,7 +327,7 @@ open class Behandling(
     val sammeSamværForAlle get() =
         forholdsmessigFordeling == null &&
             samvær.all { sb1 ->
-                samvær.all {
+                samvær.filter { it.id != sb1.id }.all {
                     sb1.erLik(it)
                 }
             }

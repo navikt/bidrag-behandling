@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.bidrag.behandling.async.BestillAsyncJobService
+import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -82,6 +84,7 @@ class BehandlingService(
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
     private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
+    private val bestillAsyncJobService: BestillAsyncJobService? = null,
     @Lazy
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
 //    private val applicationEventPublisher: ApplicationEventPublisher? = null,
@@ -553,6 +556,19 @@ class BehandlingService(
         tilgangskontrollService.sjekkTilgangBehandling(behandling)
         if (behandling.deleted) behandlingNotFoundException(behandlingId)
         return behandling
+    }
+
+    @Transactional(readOnly = true)
+    fun oppdaterRollerAsync(
+        behandlingId: Long,
+        request: OppdaterRollerRequest,
+    ) {
+        bestillAsyncJobService!!.bestillOppdateringAvRoller(
+            BehandlingOppdateringBestilling(
+                behandlingId = behandlingId,
+                request = request,
+            ),
+        )
     }
 
     @Transactional

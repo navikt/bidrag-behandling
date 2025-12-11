@@ -167,8 +167,6 @@ class GrunnlagService(
     private val barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting,
     private val vedtakConsumer: BidragVedtakConsumer,
     private val vedtakService: VedtakService? = null,
-    private val grunnlagFetchTaskExecutor: TaskExecutor? = null,
-    private val behandlngRepository: BehandlingRepository? = null,
     private val sakConsumer: BidragSakConsumer? = null,
     private val personConsumer: BidragPersonConsumer? = null,
     @Lazy
@@ -196,22 +194,22 @@ class GrunnlagService(
         return gjelder to hentetGrunnlag
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun oppdaterGrunnlagForBehandlingAsync(behandlingId: Long) {
-        grunnlagFetchTaskExecutor?.execute {
-            try {
-                val behandling = behandlngRepository!!.findBehandlingById(behandlingId).get()
-                // Your long-running method
-                oppdatereGrunnlagForBehandling(behandling)
-                val metadata = behandling.metadata ?: BehandlingMetadataDo()
-                metadata.setOppdatererGrunnlagAsync(false)
-                behandling.metadata = metadata
-            } catch (e: Exception) {
-                // Handle exceptions
-                log.error(e) { "Error processing behandling $behandlingId" }
-            }
-        }
-    }
+//    @Transactional(propagation = Propagation.REQUIRES_NEW)
+//    fun oppdaterGrunnlagForBehandlingAsync(behandlingId: Long) {
+//        grunnlagFetchTaskExecutor?.execute {
+//            try {
+//                val behandling = behandlngRepository!!.findBehandlingById(behandlingId).get()
+//                // Your long-running method
+//                oppdatereGrunnlagForBehandling(behandling)
+//                val metadata = behandling.metadata ?: BehandlingMetadataDo()
+//                metadata.setOppdatererGrunnlagAsync(false)
+//                behandling.metadata = metadata
+//            } catch (e: Exception) {
+//                // Handle exceptions
+//                log.error(e) { "Error processing behandling $behandlingId" }
+//            }
+//        }
+//    }
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {

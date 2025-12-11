@@ -442,7 +442,7 @@ class BehandlingControllerV2(
     fun oppdaterRoller(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
-    ) = behandlingService.oppdaterRoller(behandlingId, request)
+    ) = behandlingService.oppdaterRollerAsync(behandlingId, request)
 
     @PutMapping("/behandling/{behandlingsid}/aktivere")
     @Operation(
