@@ -90,7 +90,7 @@ class UnderholdService(
 
         if (request.underholdsid == null) {
             val underholdHarAndreBarn =
-                behandling.underholdskostnader.find { it.rolle == null } != null
+                behandling.underholdskostnader.find { it.gjelderAndreBarn } != null
             if (!underholdHarAndreBarn) {
                 throw HttpClientErrorException(
                     HttpStatus.BAD_REQUEST,
@@ -144,8 +144,10 @@ class UnderholdService(
             if (rolleSøknadsbarn != null) {
                 lagreUnderholdskostnad(behandling, null, rolleSøknadsbarn, null)
             } else {
+                val bidragsmottaker =
+                    behandling.alleBidragsmottakere.find { it.ident == gjelderBarn.bidragsmottaker?.verdi } ?: behandling.bidragsmottaker!!
                 personRepository.findFirstByIdent(personidentBarn.verdi)?.let { eksisterendePerson ->
-                    lagreUnderholdskostnad(behandling, eksisterendePerson, rolleSøknadsbarn, kilde)
+                    lagreUnderholdskostnad(behandling, eksisterendePerson, bidragsmottaker, kilde)
                 } ?: run {
                     val person =
                         Person(
@@ -156,13 +158,16 @@ class UnderholdService(
                         )
                     person.rolle.forEach { it.person = person }
 
-                    lagreUnderholdskostnad(behandling, person, rolleSøknadsbarn, kilde = kilde)
+                    lagreUnderholdskostnad(behandling, person, bidragsmottaker, kilde = kilde)
                 }
             }
         } ?: run {
+            val bidragsmottaker =
+                behandling.alleBidragsmottakere.find { it.ident == gjelderBarn.bidragsmottaker?.verdi } ?: behandling.bidragsmottaker!!
             lagreUnderholdskostnad(
                 behandling,
                 Person(navn = gjelderBarn.navn, fødselsdato = gjelderBarn.fødselsdato!!),
+                rolle = bidragsmottaker,
                 kilde = Kilde.MANUELL,
             )
         }
@@ -485,7 +490,7 @@ class UnderholdService(
         val personUnderhold = underholdskostnad.person
         if (personUnderhold != null) {
             personUnderhold.underholdskostnad.remove(underholdskostnad)
-            if (personUnderhold.underholdskostnad.isEmpty() && underholdskostnad.rolle == null) {
+            if (personUnderhold.underholdskostnad.isEmpty() && underholdskostnad.gjelderAndreBarn) {
                 personRepository.deleteById(personUnderhold.id!!)
                 if (!behandling.harAndreBarnIUnderhold()) {
                     notatService.sletteNotat(behandling, Notattype.UNDERHOLDSKOSTNAD, behandling.bidragsmottaker!!)

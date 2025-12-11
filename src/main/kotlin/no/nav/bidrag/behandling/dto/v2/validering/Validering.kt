@@ -25,6 +25,30 @@ import org.springframework.web.client.HttpClientErrorException
 import java.nio.charset.Charset
 import java.time.LocalDate
 
+data class VirkningstidspunktFeilV2Dto(
+    val gjelder: RolleDto,
+    val manglerVirkningstidspunkt: Boolean = false,
+    val manglerOpphørsdato: Boolean = false,
+    val kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak: Boolean = false,
+    val manglerÅrsakEllerAvslag: Boolean = false,
+    val måVelgeVedtakForBeregning: Boolean = false,
+    val manglerBegrunnelse: Boolean = false,
+    val manglerVurderingAvSkolegang: Boolean = false,
+    val virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig: Boolean = false,
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            manglerBegrunnelse ||
+                måVelgeVedtakForBeregning ||
+                manglerOpphørsdato ||
+                kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak ||
+                manglerVurderingAvSkolegang ||
+                manglerVirkningstidspunkt ||
+                manglerÅrsakEllerAvslag ||
+                virkningstidspunktKanIkkeVæreSenereEnnOpprinnelig
+}
+
 data class VirkningstidspunktFeilDto(
     val manglerVirkningstidspunkt: Boolean = false,
     val manglerOpphørsdato: List<RolleDto> = emptyList(),
@@ -66,9 +90,9 @@ data class MaksGodkjentBeløpValideringsfeil(
 }
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: Set<InntektValideringsfeil>? = emptySet(),
+    val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
     val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
-    val kontantstøtte: Set<InntektValideringsfeil>? = emptySet(),
+    val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
     val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
     @Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
@@ -250,7 +274,7 @@ data class FatteVedtakFeil(
 }
 
 data class BeregningValideringsfeil(
-    val virkningstidspunkt: VirkningstidspunktFeilDto? = null,
+    val virkningstidspunkt: List<VirkningstidspunktFeilV2Dto>? = null,
     val utgift: UtgiftValideringsfeilDto? = null,
     val inntekter: InntektValideringsfeilDto? = null,
     val privatAvtale: List<PrivatAvtaleValideringsfeilDto>? = null,

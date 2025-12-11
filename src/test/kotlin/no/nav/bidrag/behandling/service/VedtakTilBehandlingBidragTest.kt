@@ -364,7 +364,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
     private fun Behandling.validerUnderhold() {
         assertSoftly(underholdskostnader) {
             size shouldBe 3
-            val underholdSøknadsbarn = underholdskostnader.find { it.rolle != null }!!
+            val underholdSøknadsbarn = underholdskostnader.find { !it.gjelderAndreBarn }!!
             assertSoftly(underholdSøknadsbarn) {
                 harTilsynsordning shouldBe true
 

@@ -50,6 +50,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     fun `skal oppdatere årsak`() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
+        behandling.søktFomDato = LocalDate.parse("2019-12-01")
         behandling.grunnlag.addAll(
             oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
                 oppretteHusstandsmedlemMedOffentligePerioder(behandling),
@@ -101,6 +102,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     fun `skal oppdatere avslag`() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
+        behandling.søktFomDato = LocalDate.parse("2019-12-01")
         behandling.grunnlag.addAll(
             oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(
                 oppretteHusstandsmedlemMedOffentligePerioder(behandling),
@@ -465,6 +467,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     fun `skal oppdatere virkningstidspunkt og rekalkulere boforhold periode`() {
         // gitt
         val behandling = testdataManager.oppretteBehandling(true)
+        behandling.søktFomDato = LocalDate.parse("2019-12-01")
         behandling.virkningstidspunkt = LocalDate.parse("2023-01-01")
         behandling.grunnlag.addAll(
             oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem(

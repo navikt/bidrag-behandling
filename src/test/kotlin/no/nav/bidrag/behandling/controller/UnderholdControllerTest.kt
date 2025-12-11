@@ -412,7 +412,7 @@ class UnderholdControllerTest : KontrollerTestRunner() {
             lagretBehandling.underholdskostnader shouldHaveSize 3
 
             val u =
-                lagretBehandling.underholdskostnader.find { it.rolle == null && it.personNavn == navnAnnetBarnBp }
+                lagretBehandling.underholdskostnader.find { it.gjelderAndreBarn && it.personNavn == navnAnnetBarnBp }
 
             val sletteUnderholdselement = SletteUnderholdselement(u?.id!!, u.person!!.id!!, Underholdselement.BARN)
 

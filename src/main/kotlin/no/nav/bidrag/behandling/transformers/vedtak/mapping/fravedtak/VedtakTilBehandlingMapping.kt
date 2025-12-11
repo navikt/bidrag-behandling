@@ -67,6 +67,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -569,8 +570,13 @@ class VedtakTilBehandlingMapping(
                 }.groupBy { it.gjelderBarnReferanse }
                 .map { (gjelderBarnReferanse, grunnlag) ->
                     val innhold = grunnlag.innholdTilObjekt<FaktiskUtgiftPeriode>()
-                    val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!.personObjekt
+                    val personGrunnlag = hentPersonMedReferanse(gjelderBarnReferanse)
+                    val gjelderBarn = personGrunnlag!!.personObjekt
 
+                    val bmReferanse = gjelderBarn.bidragsmottaker ?: personGrunnlag.gjelderReferanse
+                    val bidragsmottakerIdent =
+                        bmReferanse?.let { hentPersonMedReferanse(gjelderBarn.bidragsmottaker) }?.personIdent
+                            ?: behandling.bidragsmottaker!!.ident
                     val kilde =
                         if (andreBarnTilBidragsmottakerIdenter.contains(gjelderBarn.ident?.verdi)) {
                             Kilde.OFFENTLIG
@@ -584,6 +590,7 @@ class VedtakTilBehandlingMapping(
                                 id = indexU,
                                 behandling = behandling,
                                 kilde = kilde,
+                                rolle = behandling.alleBidragsmottakere.find { it.ident == bidragsmottakerIdent },
                                 person =
                                     Person(
                                         id = indexU,
@@ -622,12 +629,18 @@ class VedtakTilBehandlingMapping(
                 .filter { !faktiskPeriodeGjelderReferanser.contains(it.gjelderPerson) }
                 .filter { hentPersonMedReferanse(it.gjelderPerson)?.type != Grunnlagstype.PERSON_SØKNADSBARN }
                 .map {
-                    val gjelderBarn = hentPersonMedReferanse(it.gjelderPerson)!!.personObjekt
+                    val personGrunnlag = hentPersonMedReferanse(it.gjelderPerson)
+                    val gjelderBarn = personGrunnlag!!.personObjekt
+                    val bmReferanse = gjelderBarn.bidragsmottaker ?: personGrunnlag.gjelderReferanse
+                    val bidragsmottakerIdent =
+                        bmReferanse?.let { hentPersonMedReferanse(gjelderBarn.bidragsmottaker) }?.personIdent
+                            ?: behandling.bidragsmottaker!!.ident
                     indexU += 1L
                     if (lesemodus) {
                         Underholdskostnad(
                             id = indexU,
                             behandling = behandling,
+                            rolle = behandling.alleBidragsmottakere.find { it.ident == bidragsmottakerIdent },
                             person =
                                 Person(
                                     id = indexU,
@@ -647,7 +660,51 @@ class VedtakTilBehandlingMapping(
                         )
                     }
                 }
-        return (underholdskostnadAndreBarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
+
+        val underholdskostnader = (underholdskostnadAndreBarn + underholdskostnadAndreBarnBMUtenTilsynsutgifer).toMutableSet()
+
+        val barnUnder12ÅrManuell =
+            hentAllePersoner()
+                .filter { it.type == Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER }
+                .filter { it.personObjekt.fødselsdato.erUnder12År(virkningstidspunkt) }
+        val underholdskostnadAndreBarnBMUtenTilsynsutgifterManuell =
+            barnUnder12ÅrManuell
+                .filter {
+                    underholdskostnader.none { uk -> uk.person?.ident == it.personIdent }
+                }.map {
+                    val personGrunnlag = hentPersonMedReferanse(it.referanse)
+                    val gjelderBarn = personGrunnlag!!.personObjekt
+                    val bmReferanse = gjelderBarn.bidragsmottaker ?: personGrunnlag.gjelderReferanse
+                    val bidragsmottakerIdent =
+                        bmReferanse?.let { hentPersonMedReferanse(gjelderBarn.bidragsmottaker) }?.personIdent
+                            ?: behandling.bidragsmottaker!!.ident
+                    indexU += 1L
+                    if (lesemodus) {
+                        Underholdskostnad(
+                            id = indexU,
+                            behandling = behandling,
+                            rolle = behandling.alleBidragsmottakere.find { bm -> bm.ident == bidragsmottakerIdent },
+                            person =
+                                Person(
+                                    id = indexU,
+                                    ident = gjelderBarn.ident?.verdi,
+                                    navn = gjelderBarn.navn,
+                                    fødselsdato = gjelderBarn.fødselsdato,
+                                ),
+                        )
+                    } else {
+                        underholdService.oppretteUnderholdskostnad(
+                            behandling,
+                            BarnDto(
+                                personident = gjelderBarn.ident,
+                                navn = if (gjelderBarn.ident != null) null else gjelderBarn.navn,
+                                fødselsdato = gjelderBarn.fødselsdato,
+                            ),
+                            kilde = Kilde.MANUELL,
+                        )
+                    }
+                }
+        return (underholdskostnader + underholdskostnadAndreBarnBMUtenTilsynsutgifterManuell).toMutableSet()
     }
 
     fun List<GrunnlagDto>.hentUnderholdskostnadPerioder(

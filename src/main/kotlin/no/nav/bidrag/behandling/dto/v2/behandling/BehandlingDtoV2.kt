@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
@@ -144,10 +145,9 @@ data class BehandlingDtoV2(
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
     val bpsBarnUtenLøpendeBidrag: Set<BpsBarnUtenLøpendeBidragDto>,
-    val virkningstidspunktV2: List<VirkningstidspunktBarnDtoV2> = emptyList(),
     val virkningstidspunktV3: VirkningstidspunktDtoV3,
-    val virkningstidspunkt: VirkningstidspunktDto,
     val inntekter: InntekterDtoV2,
+    val inntekterV2: List<InntekterDtoRolle>,
     val boforhold: BoforholdDtoV2,
     val gebyr: GebyrDto? = null,
     val gebyrV2: GebyrDtoV2? = null,
@@ -159,8 +159,6 @@ data class BehandlingDtoV2(
     @Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
     val samvær: List<SamværBarnDto>? = null,
     val samværV2: SamværDtoV2? = null,
-    val privatAvtale: List<PrivatAvtaleBarnDto>? = null,
-    val privatAvtaleV2: PrivatAvtaleDto? = null,
     val privatAvtaleV3: PrivatAvtaleDtoV3? = null,
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {

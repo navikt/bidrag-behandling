@@ -113,7 +113,10 @@ fun Behandling.finnBeregnTilDatoBehandling(
         val opprinneligVedtakstidspunktBeregnTil = opprinneligVedtakstidspunkt.plusMonths(1).withDayOfMonth(1).toLocalDate()
         val omgjortVedtakstidspunktBeregnTil = omgjortVedtakVedtakstidspunkt.plusMonths(1).withDayOfMonth(1).toLocalDate()
         when (søknadsbarnRolle?.beregnTil) {
-            BeregnTil.INNEVÆRENDE_MÅNED -> utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, senesteBeregnTil = senesteBeregnTil)
+            BeregnTil.INNEVÆRENDE_MÅNED -> {
+                utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, senesteBeregnTil = senesteBeregnTil)
+            }
+
             BeregnTil.ETTERFØLGENDE_MANUELL_VEDTAK -> {
                 val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
                 if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
@@ -122,6 +125,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
                     utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, nesteVirkningstidspunkt)
                 }
             }
+
             else -> {
                 val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
                 if (virkningstidspunkt >= opprinneligVedtakstidspunktBeregnTil) {
@@ -317,6 +321,7 @@ class VedtakGrunnlagMapper(
         behandling: Behandling,
         søknadsbarnRolle: Rolle,
         endeligBeregning: Boolean = true,
+        inkluderAlleSøknadsbarn: Boolean = true,
     ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
@@ -334,7 +339,7 @@ class VedtakGrunnlagMapper(
                         beregningTilDato,
                     )
                 val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
-                val personobjekter = tilPersonobjekter(søknadsbarnRolle)
+                val personobjekter = tilPersonobjekter(søknadsbarnRolle, inkluderAlleSøknadsbarn)
                 val grunnlagBeregning =
                     if (erDirekteAvslag() && erBidrag()) {
                         BeregnGrunnlag(
@@ -356,12 +361,13 @@ class VedtakGrunnlagMapper(
                                 .toMutableSet()
 
                         when (tilType()) {
-                            TypeBehandling.FORSKUDD ->
+                            TypeBehandling.FORSKUDD -> {
                                 grunnlagsliste.addAll(
                                     tilGrunnlagSivilstand(
                                         personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
                                     ),
                                 )
+                            }
 
                             TypeBehandling.SÆRBIDRAG -> {
                                 grunnlagsliste.add(tilGrunnlagUtgift())
@@ -429,13 +435,17 @@ class VedtakGrunnlagMapper(
                     erDirekteAvslag = erDirekteAvslag(),
                     beregningstype =
                         when {
-                            behandling.erKlageEllerOmgjøring ->
+                            behandling.erKlageEllerOmgjøring -> {
                                 if (endeligBeregning) {
                                     Beregningstype.OMGJØRING_ENDELIG
                                 } else {
                                     Beregningstype.OMGJØRING
                                 }
-                            else -> Beregningstype.BIDRAG
+                            }
+
+                            else -> {
+                                Beregningstype.BIDRAG
+                            }
                         },
                 )
             }
@@ -454,17 +464,19 @@ class VedtakGrunnlagMapper(
 
             val grunnlagListe = (personobjekter + bostatus + inntekter + innhentetGrunnlagListe).toMutableSet()
             when (tilType()) {
-                TypeBehandling.FORSKUDD ->
+                TypeBehandling.FORSKUDD -> {
                     grunnlagListe.addAll(
                         tilGrunnlagSivilstand(
                             personobjekter.bidragsmottaker ?: manglerRolleIGrunnlag(Rolletype.BIDRAGSMOTTAKER, id),
                         ),
                     )
+                }
 
-                TypeBehandling.SÆRBIDRAG ->
+                TypeBehandling.SÆRBIDRAG -> {
                     grunnlagListe.addAll(
                         byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt() + byggGrunnlagUtgiftMaksGodkjentBeløp(),
                     )
+                }
 
                 TypeBehandling.BIDRAG -> {
                     grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true))
@@ -479,7 +491,10 @@ class VedtakGrunnlagMapper(
     fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
         val grunnlagListe = (byggGrunnlagNotaterDirekteAvslag() + byggGrunnlagSøknad()).toMutableSet()
         when (tilType()) {
-            TypeBehandling.FORSKUDD -> grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
+            TypeBehandling.FORSKUDD -> {
+                grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
+            }
+
             TypeBehandling.SÆRBIDRAG -> {
                 grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
                 if (validering.run { tilSærbidragAvslagskode() } == Resultatkode.ALLE_UTGIFTER_ER_FORELDET) {

@@ -636,7 +636,7 @@ class VedtakService(
         val vedtakRequester =
             behandlingTilVedtakMapping
                 .run {
-                    if (behandling.avslag != null) {
+                    if (behandling.erAvslagForAlle) {
                         listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet))
                     } else {
                         behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
@@ -704,7 +704,8 @@ class VedtakService(
             }
 
         // Hent hoved vedtaksiden, dette skal fjernes etterhvert når det migreres over til ny struktur
-        val vedtaksid = vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.first()
+        val vedtaksid =
+            vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.firstOrNull() ?: vedtakResponser.values.first()
         behandlingService.oppdaterVedtakFattetStatus(
             behandling.id!!,
             vedtaksid = vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.first(),

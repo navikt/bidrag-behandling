@@ -2575,6 +2575,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
+        behandling.søknadsbarn.first().avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 omgjørVedtakId = 553,
@@ -2660,6 +2661,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT,
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
+        behandling.søknadsbarn.first().avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.omgjøringsdetaljer =
             Omgjøringsdetaljer(
                 omgjørVedtakId = 553,

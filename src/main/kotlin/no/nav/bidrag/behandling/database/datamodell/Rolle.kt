@@ -126,6 +126,11 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    val barn get() =
+        behandling.søknadsbarn.filter {
+            rolletype == Rolletype.BIDRAGSPLIKTIG ||
+                (rolletype == Rolletype.BIDRAGSMOTTAKER && it.bidragsmottaker?.ident == this.ident)
+        }
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
 
     fun sakForSøknad(søknadsid: Long) =

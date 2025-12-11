@@ -920,7 +920,7 @@ class ForholdsmessigFordelingService(
             }
             behandlingOverført.underholdskostnader.forEach { underholdskostnadOverført ->
                 if (behandling.underholdskostnader.none { s ->
-                        underholdskostnadOverført.rolle != null && s.rolle != null &&
+                        !underholdskostnadOverført.gjelderAndreBarn && s.rolle != null &&
                             s.rolle!!.ident == underholdskostnadOverført.rolle!!.ident ||
                             underholdskostnadOverført.person != null && s.person != null &&
                             s.person!!.ident == underholdskostnadOverført.person!!.ident

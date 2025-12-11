@@ -428,12 +428,12 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn1!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning) {
-                    it.grunnlagListe shouldHaveSize 17
+                    it.grunnlagListe shouldHaveSize 18
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE) shouldHaveSize 6
-                    it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE) shouldHaveSize 4
+                    it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE) shouldHaveSize 5
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE) shouldHaveSize 1
                     it.søknadsbarnReferanse shouldBe søknadsbarn1.tilGrunnlagPerson().referanse
 
@@ -452,12 +452,12 @@ class GrunnlagMappingTest {
                     byggGrunnlagForBeregning(behandling, søknadsbarn2!!).beregnGrunnlag!!
 
                 assertSoftly(grunnlagForBeregning2) {
-                    it.grunnlagListe shouldHaveSize 17
+                    it.grunnlagListe shouldHaveSize 18
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_BIDRAGSMOTTAKER) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_HUSSTANDSMEDLEM) shouldHaveSize 1
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.PERSON_SØKNADSBARN) shouldHaveSize 2
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.BOSTATUS_PERIODE) shouldHaveSize 6
-                    it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE) shouldHaveSize 4
+                    it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE) shouldHaveSize 5
                     it.grunnlagListe.filtrerBasertPåEgenReferanse(Grunnlagstype.SIVILSTAND_PERIODE) shouldHaveSize 1
                     it.søknadsbarnReferanse shouldBe søknadsbarn2.tilGrunnlagPerson().referanse
 

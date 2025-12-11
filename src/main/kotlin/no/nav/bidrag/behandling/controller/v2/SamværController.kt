@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.SamværService
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
@@ -38,7 +39,14 @@ class SamværController(
         @Valid
         @RequestBody(required = true)
         request: OppdaterSamværDto,
-    ): OppdaterSamværResponsDto = samværService.oppdaterSamvær(behandlingsid, request).tilOppdaterSamværResponseDto()
+    ): OppdaterSamværResponsDto {
+        val respons = samværService.oppdaterSamvær(behandlingsid, request)
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        return OppdaterSamværResponsDto(
+            oppdatertSamvær = respons.tilDto(),
+            samværBarn = behandling.samvær.map { it.tilDto() },
+        )
+    }
 
     @PostMapping("/behandling/{behandlingsid}/samvar/merge")
     @Operation(

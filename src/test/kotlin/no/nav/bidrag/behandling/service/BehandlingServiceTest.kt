@@ -310,7 +310,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
                 val andreVoksneIHusstanden = s.voksneIHusstanden
                 andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual opprinneligVirkningstidspunkt
-                barn.forEach {
+                this.barn.forEach {
                     it.perioder.first().datoFom!! shouldBeEqual opprinneligVirkningstidspunkt
                 }
             }
@@ -361,7 +361,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
                 val andreVoksneIHusstanden = s.voksneIHusstanden
                 andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
-                barn.forEach {
+                this.barn.forEach {
                     it.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
                 }
             }
@@ -818,7 +818,8 @@ class BehandlingServiceTest : TestContainerRunner() {
             }
             assertSoftly(opprettetBehandling.underholdskostnader.find { it.kilde == Kilde.OFFENTLIG }) {
                 it.shouldNotBeNull()
-                it.rolle shouldBe null
+                it.rolle.shouldNotBeNull()
+                it.rolle!!.rolletype.shouldBe(Rolletype.BIDRAGSMOTTAKER)
                 it.faktiskeTilsynsutgifter.shouldBeEmpty()
                 it.personIdent.shouldBe(testdataBarn2.ident)
             }
@@ -1805,7 +1806,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             assertSoftly(oppdaterBehandling!!.husstandsmedlem) { s ->
                 val andreVoksneIHusstanden = s.voksneIHusstanden
                 andreVoksneIHusstanden!!.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
-                barn.forEach {
+                this.barn.forEach {
                     it.perioder.first().datoFom!! shouldBeEqual nyVirkningsdato
                 }
             }
