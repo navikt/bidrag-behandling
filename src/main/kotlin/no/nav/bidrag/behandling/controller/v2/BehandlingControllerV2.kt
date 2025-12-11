@@ -565,7 +565,7 @@ class BehandlingControllerV2(
     fun kanBehandlingBehandlesINyLøsning(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
-        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
+        val behandling = behandlingRepository.findBehandlingSimple(behandlingsid)
         validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         return ResponseEntity.accepted().build()
     }
