@@ -126,6 +126,7 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
     val barn get() =
         behandling.søknadsbarn.filter {
             rolletype == Rolletype.BIDRAGSPLIKTIG ||

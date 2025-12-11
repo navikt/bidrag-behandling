@@ -656,6 +656,7 @@ class NotatOpplysningerService(
                                                 erEvneJustertNedTil25ProsentAvInntekt = it.erEvneJustertNedTil25ProsentAvInntekt,
                                             )
                                         },
+                                    erAvvisning = beregning.erAvvisning,
                                     erAvvistRevurdering = beregning.erAvvistRevurdering,
                                     orkestrertVedtak =
                                         beregning.delvedtak.find { it.endeligVedtak }?.let {

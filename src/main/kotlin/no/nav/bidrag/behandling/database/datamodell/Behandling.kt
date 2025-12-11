@@ -250,6 +250,7 @@ open class Behandling(
     val erIForholdsmessigFordeling get() = forholdsmessigFordeling != null
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
+    val revurderingdsbarn get() = roller.filter { it.erRevurderingsbarn }
     val bidragsmottaker get() =
         roller.find {
             it.rolletype == Rolletype.BIDRAGSMOTTAKER &&
@@ -294,6 +295,18 @@ open class Behandling(
         } else {
             søknadsbarn.filter { it.avslag == null }.mapNotNull { it.virkningstidspunkt }.minByOrNull { it }
         } ?: virkningstidspunkt ?: søktFomDato
+
+    val erAvslagForAlleIkkeRevurdering get() =
+        if (erBidrag()) {
+            søknadsbarn
+                .filter { it.forholdsmessigFordeling == null || it.forholdsmessigFordeling?.erRevurdering == false }
+                .all {
+                    it.avslag != null
+                }
+        } else {
+            avslag !=
+                null
+        }
 
     val erAvslagForAlle get() =
         if (erBidrag()) søknadsbarn.all { it.avslag != null } else avslag != null

@@ -55,6 +55,7 @@ import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.GrunnlagBeregning
 import no.nav.bidrag.beregn.særbidrag.core.felles.bo.SjablonListe
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
 import no.nav.bidrag.domene.enums.beregning.Beregningstype
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -247,49 +248,53 @@ class BeregningService(
                     },
             )
         val resultatAvvisning =
-            behandling.søknadsbarn.filter { it.avslag?.erAvvisning() == true }.map { søknasdbarn ->
-                ResultatBidragsberegningBarn(
-                    ugyldigBeregning = behandling.tilBeregningFeilmelding(),
-                    barn = søknasdbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
-                    avslagskode = søknasdbarn.avslag,
-                    resultat = BeregnetBarnebidragResultat(),
-                    opphørsdato = null,
-                )
-            }
+            behandling.søknadsbarn
+                .filter { it.avslag?.erAvvisning() == true }
+                .map { søknasdbarn ->
+                    ResultatBidragsberegningBarn(
+                        ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        vedtakstype = behandling.vedtakstype,
+                        avslagskode = søknasdbarn.avslag,
+                        resultat = BeregnetBarnebidragResultat(),
+                        opphørsdato = null,
+                    )
+                }
         val resultatAvslag =
-            behandling.søknadsbarn.filter { it.avslag?.erDirekteAvslag() == true }.map { søknasdbarn ->
-                ResultatBidragsberegningBarn(
-                    ugyldigBeregning = behandling.tilBeregningFeilmelding(),
-                    barn = søknasdbarn.mapTilResultatBarn(),
-                    erAvvistRevurdering = søknasdbarn.forholdsmessigFordeling?.erRevurdering == true,
-                    vedtakstype = behandling.vedtakstype,
-                    avslagskode = søknasdbarn.avslag,
-                    resultat =
-                        BeregnetBarnebidragResultat(
-                            beregnetBarnebidragPeriodeListe =
-                                listOf(
-                                    ResultatPeriodeBB(
-                                        periode =
-                                            ÅrMånedsperiode(
-                                                søknasdbarn.finnBeregnFra(),
-                                                null,
-                                            ),
-                                        ResultatBeregningBB(null),
-                                        emptyList(),
+            behandling.søknadsbarn
+                .filter { it.avslag?.erAvslag() == true && it.avslag?.erAvvisning() == false }
+                .map { søknasdbarn ->
+                    ResultatBidragsberegningBarn(
+                        ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                        barn = søknasdbarn.mapTilResultatBarn(),
+                        erAvvistRevurdering = søknasdbarn.forholdsmessigFordeling?.erRevurdering == true,
+                        vedtakstype = behandling.vedtakstype,
+                        avslagskode = søknasdbarn.avslag,
+                        resultat =
+                            BeregnetBarnebidragResultat(
+                                beregnetBarnebidragPeriodeListe =
+                                    listOf(
+                                        ResultatPeriodeBB(
+                                            periode =
+                                                ÅrMånedsperiode(
+                                                    søknasdbarn.finnBeregnFra(),
+                                                    null,
+                                                ),
+                                            ResultatBeregningBB(null),
+                                            emptyList(),
+                                        ),
                                     ),
-                                ),
-                            grunnlagListe =
-                                mapper
-                                    .byggGrunnlagForBeregning(
-                                        behandling,
-                                        søknasdbarn,
-                                        endeligBeregning,
-                                    ).beregnGrunnlag.grunnlagListe,
-                        ),
-                    opphørsdato = null,
-                )
-            }
+                                grunnlagListe =
+                                    mapper
+                                        .byggGrunnlagForBeregning(
+                                            behandling,
+                                            søknasdbarn,
+                                            endeligBeregning,
+                                        ).beregnGrunnlag.grunnlagListe,
+                            ),
+                        opphørsdato = null,
+                    )
+                }
         val beregning =
             if (grunnlagBeregning.beregningBarn.isNotEmpty()) {
                 try {
