@@ -137,7 +137,7 @@ class SamværService(
             oppdatereBegrunnelse?.let {
                 notatService.oppdatereNotat(
                     oppdaterSamvær.behandling,
-                    NotatGrunnlag.NotatType.SAMVÆR,
+                    NotatType.SAMVÆR,
                     it.henteNyttNotat() ?: "",
                     oppdaterSamvær.rolle,
                 )
