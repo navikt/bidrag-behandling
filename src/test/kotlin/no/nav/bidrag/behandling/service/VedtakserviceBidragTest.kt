@@ -406,7 +406,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 188
+                request.grunnlagListe shouldHaveSize 203
             }
         }
 
@@ -519,13 +519,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 15
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 27
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 4
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 8
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 33
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE) shouldHaveSize 2
@@ -1191,7 +1185,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.periode.fom shouldBe YearMonth.parse("2025-07")
                 it.periode.til shouldBe YearMonth.from(opphørsdato)
                 it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
-                it.beløp shouldBe BigDecimal(6480)
+                it.beløp shouldBe BigDecimal(5970)
             }
         }
 
@@ -1703,7 +1697,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 168
+                request.grunnlagListe shouldHaveSize 183
             }
         }
 
@@ -1769,13 +1763,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_INNTEKTSBASERT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 6
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 26
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_BIDRAGSEVNE) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_FRADRAG) shouldHaveSize 2
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_MAKS_TILSYN) shouldHaveSize 4
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_FORBRUKSUTGIFTER) shouldHaveSize 3
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SAMVARSFRADRAG) shouldHaveSize 8
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_TRINNVIS_SKATTESATS) shouldHaveSize 3
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 32
             hentGrunnlagstyper(Grunnlagstype.TILLEGGSSTØNAD_PERIODE) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.FAKTISK_UTGIFT_PERIODE) shouldHaveSize 3
             hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG) shouldHaveSize 1
