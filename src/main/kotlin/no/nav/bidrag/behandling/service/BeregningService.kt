@@ -183,7 +183,9 @@ class BeregningService(
             beregnBidragAldersjustering(behandling)
         } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
             behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
-        } else if (UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled && behandling.søknadsbarn.size > 1) {
+        } else if (UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
+            (behandling.søknadsbarn.size > 1 || UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled)
+        ) {
             beregneBarnebidragV2FF(behandling, endeligBeregning)
         } else {
             beregneBarnebidragV1(behandling, endeligBeregning)
@@ -207,6 +209,7 @@ class BeregningService(
             )
         val grunnlagBeregning =
             BidragsberegningOrkestratorRequestV2(
+                skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
                 beregningsperiode = beregningsperiode,
                 grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList(),
                 erDirekteAvslag = behandling.erDirekteAvslag(),
