@@ -302,7 +302,6 @@ class BeregningService(
                         beregnBarnebidrag
                             .utførBidragsberegningV3(grunnlagBeregning)
 
-                    val slåttUtTilFF = resultat.grunnlagListe.harSlåttUtTilForholdsmessigFordeling()
                     val perioderSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().map { it.periode }
 
                     resultat.resultat.map { resultatBarn ->

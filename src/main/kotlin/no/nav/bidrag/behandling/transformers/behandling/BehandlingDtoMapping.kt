@@ -629,7 +629,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
             inntekter
                 .filter { rolle == null || it.ident == rolle.ident }
                 .mapValideringsfeilForÅrsinntekter(
-                    virkningstidspunktEllerSøktFomDato,
+                    eldsteVirkningstidspunkt,
                     roller,
                     tilType(),
                 ).takeIf { it.isNotEmpty() },
@@ -641,7 +641,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                             .filter { it.gjelderBarn == barn.ident }
                             .mapValideringsfeilForYtelseSomGjelderBarn(
                                 Inntektsrapportering.BARNETILLEGG,
-                                virkningstidspunktEllerSøktFomDato,
+                                eldsteVirkningstidspunkt,
                                 roller,
                             ).takeIf { it.isNotEmpty() }
                     }.flatMap { it }
@@ -651,7 +651,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                     .filtrerInntektGjelderBarn(rolle)
                     .mapValideringsfeilForYtelseSomGjelderBarn(
                         Inntektsrapportering.BARNETILLEGG,
-                        virkningstidspunktEllerSøktFomDato,
+                        eldsteVirkningstidspunkt,
                         roller,
                     ).takeIf { it.isNotEmpty() }
             },
@@ -660,7 +660,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                 .filter { rolle == null || it.ident == rolle.ident }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.SMÅBARNSTILLEGG,
-                    virkningstidspunktEllerSøktFomDato,
+                    eldsteVirkningstidspunkt,
                     roller,
                 ).firstOrNull(),
         // Det er bare bidragsmottaker småbarnstillegg og utvidetbarnetrygd er relevant for. Antar derfor det alltid gjelder BM og velger derfor den første i listen
@@ -669,7 +669,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                 .filter { rolle == null || it.ident == rolle.ident }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.UTVIDET_BARNETRYGD,
-                    virkningstidspunktEllerSøktFomDato,
+                    eldsteVirkningstidspunkt,
                     roller,
                 ).firstOrNull(),
         kontantstøtte =
@@ -680,7 +680,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                             .filter { it.gjelderBarn == barn.ident }
                             .mapValideringsfeilForYtelseSomGjelderBarn(
                                 Inntektsrapportering.KONTANTSTØTTE,
-                                virkningstidspunktEllerSøktFomDato,
+                                eldsteVirkningstidspunkt,
                                 roller,
                             ).takeIf { it.isNotEmpty() }
                     }.flatMap { it }
@@ -690,7 +690,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                     .filtrerInntektGjelderBarn(rolle)
                     .mapValideringsfeilForYtelseSomGjelderBarn(
                         Inntektsrapportering.KONTANTSTØTTE,
-                        virkningstidspunktEllerSøktFomDato,
+                        eldsteVirkningstidspunkt,
                         roller,
                     ).takeIf { it.isNotEmpty() }
             },

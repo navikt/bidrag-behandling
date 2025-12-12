@@ -1078,13 +1078,18 @@ private fun RolleDto.tilNotatRolle() =
         bidragsmottakerIdent = bidragsmottaker,
     )
 
-private fun PersoninfoDto.tilNotatRolle(behandling: Behandling) =
-    DokumentmalPersonDto(
-        rolle = if (medIBehandlingen == true) behandling.roller.find { it.ident == ident?.verdi }?.rolletype else null,
+private fun PersoninfoDto.tilNotatRolle(behandling: Behandling): DokumentmalPersonDto {
+    val rolle = behandling.roller.find { it.ident == ident?.verdi }
+    return DokumentmalPersonDto(
+        rolle = if (medIBehandlingen == true) rolle?.rolletype else null,
         navn = ident?.let { hentPersonVisningsnavn(it.verdi) } ?: navn,
         fødselsdato = fødselsdato,
         ident = ident,
+        bidragsmottakerIdent = rolle?.bidragsmottaker?.ident,
+        saksnummer = rolle?.saksnummer,
+        revurdering = rolle?.erRevurderingsbarn == true,
     )
+}
 
 private fun Rolle.tilNotatRolle() =
     DokumentmalPersonDto(
