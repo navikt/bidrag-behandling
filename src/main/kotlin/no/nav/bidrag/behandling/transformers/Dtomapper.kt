@@ -438,7 +438,7 @@ class Dtomapper(
 
     fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
-            samvær.filter { it.rolle.avslag == null }.map { it.tilDto() }
+            samvær.filter { it.rolle.avslag == null }.sortedBy { it.rolle.fødselsdato }.map { it.tilDto() }
         } else {
             null
         }
@@ -859,7 +859,7 @@ class Dtomapper(
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
                 gebyrV2 = mapGebyrV2(),
-                roller = roller.map { it.tilDto() }.toSet(),
+                roller = roller.sortedBy { it.fødselsdato }.map { it.tilDto() }.toSet(),
                 bpsBarnUtenLøpendeBidrag = bpsBarnUtenLøpendeBidrag(),
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,

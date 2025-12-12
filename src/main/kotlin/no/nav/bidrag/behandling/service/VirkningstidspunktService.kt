@@ -220,22 +220,42 @@ class VirkningstidspunktService(
                 }
             }
 
-            request.henteOppdatereNotat()?.let { n ->
-                notatService.oppdatereNotat(
-                    it,
-                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                    n.henteNyttNotat() ?: "",
-                    it.bidragsmottaker!!,
-                )
-                gjelderBarnRolle?.let { rolle ->
+            val notat = request.henteOppdatereNotat()
+            if (notat != null) {
+                if (gjelderBarnRolle != null) {
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        n.henteNyttNotat() ?: "",
-                        rolle,
+                        notat.henteNyttNotat() ?: "",
+                        gjelderBarnRolle,
                     )
+                } else {
+                    if (it.erBidrag()) {
+                        it.søknadsbarn.forEach { barn ->
+                            notatService.oppdatereNotat(
+                                it,
+                                NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                                notat.henteNyttNotat() ?: "",
+                                barn,
+                            )
+                        }
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                            notat.henteNyttNotat() ?: "",
+                            it.bidragsmottaker!!,
+                        )
+                    } else {
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                            notat.henteNyttNotat() ?: "",
+                            it.bidragsmottaker!!,
+                        )
+                    }
                 }
             }
+
             oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, it)
             it
         }
