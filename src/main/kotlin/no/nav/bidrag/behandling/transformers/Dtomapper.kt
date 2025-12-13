@@ -22,10 +22,7 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
@@ -870,6 +867,7 @@ class Dtomapper(
                 virkningstidspunktV3 =
                     VirkningstidspunktDtoV3(
                         false,
+                        erVirkningstidspunktLiktForAlle,
                         erAvslagForAlle,
                         eldsteVirkningstidspunkt.toYearMonth(),
                         emptyList(),
@@ -898,6 +896,7 @@ class Dtomapper(
             virkningstidspunktV3 =
                 VirkningstidspunktDtoV3(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
+                    erVirkningstidspunktLiktForAlle = erVirkningstidspunktLiktForAlle,
                     erAvslagForAlle = erAvslagForAlle,
                     eldsteVirkningstidspunkt = eldsteVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarnV3(),

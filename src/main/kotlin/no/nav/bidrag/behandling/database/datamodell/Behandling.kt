@@ -311,6 +311,7 @@ open class Behandling(
     val erAvslagForAlle get() =
         if (erBidrag()) søknadsbarn.all { it.avslag != null } else avslag != null
 
+    val erVirkningstidspunktLiktForAlle get() = søknadsbarn.mapNotNull { it.virkningstidspunkt }.toSet().size == 1
     val globalOpphørsdato get() =
         if (søknadsbarn.any { it.opphørsdato == null }) {
             null
