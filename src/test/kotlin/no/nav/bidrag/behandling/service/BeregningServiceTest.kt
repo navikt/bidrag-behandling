@@ -163,7 +163,7 @@ class BeregningServiceTest {
             BeregnForskuddApi().beregn(any())
         }
         resultat shouldHaveSize 2
-        resultat[0].resultat.grunnlagListe shouldHaveSize 40
+        resultat[0].resultat.grunnlagListe shouldHaveSize 47
         beregnGrunnlagList shouldHaveSize 2
         assertSoftly(beregnGrunnlagList[0]) {
             it.periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt)
@@ -241,7 +241,7 @@ class BeregningServiceTest {
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
             it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
             it.resultat.beregnetBarnebidragPeriodeListe[0]
-                .resultat.beløp shouldBe BigDecimal(4410)
+                .resultat.beløp shouldBe BigDecimal(4640)
         }
     }
 

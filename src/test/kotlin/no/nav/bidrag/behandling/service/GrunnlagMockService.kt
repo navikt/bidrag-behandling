@@ -72,6 +72,7 @@ import stubPersonConsumer
 import stubPersonRepository
 import stubSivilstandrepository
 import stubUnderholdskostnadRepository
+import stubVedtakConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -178,6 +179,7 @@ class GrunnlagMockService {
         stubBehandlingrepository(behandlingRepository)
         stubHusstandrepository(husstandsmedlemRepository)
         stubSivilstandrepository(sivilstandRepository)
+        stubVedtakConsumer(vedtakConsumer)
         every {
             runBlocking {
                 grunnlagConsumer.henteGrunnlag(

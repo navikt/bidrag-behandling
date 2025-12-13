@@ -194,13 +194,12 @@ class BehandlingTilVedtakMapping(
     fun Behandling.byggOpprettVedtakRequestBidragAlle(
         enhet: String? = null,
         byggEttVedtak: Boolean = false,
-    ): List<OpprettVedtakRequestDto> {
-        return if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            return listOf(byggOpprettVedtakRequestBidragAldersjustering(enhet))
+    ): List<OpprettVedtakRequestDto> =
+        if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            listOf(byggOpprettVedtakRequestBidragAldersjustering(enhet))
         } else {
             byggOpprettVedtakRequestBidrag(enhet, byggEttVedtak)
         }
-    }
 
     fun hentBeregningBarnebidrag(behandling: Behandling): ResultatadBeregningOrkestrering {
         val sak = sakConsumer.hentSak(behandling.saksnummer)
@@ -835,6 +834,7 @@ class BehandlingTilVedtakMapping(
                     stønadsendringPerioder.map { periode ->
                         val sak = behandlingSaker.getValue(periode.barn.saksnummer)
                         val erAvvisning = periode.perioder.isEmpty() || periode.barn.avslag?.erAvvisning() == true
+                        val erAvslag = periode.barn.avslag != null
 
                         val søknadsbarnReferanse = periode.barn.tilGrunnlagsreferanse()
                         val stønadsendringerBarn =
@@ -857,7 +857,7 @@ class BehandlingTilVedtakMapping(
                                         .referanse,
                             periodeListe = periode.perioder,
                             førsteIndeksreguleringsår =
-                                if (!erAvvisning) {
+                                if (!erAvvisning && !erAvslag) {
                                     val sistePeriode =
                                         periode.perioder
                                             .filter {

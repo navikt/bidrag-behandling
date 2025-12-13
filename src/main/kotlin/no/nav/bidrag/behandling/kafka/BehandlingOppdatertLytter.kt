@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
+import no.nav.bidrag.commons.web.MdcConstants.MDC_USER_ID
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -18,6 +19,7 @@ import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.dokument.Sporingsdata
 import no.nav.bidrag.transport.felles.toCompactString
+import org.slf4j.MDC
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import kotlin.collections.filter
@@ -44,6 +46,7 @@ class BehandlingOppdatertLytter(
         val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingId)
         val erVedtakFattet = behandling.vedtakDetaljer?.vedtakstidspunkt != null
         val erBehandlingSlettet = behandling.deleted
+        val saksbehandlerIdent = TokenUtils.hentSaksbehandlerIdent() ?: MDC.get(MDC_USER_ID)
         val hendelse =
             BehandlingHendelse(
                 søknadsid = behandling.soknadsid,
@@ -97,10 +100,10 @@ class BehandlingOppdatertLytter(
                 sporingsdata =
                     Sporingsdata(
                         correlationId = "${LocalDateTime.now().toCompactString()}_behandling_søknadshendelse_${behandling.soknadsid}",
-                        brukerident = TokenUtils.hentSaksbehandlerIdent(),
+                        brukerident = saksbehandlerIdent,
                         enhetsnummer = behandling.behandlerEnhet,
                         saksbehandlersNavn =
-                            TokenUtils.hentSaksbehandlerIdent()?.let {
+                            saksbehandlerIdent?.let {
                                 EnhetProvider.hentSaksbehandlernavn(it)
                             },
                     ),

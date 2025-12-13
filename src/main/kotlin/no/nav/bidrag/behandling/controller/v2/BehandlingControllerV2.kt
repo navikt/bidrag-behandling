@@ -442,7 +442,7 @@ class BehandlingControllerV2(
     fun oppdaterRoller(
         @PathVariable behandlingId: Long,
         @Valid @RequestBody(required = true) request: OppdaterRollerRequest,
-    ) = behandlingService.oppdaterRoller(behandlingId, request)
+    ) = behandlingService.oppdaterRollerAsync(behandlingId, request)
 
     @PutMapping("/behandling/{behandlingsid}/aktivere")
     @Operation(
@@ -565,7 +565,7 @@ class BehandlingControllerV2(
     fun kanBehandlingBehandlesINyLøsning(
         @PathVariable behandlingsid: Long,
     ): ResponseEntity<Void> {
-        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
+        val behandling = behandlingRepository.findBehandlingSimple(behandlingsid)
         validerBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         return ResponseEntity.accepted().build()
     }

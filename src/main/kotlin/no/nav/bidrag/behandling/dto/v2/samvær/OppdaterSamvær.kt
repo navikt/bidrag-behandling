@@ -21,6 +21,7 @@ data class OppdaterSamværDto(
 data class OppdaterSamværResponsDto(
     @Schema(description = "Samvær som ble oppdatert", deprecated = true)
     val oppdatertSamvær: SamværBarnDto? = null,
+    val erSammeForAlle: Boolean = true,
     val samværBarn: List<SamværBarnDto> = emptyList(),
 )
 

@@ -44,6 +44,7 @@ class SamværController(
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return OppdaterSamværResponsDto(
             oppdatertSamvær = respons.tilDto(),
+            erSammeForAlle = behandling.sammeSamværForAlle,
             samværBarn = behandling.samvær.map { it.tilDto() },
         )
     }

@@ -62,7 +62,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.avslag = null
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
         virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = barn2.id, avslag = Resultatkode.AVSLAG))
-        behandling.avslag shouldBe Resultatkode.AVSLAG
+        behandling.avslag shouldBe null
         barn1.avslag shouldBe null
         barn2.avslag shouldBe Resultatkode.AVSLAG
 
@@ -71,6 +71,39 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
         behandling.avslag = null
 
         virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = null, avslag = Resultatkode.AVSLAG))
+        behandling.avslag shouldBe Resultatkode.AVSLAG
+        barn1.avslag shouldBe Resultatkode.AVSLAG
+        barn2.avslag shouldBe Resultatkode.AVSLAG
+    }
+
+    @Test
+    fun `skal oppdatere avslag når alle barn har avslag`() {
+        Optional.ofNullable<List<String>>(null).flatMap { it.stream().findFirst() }
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(generateId = true, typeBehandling = TypeBehandling.BIDRAG)
+        val barn1 = behandling.søknadsbarn.first()
+        val barn2 =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 55,
+            )
+
+        behandling.roller.add(barn2)
+        barn1.virkningstidspunkt = LocalDate.parse("2025-01-01")
+        barn2.virkningstidspunkt = LocalDate.parse("2025-02-01")
+        behandling.virkningstidspunkt = LocalDate.parse("2025-03-01")
+        barn1.avslag = null
+        barn2.avslag = null
+        behandling.avslag = null
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = barn2.id, avslag = Resultatkode.AVSLAG))
+        behandling.avslag shouldBe null
+        barn1.avslag shouldBe null
+        barn2.avslag shouldBe Resultatkode.AVSLAG
+
+        virkningstidspunktService.oppdatereVirkningstidspunkt(behandling.id!!, OppdatereVirkningstidspunkt(rolleId = barn1.id, avslag = Resultatkode.AVSLAG))
         behandling.avslag shouldBe Resultatkode.AVSLAG
         barn1.avslag shouldBe Resultatkode.AVSLAG
         barn2.avslag shouldBe Resultatkode.AVSLAG

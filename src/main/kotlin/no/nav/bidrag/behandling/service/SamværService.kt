@@ -59,7 +59,13 @@ class SamværService(
 
         if (request.sammeForAlle) {
             behandling.samvær.filter { it.id != samværBarn.id }.forEach { oppdaterSamvær ->
-                kopierSamværPerioderOgBegrunnelse(samværBarn, oppdaterSamvær)
+                kopierSamværPerioderOgBegrunnelse(
+                    samværBarn,
+                    oppdaterSamvær,
+                    erPerioderOppdatert = request.periode != null,
+                    erBegrunnelseOppdatert =
+                        request.oppdatereBegrunnelse != null,
+                )
             }
         }
 
@@ -103,27 +109,34 @@ class SamværService(
     private fun kopierSamværPerioderOgBegrunnelse(
         fraSamvær: Samvær,
         oppdaterSamvær: Samvær,
+        erPerioderOppdatert: Boolean = true,
+        erBegrunnelseOppdatert: Boolean = true,
     ) {
-        val begrunnelseFraSamvær = henteNotatinnhold(fraSamvær.behandling, NotatType.SAMVÆR, fraSamvær.rolle, true)
-        val nyePerioder =
-            fraSamvær.perioder.map {
-                Samværsperiode(
-                    oppdaterSamvær,
-                    it.fom,
-                    it.tom,
-                    it.samværsklasse,
-                    beregningJson = it.beregningJson,
-                )
-            }
+        if (erPerioderOppdatert) {
+            val nyePerioder =
+                fraSamvær.perioder.map {
+                    Samværsperiode(
+                        oppdaterSamvær,
+                        it.fom,
+                        it.tom,
+                        it.samværsklasse,
+                        beregningJson = it.beregningJson,
+                    )
+                }
 
-        oppdaterSamvær.perioder.clear()
-        oppdaterSamvær.perioder.addAll(nyePerioder)
-        notatService.oppdatereNotat(
-            oppdaterSamvær.behandling,
-            NotatType.SAMVÆR,
-            begrunnelseFraSamvær,
-            oppdaterSamvær.rolle,
-        )
+            oppdaterSamvær.perioder.clear()
+            oppdaterSamvær.perioder.addAll(nyePerioder)
+        }
+
+        if (erBegrunnelseOppdatert) {
+            val begrunnelseFraSamvær = henteNotatinnhold(fraSamvær.behandling, NotatType.SAMVÆR, fraSamvær.rolle, true)
+            notatService.oppdatereNotat(
+                oppdaterSamvær.behandling,
+                NotatType.SAMVÆR,
+                begrunnelseFraSamvær,
+                oppdaterSamvær.rolle,
+            )
+        }
     }
 
     private fun oppdaterSamvær(
@@ -137,7 +150,7 @@ class SamværService(
             oppdatereBegrunnelse?.let {
                 notatService.oppdatereNotat(
                     oppdaterSamvær.behandling,
-                    NotatGrunnlag.NotatType.SAMVÆR,
+                    NotatType.SAMVÆR,
                     it.henteNyttNotat() ?: "",
                     oppdaterSamvær.rolle,
                 )
