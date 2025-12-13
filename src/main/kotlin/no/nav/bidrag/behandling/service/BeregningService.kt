@@ -209,7 +209,7 @@ class BeregningService(
             )
         val grunnlagBeregning =
             BidragsberegningOrkestratorRequestV2(
-                skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
+//                skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
                 beregningsperiode = beregningsperiode,
                 grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList(),
                 erDirekteAvslag = behandling.erDirekteAvslag(),
