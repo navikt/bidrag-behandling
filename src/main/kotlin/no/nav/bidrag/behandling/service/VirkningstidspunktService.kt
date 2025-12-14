@@ -230,29 +230,20 @@ class VirkningstidspunktService(
                         gjelderBarnRolle,
                     )
                 } else {
-                    if (it.erBidrag()) {
-                        it.søknadsbarn.forEach { barn ->
-                            notatService.oppdatereNotat(
-                                it,
-                                NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                                notat.henteNyttNotat() ?: "",
-                                barn,
-                            )
-                        }
+                    it.søknadsbarn.forEach { barn ->
                         notatService.oppdatereNotat(
                             it,
                             NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
                             notat.henteNyttNotat() ?: "",
-                            it.bidragsmottaker!!,
-                        )
-                    } else {
-                        notatService.oppdatereNotat(
-                            it,
-                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                            notat.henteNyttNotat() ?: "",
-                            it.bidragsmottaker!!,
+                            barn,
                         )
                     }
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                        notat.henteNyttNotat() ?: "",
+                        it.bidragsmottaker!!,
+                    )
                 }
             }
 
@@ -358,6 +349,11 @@ class VirkningstidspunktService(
                                 behandling,
                             )
                         }
+                    } else if (forRolle != null && forRolle.avslag != null) {
+                        oppdaterOpphørsdato(
+                            OppdaterOpphørsdatoRequestDto(forRolle.id!!, null),
+                            behandling,
+                        )
                     }
                 }
 

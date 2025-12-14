@@ -269,11 +269,9 @@ class NotatOpplysningerService(
             virkningstidspunkt =
                 NotatVirkningstidspunktDto(
                     erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
-                    barn = behandling.tilVirkningstidspunktBarn(),
-                ),
-            virkningstidspunktV2 =
-                NotatVirkningstidspunktDto(
-                    erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
+                    erVirkningstidspunktLikForAlle = behandling.erVirkningstidspunktLiktForAlle,
+                    erAvslagForAlle = behandling.erAvslagForAlle,
+                    eldsteVirkningstidspunkt = behandling.eldsteVirkningstidspunkt.toYearMonth(),
                     barn = behandling.tilVirkningstidspunktBarn(),
                 ),
             utgift = mapper.run { behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling) },
@@ -1030,17 +1028,19 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
 
 private fun Behandling.tilVirkningstidspunktBarn() =
     søknadsbarn.sortedBy { it.fødselsdato }.map {
+        val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
         NotatVirkningstidspunktBarnDto(
             rolle = it.tilNotatRolle(),
-            søknadstype = vedtakstype.name,
+            behandlingstype = eldsteSøknad?.behandlingstype ?: søknadstype,
+            søknadstype = eldsteSøknad?.behandlingstype?.name ?: søknadstype?.name,
             vedtakstype = vedtakstype,
-            søktAv = soknadFra,
-            avslag = it.avslag,
-            årsak = it.årsak,
+            søktAv = eldsteSøknad?.søktAvType ?: soknadFra,
+            avslag = it.avslag ?: avslag,
+            årsak = it.årsak ?: årsak,
             opphørsdato = it.opphørsdato?.toYearMonth(),
-            mottattDato = mottattdato,
-            søktFraDato = YearMonth.from(søktFomDato),
-            virkningstidspunkt = it.virkningstidspunkt,
+            mottattDato = eldsteSøknad?.mottattDato ?: mottattdato,
+            søktFraDato = YearMonth.from(eldsteSøknad?.søknadFomDato ?: søktFomDato),
+            virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
             begrunnelse = tilNotatVirkningstidspunkt(it),
             begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegang(it)) tilNotatVurderingAvSkolegang(it) else null,
             beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(it)),
@@ -1048,25 +1048,6 @@ private fun Behandling.tilVirkningstidspunktBarn() =
             etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(it)?.virkningstidspunkt,
         )
     }
-
-private fun Behandling.tilVirkningstidspunkt() =
-    NotatVirkningstidspunktBarnDto(
-        rolle = søknadsbarn.first().tilNotatRolle(),
-        søknadstype = vedtakstype.name,
-        vedtakstype = vedtakstype,
-        søktAv = soknadFra,
-        avslag = avslag,
-        årsak = årsak,
-        mottattDato = mottattdato,
-        søktFraDato = YearMonth.from(søktFomDato),
-        virkningstidspunkt = virkningstidspunkt,
-        opphørsdato = globalOpphørsdatoYearMonth,
-        begrunnelse = tilNotatVirkningstidspunkt(),
-        begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegangAlle()) tilNotatVurderingAvSkolegang() else null,
-        beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(søknadsbarn.first())),
-        beregnTil = søknadsbarn.first().beregnTil,
-        etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarn.first())?.virkningstidspunkt,
-    )
 
 private fun RolleDto.tilNotatRolle() =
     DokumentmalPersonDto(

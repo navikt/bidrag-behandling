@@ -80,19 +80,28 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     val feilliste = mutableListOf<String>()
 
     val rolle = behandling.roller.find { it.id == idRolle }
-    if (rolle == null) {
-        feilliste.add("Rolle med id $idRolle finnes ikke i behandling ${behandling.id}")
-    }
+
     if (rolle != null && rolle.rolletype != Rolletype.BARN) {
         feilliste.add("Opphørsdato kan kun settes for barn")
     }
-    val stønadstype = rolle?.stønadstype ?: behandling.stonadstype
-    if (rolle != null &&
-        stønadstype == Stønadstype.BIDRAG &&
-        rolle.rolletype == Rolletype.BARN &&
-        opphørsdato.isAfter(rolle.fødselsdato.plusYears(18).plusMonths(1))
-    ) {
-        feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
+    if (rolle == null) {
+        behandling.søknadsbarn.forEach { søknadsbarn ->
+            val stønadstype = søknadsbarn.stønadstype ?: behandling.stonadstype
+            if (stønadstype == Stønadstype.BIDRAG &&
+                søknadsbarn.rolletype == Rolletype.BARN &&
+                opphørsdato.isAfter(søknadsbarn.fødselsdato.plusYears(18).plusMonths(1))
+            ) {
+                feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
+            }
+        }
+    } else {
+        val stønadstype = rolle.stønadstype ?: behandling.stonadstype
+        if (stønadstype == Stønadstype.BIDRAG &&
+            rolle.rolletype == Rolletype.BARN &&
+            opphørsdato.isAfter(rolle.fødselsdato.plusYears(18).plusMonths(1))
+        ) {
+            feilliste.add("Opphørsdato kan ikke settes til etter barnet har fylt 18 år")
+        }
     }
 
     val virkningstidspunkt = rolle?.virkningstidspunkt ?: behandling.virkningstidspunkt
@@ -123,23 +132,31 @@ fun MutableSet<String>.validerSann(
 
 fun bestemRollerSomMåHaMinstEnInntekt(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
-        TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
-        TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR, TypeBehandling.SÆRBIDRAG ->
+        TypeBehandling.FORSKUDD -> {
+            listOf(Rolletype.BIDRAGSMOTTAKER)
+        }
+
+        TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR, TypeBehandling.SÆRBIDRAG -> {
             listOf(
                 Rolletype.BIDRAGSPLIKTIG,
                 Rolletype.BIDRAGSMOTTAKER,
             )
+        }
     }
 
 fun bestemRollerSomKanHaInntekter(typeBehandling: TypeBehandling) =
     when (typeBehandling) {
-        TypeBehandling.FORSKUDD -> listOf(Rolletype.BIDRAGSMOTTAKER)
-        TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR, TypeBehandling.SÆRBIDRAG ->
+        TypeBehandling.FORSKUDD -> {
+            listOf(Rolletype.BIDRAGSMOTTAKER)
+        }
+
+        TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR, TypeBehandling.SÆRBIDRAG -> {
             listOf(
                 Rolletype.BIDRAGSPLIKTIG,
                 Rolletype.BIDRAGSMOTTAKER,
                 Rolletype.BARN,
             )
+        }
     }
 
 private val inntekstrapporteringerSomKreverInnteksttype = listOf(Inntektsrapportering.BARNETILLEGG)
@@ -169,24 +186,29 @@ fun OpprettBehandlingRequest.valider() {
     }
     if (erSærbidrag()) {
         when {
-            roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG } ->
+            roller.none { it.rolletype == Rolletype.BIDRAGSPLIKTIG } -> {
                 feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSPLIKTIG}")
+            }
 
-            roller.none { it.rolletype == Rolletype.BIDRAGSMOTTAKER } ->
+            roller.none { it.rolletype == Rolletype.BIDRAGSMOTTAKER } -> {
                 feilliste.add("Behandling av typen $engangsbeløpstype må ha en rolle av typen ${Rolletype.BIDRAGSMOTTAKER}")
+            }
 
-            kategori?.kategori.isNullOrEmpty() ->
+            kategori?.kategori.isNullOrEmpty() -> {
                 feilliste.add(
                     "Kategori må settes for ${Engangsbeløptype.SÆRBIDRAG}",
                 )
+            }
 
-            Særbidragskategori.entries.none { it.name == kategori?.kategori } ->
+            Særbidragskategori.entries.none { it.name == kategori?.kategori } -> {
                 feilliste.add(
                     "Kategori ${kategori?.kategori} er ikke en gyldig særbidrag kategori",
                 )
+            }
 
-            kategori?.kategori == Særbidragskategori.ANNET.name && kategori.beskrivelse.isNullOrEmpty() ->
+            kategori?.kategori == Særbidragskategori.ANNET.name && kategori.beskrivelse.isNullOrEmpty() -> {
                 feilliste.add("Beskrivelse må settes hvis kategori er ${Særbidragskategori.ANNET}")
+            }
         }
     }
     roller
