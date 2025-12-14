@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.secureLogger
@@ -22,6 +21,11 @@ import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRespon
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnSamværsklasse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnSluttberegningIReferanser
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentBeregnetBeløp
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentResultatBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
@@ -30,6 +34,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
+import kotlin.collections.firstOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -197,44 +202,36 @@ class BeregningEvnevurderingService(
             }
 
         // Finner sluttberegning-grunnlaget
-        val sluttberegningReferanse =
-            sistePeriode.grunnlagReferanseListe.firstOrNull { grunnlagsReferanse ->
-                grunnlagsReferanse.lowercase().contains("sluttberegning")
-            } ?: ""
         val sluttberegningGrunnlag =
-            vedtakDto.grunnlagListe.finnSluttberegningIReferanser(listOf(sluttberegningReferanse)) ?: run {
+            vedtakDto.grunnlagListe.finnSluttberegningIReferanser(sistePeriode.grunnlagReferanseListe) ?: run {
                 secureLogger.warn {
-                    "Fant ikke sluttberegning i siste periode i grunnlag for vedtak ${vedtakForStønad.vedtaksid} og " +
-                        "stønadsendring $stønadsendringDto i bidrag-vedtak."
+                    "Fant ikke sluttberegningGrunnlag vedtak ${vedtakForStønad.vedtaksid} og stønadsendring $stønadsendringDto i " +
+                        "bidrag-vedtak."
                 }
                 return null
             }
-        secureLogger.info { "Fant sluttberegning-grunnlag: $sluttberegningGrunnlag" }
-        val sluttberegningObjekt = sluttberegningGrunnlag.innholdTilObjekt<SluttberegningBarnebidrag>()
-
-        // Henter ut alle grunnlag som refereres av sluttberegning
-        val grunnlagListeSluttberegningSistePeriode =
-            vedtakDto.grunnlagListe.filter { grunnlag -> grunnlag.referanse in sluttberegningGrunnlag.grunnlagsreferanseListe }
-
-        // Finner samværsklasse
+        val beregnetBeløp = sluttberegningGrunnlag.hentBeregnetBeløp()
+        val faktiskBeløp = sluttberegningGrunnlag.hentResultatBeløp()
         val samværsklasse =
-            (
-                grunnlagListeSluttberegningSistePeriode
-                    .filtrerOgKonverterBasertPåEgenReferanse<SamværsperiodeGrunnlag>(Grunnlagstype.SAMVÆRSPERIODE)
-                    .firstOrNull()
-                    ?: run {
-                        secureLogger.warn { "Fant ikke tilhørende samværsklasse i sluttberegning med referanse $sluttberegningReferanse." }
-                        return null
-                    }
-            ).innhold.samværsklasse
-        secureLogger.info { "Samværsklasse: $samværsklasse" }
+            vedtakDto.grunnlagListe
+                .finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<SamværsperiodeGrunnlag>(
+                    Grunnlagstype.SAMVÆRSPERIODE,
+                    sluttberegningGrunnlag.grunnlagsreferanseListe,
+                ).firstOrNull()
+                ?.innhold
+                ?.samværsklasse ?: run {
+                secureLogger.warn {
+                    "Fant ikke tilhørende samværsklasse i vedtak ${vedtakForStønad.vedtaksid} og stønadsendring $stønadsendringDto i"
+                }
+                return null
+            }
 
         return BidragBeregningResponsDto.BidragBeregning(
             saksnummer = vedtakForStønad.stønadsendring.sak.verdi,
             personidentBarn = vedtakForStønad.stønadsendring.kravhaver,
             datoSøknad = LocalDate.now(), // Brukes ikke
-            beregnetBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBM.avrundetTilNærmesteTier,
-            faktiskBeløp = sluttberegningObjekt.bruttoBidragEtterBarnetilleggBP.avrundetTilNærmesteTier,
+            beregnetBeløp = beregnetBeløp ?: BigDecimal.ZERO,
+            faktiskBeløp = faktiskBeløp ?: BigDecimal.ZERO,
             beløpSamvær = BigDecimal.ZERO, // Brukes ikke
             stønadstype = Stønadstype.BIDRAG,
             samværsklasse = samværsklasse,
