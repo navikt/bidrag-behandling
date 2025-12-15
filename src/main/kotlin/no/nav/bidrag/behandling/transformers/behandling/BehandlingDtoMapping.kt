@@ -475,10 +475,11 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
     val begrunnelseVirkningstidspunkt =
         NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, this).takeIf { it.isNotEmpty() }
             ?: NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
-
+    val avslagRolle = if (avslag == null && årsak == null) behandling.avslag else avslag
+    val årsakRolle = if (avslag == null && årsak == null) behandling.årsak else årsak
     return VirkningstidspunktFeilV2Dto(
         gjelder = tilDto(),
-        manglerÅrsakEllerAvslag = avslag == null && årsak == null,
+        manglerÅrsakEllerAvslag = avslagRolle == null && årsakRolle == null,
         manglerVirkningstidspunkt = virkningstidspunkt == null,
         manglerVurderingAvSkolegang =
             if (behandling.kanSkriveVurderingAvSkolegang(this) && !behandling.erKlageEllerOmgjøring) {
@@ -492,13 +493,13 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
                 false
             },
         manglerOpphørsdato =
-            if (stønadstype == Stønadstype.BIDRAG18AAR && avslag == null) {
+            if (stønadstype == Stønadstype.BIDRAG18AAR && avslagRolle == null) {
                 opphørsdato == null
             } else {
                 false
             },
         kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
-            if (avslag == null && behandling.erKlageEllerOmgjøring) {
+            if (avslagRolle == null && behandling.erKlageEllerOmgjøring) {
                 val etterfølgendeVedtak = behandling.hentNesteEtterfølgendeVedtak(this)
                 val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
                 virkningstidspunktEtterfølgendeVedtak != null && opphørsdato != null &&
@@ -507,7 +508,7 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
                 false
             },
         manglerBegrunnelse =
-            if (behandling.vedtakstype == Vedtakstype.OPPHØR || avslag != null) {
+            if (behandling.vedtakstype == Vedtakstype.OPPHØR || avslagRolle != null) {
                 begrunnelseVirkningstidspunkt.isEmpty()
             } else {
                 false

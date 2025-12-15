@@ -130,6 +130,8 @@ fun Behandling.finnBeregnTilDatoBehandling(
                 val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
                 if (virkningstidspunkt >= opprinneligVedtakstidspunktBeregnTil) {
                     virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
+                } else if (søknadsbarnRolle == null) {
+                    finnBeregnTilDato()
                 } else {
                     utledBeregnTilDato(
                         virkningstidspunkt,
