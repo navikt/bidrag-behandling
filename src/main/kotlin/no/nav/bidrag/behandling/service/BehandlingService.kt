@@ -419,6 +419,10 @@ class BehandlingService(
                     eksisterendeDetaljer
                         .copy(
                             vedtakFattetAvEnhet = fattetAvEnhet,
+                            vedtakstidspunkt = LocalDateTime.now(),
+                            vedtakFattetAv =
+                                eksisterendeDetaljer.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
+                                    ?: TokenUtils.hentApplikasjonsnavn(),
                             fattetVedtak =
                                 (eksisterendeDetaljer.fattetVedtak + setOf(resultat)).toSet(),
                         )
@@ -443,10 +447,10 @@ class BehandlingService(
                         .copy(
                             vedtaksid = vedtaksid,
                             vedtakFattetAvEnhet = fattetAvEnhet,
-                            vedtakstidspunkt = it.vedtakDetaljer?.vedtakstidspunkt ?: LocalDateTime.now(),
+                            vedtakstidspunkt = eksisterendeDetaljer.vedtakstidspunkt ?: LocalDateTime.now(),
                             unikreferanse = unikreferanse,
                             vedtakFattetAv =
-                                it.vedtakDetaljer?.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
+                                eksisterendeDetaljer.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent()
                                     ?: TokenUtils.hentApplikasjonsnavn(),
                         )
 
