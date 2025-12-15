@@ -41,11 +41,11 @@ open class Samvær(
         if (perioder.size != other.perioder.size) return false
         if (!perioder.all { periode -> other.perioder.any { otherPeriode -> periode.erLik(otherPeriode) } }) return false
         if (rolle.notat
-                .find { it.type == NotatGrunnlag.NotatType.SAMVÆR }
+                .find { it.type == NotatGrunnlag.NotatType.SAMVÆR && it.erDelAvBehandlingen }
                 ?.innhold
                 ?.takeIf { it.isNotEmpty() } !=
             other.rolle.notat
-                .find { it.type == NotatGrunnlag.NotatType.SAMVÆR }
+                .find { it.type == NotatGrunnlag.NotatType.SAMVÆR && it.erDelAvBehandlingen }
                 ?.innhold
                 ?.takeIf { it.isNotEmpty() }
         ) {

@@ -332,19 +332,19 @@ open class Behandling(
                         sb1.avslag == it.avslag &&
                         sb1.årsak == it.årsak &&
                         sb1.notat
-                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT && it.erDelAvBehandlingen }
                             ?.innhold
                             ?.takeIf { it.isNotEmpty() } ==
                         it.notat
-                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT && it.erDelAvBehandlingen }
                             ?.innhold
                             ?.takeIf { it.isNotEmpty() } &&
                         sb1.notat
-                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG && it.erDelAvBehandlingen }
                             ?.innhold
                             ?.takeIf { it.isNotEmpty() } ==
                         it.notat
-                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG && it.erDelAvBehandlingen }
                             ?.innhold
                             ?.takeIf { it.isNotEmpty() }
                 }
