@@ -331,10 +331,22 @@ open class Behandling(
                         sb1.beregnTil == it.beregnTil &&
                         sb1.avslag == it.avslag &&
                         sb1.årsak == it.årsak &&
-                        sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ==
-                        it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold &&
-                        sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold ==
-                        it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold
+                        sb1.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() } ==
+                        it.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() } &&
+                        sb1.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() } ==
+                        it.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() }
                 }
             }
 
