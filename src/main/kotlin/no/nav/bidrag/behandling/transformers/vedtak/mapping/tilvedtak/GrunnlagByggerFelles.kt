@@ -406,13 +406,14 @@ fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
     } else {
         setOf(
             henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT).takeIfNotNullOrEmpty {
-                opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT, false, it)
+                opprettGrunnlagNotat(Notattype.VIRKNINGSTIDSPUNKT, false, it, gjelderReferanse = bidragsmottaker?.tilGrunnlagsreferanse())
             },
             henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT, begrunnelseDelAvBehandlingen = false).takeIfNotNullOrEmpty {
                 opprettGrunnlagNotat(
                     Notattype.VIRKNINGSTIDSPUNKT,
                     false,
                     it,
+                    gjelderReferanse = bidragsmottaker?.tilGrunnlagsreferanse(),
                     fraOmgjortVedtak = true,
                 )
             },

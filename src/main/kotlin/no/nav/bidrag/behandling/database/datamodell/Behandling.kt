@@ -250,6 +250,7 @@ open class Behandling(
     val erIForholdsmessigFordeling get() = forholdsmessigFordeling != null
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
+    val revurderingdsbarn get() = roller.filter { it.erRevurderingsbarn }
     val bidragsmottaker get() =
         roller.find {
             it.rolletype == Rolletype.BIDRAGSMOTTAKER &&
@@ -295,9 +296,22 @@ open class Behandling(
             søknadsbarn.filter { it.avslag == null }.mapNotNull { it.virkningstidspunkt }.minByOrNull { it }
         } ?: virkningstidspunkt ?: søktFomDato
 
+    val erAvslagForAlleIkkeRevurdering get() =
+        if (erBidrag()) {
+            søknadsbarn
+                .filter { it.forholdsmessigFordeling == null || it.forholdsmessigFordeling?.erRevurdering == false }
+                .all {
+                    it.avslag != null
+                }
+        } else {
+            avslag !=
+                null
+        }
+
     val erAvslagForAlle get() =
         if (erBidrag()) søknadsbarn.all { it.avslag != null } else avslag != null
 
+    val erVirkningstidspunktLiktForAlle get() = søknadsbarn.mapNotNull { it.virkningstidspunkt }.toSet().size == 1
     val globalOpphørsdato get() =
         if (søknadsbarn.any { it.opphørsdato == null }) {
             null
@@ -317,17 +331,29 @@ open class Behandling(
                         sb1.beregnTil == it.beregnTil &&
                         sb1.avslag == it.avslag &&
                         sb1.årsak == it.årsak &&
-                        sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold ==
-                        it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT }?.innhold &&
-                        sb1.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold ==
-                        it.notat.find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG }?.innhold
+                        sb1.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT && it.erDelAvBehandlingen }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() } ==
+                        it.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT && it.erDelAvBehandlingen }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() } &&
+                        sb1.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG && it.erDelAvBehandlingen }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() } ==
+                        it.notat
+                            .find { it.type == NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG && it.erDelAvBehandlingen }
+                            ?.innhold
+                            ?.takeIf { it.isNotEmpty() }
                 }
             }
 
     val sammeSamværForAlle get() =
         forholdsmessigFordeling == null &&
             samvær.all { sb1 ->
-                samvær.all {
+                samvær.filter { it.id != sb1.id }.all {
                     sb1.erLik(it)
                 }
             }

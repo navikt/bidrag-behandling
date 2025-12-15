@@ -93,7 +93,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 barn.ident!!.verdi shouldBe testdataBarn1.ident
                 barn.navn shouldBe testdataBarn1.navn
                 barn.fødselsdato shouldBe testdataBarn1.fødselsdato
-                perioder shouldHaveSize 6
+                perioder shouldHaveSize 7
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
                     beløp shouldBe BigDecimal(1760)
@@ -108,7 +108,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                 barn.ident!!.verdi shouldBe testdataBarn2.ident
                 barn.navn shouldBe testdataBarn2.navn
                 barn.fødselsdato shouldBe testdataBarn2.fødselsdato
-                perioder shouldHaveSize 6
+                perioder shouldHaveSize 7
                 assertSoftly(perioder[0]) {
                     periode shouldBe ÅrMånedsperiode("2023-02", "2023-07")
                     beløp shouldBe BigDecimal(1760)

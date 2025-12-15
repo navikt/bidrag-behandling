@@ -381,8 +381,8 @@ class UtgiftserviceTest : TestContainerRunner() {
                         id = utgiftspostId,
                         dato = LocalDate.now().minusMonths(1),
                         type = Utgiftstype.KONFIRMASJONSAVGIFT.name,
-                        kravbeløp = BigDecimal(3000),
-                        godkjentBeløp = BigDecimal(2000),
+                        kravbeløp = BigDecimal(7000),
+                        godkjentBeløp = BigDecimal(5000),
                         kommentar = "Test",
                     ),
             )
@@ -393,18 +393,18 @@ class UtgiftserviceTest : TestContainerRunner() {
         response.avslag shouldBe null
         assertSoftly(response.beregning!!) {
             totalBeløpBetaltAvBp shouldBe BigDecimal(0)
-            totalGodkjentBeløp shouldBe BigDecimal(2000)
+            totalGodkjentBeløp shouldBe BigDecimal(5000)
             beløpDirekteBetaltAvBp shouldBe BigDecimal(0)
             totalGodkjentBeløpBp shouldBe BigDecimal(0)
-            totalKravbeløp shouldBe BigDecimal(3000)
+            totalKravbeløp shouldBe BigDecimal(7000)
         }
 
         assertSoftly(response.oppdatertUtgiftspost!!) {
             id shouldBe utgiftspostId
             dato shouldBe LocalDate.now().minusMonths(1)
             type shouldBe Utgiftstype.KONFIRMASJONSAVGIFT.name
-            kravbeløp shouldBe BigDecimal(3000)
-            godkjentBeløp shouldBe BigDecimal(2000)
+            kravbeløp shouldBe BigDecimal(7000)
+            godkjentBeløp shouldBe BigDecimal(5000)
             kommentar shouldBe "Test"
         }
     }

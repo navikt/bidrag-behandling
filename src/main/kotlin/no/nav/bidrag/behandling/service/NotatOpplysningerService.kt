@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -54,13 +55,14 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
-import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -116,6 +118,7 @@ import no.nav.bidrag.transport.dokumentmaler.notat.NotatPrivatAvtaleDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatPrivatAvtalePeriodeDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatResultatForskuddBeregningBarnDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatResultatSærbidragsberegningDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatSamværBarnDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatSamværDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatSivilstand
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatSærbidragKategoriDto
@@ -170,12 +173,13 @@ class NotatOpplysningerService(
         secureLogger.info { "Oppretter notat med opplysninger $notatDto" }
         val notatPdf = bidragDokumentProduksjonConsumer.opprettNotat(notatDto)
         log.info { "Oppretter notat for behandling $behandlingId i sak ${behandling.saksnummer}" }
+        val vedtakDetaljer = behandling.vedtakDetaljer
         val forespørsel =
             OpprettJournalpostRequest(
                 skalFerdigstilles = true,
                 datoDokument = oppdaterDatoDokument.ifTrue { behandling.vedtakstidspunkt },
                 journalposttype = JournalpostType.NOTAT,
-                journalførendeEnhet = behandling.behandlerEnhet,
+                journalførendeEnhet = vedtakDetaljer?.vedtakFattetAvEnhet ?: behandling.vedtakFattetAvEnhet ?: behandling.behandlerEnhet,
                 tilknyttSaker = behandling.saker,
                 gjelderIdent =
                     if (behandling.erForskudd()) {
@@ -184,7 +188,7 @@ class NotatOpplysningerService(
                         behandling.bidragspliktig!!.ident
                     },
                 referanseId = behandling.tilReferanseId(),
-                saksbehandlerIdent = behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
+                saksbehandlerIdent = vedtakDetaljer?.vedtakFattetAv ?: behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
                 dokumenter =
                     listOf(
                         OpprettDokumentDto(
@@ -264,19 +268,22 @@ class NotatOpplysningerService(
             saksbehandlerNavn =
                 TokenUtils
                     .hentSaksbehandlerIdent()
-                    ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
+                    ?.let { EnhetProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt =
                 NotatVirkningstidspunktDto(
                     erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
-                    barn = behandling.tilVirkningstidspunktBarn(),
-                ),
-            virkningstidspunktV2 =
-                NotatVirkningstidspunktDto(
-                    erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
+                    erVirkningstidspunktLikForAlle = behandling.erVirkningstidspunktLiktForAlle,
+                    erAvslagForAlle = behandling.erAvslagForAlle,
+                    eldsteVirkningstidspunkt = behandling.eldsteVirkningstidspunkt.toYearMonth(),
                     barn = behandling.tilVirkningstidspunktBarn(),
                 ),
             utgift = mapper.run { behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling) },
             samvær = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
+            samværV2 =
+                NotatSamværDto(
+                    erSammeForAlle = behandling.sammeSamværForAlle,
+                    barn = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
+                ),
             underholdskostnader =
                 NotatUnderholdDto(
                     offentligeOpplysninger = behandling.tilUnderholdOpplysning(),
@@ -448,25 +455,36 @@ class NotatOpplysningerService(
             inntekter =
                 NotatInntekterDto(
                     notat = behandling.tilNotatInntekt(behandling.bidragsmottaker!!),
-                    notatPerRolle = behandling.roller.map { r -> behandling.tilNotatInntekt(r) }.toSet(),
+                    notatPerRolle =
+                        behandling.roller
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
+                            .map { r ->
+                                behandling.tilNotatInntekt(r)
+                            }.toSet(),
                     inntekterPerRolle =
-                        behandling.roller.sortedBy { it.fødselsdato }.map { rolle ->
-                            behandling.hentInntekterForIdent(
-                                rolle.ident!!,
-                                rolle,
-                                alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
-                                bareMedIBeregning = true,
-                            )
-                        },
+                        behandling.roller
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
+                            .sortedBy { it.fødselsdato }
+                            .map { rolle ->
+                                behandling.hentInntekterForIdent(
+                                    rolle.ident!!,
+                                    rolle,
+                                    alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
+                                    bareMedIBeregning = true,
+                                )
+                            },
                     offentligeInntekterPerRolle =
-                        behandling.roller.sortedBy { it.fødselsdato }.map { rolle ->
-                            behandling.hentInntekterForIdent(
-                                rolle.ident!!,
-                                rolle,
-                                alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
-                                filtrerBareOffentlige = true,
-                            )
-                        },
+                        behandling.roller
+                            .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
+                            .sortedBy { it.fødselsdato }
+                            .map { rolle ->
+                                behandling.hentInntekterForIdent(
+                                    rolle.ident!!,
+                                    rolle,
+                                    alleArbeidsforhold.filter { rolle.ident == it.partPersonId },
+                                    filtrerBareOffentlige = true,
+                                )
+                            },
                 ),
             vedtak = behandling.hentBeregning(),
             erOrkestrertVedtak = behandling.erKlageEllerOmgjøring && behandling.erBidrag(),
@@ -644,6 +662,8 @@ class NotatOpplysningerService(
                                                 erEvneJustertNedTil25ProsentAvInntekt = it.erEvneJustertNedTil25ProsentAvInntekt,
                                             )
                                         },
+                                    erAvvisning = beregning.erAvvisning,
+                                    erAvvistRevurdering = beregning.erAvvistRevurdering,
                                     orkestrertVedtak =
                                         beregning.delvedtak.find { it.endeligVedtak }?.let {
                                             EndeligOrkestrertVedtak(
@@ -671,9 +691,9 @@ class NotatOpplysningerService(
                 emptyList()
             }
         return NotatVedtakDetaljerDto(
-            erFattet = erVedtakFattet,
-            fattetTidspunkt = vedtakstidspunkt,
-            fattetAvSaksbehandler = vedtakFattetAv?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
+            erFattet = vedtakDetaljer != null || erVedtakFattet,
+            fattetTidspunkt = vedtakDetaljer?.vedtakstidspunkt ?: vedtakstidspunkt,
+            fattetAvSaksbehandler = (vedtakDetaljer?.vedtakFattetAv ?: vedtakFattetAv)?.let { EnhetProvider.hentSaksbehandlernavn(it) },
             resultat = resultat,
         )
     }
@@ -951,7 +971,7 @@ private fun Behandling.tilUnderholdOpplysning(): List<NotatOffentligeOpplysninge
             .find { it.rolle.id == bidragsmottaker!!.id && it.type == Grunnlagsdatatype.TILLEGGSSTØNAD && !it.erBearbeidet }
             ?.konvertereData<List<TilleggsstønadGrunnlagDto>>()
             ?: emptyList()
-    return søknadsbarn.map { rolle ->
+    return søknadsbarn.filter { it.avslag == null }.map { rolle ->
         NotatOffentligeOpplysningerUnderholdBarn(
             gjelder = rolle.behandling.bidragsmottaker!!.tilNotatRolle(),
             gjelderBarn = rolle.tilNotatRolle(),
@@ -1016,17 +1036,19 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
 
 private fun Behandling.tilVirkningstidspunktBarn() =
     søknadsbarn.sortedBy { it.fødselsdato }.map {
+        val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
         NotatVirkningstidspunktBarnDto(
             rolle = it.tilNotatRolle(),
-            søknadstype = vedtakstype.name,
+            behandlingstype = eldsteSøknad?.behandlingstype ?: søknadstype,
+            søknadstype = eldsteSøknad?.behandlingstype?.name ?: søknadstype?.name,
             vedtakstype = vedtakstype,
-            søktAv = soknadFra,
-            avslag = it.avslag,
-            årsak = it.årsak,
+            søktAv = eldsteSøknad?.søktAvType ?: soknadFra,
+            avslag = it.avslag ?: avslag,
+            årsak = it.årsak ?: årsak,
             opphørsdato = it.opphørsdato?.toYearMonth(),
-            mottattDato = mottattdato,
-            søktFraDato = YearMonth.from(søktFomDato),
-            virkningstidspunkt = it.virkningstidspunkt,
+            mottattDato = eldsteSøknad?.mottattDato ?: mottattdato,
+            søktFraDato = YearMonth.from(eldsteSøknad?.søknadFomDato ?: søktFomDato),
+            virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
             begrunnelse = tilNotatVirkningstidspunkt(it),
             begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegang(it)) tilNotatVurderingAvSkolegang(it) else null,
             beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(it)),
@@ -1034,25 +1056,6 @@ private fun Behandling.tilVirkningstidspunktBarn() =
             etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(it)?.virkningstidspunkt,
         )
     }
-
-private fun Behandling.tilVirkningstidspunkt() =
-    NotatVirkningstidspunktBarnDto(
-        rolle = søknadsbarn.first().tilNotatRolle(),
-        søknadstype = vedtakstype.name,
-        vedtakstype = vedtakstype,
-        søktAv = soknadFra,
-        avslag = avslag,
-        årsak = årsak,
-        mottattDato = mottattdato,
-        søktFraDato = YearMonth.from(søktFomDato),
-        virkningstidspunkt = virkningstidspunkt,
-        opphørsdato = globalOpphørsdatoYearMonth,
-        begrunnelse = tilNotatVirkningstidspunkt(),
-        begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegangAlle()) tilNotatVurderingAvSkolegang() else null,
-        beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(søknadsbarn.first())),
-        beregnTil = søknadsbarn.first().beregnTil,
-        etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarn.first())?.virkningstidspunkt,
-    )
 
 private fun RolleDto.tilNotatRolle() =
     DokumentmalPersonDto(
@@ -1064,13 +1067,18 @@ private fun RolleDto.tilNotatRolle() =
         bidragsmottakerIdent = bidragsmottaker,
     )
 
-private fun PersoninfoDto.tilNotatRolle(behandling: Behandling) =
-    DokumentmalPersonDto(
-        rolle = if (medIBehandlingen == true) behandling.roller.find { it.ident == ident?.verdi }?.rolletype else null,
+private fun PersoninfoDto.tilNotatRolle(behandling: Behandling): DokumentmalPersonDto {
+    val rolle = behandling.roller.find { it.ident == ident?.verdi }
+    return DokumentmalPersonDto(
+        rolle = if (medIBehandlingen == true) rolle?.rolletype else null,
         navn = ident?.let { hentPersonVisningsnavn(it.verdi) } ?: navn,
         fødselsdato = fødselsdato,
         ident = ident,
+        bidragsmottakerIdent = rolle?.bidragsmottaker?.ident,
+        saksnummer = rolle?.saksnummer,
+        revurdering = rolle?.erRevurderingsbarn == true,
     )
+}
 
 private fun Rolle.tilNotatRolle() =
     DokumentmalPersonDto(
@@ -1130,11 +1138,11 @@ private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
 private fun List<SamværBarnDto>.tilNotatSamværDto(behandling: Behandling) =
     map { samvær ->
         val gjelderBarn = behandling.søknadsbarn.find { it.ident == samvær.gjelderBarn }!!
-        NotatSamværDto(
+        NotatSamværBarnDto(
             gjelderBarn = gjelderBarn.tilNotatRolle(),
             perioder =
                 samvær.perioder.map {
-                    NotatSamværDto.NotatSamværsperiodeDto(
+                    NotatSamværBarnDto.NotatSamværsperiodeDto(
                         periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
                         samværsklasse = it.samværsklasse,
                         gjennomsnittligSamværPerMåned = it.gjennomsnittligSamværPerMåned,

@@ -220,22 +220,33 @@ class VirkningstidspunktService(
                 }
             }
 
-            request.henteOppdatereNotat()?.let { n ->
-                notatService.oppdatereNotat(
-                    it,
-                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                    n.henteNyttNotat() ?: "",
-                    it.bidragsmottaker!!,
-                )
-                gjelderBarnRolle?.let { rolle ->
+            val notat = request.henteOppdatereNotat()
+            if (notat != null) {
+                if (gjelderBarnRolle != null) {
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        n.henteNyttNotat() ?: "",
-                        rolle,
+                        notat.henteNyttNotat() ?: "",
+                        gjelderBarnRolle,
+                    )
+                } else {
+                    it.søknadsbarn.forEach { barn ->
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                            notat.henteNyttNotat() ?: "",
+                            barn,
+                        )
+                    }
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                        notat.henteNyttNotat() ?: "",
+                        it.bidragsmottaker!!,
                     )
                 }
             }
+
             oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, it)
             it
         }
@@ -250,7 +261,7 @@ class VirkningstidspunktService(
             log.info { "Virkningstidspunkt årsak/avslag er endret. Oppdaterer gebyr detaljer ${behandling.id}" }
             gebyrService.oppdaterGebyrEtterEndringÅrsakAvslag(behandling)
         }
-        val forRolle = request.rolleId?.let { behandling.roller.find { it.id == request.rolleId } }
+        val forRolle = if (behandling.erBidrag()) request.rolleId?.let { behandling.roller.find { it.id == request.rolleId } } else null
 
         val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
@@ -287,15 +298,13 @@ class VirkningstidspunktService(
         }
 
         if (erAvslagÅrsakEndret) {
-            behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
-            behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
             if (forRolle != null) {
                 forRolle.årsak = if (request.avslag != null) null else request.årsak ?: forRolle.årsak
                 forRolle.avslag = if (request.årsak != null) null else request.avslag ?: forRolle.avslag
             } else {
                 behandling.søknadsbarn.forEach {
                     val nyÅrsak =
-                        if (request.årsak != null && it.forholdsmessigFordeling?.erRevurdering == true) {
+                        if (request.årsak != null && it.erRevurderingsbarn) {
                             VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
                         } else {
                             request.årsak
@@ -303,6 +312,29 @@ class VirkningstidspunktService(
                     it.årsak = if (request.avslag != null) null else nyÅrsak ?: it.årsak
                     it.avslag = if (nyÅrsak != null) null else request.avslag ?: it.avslag
                 }
+            }
+            if (behandling.erAvslagForAlleIkkeRevurdering) {
+                behandling.revurderingdsbarn.forEach {
+                    it.årsak = null
+                    it.avslag =
+                        if (request.avslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD) {
+                            Resultatkode.BIDRAGSPLIKTIG_ER_DØD
+                        } else {
+                            Resultatkode.AVSLAG
+                        }
+                }
+            } else {
+                behandling.revurderingdsbarn.forEach {
+                    it.årsak = VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+                    it.avslag = null
+                }
+            }
+            if (behandling.erBidrag()) {
+                behandling.årsak = if (!behandling.erAvslagForAlle && request.årsak != null) request.årsak else null
+                behandling.avslag = if (behandling.erAvslagForAlle && request.avslag != null) request.avslag else null
+            } else {
+                behandling.årsak = if (request.avslag != null) null else request.årsak ?: behandling.årsak
+                behandling.avslag = if (request.årsak != null) null else request.avslag ?: behandling.avslag
             }
 
             when (behandling.tilType()) {
@@ -317,6 +349,11 @@ class VirkningstidspunktService(
                                 behandling,
                             )
                         }
+                    } else if (forRolle != null && forRolle.avslag != null) {
+                        oppdaterOpphørsdato(
+                            OppdaterOpphørsdatoRequestDto(forRolle.id!!, null),
+                            behandling,
+                        )
                     }
                 }
 

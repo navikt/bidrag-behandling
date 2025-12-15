@@ -126,6 +126,7 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
     val barn get() =
         behandling.søknadsbarn.filter {
             rolletype == Rolletype.BIDRAGSPLIKTIG ||
@@ -284,10 +285,14 @@ data class GebyrRolleSøknad(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as GebyrRolleSøknad
-        return saksnummer == other.saksnummer && søknadsid == other.søknadsid && behandlingid == other.behandlingid
+        return saksnummer == other.saksnummer && søknadsid == other.søknadsid &&
+            behandlingid == other.behandlingid && referanse == other.referanse &&
+            manueltOverstyrtGebyr == other.manueltOverstyrtGebyr
     }
 
-    override fun hashCode(): Int = saksnummer.hashCode() * 31 + søknadsid.hashCode() + (behandlingid?.hashCode() ?: 0)
+    override fun hashCode(): Int =
+        saksnummer.hashCode() * 31 + søknadsid.hashCode() + (behandlingid?.hashCode() ?: 0) + (referanse?.hashCode() ?: 0) +
+            (manueltOverstyrtGebyr?.hashCode() ?: 0)
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

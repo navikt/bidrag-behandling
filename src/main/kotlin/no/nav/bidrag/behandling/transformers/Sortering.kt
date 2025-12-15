@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
@@ -10,6 +11,12 @@ import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenfo
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
+import java.time.LocalDate
+
+fun <T> sorterPersonEtterEldsteFødselsdato(
+    fødselsdato: (T) -> LocalDate,
+    navn: (T) -> String?,
+) = compareBy(fødselsdato, navn)
 
 fun Set<Utgiftspost>.sorter() = sortedBy { it.dato }
 

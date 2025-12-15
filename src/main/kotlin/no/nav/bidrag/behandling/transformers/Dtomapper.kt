@@ -22,10 +22,7 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerDto
-import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
@@ -263,6 +260,7 @@ class Dtomapper(
 
     fun Set<Underholdskostnad>.tilDtos() =
         this
+            .filter { it.rolle == null || it.gjelderAndreBarn || it.rolle?.avslag == null }
             .map { it.tilDto() }
             .sortedWith(
                 compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
@@ -437,7 +435,11 @@ class Dtomapper(
 
     fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
-            samvær.map { it.tilDto() }
+            samvær
+                .filter { it.rolle.avslag == null }
+                .sortedWith(
+                    sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.navn }),
+                ).map { it.tilDto() }
         } else {
             null
         }
@@ -643,7 +645,14 @@ class Dtomapper(
 
     private fun Behandling.ikkeAktiveGrunnlagsdata(): IkkeAktiveGrunnlagsdata {
         val behandling = this
-        val roller = behandling.roller.sortedBy { if (it.rolletype == Rolletype.BARN) 1 else -1 }
+        val roller =
+            behandling.roller.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.sortedBy {
+                if (it.rolletype == Rolletype.BARN) {
+                    1
+                } else {
+                    -1
+                }
+            }
         val inntekter = behandling.inntekter
         val sisteInnhentedeIkkeAktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteIkkeAktiv()
         val aktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteAktiv()
@@ -851,7 +860,12 @@ class Dtomapper(
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
                 gebyrV2 = mapGebyrV2(),
-                roller = roller.map { it.tilDto() }.toSet(),
+                roller =
+                    roller
+                        .sortedWith(
+                            sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.navn }),
+                        ).map { it.tilDto() }
+                        .toSet(),
                 bpsBarnUtenLøpendeBidrag = bpsBarnUtenLøpendeBidrag(),
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
@@ -862,6 +876,7 @@ class Dtomapper(
                 virkningstidspunktV3 =
                     VirkningstidspunktDtoV3(
                         false,
+                        erVirkningstidspunktLiktForAlle,
                         erAvslagForAlle,
                         eldsteVirkningstidspunkt.toYearMonth(),
                         emptyList(),
@@ -890,6 +905,7 @@ class Dtomapper(
             virkningstidspunktV3 =
                 VirkningstidspunktDtoV3(
                     erLikForAlle = this.sammeVirkningstidspunktForAlle,
+                    erVirkningstidspunktLiktForAlle = erVirkningstidspunktLiktForAlle,
                     erAvslagForAlle = erAvslagForAlle,
                     eldsteVirkningstidspunkt = eldsteVirkningstidspunkt.toYearMonth(),
                     barn = mapVirkningstidspunktAlleBarnV3(),
@@ -900,7 +916,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                 ),
             inntekterV2 =
-                roller.map {
+                roller.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
                     InntekterDtoRolle(
                         gjelder = it.tilDto(),
                         inntekter =

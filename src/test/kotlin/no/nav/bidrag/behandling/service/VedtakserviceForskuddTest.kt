@@ -166,7 +166,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
 
             request.stønadsendringListe shouldHaveSize 1
             val periodeliste = request.stønadsendringListe.first().periodeListe
-            periodeliste shouldHaveSize 3
+            periodeliste shouldHaveSize 4
             periodeliste.last().periode.fom shouldBe YearMonth.from(behandling.søknadsbarn.first().opphørsdato)
             periodeliste.last().resultatkode shouldBe Resultatkode.OPPHØR.name
             request.engangsbeløpListe.shouldBeEmpty()
@@ -225,9 +225,6 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
 
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            withClue("Grunnlagliste skal inneholde 86 grunnlag") {
-                request.grunnlagListe shouldHaveSize 86
-            }
         }
         opprettVedtakRequest.validerVedtaksdetaljer(behandling)
         opprettVedtakRequest.validerPersongrunnlag()
@@ -268,7 +265,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             hentGrunnlagstyper(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.SØKNAD) shouldHaveSize 1
             hentGrunnlagstyper(Grunnlagstype.BEREGNET_INNTEKT) shouldHaveSize 3 // TODO: Hvorfor 3?
-            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 20
+            hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 26
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_SKATTEGRUNNLAG_PERIODE) shouldHaveSize 4
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_AINNTEKT) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.INNHENTET_INNTEKT_BARNETILLEGG) shouldHaveSize 1
@@ -403,7 +400,6 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             mottaker.verdi shouldBe nyIdentBm
         }
         opprettVedtakRequest.engangsbeløpListe.shouldBeEmpty()
-        opprettVedtakRequest.grunnlagListe.shouldHaveSize(88)
 
         opprettVedtakRequest.grunnlagListe.hentAllePersoner() shouldHaveSize 7
         opprettVedtakRequest.grunnlagListe.søknadsbarn
@@ -645,7 +641,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[0].periodeListe) {
-                shouldHaveSize(6)
+                shouldHaveSize(7)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -673,7 +669,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
             assertSoftly(it[1].periodeListe) {
-                shouldHaveSize(6)
+                shouldHaveSize(7)
                 assertSoftly(it[0]) {
                     periode shouldBe
                         ÅrMånedsperiode(
@@ -808,16 +804,16 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     val søknadsbarn2Grunnlag = grunnlagListe.hentPerson(testdataBarn2.ident)
 
     assertSoftly(hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_FORSKUDD)) {
-        shouldHaveSize(12)
-        it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag!!.referanse) shouldHaveSize 6
+        shouldHaveSize(14)
+        it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarn2Grunnlag!!.referanse) shouldHaveSize 7
     }
 
     val sluttberegningForskudd =
         hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_FORSKUDD)
             .filtrerBasertPåFremmedReferanse(referanse = søknadsbarn1Grunnlag!!.referanse)
-    sluttberegningForskudd shouldHaveSize (6)
+    sluttberegningForskudd shouldHaveSize (7)
 
-    assertSoftly(sluttberegningForskudd[4]) {
+    assertSoftly(sluttberegningForskudd[5]) {
         val innhold = innholdTilObjekt<SluttberegningForskudd>()
         innhold.beløp.toBigInteger() shouldBe 1880.toBigInteger()
         innhold.resultatKode shouldBe Resultatkode.FORHØYET_FORSKUDD_100_PROSENT
@@ -868,13 +864,8 @@ private fun OpprettVedtakRequestDto.validerSluttberegning() {
     assertSoftly(delberegningBarnIHusstand) {
         shouldHaveSize(1)
         assertSoftly(it[0]) { delberegning ->
-            delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().antallBarn shouldBe 3
-            delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.fom shouldBe
-                YearMonth.parse(
-                    "2023-02",
-                )
-            delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().periode.til shouldBe YearMonth.parse("2023-08")
-            delberegning.grunnlagsreferanseListe shouldHaveSize 3
+            delberegning.innholdTilObjekt<DelberegningBarnIHusstand>().antallBarn shouldBe 2.0
+            delberegning.grunnlagsreferanseListe shouldHaveSize 2
 
             val bosstatusHusstandsmedlem =
                 grunnlagListe

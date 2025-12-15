@@ -485,7 +485,7 @@ class VedtakTilBehandlingMapping(
                     val grunnlag = it.innholdTilObjekt<PrivatAvtalePeriodeGrunnlag>()
                     val paPeriode =
                         PrivatAvtalePeriode(
-                            id = if (lesemodus) 1 else null,
+                            id = if (lesemodus) (Math.random() * 10000).toLong() else null,
                             privatAvtale = privatAvtale,
                             fom = grunnlag.periode.fom.atDay(1),
                             tom = grunnlag.periode.til?.atEndOfMonth(),
@@ -821,7 +821,7 @@ class VedtakTilBehandlingMapping(
                     val person = hentPersonMedReferanse(gjelderReferanse)!!
                     val samvær =
                         Samvær(
-                            id = if (lesemodus) 1 else null,
+                            id = if (lesemodus) (Math.random() * 10000).toLong() else null,
                             behandling = behandling,
                             rolle = behandling.roller.find { it.ident == person.personIdent }!!,
                             perioder = mutableSetOf(),
@@ -856,7 +856,7 @@ class VedtakTilBehandlingMapping(
             behandling.søknadsbarn
                 .map {
                     Samvær(
-                        id = if (lesemodus) 1 else null,
+                        id = if (lesemodus) (Math.random() * 10000).toLong() else null,
                         behandling = behandling,
                         rolle = it,
                         perioder = mutableSetOf(),
