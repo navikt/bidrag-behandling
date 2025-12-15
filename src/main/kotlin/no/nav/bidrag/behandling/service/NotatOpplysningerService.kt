@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
+import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -117,6 +118,7 @@ import no.nav.bidrag.transport.dokumentmaler.notat.NotatPrivatAvtaleDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatPrivatAvtalePeriodeDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatResultatForskuddBeregningBarnDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatResultatSærbidragsberegningDto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatSamværBarnDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatSamværDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatSivilstand
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatSærbidragKategoriDto
@@ -276,6 +278,11 @@ class NotatOpplysningerService(
                 ),
             utgift = mapper.run { behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling) },
             samvær = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
+            samværV2 =
+                NotatSamværDto(
+                    erSammeForAlle = behandling.sammeSamværForAlle,
+                    barn = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
+                ),
             underholdskostnader =
                 NotatUnderholdDto(
                     offentligeOpplysninger = behandling.tilUnderholdOpplysning(),
@@ -1130,11 +1137,11 @@ private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
 private fun List<SamværBarnDto>.tilNotatSamværDto(behandling: Behandling) =
     map { samvær ->
         val gjelderBarn = behandling.søknadsbarn.find { it.ident == samvær.gjelderBarn }!!
-        NotatSamværDto(
+        NotatSamværBarnDto(
             gjelderBarn = gjelderBarn.tilNotatRolle(),
             perioder =
                 samvær.perioder.map {
-                    NotatSamværDto.NotatSamværsperiodeDto(
+                    NotatSamværBarnDto.NotatSamværsperiodeDto(
                         periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
                         samværsklasse = it.samværsklasse,
                         gjennomsnittligSamværPerMåned = it.gjennomsnittligSamværPerMåned,

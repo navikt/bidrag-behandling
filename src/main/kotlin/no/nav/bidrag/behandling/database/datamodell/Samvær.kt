@@ -40,10 +40,14 @@ open class Samvær(
         if (rolle.finnBeregnFra() != other.rolle.finnBeregnFra()) return false
         if (perioder.size != other.perioder.size) return false
         if (!perioder.all { periode -> other.perioder.any { otherPeriode -> periode.erLik(otherPeriode) } }) return false
-        if (rolle.notat.find { it.type == NotatGrunnlag.NotatType.SAMVÆR }?.innhold !=
+        if (rolle.notat
+                .find { it.type == NotatGrunnlag.NotatType.SAMVÆR }
+                ?.innhold
+                ?.takeIf { it.isNotEmpty() } !=
             other.rolle.notat
                 .find { it.type == NotatGrunnlag.NotatType.SAMVÆR }
                 ?.innhold
+                ?.takeIf { it.isNotEmpty() }
         ) {
             return false
         }

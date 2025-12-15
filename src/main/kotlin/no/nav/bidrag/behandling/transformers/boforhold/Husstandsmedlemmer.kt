@@ -20,8 +20,8 @@ import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.boforhold.dto.EndreBostatus
 import no.nav.bidrag.boforhold.dto.Husstandsmedlemmer
-import no.nav.bidrag.boforhold.utils.justerBoforholdPerioderForOpphørsdatoOgBeregnTilDato
-import no.nav.bidrag.boforhold.utils.justerBostatusPerioderForOpphørsdatoOgBeregnTilDato
+import no.nav.bidrag.boforhold.utils.justerBoforholdPerioderForOpphørsdato
+import no.nav.bidrag.boforhold.utils.justerBostatusPerioderForOpphørsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
@@ -322,7 +322,7 @@ fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdRe
     perioder.clear()
     perioder.addAll(
         nyePerioder
-            .justerBoforholdPerioderForOpphørsdatoOgBeregnTilDato(
+            .justerBoforholdPerioderForOpphørsdato(
                 rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(rolle),
             ).tilPerioder(this),
@@ -336,7 +336,7 @@ fun Husstandsmedlem.overskriveAndreVoksneIHusstandMedBearbeidaPerioder(nyePeriod
     perioder.clear()
     perioder.addAll(
         nyePerioder
-            .justerBostatusPerioderForOpphørsdatoOgBeregnTilDato(
+            .justerBostatusPerioderForOpphørsdato(
                 behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
             ).tilPerioder(this),
