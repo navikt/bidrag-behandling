@@ -55,7 +55,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.finnVisningsnavn
-import no.nav.bidrag.commons.service.organisasjon.SaksbehandlernavnProvider
+import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
@@ -173,12 +173,13 @@ class NotatOpplysningerService(
         secureLogger.info { "Oppretter notat med opplysninger $notatDto" }
         val notatPdf = bidragDokumentProduksjonConsumer.opprettNotat(notatDto)
         log.info { "Oppretter notat for behandling $behandlingId i sak ${behandling.saksnummer}" }
+        val vedtakDetaljer = behandling.vedtakDetaljer
         val forespørsel =
             OpprettJournalpostRequest(
                 skalFerdigstilles = true,
                 datoDokument = oppdaterDatoDokument.ifTrue { behandling.vedtakstidspunkt },
                 journalposttype = JournalpostType.NOTAT,
-                journalførendeEnhet = behandling.behandlerEnhet,
+                journalførendeEnhet = vedtakDetaljer?.vedtakFattetAvEnhet ?: behandling.vedtakFattetAvEnhet ?: behandling.behandlerEnhet,
                 tilknyttSaker = behandling.saker,
                 gjelderIdent =
                     if (behandling.erForskudd()) {
@@ -187,7 +188,7 @@ class NotatOpplysningerService(
                         behandling.bidragspliktig!!.ident
                     },
                 referanseId = behandling.tilReferanseId(),
-                saksbehandlerIdent = behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
+                saksbehandlerIdent = vedtakDetaljer?.vedtakFattetAv ?: behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
                 dokumenter =
                     listOf(
                         OpprettDokumentDto(
@@ -267,7 +268,7 @@ class NotatOpplysningerService(
             saksbehandlerNavn =
                 TokenUtils
                     .hentSaksbehandlerIdent()
-                    ?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
+                    ?.let { EnhetProvider.hentSaksbehandlernavn(it) },
             virkningstidspunkt =
                 NotatVirkningstidspunktDto(
                     erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
@@ -690,9 +691,9 @@ class NotatOpplysningerService(
                 emptyList()
             }
         return NotatVedtakDetaljerDto(
-            erFattet = erVedtakFattet,
-            fattetTidspunkt = vedtakstidspunkt,
-            fattetAvSaksbehandler = vedtakFattetAv?.let { SaksbehandlernavnProvider.hentSaksbehandlernavn(it) },
+            erFattet = vedtakDetaljer != null || erVedtakFattet,
+            fattetTidspunkt = vedtakDetaljer?.vedtakstidspunkt ?: vedtakstidspunkt,
+            fattetAvSaksbehandler = (vedtakDetaljer?.vedtakFattetAv ?: vedtakFattetAv)?.let { EnhetProvider.hentSaksbehandlernavn(it) },
             resultat = resultat,
         )
     }
