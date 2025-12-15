@@ -173,9 +173,8 @@ class ValiderBeregning(
                 validerForBeregningBidragIkkeAvslag()
             } else {
                 val gebyrValideringsfeil = validerGebyr()
-                val virkningstidspunktFeil = hentVirkningstidspunktValideringsfeil().takeIf { it.harFeil }
                 val virkningstidspunktFeilV2 = hentVirkningstidspunktValideringsfeilV2()
-                val harFeil = virkningstidspunktFeil != null || gebyrValideringsfeil.isNotEmpty() || virkningstidspunktFeilV2.isNotEmpty()
+                val harFeil = gebyrValideringsfeil.isNotEmpty() || virkningstidspunktFeilV2.isNotEmpty()
                 harFeil.ifTrue {
                     BeregningValideringsfeil(
                         virkningstidspunkt = virkningstidspunktFeilV2.takeIf { it.isNotEmpty() },
