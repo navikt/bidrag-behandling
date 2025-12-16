@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtakBegrunnelse
 import no.nav.bidrag.behandling.transformers.tilDto
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -187,7 +188,7 @@ class BehandlingBeregnController(
             )
         }
 
-        return beregningService.beregneBidrag(behandling, endeligBeregning).tilDto(behandling.kanFatteVedtak())
+        return beregningService.beregneBidrag(behandling, endeligBeregning).tilDto(behandling.kanFatteVedtakBegrunnelse())
     }
 
     @Suppress("unused")

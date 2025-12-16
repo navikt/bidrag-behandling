@@ -242,7 +242,7 @@ fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List
         }
 }
 
-fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtak: Boolean): ResultatBidragberegningDto {
+fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtakBegrunnelse: String?): ResultatBidragberegningDto {
     val grunnlagsliste =
         flatMap {
             it.resultat.grunnlagListe
@@ -254,7 +254,8 @@ fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtak: Boolean): Resultat
         }.toSet()
     val grunnlagslisteAlle = (grunnlagsliste + grunnlagslisteDelvedtak).toList()
     return ResultatBidragberegningDto(
-        kanFatteVedtak = kanFatteVedtak,
+        kanFatteVedtak = kanFatteVedtakBegrunnelse == null,
+        kanFatteVedtakBegrunnelse = kanFatteVedtakBegrunnelse,
         minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling(),
         perioderSlåttUtTilFF = grunnlagslisteAlle.perioderSlåttUtTilFF(),
         resultatBarn =

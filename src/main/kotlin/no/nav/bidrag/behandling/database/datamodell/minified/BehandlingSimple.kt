@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell.minified
 
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.regnskap.Søknadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -56,6 +57,7 @@ data class BehandlingSimple(
 data class RolleSimple(
     val rolletype: Rolletype,
     val ident: String,
+    val virkningstidspunkt: LocalDate,
 ) {
     val personident get() = Personident(ident)
 }

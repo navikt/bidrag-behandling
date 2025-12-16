@@ -38,7 +38,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
 
     @Query(
         """
-    SELECT new no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple(r.rolletype, r.ident) FROM rolle r WHERE r.behandling.id= :id
+    SELECT new no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple(r.rolletype, r.ident, r.virkningstidspunkt) FROM rolle r WHERE r.behandling.id= :id
 """
     )
     fun findRolleSimpleData(id: Long): List<RolleSimple>

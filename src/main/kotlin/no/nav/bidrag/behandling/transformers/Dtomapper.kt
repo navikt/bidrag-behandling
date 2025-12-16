@@ -90,6 +90,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtakBegrunnelse
 import no.nav.bidrag.behandling.transformers.behandling.tilBarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
@@ -794,6 +795,7 @@ class Dtomapper(
             BehandlingDtoV2(
                 id = id!!,
                 kanFatteVedtak = kanFatteVedtak(),
+                kanFatteVedtakBegrunnelse = kanFatteVedtakBegrunnelse(),
                 type = tilType(),
                 lesemodus = lesemodusVedtak,
                 erBisysVedtak = erBisysVedtak,

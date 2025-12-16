@@ -183,6 +183,7 @@ data class UgyldigBeregningDto(
 
 data class ResultatBidragberegningDto(
     val kanFatteVedtak: Boolean = true,
+    val kanFatteVedtakBegrunnelse: String? = null,
     val minstEnPeriodeHarSlåttUtTilFF: Boolean = false,
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
     val perioderSlåttUtTilFF: List<PeriodeSlåttUtTilFF>,
@@ -242,12 +243,24 @@ data class ResultatBarnebidragsberegningPeriodeDto(
         get(): String {
             if (klageOmgjøringDetaljer == null) return ""
             return when {
-                klageOmgjøringDetaljer.omgjøringsvedtak && vedtakstype == Vedtakstype.KLAGE -> "Klagevedtak"
-                klageOmgjøringDetaljer.omgjøringsvedtak && !vedtakstype.erIndeksEllerAldersjustering -> "Omgjøringsvedtak"
+                klageOmgjøringDetaljer.omgjøringsvedtak && vedtakstype == Vedtakstype.KLAGE -> {
+                    "Klagevedtak"
+                }
+
+                klageOmgjøringDetaljer.omgjøringsvedtak && !vedtakstype.erIndeksEllerAldersjustering -> {
+                    "Omgjøringsvedtak"
+                }
+
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
-                    vedtakstype == Vedtakstype.ALDERSJUSTERING -> "Beregnet aldersjustering"
+                    vedtakstype == Vedtakstype.ALDERSJUSTERING -> {
+                    "Beregnet aldersjustering"
+                }
+
                 (klageOmgjøringDetaljer.resultatFraVedtak == null || resultatFraVedtak?.beregnet == true) &&
-                    vedtakstype == Vedtakstype.INDEKSREGULERING -> "Beregnet indeksregulering"
+                    vedtakstype == Vedtakstype.INDEKSREGULERING -> {
+                    "Beregnet indeksregulering"
+                }
+
                 klageOmgjøringDetaljer.beregnTilDato != null && periode.fom >= klageOmgjøringDetaljer.beregnTilDato
                 -> {
                     val prefiks =
@@ -260,14 +273,17 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                         }
                     "$prefiks (${klageOmgjøringDetaljer.resultatFraVedtakVedtakstidspunkt?.toLocalDate().tilVisningsnavn()})"
                 }
-                else -> "Gjenopprettet beløpshistorikk"
+
+                else -> {
+                    "Gjenopprettet beløpshistorikk"
+                }
             }
         }
 
     @Suppress("unused")
     val resultatkodeVisningsnavn get() =
         when {
-            erOpphør ->
+            erOpphør -> {
                 if (beregningsdetaljer?.sluttberegning?.ikkeOmsorgForBarnet == true ||
                     beregningsdetaljer?.sluttberegning?.barnetErSelvforsørget == true
                 ) {
@@ -277,32 +293,55 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                 } else {
                     resultatKode?.visningsnavn?.intern ?: "Opphør"
                 }
-            vedtakstype == Vedtakstype.INNKREVING -> "Innkreving"
+            }
 
-            vedtakstype == Vedtakstype.ALDERSJUSTERING ->
+            vedtakstype == Vedtakstype.INNKREVING -> {
+                "Innkreving"
+            }
+
+            vedtakstype == Vedtakstype.ALDERSJUSTERING -> {
                 when {
-                    klageOmgjøringDetaljer?.delAvVedtaket == false -> "Manuell aldersjustering (ikke del av vedtaket)"
-                    endeligVedtak -> "Aldersjustering"
-                    aldersjusteringDetaljer?.aldersjustert == false -> aldersjusteringDetaljer.begrunnelserVisningsnavn
-                    else ->
+                    klageOmgjøringDetaljer?.delAvVedtaket == false -> {
+                        "Manuell aldersjustering (ikke del av vedtaket)"
+                    }
+
+                    endeligVedtak -> {
+                        "Aldersjustering"
+                    }
+
+                    aldersjusteringDetaljer?.aldersjustert == false -> {
+                        aldersjusteringDetaljer.begrunnelserVisningsnavn
+                    }
+
+                    else -> {
                         beregningsdetaljer?.sluttberegningAldersjustering?.resultatVisningsnavn?.intern
                             ?: lastVisningsnavnFraFil("sluttberegningBarnebidrag.yaml")["kostnadsberegnet"]?.intern
+                    }
                 }
+            }
 
-            vedtakstype == Vedtakstype.INDEKSREGULERING -> "Indeksregulering"
+            vedtakstype == Vedtakstype.INDEKSREGULERING -> {
+                "Indeksregulering"
+            }
 
             resultatKode?.erDirekteAvslag() == true ||
                 resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
-                resultatKode == Resultatkode.INNVILGET_VEDTAK -> resultatKode.visningsnavnIntern(vedtakstype)
+                resultatKode == Resultatkode.INNVILGET_VEDTAK -> {
+                resultatKode.visningsnavnIntern(vedtakstype)
+            }
 
-            ugyldigBeregning != null ->
+            ugyldigBeregning != null -> {
                 when (ugyldigBeregning.type) {
                     UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
                     -> "Lavere enn løpende bidrag"
+
                     UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD -> "Ingen løpende forskudd"
                 }
+            }
 
-            else -> beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern
+            else -> {
+                beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern
+            }
         }
 }
 

@@ -106,6 +106,7 @@ data class LesemodusVedtak(
 data class BehandlingDtoV2(
     val id: Long,
     val kanFatteVedtak: Boolean = true,
+    val kanFatteVedtakBegrunnelse: String? = null,
     val type: TypeBehandling,
     val lesemodus: LesemodusVedtak? = null,
     val erBisysVedtak: Boolean,
