@@ -189,6 +189,7 @@ spring:
     locations: classpath:/db/migration
   jpa:
     database: postgresql
+    open-in-view: false
 
 ---
 spring:
@@ -213,3 +214,4 @@ spring:
     locations: classpath:/db/migration
   jpa:
     database: postgresql
+    open-in-view: false
