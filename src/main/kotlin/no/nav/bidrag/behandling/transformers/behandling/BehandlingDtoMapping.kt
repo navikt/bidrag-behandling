@@ -101,6 +101,7 @@ private val log = KotlinLogging.logger {}
 fun Behandling.toSimple() =
     BehandlingSimple(
         id = id!!,
+        virkningstidspunkt = virkningstidspunkt,
         søktFomDato = søktFomDato,
         mottattdato = mottattdato,
         saksnummer = saksnummer,
@@ -126,7 +127,7 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
             ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
-        if (roller.map { it.virkningstidspunkt }.toSet().size > 1) {
+        if (roller.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
             return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
         }
         val sakerBp =

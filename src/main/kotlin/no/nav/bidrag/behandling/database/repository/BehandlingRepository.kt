@@ -19,6 +19,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
         """
     SELECT new no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple(
         b.id,
+        b.virkningstidspunkt,
         b.søktFomDato,
         b.mottattdato,
         b.saksnummer,

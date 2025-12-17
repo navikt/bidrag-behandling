@@ -14,6 +14,7 @@ import java.time.LocalDate
 
 data class BehandlingSimple(
     val id: Long,
+    val virkningstidspunkt: LocalDate?,
     val søktFomDato: LocalDate,
     val mottattdato: LocalDate,
     val saksnummer: String,
@@ -28,6 +29,7 @@ data class BehandlingSimple(
 ) {
     constructor(
         id: Long,
+        virkningstidspunkt: LocalDate,
         søktFomDato: LocalDate,
         mottattdato: LocalDate,
         saksnummer: String,
@@ -39,6 +41,7 @@ data class BehandlingSimple(
         forholdsmessigFordeling: ForholdsmessigFordeling?,
     ) : this(
         id,
+        virkningstidspunkt,
         søktFomDato,
         mottattdato,
         saksnummer,
@@ -59,7 +62,7 @@ data class BehandlingSimple(
 data class RolleSimple(
     val rolletype: Rolletype,
     val ident: String,
-    val virkningstidspunkt: LocalDate,
+    val virkningstidspunkt: LocalDate?,
 ) {
     val personident get() = Personident(ident)
 }
