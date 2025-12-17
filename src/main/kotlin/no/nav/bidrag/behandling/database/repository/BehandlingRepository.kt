@@ -43,11 +43,19 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
     )
     fun findRolleSimpleData(id: Long): List<RolleSimple>
 
+    @Query(
+        """
+    SELECT count(*) FROM privat_avtale p WHERE p.behandling.id= :id and p.rolle is null
+"""
+    )
+    fun findNumberOfPrivatAvtaleAndreBarn(id: Long): Int
+
 
     fun findBehandlingSimple(id: Long): BehandlingSimple {
         val behandling = findBehandlingSimpleData(id)
         val roller = findRolleSimpleData(id)
-        return behandling.copy(roller = roller)
+        val harPrivatAvtaleAndreBarn = findNumberOfPrivatAvtaleAndreBarn(id) != 0
+        return behandling.copy(roller = roller, harPrivatAvtaleAndreBarn = harPrivatAvtaleAndreBarn)
     }
 
     fun findBehandlingById(id: Long): Optional<Behandling>

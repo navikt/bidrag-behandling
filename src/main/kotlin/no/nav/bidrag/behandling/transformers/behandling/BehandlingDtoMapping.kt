@@ -105,6 +105,7 @@ fun Behandling.toSimple() =
         saksnummer = saksnummer,
         vedtakstype = vedtakstype,
         søknadstype = søknadstype,
+        harPrivatAvtaleAndreBarn = privatAvtale.any { it.rolle == null },
         omgjøringsdetaljer = omgjøringsdetaljer,
         stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
@@ -134,6 +135,9 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         val gjeldendeSak = hentSak(saksnummer) ?: return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
         if (gjeldendeSak.barn.size != søknadsbarn.size) {
             return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
+        }
+        if (harPrivatAvtaleAndreBarn) {
+            return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
         }
     }
     val harBPStønadForFlereBarn =
