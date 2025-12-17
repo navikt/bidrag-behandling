@@ -148,7 +148,7 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
     return null
 }
 
-fun BehandlingSimple.kanFatteVedtak(): Boolean = kanFatteVedtakBegrunnelse() != null
+fun BehandlingSimple.kanFatteVedtak(): Boolean = kanFatteVedtakBegrunnelse() == null
 
 fun Behandling.kanFatteVedtak(): Boolean = toSimple().kanFatteVedtak()
 
