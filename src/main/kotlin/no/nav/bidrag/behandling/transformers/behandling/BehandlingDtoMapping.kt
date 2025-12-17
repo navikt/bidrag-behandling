@@ -68,6 +68,7 @@ import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -128,7 +129,11 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         if (roller.map { it.virkningstidspunkt }.toSet().size > 1) {
             return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
         }
-        val sakerBp = hentAlleSaker(bidragspliktig!!.ident).filter { it.saksnummer.verdi != saksnummer }
+        val sakerBp =
+            hentAlleSaker(bidragspliktig!!.ident).filter {
+                it.saksnummer.verdi != saksnummer &&
+                    it.bidragspliktig?.fødselsnummer?.verdi == bidragspliktig!!.ident
+            }
         if (sakerBp.isNotEmpty()) {
             return "Kan ikke fatte vedtak når BP har flere saker"
         }
