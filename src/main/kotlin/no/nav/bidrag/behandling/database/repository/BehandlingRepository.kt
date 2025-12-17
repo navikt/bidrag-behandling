@@ -19,6 +19,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
         """
     SELECT new no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple(
         b.id,
+        b.virkningstidspunkt,
         b.søktFomDato,
         b.mottattdato,
         b.saksnummer,
@@ -38,16 +39,24 @@ interface BehandlingRepository : CrudRepository<Behandling, Long> {
 
     @Query(
         """
-    SELECT new no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple(r.rolletype, r.ident) FROM rolle r WHERE r.behandling.id= :id
+    SELECT new no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple(r.rolletype, r.ident, r.virkningstidspunkt) FROM rolle r WHERE r.behandling.id= :id
 """
     )
     fun findRolleSimpleData(id: Long): List<RolleSimple>
+
+    @Query(
+        """
+    SELECT count(*) FROM privat_avtale p WHERE p.behandling.id= :id and p.rolle is null
+"""
+    )
+    fun findNumberOfPrivatAvtaleAndreBarn(id: Long): Int
 
 
     fun findBehandlingSimple(id: Long): BehandlingSimple {
         val behandling = findBehandlingSimpleData(id)
         val roller = findRolleSimpleData(id)
-        return behandling.copy(roller = roller)
+        val harPrivatAvtaleAndreBarn = findNumberOfPrivatAvtaleAndreBarn(id) != 0
+        return behandling.copy(roller = roller, harPrivatAvtaleAndreBarn = harPrivatAvtaleAndreBarn)
     }
 
     fun findBehandlingById(id: Long): Optional<Behandling>

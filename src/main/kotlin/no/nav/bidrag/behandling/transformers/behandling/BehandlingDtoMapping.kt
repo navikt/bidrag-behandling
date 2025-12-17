@@ -36,8 +36,11 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilV2Dto
 import no.nav.bidrag.behandling.service.NotatService
+import no.nav.bidrag.behandling.service.hentAlleSaker
 import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.service.hentSak
+import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
@@ -65,6 +68,7 @@ import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
+import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -97,36 +101,68 @@ private val log = KotlinLogging.logger {}
 fun Behandling.toSimple() =
     BehandlingSimple(
         id = id!!,
+        virkningstidspunkt = virkningstidspunkt,
         søktFomDato = søktFomDato,
         mottattdato = mottattdato,
         saksnummer = saksnummer,
         vedtakstype = vedtakstype,
         søknadstype = søknadstype,
+        harPrivatAvtaleAndreBarn = privatAvtale.any { it.rolle == null },
         omgjøringsdetaljer = omgjøringsdetaljer,
         stønadstype = stonadstype,
         engangsbeløptype = engangsbeloptype,
         forholdsmessigFordeling = forholdsmessigFordeling,
-        roller = roller.map { RolleSimple(it.rolletype, it.ident!!) },
+        roller = roller.map { RolleSimple(it.rolletype, it.ident!!, it.virkningstidspunktRolle) },
     )
 
-fun BehandlingSimple.kanFatteVedtak(): Boolean {
+fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
     if (!erBidrag()) {
-        return true
+        return null
     }
     if (søknadsbarn.size > 1 && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
-        return false
+        return "Kan ikke fatte vedtak for bidrag med flere barn"
     }
 
-    val stønaderBp = hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident) ?: return søknadsbarn.size == 1
+    val stønaderBp =
+        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
+            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
+    if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
+        if (roller.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
+            return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
+        }
+        val sakerBp =
+            hentAlleSaker(bidragspliktig!!.ident).filter {
+                it.saksnummer.verdi != saksnummer &&
+                    it.bidragspliktig?.fødselsnummer?.verdi == bidragspliktig!!.ident
+            }
+        if (sakerBp.isNotEmpty()) {
+            return "Kan ikke fatte vedtak når BP har flere saker"
+        }
+        val gjeldendeSak = hentSak(saksnummer) ?: return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
+        if (gjeldendeSak.barn.size != søknadsbarn.size) {
+            return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
+        }
+        if (harPrivatAvtaleAndreBarn) {
+            return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
+        }
+    }
     val harBPStønadForFlereBarn =
         stønaderBp
             .stønader
             .filter { it.kravhaver.verdi != søknadsbarn.first().ident }
             .any { it.type != Stønadstype.FORSKUDD }
-    return !harBPStønadForFlereBarn || UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled
+    if (harBPStønadForFlereBarn && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
+        return "Kan ikke fatte vedtak hvor BP har løpende bidrag for andre barn"
+    }
+
+    return null
 }
 
+fun BehandlingSimple.kanFatteVedtak(): Boolean = kanFatteVedtakBegrunnelse() == null
+
 fun Behandling.kanFatteVedtak(): Boolean = toSimple().kanFatteVedtak()
+
+fun Behandling.kanFatteVedtakBegrunnelse(): String? = toSimple().kanFatteVedtakBegrunnelse()
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(

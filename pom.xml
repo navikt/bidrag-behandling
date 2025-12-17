@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.6</version>
+    <version>3.5.8</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>no.nav</groupId>
@@ -38,7 +38,7 @@
     <checker-qual.version>3.48.3</checker-qual.version>
     <asm.version>9.7.1</asm.version>
     <jetbrains.annotations.version>26.0.2</jetbrains.annotations.version>
-    <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
   </properties>
 
   <repositories>
@@ -477,7 +477,7 @@
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
-      <version>3.2.2</version>
+      <version>3.2.3</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.errorprone</groupId>

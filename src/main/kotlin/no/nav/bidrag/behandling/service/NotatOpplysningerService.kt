@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforho
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforholdTilBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtakBegrunnelse
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
@@ -648,7 +649,7 @@ class NotatOpplysningerService(
                     }
 
                     TypeBehandling.BIDRAG -> {
-                        beregningService.beregneBidrag(this).tilDto(this.kanFatteVedtak()).let {
+                        beregningService.beregneBidrag(this).tilDto(this.kanFatteVedtakBegrunnelse()).let {
                             it.resultatBarn.sortedBy { it.barn.fødselsdato }.map { beregning ->
                                 DokumentmalResultatBidragsberegningBarnDto(
                                     barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),

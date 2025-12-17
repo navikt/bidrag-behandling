@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell.minified
 
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.regnskap.Søknadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -13,9 +14,11 @@ import java.time.LocalDate
 
 data class BehandlingSimple(
     val id: Long,
+    val virkningstidspunkt: LocalDate?,
     val søktFomDato: LocalDate,
     val mottattdato: LocalDate,
     val saksnummer: String,
+    val harPrivatAvtaleAndreBarn: Boolean,
     val vedtakstype: Vedtakstype?,
     val søknadstype: Behandlingstype?,
     val omgjøringsdetaljer: Omgjøringsdetaljer?,
@@ -26,6 +29,7 @@ data class BehandlingSimple(
 ) {
     constructor(
         id: Long,
+        virkningstidspunkt: LocalDate,
         søktFomDato: LocalDate,
         mottattdato: LocalDate,
         saksnummer: String,
@@ -37,9 +41,11 @@ data class BehandlingSimple(
         forholdsmessigFordeling: ForholdsmessigFordeling?,
     ) : this(
         id,
+        virkningstidspunkt,
         søktFomDato,
         mottattdato,
         saksnummer,
+        false,
         vedtakstype,
         søknadstype,
         omgjøringsdetaljer,
@@ -56,6 +62,7 @@ data class BehandlingSimple(
 data class RolleSimple(
     val rolletype: Rolletype,
     val ident: String,
+    val virkningstidspunkt: LocalDate?,
 ) {
     val personident get() = Personident(ident)
 }
