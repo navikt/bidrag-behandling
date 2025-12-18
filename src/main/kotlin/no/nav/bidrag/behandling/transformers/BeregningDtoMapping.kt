@@ -1404,12 +1404,36 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         ).firstOrNull() ?: return null
 
     // TODO: Legg til også privat avtale og utlandskbidrag
-    val bidragTilFordelingAlle =
+    val bidragTilFordelingSøknadsbarn =
         finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragTilFordeling>(
             Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING,
             sumBidragTilBeregning.grunnlag,
         ).sortedBy { it.gjelderBarnReferanse == bidragTilFordeling.gjelderBarnReferanse }
 
+    val bidragTilFordelingAlle =
+        bidragTilFordelingSøknadsbarn.map {
+            val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+            ForholdsmessigFordelingBidragTilFordelingBarn(
+                prioritertBidrag = false,
+                privatAvtale = false,
+                erSøknadsbarn = true,
+                beregnetBidrag =
+                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                        // Verdiene under er ikke interessant å vise for barn som er i søknaden
+                        saksnummer = Saksnummer(""),
+                        samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                        løpendeBeløp = BigDecimal.ZERO,
+                        faktiskBeløp = BigDecimal.ZERO,
+                        beregnetBidrag = it.innhold.bidragTilFordeling,
+                        beregnetBeløp = BigDecimal.ZERO,
+                        reduksjonUnderholdskostnad = BigDecimal.ZERO,
+                        samværsfradrag = BigDecimal.ZERO,
+                    ),
+                barn =
+                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                bidragTilFordeling = it.innhold.bidragTilFordeling,
+            )
+        } + finnBidragTilFordelingLøpendeBidrag(sumBidragTilBeregning.grunnlag)
     return ForholdsmessigFordelingBeregningsdetaljer(
         sumBidragTilFordeling = sumBidragTilBeregning.innhold.sumBidragTilFordeling,
         sumPrioriterteBidragTilFordeling = sumBidragTilBeregning.innhold.sumPrioriterteBidragTilFordeling,
@@ -1420,30 +1444,18 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         bidragEtterFordeling = andelAvBidragsevne.innhold.bidragEtterFordeling,
         harBPFullEvne = andelAvBidragsevne.innhold.harBPFullEvne,
         erForholdsmessigFordelt = periodeHarSlåttUtTilFF(sluttberegning.sluttberegningPeriode()),
-        bidragTilFordelingAlle =
-            bidragTilFordelingAlle.map {
-                val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
-                ForholdsmessigFordelingBidragTilFordelingBarn(
-                    prioritertBidrag = false,
-                    privatAvtale = false,
-                    erSøknadsbarn = true,
-                    beregnetBidrag =
-                        ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
-                            // Verdiene under er ikke interessant å vise for barn som er i søknaden
-                            saksnummer = Saksnummer(""),
-                            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
-                            løpendeBeløp = BigDecimal.ZERO,
-                            faktiskBeløp = BigDecimal.ZERO,
-                            beregnetBidrag = it.innhold.bidragTilFordeling,
-                            beregnetBeløp = BigDecimal.ZERO,
-                            reduksjonUnderholdskostnad = BigDecimal.ZERO,
-                            samværsfradrag = BigDecimal.ZERO,
-                        ),
-                    barn =
-                        PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
-                    bidragTilFordeling = it.innhold.bidragTilFordeling,
-                )
-            } + finnBidragTilFordelingLøpendeBidrag(sumBidragTilBeregning.grunnlag),
+        bidragTilFordelingAlle = bidragTilFordelingAlle,
+        finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = bidragTilFordelingAlle.any { !it.erSøknadsbarn },
+        sumBidragTilFordelingSøknadsbarn =
+            bidragTilFordelingAlle
+                .filter {
+                    it.erSøknadsbarn && it.beregnetBidrag != null
+                }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
+        sumBidragTilFordelingIkkeSøknadsbarn =
+            bidragTilFordelingAlle
+                .filter {
+                    !it.erSøknadsbarn && it.beregnetBidrag != null
+                }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
     )
 }
 

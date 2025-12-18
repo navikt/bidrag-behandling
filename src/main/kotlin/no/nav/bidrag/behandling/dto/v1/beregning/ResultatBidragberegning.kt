@@ -386,6 +386,9 @@ data class PeriodeSlåttUtTilFF(
 
 data class ForholdsmessigFordelingBeregningsdetaljer(
     val sumBidragTilFordeling: BigDecimal,
+    val finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn: Boolean,
+    val sumBidragTilFordelingSøknadsbarn: BigDecimal,
+    val sumBidragTilFordelingIkkeSøknadsbarn: BigDecimal,
     val sumPrioriterteBidragTilFordeling: BigDecimal,
     val bidragTilFordelingForBarnet: BigDecimal,
     val andelAvSumBidragTilFordelingFaktor: BigDecimal,
