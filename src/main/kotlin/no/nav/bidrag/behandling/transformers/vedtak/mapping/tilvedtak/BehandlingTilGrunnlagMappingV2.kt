@@ -150,7 +150,7 @@ class BehandlingTilGrunnlagMappingV2(
                             },
                         delAvOpprinneligBehandling =
                             if (forholdsmessigFordeling != null) {
-                                forholdsmessigFordeling!!.delAvOpprinneligBehandling
+                                !forholdsmessigFordeling!!.erRevurdering
                             } else {
                                 true
                             },
