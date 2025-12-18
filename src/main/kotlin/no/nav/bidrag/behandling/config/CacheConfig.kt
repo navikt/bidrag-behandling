@@ -26,6 +26,7 @@ class CacheConfig {
         const val BBM_BEREGNING_CACHE = "BBM_BEREGNING_CACHE"
         const val BBM_ALLE_BEREGNINGER_CACHE = "BBM_ALLE_BEREGNINGER_CACHE"
         const val VEDTAK_FOR_STØNAD_CACHE = "VEDTAK_FOR_STØNAD_CACHE"
+        const val MANUELLE_VEDTAK_FOR_BP = "MANUELLE_VEDTAK_FOR_BP"
         const val VEDTAK_CACHE = "VEDTAK_CACHE"
         const val STØNAD_LØPENDE_BIDRAG_CACHE = "STØNAD_LØPENDE_BIDRAG_CACHE"
 
@@ -76,6 +77,10 @@ class CacheConfig {
         )
         caffeineCacheManager.registerCustomCache(
             VEDTAK_FOR_STØNAD_CACHE,
+            Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
+        )
+        caffeineCacheManager.registerCustomCache(
+            MANUELLE_VEDTAK_FOR_BP,
             Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build(),
         )
         caffeineCacheManager.registerCustomCache(

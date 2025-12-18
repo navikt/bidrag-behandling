@@ -1,11 +1,13 @@
 package no.nav.bidrag.behandling.consumer
 
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.MANUELLE_VEDTAK_FOR_BP
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.VEDTAK_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.VEDTAK_FOR_STØNAD_CACHE
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningVedtakConsumer
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.web.client.AbstractRestClient
+import no.nav.bidrag.transport.behandling.vedtak.request.HentManuelleVedtakRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.HentVedtakForStønadResponse
@@ -70,6 +72,18 @@ class BidragVedtakConsumer(
     override fun hentVedtakForStønad(request: HentVedtakForStønadRequest): HentVedtakForStønadResponse =
         postForNonNullEntity(
             bidragVedtakUri.pathSegment("hent-vedtak").build().toUri(),
+            request,
+        )
+
+    @BrukerCacheable(MANUELLE_VEDTAK_FOR_BP)
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    override fun hentManuelleVedtak(request: HentManuelleVedtakRequest): HentVedtakForStønadResponse =
+        postForNonNullEntity(
+            bidragVedtakUri.pathSegment("hent-manuelle-vedtak").build().toUri(),
             request,
         )
 }
