@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
@@ -45,6 +46,8 @@ import no.nav.bidrag.beregn.core.bo.SjablonPeriode
 import no.nav.bidrag.beregn.core.dto.SjablonPeriodeCore
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
+import no.nav.bidrag.beregn.core.exception.IkkeFullBidragsevneOgUfullstendigeGrunnlagBeregningException
+import no.nav.bidrag.beregn.core.exception.IkkeFullBidragsevneOgUfullstendigeGrunnlagException
 import no.nav.bidrag.beregn.core.service.mapper.CoreMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
@@ -71,6 +74,7 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebid
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregningGrunnlagV2
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequestV2
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponseV2
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
@@ -301,10 +305,9 @@ class BeregningService(
         val beregning =
             if (grunnlagBeregning.beregningBarn.isNotEmpty()) {
                 try {
-                    val resultat =
-                        beregnBarnebidrag
-                            .utførBidragsberegningV3(grunnlagBeregning)
+                    val resultatBeregning = utførBeregningFF(grunnlagBeregning)
 
+                    val resultat = resultatBeregning.resultat
                     val perioderSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().map { it.periode }
 
                     resultat.resultat.map { resultatBarn ->
@@ -340,7 +343,7 @@ class BeregningService(
                                 behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak || !behandling.erKlageEllerOmgjøring
                             }
                         ResultatBidragsberegningBarn(
-                            ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                            ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding() ?: behandling.tilBeregningFeilmelding(),
                             barn = søknadsbarn.mapTilResultatBarn(),
                             erAvvistRevurdering = erAvvistRevurdering,
                             vedtakstype = behandling.vedtakstype,
@@ -402,6 +405,22 @@ class BeregningService(
 
         return beregning + resultatAvvisning + resultatAvslag
     }
+
+    private fun utførBeregningFF(grunnlagBeregning: BidragsberegningOrkestratorRequestV2): ResultatBidragsberegning =
+        try {
+            val resultat =
+                beregnBarnebidrag
+                    .utførBidragsberegningV3(grunnlagBeregning)
+            ResultatBidragsberegning(
+                resultat = resultat,
+            )
+        } catch (e: IkkeFullBidragsevneOgUfullstendigeGrunnlagException) {
+            ResultatBidragsberegning(
+                feilmelding = e.melding,
+                feiltype = UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF,
+                resultat = e.data,
+            )
+        }
 
     fun beregneBarnebidragV1(
         behandling: Behandling,
