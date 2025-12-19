@@ -426,6 +426,7 @@ internal fun List<GrunnlagDto>.mapRoller(
     opprinneligVirkningstidspunkt: LocalDate,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
+        .distinctBy { it.personIdent }
         .mapIndexed { i, rolle ->
             val stønadsendring = vedtak.stønadsendringListe.find { it.kravhaver.verdi == rolle.personIdent }
             val resultatFraVedtak =
@@ -1240,14 +1241,27 @@ private fun GrunnlagDto.tilRolle(
         id = id,
         rolletype =
             when (type) {
-                Grunnlagstype.PERSON_SØKNADSBARN -> Rolletype.BARN
-                Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> Rolletype.BIDRAGSMOTTAKER
-                Grunnlagstype.PERSON_REELL_MOTTAKER -> Rolletype.REELMOTTAKER
-                Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> Rolletype.BIDRAGSPLIKTIG
-                else ->
+                Grunnlagstype.PERSON_SØKNADSBARN -> {
+                    Rolletype.BARN
+                }
+
+                Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> {
+                    Rolletype.BIDRAGSMOTTAKER
+                }
+
+                Grunnlagstype.PERSON_REELL_MOTTAKER -> {
+                    Rolletype.REELMOTTAKER
+                }
+
+                Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> {
+                    Rolletype.BIDRAGSPLIKTIG
+                }
+
+                else -> {
                     vedtakmappingFeilet(
                         "Ukjent rolletype $type",
                     )
+                }
             },
         ident = personIdent,
         opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
