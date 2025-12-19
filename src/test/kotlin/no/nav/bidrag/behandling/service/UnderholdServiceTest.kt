@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggeTilNyttBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.oppretteBarnetilsynGrunnlagDto
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.synkSøknadsbarnVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
@@ -1145,6 +1146,7 @@ class UnderholdServiceTest {
                     ?.minBy { it.periodeFra }
                     ?.periodeFra
                     ?.plusMonths(1)
+                    ?.withDayOfMonth(1)
 
             nyVirkningsdato shouldNotBe null
 
@@ -1156,6 +1158,7 @@ class UnderholdServiceTest {
                 ?.periodeFra
                 ?.shouldBeBefore(nyVirkningsdato!!)
             b.virkningstidspunkt = nyVirkningsdato
+            b.synkSøknadsbarnVirkningstidspunkt()
 
             // hvis
             underholdService.tilpasseUnderholdEtterVirkningsdato(b)
@@ -1223,6 +1226,7 @@ class UnderholdServiceTest {
             )
 
             b.virkningstidspunkt = b.virkningstidspunkt?.plusMonths(1)
+            b.synkSøknadsbarnVirkningstidspunkt()
 
             // hvis
             underholdService.tilpasseUnderholdEtterVirkningsdato(b)
@@ -1248,6 +1252,7 @@ class UnderholdServiceTest {
                     inkludereBp = true,
                     behandlingstype = TypeBehandling.BIDRAG,
                 )
+            b.synkSøknadsbarnVirkningstidspunkt()
 
             b.leggeTilGjeldendeBarnetilsyn(
                 oppretteBarnetilsynGrunnlagDto(
@@ -1280,7 +1285,8 @@ class UnderholdServiceTest {
                 ),
             )
 
-            b.virkningstidspunkt = LocalDate.now()
+            b.virkningstidspunkt = LocalDate.now().withDayOfMonth(1)
+            b.synkSøknadsbarnVirkningstidspunkt()
 
             // hvis
             underholdService.tilpasseUnderholdEtterVirkningsdato(b)

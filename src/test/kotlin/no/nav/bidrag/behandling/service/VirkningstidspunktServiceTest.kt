@@ -976,11 +976,11 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
             virkningstidspunktService.oppdatereVirkningstidspunkt(1, OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt))
             assertSoftly {
                 val førstePeriode = samværBarn2.perioder.minBy { it.fom }
-                førstePeriode.fom shouldBe LocalDate.now().plusMonths(2)
+                førstePeriode.fom shouldBe LocalDate.now().plusMonths(2).withDayOfMonth(1)
             }
             assertSoftly {
                 val førstePeriode = samværBarn1.perioder.minBy { it.fom }
-                førstePeriode.fom shouldBe LocalDate.now().plusMonths(2)
+                førstePeriode.fom shouldBe LocalDate.now().plusMonths(2).withDayOfMonth(1)
             }
         }
 
