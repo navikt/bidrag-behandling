@@ -71,6 +71,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.NotatService
@@ -890,7 +891,7 @@ class Dtomapper(
                             gjelder = it.tilDto(),
                             inntekter =
                                 InntekterDtoV3(
-                                    valideringsfeil = InntektValideringsfeilDto(),
+                                    valideringsfeil = InntektValideringsfeilV2Dto(),
                                     beregnetInntekt = BeregnetInntekterDto(it.personident!!, it.rolletype, emptyList()),
                                 ),
                         )

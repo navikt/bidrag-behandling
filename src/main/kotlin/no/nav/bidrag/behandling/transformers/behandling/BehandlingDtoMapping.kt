@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilV2Dto
 import no.nav.bidrag.behandling.service.NotatService
@@ -409,7 +410,7 @@ fun Behandling.tilInntektDtoV3(
                 gjelder = rolle.tilDto(),
             )
         },
-    valideringsfeil = hentInntekterValideringsfeil(rolle),
+    valideringsfeil = hentInntekterValideringsfeilV2(rolle),
 )
 
 fun List<Inntekt>.filtrerInntektGjelderBarn(rolle: Rolle?) =
@@ -660,6 +661,53 @@ fun Behandling.hentVirkningstidspunktValideringsfeil(): VirkningstidspunktFeilDt
     )
 }
 
+fun Behandling.hentInntekterValideringsfeilV2(rolle: Rolle): InntektValideringsfeilV2Dto =
+    InntektValideringsfeilV2Dto(
+        årsinntekter =
+            inntekter
+                .filter { it.ident == rolle.ident }
+                .mapValideringsfeilForÅrsinntekterV2(
+                    eldsteVirkningstidspunkt,
+                    rolle,
+                    tilType(),
+                ),
+        barnetillegg =
+            inntekter
+                .toList()
+                .filtrerInntektGjelderBarn(rolle)
+                .mapValideringsfeilForYtelseSomGjelderBarn(
+                    Inntektsrapportering.BARNETILLEGG,
+                    eldsteVirkningstidspunkt,
+                    roller,
+                ).takeIf { it.isNotEmpty() },
+        småbarnstillegg =
+            inntekter
+                .filter { it.ident == rolle.ident }
+                .mapValideringsfeilForYtelse(
+                    Inntektsrapportering.SMÅBARNSTILLEGG,
+                    eldsteVirkningstidspunkt,
+                    roller,
+                ).firstOrNull(),
+        // Det er bare bidragsmottaker småbarnstillegg og utvidetbarnetrygd er relevant for. Antar derfor det alltid gjelder BM og velger derfor den første i listen
+        utvidetBarnetrygd =
+            inntekter
+                .filter { it.ident == rolle.ident }
+                .mapValideringsfeilForYtelse(
+                    Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    eldsteVirkningstidspunkt,
+                    roller,
+                ).firstOrNull(),
+        kontantstøtte =
+            inntekter
+                .toList()
+                .filtrerInntektGjelderBarn(rolle)
+                .mapValideringsfeilForYtelseSomGjelderBarn(
+                    Inntektsrapportering.KONTANTSTØTTE,
+                    eldsteVirkningstidspunkt,
+                    roller,
+                ).takeIf { it.isNotEmpty() },
+    )
+
 fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValideringsfeilDto =
     InntektValideringsfeilDto(
         årsinntekter =
@@ -732,6 +780,54 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                     ).takeIf { it.isNotEmpty() }
             },
     )
+
+fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekterV2(
+    virkningstidspunkt: LocalDate,
+    rolle: Rolle,
+    behandlingType: TypeBehandling = TypeBehandling.FORSKUDD,
+): InntektValideringsfeil? {
+    val inntekterSomSkalSjekkes = filter { !eksplisitteYtelser.contains(it.type) }.filter { it.taMed }
+    val rollerSomKreverMinstEnInntekt = bestemRollerSomMåHaMinstEnInntekt(behandlingType)
+    val opphørsdato = rolle.behandling.globalOpphørsdato
+    val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
+
+    return if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
+        InntektValideringsfeil(
+            hullIPerioder = emptyList(),
+            overlappendePerioder = emptySet(),
+            fremtidigPeriode = false,
+            manglerPerioder = true,
+            rolle = rolle.tilDto(),
+        )
+    } else {
+        val hullIPerioder =
+            if (rolle.rolletype == Rolletype.BARN) {
+                // Kan ha hull i perioder hvis det er barn
+                // Feks at barnet bare har inntekt fra sommerjobb
+                emptyList()
+            } else {
+                inntekterTaMed.finnHullIPerioder(virkningstidspunkt, opphørsdato)
+            }
+        InntektValideringsfeil(
+            hullIPerioder = hullIPerioder,
+            overlappendePerioder = inntekterTaMed.finnOverlappendePerioderInntekt(),
+            fremtidigPeriode = inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
+            ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(opphørsdato),
+            manglerPerioder =
+                (rolle.rolletype != Rolletype.BARN)
+                    .ifTrue { this.isEmpty() } == true,
+            rolle = rolle.tilDto(),
+            ingenLøpendePeriode =
+                if (opphørsdato == null ||
+                    opphørsdato.opphørSisteTilDato().isAfter(LocalDate.now().sluttenAvForrigeMåned)
+                ) {
+                    hullIPerioder.any { it.til == null }
+                } else {
+                    false
+                },
+        )
+    }.takeIf { it.harFeil }
+}
 
 fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekter(
     virkningstidspunkt: LocalDate,

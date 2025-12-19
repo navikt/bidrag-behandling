@@ -639,20 +639,21 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun sjekkSkalOppretteForholdsmessigFordeling(behandlingId: Long): SjekkForholdmessigFordelingResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        val finnesLøpendeBidragSomOverlapperMedElsteVirkning =
-            behandling.søknadsbarn.any {
-                val periodeLøperBidrag = behandling.finnPeriodeLøperBidrag(it)
-                val periodeBeregning = ÅrMånedsperiode(behandling.eldsteVirkningstidspunkt.toYearMonth(), it.opphørsdato?.toYearMonth())
-                periodeLøperBidrag != null && periodeLøperBidrag.fom < it.virkningstidspunktRolle.toYearMonth() &&
-                    periodeLøperBidrag.overlapper(periodeBeregning)
-            }
+        val finnesLøpendeBidragSomOverlapperMedEldsteVirkning =
+            !behandling.erVirkningstidspunktLiktForAlle &&
+                behandling.søknadsbarn.any {
+                    val periodeLøperBidrag = behandling.finnPeriodeLøperBidrag(it)
+                    val periodeBeregning = ÅrMånedsperiode(behandling.eldsteVirkningstidspunkt.toYearMonth(), it.opphørsdato?.toYearMonth())
+                    periodeLøperBidrag != null && periodeLøperBidrag.fom < it.virkningstidspunktRolle.toYearMonth() &&
+                        periodeLøperBidrag.overlapper(periodeBeregning)
+                }
         val behandlesAvEnhet = finnEnhetForBarnIBehandling(behandling)
 
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
         val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
-            if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && finnesLøpendeBidragSomOverlapperMedElsteVirkning) {
+            if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && `finnesLøpendeBidragSomOverlapperMedEldsteVirkning`) {
                 relevanteKravhavere
             } else {
                 relevanteKravhavereIkkeSøknadsbarn
@@ -668,7 +669,7 @@ class ForholdsmessigFordelingService(
                 !behandling.erIForholdsmessigFordeling &&
                     (
                         bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
-                            finnesLøpendeBidragSomOverlapperMedElsteVirkning
+                            finnesLøpendeBidragSomOverlapperMedEldsteVirkning
                     ),
             måOppretteForholdsmessigFordeling = resultat.beregningManglerGrunnlag,
             harSlåttUtTilForholdsmessigFordeling = resultat.harSlåttUtTilFF,
