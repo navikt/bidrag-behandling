@@ -1093,6 +1093,7 @@ class Dtomapper(
                         } else {
                             null
                         },
+                    løpendeBidragPeriode = finnPeriodeLøpendePeriodeInnenforSøktFomDato(it),
                     harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
                     harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                     eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
@@ -1221,6 +1222,7 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    løpendeBidragPeriode = null,
                     harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                     harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
                     opphørsdato = globalOpphørsdato,

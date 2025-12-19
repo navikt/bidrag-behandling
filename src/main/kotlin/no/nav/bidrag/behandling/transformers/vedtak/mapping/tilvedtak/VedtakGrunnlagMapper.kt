@@ -86,11 +86,17 @@ fun Behandling.finnBeregnTilDato() =
 fun Rolle.finnBeregnFra(): YearMonth =
     if (behandling.erBidrag()) {
         if (behandling.erIForholdsmessigFordeling) {
-            behandling
-                .finnPeriodeLøperBidrag(this)
-                ?.fom
-                ?.let { maxOf(it, virkningstidspunktRolle.toYearMonth()) }
-                ?: virkningstidspunktRolle.toYearMonth()
+            if (rolletype == Rolletype.BIDRAGSMOTTAKER) {
+                behandling.søknadsbarn.filter { it.bidragsmottaker != null && it.bidragsmottaker?.ident == ident }.minOfOrNull {
+                    it.finnBeregnFra()
+                } ?: behandling.eldsteVirkningstidspunkt.toYearMonth()
+            } else {
+                behandling
+                    .finnPeriodeLøperBidrag(this)
+                    ?.fom
+                    ?.let { maxOf(it, behandling.eldsteVirkningstidspunkt.toYearMonth()) }
+                    ?: virkningstidspunktRolle.toYearMonth()
+            }
         } else {
             virkningstidspunktRolle.toYearMonth()
         }

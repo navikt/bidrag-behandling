@@ -332,6 +332,30 @@ fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle
     }
 }
 
+fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): ÅrMånedsperiode? {
+    val eksisterendeVedtak =
+        // TODO sjekke opphør fra opprinnelig eller nåværende historikk?
+        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
+            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
+            ?: return null
+    val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
+//    val perioder =
+//        stønad.periodeListe
+//            .filter {
+//                it.periode.til == null || it.periode.til!! > YearMonth.from(søktFomDato)
+//            }
+    if (stønad.periodeListe.isEmpty()) {
+        return null
+    }
+    return ÅrMånedsperiode(
+        stønad.periodeListe.minOf { it.periode.fom },
+        stønad.periodeListe
+            .maxByOrNull { it.periode.fom }
+            ?.periode
+            ?.til,
+    )
+}
+
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
         // TODO sjekke opphør fra opprinnelig eller nåværende historikk?

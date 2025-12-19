@@ -1369,7 +1369,7 @@ fun List<GrunnlagDto>.perioderSlåttUtTilFF(): List<PeriodeSlåttUtTilFF> {
         )
 
     return andelBidragsevne
-        .filter { !it.innhold.harBPFullEvne && it.innhold.andelAvSumBidragTilFordelingFaktor < BigDecimal.ONE }
+        .filter { it.innhold.andelAvSumBidragTilFordelingFaktor < BigDecimal.ONE }
         .map {
             val grunnlag25ProsentAvInntekt = finnGrunnlag25ProsentAvInntekt(it.grunnlag.grunnlagsreferanseListe)
             PeriodeSlåttUtTilFF(

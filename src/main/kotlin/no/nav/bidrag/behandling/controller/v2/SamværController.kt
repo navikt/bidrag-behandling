@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.service.SamværService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
+import no.nav.bidrag.behandling.transformers.sorterPersonEtterEldsteFødselsdato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
@@ -45,7 +46,11 @@ class SamværController(
         return OppdaterSamværResponsDto(
             oppdatertSamvær = respons.tilDto(),
             erSammeForAlle = behandling.sammeSamværForAlle,
-            samværBarn = behandling.samvær.map { it.tilDto() },
+            samværBarn =
+                behandling.samvær
+                    .sortedWith(
+                        sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.navn }),
+                    ).map { it.tilDto() },
         )
     }
 
