@@ -216,7 +216,7 @@ class AdminController(
         return behandlingService.opprettBehandling(request)
     }
 
-    @PostMapping("/admin/feilfiks/referanser")
+    @PostMapping("/admin/feilfiks/referanser/privatavtale")
     @Operation(
         description =
             "Fikse feil i referanser ",
@@ -231,8 +231,32 @@ class AdminController(
         ],
     )
     @Transactional
-    fun feilfiksReferanser() {
+    fun feilfiksReferanserPrivatAvtale() {
         privatAvtaleService.fiksReferanserPrivatAvtale()
+    }
+
+    @PostMapping("/admin/feilfiks/aktivering/grunnlag/{behandlingId}")
+    @Operation(
+        description =
+            "Fikse feil i referanser ",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun feilfiksAktiveringGrunnlag(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        behandling.grunnlag.forEach {
+            it.aktiv = it.innhentet
+        }
     }
 
     @PostMapping("/admin/grunnlag/inntekt/oppdater/{behandlingId}")
