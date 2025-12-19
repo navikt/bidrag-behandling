@@ -255,7 +255,7 @@ class AdminController(
     ) {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         behandling.grunnlag.forEach {
-            it.aktiv = LocalDateTime.now()
+            it.aktiv = it.innhentet
         }
     }
 
