@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDe
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBM
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBP
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
+import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -46,6 +47,8 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -63,6 +66,10 @@ import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhe
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -71,6 +78,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.collections.plus
@@ -91,7 +99,15 @@ val behandlingstyperSomIkkeSkalInkluderesIFF =
 data class FFBeregningResultat(
     val harSlåttUtTilFF: Boolean,
     val beregningManglerGrunnlag: Boolean,
-)
+    val simulertGrunnlag: List<SimulertInntektGrunnlag> = emptyList(),
+) {
+    data class SimulertInntektGrunnlag(
+        val type: Grunnlagstype,
+        val gjelder: String,
+        val beløp: BigDecimal,
+        val inntektstype: Inntektsrapportering,
+    )
+}
 
 data class SakKravhaver(
     val saksnummer: String?,
@@ -624,12 +640,32 @@ class ForholdsmessigFordelingService(
 
     private fun sjekkBeregningKreverForholdsmessigFordeling(behandling: Behandling): FFBeregningResultat =
         try {
-            val resultat = beregningService.beregneBidrag(behandling, true)
-            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
+            val resultat = beregningService.beregneBidrag(behandling, true, simulerBeregning = true).resultatBarn
+            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }.toSet().toList()
+            val simulertSamværGrunnlag =
+                grunnlagsliste
+                    .filter {
+                        it.type == Grunnlagstype.SAMVÆRSPERIODE &&
+                            it.referanse.contains(grunnlagsreferanseSimulert)
+                    }
+            val simulertInntektGrunnlag =
+                grunnlagsliste
+                    .filter {
+                        it.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE &&
+                            it.referanse.contains(grunnlagsreferanseSimulert)
+                    }.map {
+                        FFBeregningResultat.SimulertInntektGrunnlag(
+                            type = it.type,
+                            gjelder = grunnlagsliste.hentPersonMedReferanse(it.gjelderReferanse!!)!!.personIdent!!,
+                            beløp = it.innholdTilObjekt<InntektsrapporteringPeriode>().beløp,
+                            inntektstype = it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering,
+                        )
+                    }
+
             FFBeregningResultat(
                 grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
-                // TODO: Simuler beregning
-                grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
+                resultat.any { it.ugyldigBeregning != null },
+                simulertGrunnlag = simulertInntektGrunnlag,
             )
         } catch (e: Exception) {
             // Valideringsfeil

@@ -26,9 +26,7 @@ import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponseV2
-import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningResultatBarnV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetBidragPerBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUnderholdskostnad
@@ -152,7 +150,11 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
     )
 }
 
-data class ResultatBidragsberegning(
+/**
+ * ResultatUtførBidragsberegning brukes som wrapper for håndtering av direkte resultat av beregningen.
+ * Dette inkludrerer også feilhåndtering
+ */
+data class ResultatUtførBidragsberegning(
     val feilmelding: String? = null,
     val feiltype: UgyldigBeregningDto.UgyldigBeregningType? = null,
     val resultat: BidragsberegningOrkestratorResponseV2,
@@ -176,6 +178,16 @@ data class ResultatBidragsberegning(
                 }
             }
         }
+}
+
+data class ResultatBidragsberegning(
+    val perioderSlåttUtTilFF: List<ÅrMånedsperiode> = emptyList(),
+    val grunnlagsliste: List<GrunnlagDto> = emptyList(),
+    val vedtakstype: Vedtakstype,
+    val ugyldigBeregning: UgyldigBeregningDto? = null,
+    val resultatBarn: List<ResultatBidragsberegningBarn> = emptyList(),
+) {
+    val alleUgyldigBeregninger get() = listOfNotNull(ugyldigBeregning) + resultatBarn.mapNotNull { it.ugyldigBeregning }
 }
 
 data class ResultatBidragsberegningBarn(

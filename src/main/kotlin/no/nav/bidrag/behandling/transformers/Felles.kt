@@ -36,6 +36,7 @@ import java.time.Period
 import java.time.Year
 import java.time.YearMonth
 
+val grunnlagsreferanseSimulert = "simulert_grunnlag"
 val vedtakstyperIkkeBeregning =
     listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
 

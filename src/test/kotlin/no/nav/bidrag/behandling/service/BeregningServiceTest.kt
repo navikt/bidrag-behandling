@@ -230,7 +230,7 @@ class BeregningServiceTest {
             ).toMutableSet()
 
         every { behandlingService.hentBehandlingById(any()) } returns behandling
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1).resultatBarn
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -286,7 +286,7 @@ class BeregningServiceTest {
         )
         behandling.grunnlagsinnhentingFeilet = commonObjectmapper.writeValueAsString(mapOf(Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG to GrunnlagFeilDto(grunnlagstype = null, feilmelding = "", personId = "", feiltype = HentGrunnlagFeiltype.TEKNISK_FEIL)))
         every { behandlingService.hentBehandlingById(any()) } returns behandling
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1).resultatBarn
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -340,7 +340,7 @@ class BeregningServiceTest {
             ),
         )
         every { behandlingService.hentBehandlingById(any()) } returns behandling
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1).resultatBarn
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())
@@ -397,7 +397,7 @@ class BeregningServiceTest {
         )
         every { behandlingService.hentBehandlingById(any()) } returns behandling
 
-        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1)
+        val resultat = BeregningService(behandlingService, vedtakGrunnlagMapper, aldersjusteringOrchestrator, bidragsberegningOrkestrator).beregneBidrag(1).resultatBarn
 
         verify(exactly = 1) {
             BeregnBarnebidragApi().beregn(any())

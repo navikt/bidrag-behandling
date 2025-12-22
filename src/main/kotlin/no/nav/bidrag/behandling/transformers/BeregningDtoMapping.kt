@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPe
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningInntekterDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
@@ -249,27 +250,19 @@ fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List
         }
 }
 
-fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtakBegrunnelse: String?): ResultatBidragberegningDto {
-    val grunnlagsliste =
-        flatMap {
-            it.resultat.grunnlagListe
-        }.toSet()
-
-    val grunnlagslisteDelvedtak =
-        flatMap {
-            it.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList()
-        }.toSet()
-    val grunnlagslisteAlle = (grunnlagsliste + grunnlagslisteDelvedtak).toList()
-    return ResultatBidragberegningDto(
+fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): ResultatBidragberegningDto =
+    ResultatBidragberegningDto(
         kanFatteVedtak = kanFatteVedtakBegrunnelse == null,
         kanFatteVedtakBegrunnelse = kanFatteVedtakBegrunnelse,
-        ugyldigBeregning = firstNotNullOfOrNull { it.ugyldigBeregning },
-        minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling(),
-        perioderSlåttUtTilFF = grunnlagslisteAlle.perioderSlåttUtTilFF(),
+        ugyldigBeregning = ugyldigBeregning,
+        minstEnPeriodeHarSlåttUtTilFF = grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
+        perioderSlåttUtTilFF = grunnlagsliste.perioderSlåttUtTilFF(),
         resultatBarn =
-            sortedBy { it.barn.fødselsdato }.map { resultat ->
+            resultatBarn.sortedBy { it.barn.fødselsdato }.map { resultat ->
                 val delvedtakListe = opprettDelvedtak(resultat)
                 val endeligVedtak = delvedtakListe.find { it.endeligVedtak }
+                val grunnlagslisteDelvedtak =
+                    resultat.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList()
                 val grunnlagsListe =
                     (resultat.resultat.grunnlagListe.toSet() + grunnlagslisteDelvedtak).toList()
                 val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag()
@@ -330,7 +323,6 @@ fun List<ResultatBidragsberegningBarn>.tilDto(kanFatteVedtakBegrunnelse: String?
                 )
             },
     )
-}
 
 private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<DelvedtakDto> =
     resultat.resultatVedtak?.resultatVedtakListe?.map { rv ->

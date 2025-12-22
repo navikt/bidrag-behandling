@@ -765,7 +765,7 @@ class Dtomapper(
     private fun Behandling.hentAldersjusteringBeregning(): List<ResultatBidragsberegningBarn> {
         if (vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyList()
         return try {
-            beregningService!!.beregneBidrag(this)
+            beregningService!!.beregneBidrag(this).resultatBarn
         } catch (e: Exception) {
             emptyList()
         }

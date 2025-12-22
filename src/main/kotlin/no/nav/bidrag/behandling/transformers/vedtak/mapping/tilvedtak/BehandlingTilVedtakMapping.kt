@@ -112,20 +112,16 @@ class BehandlingTilVedtakMapping(
     fun Behandling.byggOpprettVedtakRequestBidragAldersjustering(enhet: String? = null): OpprettVedtakRequestDto {
         val sak = sakConsumer.hentSak(saksnummer)
         val beregning = beregningService.beregneBidrag(id!!)
-        if (beregning.any { it.ugyldigBeregning != null }) {
-            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+        val resultatBarn = beregning.resultatBarn
+        if (beregning.alleUgyldigBeregninger.isNotEmpty()) {
+            val begrunnelse = beregning.alleUgyldigBeregninger.joinToString { it.begrunnelse }
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke fatte vedtak: $begrunnelse",
             )
         }
         // Ønsker ikke virkningstidspunkt grunnlag fra aldersjusteringen
-        val beregningGrunnlagsliste =
-            beregning
-                .first()
-                .resultat!!
-                .grunnlagListe
-                .filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
+        val beregningGrunnlagsliste = beregning.grunnlagsliste
 
         val bidragspliktigGrunnlag = beregningGrunnlagsliste.bidragspliktig ?: bidragspliktig!!.tilGrunnlagPerson()
         val bidragsmottakerGrunnlag = beregningGrunnlagsliste.bidragsmottaker ?: bidragsmottaker!!.tilGrunnlagPerson()
@@ -147,7 +143,7 @@ class BehandlingTilVedtakMapping(
             .copy(
                 grunnlagListe = grunnlagsliste.toHashSet().toList(),
                 stønadsendringListe =
-                    beregning.map {
+                    resultatBarn.map {
                         val søknadsbarnRolle = søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!
                         val søknadsbarnGrunnlag =
                             grunnlagsliste.toSet().hentPersonMedIdent(søknadsbarnRolle.ident) ?: søknadsbarnRolle.tilGrunnlagPerson()
@@ -204,15 +200,16 @@ class BehandlingTilVedtakMapping(
     fun hentBeregningBarnebidrag(behandling: Behandling): ResultatadBeregningOrkestrering {
         val sak = sakConsumer.hentSak(behandling.saksnummer)
         val beregning = beregningService.beregneBidrag(behandling.id!!)
+        val resultatBarn = beregning.resultatBarn
 
-        if (beregning.any { it.ugyldigBeregning != null }) {
-            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+        if (beregning.alleUgyldigBeregninger.isNotEmpty()) {
+            val begrunnelse = beregning.alleUgyldigBeregninger.joinToString { it!!.begrunnelse }
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke fatte vedtak: $begrunnelse",
             )
         }
-        return ResultatadBeregningOrkestrering(sak, beregning = beregning)
+        return ResultatadBeregningOrkestrering(sak, beregning = resultatBarn)
     }
 
     fun byggOpprettVedtakRequestInnkreving(
@@ -221,9 +218,10 @@ class BehandlingTilVedtakMapping(
         skalIndeksreguleres: Map<String, Boolean>,
     ): OpprettVedtakRequestDto {
         val beregning = beregningService.beregneBidrag(behandling.id!!)
+        val resultatBarn = beregning.resultatBarn
 
-        if (beregning.any { it.ugyldigBeregning != null }) {
-            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+        if (beregning.alleUgyldigBeregninger.isNotEmpty()) {
+            val begrunnelse = beregning.alleUgyldigBeregninger.joinToString { it!!.begrunnelse }
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke fatte vedtak: $begrunnelse",
@@ -243,7 +241,7 @@ class BehandlingTilVedtakMapping(
                     behandling.byggGrunnlagNotaterInnkreving().map(GrunnlagDto::tilOpprettRequestDto) +
                     behandling.byggGrunnlagManuelleVedtak(personobjekter.map { it.tilDto() }).map(GrunnlagDto::tilOpprettRequestDto) +
                     behandling.byggGrunnlagBegrunnelseVirkningstidspunkt().map(GrunnlagDto::tilOpprettRequestDto)
-            val beregningGrunnlag = beregning.flatMap { it.resultat.grunnlagListe.map { it.tilOpprettRequestDto() } }
+            val beregningGrunnlag = beregning.grunnlagsliste.map { it.tilOpprettRequestDto() }
 
             val grunnlagliste =
                 (
@@ -257,7 +255,7 @@ class BehandlingTilVedtakMapping(
                 unikReferanse = behandling.opprettUnikReferanse("innkreving"),
                 behandlingsreferanseListe = behandling.tilBehandlingreferanseListe(),
                 stønadsendringListe =
-                    beregning.map {
+                    resultatBarn.map {
                         val periodeliste =
                             it.resultat.beregnetBarnebidragPeriodeListe
                                 .map {
@@ -273,7 +271,7 @@ class BehandlingTilVedtakMapping(
 
                         val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!
                         val resultatFraAnnenVedtakGrunnlag =
-                            beregning.find { it.barn.ident!!.verdi == søknadsbarn.ident }!!.resultat.grunnlagListe.filter {
+                            resultatBarn.find { it.barn.ident!!.verdi == søknadsbarn.ident }!!.resultat.grunnlagListe.filter {
                                 it.type == Grunnlagstype.RESULTAT_FRA_VEDTAK
                             }
                         val opphørPeriode =
@@ -643,21 +641,22 @@ class BehandlingTilVedtakMapping(
         val behandlingSaker = saker.associateWith { sakConsumer.hentSak(it) }
         val beregning = beregningService.beregneBidrag(id!!)
 
-        if (beregning.any { it.ugyldigBeregning != null }) {
-            val begrunnelse = beregning.filter { it.ugyldigBeregning != null }.joinToString { it.ugyldigBeregning!!.begrunnelse }
+        val resultatBarn = beregning.resultatBarn
+        if (beregning.alleUgyldigBeregninger.isNotEmpty()) {
+            val begrunnelse = beregning.alleUgyldigBeregninger.joinToString { it.begrunnelse }
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke fatte vedtak: $begrunnelse",
             )
         }
 
-        val grunnlagslisteAlle = beregning.flatMap { it.resultat.grunnlagListe }
+        val grunnlagslisteAlle = beregning.grunnlagsliste
         val minstEnPeriodeErFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling()
 
         return if (minstEnPeriodeErFF || byggEttVedtak || !behandling.erIForholdsmessigFordeling) {
-            listOf(byggOpprettVedtakRequest(beregning, behandlingSaker, enhet))
+            listOf(byggOpprettVedtakRequest(resultatBarn, behandlingSaker, enhet))
         } else {
-            byggOpprettVedtakRequestSplittetFF(beregning, behandlingSaker, enhet)
+            byggOpprettVedtakRequestSplittetFF(resultatBarn, behandlingSaker, enhet)
         }
     }
 
