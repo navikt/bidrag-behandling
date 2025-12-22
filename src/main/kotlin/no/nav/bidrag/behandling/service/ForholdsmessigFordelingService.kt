@@ -100,14 +100,14 @@ data class FFBeregningResultat(
     val harSlåttUtTilFF: Boolean,
     val beregningManglerGrunnlag: Boolean,
     val simulertGrunnlag: List<SimulertInntektGrunnlag> = emptyList(),
-) {
-    data class SimulertInntektGrunnlag(
-        val type: Grunnlagstype,
-        val gjelder: String,
-        val beløp: BigDecimal,
-        val inntektstype: Inntektsrapportering,
-    )
-}
+)
+
+data class SimulertInntektGrunnlag(
+    val type: Grunnlagstype,
+    val gjelder: String,
+    val beløp: BigDecimal,
+    val inntektstype: Inntektsrapportering,
+)
 
 data class SakKravhaver(
     val saksnummer: String?,
@@ -640,21 +640,17 @@ class ForholdsmessigFordelingService(
 
     private fun sjekkBeregningKreverForholdsmessigFordeling(behandling: Behandling): FFBeregningResultat =
         try {
-            val resultat = beregningService.beregneBidrag(behandling, true, simulerBeregning = true).resultatBarn
-            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }.toSet().toList()
-            val simulertSamværGrunnlag =
-                grunnlagsliste
-                    .filter {
-                        it.type == Grunnlagstype.SAMVÆRSPERIODE &&
-                            it.referanse.contains(grunnlagsreferanseSimulert)
-                    }
+            val resultat = beregningService.beregneBidrag(behandling, true, simulerBeregning = true)
+            val resultatBarn = resultat.resultatBarn
+            val grunnlagsliste = resultat.grunnlagsliste.toSet().toList()
+
             val simulertInntektGrunnlag =
                 grunnlagsliste
                     .filter {
                         it.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE &&
                             it.referanse.contains(grunnlagsreferanseSimulert)
                     }.map {
-                        FFBeregningResultat.SimulertInntektGrunnlag(
+                        SimulertInntektGrunnlag(
                             type = it.type,
                             gjelder = grunnlagsliste.hentPersonMedReferanse(it.gjelderReferanse!!)!!.personIdent!!,
                             beløp = it.innholdTilObjekt<InntektsrapporteringPeriode>().beløp,
@@ -663,8 +659,8 @@ class ForholdsmessigFordelingService(
                     }
 
             FFBeregningResultat(
-                grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
-                resultat.any { it.ugyldigBeregning != null },
+                harSlåttUtTilFF = grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
+                beregningManglerGrunnlag = resultat.alleUgyldigBeregninger.isNotEmpty(),
                 simulertGrunnlag = simulertInntektGrunnlag,
             )
         } catch (e: Exception) {
@@ -707,6 +703,7 @@ class ForholdsmessigFordelingService(
                         bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
                             finnesLøpendeBidragSomOverlapperMedEldsteVirkning
                     ),
+            simulertGrunnlag = resultat.simulertGrunnlag,
             måOppretteForholdsmessigFordeling = resultat.beregningManglerGrunnlag,
             harSlåttUtTilForholdsmessigFordeling = resultat.harSlåttUtTilFF,
             eldsteSøktFraDato = relevanteKravhavere.finnEldsteSøktFomDato(behandling),

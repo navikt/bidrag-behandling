@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling
 
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.service.SimulertInntektGrunnlag
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -17,6 +18,7 @@ data class SjekkForholdmessigFordelingResponse(
     val skalBehandlesAvEnhet: String,
     val kanOppretteForholdsmessigFordeling: Boolean,
     val måOppretteForholdsmessigFordeling: Boolean = false,
+    val simulertGrunnlag: List<SimulertInntektGrunnlag> = emptyList(),
     val harSlåttUtTilForholdsmessigFordeling: Boolean = false,
     val eldsteSøktFraDato: LocalDate,
     val barn: List<ForholdsmessigFordelingBarnDto> = emptyList(),
