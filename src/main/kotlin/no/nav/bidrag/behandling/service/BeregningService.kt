@@ -182,20 +182,15 @@ class BeregningService(
             }
         }
 
+        val skalBeregneForFFV2 =
+            UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
+                (behandling.søknadsbarn.size > 1 || UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled)
+
         return if (behandling.erInnkreving) {
             beregnInnkrevingsgrunnlag(behandling)
         } else if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
-        } else if (mapper.validering.run { behandling.erDirekteAvslagUtenBeregning() } && !behandling.erBidrag()) {
-            val resultat = behandling.søknadsbarn.map { behandling.tilResultatAvslagBidrag(it) }
-            ResultatBidragsberegning(
-                grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe },
-                resultatBarn = resultat,
-                vedtakstype = behandling.vedtakstype,
-            )
-        } else if (UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
-            (behandling.søknadsbarn.size > 1 || UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled)
-        ) {
+        } else if (skalBeregneForFFV2) {
             beregneBarnebidragV2FF(behandling, endeligBeregning, simulerBeregning)
         } else {
             val resultat = beregneBarnebidragV1(behandling, endeligBeregning)
@@ -206,7 +201,7 @@ class BeregningService(
                     }.flatMap { it.resultatVedtak!!.resultatVedtakListe.flatMap { it.resultat.grunnlagListe } }
             val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
             ResultatBidragsberegning(
-                grunnlagsliste = grunnlagsliste + grunnlagResultatVedtak,
+                grunnlagsliste = (grunnlagsliste + grunnlagResultatVedtak).toSet(),
                 resultatBarn = resultat,
                 vedtakstype = behandling.vedtakstype,
             )
@@ -416,7 +411,7 @@ class BeregningService(
                 grunnlagslisteAlle.addAll(resultat.grunnlagListe)
                 ResultatBidragsberegning(
                     perioderSlåttUtTilFF = perioderSlåttUtTilFF,
-                    grunnlagsliste = grunnlagslisteAlle,
+                    grunnlagsliste = grunnlagslisteAlle.toSet(),
                     ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
                     resultatBarn = resultatBarn + resultatAvvisning + resultatAvslag,
                     vedtakstype = behandling.vedtakstype,
@@ -427,7 +422,7 @@ class BeregningService(
             }
         } else {
             ResultatBidragsberegning(
-                grunnlagsliste = grunnlagslisteAlle,
+                grunnlagsliste = grunnlagslisteAlle.toSet(),
                 ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                 resultatBarn = resultatAvvisning + resultatAvslag,
                 vedtakstype = behandling.vedtakstype,
@@ -797,7 +792,7 @@ class BeregningService(
             }
 
         return ResultatBidragsberegning(
-            grunnlagsliste = grunnlagslisteAlle,
+            grunnlagsliste = grunnlagslisteAlle.toSet(),
             resultatBarn = resultat,
             vedtakstype = behandling.vedtakstype,
         )
@@ -825,7 +820,7 @@ class BeregningService(
             try {
                 if (søknadsbarn.grunnlagFraVedtak == null) {
                     return ResultatBidragsberegning(
-                        grunnlagsliste = emptyList(),
+                        grunnlagsliste = emptySet(),
                         resultatBarn = emptyList(),
                         vedtakstype = behandling.vedtakstype,
                     )
@@ -906,7 +901,7 @@ class BeregningService(
             }
 
         return ResultatBidragsberegning(
-            grunnlagsliste = resultat.resultat.grunnlagListe,
+            grunnlagsliste = resultat.resultat.grunnlagListe.toSet(),
             resultatBarn = listOf(resultat),
             vedtakstype = behandling.vedtakstype,
         )

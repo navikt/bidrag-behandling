@@ -255,8 +255,8 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
         kanFatteVedtak = kanFatteVedtakBegrunnelse == null,
         kanFatteVedtakBegrunnelse = kanFatteVedtakBegrunnelse,
         ugyldigBeregning = ugyldigBeregning,
-        minstEnPeriodeHarSlåttUtTilFF = grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
-        perioderSlåttUtTilFF = grunnlagsliste.perioderSlåttUtTilFF(),
+        minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteList.harSlåttUtTilForholdsmessigFordeling(),
+        perioderSlåttUtTilFF = grunnlagslisteList.perioderSlåttUtTilFF(),
         resultatBarn =
             resultatBarn.sortedBy { it.barn.fødselsdato }.map { resultat ->
                 val delvedtakListe = opprettDelvedtak(resultat)

@@ -182,11 +182,12 @@ data class ResultatUtførBidragsberegning(
 
 data class ResultatBidragsberegning(
     val perioderSlåttUtTilFF: List<ÅrMånedsperiode> = emptyList(),
-    val grunnlagsliste: List<GrunnlagDto> = emptyList(),
+    val grunnlagsliste: Set<GrunnlagDto> = emptySet(),
     val vedtakstype: Vedtakstype,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val resultatBarn: List<ResultatBidragsberegningBarn> = emptyList(),
 ) {
+    val grunnlagslisteList get() = grunnlagsliste.toList()
     val alleUgyldigBeregninger get() = listOfNotNull(ugyldigBeregning) + resultatBarn.mapNotNull { it.ugyldigBeregning }
 }
 

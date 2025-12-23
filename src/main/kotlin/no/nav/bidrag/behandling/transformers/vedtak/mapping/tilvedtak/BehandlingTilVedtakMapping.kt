@@ -121,7 +121,7 @@ class BehandlingTilVedtakMapping(
             )
         }
         // Ønsker ikke virkningstidspunkt grunnlag fra aldersjusteringen
-        val beregningGrunnlagsliste = beregning.grunnlagsliste
+        val beregningGrunnlagsliste = beregning.grunnlagslisteList
 
         val bidragspliktigGrunnlag = beregningGrunnlagsliste.bidragspliktig ?: bidragspliktig!!.tilGrunnlagPerson()
         val bidragsmottakerGrunnlag = beregningGrunnlagsliste.bidragsmottaker ?: bidragsmottaker!!.tilGrunnlagPerson()
@@ -650,7 +650,7 @@ class BehandlingTilVedtakMapping(
             )
         }
 
-        val grunnlagslisteAlle = beregning.grunnlagsliste
+        val grunnlagslisteAlle = beregning.grunnlagslisteList
         val minstEnPeriodeErFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling()
 
         return if (minstEnPeriodeErFF || byggEttVedtak || !behandling.erIForholdsmessigFordeling) {

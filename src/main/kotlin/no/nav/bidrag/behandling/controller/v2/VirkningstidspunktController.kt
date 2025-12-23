@@ -104,7 +104,7 @@ class VirkningstidspunktController(
         virkningstidspunktService.oppdaterBeregnManuellVedtak(behandlingsid, request)
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         val beregning = hentBeregning(behandling)
-        behandling.grunnlagslisteFraVedtak = beregning.grunnlagsliste
+        behandling.grunnlagslisteFraVedtak = beregning.grunnlagslisteList
         return OppdaterManuellVedtakResponse(
             beregning.resultatBarn.all {
                 it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
