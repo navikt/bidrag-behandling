@@ -679,7 +679,8 @@ class BehandlingService(
             .forEach {
                 roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
-                    eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
+                    // Skal ikke være mulig å fjerne gebyrsøknad fra rolle
+                    eksisterendeRolle.harGebyrsøknad = if (eksisterendeRolle.harGebyrsøknad) true else it.harGebyrsøknad
                     if (it.harGebyrsøknad || !it.referanseGebyr.isNullOrEmpty()) {
                         val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
                         val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
