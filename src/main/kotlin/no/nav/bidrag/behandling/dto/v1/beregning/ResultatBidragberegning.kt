@@ -193,7 +193,6 @@ data class ResultatBidragsberegning(
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val erAvvistRevurdering: Boolean = false,
-    val vedtakstype: Vedtakstype,
     val beregningInnkrevingsgrunnlag: Boolean = false,
     val resultat: BeregnetBarnebidragResultat,
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,

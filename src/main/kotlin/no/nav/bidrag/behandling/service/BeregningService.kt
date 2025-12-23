@@ -222,7 +222,7 @@ class BeregningService(
             behandling.søknadsbarn.filter { it.avslag == null }.map { søknasdbarn ->
                 mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
             }
-        val beregnFraDato = behandling.eldsteVirkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+        val beregnFraDato = behandling.eldsteVirkningstidspunkt
         val beregningTilDato = behandling.finnBeregnTilDato()
         val beregningsperiode =
             ÅrMånedsperiode(
@@ -279,7 +279,6 @@ class BeregningService(
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                         barn = søknasdbarn.mapTilResultatBarn(),
-                        vedtakstype = behandling.vedtakstype,
                         avslagskode = søknasdbarn.avslag,
                         resultat = BeregnetBarnebidragResultat(),
                         opphørsdato = null,
@@ -293,7 +292,6 @@ class BeregningService(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                         barn = søknasdbarn.mapTilResultatBarn(),
                         erAvvistRevurdering = søknasdbarn.forholdsmessigFordeling?.erRevurdering == true,
-                        vedtakstype = behandling.vedtakstype,
                         avslagskode = søknasdbarn.avslag,
                         resultat =
                             BeregnetBarnebidragResultat(
@@ -361,12 +359,11 @@ class BeregningService(
                             }
                         val endeligResultat =
                             resultatBarn.resultatVedtakListe.find {
-                                behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak || !behandling.erKlageEllerOmgjøring
+                                (behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak) || !behandling.erKlageEllerOmgjøring
                             }
                         ResultatBidragsberegningBarn(
                             barn = søknadsbarn.mapTilResultatBarn(),
                             erAvvistRevurdering = erAvvistRevurdering,
-                            vedtakstype = behandling.vedtakstype,
                             avslagskode = søknadsbarn.avslag,
                             resultatVedtak =
                                 BidragsberegningOrkestratorResponse(
@@ -420,7 +417,7 @@ class BeregningService(
                 ResultatBidragsberegning(
                     perioderSlåttUtTilFF = perioderSlåttUtTilFF,
                     grunnlagsliste = grunnlagslisteAlle,
-                    ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding() ?: behandling.tilBeregningFeilmelding(),
+                    ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                     resultatBarn = resultatBarn + resultatAvvisning + resultatAvslag,
                     vedtakstype = behandling.vedtakstype,
                 )
@@ -511,7 +508,6 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                     barn = søknasdbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     avslagskode = søknasdbarn.avslag,
                     resultat = BeregnetBarnebidragResultat(),
                     opphørsdato = null,
@@ -544,12 +540,11 @@ class BeregningService(
                     }
                 val endeligResultat =
                     resultatBarn.resultatVedtakListe.find {
-                        behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak || !behandling.erKlageEllerOmgjøring
+                        (behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak) || !behandling.erKlageEllerOmgjøring
                     }
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     avslagskode = søknadsbarn.avslag,
                     resultatVedtak =
                         BidragsberegningOrkestratorResponse(
@@ -611,7 +606,6 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning = feil.opprettBegrunnelse(),
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
@@ -641,7 +635,6 @@ class BeregningService(
                                     "som starter før beregningsperioden ${søknadsbarn.virkningstidspunkt.tilVisningsnavn()} - ${beregnTilDato.tilVisningsnavn()}",
                         ),
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
@@ -653,7 +646,6 @@ class BeregningService(
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning = feil.opprettBegrunnelse(),
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
@@ -676,7 +668,6 @@ class BeregningService(
                             begrunnelse = feil.message ?: "Ukjent feil",
                         ),
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
@@ -778,7 +769,6 @@ class BeregningService(
                 grunnlagslisteAlle.addAll(perioder.second)
                 ResultatBidragsberegningBarn(
                     pa.rolle!!.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     opphørsdato = pa.rolle!!.opphørsdato?.toYearMonth(),
                     beregningInnkrevingsgrunnlag = true,
                     resultat =
@@ -787,10 +777,12 @@ class BeregningService(
                                 perioder.first
                                     .filter {
                                         it.periode.til == null ||
-                                            it.periode.overlapper(
-                                                ÅrMånedsperiode(pa.rolle!!.virkningstidspunkt!!, pa.rolle!!.opphørsdato),
-                                            ) &&
-                                            it.periode.til != pa.rolle!!.virkningstidspunkt!!.toYearMonth()
+                                            (
+                                                it.periode.overlapper(
+                                                    ÅrMånedsperiode(pa.rolle!!.virkningstidspunkt!!, pa.rolle!!.opphørsdato),
+                                                ) &&
+                                                    it.periode.til != pa.rolle!!.virkningstidspunkt!!.toYearMonth()
+                                            )
                                     }.map {
                                         it.copy(
                                             periode =
@@ -849,7 +841,6 @@ class BeregningService(
                 val søknadsbarnGrunnlag = beregning.beregning.grunnlagListe.hentPersonNyesteIdent(søknadsbarn.ident)!!
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
@@ -878,7 +869,6 @@ class BeregningService(
                     )
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
@@ -901,7 +891,6 @@ class BeregningService(
                     )
                 ResultatBidragsberegningBarn(
                     barn = søknadsbarn.mapTilResultatBarn(),
-                    vedtakstype = behandling.vedtakstype,
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
@@ -960,7 +949,6 @@ class BeregningService(
         return ResultatBidragsberegningBarn(
             barn = barn.mapTilResultatBarn(),
             avslagskode = avslag,
-            vedtakstype = vedtakstype,
             omgjøringsdetaljer = omgjøringsdetaljer,
             beregnTilDato = YearMonth.now().plusMonths(1),
             resultatVedtak =

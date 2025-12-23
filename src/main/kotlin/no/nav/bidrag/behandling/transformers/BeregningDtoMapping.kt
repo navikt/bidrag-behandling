@@ -274,10 +274,12 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                     erAvvistRevurdering = resultat.erAvvistRevurdering,
                     erAvvisning = resultat.avslagskode?.erAvvisning() == true,
                     forsendelseDistribueresAutomatisk =
-                        resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,
+                        vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,
                     resultatUtenBeregning =
-                        resultat.vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer != null &&
-                            !aldersjusteringDetaljer.aldersjustert || resultat.vedtakstype == Vedtakstype.INNKREVING,
+                        (
+                            vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer != null &&
+                                !aldersjusteringDetaljer.aldersjustert
+                        ) || vedtakstype == Vedtakstype.INNKREVING,
                     indeksår =
                         if (endeligVedtak != null && resultat.avslagskode?.erDirekteAvslag() == false) {
                             endeligVedtak.indeksår
@@ -315,7 +317,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                     it.grunnlagsreferanseListe,
                                     resultat.ugyldigBeregning,
                                     grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
-                                    resultat.vedtakstype,
+                                    vedtakstype,
                                     resultat.barn.ident!!,
                                 )
                             }
@@ -390,7 +392,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                         resultatFraVedtak?.vedtaksid == null &&
                             klagevedtak?.resultat?.beregnetBarnebidragPeriodeListe?.any {
                                 it.periode.fom == p.periode.fom ||
-                                    p.periode.fom == resultat.opphørsdato && p.resultat.beløp == null
+                                    (p.periode.fom == resultat.opphørsdato && p.resultat.beløp == null)
                             } == true
 
                     val aldersjusteringsdetaljer =
@@ -509,7 +511,7 @@ fun kanOpprette35C(
     vedtakstype: Vedtakstype,
     erOpphør: Boolean,
 ) = !vedtakstype.erIndeksEllerAldersjustering &&
-    periode.fom >= beregnTilDato && (opphørsdato == null || opphørsdato != periode.fom || opphørsdato == periode.fom && !erOpphør)
+    periode.fom >= beregnTilDato && (opphørsdato == null || opphørsdato != periode.fom || (opphørsdato == periode.fom && !erOpphør))
 
 fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int? {
     val delberegningPrivatAvtale =
