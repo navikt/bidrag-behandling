@@ -417,7 +417,7 @@ class BeregningService(
                 ResultatBidragsberegning(
                     perioderSlåttUtTilFF = perioderSlåttUtTilFF,
                     grunnlagsliste = grunnlagslisteAlle,
-                    ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                    ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
                     resultatBarn = resultatBarn + resultatAvvisning + resultatAvslag,
                     vedtakstype = behandling.vedtakstype,
                 )
