@@ -201,7 +201,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.ALDERSJUSTERING
             withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 16
+                request.grunnlagListe shouldHaveSize 17
             }
             request.unikReferanse shouldBe behandling.opprettUnikReferanse()
         }
