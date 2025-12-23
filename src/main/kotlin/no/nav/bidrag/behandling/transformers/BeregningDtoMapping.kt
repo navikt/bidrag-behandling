@@ -1398,14 +1398,14 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         ).firstOrNull() ?: return null
 
     // TODO: Legg til også privat avtale og utlandskbidrag
-    val bidragTilFordelingSøknadsbarn =
+    val bidragTilFordelingSøknadsbarnGrunnlag =
         finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragTilFordeling>(
             Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING,
             sumBidragTilBeregning.grunnlag,
         ).sortedBy { it.gjelderBarnReferanse == bidragTilFordeling.gjelderBarnReferanse }
 
-    val bidragTilFordelingAlle =
-        bidragTilFordelingSøknadsbarn.map {
+    val bidragTilFordelingSøknadsbarn =
+        bidragTilFordelingSøknadsbarnGrunnlag.map {
             val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
             ForholdsmessigFordelingBidragTilFordelingBarn(
                 prioritertBidrag = false,
@@ -1427,7 +1427,9 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
                     PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
                 bidragTilFordeling = it.innhold.bidragTilFordeling,
             )
-        } + finnBidragTilFordelingLøpendeBidrag(sumBidragTilBeregning.grunnlag)
+        }
+    val bidragTilFordelingAndreBarn = finnBidragTilFordelingLøpendeBidrag(sumBidragTilBeregning.grunnlag)
+    val bidragTilFordelingAlle = bidragTilFordelingSøknadsbarn + bidragTilFordelingAndreBarn
     return ForholdsmessigFordelingBeregningsdetaljer(
         sumBidragTilFordeling = sumBidragTilBeregning.innhold.sumBidragTilFordeling,
         sumPrioriterteBidragTilFordeling = sumBidragTilBeregning.innhold.sumPrioriterteBidragTilFordeling,
