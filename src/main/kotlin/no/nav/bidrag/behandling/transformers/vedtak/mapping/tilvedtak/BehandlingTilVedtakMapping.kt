@@ -650,13 +650,12 @@ class BehandlingTilVedtakMapping(
             )
         }
 
-        val grunnlagslisteAlle = beregning.grunnlagslisteList
-        val minstEnPeriodeErFF = grunnlagslisteAlle.harSlåttUtTilForholdsmessigFordeling()
+        val minstEnRevurderingsbarnHarAvvistRevurderingFF = beregning.resultatBarn.any { it.erAvvistRevurdering }
 
-        return if (minstEnPeriodeErFF || byggEttVedtak || !behandling.erIForholdsmessigFordeling) {
-            listOf(byggOpprettVedtakRequest(resultatBarn, behandlingSaker, enhet))
-        } else {
+        return if (minstEnRevurderingsbarnHarAvvistRevurderingFF && !byggEttVedtak) {
             byggOpprettVedtakRequestSplittetFF(resultatBarn, behandlingSaker, enhet)
+        } else {
+            listOf(byggOpprettVedtakRequest(resultatBarn, behandlingSaker, enhet))
         }
     }
 
