@@ -886,7 +886,7 @@ class Dtomapper(
                     ),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
                 inntekterV2 =
-                    roller.map {
+                    roller.sorterForInntektsbildet().map {
                         InntekterDtoRolle(
                             gjelder = it.tilDto(),
                             inntekter =
@@ -919,7 +919,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                 ),
             inntekterV2 =
-                roller.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
+                roller.sorterForInntektsbildet().filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
                     InntekterDtoRolle(
                         gjelder = it.tilDto(),
                         inntekter =
