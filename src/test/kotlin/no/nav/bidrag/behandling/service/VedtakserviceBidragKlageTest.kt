@@ -107,6 +107,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 dtomapper,
                 validerBehandlingService,
                 underholdService,
+                bestillAsyncJobService = bestillAsyncJobService,
             )
         beregningService =
             BeregningService(

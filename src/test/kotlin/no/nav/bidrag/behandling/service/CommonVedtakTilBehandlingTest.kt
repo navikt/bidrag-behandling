@@ -4,6 +4,7 @@ import io.getunleash.FakeUnleash
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import no.nav.bidrag.behandling.async.BestillAsyncJobService
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
@@ -78,10 +79,14 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     @MockK
     lateinit var klageOrkestrator: OmgjøringOrkestrator
 
+    @MockK
+    lateinit var bestillAsyncJobService: BestillAsyncJobService
+
     open lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
 
     @BeforeEach
     fun initMocks() {
+        every { bestillAsyncJobService.bestillHendelse(any()) } returns Unit
         stubVedtakConsumer(vedtakConsumer)
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
