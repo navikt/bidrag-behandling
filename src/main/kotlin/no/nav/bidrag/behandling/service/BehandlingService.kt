@@ -237,6 +237,7 @@ class BehandlingService(
                     behandlerenhet = opprettBehandling.behandlerenhet,
                     erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
                     søknadsdetaljer,
+                    søktFraDato = opprettBehandling.søktFomDato,
                 )
                 return OpprettBehandlingResponse(behandling.id!!)
             }

@@ -53,6 +53,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -139,6 +140,7 @@ class ForholdsmessigFordelingService(
     private val bbmConsumer: BidragBBMConsumer,
     private val forsendelseService: ForsendelseService,
     private val beregningService: BeregningService,
+    private val virkningstidspunktService: VirkningstidspunktService,
 ) {
     @Transactional
     fun lukkAllFFSaker(behandlingsid: Long) {
@@ -400,15 +402,12 @@ class ForholdsmessigFordelingService(
                     null
                 }
             }
-        rolle.forholdsmessigFordeling!!.søknader =
-            rolle.forholdsmessigFordeling!!
-                .søknader
-                .map {
-                    if (søknaderFeilregistrert.contains(it.søknadsid!!)) {
-                        it.status = Behandlingstatus.FEILREGISTRERT
-                    }
-                    it
-                }.toMutableSet()
+        rolle.forholdsmessigFordeling!!
+            .søknaderUnderBehandling
+            .filter { søknaderFeilregistrert.contains(it.søknadsid!!) }
+            .forEach {
+                it.status = Behandlingstatus.FEILREGISTRERT
+            }
     }
 
     fun feilregistrerFFSøknad(rolle: Rolle) {
@@ -463,15 +462,11 @@ class ForholdsmessigFordelingService(
         behandlerenhet: String = behandling.behandlerEnhet,
         erRevurdering: Boolean = false,
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
+        søktFraDato: LocalDate? = null,
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
-        rollerSomSkalLeggesTilDto
-            .filter { it.rolletype == Rolletype.BARN }
-            .mapNotNull { nyRolle -> behandling.roller.find { it.ident == nyRolle.ident!!.verdi } }
-            .filter { it.forholdsmessigFordeling?.erRevurdering == true }
-            .forEach {
-                feilregistrerBarnFraFFSøknad(it)
-            }
+        feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
+
         val rollerSomSkalLeggesTil =
             rollerSomSkalLeggesTilDto
                 .map { nyRolle ->
@@ -495,6 +490,7 @@ class ForholdsmessigFordelingService(
                         if (eksisterendeRolle.forholdsmessigFordeling == null) {
                             eksisterendeRolle.forholdsmessigFordeling = ffRolleDetaljer
                         } else {
+                            val varRevurderingsbarn = eksisterendeRolle.forholdsmessigFordeling!!.erRevurdering
                             val eksisterendeSøknadsliste = eksisterendeRolle.forholdsmessigFordeling!!.søknader
                             eksisterendeRolle.forholdsmessigFordeling =
                                 ffRolleDetaljer.copy(
@@ -504,7 +500,16 @@ class ForholdsmessigFordelingService(
                                                 setOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
                                         ).toMutableSet(),
                                 )
+                            if (varRevurderingsbarn && søktFraDato != null) {
+                                eksisterendeRolle.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                                virkningstidspunktService.oppdaterVirkningstidspunkt(
+                                    eksisterendeRolle.id,
+                                    søktFraDato.withDayOfMonth(1),
+                                    behandling,
+                                )
+                            }
                         }
+
                         val gebyr = eksisterendeRolle.hentEllerOpprettGebyr()
                         if (nyRolle.harGebyrsøknad) {
                             gebyr.gebyrSøknader.add(
@@ -528,6 +533,19 @@ class ForholdsmessigFordelingService(
                 .filter { identerSomSkalSlettes.contains(it.ident) }
                 .map { it }
         slettBarnEllerBehandling(rollerSomSkalSlettes, behandling, søknadsid)
+    }
+
+    private fun feilregistrerRevurderingsbarnFraFFSøknad(
+        behandling: Behandling,
+        barn: List<OpprettRolleDto>,
+    ) {
+        barn
+            .filter { it.rolletype == Rolletype.BARN }
+            .mapNotNull { nyRolle -> behandling.roller.find { it.ident == nyRolle.ident!!.verdi } }
+            .filter { it.forholdsmessigFordeling?.erRevurdering == true }
+            .forEach {
+                feilregistrerBarnFraFFSøknad(it)
+            }
     }
 
     @Transactional
