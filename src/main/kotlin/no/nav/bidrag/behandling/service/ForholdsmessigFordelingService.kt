@@ -418,6 +418,16 @@ class ForholdsmessigFordelingService(
             LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
             try {
                 bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
+                søknad.status = Behandlingstatus.FEILREGISTRERT
+                if (rolle.bidragsmottaker != null) {
+                    rolle.bidragsmottaker!!
+                        .forholdsmessigFordeling!!
+                        .søknaderUnderBehandling
+                        .find { it.søknadsid == søknad.søknadsid }
+                        ?.let {
+                            it.status = Behandlingstatus.FEILREGISTRERT
+                        }
+                }
             } catch (e: Exception) {
                 LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid i behandling ${rolle.behandling.id}" }
             }

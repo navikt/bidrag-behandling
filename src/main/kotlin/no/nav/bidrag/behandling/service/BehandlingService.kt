@@ -143,6 +143,16 @@ class BehandlingService(
     fun logiskSlettBehandling(behandling: Behandling) {
         log.debug { "Logisk sletter behandling ${behandling.id}" }
         behandlingRepository.logiskSlett(behandling.id!!)
+        if (behandling.erIForholdsmessigFordeling) {
+            val søknaderToUpdate =
+                behandling.roller
+                    .filter { !it.erRevurderingsbarn }
+                    .flatMap { it.forholdsmessigFordeling!!.søknaderUnderBehandling }
+                    .filter { it.søknadsid == behandling.soknadsid }
+
+            søknaderToUpdate.forEach { it.status = Behandlingstatus.FEILREGISTRERT }
+        }
+
         sendOppdatertHendelse(behandling.id!!, true)
     }
 
