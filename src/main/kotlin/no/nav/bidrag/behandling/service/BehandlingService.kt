@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
+import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
@@ -83,11 +84,9 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
-    private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
     private val bestillAsyncJobService: BestillAsyncJobService? = null,
     @Lazy
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
-//    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
     fun slettBehandling(
@@ -133,9 +132,11 @@ class BehandlingService(
         behandlingId: Long,
         slettet: Boolean,
     ) {
-        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandlingId,
-            if (slettet) BehandlingHendelseType.AVSLUTTET else BehandlingHendelseType.ENDRET,
+        bestillAsyncJobService!!.bestillHendelse(
+            BehandlingHendelseBestilling(
+                behandlingId,
+                if (slettet) BehandlingHendelseType.AVSLUTTET else BehandlingHendelseType.ENDRET,
+            ),
         )
     }
 
@@ -159,13 +160,15 @@ class BehandlingService(
             } else {
                 behandling
             }
-        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            lagretBehandling.id!!,
-            if (oppretterBehandling) {
-                BehandlingHendelseType.OPPRETTET
-            } else {
-                BehandlingHendelseType.ENDRET
-            },
+        bestillAsyncJobService!!.bestillHendelse(
+            BehandlingHendelseBestilling(
+                lagretBehandling.id!!,
+                if (oppretterBehandling) {
+                    BehandlingHendelseType.OPPRETTET
+                } else {
+                    BehandlingHendelseType.ENDRET
+                },
+            ),
         )
         if (behandling.vedtakstype.opprettForsendelse() && (oppretterBehandling || opprettForsendelse)) {
             opprettForsendelseForBehandling(lagretBehandling)
@@ -465,9 +468,11 @@ class BehandlingService(
                 }
             }
 
-        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandlingsid,
-            BehandlingHendelseType.AVSLUTTET,
+        bestillAsyncJobService!!.bestillHendelse(
+            BehandlingHendelseBestilling(
+                behandlingsid,
+                BehandlingHendelseType.AVSLUTTET,
+            ),
         )
     }
 

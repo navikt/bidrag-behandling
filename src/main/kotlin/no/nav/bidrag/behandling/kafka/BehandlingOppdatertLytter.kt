@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.kafka
 
 import jakarta.transaction.Transactional
+import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -21,6 +22,8 @@ import no.nav.bidrag.transport.dokument.Sporingsdata
 import no.nav.bidrag.transport.felles.toCompactString
 import org.slf4j.MDC
 import org.springframework.stereotype.Component
+import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.event.TransactionalEventListener
 import java.time.LocalDateTime
 import kotlin.collections.filter
 
@@ -35,13 +38,11 @@ class BehandlingOppdatertLytter(
     private val behandlingKafkaPublisher: BehandlingKafkaPublisher,
 ) {
     //    fun sendBehandlingOppdatertHendelse(behandlingHendelse: BehandlingEndringHendelse) {
-//    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional
-    fun sendBehandlingOppdatertHendelse(
-        behandlingId: Long,
-        type: BehandlingHendelseType = BehandlingHendelseType.ENDRET,
-    ) {
+    fun sendBehandlingOppdatertHendelse(bestilling: BehandlingHendelseBestilling) {
         if (!UnleashFeatures.SEND_BEHANDLING_HENDELSE.isEnabled) return
+        val (behandlingId, type) = bestilling
         val behandling = behandlingRepository.hentBehandlingInkludertSlettet(behandlingId)!!
         val roller = behandlingRepository.hentRollerInkludertSlettet(behandlingId)
         val erVedtakFattet = behandling.vedtakDetaljer?.vedtakstidspunkt != null
