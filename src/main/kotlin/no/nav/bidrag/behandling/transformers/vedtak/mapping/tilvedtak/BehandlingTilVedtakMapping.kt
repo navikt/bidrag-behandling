@@ -1008,6 +1008,7 @@ class BehandlingTilVedtakMapping(
                     engangsbeløpListe = resultatEngangsbeløpGebyr.engangsbeløp,
                     stønadsendringListe =
                         søknadsbarn.map {
+                            val avslagKode = it.avslag ?: avslag
                             OpprettStønadsendringRequestDto(
                                 innkreving = innkrevingstype!!,
                                 skyldner = tilSkyldner(),
@@ -1021,8 +1022,8 @@ class BehandlingTilVedtakMapping(
                                             sak.hentRolleMedFnr(it.ident!!),
                                         ),
                                 sak = Saksnummer(saksnummer),
-                                type = stonadstype!!,
-                                beslutning = if (avslag?.erAvvisning() == true) Beslutningstype.AVVIST else Beslutningstype.ENDRING,
+                                type = it.stønadstype ?: stonadstype!!,
+                                beslutning = if (avslagKode?.erAvvisning() == true) Beslutningstype.AVVIST else Beslutningstype.ENDRING,
                                 grunnlagReferanseListe =
                                     grunnlagListe.map { it.referanse } +
                                         grunnlagVirkningstidspunkt
@@ -1031,14 +1032,14 @@ class BehandlingTilVedtakMapping(
                                             }!!
                                             .referanse,
                                 periodeListe =
-                                    if (avslag?.erAvvisning() == true) {
+                                    if (avslagKode?.erAvvisning() == true) {
                                         emptyList()
                                     } else {
                                         listOf(
                                             OpprettPeriodeRequestDto(
                                                 periode = ÅrMånedsperiode(virkningstidspunktEllerSøktFomDato, null),
                                                 beløp = null,
-                                                resultatkode = avslag!!.name,
+                                                resultatkode = avslagKode!!.name,
                                                 valutakode = "NOK",
                                                 grunnlagReferanseListe = emptyList(),
                                             ),
