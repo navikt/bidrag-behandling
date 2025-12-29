@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
+import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
@@ -27,6 +28,8 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøkna
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierGrunnlag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierInntekt
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierOverBegrunnelseForBehandling
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierOverInntekterForRolleFraBehandling
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierSamvær
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierUnderholdskostnad
@@ -69,6 +72,7 @@ import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsid
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -940,6 +944,7 @@ class ForholdsmessigFordelingService(
     ): List<Long> {
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val eksisterendeBMIdenter = behandling.alleBidragsmottakere.map { it.ident }
+        val eksisterendeRoller = behandling.roller.map { it.ident }
         val åpneBehandlinger = relevanteKravhavere.flatMap { it.åpneBehandlinger }
         val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr))
         åpneBehandlinger.forEach { behandlingOverført ->
@@ -988,31 +993,44 @@ class ForholdsmessigFordelingService(
                 }
             }
             behandlingOverført.underholdskostnader.forEach { underholdskostnadOverført ->
-                if (behandling.underholdskostnader.none { s ->
-                        !underholdskostnadOverført.gjelderAndreBarn && s.rolle != null &&
-                            s.rolle!!.ident == underholdskostnadOverført.rolle!!.ident ||
-                            underholdskostnadOverført.person != null && s.person != null &&
-                            s.person!!.ident == underholdskostnadOverført.person!!.ident
+                if (behandling.underholdskostnader.none { u ->
+                        (
+                            !underholdskostnadOverført.gjelderAndreBarn && u.rolle != null &&
+                                u.rolle!!.ident == underholdskostnadOverført.rolle!!.ident
+                        ) ||
+                            (
+                                underholdskostnadOverført.person != null && u.person != null &&
+                                    u.person!!.ident == underholdskostnadOverført.person!!.ident
+                            )
                     }
                 ) {
                     underholdskostnadOverført.kopierUnderholdskostnad(behandling)
                 }
             }
-            behandlingOverført.inntekter
-                .filter { !eksisterendeBMIdenter.contains(behandlingOverført.bidragsmottaker!!.ident) }
-                .filter {
-                    it.ident == behandlingOverført.bidragsmottaker?.ident ||
-                        behandlingOverført.søknadsbarn.map { it.ident }.contains(it.ident)
-                }.forEach { inntektOverført ->
-                    kopierInntekt(behandling, inntektOverført)
-                }
 
+            // Overfør alle inntektene til BM/Barn som ikke finnes i opprinnelig behandling
             behandlingOverført.inntekter
-                .filter { bidragspliktigFnr == behandlingOverført.bidragspliktig!!.ident }
-                .filter { it.taMed && it.type.kanLeggesInnManuelt }
+                .filter { !eksisterendeRoller.contains(it.ident) }
                 .forEach { inntektOverført ->
                     kopierInntekt(behandling, inntektOverført)
                 }
+
+            // Overfør alle inntektene til BP/BM/Barn som ikke finnes i opprinnelig behandling
+            behandlingOverført.roller
+                .filter { eksisterendeRoller.contains(it.ident) }
+                .forEach {
+                    kopierOverInntekterForRolleFraBehandling(it.ident!!, behandling, behandlingOverført)
+                }
+
+            behandlingOverført.roller.forEach {
+                kopierOverBegrunnelseForBehandling(
+                    it.ident!!,
+                    behandlingOverført,
+                    behandling,
+                    NotatGrunnlag.NotatType.INNTEKT,
+                )
+            }
+
             behandlingOverført.grunnlag
                 .filter { it.rolle.ident != bidragspliktigFnr && behandling.roller.any { r -> r.ident == it.rolle.ident } }
                 .forEach {
