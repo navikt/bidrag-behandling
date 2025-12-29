@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.rolleManglerIdent
@@ -653,7 +654,7 @@ class BehandlingTilVedtakMapping(
         val minstEnRevurderingsbarnHarAvvistRevurderingFF = beregning.resultatBarn.any { it.erAvvistRevurdering }
 
         return if (minstEnRevurderingsbarnHarAvvistRevurderingFF && !byggEttVedtak) {
-            byggOpprettVedtakRequestSplittetFF(resultatBarn, behandlingSaker, enhet)
+            byggOpprettVedtakRequestSplittetFF(beregning, behandlingSaker, enhet)
         } else {
             listOf(byggOpprettVedtakRequest(resultatBarn, behandlingSaker, enhet))
         }
@@ -661,7 +662,7 @@ class BehandlingTilVedtakMapping(
 
     // Fatte vedetak når forholdsmessig fordeling ikke går til FF
     private fun Behandling.byggOpprettVedtakRequestSplittetFF(
-        beregning: List<ResultatBidragsberegningBarn>,
+        beregning: ResultatBidragsberegning,
         behandlingSaker: Map<String, BidragssakDto>,
         enhet: String?,
     ): List<OpprettVedtakRequestDto> {
@@ -705,20 +706,21 @@ class BehandlingTilVedtakMapping(
                 førsteSøknadsbarn.forholdsmessigFordeling?.søknaderUnderBehandling?.any {
                     it.søknadsid == søknadsid && it.innkreving
                 } == true
+            val grunnlagslisteAlle = beregning.grunnlagsliste
 
             mapper.run {
                 val stønadsendringPerioder =
                     if (erRevurderingsbarn) {
                         emptyList()
                     } else {
-                        beregning
+                        beregning.resultatBarn
                             .filter { b -> søknadsbarn.any { it.ident == b.barn.ident?.verdi } }
                             .map { it.resultat.byggStønadsendringerForVedtak(behandling, it.barn) }
                     }
                 val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
 
                 val grunnlagListeVedtak =
-                    byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
+                    byggGrunnlagForVedtak(grunnlagslisteAlle.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
                 val stønadsendringGrunnlagListe = byggGrunnlagGenerelt()
 
                 val grunnlagListe =
@@ -796,7 +798,7 @@ class BehandlingTilVedtakMapping(
                                 mapEngangsbeløpDirekteOppgjør(behandlingSaker)
                         },
                     grunnlagListe =
-                        (grunnlagListe + engangsbeløpGebyr.grunnlagsliste + grunnlagVirkningstidspunkt)
+                        (grunnlagListe + engangsbeløpGebyr.grunnlagsliste + grunnlagVirkningstidspunkt + grunnlagslisteAlle)
                             .toSet()
                             .map(BaseGrunnlag::tilOpprettRequestDto),
                 )
