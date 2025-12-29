@@ -16,6 +16,7 @@ import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -96,6 +97,7 @@ data class VirkningstidspunktBarnDtoV2(
     val begrunnelse: BegrunnelseDto,
     val begrunnelseVurderingAvSkolegang: BegrunnelseDto? = null,
     val begrunnelseVurderingAvSkolegangFraOpprinneligVedtak: BegrunnelseDto? = null,
+    val løpendeBidragPeriode: ÅrMånedsperiode? = null,
     val harLøpendeBidrag: Boolean = false,
     val harLøpendeForskudd: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,

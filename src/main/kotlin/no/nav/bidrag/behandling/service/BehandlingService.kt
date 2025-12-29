@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
+import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
@@ -83,11 +84,9 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
-    private val behandlingOppdatertLytter: BehandlingOppdatertLytter? = null,
     private val bestillAsyncJobService: BestillAsyncJobService? = null,
     @Lazy
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
-//    private val applicationEventPublisher: ApplicationEventPublisher? = null,
 ) {
     @Transactional
     fun slettBehandling(
@@ -133,15 +132,27 @@ class BehandlingService(
         behandlingId: Long,
         slettet: Boolean,
     ) {
-        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandlingId,
-            if (slettet) BehandlingHendelseType.AVSLUTTET else BehandlingHendelseType.ENDRET,
+        bestillAsyncJobService!!.bestillHendelse(
+            BehandlingHendelseBestilling(
+                behandlingId,
+                if (slettet) BehandlingHendelseType.AVSLUTTET else BehandlingHendelseType.ENDRET,
+            ),
         )
     }
 
     fun logiskSlettBehandling(behandling: Behandling) {
         log.debug { "Logisk sletter behandling ${behandling.id}" }
         behandlingRepository.logiskSlett(behandling.id!!)
+        if (behandling.erIForholdsmessigFordeling) {
+            val søknaderToUpdate =
+                behandling.roller
+                    .filter { !it.erRevurderingsbarn }
+                    .flatMap { it.forholdsmessigFordeling!!.søknaderUnderBehandling }
+                    .filter { it.søknadsid == behandling.soknadsid }
+
+            søknaderToUpdate.forEach { it.status = Behandlingstatus.FEILREGISTRERT }
+        }
+
         sendOppdatertHendelse(behandling.id!!, true)
     }
 
@@ -159,13 +170,15 @@ class BehandlingService(
             } else {
                 behandling
             }
-        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            lagretBehandling.id!!,
-            if (oppretterBehandling) {
-                BehandlingHendelseType.OPPRETTET
-            } else {
-                BehandlingHendelseType.ENDRET
-            },
+        bestillAsyncJobService!!.bestillHendelse(
+            BehandlingHendelseBestilling(
+                lagretBehandling.id!!,
+                if (oppretterBehandling) {
+                    BehandlingHendelseType.OPPRETTET
+                } else {
+                    BehandlingHendelseType.ENDRET
+                },
+            ),
         )
         if (behandling.vedtakstype.opprettForsendelse() && (oppretterBehandling || opprettForsendelse)) {
             opprettForsendelseForBehandling(lagretBehandling)
@@ -224,6 +237,7 @@ class BehandlingService(
                     behandlerenhet = opprettBehandling.behandlerenhet,
                     erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
                     søknadsdetaljer,
+                    søktFraDato = opprettBehandling.søktFomDato,
                 )
                 return OpprettBehandlingResponse(behandling.id!!)
             }
@@ -465,9 +479,11 @@ class BehandlingService(
                 }
             }
 
-        behandlingOppdatertLytter!!.sendBehandlingOppdatertHendelse(
-            behandlingsid,
-            BehandlingHendelseType.AVSLUTTET,
+        bestillAsyncJobService!!.bestillHendelse(
+            BehandlingHendelseBestilling(
+                behandlingsid,
+                BehandlingHendelseType.AVSLUTTET,
+            ),
         )
     }
 
@@ -679,7 +695,8 @@ class BehandlingService(
             .forEach {
                 roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
-                    eksisterendeRolle.harGebyrsøknad = it.harGebyrsøknad
+                    // Skal ikke være mulig å fjerne gebyrsøknad fra rolle
+                    eksisterendeRolle.harGebyrsøknad = if (eksisterendeRolle.harGebyrsøknad) true else it.harGebyrsøknad
                     if (it.harGebyrsøknad || !it.referanseGebyr.isNullOrEmpty()) {
                         val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
                         val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)

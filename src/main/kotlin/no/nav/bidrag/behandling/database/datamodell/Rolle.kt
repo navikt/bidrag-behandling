@@ -142,7 +142,7 @@ open class Rolle(
 
     val saksnummer get() = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer
     val gebyrSøknader get() =
-        if (harGebyrsøknad) {
+        if (harGebyrsøknad || gebyr?.gebyrSøknader?.isNotEmpty() == true) {
             gebyr?.gebyrSøknader?.takeIf { it.isNotEmpty() }
                 ?: setOf(
                     GebyrRolleSøknad(

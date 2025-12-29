@@ -733,6 +733,8 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
     gjelder: GrunnlagDto,
     søknadsbarn: GrunnlagDto?,
     grunnlagListe: List<Grunnlag> = emptyList(),
+    skalTasMed: Boolean? = null,
+    periode: ÅrMånedsperiode? = null,
 ) = GrunnlagDto(
     type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
     referanse = tilGrunnlagreferanse(gjelder, søknadsbarn),
@@ -750,7 +752,9 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                 beløp = belop,
                 versjon = (kilde == Kilde.OFFENTLIG).ifTrue { grunnlagListe.hentVersjonForInntekt(this) },
                 periode =
-                    if (kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type)) {
+                    if (periode != null) {
+                        periode
+                    } else if (kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(type)) {
                         ÅrMånedsperiode(opprinneligFom!!, bestemDatoTomForOffentligInntekt()?.plusDays(1))
                     } else {
                         ÅrMånedsperiode(datoFomEllerOpprinneligFom!!, datoTom?.plusDays(1))
@@ -766,7 +770,7 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                     },
                 inntektsrapportering = type,
                 manueltRegistrert = kilde == Kilde.MANUELL,
-                valgt = taMed,
+                valgt = skalTasMed ?: taMed,
                 inntektspostListe =
                     inntektsposter.map {
                         InntektsrapporteringPeriode.Inntektspost(

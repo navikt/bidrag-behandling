@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDt
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
@@ -103,12 +104,12 @@ class VirkningstidspunktController(
         virkningstidspunktService.oppdaterBeregnManuellVedtak(behandlingsid, request)
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         val beregning = hentBeregning(behandling)
-        behandling.grunnlagslisteFraVedtak = beregning.firstOrNull()?.resultat?.grunnlagListe
+        behandling.grunnlagslisteFraVedtak = beregning.grunnlagslisteList
         return OppdaterManuellVedtakResponse(
-            beregning.all {
+            beregning.resultatBarn.all {
                 it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
             },
-            dtomapper.tilUnderholdskostnadDto(behandling, beregning),
+            dtomapper.tilUnderholdskostnadDto(behandling, beregning.resultatBarn),
         )
     }
 
@@ -116,6 +117,6 @@ class VirkningstidspunktController(
         try {
             dtomapper.beregningService!!.beregneBidrag(behandling)
         } catch (e: Exception) {
-            emptyList()
+            ResultatBidragsberegning(vedtakstype = behandling.vedtakstype)
         }
 }

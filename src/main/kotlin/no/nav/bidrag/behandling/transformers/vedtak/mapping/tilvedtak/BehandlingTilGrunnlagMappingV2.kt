@@ -10,6 +10,10 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.behandling.tilRolle
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
@@ -18,9 +22,13 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagUnderh
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetSivilstand
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
+import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
+import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -50,7 +58,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
+import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -150,7 +160,7 @@ class BehandlingTilGrunnlagMappingV2(
                             },
                         delAvOpprinneligBehandling =
                             if (forholdsmessigFordeling != null) {
-                                forholdsmessigFordeling!!.delAvOpprinneligBehandling
+                                !forholdsmessigFordeling!!.erRevurdering
                             } else {
                                 true
                             },
@@ -283,6 +293,82 @@ class BehandlingTilGrunnlagMappingV2(
                 it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering == Inntektsrapportering.AINNTEKT_BEREGNET_12MND
             }
 
+    fun Behandling.tilGrunnlagInntektSimulering(personobjekter: Set<GrunnlagDto> = tilPersonobjekter()): Set<GrunnlagDto> {
+        fun opprettManuellInntekt(gjelderReferanse: String) =
+            GrunnlagDto(
+                type = Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
+                referanse = "inntekt_${gjelderReferanse}_${Inntektsrapportering.LØNN_MANUELT_BEREGNET}_$grunnlagsreferanseSimulert",
+                grunnlagsreferanseListe = emptyList(),
+                gjelderReferanse = gjelderReferanse,
+                gjelderBarnReferanse = null,
+                innhold =
+                    POJONode(
+                        InntektsrapporteringPeriode(
+                            beløp = BigDecimal.ZERO,
+                            versjon = null,
+                            periode = ÅrMånedsperiode(eldsteVirkningstidspunkt, null),
+                            opprinneligPeriode = null,
+                            inntektsrapportering = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
+                            manueltRegistrert = true,
+                            valgt = true,
+                            inntektspostListe = emptyList(),
+                            gjelderBarn = null,
+                        ),
+                    ),
+            )
+
+        val inntekterBPIkkeYtelse = inntekter.filter { it.ident == bidragspliktig?.ident && !eksplisitteYtelser.contains(it.type) }
+
+        val grunnlagBp =
+            if (inntekterBPIkkeYtelse.none { it.taMed }) {
+                val gjelder = personobjekter.hentPersonNyesteIdent(bidragspliktig!!.ident)!!
+                val ainntekt12Mnd = inntekterBPIkkeYtelse.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
+                if (ainntekt12Mnd != null) {
+                    ainntekt12Mnd
+                        .tilInntektsrapporteringPeriode(
+                            gjelder,
+                            null,
+                            grunnlagListe,
+                            skalTasMed = true,
+                            periode = ÅrMånedsperiode(eldsteVirkningstidspunkt, null),
+                        ).let {
+                            it.copy(
+                                referanse = "${it.referanse}_$grunnlagsreferanseSimulert",
+                            )
+                        }
+                } else {
+                    opprettManuellInntekt(gjelder.referanse)
+                }
+            } else {
+                null
+            }
+
+        val inntekterBMIkkeYtelse = inntekter.filter { it.ident == bidragsmottaker?.ident && !eksplisitteYtelser.contains(it.type) }
+
+        val grunnlagBm =
+            if (inntekterBMIkkeYtelse.none { it.taMed }) {
+                val gjelder = personobjekter.hentPersonNyesteIdent(bidragsmottaker!!.ident)!!
+                val ainntekt12Mnd = inntekterBMIkkeYtelse.find { it.type == Inntektsrapportering.AINNTEKT_BEREGNET_12MND }
+                if (ainntekt12Mnd != null) {
+                    ainntekt12Mnd
+                        .tilInntektsrapporteringPeriode(
+                            gjelder,
+                            null,
+                            grunnlagListe,
+                        ).let {
+                            it.copy(
+                                referanse = "${it.referanse}_$grunnlagsreferanseSimulert",
+                            )
+                        }
+                } else {
+                    opprettManuellInntekt(gjelder.referanse)
+                }
+            } else {
+                null
+            }
+        return setOfNotNull(grunnlagBm, grunnlagBp)
+    }
+
     fun Behandling.tilGrunnlagInntekt(
         personobjekter: Set<GrunnlagDto> = tilPersonobjekter(),
         søknadsbarn: GrunnlagDto? = null,
@@ -363,6 +449,29 @@ class BehandlingTilGrunnlagMappingV2(
                 ),
         )
     }
+
+    fun Behandling.tilGrunnlagSamværSimulering(): List<GrunnlagDto> =
+        søknadsbarn.mapNotNull { barn ->
+            val samværBarn = samvær.find { it.rolle.ident == barn.ident }
+            if (samværBarn == null || samværBarn.perioder.isEmpty()) {
+                GrunnlagDto(
+                    referanse = "samvær_${Grunnlagstype.SAMVÆRSPERIODE}_${barn.tilGrunnlagsreferanse()}_$grunnlagsreferanseSimulert",
+                    type = Grunnlagstype.SAMVÆRSPERIODE,
+                    gjelderReferanse = bidragspliktig!!.tilGrunnlagsreferanse(),
+                    grunnlagsreferanseListe = emptyList(),
+                    gjelderBarnReferanse = barn.tilGrunnlagsreferanse(),
+                    innhold =
+                        POJONode(
+                            SamværsperiodeGrunnlag(
+                                periode = ÅrMånedsperiode(barn.finnBeregnFra(), null),
+                                samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
+                            ),
+                        ),
+                )
+            } else {
+                null
+            }
+        }
 
     fun Behandling.tilGrunnlagSamvær(søknadsbarn: BaseGrunnlag? = null): List<GrunnlagDto> {
         val søknadsbarnIdent = søknadsbarn?.personIdent

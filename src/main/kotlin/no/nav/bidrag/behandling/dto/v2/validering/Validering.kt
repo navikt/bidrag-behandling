@@ -89,6 +89,26 @@ data class MaksGodkjentBeløpValideringsfeil(
     val harFeil get() = manglerBeløp || manglerBegrunnelse
 }
 
+data class InntektValideringsfeilV2Dto(
+    val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
+    val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
+    val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
+    val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
+    @Schema(name = "årsinntekter")
+    val årsinntekter: InntektValideringsfeil? = InntektValideringsfeil(),
+) {
+    @get:JsonIgnore
+    val harFeil
+        get() =
+            barnetillegg?.any { it.harFeil } == true ||
+                utvidetBarnetrygd?.harFeil == true ||
+                kontantstøtte?.any {
+                    it.harFeil
+                } == true ||
+                småbarnstillegg?.harFeil == true ||
+                årsinntekter?.harFeil == true
+}
+
 data class InntektValideringsfeilDto(
     val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
     val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
@@ -123,6 +143,7 @@ data class InntektValideringsfeil(
     val gjelderBarn: String? = null,
     @JsonIgnore
     val erYtelse: Boolean = false,
+    @Deprecated("Skal fjernes")
     val rolle: RolleDto? = null,
     val ident: String? = rolle?.ident,
     @Schema(

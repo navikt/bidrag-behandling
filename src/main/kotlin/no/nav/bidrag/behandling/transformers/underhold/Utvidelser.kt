@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteUaktiverteGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.henteNyesteGrunnlag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
@@ -32,6 +33,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
+import no.nav.bidrag.transport.felles.toLocalDate
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -121,7 +123,7 @@ fun Collection<BarnetilsynGrunnlagDto>.justerBarnetilsynPeriodeTil() =
 fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overskriveAktiverte: Boolean = true) {
     val barnetilsyn = konvertereData<MutableSet<BarnetilsynGrunnlagDto>>()!!
 
-    val virkningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+    val virkningstidspunkt = rolle.finnBeregnFra().toLocalDate()
 
     barnetilsyn
         .groupBy { it.barnPersonId }
@@ -157,7 +159,7 @@ fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertG
 }
 
 fun Underholdskostnad.justerePerioder(forrigeVirkningstidspunkt: LocalDate? = null) {
-    val virkningsdato = behandling.virkningstidspunktEllerSøktFomDato
+    val virkningsdato = rolle?.finnBeregnFra()?.toLocalDate() ?: behandling.eldsteVirkningstidspunkt
 
     barnetilsyn.filter { it.fom < virkningsdato }.forEach { periode ->
         if (periode.tom != null && virkningsdato >= periode.tom) {

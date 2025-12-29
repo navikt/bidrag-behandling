@@ -71,6 +71,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.NotatService
@@ -764,7 +765,7 @@ class Dtomapper(
     private fun Behandling.hentAldersjusteringBeregning(): List<ResultatBidragsberegningBarn> {
         if (vedtakstype != Vedtakstype.ALDERSJUSTERING) return emptyList()
         return try {
-            beregningService!!.beregneBidrag(this)
+            beregningService!!.beregneBidrag(this).resultatBarn
         } catch (e: Exception) {
             emptyList()
         }
@@ -885,12 +886,12 @@ class Dtomapper(
                     ),
                 inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
                 inntekterV2 =
-                    roller.map {
+                    roller.sorterForInntektsbildet().map {
                         InntekterDtoRolle(
                             gjelder = it.tilDto(),
                             inntekter =
                                 InntekterDtoV3(
-                                    valideringsfeil = InntektValideringsfeilDto(),
+                                    valideringsfeil = InntektValideringsfeilV2Dto(),
                                     beregnetInntekt = BeregnetInntekterDto(it.personident!!, it.rolletype, emptyList()),
                                 ),
                         )
@@ -918,7 +919,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                 ),
             inntekterV2 =
-                roller.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
+                roller.sorterForInntektsbildet().filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
                     InntekterDtoRolle(
                         gjelder = it.tilDto(),
                         inntekter =
@@ -1092,6 +1093,7 @@ class Dtomapper(
                         } else {
                             null
                         },
+                    løpendeBidragPeriode = finnPeriodeLøpendePeriodeInnenforSøktFomDato(it),
                     harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
                     harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
                     eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
@@ -1220,6 +1222,7 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
+                    løpendeBidragPeriode = null,
                     harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                     harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
                     opphørsdato = globalOpphørsdato,
@@ -1257,13 +1260,7 @@ class Dtomapper(
                             Underholdskostnad(
                                 id = index.toLong(),
                                 behandling = behandling,
-                                person =
-                                    Person(
-                                        id = index.toLong(),
-                                        ident = rolle.ident!!,
-                                        fødselsdato = rolle.fødselsdato,
-                                        rolle = mutableSetOf(rolle),
-                                    ),
+                                rolle = rolle,
                             )
                         grunnlagFraVedtak.grunnlagListe.hentUnderholdskostnadPerioder(
                             underholdskostnad,

@@ -1545,7 +1545,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandlingEtter = behandlingService.hentBehandlingById(behandling.id!!)
             response.status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
             behandlingEtter.bidragspliktig!!.harGebyrsøknad shouldBe true
-            behandlingEtter.bidragsmottaker!!.harGebyrsøknad shouldBe false
+            behandlingEtter.bidragsmottaker!!.harGebyrsøknad shouldBe true
             behandlingEtter.søknadsbarn shouldHaveSize 3
             behandlingEtter.søknadsbarn.find { it.ident == "1111234" }!!.innbetaltBeløp shouldBe BigDecimal("100.254")
             behandlingEtter.husstandsmedlem shouldHaveSize 3

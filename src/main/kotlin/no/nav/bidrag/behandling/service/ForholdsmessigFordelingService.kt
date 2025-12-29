@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
+import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
@@ -27,6 +28,8 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøkna
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierGrunnlag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierInntekt
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierOverBegrunnelseForBehandling
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierOverInntekterForRolleFraBehandling
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierSamvær
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierUnderholdskostnad
@@ -37,6 +40,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDe
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBM
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBP
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
+import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -46,10 +50,14 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -63,6 +71,11 @@ import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhe
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -71,6 +84,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.collections.plus
@@ -91,6 +105,14 @@ val behandlingstyperSomIkkeSkalInkluderesIFF =
 data class FFBeregningResultat(
     val harSlåttUtTilFF: Boolean,
     val beregningManglerGrunnlag: Boolean,
+    val simulertGrunnlag: List<SimulertInntektGrunnlag> = emptyList(),
+)
+
+data class SimulertInntektGrunnlag(
+    val type: Grunnlagstype,
+    val gjelder: String,
+    val beløp: BigDecimal,
+    val inntektstype: Inntektsrapportering,
 )
 
 data class SakKravhaver(
@@ -123,6 +145,7 @@ class ForholdsmessigFordelingService(
     private val bbmConsumer: BidragBBMConsumer,
     private val forsendelseService: ForsendelseService,
     private val beregningService: BeregningService,
+    private val virkningstidspunktService: VirkningstidspunktService,
 ) {
     @Transactional
     fun lukkAllFFSaker(behandlingsid: Long) {
@@ -384,15 +407,12 @@ class ForholdsmessigFordelingService(
                     null
                 }
             }
-        rolle.forholdsmessigFordeling!!.søknader =
-            rolle.forholdsmessigFordeling!!
-                .søknader
-                .map {
-                    if (søknaderFeilregistrert.contains(it.søknadsid!!)) {
-                        it.status = Behandlingstatus.FEILREGISTRERT
-                    }
-                    it
-                }.toMutableSet()
+        rolle.forholdsmessigFordeling!!
+            .søknaderUnderBehandling
+            .filter { søknaderFeilregistrert.contains(it.søknadsid!!) }
+            .forEach {
+                it.status = Behandlingstatus.FEILREGISTRERT
+            }
     }
 
     fun feilregistrerFFSøknad(rolle: Rolle) {
@@ -402,6 +422,16 @@ class ForholdsmessigFordelingService(
             LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
             try {
                 bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
+                søknad.status = Behandlingstatus.FEILREGISTRERT
+                if (rolle.bidragsmottaker != null) {
+                    rolle.bidragsmottaker!!
+                        .forholdsmessigFordeling!!
+                        .søknaderUnderBehandling
+                        .find { it.søknadsid == søknad.søknadsid }
+                        ?.let {
+                            it.status = Behandlingstatus.FEILREGISTRERT
+                        }
+                }
             } catch (e: Exception) {
                 LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid i behandling ${rolle.behandling.id}" }
             }
@@ -437,15 +467,11 @@ class ForholdsmessigFordelingService(
         behandlerenhet: String = behandling.behandlerEnhet,
         erRevurdering: Boolean = false,
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
+        søktFraDato: LocalDate? = null,
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
-        rollerSomSkalLeggesTilDto
-            .filter { it.rolletype == Rolletype.BARN }
-            .mapNotNull { nyRolle -> behandling.roller.find { it.ident == nyRolle.ident!!.verdi } }
-            .filter { it.forholdsmessigFordeling?.erRevurdering == true }
-            .forEach {
-                feilregistrerBarnFraFFSøknad(it)
-            }
+        feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
+
         val rollerSomSkalLeggesTil =
             rollerSomSkalLeggesTilDto
                 .map { nyRolle ->
@@ -469,6 +495,7 @@ class ForholdsmessigFordelingService(
                         if (eksisterendeRolle.forholdsmessigFordeling == null) {
                             eksisterendeRolle.forholdsmessigFordeling = ffRolleDetaljer
                         } else {
+                            val varRevurderingsbarn = eksisterendeRolle.forholdsmessigFordeling!!.erRevurdering
                             val eksisterendeSøknadsliste = eksisterendeRolle.forholdsmessigFordeling!!.søknader
                             eksisterendeRolle.forholdsmessigFordeling =
                                 ffRolleDetaljer.copy(
@@ -478,7 +505,16 @@ class ForholdsmessigFordelingService(
                                                 setOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
                                         ).toMutableSet(),
                                 )
+                            if (varRevurderingsbarn && søktFraDato != null) {
+                                eksisterendeRolle.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                                virkningstidspunktService.oppdaterVirkningstidspunkt(
+                                    eksisterendeRolle.id,
+                                    søktFraDato.withDayOfMonth(1),
+                                    behandling,
+                                )
+                            }
                         }
+
                         val gebyr = eksisterendeRolle.hentEllerOpprettGebyr()
                         if (nyRolle.harGebyrsøknad) {
                             gebyr.gebyrSøknader.add(
@@ -502,6 +538,19 @@ class ForholdsmessigFordelingService(
                 .filter { identerSomSkalSlettes.contains(it.ident) }
                 .map { it }
         slettBarnEllerBehandling(rollerSomSkalSlettes, behandling, søknadsid)
+    }
+
+    private fun feilregistrerRevurderingsbarnFraFFSøknad(
+        behandling: Behandling,
+        barn: List<OpprettRolleDto>,
+    ) {
+        barn
+            .filter { it.rolletype == Rolletype.BARN }
+            .mapNotNull { nyRolle -> behandling.roller.find { it.ident == nyRolle.ident!!.verdi } }
+            .filter { it.forholdsmessigFordeling?.erRevurdering == true }
+            .forEach {
+                feilregistrerBarnFraFFSøknad(it)
+            }
     }
 
     @Transactional
@@ -624,12 +673,28 @@ class ForholdsmessigFordelingService(
 
     private fun sjekkBeregningKreverForholdsmessigFordeling(behandling: Behandling): FFBeregningResultat =
         try {
-            val resultat = beregningService.beregneBidrag(behandling, true)
-            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
+            val resultat = beregningService.beregneBidrag(behandling, true, simulerBeregning = true)
+            val resultatBarn = resultat.resultatBarn
+            val grunnlagsliste = resultat.grunnlagsliste.toSet().toList()
+
+            val simulertInntektGrunnlag =
+                grunnlagsliste
+                    .filter {
+                        it.type == Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE &&
+                            it.referanse.contains(grunnlagsreferanseSimulert)
+                    }.map {
+                        SimulertInntektGrunnlag(
+                            type = it.type,
+                            gjelder = grunnlagsliste.hentPersonMedReferanse(it.gjelderReferanse!!)!!.personIdent!!,
+                            beløp = it.innholdTilObjekt<InntektsrapporteringPeriode>().beløp,
+                            inntektstype = it.innholdTilObjekt<InntektsrapporteringPeriode>().inntektsrapportering,
+                        )
+                    }
+
             FFBeregningResultat(
-                grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
-                // TODO: Simuler beregning
-                grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
+                harSlåttUtTilFF = grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
+                beregningManglerGrunnlag = resultat.alleUgyldigBeregninger.isNotEmpty(),
+                simulertGrunnlag = simulertInntektGrunnlag,
             )
         } catch (e: Exception) {
             // Valideringsfeil
@@ -639,20 +704,27 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun sjekkSkalOppretteForholdsmessigFordeling(behandlingId: Long): SjekkForholdmessigFordelingResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        val finnesLøpendeBidragSomOverlapperMedElsteVirkning =
-            behandling.søknadsbarn.any {
-                val periodeLøperBidrag = behandling.finnPeriodeLøperBidrag(it)
-                val periodeBeregning = ÅrMånedsperiode(behandling.eldsteVirkningstidspunkt.toYearMonth(), it.opphørsdato?.toYearMonth())
-                periodeLøperBidrag != null && periodeLøperBidrag.fom < it.virkningstidspunktRolle.toYearMonth() &&
-                    periodeLøperBidrag.overlapper(periodeBeregning)
-            }
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            return SjekkForholdmessigFordelingResponse(
+                skalBehandlesAvEnhet = "",
+                eldsteSøktFraDato = behandling.søktFomDato,
+            )
+        }
+        val finnesLøpendeBidragSomOverlapperMedEldsteVirkning =
+            !behandling.erVirkningstidspunktLiktForAlle &&
+                behandling.søknadsbarn.any {
+                    val periodeLøperBidrag = behandling.finnPeriodeLøperBidrag(it)
+                    val periodeBeregning = ÅrMånedsperiode(behandling.eldsteVirkningstidspunkt.toYearMonth(), it.opphørsdato?.toYearMonth())
+                    periodeLøperBidrag != null && periodeLøperBidrag.fom < it.virkningstidspunktRolle.toYearMonth() &&
+                        periodeLøperBidrag.overlapper(periodeBeregning)
+                }
         val behandlesAvEnhet = finnEnhetForBarnIBehandling(behandling)
 
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
         val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
-            if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && finnesLøpendeBidragSomOverlapperMedElsteVirkning) {
+            if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && `finnesLøpendeBidragSomOverlapperMedEldsteVirkning`) {
                 relevanteKravhavere
             } else {
                 relevanteKravhavereIkkeSøknadsbarn
@@ -668,8 +740,9 @@ class ForholdsmessigFordelingService(
                 !behandling.erIForholdsmessigFordeling &&
                     (
                         bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
-                            finnesLøpendeBidragSomOverlapperMedElsteVirkning
+                            finnesLøpendeBidragSomOverlapperMedEldsteVirkning
                     ),
+            simulertGrunnlag = resultat.simulertGrunnlag,
             måOppretteForholdsmessigFordeling = resultat.beregningManglerGrunnlag,
             harSlåttUtTilForholdsmessigFordeling = resultat.harSlåttUtTilFF,
             eldsteSøktFraDato = relevanteKravhavere.finnEldsteSøktFomDato(behandling),
@@ -871,6 +944,7 @@ class ForholdsmessigFordelingService(
     ): List<Long> {
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val eksisterendeBMIdenter = behandling.alleBidragsmottakere.map { it.ident }
+        val eksisterendeRoller = behandling.roller.map { it.ident }
         val åpneBehandlinger = relevanteKravhavere.flatMap { it.åpneBehandlinger }
         val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr))
         åpneBehandlinger.forEach { behandlingOverført ->
@@ -919,31 +993,44 @@ class ForholdsmessigFordelingService(
                 }
             }
             behandlingOverført.underholdskostnader.forEach { underholdskostnadOverført ->
-                if (behandling.underholdskostnader.none { s ->
-                        !underholdskostnadOverført.gjelderAndreBarn && s.rolle != null &&
-                            s.rolle!!.ident == underholdskostnadOverført.rolle!!.ident ||
-                            underholdskostnadOverført.person != null && s.person != null &&
-                            s.person!!.ident == underholdskostnadOverført.person!!.ident
+                if (behandling.underholdskostnader.none { u ->
+                        (
+                            !underholdskostnadOverført.gjelderAndreBarn && u.rolle != null &&
+                                u.rolle!!.ident == underholdskostnadOverført.rolle!!.ident
+                        ) ||
+                            (
+                                underholdskostnadOverført.person != null && u.person != null &&
+                                    u.person!!.ident == underholdskostnadOverført.person!!.ident
+                            )
                     }
                 ) {
                     underholdskostnadOverført.kopierUnderholdskostnad(behandling)
                 }
             }
-            behandlingOverført.inntekter
-                .filter { !eksisterendeBMIdenter.contains(behandlingOverført.bidragsmottaker!!.ident) }
-                .filter {
-                    it.ident == behandlingOverført.bidragsmottaker?.ident ||
-                        behandlingOverført.søknadsbarn.map { it.ident }.contains(it.ident)
-                }.forEach { inntektOverført ->
-                    kopierInntekt(behandling, inntektOverført)
-                }
 
+            // Overfør alle inntektene til BM/Barn som ikke finnes i opprinnelig behandling
             behandlingOverført.inntekter
-                .filter { bidragspliktigFnr == behandlingOverført.bidragspliktig!!.ident }
-                .filter { it.taMed && it.type.kanLeggesInnManuelt }
+                .filter { !eksisterendeRoller.contains(it.ident) }
                 .forEach { inntektOverført ->
                     kopierInntekt(behandling, inntektOverført)
                 }
+
+            // Overfør alle inntektene til BP/BM/Barn som ikke finnes i opprinnelig behandling
+            behandlingOverført.roller
+                .filter { eksisterendeRoller.contains(it.ident) }
+                .forEach {
+                    kopierOverInntekterForRolleFraBehandling(it.ident!!, behandling, behandlingOverført)
+                }
+
+            behandlingOverført.roller.forEach {
+                kopierOverBegrunnelseForBehandling(
+                    it.ident!!,
+                    behandlingOverført,
+                    behandling,
+                    NotatGrunnlag.NotatType.INNTEKT,
+                )
+            }
+
             behandlingOverført.grunnlag
                 .filter { it.rolle.ident != bidragspliktigFnr && behandling.roller.any { r -> r.ident == it.rolle.ident } }
                 .forEach {

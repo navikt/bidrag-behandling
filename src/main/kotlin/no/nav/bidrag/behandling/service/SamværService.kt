@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.samvær.SletteSamværsperiodeElementDto
 import no.nav.bidrag.behandling.dto.v2.samvær.valider
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.samvær.tilOppdaterSamværResponseDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
@@ -24,6 +25,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.delberegningSamværsklasse
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toLocalDate
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -225,7 +227,7 @@ class SamværService(
         forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         behandling.samvær.forEach {
-            val virkningstidspunkt = it.rolle.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
+            val virkningstidspunkt = it.rolle.finnBeregnFra().toLocalDate()
             // Antar at opphørsdato er måneden perioden skal opphøre
             val beregnTil = behandling.finnBeregnTilDatoBehandling(it.rolle)
             val opphørsdato = it.rolle.opphørsdato

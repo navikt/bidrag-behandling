@@ -10,8 +10,21 @@ import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
 import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
+
+fun Set<Rolle>.sorterForInntektsbildet() =
+    sortedWith(
+        compareBy<Rolle> {
+            when (it.rolletype) {
+                Rolletype.BIDRAGSMOTTAKER -> 0
+                Rolletype.BIDRAGSPLIKTIG -> 1
+                Rolletype.BARN -> 2
+                else -> 3
+            }
+        }.then(sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.navn })),
+    )
 
 fun <T> sorterPersonEtterEldsteFødselsdato(
     fødselsdato: (T) -> LocalDate,

@@ -34,6 +34,7 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -267,6 +268,19 @@ fun kopierInntekt(
     hovedbehandling: Behandling,
     inntektOverført: Inntekt,
 ) {
+    val eksisterndeInntekt =
+        hovedbehandling.inntekter
+            .filter {
+                it.taMed && it.ident == inntektOverført.ident &&
+                    it.type == inntektOverført.type
+            }.find {
+                val periodeOverført = ÅrMånedsperiode(inntektOverført.datoFom!!, inntektOverført.datoTom)
+                val periodeInntekt = ÅrMånedsperiode(it.datoFom!!, it.datoTom)
+                periodeOverført.overlapper(periodeInntekt) && it.belop == inntektOverført.belop
+            }
+    // Ikke overfør manuell inntekt hvis det overlapper
+    if (eksisterndeInntekt != null && (inntektOverført.datoTom == null || eksisterndeInntekt.datoTom == inntektOverført.datoTom)) return
+
     val inntekt =
         Inntekt(
             behandling = hovedbehandling,
@@ -294,15 +308,76 @@ fun kopierInntekt(
         }
 
     val rolleInntekt = hovedbehandling.roller.find { it.ident == inntektOverført.ident }!!
-    val notatInntekt =
-        inntektOverført.behandling!!
-            .notater
-            .find { it.type == NotatGrunnlag.NotatType.INNTEKT && it.rolle.ident == inntektOverført.ident }
-            ?.innhold ?: ""
+
     hovedbehandling.inntekter.add(inntekt)
-    hovedbehandling.notater.add(
-        Notat(behandling = hovedbehandling, innhold = notatInntekt, rolle = rolleInntekt, type = NotatGrunnlag.NotatType.INNTEKT),
-    )
+
+    kopierOverBegrunnelseForBehandling(rolleInntekt.ident!!, inntektOverført.behandling!!, hovedbehandling, NotatGrunnlag.NotatType.INNTEKT)
+}
+
+fun kopierOverInntekterForRolleFraBehandling(
+    gjelderPerson: String,
+    behandling: Behandling,
+    behandlingOverført: Behandling,
+) {
+    behandlingOverført.inntekter
+        .filter { gjelderPerson == it.ident }
+        .filter { it.taMed && it.type.kanLeggesInnManuelt }
+        .forEach { inntektOverført ->
+            kopierInntekt(behandling, inntektOverført)
+        }
+
+    behandlingOverført.inntekter
+        .filter { gjelderPerson == it.ident }
+        .filter { it.taMed && !it.type.kanLeggesInnManuelt }
+        .forEach { inntektOverført ->
+            val tilsvarendeInntekt =
+                behandling.inntekter
+                    .filter { gjelderPerson == it.ident }
+                    .find {
+                        it.type == inntektOverført.type && it.opprinneligFom == inntektOverført.opprinneligFom &&
+                            it.opprinneligTom == inntektOverført.opprinneligTom
+                    }
+            if (tilsvarendeInntekt != null && !tilsvarendeInntekt.taMed) {
+                tilsvarendeInntekt.datoFom = inntektOverført.datoFom
+                tilsvarendeInntekt.datoTom = inntektOverført.datoTom
+                tilsvarendeInntekt.taMed = true
+            }
+        }
+}
+
+fun kopierOverBegrunnelseForBehandling(
+    rolle: String,
+    fraBehandling: Behandling,
+    tilBehandling: Behandling,
+    notatType: NotatGrunnlag.NotatType,
+) {
+    val rolleInntekt = tilBehandling.roller.find { it.ident == rolle }!!
+    val begrunnelseInntektOverført =
+        fraBehandling
+            .notater
+            .find { it.type == notatType && it.rolle.ident == rolle }
+            ?.innhold ?: ""
+    val eksisterendeInntektBegrunnelse =
+        tilBehandling.notater
+            .find {
+                it.type == notatType &&
+                    it.rolle.ident == rolle
+            }
+    if (eksisterendeInntektBegrunnelse == null) {
+        tilBehandling.notater.add(
+            Notat(behandling = tilBehandling, innhold = begrunnelseInntektOverført, rolle = rolleInntekt, type = notatType),
+        )
+        return
+    }
+    val endeligBegrunnelse =
+        if (begrunnelseInntektOverført.isNotEmpty() &&
+            !eksisterendeInntektBegrunnelse.innhold.contains(begrunnelseInntektOverført, ignoreCase = true)
+        ) {
+            """${eksisterendeInntektBegrunnelse.innhold} <br><u>Overført fra sak ${fraBehandling.saksnummer}</u><br> $begrunnelseInntektOverført"""
+        } else {
+            eksisterendeInntektBegrunnelse.innhold
+        }
+    eksisterendeInntektBegrunnelse.innhold = endeligBegrunnelse
 }
 
 fun kopierSamvær(

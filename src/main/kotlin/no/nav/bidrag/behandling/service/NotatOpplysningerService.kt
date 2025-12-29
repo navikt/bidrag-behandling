@@ -773,12 +773,31 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                 harBPFullEvne = it.harBPFullEvne,
                                 erKompletteGrunnlagForAlleLøpendeBidrag = it.erKompletteGrunnlagForAlleLøpendeBidrag,
                                 erForholdsmessigFordelt = it.erForholdsmessigFordelt,
+                                sumBidragTilFordelingSøknadsbarn = it.sumBidragTilFordelingSøknadsbarn,
+                                sumBidragTilFordelingIkkeSøknadsbarn = it.sumBidragTilFordelingIkkeSøknadsbarn,
+                                sumBidragTilFordelingSPrioritertBidrag = BigDecimal.ZERO,
+                                finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = it.finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn,
                                 bidragTilFordelingAlle =
                                     it.bidragTilFordelingAlle.map {
                                         DokumentmalForholdsmessigFordelingBidragTilFordelingBarn(
                                             prioritertBidrag = it.prioritertBidrag,
                                             privatAvtale = it.privatAvtale,
+                                            erSøknadsbarn = it.erSøknadsbarn,
                                             bidragTilFordeling = it.bidragTilFordeling,
+                                            beregnetBidrag =
+                                                it.beregnetBidrag?.let {
+                                                    DokumentmalForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                                                        saksnummer = it.saksnummer,
+                                                        samværsfradrag = it.samværsfradrag,
+                                                        samværsklasse = it.samværsklasse,
+                                                        valutakode = it.valutakode,
+                                                        reduksjonUnderholdskostnad = it.reduksjonUnderholdskostnad,
+                                                        beregnetBidrag = it.beregnetBidrag,
+                                                        beregnetBeløp = it.beregnetBeløp,
+                                                        faktiskBeløp = it.faktiskBeløp,
+                                                        løpendeBeløp = it.løpendeBeløp,
+                                                    )
+                                                },
                                             barn = it.barn.tilNotatRolle(behandling),
                                         )
                                     },

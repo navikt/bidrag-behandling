@@ -86,11 +86,17 @@ fun Behandling.finnBeregnTilDato() =
 fun Rolle.finnBeregnFra(): YearMonth =
     if (behandling.erBidrag()) {
         if (behandling.erIForholdsmessigFordeling) {
-            behandling
-                .finnPeriodeLøperBidrag(this)
-                ?.fom
-                ?.let { maxOf(it, virkningstidspunktRolle.toYearMonth()) }
-                ?: virkningstidspunktRolle.toYearMonth()
+            if (rolletype == Rolletype.BIDRAGSMOTTAKER) {
+                behandling.søknadsbarn.filter { it.bidragsmottaker != null && it.bidragsmottaker?.ident == ident }.minOfOrNull {
+                    it.finnBeregnFra()
+                } ?: behandling.eldsteVirkningstidspunkt.toYearMonth()
+            } else {
+                behandling
+                    .finnPeriodeLøperBidrag(this)
+                    ?.fom
+                    ?.let { maxOf(it, behandling.eldsteVirkningstidspunkt.toYearMonth()) }
+                    ?: virkningstidspunktRolle.toYearMonth()
+            }
         } else {
             virkningstidspunktRolle.toYearMonth()
         }
@@ -324,6 +330,7 @@ class VedtakGrunnlagMapper(
         søknadsbarnRolle: Rolle,
         endeligBeregning: Boolean = true,
         inkluderAlleSøknadsbarn: Boolean = true,
+        simulerBeregning: Boolean = false,
     ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
@@ -358,9 +365,17 @@ class VedtakGrunnlagMapper(
                     } else {
                         val bostatusBarn = tilGrunnlagBostatus(personobjekter)
                         val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
+                        val simulertGrunnlag =
+                            if (simulerBeregning) {
+                                tilGrunnlagInntektSimulering(personobjekter) + tilGrunnlagSamværSimulering()
+                            } else {
+                                emptySet()
+                            }
                         val grunnlagsliste =
-                            (personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad() + byggGrunnlagVirkningsttidspunkt())
-                                .toMutableSet()
+                            (
+                                personobjekter + bostatusBarn + inntekter + byggGrunnlagSøknad() + byggGrunnlagVirkningsttidspunkt() +
+                                    simulertGrunnlag
+                            ).toMutableSet()
 
                         when (tilType()) {
                             TypeBehandling.FORSKUDD -> {

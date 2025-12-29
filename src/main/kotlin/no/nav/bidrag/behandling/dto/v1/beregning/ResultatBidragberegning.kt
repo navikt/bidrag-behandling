@@ -17,6 +17,7 @@ import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.Visningsnavn
 import no.nav.bidrag.domene.util.lastVisningsnavnFraFil
@@ -24,6 +25,7 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.domene.util.visningsnavnIntern
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponseV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
@@ -148,10 +150,50 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
     )
 }
 
+/**
+ * ResultatUtførBidragsberegning brukes som wrapper for håndtering av direkte resultat av beregningen.
+ * Dette inkludrerer også feilhåndtering
+ */
+data class ResultatUtførBidragsberegning(
+    val feilmelding: String? = null,
+    val feiltype: UgyldigBeregningDto.UgyldigBeregningType? = null,
+    val resultat: BidragsberegningOrkestratorResponseV2,
+) {
+    fun tilBeregningFeilmelding() =
+        if (feiltype == null) {
+            null
+        } else {
+            when (feiltype) {
+                UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF -> {
+                    UgyldigBeregningDto(
+                        tittel = "Forholdsmessig fordeling",
+                        begrunnelse = @Suppress("ktlint:standard:max-line-length")
+                        "Bidraget må forholdsmessig fordeles på grunn av manglende evne i minst en av periodene. Opprett forholdsmessig fordeling fra dialogen i sidemenyen",
+                        resultatPeriode = emptyList(),
+                    )
+                }
+
+                else -> {
+                    null
+                }
+            }
+        }
+}
+
+data class ResultatBidragsberegning(
+    val perioderSlåttUtTilFF: List<ÅrMånedsperiode> = emptyList(),
+    val grunnlagsliste: Set<GrunnlagDto> = emptySet(),
+    val vedtakstype: Vedtakstype,
+    val ugyldigBeregning: UgyldigBeregningDto? = null,
+    val resultatBarn: List<ResultatBidragsberegningBarn> = emptyList(),
+) {
+    val grunnlagslisteList get() = grunnlagsliste.toList()
+    val alleUgyldigBeregninger get() = listOfNotNull(ugyldigBeregning) + resultatBarn.mapNotNull { it.ugyldigBeregning }
+}
+
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val erAvvistRevurdering: Boolean = false,
-    val vedtakstype: Vedtakstype,
     val beregningInnkrevingsgrunnlag: Boolean = false,
     val resultat: BeregnetBarnebidragResultat,
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
@@ -178,12 +220,14 @@ data class UgyldigBeregningDto(
     enum class UgyldigBeregningType {
         BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
         BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
+        UFULSTENDING_GRUNNLAG_FF,
     }
 }
 
 data class ResultatBidragberegningDto(
     val kanFatteVedtak: Boolean = true,
     val kanFatteVedtakBegrunnelse: String? = null,
+    val ugyldigBeregning: UgyldigBeregningDto? = null,
     val minstEnPeriodeHarSlåttUtTilFF: Boolean = false,
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
     val perioderSlåttUtTilFF: List<PeriodeSlåttUtTilFF>,
@@ -336,6 +380,8 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                     -> "Lavere enn løpende bidrag"
 
                     UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD -> "Ingen løpende forskudd"
+
+                    UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF -> "Mangler bidragsevne"
                 }
             }
 
@@ -352,6 +398,9 @@ data class PeriodeSlåttUtTilFF(
 
 data class ForholdsmessigFordelingBeregningsdetaljer(
     val sumBidragTilFordeling: BigDecimal,
+    val finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn: Boolean,
+    val sumBidragTilFordelingSøknadsbarn: BigDecimal,
+    val sumBidragTilFordelingIkkeSøknadsbarn: BigDecimal,
     val sumPrioriterteBidragTilFordeling: BigDecimal,
     val bidragTilFordelingForBarnet: BigDecimal,
     val andelAvSumBidragTilFordelingFaktor: BigDecimal,
@@ -366,9 +415,23 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
 data class ForholdsmessigFordelingBidragTilFordelingBarn(
     val prioritertBidrag: Boolean,
     val privatAvtale: Boolean,
+    val erSøknadsbarn: Boolean,
+    val beregnetBidrag: BeregnetBidragBarnDto? = null,
     val bidragTilFordeling: BigDecimal,
     val barn: PersoninfoDto,
-)
+) {
+    data class BeregnetBidragBarnDto(
+        val saksnummer: Saksnummer,
+        val løpendeBeløp: BigDecimal,
+        val valutakode: String = "NOK",
+        val samværsklasse: Samværsklasse,
+        val samværsfradrag: BigDecimal,
+        val beregnetBeløp: BigDecimal,
+        val faktiskBeløp: BigDecimal,
+        val reduksjonUnderholdskostnad: BigDecimal,
+        val beregnetBidrag: BigDecimal,
+    )
+}
 
 data class KlageOmgjøringDetaljer(
     val resultatFraVedtak: Int? = null,

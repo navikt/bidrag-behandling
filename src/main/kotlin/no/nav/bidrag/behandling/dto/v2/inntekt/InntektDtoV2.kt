@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
+import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -83,7 +84,7 @@ data class InntekterDtoV3(
     @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
     val begrunnelse: BegrunnelseDto? = null,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
-    val valideringsfeil: InntektValideringsfeilDto,
+    val valideringsfeil: InntektValideringsfeilV2Dto,
 )
 
 data class InntekterDtoV2(
