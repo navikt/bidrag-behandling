@@ -53,6 +53,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -699,6 +700,12 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun sjekkSkalOppretteForholdsmessigFordeling(behandlingId: Long): SjekkForholdmessigFordelingResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+            return SjekkForholdmessigFordelingResponse(
+                skalBehandlesAvEnhet = "",
+                eldsteSøktFraDato = behandling.søktFomDato,
+            )
+        }
         val finnesLøpendeBidragSomOverlapperMedEldsteVirkning =
             !behandling.erVirkningstidspunktLiktForAlle &&
                 behandling.søknadsbarn.any {

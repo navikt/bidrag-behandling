@@ -16,7 +16,7 @@ data class ForholdmessigFordelingDetaljerDto(
 
 data class SjekkForholdmessigFordelingResponse(
     val skalBehandlesAvEnhet: String,
-    val kanOppretteForholdsmessigFordeling: Boolean,
+    val kanOppretteForholdsmessigFordeling: Boolean = false,
     val måOppretteForholdsmessigFordeling: Boolean = false,
     val simulertGrunnlag: List<SimulertInntektGrunnlag> = emptyList(),
     val harSlåttUtTilForholdsmessigFordeling: Boolean = false,
