@@ -117,7 +117,7 @@ fun Behandling.toSimple() =
     )
 
 fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
-    if (!erBidrag()) {
+    if (!erBidrag() || listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(vedtakstype)) {
         return null
     }
     if (søknadsbarn.size > 1 && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
