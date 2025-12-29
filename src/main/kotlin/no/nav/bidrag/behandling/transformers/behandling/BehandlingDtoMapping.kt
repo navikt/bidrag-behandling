@@ -127,7 +127,9 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
     val stønaderBp =
         hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
             ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
-    if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
+    if (UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
+        !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
+    ) {
         if (roller.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
             return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
         }
