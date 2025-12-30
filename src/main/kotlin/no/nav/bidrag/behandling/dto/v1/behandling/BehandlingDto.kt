@@ -22,6 +22,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 
+data class SjekkLasterGrunnlagResponse(
+    val lasterGrunnlag: Boolean,
+)
+
 data class OppdaterManuellVedtakResponse(
     val erVedtakUtenBeregning: Boolean,
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
@@ -76,7 +80,7 @@ data class VirkningstidspunktDtoV3(
     val erVirkningstidspunktLiktForAlle: Boolean,
     val erAvslagForAlle: Boolean = false,
     val eldsteVirkningstidspunkt: YearMonth,
-    val barn: List<VirkningstidspunktBarnDtoV2>,
+    val barn: List<VirkningstidspunktBarnDtoV2> = emptyList(),
 )
 
 data class VirkningstidspunktBarnDtoV2(

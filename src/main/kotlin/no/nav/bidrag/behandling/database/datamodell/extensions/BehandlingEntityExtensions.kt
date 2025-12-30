@@ -4,9 +4,8 @@ import io.hypersistence.utils.hibernate.type.ImmutableType
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
-import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.tilÅrsakstype
-import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -15,6 +14,18 @@ import org.hibernate.engine.spi.SharedSessionContractImplementor
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Types
+import java.time.LocalDateTime
+
+fun LasterGrunnlagAsyncStatus?.lasterGrunnlagAsync(): Boolean =
+    UnleashFeatures.HENT_GRUNNLAG_ASYNC.isEnabled && this != null &&
+        listOf(LasterGrunnlagAsyncStatus.BESTILT, LasterGrunnlagAsyncStatus.LASTER).contains(this)
+
+enum class LasterGrunnlagAsyncStatus {
+    BESTILT,
+    LASTER,
+    FERDIG,
+    FEILET,
+}
 
 class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     companion object {
@@ -27,13 +38,38 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
 
     private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
     private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
-    private val oppdatererGrunnlag = "oppdaterer_grunnlag_async"
+    private val lasterGrunnlagAsync = "laster_grunnlag_async_tidspunkt"
+    private val lasterGrunnlagAsyncStatus = "laster_grunnlag_async_status"
 
-    fun setOppdatererGrunnlagAsync(value: Boolean) {
-        update(oppdatererGrunnlag, value.toString())
+    fun bestillLastGrunnlagAsync() {
+        update(lasterGrunnlagAsync, LocalDateTime.now().toString())
+        update(lasterGrunnlagAsyncStatus, LasterGrunnlagAsyncStatus.BESTILT.name)
     }
 
-    fun erOppdatererGrunnlagAsync() = get(oppdatererGrunnlag)?.toBooleanStrictOrNull() == true
+    fun startLastGrunnlagAsync() {
+        update(lasterGrunnlagAsync, LocalDateTime.now().toString())
+        update(lasterGrunnlagAsyncStatus, LasterGrunnlagAsyncStatus.LASTER.name)
+    }
+
+    fun avsluttLastGrunnlagAsync(feilet: Boolean = false) {
+        update(lasterGrunnlagAsync, LocalDateTime.now().toString())
+        if (feilet) {
+            update(lasterGrunnlagAsyncStatus, LasterGrunnlagAsyncStatus.FEILET.name)
+            return
+        }
+        update(lasterGrunnlagAsyncStatus, LasterGrunnlagAsyncStatus.FERDIG.name)
+    }
+
+    fun statusLasterGrunnlagAsync(): LasterGrunnlagAsyncStatus? =
+        if (!UnleashFeatures.HENT_GRUNNLAG_ASYNC.isEnabled) {
+            LasterGrunnlagAsyncStatus.FERDIG
+        } else {
+            get(lasterGrunnlagAsyncStatus)?.let {
+                LasterGrunnlagAsyncStatus.valueOf(it)
+            }
+        }
+
+    fun lasterGrunnlagAsync() = statusLasterGrunnlagAsync()?.lasterGrunnlagAsync()
 
     fun setKlagePåBisysVedtak() {
         update(klagePåBisysVedtak, "true")
@@ -111,7 +147,7 @@ fun hentDefaultÅrsak(
     vedtakstype: Vedtakstype,
 ): VirkningstidspunktÅrsakstype? =
     when (typeBehandling) {
-        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR ->
+        TypeBehandling.FORSKUDD, TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
             if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
                 VirkningstidspunktÅrsakstype.AUTOMATISK_JUSTERING
             } else if (vedtakstype != Vedtakstype.OPPHØR) {
@@ -119,5 +155,9 @@ fun hentDefaultÅrsak(
             } else {
                 null
             }
-        TypeBehandling.SÆRBIDRAG -> null
+        }
+
+        TypeBehandling.SÆRBIDRAG -> {
+            null
+        }
     }

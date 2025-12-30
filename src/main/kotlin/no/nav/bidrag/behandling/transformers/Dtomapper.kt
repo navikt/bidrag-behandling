@@ -499,7 +499,7 @@ class Dtomapper(
         val erBeskytta = personinfo.ident?.let { tilgangskontrollService.harBeskyttelse(it) } ?: false
 
         personinfo.ident?.let {
-            if (!tilgangskontrollService.harTilgang(it, saksnummer) || skjuleIdentitietHvisBeskyttet && erBeskytta) {
+            if (!tilgangskontrollService.harTilgang(it, saksnummer) || (skjuleIdentitietHvisBeskyttet && erBeskytta)) {
                 return Personinfo(
                     null,
                     "Person skjermet, født ${personinfo.fødselsdato?.year}",
@@ -787,14 +787,17 @@ class Dtomapper(
                 (
                     hentAldersjusteringBeregning()
                         .any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
-                        aldersjusteringGrunnlag != null &&
-                        aldersjusteringGrunnlag.aldersjustert
+                        (
+                            aldersjusteringGrunnlag != null &&
+                                aldersjusteringGrunnlag.aldersjustert
+                        )
                 )
         val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
         this.grunnlagslisteFraVedtak = this.grunnlagslisteFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
         val behandlingDto =
             BehandlingDtoV2(
                 id = id!!,
+                lasterGrunnlag = metadata?.lasterGrunnlagAsync() == true,
                 kanFatteVedtak = kanFatteVedtak(),
                 kanFatteVedtakBegrunnelse = kanFatteVedtakBegrunnelse(),
                 type = tilType(),
@@ -842,7 +845,7 @@ class Dtomapper(
                         ForholdmessigFordelingDetaljerDto(barn = barnDto)
                     },
                 erVedtakUtenBeregning =
-                    vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert || erVedtakUtenBeregning,
+                    (vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringOgErAldersjustert) || erVedtakUtenBeregning,
                 grunnlagFraVedtaksid = grunnlagFraVedtak,
                 medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
                 innkrevingstype = innkrevingstype ?: Innkrevingstype.MED_INNKREVING,

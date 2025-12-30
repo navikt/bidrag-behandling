@@ -25,6 +25,7 @@ enum class UnleashFeatures(
     BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG("behandling.bidrag_beregning_v2_lopende_bidrag", false),
     TILGANG_OPPRETTE_FF("behandling.opprette_ff", false),
     SEND_BEHANDLING_HENDELSE("bisys.send_behandling_hendelse", false),
+    HENT_GRUNNLAG_ASYNC("behandling.hent_grunnlag_async", false),
     ;
 
     private var defaultValue = false

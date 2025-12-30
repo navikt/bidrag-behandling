@@ -181,6 +181,7 @@ fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn
                                 søktAv = søknad.søktAvType,
                                 begrensetRevurdering = søknad.behandlingstype?.erBegrensetRevurdering() == true,
                                 innkrevingsgrunnlag = erInnkreving,
+                                saksnummer = søknad.saksnummer ?: it.saksnummer,
                                 egetTiltak =
                                     listOf(
                                         Behandlingstype.BEGRENSET_REVURDERING,
@@ -190,6 +191,7 @@ fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn
                                     ).contains(søknad.behandlingstype),
                                 opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
                                 behandlingstype = søknad.behandlingstype,
+                                behandlingstema = søknad.behandlingstema,
                                 søknadsid = søknad.søknadsid,
                                 privatAvtale = søknad.behandlingstype == Behandlingstype.PRIVAT_AVTALE,
                                 paragraf35c =
@@ -216,6 +218,7 @@ fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn
                             søktAv = soknadFra,
                             begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,
                             innkrevingsgrunnlag = erInnkreving,
+                            saksnummer = saksnummer,
                             egetTiltak =
                                 listOf(
                                     Behandlingstype.BEGRENSET_REVURDERING,

@@ -221,7 +221,7 @@ class VedtakService(
 
             tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
             val behandlingDo = behandlingService.lagreBehandling(konvertertBehandling, true)
-            grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+            grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo)
             if (behandlingDo.erBidrag()) {
                 behandlingDo.søknadsbarn.forEach { rolle ->
                     val opphørsdato = rolle.opphørsdato ?: behandlingDo.finnEksisterendeVedtakMedOpphør(rolle)?.opphørsdato

@@ -99,7 +99,7 @@ data class InntekterDtoV2(
     @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
     val begrunnelser: Set<BegrunnelseDto> = emptySet(),
     val begrunnelserFraOpprinneligVedtak: Set<BegrunnelseDto> = emptySet(),
-    val valideringsfeil: InntektValideringsfeilDto,
+    val valideringsfeil: InntektValideringsfeilDto = InntektValideringsfeilDto(),
 ) {
     @Deprecated("Bruk begrunnelser for begrunnelse per rolle")
     @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
