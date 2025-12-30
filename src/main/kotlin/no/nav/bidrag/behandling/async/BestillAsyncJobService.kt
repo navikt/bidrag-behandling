@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.async
 import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.async.dto.GrunnlagInnhentingBestilling
+import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -24,6 +25,15 @@ class BestillAsyncJobService(
 
     @Async
     fun bestillOppdateringAvRoller(bestilling: BehandlingOppdateringBestilling) {
+        applicationEventPublisher.publishEvent(bestilling)
+    }
+
+    fun bestillOpprettelseAvForsendelse(bestilling: OpprettForsendelseBestilling) {
+        applicationEventPublisher.publishEvent(bestilling)
+    }
+
+    @Async
+    fun bestillOpprettelseAvForsendelseAsync(bestilling: OpprettForsendelseBestilling) {
         applicationEventPublisher.publishEvent(bestilling)
     }
 

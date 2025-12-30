@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.async.dto.GrunnlagInnhentingBestilling
+import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import org.springframework.context.event.EventListener
@@ -33,5 +34,13 @@ class BestillAsyncJobListener(
     fun behandleBestillingAvOppdateringAvRoller(bestilling: BehandlingOppdateringBestilling) {
         log.info { "Async: Oppdaterer roller for behandling ${bestilling.behandlingId}" }
         behandlingService.oppdaterRoller(bestilling.behandlingId, bestilling.request)
+    }
+
+    @EventListener
+    @Async
+    fun behandleBestillingAvForsendelse(bestilling: OpprettForsendelseBestilling) {
+        if (bestilling.waitForCommit) return
+        log.info { "Async: Oppretter forsendelse for behandling ${bestilling.behandlingId}" }
+        behandlingService.opprettForsendelseForBehandling(bestilling.behandlingId)
     }
 }

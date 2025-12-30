@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
 import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
+import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -181,7 +182,7 @@ class BehandlingService(
             ),
         )
         if (behandling.vedtakstype.opprettForsendelse() && (oppretterBehandling || opprettForsendelse)) {
-            opprettForsendelseForBehandling(lagretBehandling)
+            bestillAsyncJobService.bestillOpprettelseAvForsendelse(OpprettForsendelseBestilling(behandling.id!!))
         }
         return lagretBehandling
     }
@@ -204,13 +205,7 @@ class BehandlingService(
                 )
             }
         }
-        val søknadsid =
-            if (opprettBehandling.opprettSøknad && opprettBehandling.søknadsid == null) {
-                // TODO: Opprett søknad
-                1
-            } else {
-                opprettBehandling.søknadsid!!
-            }
+        val søknadsid = opprettBehandling.søknadsid
 
         if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
@@ -341,20 +336,14 @@ class BehandlingService(
                 }
             }
         }
-
-        val behandlingDo = opprettBehandlingHvisIkkeEksisterer(behandling)
-
         if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype.kreverGrunnlag()) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
-                behandlingDo.underholdskostnader.add(
+                behandling.underholdskostnader.add(
                     underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident)),
                 )
             }
         }
-
-        grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo)
-
         behandling.søknadsbarn.forEach { rolle ->
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
@@ -369,7 +358,10 @@ class BehandlingService(
                 }
             }
         }
-        behandlingRepository.save(behandling)
+        val behandlingDo = opprettBehandlingHvisIkkeEksisterer(behandling)
+
+        grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo)
+
         log.debug {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
                 "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
@@ -378,7 +370,8 @@ class BehandlingService(
         return OpprettBehandlingResponse(behandlingDo.id!!)
     }
 
-    private fun opprettForsendelseForBehandling(behandling: Behandling) {
+    fun opprettForsendelseForBehandling(behandlingId: Long) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         forsendelseService.slettEllerOpprettForsendelse(
             no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
                 saksnummer = behandling.saksnummer,
