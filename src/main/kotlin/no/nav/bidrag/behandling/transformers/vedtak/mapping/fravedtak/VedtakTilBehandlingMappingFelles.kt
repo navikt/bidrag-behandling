@@ -1273,14 +1273,15 @@ private fun GrunnlagDto.tilRolle(
         behandlingstema = behandling.behandlingstema,
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         forholdsmessigFordeling =
-            if (søknader != null && søknader.isNotEmpty() && stønadsendring != null) {
+            if (søknader != null && søknader.isNotEmpty()) {
                 val erRevurdering = søknader.all { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+                val førsteSøknad = søknader.first()
                 ForholdsmessigFordelingRolle(
-                    tilhørerSak = stønadsendring.sak.verdi,
+                    tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad.saksnummer ?: behandling.saksnummer,
                     behandlerenhet = behandling.behandlerEnhet,
                     delAvOpprinneligBehandling = !erRevurdering,
                     erRevurdering = erRevurdering,
-                    bidragsmottaker = stønadsendring.mottaker.verdi,
+                    bidragsmottaker = stønadsendring?.mottaker?.verdi,
                     søknader =
                         if (lesemodus) {
                             søknader
@@ -1291,7 +1292,7 @@ private fun GrunnlagDto.tilRolle(
                                         mottattDato = søknadGrunnlag.mottattDato,
                                         søktAvType = søknadGrunnlag.søktAv,
                                         behandlingstype = søknadGrunnlag.behandlingstype,
-                                        behandlingstema = stønadsendring.type.tilBehandlingstema(),
+                                        behandlingstema = stønadsendring?.type?.tilBehandlingstema() ?: søknadGrunnlag.behandlingstema,
                                     )
                                 }.toMutableSet()
                         } else {
