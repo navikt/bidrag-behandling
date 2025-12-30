@@ -31,8 +31,8 @@ env:
   BIDRAG_ORGANISASJON_URL: https://bidrag-organisasjon.dev-fss-pub.nais.io/bidrag-organisasjon
   BIDRAG_SJABLON_URL: https://bidrag-sjablon.dev-fss-pub.nais.io/bidrag-sjablon
   ARBEID_OG_INNTEKT_URL: https://arbeid-og-inntekt.dev-fss-pub.nais.io/api/v2
-  GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 1
-  GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING_BELOPSHISTORIKK: 0
+  GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING: 60
+  GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING_BELOPSHISTORIKK: 5
   KODEVERK_URL: http://bidrag-kodeverk
   OPPGAVE_URL: https://oppgave.dev-fss-pub.nais.io
   OPPGAVE_SCOPE: dev-fss.oppgavehandtering.oppgave

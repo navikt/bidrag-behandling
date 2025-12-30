@@ -133,6 +133,7 @@ open class Rolle(
                 (rolletype == Rolletype.BIDRAGSMOTTAKER && it.bidragsmottaker?.ident == this.ident)
         }
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
+    val virkningstidspunktBeregnet get() = if (behandling.erIForholdsmessigFordeling) behandling.eldsteVirkningstidspunkt else virkningstidspunktRolle
 
     fun sakForSøknad(søknadsid: Long) =
         forholdsmessigFordeling

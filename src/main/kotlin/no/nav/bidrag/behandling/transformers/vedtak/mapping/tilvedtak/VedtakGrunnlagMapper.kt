@@ -336,7 +336,7 @@ class VedtakGrunnlagMapper(
             behandling.run {
                 val virkningstidspunkt =
                     if (erBidrag()) {
-                        søknadsbarnRolle.virkningstidspunkt ?: behandling.virkningstidspunkt
+                        søknadsbarnRolle.virkningstidspunktBeregnet
                     } else {
                         behandling.virkningstidspunkt
                     }
