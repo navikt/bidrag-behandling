@@ -344,6 +344,11 @@ class BehandlingService(
                 )
             }
         }
+
+        val behandlingDo = opprettBehandlingHvisIkkeEksisterer(behandling)
+
+        grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo)
+
         behandling.søknadsbarn.forEach { rolle ->
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
@@ -358,10 +363,6 @@ class BehandlingService(
                 }
             }
         }
-        val behandlingDo = opprettBehandlingHvisIkkeEksisterer(behandling)
-
-        grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo)
-
         log.debug {
             "Opprettet behandling for stønadstype ${opprettBehandling.stønadstype} og engangsbeløptype " +
                 "${opprettBehandling.engangsbeløpstype} vedtakstype ${opprettBehandling.vedtakstype} " +
