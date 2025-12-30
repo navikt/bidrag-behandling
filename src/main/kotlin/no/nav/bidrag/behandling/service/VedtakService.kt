@@ -665,16 +665,16 @@ class VedtakService(
                             it.kilde == BehandlingsrefKilde.BISYS_SØKNAD
                         }.map { it.referanse.toLong() }
                 val response = fatteVedtak(vedtakRequest)
-//                behandlingService.oppdaterDelvedtakFattetStatus(
-//                    behandlingsid = behandling.id!!,
-//                    fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-//                    resultat =
-//                        FattetVedtak(
-//                            vedtaksid = response.vedtaksid,
-//                            vedtakstype = vedtakRequest.type,
-//                            referanse = vedtakRequest.unikReferanse ?: "ukjent",
-//                        ),
-//                )
+                behandlingService.oppdaterDelvedtakFattetStatus(
+                    behandlingsid = behandling.id!!,
+                    fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                    resultat =
+                        FattetVedtak(
+                            vedtaksid = response.vedtaksid,
+                            vedtakstype = vedtakRequest.type,
+                            referanse = vedtakRequest.unikReferanse ?: "ukjent",
+                        ),
+                )
                 val aldersjusteringBeregnet =
                     vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
                         vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
