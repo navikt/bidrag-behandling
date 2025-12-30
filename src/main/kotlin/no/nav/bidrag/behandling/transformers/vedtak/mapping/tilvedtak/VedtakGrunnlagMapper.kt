@@ -420,7 +420,7 @@ class VedtakGrunnlagMapper(
                         val etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)
                         val skalInnkreves =
                             behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING || etterfølgendeVedtak != null ||
-                                innkrevesFraPeriode != null && innkrevesFraPeriode.overlapper(beregningsperiode)
+                                (innkrevesFraPeriode != null && innkrevesFraPeriode.overlapper(beregningsperiode))
                         OmgjøringOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
                             omgjørVedtakId = behandling.omgjøringsdetaljer?.opprinneligVedtakId!!,
