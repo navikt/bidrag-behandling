@@ -1435,7 +1435,10 @@ class GrunnlagService(
                 true
             }
 
-            behandling.grunnlagsinnhentingFeilet != null && antallMinutter > 10 -> {
+            // Ikke hent på nytt i testmiljøene da det vil alltid feile i Q1 feks
+            !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled &&
+                behandling.grunnlagsinnhentingFeilet != null &&
+                antallMinutter > 10 -> {
                 LocalDateTime.now().minusMinutes(10) >
                     behandling.grunnlagSistInnhentet
             }
