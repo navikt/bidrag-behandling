@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
+import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
+import no.nav.bidrag.behandling.database.datamodell.extensions.lasterGrunnlagAsync
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -16,6 +18,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequ
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettKategoriRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.SjekkLasterGrunnlagResponse
+import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -51,7 +55,9 @@ import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsni
 import no.nav.bidrag.behandling.transformers.behandling.toSimple
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRequest
 import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRespons
 import org.springframework.http.ResponseEntity
@@ -62,6 +68,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.YearMonth
 
 private val log = KotlinLogging.logger {}
 
@@ -336,6 +345,22 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
         @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
     ): BehandlingDtoV2 {
+        val lasterGrunnlagStatus = behandlingRepository.hentLasterGrunnlagStatus(behandlingsid)
+        if (lasterGrunnlagStatus.lasterGrunnlagAsync()) {
+            return BehandlingDtoV2(
+                id = behandlingsid,
+                lasterGrunnlag = true,
+                type = TypeBehandling.BIDRAG,
+                vedtakstype = Vedtakstype.ENDRING,
+                opprettetTidspunkt = LocalDateTime.now(),
+                saksnummer = "",
+                søktAv = SøktAvType.BIDRAGSMOTTAKER,
+                søktFomDato = LocalDate.now(),
+                mottattdato = LocalDate.now(),
+                behandlerenhet = "",
+                virkningstidspunktV3 = VirkningstidspunktDtoV3(false, false, false, YearMonth.now()),
+            )
+        }
         val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
         return dtomapper.tilDto(behandling)
     }
@@ -590,5 +615,18 @@ class BehandlingControllerV2(
             behandlingRepository.findBehandlingSimple(behandlingsid)
         validerBehandlingService.validerKanBehandlesIBisys(behandling)
         return ResponseEntity.accepted().build()
+    }
+
+    @PostMapping("/behandling/lasterGrunnlag/{behandlingsid}")
+    @Operation(
+        description = "Sjekk om grunnlag lastes inn async for behandling",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun sjekkLasterGrunnlag(
+        @PathVariable behandlingsid: Long,
+    ): SjekkLasterGrunnlagResponse {
+        val lasterGrunnlagStatus =
+            behandlingRepository.hentLasterGrunnlagStatus(behandlingsid)
+        return SjekkLasterGrunnlagResponse(lasterGrunnlagStatus.lasterGrunnlagAsync())
     }
 }

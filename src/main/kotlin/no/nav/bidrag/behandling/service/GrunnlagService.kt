@@ -8,6 +8,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagstypeIkkeStøttetException
+import no.nav.bidrag.behandling.async.BestillAsyncJobService
+import no.nav.bidrag.behandling.async.dto.GrunnlagInnhentingBestilling
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
@@ -19,6 +21,8 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
+import no.nav.bidrag.behandling.database.datamodell.extensions.lasterGrunnlagAsync
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
@@ -171,6 +175,8 @@ class GrunnlagService(
     private val personConsumer: BidragPersonConsumer? = null,
     @Lazy
     private val ffService: ForholdsmessigFordelingService? = null,
+    private val behandlingRepository: BehandlingRepository? = null,
+    private val bestillAsyncJobService: BestillAsyncJobService? = null,
 ) {
     @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
     lateinit var grenseInnhenting: String
@@ -194,22 +200,32 @@ class GrunnlagService(
         return gjelder to hentetGrunnlag
     }
 
-//    @Transactional(propagation = Propagation.REQUIRES_NEW)
-//    fun oppdaterGrunnlagForBehandlingAsync(behandlingId: Long) {
-//        grunnlagFetchTaskExecutor?.execute {
-//            try {
-//                val behandling = behandlngRepository!!.findBehandlingById(behandlingId).get()
-//                // Your long-running method
-//                oppdatereGrunnlagForBehandling(behandling)
-//                val metadata = behandling.metadata ?: BehandlingMetadataDo()
-//                metadata.setOppdatererGrunnlagAsync(false)
-//                behandling.metadata = metadata
-//            } catch (e: Exception) {
-//                // Handle exceptions
-//                log.error(e) { "Error processing behandling $behandlingId" }
-//            }
-//        }
-//    }
+    @Transactional
+    fun oppdaterGrunnlagForBehandlingAsync(behandling: Behandling) {
+        if (!UnleashFeatures.HENT_GRUNNLAG_ASYNC.isEnabled) {
+            return oppdatereGrunnlagForBehandling(behandling)
+        }
+        val behandlingId = behandling.id!!
+        if (behandlingRepository!!.hentLasterGrunnlagStatus(behandlingId)?.lasterGrunnlagAsync() == true) {
+            log.info { "Grunnlag for behandling $behandlingId lastes allerede, hopper over ny innhenting" }
+            return
+        }
+        log.info { "Bestiller innhenting av grunnlag for behandling $behandlingId" }
+        behandlingRepository.oppdaterLasterGrunnlagStatus(behandlingId)
+        bestillAsyncJobService?.bestillInnhentingAvGrunnlag(GrunnlagInnhentingBestilling(behandlingId))
+    }
+
+    @Transactional
+    fun oppdatereGrunnlagForBehandling(behandlingId: Long) {
+        val behandling = behandlingRepository?.findBehandlingById(behandlingId)!!.get()
+        if (behandling.metadata?.statusLasterGrunnlagAsync() != LasterGrunnlagAsyncStatus.BESTILT) {
+            log.info { "Grunnlag for behandling $behandlingId lastes allerede, hopper over ny innhenting" }
+            return
+        }
+        log.info { "Henter grunnlag for behandling $behandlingId" }
+        oppdatereGrunnlagForBehandling(behandling)
+        behandlingRepository!!.resetLasterGrunnlagStatus(behandlingId)
+    }
 
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
@@ -320,6 +336,8 @@ class GrunnlagService(
                 }
             }
         }
+
+        behandling.metadata?.avsluttLastGrunnlagAsync()
     }
 
     suspend fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {

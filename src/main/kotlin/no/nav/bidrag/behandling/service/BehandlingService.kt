@@ -353,7 +353,7 @@ class BehandlingService(
             }
         }
 
-        grunnlagService.oppdatereGrunnlagForBehandling(behandlingDo)
+        grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandlingDo)
 
         behandling.søknadsbarn.forEach { rolle ->
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
@@ -512,7 +512,7 @@ class BehandlingService(
     ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         if (!ikkeHentGrunnlag) {
-            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+            grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandling)
         }
         virkningstidspunktService.run {
             behandling.oppdatereVirkningstidspunktSærbidrag()

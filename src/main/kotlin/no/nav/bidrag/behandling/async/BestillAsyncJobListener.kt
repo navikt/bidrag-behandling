@@ -17,6 +17,7 @@ private val log = KotlinLogging.logger {}
 @Component
 class BestillAsyncJobListener(
     private val behandlingService: BehandlingService,
+    private val grunnlagService: GrunnlagService,
 ) {
     @EventListener
     @Transactional(Transactional.TxType.REQUIRES_NEW)
@@ -24,6 +25,7 @@ class BestillAsyncJobListener(
     fun bestillInnhentingAvGrunnlag(bestilling: GrunnlagInnhentingBestilling) {
         if (bestilling.waitForCommit) return
         log.info { "Async: Henter grunnlag for behandling ${bestilling.behandlingId}" }
+        grunnlagService.oppdatereGrunnlagForBehandling(bestilling.behandlingId)
     }
 
     @EventListener

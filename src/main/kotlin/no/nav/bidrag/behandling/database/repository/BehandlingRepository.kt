@@ -4,6 +4,7 @@ package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
 import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
 import org.springframework.data.jpa.repository.Modifying
@@ -15,6 +16,18 @@ import java.util.Optional
 
 
 interface BehandlingRepository : CrudRepository<Behandling, Long> {
+    @Query("select hstore_to_json(metadata) ->> 'laster_grunnlag_async_status' from behandling b where b.id = :id and b.deleted = false", nativeQuery = true)
+    fun hentLasterGrunnlagStatus(id: Long): LasterGrunnlagAsyncStatus?
+
+
+    @Modifying
+    @Query("update behandling set metadata = coalesce(metadata, hstore('')) || hstore(array['laster_grunnlag_async_status', 'laster_grunnlag_async_tidspunkt'], array['BESTILT', now()::text]) where id = :id and deleted = false", nativeQuery = true)
+    fun oppdaterLasterGrunnlagStatus(id: Long)
+
+    @Modifying
+    @Query("update behandling set metadata = coalesce(metadata, hstore('')) || hstore(array['laster_grunnlag_async_status', 'laster_grunnlag_async_tidspunkt'], array['FERDIG', now()::text]) where id = :id and deleted = false", nativeQuery = true)
+    fun resetLasterGrunnlagStatus(id: Long)
+
     @Query(
         """
     SELECT new no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple(
