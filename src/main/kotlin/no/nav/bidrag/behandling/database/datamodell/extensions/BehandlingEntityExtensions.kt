@@ -5,7 +5,9 @@ import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 import no.nav.bidrag.behandling.config.UnleashFeatures
+import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.tilÅrsakstype
+import no.nav.bidrag.behandling.transformers.toLocalDateTime
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -19,6 +21,18 @@ import java.time.LocalDateTime
 fun LasterGrunnlagAsyncStatus?.lasterGrunnlagAsync(): Boolean =
     UnleashFeatures.HENT_GRUNNLAG_ASYNC.isEnabled && this != null &&
         listOf(LasterGrunnlagAsyncStatus.BESTILT, LasterGrunnlagAsyncStatus.LASTER).contains(this)
+
+data class LasterGrunnlagDetaljer(
+    val status: LasterGrunnlagAsyncStatus,
+    val tidspunkt: LocalDateTime = LocalDateTime.now(),
+) {
+    companion object {
+        fun LasterGrunnlagDetaljer?.erBestilt() = this != null && status == LasterGrunnlagAsyncStatus.BESTILT
+
+        fun LasterGrunnlagDetaljer?.lasterGrunnlag() =
+            this != null && status.lasterGrunnlagAsync() && tidspunkt.isAfter(LocalDateTime.now().minusMinutes(2))
+    }
+}
 
 enum class LasterGrunnlagAsyncStatus {
     BESTILT,
@@ -60,16 +74,21 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
         update(lasterGrunnlagAsyncStatus, LasterGrunnlagAsyncStatus.FERDIG.name)
     }
 
-    fun statusLasterGrunnlagAsync(): LasterGrunnlagAsyncStatus? =
-        if (!UnleashFeatures.HENT_GRUNNLAG_ASYNC.isEnabled) {
-            LasterGrunnlagAsyncStatus.FERDIG
-        } else {
-            get(lasterGrunnlagAsyncStatus)?.let {
-                LasterGrunnlagAsyncStatus.valueOf(it)
+    fun lasterGrunnlagDetaljer(): LasterGrunnlagDetaljer {
+        val status =
+            if (!UnleashFeatures.HENT_GRUNNLAG_ASYNC.isEnabled) {
+                LasterGrunnlagAsyncStatus.FERDIG
+            } else {
+                get(lasterGrunnlagAsyncStatus)?.let {
+                    LasterGrunnlagAsyncStatus.valueOf(it)
+                } ?: LasterGrunnlagAsyncStatus.FERDIG
             }
-        }
+        val tidspunkt =
+            get(lasterGrunnlagAsync).toLocalDateTime()
+        return LasterGrunnlagDetaljer(status, tidspunkt)
+    }
 
-    fun lasterGrunnlagAsync() = statusLasterGrunnlagAsync()?.lasterGrunnlagAsync()
+    fun lasterGrunnlagAsync() = lasterGrunnlagDetaljer().lasterGrunnlag()
 
     fun setKlagePåBisysVedtak() {
         update(klagePåBisysVedtak, "true")
