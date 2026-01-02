@@ -158,7 +158,7 @@ val testdataBarn1 =
         navn = "Kran Mappe",
         ident = "1344124",
         rolletype = Rolletype.BARN,
-        fødselsdato = LocalDate.parse("2021-03-01"),
+        fødselsdato = LocalDate.parse("2020-03-01"),
     )
 val testdataBarn2 =
     TestDataPerson(
