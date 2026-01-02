@@ -1341,14 +1341,16 @@ class ForholdsmessigFordelingService(
         val krahaverFraÅpneSaker = sakKravhaverListe.map { it.kravhaver }
 
         val løpendeBidragsaker =
-            løpendeBidraggsakerBP.filter { !krahaverFraÅpneSaker.contains(it.kravhaver.verdi) }.map {
-                SakKravhaver(
-                    saksnummer = it.sak.verdi,
-                    kravhaver = it.kravhaver.verdi,
-                    stønadstype = it.type,
-                    løperBidragFra = it.periodeFra,
-                )
-            }
+            løpendeBidraggsakerBP
+                .filter { !krahaverFraÅpneSaker.contains(it.kravhaver.verdi) }
+                .map {
+                    SakKravhaver(
+                        saksnummer = it.sak.verdi,
+                        kravhaver = it.kravhaver.verdi,
+                        stønadstype = it.type,
+                        løperBidragFra = it.periodeFra,
+                    )
+                }.distinctBy { it.kravhaver }
         val bidragsaker = løpendeBidragsaker + sakKravhaverListe
         return bidragsaker
             .sortedWith { a, b ->
