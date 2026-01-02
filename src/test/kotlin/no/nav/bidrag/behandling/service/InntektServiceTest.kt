@@ -333,7 +333,7 @@ class InntektServiceTest : TestContainerRunner() {
                 barnetillegg.belop shouldBe (500).toBigDecimal()
                 barnetillegg.taMed shouldBe true
                 barnetillegg.datoFom shouldBe behandling.virkningstidspunkt
-                barnetillegg.datoTom shouldBe LocalDate.parse("2025-01-31")
+                barnetillegg.datoTom shouldBe null
                 barnetillegg.inntektsposter.size shouldBe 1
                 barnetillegg.inntektsposter.first().inntektstype shouldBe Inntektstype.BARNETILLEGG_PENSJON
                 barnetillegg.inntektsposter.first().beløp shouldBe (500).toBigDecimal()
