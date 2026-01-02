@@ -1176,7 +1176,7 @@ class UnderholdServiceTest {
             ikkeaktiveBearbeidaBarnetilsyn
                 .find { it.gjelder == testdataBarn1.ident }!!
                 .konvertereData<Set<BarnetilsynGrunnlagDto>>()
-                ?.shouldHaveSize(4)
+                ?.shouldHaveSize(3)
 
             assertSoftly(
                 ikkeaktiveBearbeidaBarnetilsyn

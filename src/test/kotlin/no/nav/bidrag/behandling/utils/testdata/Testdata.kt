@@ -158,7 +158,7 @@ val testdataBarn1 =
         navn = "Kran Mappe",
         ident = "1344124",
         rolletype = Rolletype.BARN,
-        fødselsdato = LocalDate.parse("2020-03-01"),
+        fødselsdato = LocalDate.parse("2021-03-01"),
     )
 val testdataBarn2 =
     TestDataPerson(
@@ -2187,7 +2187,7 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
 
 fun Behandling.leggeTilNyttBarnetilsyn(
     innhentet: LocalDateTime = LocalDateTime.now(),
-    fraDato: LocalDate = LocalDate.now().minusYears(1),
+    fraDato: LocalDate = LocalDate.now().minusYears(1).withDayOfMonth(1),
 ) {
     val barnetilsynInnhentesForRolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!
 
