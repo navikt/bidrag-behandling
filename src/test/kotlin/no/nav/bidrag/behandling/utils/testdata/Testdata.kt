@@ -2187,7 +2187,7 @@ fun Behandling.leggeTilGjeldendeBarnetilsyn(
 
 fun Behandling.leggeTilNyttBarnetilsyn(
     innhentet: LocalDateTime = LocalDateTime.now(),
-    fraDato: LocalDate = LocalDate.now().minusYears(1),
+    fraDato: LocalDate = LocalDate.now().minusYears(1).withDayOfMonth(1),
 ) {
     val barnetilsynInnhentesForRolle = Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(this)!!
 

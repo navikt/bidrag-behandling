@@ -182,7 +182,7 @@ class BehandlingService(
             ),
         )
         if (behandling.vedtakstype.opprettForsendelse() && (oppretterBehandling || opprettForsendelse)) {
-            bestillAsyncJobService.bestillOpprettelseAvForsendelse(OpprettForsendelseBestilling(behandling.id!!))
+            opprettForsendelseForBehandling(behandling.id!!)
         }
         return lagretBehandling
     }

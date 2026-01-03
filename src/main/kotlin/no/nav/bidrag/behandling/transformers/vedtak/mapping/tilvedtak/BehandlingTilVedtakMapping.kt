@@ -638,7 +638,6 @@ class BehandlingTilVedtakMapping(
         enhet: String? = null,
         byggEttVedtak: Boolean,
     ): List<OpprettVedtakRequestDto> {
-        val behandling = this
         val behandlingSaker = saker.associateWith { sakConsumer.hentSak(it) }
         val beregning = beregningService.beregneBidrag(id!!)
 

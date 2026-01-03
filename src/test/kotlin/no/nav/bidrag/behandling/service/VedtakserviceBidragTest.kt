@@ -421,7 +421,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
                 it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
                 it.beslutning shouldBe Beslutningstype.ENDRING
-                it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
+                it.førsteIndeksreguleringsår shouldBe 2026
 
                 it.periodeListe shouldHaveSize 8
                 it.grunnlagReferanseListe shouldHaveSize 17
@@ -1712,7 +1712,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.mottaker shouldBe Personident(behandling.bidragsmottaker!!.ident!!)
                 it.innkreving shouldBe Innkrevingstype.MED_INNKREVING
                 it.beslutning shouldBe Beslutningstype.ENDRING
-                it.førsteIndeksreguleringsår shouldBe YearMonth.now().plusYears(1).year
+                it.førsteIndeksreguleringsår shouldBe 2026
 
                 it.periodeListe shouldHaveSize 8
                 it.grunnlagReferanseListe shouldHaveSize 8

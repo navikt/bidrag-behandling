@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.Ressurstype
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
+import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.extensions.lasterGrunnlagAsync
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
@@ -346,7 +347,7 @@ class BehandlingControllerV2(
         @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
     ): BehandlingDtoV2 {
         val lasterGrunnlagStatus = behandlingRepository.hentLasterGrunnlagStatus(behandlingsid)
-        if (lasterGrunnlagStatus.lasterGrunnlagAsync()) {
+        if (lasterGrunnlagStatus.lasterGrunnlag()) {
             return BehandlingDtoV2(
                 id = behandlingsid,
                 lasterGrunnlag = true,
@@ -627,6 +628,6 @@ class BehandlingControllerV2(
     ): SjekkLasterGrunnlagResponse {
         val lasterGrunnlagStatus =
             behandlingRepository.hentLasterGrunnlagStatus(behandlingsid)
-        return SjekkLasterGrunnlagResponse(lasterGrunnlagStatus.lasterGrunnlagAsync())
+        return SjekkLasterGrunnlagResponse(lasterGrunnlagStatus.lasterGrunnlag())
     }
 }

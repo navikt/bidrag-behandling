@@ -95,7 +95,8 @@ fun Rolle.finnBeregnFra(): YearMonth =
                     .finnPeriodeLøperBidrag(this)
                     ?.fom
                     ?.let { maxOf(it, behandling.eldsteVirkningstidspunkt.toYearMonth()) }
-                    ?: virkningstidspunktRolle.toYearMonth()
+                    ?: behandling.eldsteVirkningstidspunkt.toYearMonth()
+                // TODO: Beregning bør ta hensyn til løpende bidrag virkningstidspunktRolle.toYearMonth()
             }
         } else {
             virkningstidspunktRolle.toYearMonth()

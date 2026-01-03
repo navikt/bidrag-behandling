@@ -4,7 +4,6 @@ package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
 import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
 import org.springframework.data.jpa.repository.Modifying
@@ -15,9 +14,7 @@ import java.time.LocalDateTime
 import java.util.Optional
 
 
-interface BehandlingRepository : CrudRepository<Behandling, Long> {
-    @Query("select hstore_to_json(metadata) ->> 'laster_grunnlag_async_status' from behandling b where b.id = :id and b.deleted = false", nativeQuery = true)
-    fun hentLasterGrunnlagStatus(id: Long): LasterGrunnlagAsyncStatus?
+interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandlingRepository {
 
 
     @Modifying

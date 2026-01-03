@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
@@ -1234,7 +1235,7 @@ private fun GrunnlagDto.tilRolle(
     resultatFraVedtakVedInnkrevingsgrunnlag: GrunnlagFraVedtak? = null,
 ): Rolle {
     val virkningstidspunktGrunnlag = grunnlagsliste.hentVirkningstidspunkt(referanse)
-    val søknader = if (grunnlagsliste.harSlåttUtTilForholdsmessigFordeling()) grunnlagsliste.hentSøknader(referanse) else null
+
     val aldersjustering = grunnlagsliste.hentAldersjusteringDetaljerForBarn(referanse)
     return Rolle(
         behandling,
@@ -1273,13 +1274,15 @@ private fun GrunnlagDto.tilRolle(
         behandlingstema = behandling.behandlingstema,
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         forholdsmessigFordeling =
-            if (søknader != null && søknader.isNotEmpty()) {
+            if (grunnlagsliste.harOpprettetForholdsmessigFordeling()) {
+                val søknader = grunnlagsliste.hentSøknader(referanse)
+                val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
                 val erRevurdering = søknader.all { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
                 val førsteSøknad = søknader.first()
                 ForholdsmessigFordelingRolle(
                     tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad.saksnummer ?: behandling.saksnummer,
                     behandlerenhet = behandling.behandlerEnhet,
-                    delAvOpprinneligBehandling = !erRevurdering,
+                    delAvOpprinneligBehandling = personGrunnlag.delAvOpprinneligBehandling,
                     erRevurdering = erRevurdering,
                     bidragsmottaker = stønadsendring?.mottaker?.verdi,
                     søknader =

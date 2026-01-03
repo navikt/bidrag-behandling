@@ -127,20 +127,21 @@ fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overs
 
     barnetilsyn
         .groupBy { it.barnPersonId }
-        .forEach { (gjelder, perioder) ->
-            perioder
-                .filter { it.periodeFra < virkningstidspunkt }
-                .justerBarnetilsynPeriodeTil()
-                .forEach { periode ->
-                    if (periode.periodeTil != null && virkningstidspunkt >= periode.periodeTil) {
-                        barnetilsyn.remove(periode)
-                    } else {
-                        barnetilsyn.add(periode.copy(periodeFra = virkningstidspunkt))
-                        barnetilsyn.remove(periode)
-                    }
-                }
+        .forEach { (barnPersonId, perioder) ->
+            val justertePerioder =
+                perioder
+                    .justerBarnetilsynPeriodeTil()
+                    .mapNotNull { periode ->
+                        if (periode.periodeFra >= virkningstidspunkt) {
+                            periode
+                        } else if (periode.periodeTil != null && virkningstidspunkt >= periode.periodeTil) {
+                            null
+                        } else {
+                            periode.copy(periodeFra = virkningstidspunkt)
+                        }
+                    }.toSet()
 
-            behandling.overskriveBearbeidaBarnetilsynsgrunnlag(gjelder, barnetilsyn, overskriveAktiverte)
+            behandling.overskriveBearbeidaBarnetilsynsgrunnlag(barnPersonId, justertePerioder, overskriveAktiverte)
         }
 }
 

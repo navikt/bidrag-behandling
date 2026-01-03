@@ -22,6 +22,8 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
+import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.erBestilt
+import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.extensions.lasterGrunnlagAsync
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
@@ -206,7 +208,7 @@ class GrunnlagService(
             return oppdatereGrunnlagForBehandling(behandling)
         }
         val behandlingId = behandling.id!!
-        if (behandlingRepository!!.hentLasterGrunnlagStatus(behandlingId)?.lasterGrunnlagAsync() == true) {
+        if (behandlingRepository!!.hentLasterGrunnlagStatus(behandlingId).lasterGrunnlag()) {
             log.info { "Grunnlag for behandling $behandlingId lastes allerede, hopper over ny innhenting" }
             return
         }
@@ -218,7 +220,7 @@ class GrunnlagService(
     @Transactional
     fun oppdatereGrunnlagForBehandling(behandlingId: Long) {
         val behandling = behandlingRepository?.findBehandlingById(behandlingId)!!.get()
-        if (behandling.metadata?.statusLasterGrunnlagAsync() != LasterGrunnlagAsyncStatus.BESTILT) {
+        if (behandling.metadata?.lasterGrunnlagDetaljer()?.erBestilt() == false) {
             log.info { "Grunnlag for behandling $behandlingId lastes allerede, hopper over ny innhenting" }
             return
         }

@@ -337,7 +337,7 @@ fun Behandling.tilInntektDtoV3(
                 inntekter =
                     inntekter
                         .filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                        .filter { it.gjelderBarn == barn.ident }
+                        .filter { it.gjelderBarn == barn.ident && it.ident == rolle.ident }
                         .sorterEtterDatoOgBarn()
                         .ekskluderYtelserFørVirkningstidspunkt()
                         .tilInntektDtoV2()
@@ -359,7 +359,7 @@ fun Behandling.tilInntektDtoV3(
                 inntekter =
                     inntekter
                         .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                        .filter { it.gjelderBarn == barn.ident }
+                        .filter { it.gjelderBarn == barn.ident && it.ident == rolle.ident }
                         .sorterEtterDatoOgBarn()
                         .ekskluderYtelserFørVirkningstidspunkt()
                         .tilInntektDtoV2()

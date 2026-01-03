@@ -480,7 +480,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly(stønadTilBarnetilsyn.elementAt(0)) {
                     it.omfang shouldBe Tilsynstype.HELTID
-                    it.under_skolealder shouldBe true
+                    it.under_skolealder shouldBe false
                     it.fom shouldBe LocalDate.of(2023, 1, 1)
                     it.tom shouldBe LocalDate.of(2023, 12, 31)
                     it.kilde shouldBe Kilde.OFFENTLIG
@@ -488,7 +488,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly(stønadTilBarnetilsyn.elementAt(1)) {
                     it.omfang shouldBe Tilsynstype.HELTID
-                    it.under_skolealder shouldBe true
+                    it.under_skolealder shouldBe false
                     it.fom shouldBe LocalDate.of(2024, 1, 1)
                     it.tom shouldBe null
                     it.kilde shouldBe Kilde.OFFENTLIG
