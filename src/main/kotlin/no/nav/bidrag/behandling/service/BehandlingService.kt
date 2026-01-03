@@ -36,6 +36,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettForsendelse
@@ -50,6 +51,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -591,22 +593,31 @@ class BehandlingService(
         request: OppdaterRollerRequest,
     ): OppdaterRollerResponse {
         val oppdaterRollerListe = request.roller
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        val behandling =
+            behandlingRepository.findBehandlingById(behandlingId).get().let {
+                if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+                    behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!)!!
+                } else {
+                    it
+                }
+            }
+
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke oppdatere behandling hvor vedtak er fattet",
             )
         }
-
-        secureLogger.debug { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
-        val eksisterendeRoller = behandling.roller
         val oppdaterRollerNyesteIdent =
             oppdaterRollerListe.map { rolle ->
                 rolle.copy(
                     ident = oppdaterTilNyesteIdent(rolle.ident?.verdi, behandlingId)?.let { Personident(it) } ?: rolle.ident,
                 )
             }
+
+        secureLogger.debug { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
+
+        val eksisterendeRoller = behandling.roller
 
         if (request.søknadsid != null) {
             behandling.oppdaterEksisterendeRoller(request.søknadsid, request.saksnummer ?: behandling.saksnummer, oppdaterRollerNyesteIdent)
@@ -652,8 +663,8 @@ class BehandlingService(
 
         oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
         oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
-
-        // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
+        oppdaterUnderholdskostnadForRoller(behandling, rollerSomLeggesTil)
+        oppdaterOpphørForRoller(behandling, rollerSomLeggesTil)
 
         lagreBehandling(behandling, forceSave = true)
 
@@ -699,6 +710,40 @@ class BehandlingService(
                     }
                 }
             }
+    }
+
+    private fun oppdaterOpphørForRoller(
+        behandling: Behandling,
+        rollerSomLeggesTil: List<OpprettRolleDto>,
+    ) {
+        if (behandling.tilType() == TypeBehandling.BIDRAG) {
+            rollerSomLeggesTil.forEach { r ->
+                val rolle = behandling.roller.find { it.ident == r.ident!!.verdi }!!
+                behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
+                    val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
+                    if (opphørsdato != null) {
+                        virkningstidspunktService.oppdaterOpphørsdato(
+                            behandling.id!!,
+                            OppdaterOpphørsdatoRequestDto(
+                                rolle.id!!,
+                                opphørsdato,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun oppdaterUnderholdskostnadForRoller(
+        behandling: Behandling,
+        rollerSomLeggesTil: List<OpprettRolleDto>,
+    ) {
+        if (behandling.tilType() == TypeBehandling.BIDRAG) {
+            rollerSomLeggesTil.forEach { rolle ->
+                underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = rolle.ident), kilde = Kilde.OFFENTLIG)
+            }
+        }
     }
 
     private fun oppdatereSamværForRoller(

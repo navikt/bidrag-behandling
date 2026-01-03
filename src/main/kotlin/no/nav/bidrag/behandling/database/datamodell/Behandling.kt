@@ -220,6 +220,23 @@ open class Behandling(
         }
     }
 
+    fun hentSøknad(finnSøknadsid: Long) =
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn.firstNotNullOfOrNull { it.forholdsmessigFordeling!!.søknaderUnderBehandling.find { it.søknadsid == finnSøknadsid } }
+        } else if (soknadsid == finnSøknadsid) {
+            ForholdsmessigFordelingSøknadBarn(
+                mottattDato = mottattdato,
+                søknadFomDato = søktFomDato,
+                søktAvType = soknadFra,
+                behandlingstema = behandlingstema,
+                behandlingstype = søknadstype,
+                søknadsid = soknadsid,
+                saksnummer = saksnummer,
+            )
+        } else {
+            null
+        }
+
     fun søknadForSak(saksnummer: String) =
         if (erIForholdsmessigFordeling) {
             søknadsbarn
