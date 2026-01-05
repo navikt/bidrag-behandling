@@ -19,7 +19,7 @@ open class Sivilstand(
     @JoinColumn(name = "behandling_id", nullable = false)
     open var behandling: Behandling,
     open val datoFom: LocalDate,
-    open val datoTom: LocalDate? = null,
+    open var datoTom: LocalDate? = null,
     @Enumerated(EnumType.STRING)
     open val sivilstand: Sivilstandskode,
     @Enumerated(EnumType.STRING)
