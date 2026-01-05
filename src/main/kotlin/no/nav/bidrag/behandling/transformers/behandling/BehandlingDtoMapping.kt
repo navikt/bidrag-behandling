@@ -385,7 +385,7 @@ fun Map<Grunnlagsdatatype, GrunnlagFeilDto?>.tilGrunnlagsinnhentingsfeil(behandl
         .map { feil ->
             Grunnlagsinnhentingsfeil(
                 rolle =
-                    feil.value?.let { p -> behandling.roller.find { p.personId == it.ident }?.tilDto()!! }
+                    feil.value?.let { p -> behandling.roller.find { p.personId == it.ident }?.tilDto() }
                         ?: behandling.bidragsmottaker!!.tilDto(),
                 feilmelding = feil.value?.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
                 grunnlagsdatatype = feil.key,
