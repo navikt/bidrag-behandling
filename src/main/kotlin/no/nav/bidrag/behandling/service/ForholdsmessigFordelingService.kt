@@ -20,6 +20,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
+import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
+import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnEldsteSøktFomDato
@@ -146,6 +148,7 @@ class ForholdsmessigFordelingService(
     private val forsendelseService: ForsendelseService,
     private val beregningService: BeregningService,
     private val virkningstidspunktService: VirkningstidspunktService,
+    private val underholdService: UnderholdService,
 ) {
     @Transactional
     fun lukkAllFFSaker(behandlingsid: Long) {
@@ -242,7 +245,15 @@ class ForholdsmessigFordelingService(
         }
 
         giSakTilgangTilEnhet(behandling, behandlerEnhet)
-        opprettSamværOgUnderholdForBarn(behandling)
+        oppdaterBehandlingEtterOppdatertRoller(
+            behandling,
+            underholdService,
+            virkningstidspunktService,
+            behandling.søknadsbarn.map {
+                OpprettRolleDto(Rolletype.BARN, it.personident!!, it.navn, it.fødselsdato)
+            },
+            emptyList(),
+        )
         behandling.syncGebyrSøknadReferanse()
         behandlingService.lagreBehandling(behandling)
 
@@ -532,7 +543,13 @@ class ForholdsmessigFordelingService(
                 }
 
         behandling.roller.addAll(rollerSomSkalLeggesTil)
-        opprettSamværOgUnderholdForBarn(behandling)
+        oppdaterBehandlingEtterOppdatertRoller(
+            behandling,
+            underholdService,
+            virkningstidspunktService,
+            rollerSomSkalLeggesTilDto,
+            rollerSomSkalSlettes,
+        )
         val rollerSomSkalSlettes =
             behandling.roller
                 .filter { identerSomSkalSlettes.contains(it.ident) }

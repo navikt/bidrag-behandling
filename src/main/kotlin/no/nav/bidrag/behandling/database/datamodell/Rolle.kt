@@ -62,7 +62,7 @@ open class Rolle(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
     open val navn: String? = null,
-    open val deleted: Boolean = false,
+    open var deleted: Boolean = false,
     open var harGebyrsøknad: Boolean = false,
     @Column(columnDefinition = "jsonb", name = "manuelt_overstyrt_gebyr")
     @ColumnTransformer(write = "?::jsonb")
@@ -228,6 +228,15 @@ open class Rolle(
 
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Rolle) return false
+        if (id != null && other.id != null) return id == other.id
+        return false
+    }
+
+    override fun hashCode(): Int = id?.hashCode() ?: 0
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

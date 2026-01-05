@@ -35,6 +35,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
+import no.nav.bidrag.behandling.transformers.behandling.oppdaterUnderholdskostnadForRoller
+import no.nav.bidrag.behandling.transformers.behandling.oppdatereSamværForRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
@@ -652,19 +655,20 @@ class BehandlingService(
             )
         } else {
             behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
-            behandling.roller.removeIf { r ->
-                val skalSlettes = identerSomSkalSlettes.contains(r.ident)
-                skalSlettes.ifTrue {
+            behandling.roller.forEach { r ->
+                if (identerSomSkalSlettes.contains(r.ident)) {
                     log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+                    r.deleted = true
                 }
-                skalSlettes
             }
+            oppdaterBehandlingEtterOppdatertRoller(
+                behandling,
+                underholdService,
+                virkningstidspunktService,
+                rollerSomLeggesTil,
+                rollerSomSkalSlettes,
+            )
         }
-
-        oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
-        oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
-        oppdaterUnderholdskostnadForRoller(behandling, rollerSomLeggesTil)
-        oppdaterOpphørForRoller(behandling, rollerSomLeggesTil)
 
         lagreBehandling(behandling, forceSave = true)
 
@@ -710,64 +714,5 @@ class BehandlingService(
                     }
                 }
             }
-    }
-
-    private fun oppdaterOpphørForRoller(
-        behandling: Behandling,
-        rollerSomLeggesTil: List<OpprettRolleDto>,
-    ) {
-        if (behandling.tilType() == TypeBehandling.BIDRAG) {
-            rollerSomLeggesTil.forEach { r ->
-                val rolle = behandling.roller.find { it.ident == r.ident!!.verdi }!!
-                behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
-                    val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
-                    if (opphørsdato != null) {
-                        virkningstidspunktService.oppdaterOpphørsdato(
-                            behandling.id!!,
-                            OppdaterOpphørsdatoRequestDto(
-                                rolle.id!!,
-                                opphørsdato,
-                            ),
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    private fun oppdaterUnderholdskostnadForRoller(
-        behandling: Behandling,
-        rollerSomLeggesTil: List<OpprettRolleDto>,
-    ) {
-        if (behandling.tilType() == TypeBehandling.BIDRAG) {
-            rollerSomLeggesTil.forEach { rolle ->
-                underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = rolle.ident), kilde = Kilde.OFFENTLIG)
-            }
-        }
-    }
-
-    private fun oppdatereSamværForRoller(
-        behandling: Behandling,
-        rollerSomLeggesTil: List<OpprettRolleDto>,
-    ) {
-        if (behandling.tilType() == TypeBehandling.BIDRAG) {
-            rollerSomLeggesTil.forEach { rolle ->
-                behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
-            }
-        }
-    }
-
-    private fun oppdatereHusstandsmedlemmerForRoller(
-        behandling: Behandling,
-        rollerSomLeggesTil: List<OpprettRolleDto>,
-    ) {
-        val nyeRollerSomIkkeHarHusstandsmedlemmer =
-            rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
-        behandling.husstandsmedlem.addAll(
-            nyeRollerSomIkkeHarHusstandsmedlemmer.map {
-                secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
-                it.toHusstandsmedlem(behandling)
-            },
-        )
     }
 }
