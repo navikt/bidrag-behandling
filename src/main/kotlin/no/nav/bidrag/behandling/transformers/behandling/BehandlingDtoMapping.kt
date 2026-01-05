@@ -134,6 +134,24 @@ fun oppdaterBehandlingEtterOppdatertRoller(
     rollerSomLeggesTil: List<OpprettRolleDto>,
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        val rolleBarn = behandling.roller.find { it.ident == rolle.ident!!.verdi }
+        val notater = behandling.notater.filter { it.rolle.ident == rolle.ident!!.verdi }
+        notater.forEach { notat ->
+            if (notat.type == Notattype.UNDERHOLDSKOSTNAD) {
+                behandling.notater
+                    .find {
+                        it.type == Notattype.UNDERHOLDSKOSTNAD &&
+                            it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER &&
+                            notat.erDelAvBehandlingen == it.erDelAvBehandlingen
+                    }?.let {
+                        it.innhold += "<br> ${notat.innhold}"
+                    }
+            }
+            rolleBarn!!.notat.remove(notat)
+            behandling.notater.remove(notat)
+        }
+    }
     oppdatereSamværForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
     oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTil, rollerSomSkalSlettes)
     oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
