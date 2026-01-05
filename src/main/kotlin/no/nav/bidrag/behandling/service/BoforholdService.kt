@@ -40,6 +40,8 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.filtrerUtUrelevantePerioder
+import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
+import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioderVoksne
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveAndreVoksneIHusstandMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaBostatusperioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
@@ -1085,94 +1087,6 @@ class BoforholdService(
                     }
                 }
             }
-    }
-
-    private fun Husstandsmedlem.oppdaterePerioder(
-        nyEllerOppdatertBostatusperiode: Bostatusperiode? = null,
-        sletteHusstandsmedlemsperiode: Long? = null,
-    ) {
-        val endreBostatus = tilEndreBostatus(nyEllerOppdatertBostatusperiode, sletteHusstandsmedlemsperiode)
-
-        val periodiseringsrequest = tilBoforholdBarnRequest(endreBostatus)
-
-        this.overskriveMedBearbeidaPerioder(
-            BoforholdApi.beregnBoforholdBarnV3(
-                behandling.eldsteVirkningstidspunkt,
-                rolle?.opphørsdato ?: behandling.globalOpphørsdato,
-                behandling.finnBeregnTilDatoBehandling(rolle),
-                behandling.tilTypeBoforhold(),
-                listOf(periodiseringsrequest),
-            ),
-        )
-    }
-
-    private fun Husstandsmedlem.oppdaterePerioderVoksne(
-        gjelderRolle: Rolle,
-        nyEllerOppdatertBostatusperiode: Bostatusperiode? = null,
-        sletteHusstandsmedlemsperiode: Long? = null,
-    ) {
-        val endreBostatus = tilEndreBostatus(nyEllerOppdatertBostatusperiode, sletteHusstandsmedlemsperiode)
-        val periodiseringsrequest = tilBoforholdVoksneRequest(gjelderRolle, endreBostatus)
-
-        val borMedAndreVoksneperioder =
-            BoforholdApi.beregnBoforholdAndreVoksne(
-                behandling.eldsteVirkningstidspunkt,
-                periodiseringsrequest,
-                behandling.globalOpphørsdato,
-                behandling.finnBeregnTilDatoBehandling(),
-            )
-
-        this.overskriveMedBearbeidaBostatusperioder(borMedAndreVoksneperioder)
-    }
-
-    private fun Husstandsmedlem.tilEndreBostatus(
-        nyEllerOppdatertBostatusperiode: Bostatusperiode? = null,
-        sletteHusstandsmedlemsperiode: Long? = null,
-    ): EndreBostatus? {
-        try {
-            if (nyEllerOppdatertBostatusperiode == null && sletteHusstandsmedlemsperiode == null) {
-                return null
-            }
-
-            return EndreBostatus(
-                typeEndring = bestemmeEndringstype(nyEllerOppdatertBostatusperiode, sletteHusstandsmedlemsperiode),
-                nyBostatus = bestemmeNyBostatus(nyEllerOppdatertBostatusperiode),
-                originalBostatus =
-                    bestemmeOriginalBostatus(
-                        nyEllerOppdatertBostatusperiode,
-                        sletteHusstandsmedlemsperiode,
-                    ),
-            )
-        } catch (_: IllegalArgumentException) {
-            log.warn {
-                "Mottok mangelfulle opplysninger ved oppdatering av boforhold i behandling ${this.behandling.id}. " +
-                    "Mottatt input: nyEllerOppdatertHusstandsmedlemsperiode=$nyEllerOppdatertBostatusperiode, " +
-                    "sletteHusstansmedlemsperiode=$sletteHusstandsmedlemsperiode"
-            }
-            oppdateringAvBoforholdFeilet(
-                "Oppdatering av boforhold i behandling ${this.behandling.id} feilet pga mangelfulle inputdata",
-            )
-        }
-    }
-
-    private fun bestemmeNyBostatus(nyEllerOppdatertBostatusperiode: Bostatusperiode? = null): Bostatus? =
-        nyEllerOppdatertBostatusperiode?.let {
-            Bostatus(
-                periodeFom = it.datoFom,
-                periodeTom = it.datoTom,
-                bostatus = it.bostatus,
-                kilde = it.kilde,
-            )
-        }
-
-    private fun Husstandsmedlem.bestemmeOriginalBostatus(
-        nyBostatusperiode: Bostatusperiode? = null,
-        sletteHusstansmedlemsperiode: Long? = null,
-    ): Bostatus? {
-        nyBostatusperiode?.id?.let {
-            return perioder.find { nyBostatusperiode.id == it.id }?.tilBostatus()
-        }
-        sletteHusstansmedlemsperiode.let { id -> return perioder.find { id == it.id }?.tilBostatus() }
     }
 
     private fun Behandling.gjenoppretteForrigeSivilstandshistorikk(rolle: Rolle) {

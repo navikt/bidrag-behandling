@@ -68,6 +68,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BehandlingDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
@@ -85,6 +86,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -1058,6 +1060,9 @@ internal fun List<GrunnlagDto>.hentAldersjusteringDetaljerForBarn(gjelderBarnRef
     filtrerBasertPåEgenReferanse(Grunnlagstype.ALDERSJUSTERING_DETALJER)
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
         ?.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
+
+internal fun List<GrunnlagDto>.hentBehandlingDetaljer(): BehandlingDetaljerGrunnlag? =
+    filtrerOgKonverterBasertPåEgenReferanse<BehandlingDetaljerGrunnlag>(Grunnlagstype.BEHANDLING_DETALJER).firstOrNull()?.innhold
 
 internal fun List<GrunnlagDto>.hentSøknader(gjelderReferanse: String? = null): List<SøknadGrunnlag> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)

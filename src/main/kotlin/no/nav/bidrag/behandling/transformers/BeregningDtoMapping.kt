@@ -40,6 +40,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligIn
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentBehandlingDetaljer
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøknader
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
@@ -1391,10 +1392,11 @@ internal fun List<GrunnlagDto>.hentSamvær(gjelderReferanse: String): List<Samv�
         }.map { it.innholdTilObjekt<SamværsperiodeGrunnlag>() }
 
 fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
-    // Opprettet FF
-    hentSøknader().any {
-        it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
-    } ||
+    hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true ||
+        // Opprettet FF
+        hentSøknader().any {
+            it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
+        } ||
         // Opprett FF når alle barna er i samme søknad. Tilfelle hvor det er valgt ulik virkningstidspunkt for barna
         filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT).any {
             if (it.gjelderBarnReferanse == null) return@any false

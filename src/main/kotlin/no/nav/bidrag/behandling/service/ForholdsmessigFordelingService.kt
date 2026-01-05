@@ -37,7 +37,6 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierSamv√
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierUnderholdskostnad
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.mapSakKravhaverTilForholdsmessigFordelingDto
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettRolle
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettSamv√¶rOgUnderholdForBarn
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBM
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBP

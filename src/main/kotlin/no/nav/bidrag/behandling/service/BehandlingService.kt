@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
 import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
-import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -33,19 +32,14 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
-import no.nav.bidrag.behandling.transformers.behandling.oppdaterUnderholdskostnadForRoller
-import no.nav.bidrag.behandling.transformers.behandling.oppdatereSamværForRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -54,7 +48,6 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
-import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -630,8 +623,9 @@ class BehandlingService(
             oppdaterRollerNyesteIdent
                 .filter { !it.erSlettet }
                 .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
+                .distinct()
 
-        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
+        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }.distinct()
         identerSomSkalLeggesTil.isNotEmpty().ifTrue {
             secureLogger.debug {
                 "Legger til søknadsbarn ${
@@ -640,8 +634,8 @@ class BehandlingService(
             }
         }
 
-        val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
-        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }.distinct()
+        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }.distinct()
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
@@ -655,12 +649,6 @@ class BehandlingService(
             )
         } else {
             behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
-            behandling.roller.forEach { r ->
-                if (identerSomSkalSlettes.contains(r.ident)) {
-                    log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
-                    r.deleted = true
-                }
-            }
             oppdaterBehandlingEtterOppdatertRoller(
                 behandling,
                 underholdService,
@@ -668,6 +656,14 @@ class BehandlingService(
                 rollerSomLeggesTil,
                 rollerSomSkalSlettes,
             )
+            behandling.roller.removeIf { r ->
+                if (identerSomSkalSlettes.contains(r.ident)) {
+                    log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+                    true
+                } else {
+                    false
+                }
+            }
         }
 
         lagreBehandling(behandling, forceSave = true)

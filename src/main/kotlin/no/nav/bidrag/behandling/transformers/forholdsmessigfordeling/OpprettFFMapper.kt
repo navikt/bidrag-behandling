@@ -20,7 +20,9 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
+import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.service.SakKravhaver
+import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.tilType
@@ -28,6 +30,7 @@ import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -466,29 +469,6 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
             type = NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
         ),
     )
-}
-
-fun opprettSamværOgUnderholdForBarn(behandling: Behandling) {
-    behandling.søknadsbarn.forEach {
-        if (behandling.samvær.none { s -> s.rolle.ident == it.ident }) {
-            behandling.samvær.add(
-                Samvær(
-                    rolle = it,
-                    behandling = behandling,
-                ),
-            )
-        }
-    }
-    behandling.søknadsbarn.forEach {
-        if (behandling.underholdskostnader.none { s -> s.rolle?.ident == it.ident }) {
-            behandling.underholdskostnader.add(
-                Underholdskostnad(
-                    rolle = it,
-                    behandling = behandling,
-                ),
-            )
-        }
-    }
 }
 
 fun Set<SakKravhaver>.hentForKravhaver(kravhaverIdent: String) = find { it.kravhaver == kravhaverIdent }

@@ -10,8 +10,6 @@ import no.nav.bidrag.behandling.service.GrunnlagService
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import org.springframework.transaction.event.TransactionPhase
-import org.springframework.transaction.event.TransactionalEventListener
 
 private val log = KotlinLogging.logger {}
 
