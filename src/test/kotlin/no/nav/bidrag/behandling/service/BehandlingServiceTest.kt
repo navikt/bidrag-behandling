@@ -45,6 +45,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
+import no.nav.bidrag.behandling.transformers.validering.virkningstidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.utils.hentInntektForBarn
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
@@ -2154,6 +2155,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             val behandling =
                 Behandling(
                     Vedtakstype.FASTSETTELSE,
+                    virkningstidspunkt = YearMonth.now().atDay(1),
                     søktFomDato = YearMonth.now().atDay(1),
                     mottattdato = YearMonth.now().atEndOfMonth(),
                     saksnummer = "1900000",

@@ -232,11 +232,10 @@ open class Rolle(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Rolle) return false
-        if (id != null && other.id != null) return id == other.id
-        return false
+        return ident == other.ident && rolletype == other.rolletype
     }
 
-    override fun hashCode(): Int = id?.hashCode() ?: 0
+    override fun hashCode(): Int = (ident?.hashCode() ?: 0) * 31 + rolletype.hashCode()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
