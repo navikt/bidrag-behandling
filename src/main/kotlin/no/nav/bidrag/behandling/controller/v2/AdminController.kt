@@ -313,7 +313,7 @@ class AdminController(
         @PathVariable behandlingId: Long,
     ) {
         log.info { "Admin: Logisk sletter behandling $behandlingId" }
-        behandlingRepository.deleteById(behandlingId)
+        behandlingRepository.logiskSlett(behandlingId)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
