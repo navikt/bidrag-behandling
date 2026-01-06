@@ -54,6 +54,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.toSimple
+import no.nav.bidrag.behandling.transformers.sorterForInntektsbildet
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -153,7 +154,7 @@ class BehandlingControllerV2(
                     inkluderHistoriskeInntekter = true,
                 ),
             inntekterV2 =
-                behandling.roller.map {
+                behandling.roller.sorterForInntektsbildet().map {
                     InntekterDtoRolle(
                         gjelder = it.tilDto(),
                         inntekter =
