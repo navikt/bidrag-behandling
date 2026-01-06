@@ -369,7 +369,7 @@ class GrunnlagMockService {
         val grunnlag = behandling.grunnlag
         grunnlag shouldHaveSize 9
 
-        behandling.underholdskostnader shouldHaveSize 4
+        behandling.underholdskostnader shouldHaveSize 5
         assertSoftly(behandling.underholdskostnader.find { it.personIdent == testdataBarnBm.ident }) {
             it.shouldNotBeNull()
             it.kilde shouldBe Kilde.OFFENTLIG
