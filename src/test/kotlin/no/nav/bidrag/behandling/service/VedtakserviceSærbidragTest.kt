@@ -21,6 +21,8 @@ import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentNotat
 import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
+import no.nav.bidrag.behandling.utils.stubHentPersonNyIdent
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
@@ -81,8 +83,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.Transactional
-import stubHentPersonNyIdent
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -1920,13 +1920,13 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
         val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)) {
-            shouldHaveSize(21)
+            shouldHaveSize(24)
             val inntekterBM = it.filter { it.gjelderReferanse == bmGrunnlag.referanse }
             val inntekterBP = it.filter { it.gjelderReferanse == bpGrunnlag.referanse }
             val inntekterBA = it.filter { it.gjelderReferanse == søknadsbarnGrunnlag.referanse }
-            inntekterBM shouldHaveSize 10
-            inntekterBP shouldHaveSize 7
-            inntekterBA shouldHaveSize 4
+            inntekterBM shouldHaveSize 11
+            inntekterBP shouldHaveSize 8
+            inntekterBA shouldHaveSize 5
 
             val inntektBm =
                 inntekterBM.map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }.find {

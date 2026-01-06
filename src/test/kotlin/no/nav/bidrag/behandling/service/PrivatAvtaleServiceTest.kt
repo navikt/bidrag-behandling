@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriode
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.validerePrivatAvtale
+import no.nav.bidrag.behandling.utils.stubPersonRepository
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -28,7 +29,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import stubPersonRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth

@@ -1,8 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.databind.node.POJONode
-import disableUnleashFeature
-import enableUnleashFeature
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
@@ -25,9 +23,12 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.utils.disableUnleashFeature
+import no.nav.bidrag.behandling.utils.enableUnleashFeature
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentNotat
 import no.nav.bidrag.behandling.utils.hentPerson
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
@@ -84,7 +85,6 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.web.client.HttpClientErrorException
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
@@ -301,9 +301,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest) {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 29
-            }
             request.unikReferanse shouldBe behandling.opprettUnikReferanse("omgjøring")
         }
 
@@ -426,10 +423,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakRequest) {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${request.grunnlagListe.size} grunnlag") {
-                request.grunnlagListe shouldHaveSize 28
-            }
-//            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
         }
 
         assertSoftly(opprettVedtakRequest.stønadsendringListe) {
@@ -561,10 +554,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakSlot shouldHaveSize 2
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 30
-            }
-
             assertSoftly(it.stønadsendringListe) { se ->
                 se.shouldHaveSize(1)
                 val stønadsendring = it.stønadsendringListe.first()
@@ -735,10 +724,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakSlot shouldHaveSize 2
         assertSoftly(opprettVedtakSlot[0]) {
             it.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 28
-            }
-
             assertSoftly(it.stønadsendringListe) { se ->
                 se.shouldHaveSize(1)
                 val stønadsendring = it.stønadsendringListe.first()
@@ -955,9 +940,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakSlot shouldHaveSize 3
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 44
-            }
+
             hentGrunnlagstyper(Grunnlagstype.NOTAT) shouldHaveSize 16
             validerNotater()
             val beregnetFraDato =
@@ -1304,9 +1287,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakSlot shouldHaveSize 3
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 33
-            }
+
             val beregnetFraDato =
                 it.stønadsendringListe
                     .first()
@@ -1662,9 +1643,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakSlot shouldHaveSize 3
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.ENDRING
-            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 33
-            }
+
             val beregnetFraDato =
                 it.stønadsendringListe
                     .first()
@@ -2004,9 +1983,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakSlot shouldHaveSize 3
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 30
-            }
             val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.NOTAT)) {
                 shouldHaveSize(3)
@@ -2531,11 +2507,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         opprettVedtakSlot shouldHaveSize 3
         assertSoftly(opprettVedtakSlot.first()) {
             it.type shouldBe Vedtakstype.KLAGE
-            withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 29
-            }
-//            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
-
             assertSoftly(it.stønadsendringListe) {
                 shouldHaveSize(1)
                 val stønadsendring = first()

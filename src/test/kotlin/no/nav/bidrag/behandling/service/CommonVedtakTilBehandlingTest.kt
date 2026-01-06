@@ -15,6 +15,14 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.Behandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
+import no.nav.bidrag.behandling.utils.stubBehandlingrepository
+import no.nav.bidrag.behandling.utils.stubIdentConsumer
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
+import no.nav.bidrag.behandling.utils.stubPersonRepository
+import no.nav.bidrag.behandling.utils.stubSaksbehandlernavnProvider
+import no.nav.bidrag.behandling.utils.stubTokenUtils
+import no.nav.bidrag.behandling.utils.stubUnderholdskostnadRepository
+import no.nav.bidrag.behandling.utils.stubVedtakConsumer
 import no.nav.bidrag.behandling.utils.testdata.opprettEngangsbeløp
 import no.nav.bidrag.behandling.utils.testdata.opprettVedtakDto
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
@@ -37,14 +45,6 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
-import stubBehandlingrepository
-import stubIdentConsumer
-import stubPersonConsumer
-import stubPersonRepository
-import stubSaksbehandlernavnProvider
-import stubTokenUtils
-import stubUnderholdskostnadRepository
-import stubVedtakConsumer
 
 @ExtendWith(MockKExtension::class)
 abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {

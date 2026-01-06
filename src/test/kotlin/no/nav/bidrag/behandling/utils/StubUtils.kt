@@ -1,3 +1,5 @@
+package no.nav.bidrag.behandling.utils
+
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -39,6 +41,7 @@ import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.service.PersonService
+import no.nav.bidrag.behandling.service.hentPerson
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT
 import no.nav.bidrag.behandling.utils.testdata.BP_BARN_ANNEN_IDENT_2
@@ -230,6 +233,7 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
         LocalDate.now().minusYears(11)
     }
     mockkObject(AppContext)
+
     every {
         AppContext.getBean(eq(BidragPersonConsumer::class.java))
     } returns personConsumerMock
@@ -681,7 +685,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Summert.*")).willReturn(
+            WireMock.get(urlPathMatching(".*/kodeverk/Summert.*")).willReturn(
                 if (response != null) {
                     aClosedJsonResponse().withStatus(status.value()).withBody(
                         ObjectMapper().findAndRegisterModules().writeValueAsString(response),
@@ -698,7 +702,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/SpesifisertSummertSkattegrunnlag.*")).willReturn(
+            WireMock.get(urlPathMatching(".*/kodeverk/SpesifisertSummertSkattegrunnlag.*")).willReturn(
                 if (response != null) {
                     aClosedJsonResponse().withStatus(status.value()).withBody(
                         ObjectMapper().findAndRegisterModules().writeValueAsString(response),
@@ -715,7 +719,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.get(WireMock.urlPathMatching(".*/kodeverk/Loennsbeskrivelse.*")).willReturn(
+            WireMock.get(urlPathMatching(".*/kodeverk/Loennsbeskrivelse.*")).willReturn(
                 if (response != null) {
                     aClosedJsonResponse().withStatus(status.value()).withBody(
                         ObjectMapper().findAndRegisterModules().writeValueAsString(response),
@@ -733,7 +737,7 @@ class StubUtils {
     ) {
         WireMock.stubFor(
             WireMock
-                .get(WireMock.urlPathMatching(".*/kodeverk/YtelseFraOffentligeBeskrivelse.*"))
+                .get(urlPathMatching(".*/kodeverk/YtelseFraOffentligeBeskrivelse.*"))
                 .willReturn(
                     if (response != null) {
                         aClosedJsonResponse().withStatus(status.value()).withBody(
@@ -753,7 +757,7 @@ class StubUtils {
     ) {
         WireMock.stubFor(
             WireMock
-                .get(WireMock.urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*"))
+                .get(urlPathMatching(".*/kodeverk/PensjonEllerTrygdeBeskrivelse.*"))
                 .willReturn(
                     if (response != null) {
                         createGenericResponse().withStatus(status.value()).withBody(
@@ -773,7 +777,7 @@ class StubUtils {
     ) {
         WireMock.stubFor(
             WireMock
-                .get(WireMock.urlPathMatching(".*/kodeverk/Naeringsinntektsbeskrivelse.*"))
+                .get(urlPathMatching(".*/kodeverk/Naeringsinntektsbeskrivelse.*"))
                 .willReturn(
                     if (response != null) {
                         aClosedJsonResponse().withStatus(status.value()).withBody(
@@ -1036,7 +1040,7 @@ class StubUtils {
 
         fun opprettJournalpostKaltMed(vararg contains: String) {
             val verify =
-                WireMock.postRequestedFor(
+                postRequestedFor(
                     urlMatching("/dokument/journalpost/JOARK"),
                 )
             verifyContains(verify, *contains)

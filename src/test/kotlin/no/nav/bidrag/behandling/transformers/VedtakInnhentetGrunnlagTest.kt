@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.utils.opprettKontantstøtteListe
 import no.nav.bidrag.behandling.utils.opprettSkattegrunnlagGrunnlagListe
 import no.nav.bidrag.behandling.utils.opprettSmåbarnstillegListe
 import no.nav.bidrag.behandling.utils.opprettUtvidetBarnetrygdGrunnlagListe
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGrunnlagEntityForInntekt
 import no.nav.bidrag.behandling.utils.testdata.opprettRolle
@@ -57,7 +58,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

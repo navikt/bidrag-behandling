@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.utils.testdata
 
-import StubUtils
 import com.fasterxml.jackson.module.kotlin.readValue
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -9,6 +8,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.utils.StubUtils
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagDatakilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -62,6 +62,7 @@ fun opprettGrunnlagFraFil(
                     }
                 }.tilGrunnlagEntity(behandling)
         }
+
         Grunnlagsdatatype.ANDRE_BARN -> {
             if (behandling.tilType() == TypeBehandling.BIDRAG) {
                 grunnlag.husstandsmedlemmerOgEgneBarnListe
@@ -71,33 +72,43 @@ fun opprettGrunnlagFraFil(
                 emptyList()
             }
         }
+
         Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN -> {
             grunnlag.husstandsmedlemmerOgEgneBarnListe.tilGrunnlagEntity(behandling, Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN)
         }
 
-        Grunnlagsdatatype.SIVILSTAND ->
+        Grunnlagsdatatype.SIVILSTAND -> {
             grunnlag.sivilstandListe.tilGrunnlagEntity(behandling)
+        }
 
-        Grunnlagsdatatype.ARBEIDSFORHOLD ->
+        Grunnlagsdatatype.ARBEIDSFORHOLD -> {
             grunnlag.arbeidsforholdListe.tilGrunnlagEntity(behandling)
+        }
+
         // Inntekter er en subset av grunnlag så lagrer bare alt
-        Grunnlagsdatatype.BARNETILLEGG ->
+        Grunnlagsdatatype.BARNETILLEGG -> {
             grunnlag.barnetilleggListe.tilGrunnlagEntity(behandling)
+        }
 
-        Grunnlagsdatatype.BARNETILSYN ->
+        Grunnlagsdatatype.BARNETILSYN -> {
             grunnlag.barnetilsynListe.tilGrunnlagEntity(behandling)
+        }
 
-        Grunnlagsdatatype.TILLEGGSSTØNAD ->
+        Grunnlagsdatatype.TILLEGGSSTØNAD -> {
             grunnlag.tilleggsstønadBarnetilsynListe.tilGrunnlagEntity(behandling)
+        }
 
-        Grunnlagsdatatype.KONTANTSTØTTE ->
+        Grunnlagsdatatype.KONTANTSTØTTE -> {
             grunnlag.kontantstøtteListe.tilGrunnlagEntity(behandling)
+        }
 
-        Grunnlagsdatatype.SMÅBARNSTILLEGG ->
+        Grunnlagsdatatype.SMÅBARNSTILLEGG -> {
             grunnlag.småbarnstilleggListe.tilGrunnlagEntity(behandling)
+        }
 
-        Grunnlagsdatatype.UTVIDET_BARNETRYGD ->
+        Grunnlagsdatatype.UTVIDET_BARNETRYGD -> {
             grunnlag.utvidetBarnetrygdListe.tilGrunnlagEntity(behandling)
+        }
 
         Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
             val skattegrunnlagGruppert = grunnlag.skattegrunnlagListe.groupBy { it.personId }
@@ -116,7 +127,9 @@ fun opprettGrunnlagFraFil(
                 }
         }
 
-        else -> emptyList()
+        else -> {
+            emptyList()
+        }
     }
 }
 
@@ -350,8 +363,7 @@ fun Behandling.initGrunnlagRespons(
 ) {
     roller.forEach {
         when (it.rolletype) {
-            Rolletype.BIDRAGSMOTTAKER ->
-
+            Rolletype.BIDRAGSMOTTAKER -> {
                 stubUtils.stubHenteGrunnlag(
                     rolleIdent = bmIdent,
                     responsobjekt =
@@ -368,8 +380,9 @@ fun Behandling.initGrunnlagRespons(
                             baIdent!!,
                         ),
                 )
+            }
 
-            Rolletype.BIDRAGSPLIKTIG ->
+            Rolletype.BIDRAGSPLIKTIG -> {
                 stubUtils.stubHenteGrunnlag(
                     rolleIdent = bpIdent,
                     responsobjekt =
@@ -380,8 +393,9 @@ fun Behandling.initGrunnlagRespons(
                             baIdent!!,
                         ),
                 )
+            }
 
-            Rolletype.BARN ->
+            Rolletype.BARN -> {
                 stubUtils.stubHenteGrunnlag(
                     rolleIdent = baIdent,
                     responsobjekt =
@@ -391,8 +405,11 @@ fun Behandling.initGrunnlagRespons(
                             baIdent!!,
                         ),
                 )
+            }
 
-            else -> throw Exception()
+            else -> {
+                throw Exception()
+            }
         }
     }
 }
