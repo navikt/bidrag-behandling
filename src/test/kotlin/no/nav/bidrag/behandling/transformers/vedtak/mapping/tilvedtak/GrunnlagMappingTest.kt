@@ -32,6 +32,8 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.utils.stubHentPersonNyIdent
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.SOKNAD_ID
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
@@ -103,8 +105,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.web.client.HttpClientErrorException
-import stubHentPersonNyIdent
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

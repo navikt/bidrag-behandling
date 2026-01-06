@@ -16,6 +16,8 @@ import no.nav.bidrag.behandling.consumer.dto.behandlingstypeUtland
 import no.nav.bidrag.behandling.consumer.dto.formatterDatoForOppgave
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
+import no.nav.bidrag.behandling.utils.stubSaksbehandlernavnProvider
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -41,8 +43,6 @@ import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import stubPersonConsumer
-import stubSaksbehandlernavnProvider
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional

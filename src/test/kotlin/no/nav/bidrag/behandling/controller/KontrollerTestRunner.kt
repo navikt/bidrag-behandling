@@ -1,12 +1,14 @@
 package no.nav.bidrag.behandling.controller
 
-import StubUtils
 import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.Unleash
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockkObject
 import no.nav.bidrag.behandling.service.CommonTestRunner
+import no.nav.bidrag.behandling.utils.StubUtils
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
+import no.nav.bidrag.behandling.utils.stubVedtakConsumer
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -21,8 +23,6 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
-import stubPersonConsumer
-import stubVedtakConsumer
 
 abstract class KontrollerTestRunner : CommonTestRunner() {
     companion object {

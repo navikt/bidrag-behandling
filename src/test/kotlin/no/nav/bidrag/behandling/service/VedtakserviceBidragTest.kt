@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.utils.hentGrunnlagstyperForReferanser
 import no.nav.bidrag.behandling.utils.hentNotat
 import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
 import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
@@ -113,7 +114,6 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.web.client.HttpStatusCodeException
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

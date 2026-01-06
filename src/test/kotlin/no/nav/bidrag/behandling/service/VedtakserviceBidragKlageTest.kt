@@ -1,8 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import com.fasterxml.jackson.databind.node.POJONode
-import disableUnleashFeature
-import enableUnleashFeature
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
@@ -25,9 +23,12 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.utils.disableUnleashFeature
+import no.nav.bidrag.behandling.utils.enableUnleashFeature
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentNotat
 import no.nav.bidrag.behandling.utils.hentPerson
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.lagVedtaksdata
 import no.nav.bidrag.behandling.utils.testdata.leggTilGrunnlagBeløpshistorikk
@@ -84,7 +85,6 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.web.client.HttpClientErrorException
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth

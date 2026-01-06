@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.validerHarGrunnlag
 import no.nav.bidrag.behandling.utils.validerHarReferanseTilSjablon
@@ -28,7 +29,6 @@ import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import stubPersonConsumer
 import java.math.BigDecimal
 
 @ExtendWith(MockKExtension::class)

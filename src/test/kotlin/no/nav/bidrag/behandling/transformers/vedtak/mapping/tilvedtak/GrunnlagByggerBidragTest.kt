@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
@@ -40,7 +41,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.YearMonth
 

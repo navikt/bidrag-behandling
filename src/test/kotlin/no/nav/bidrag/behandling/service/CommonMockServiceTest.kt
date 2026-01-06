@@ -21,6 +21,10 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.utils.stubHusstandrepository
+import no.nav.bidrag.behandling.utils.stubInntektRepository
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
+import no.nav.bidrag.behandling.utils.stubPersonRepository
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
@@ -30,10 +34,6 @@ import no.nav.bidrag.commons.web.mock.stubSjablonService
 import no.nav.bidrag.inntekt.InntektApi
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
-import stubHusstandrepository
-import stubInntektRepository
-import stubPersonConsumer
-import stubPersonRepository
 
 @ExtendWith(MockKExtension::class)
 abstract class CommonMockServiceTest {

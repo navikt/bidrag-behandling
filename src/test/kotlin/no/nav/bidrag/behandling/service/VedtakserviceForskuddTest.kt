@@ -21,6 +21,8 @@ import no.nav.bidrag.behandling.utils.hentGrunnlagstyperForReferanser
 import no.nav.bidrag.behandling.utils.hentNotat
 import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
+import no.nav.bidrag.behandling.utils.stubHentPersonNyIdent
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
@@ -63,8 +65,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.søknadsbarn
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import org.junit.jupiter.api.Test
-import stubHentPersonNyIdent
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth

@@ -44,6 +44,8 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
+import no.nav.bidrag.behandling.utils.stubUnderholdskostnadRepository
 import no.nav.bidrag.behandling.utils.testdata.leggeTilGjeldendeBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggeTilNyttBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.oppretteBarnetilsynGrunnlagDto
@@ -70,8 +72,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
-import stubPersonConsumer
-import stubUnderholdskostnadRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertFailsWith

@@ -21,6 +21,8 @@ import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentNotat
 import no.nav.bidrag.behandling.utils.hentPerson
 import no.nav.bidrag.behandling.utils.shouldContainPerson
+import no.nav.bidrag.behandling.utils.stubHentPersonNyIdent
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
@@ -81,8 +83,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.Transactional
-import stubHentPersonNyIdent
-import stubPersonConsumer
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
