@@ -11,10 +11,12 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.BoforholdService.Companion.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
+import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -149,14 +151,6 @@ class AdminController(
             "Opprett aldersjustering behandling for sak",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
     @Transactional
     fun opprettAldersjustering(
         @PathVariable saksnummer: String,
@@ -222,14 +216,6 @@ class AdminController(
             "Fikse feil i referanser ",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
     @Transactional
     fun feilfiksReferanserPrivatAvtale() {
         privatAvtaleService.fiksReferanserPrivatAvtale()
@@ -240,14 +226,6 @@ class AdminController(
         description =
             "Fikse feil i referanser ",
         security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
     )
     @Transactional
     fun feilfiksAktiveringGrunnlag(
@@ -265,14 +243,6 @@ class AdminController(
             "Oppdater offentlige ytelser basert på nyeste grunnlag ",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
     @Transactional
     fun oppdaterOffentligeInntekter(
         @PathVariable behandlingId: Long,
@@ -288,14 +258,6 @@ class AdminController(
             "Oppdater husstandsmedlemmer etter nyeste grunnlagsdata",
         security = [SecurityRequirement(name = "bearer-key")],
     )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Forespørsel oppdatert uten feil",
-            ),
-        ],
-    )
     @Transactional
     fun revaliderGrunnlag(
         @PathVariable behandlingId: Long,
@@ -303,6 +265,40 @@ class AdminController(
         val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
 
         grunnlagService.reperiodiserOgLagreBoforhold(behandling)
+    }
+
+    @PostMapping("/admin/feilfiks/sivilstand/perioder/{behandlingId}")
+    @Operation(
+        description =
+            "Fiks feil i perioder hvor fom starter før til",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @Transactional
+    fun fiksPerioderFomSomKommerFørTil(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
+
+        behandling.sivilstand.forEach { sivilstand ->
+            val ugyldigPeriode = sivilstand.datoTom != null && sivilstand.datoFom.isAfter(sivilstand.datoTom)
+            if (ugyldigPeriode) {
+                val annenPeriodeMedSammeFom = behandling.sivilstand.any { it.id != sivilstand.id && it.datoFom == sivilstand.datoFom }
+                if (annenPeriodeMedSammeFom) {
+                    log.info {
+                        "Sletter sivilstand med id=${sivilstand.id} da det finnes en annen periode med samme fom=${sivilstand.datoFom} for behandlingId=$behandlingId"
+                    }
+                    behandling.sivilstand.remove(sivilstand)
+                } else {
+                    log.info {
+                        "Retter sivilstand med id=${sivilstand.id} " +
+                            "ved å sette datoTom=null (var ${sivilstand.datoTom}) for behandlingId=$behandlingId"
+                    }
+                    sivilstand.datoTom = null
+                }
+            }
+        }
+        behandling.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag()
+        grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years

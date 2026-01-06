@@ -40,6 +40,7 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.filtrerUtUrelevantePerioder
+import no.nav.bidrag.behandling.transformers.boforhold.henteNyesteSivilstandGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveAndreVoksneIHusstandMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaBostatusperioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
@@ -73,6 +74,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
+import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -805,6 +807,18 @@ class BoforholdService(
     }
 
     companion object {
+        fun Behandling.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag() {
+            val request =
+                SivilstandRequest(
+                    innhentedeOffentligeOpplysninger = henteNyesteSivilstandGrunnlagsdata(),
+                    behandledeSivilstandsopplysninger = emptyList(),
+                    endreSivilstand = null,
+                    fødselsdatoBM = this.bidragsmottaker!!.fødselsdato,
+                )
+            val resultat = SivilstandApi.beregnV2(this.eldsteVirkningstidspunkt, request).toSet()
+            overskriveMedBearbeidaSivilstandshistorikk(resultat)
+        }
+
         private fun Behandling.tilbakestilleTilOffentligSivilstandshistorikk() {
             this.grunnlag.henteSisteSivilstand(true)?.let { overskriveMedBearbeidaSivilstandshistorikk(it) }
                 ?: run {
