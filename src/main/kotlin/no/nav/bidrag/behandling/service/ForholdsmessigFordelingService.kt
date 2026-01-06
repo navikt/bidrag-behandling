@@ -480,64 +480,64 @@ class ForholdsmessigFordelingService(
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
 
-        val rollerSomSkalLeggesTil =
-            rollerSomSkalLeggesTilDto
-                .map { nyRolle ->
-                    val søknadsdetaljerBarn = søknadsdetaljer ?: behandling.tilFFBarnDetaljer()
-                    val eksisterendeRolle = behandling.roller.find { it.ident == nyRolle.ident!!.verdi }
-                    val ffRolleDetaljer =
-                        ForholdsmessigFordelingRolle(
-                            tilhørerSak = saksnummer,
-                            delAvOpprinneligBehandling = true,
-                            behandlingsid = behandling.id,
-                            bidragsmottaker = bmIdent ?: behandling.bidragsmottakerForSak(saksnummer)?.ident,
-                            behandlerenhet = behandlerenhet,
-                            erRevurdering = erRevurdering,
-                            søknader = mutableSetOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid)),
-                        )
-                    if (eksisterendeRolle == null) {
-                        val rolle = nyRolle.toRolle(behandling)
-                        rolle.forholdsmessigFordeling = ffRolleDetaljer
-                        rolle
+        val rollerSomSkalLeggesTil = mutableSetOf<Rolle>()
+        rollerSomSkalLeggesTilDto
+            .forEach { nyRolle ->
+                val søknadsdetaljerBarn = søknadsdetaljer ?: behandling.tilFFBarnDetaljer()
+                val eksisterendeRolle = behandling.roller.find { it.ident == nyRolle.ident!!.verdi }
+                val ffRolleDetaljer =
+                    ForholdsmessigFordelingRolle(
+                        tilhørerSak = saksnummer,
+                        delAvOpprinneligBehandling = true,
+                        behandlingsid = behandling.id,
+                        bidragsmottaker = bmIdent ?: behandling.bidragsmottakerForSak(saksnummer)?.ident,
+                        behandlerenhet = behandlerenhet,
+                        erRevurdering = erRevurdering,
+                        søknader = mutableSetOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid)),
+                    )
+                if (eksisterendeRolle == null) {
+                    val rolle = nyRolle.toRolle(behandling)
+                    rolle.forholdsmessigFordeling = ffRolleDetaljer
+                    rollerSomSkalLeggesTil.add(rolle)
+                } else {
+                    if (eksisterendeRolle.forholdsmessigFordeling == null) {
+                        eksisterendeRolle.forholdsmessigFordeling = ffRolleDetaljer
                     } else {
-                        if (eksisterendeRolle.forholdsmessigFordeling == null) {
-                            eksisterendeRolle.forholdsmessigFordeling = ffRolleDetaljer
-                        } else {
-                            val varRevurderingsbarn = eksisterendeRolle.forholdsmessigFordeling!!.erRevurdering
-                            val eksisterendeSøknadsliste = eksisterendeRolle.forholdsmessigFordeling!!.søknader
-                            eksisterendeRolle.forholdsmessigFordeling =
-                                ffRolleDetaljer.copy(
-                                    søknader =
-                                        (
-                                            eksisterendeSøknadsliste +
-                                                setOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
-                                        ).toMutableSet(),
-                                )
-                            if (varRevurderingsbarn && søktFraDato != null) {
-                                eksisterendeRolle.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
-                                virkningstidspunktService.oppdaterVirkningstidspunkt(
-                                    eksisterendeRolle.id,
-                                    søktFraDato.withDayOfMonth(1),
-                                    behandling,
-                                )
-                            }
-                        }
-
-                        val gebyr = eksisterendeRolle.hentEllerOpprettGebyr()
-                        if (nyRolle.harGebyrsøknad) {
-                            gebyr.gebyrSøknader.add(
-                                GebyrRolleSøknad(
-                                    saksnummer = saksnummer,
-                                    søknadsid = søknadsid,
-                                    referanse = nyRolle.referanseGebyr,
-                                ),
+                        val varRevurderingsbarn = eksisterendeRolle.forholdsmessigFordeling!!.erRevurdering
+                        val eksisterendeSøknadsliste = eksisterendeRolle.forholdsmessigFordeling!!.søknader
+                        eksisterendeRolle.forholdsmessigFordeling =
+                            ffRolleDetaljer.copy(
+                                søknader =
+                                    (
+                                        eksisterendeSøknadsliste +
+                                            setOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
+                                    ).toMutableSet(),
                             )
-                            eksisterendeRolle.gebyr = gebyr
-                            eksisterendeRolle.harGebyrsøknad = true
+                        if (varRevurderingsbarn && søktFraDato != null) {
+                            eksisterendeRolle.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
+                            virkningstidspunktService.oppdaterVirkningstidspunkt(
+                                eksisterendeRolle.id,
+                                søktFraDato.withDayOfMonth(1),
+                                behandling,
+                            )
                         }
-                        eksisterendeRolle
                     }
+
+                    val gebyr = eksisterendeRolle.hentEllerOpprettGebyr()
+                    if (nyRolle.harGebyrsøknad) {
+                        gebyr.gebyrSøknader.add(
+                            GebyrRolleSøknad(
+                                saksnummer = saksnummer,
+                                søknadsid = søknadsid,
+                                referanse = nyRolle.referanseGebyr,
+                            ),
+                        )
+                        eksisterendeRolle.gebyr = gebyr
+                        eksisterendeRolle.harGebyrsøknad = true
+                    }
+                    rollerSomSkalLeggesTil.add(eksisterendeRolle)
                 }
+            }
 
         behandling.roller.addAll(rollerSomSkalLeggesTil)
         oppdaterBehandlingEtterOppdatertRoller(

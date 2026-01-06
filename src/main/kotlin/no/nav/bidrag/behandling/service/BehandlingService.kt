@@ -640,8 +640,15 @@ class BehandlingService(
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
         if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            val revurderingsbarnSomLeggesTil =
+                oppdaterRollerListe
+                    .filter { r -> !r.erSlettet }
+                    .filter { oppdatertRolle ->
+                        val rolle = behandling.roller.find { it.ident == oppdatertRolle.ident?.verdi }
+                        rolle != null && rolle.erRevurderingsbarn
+                    }
             forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
-                rollerSomLeggesTil,
+                (rollerSomLeggesTil + revurderingsbarnSomLeggesTil).distinct(),
                 rollerSomSkalSlettes,
                 behandling,
                 request.søknadsid ?: behandling.soknadsid!!,
