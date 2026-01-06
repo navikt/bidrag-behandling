@@ -40,8 +40,10 @@ import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
 import no.nav.bidrag.behandling.transformers.boforhold.filtrerUtUrelevantePerioder
+import no.nav.bidrag.behandling.transformers.boforhold.henteNyesteSivilstandGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioderVoksne
+import no.nav.bidrag.behandling.transformers.boforhold.opprettDefaultPeriodeForOffentligHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveAndreVoksneIHusstandMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaBostatusperioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
@@ -55,6 +57,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilOppdatereBoforholdResponse
 import no.nav.bidrag.behandling.transformers.boforhold.tilPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstand
+import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandBeregnV2Dto
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandDto
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSvilstandRequest
@@ -75,6 +78,7 @@ import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
+import no.nav.bidrag.sivilstand.dto.SivilstandRequest
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -85,6 +89,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.toList
 import no.nav.bidrag.sivilstand.dto.Sivilstand as SivilstandBeregnV2Dto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -807,6 +812,18 @@ class BoforholdService(
     }
 
     companion object {
+        fun Behandling.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag() {
+            val request =
+                SivilstandRequest(
+                    innhentedeOffentligeOpplysninger = henteNyesteSivilstandGrunnlagsdata(),
+                    behandledeSivilstandsopplysninger = emptyList(),
+                    endreSivilstand = null,
+                    fødselsdatoBM = this.bidragsmottaker!!.fødselsdato,
+                )
+            val resultat = SivilstandApi.beregnV2(this.eldsteVirkningstidspunkt, request).toSet()
+            overskriveMedBearbeidaSivilstandshistorikk(resultat)
+        }
+
         private fun Behandling.tilbakestilleTilOffentligSivilstandshistorikk() {
             this.grunnlag.henteSisteSivilstand(true)?.let { overskriveMedBearbeidaSivilstandshistorikk(it) }
                 ?: run {

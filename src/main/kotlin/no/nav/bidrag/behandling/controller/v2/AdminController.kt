@@ -11,10 +11,12 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.BoforholdService.Companion.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
+import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -295,6 +297,8 @@ class AdminController(
                 }
             }
         }
+        behandling.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag()
+        grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
