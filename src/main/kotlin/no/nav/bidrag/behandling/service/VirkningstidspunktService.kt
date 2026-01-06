@@ -369,9 +369,11 @@ class VirkningstidspunktService(
         behandling: Behandling,
         tvingEndring: Boolean = false,
         rekalkulerOpplysningerVedEndring: Boolean = true,
+        forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
-        val forrigeVirkningstidspunkt = gjelderBarn?.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
+        // Forrige virkningstidspunkt settes fra input til metoden hvis det var en revurderingsbarn som får ny virkningstidspunkt etter ny søknad
+        val forrigeVirkningstidspunkt = forrigeVirkningstidspunkt ?: gjelderBarn?.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
         val erVirkningstidspunktEndret = tvingEndring || nyVirkningstidspunkt != forrigeVirkningstidspunkt
 
         fun oppdatereUnderhold() {

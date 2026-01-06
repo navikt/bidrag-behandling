@@ -519,6 +519,7 @@ class ForholdsmessigFordelingService(
                                 eksisterendeRolle.id,
                                 søktFraDato.withDayOfMonth(1),
                                 behandling,
+                                forrigeVirkningstidspunkt = behandling.eldsteVirkningstidspunkt,
                             )
                         }
                     }

@@ -204,7 +204,9 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     rollerSomLeggesTil: List<OpprettRolleDto>,
 ) {
     val nyeRollerSomIkkeHarHusstandsmedlemmer =
-        rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
+        rollerSomLeggesTil
+            .filter { it.rolletype == Rolletype.BARN }
+            .filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map {
             secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
