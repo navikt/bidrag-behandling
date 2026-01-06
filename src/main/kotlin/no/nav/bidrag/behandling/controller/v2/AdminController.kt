@@ -24,6 +24,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -299,6 +300,20 @@ class AdminController(
         }
         behandling.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag()
         grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
+    }
+
+    @DeleteMapping("/admin/behandling/{behandlingId}")
+    @Operation(
+        description =
+            "Slett behandling som inneholder ugyldig verdier",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @Transactional
+    fun slettBehandlingAdmin(
+        @PathVariable behandlingId: Long,
+    ) {
+        log.info { "Admin: Logisk sletter behandling $behandlingId" }
+        behandlingRepository.deleteById(behandlingId)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
