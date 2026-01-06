@@ -221,6 +221,7 @@ fun oppdaterUnderholdskostnadForRoller(
 ) {
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
         rollerSomLeggesTil
+            .filter { it.rolletype == Rolletype.BARN }
             .filter { rolle ->
                 behandling.underholdskostnader.none { u -> u.rolle?.ident == rolle.ident!!.verdi }
             }.forEach { rolle ->
@@ -238,9 +239,12 @@ fun oppdatereSamværForRoller(
     rollerSomSlettes: List<OpprettRolleDto>,
 ) {
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
-        rollerSomLeggesTil.filter { rolle -> behandling.samvær.none { s -> s.rolle.ident == rolle.ident!!.verdi } }.forEach { rolle ->
-            behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
-        }
+        rollerSomLeggesTil
+            .filter { it.rolletype == Rolletype.BARN }
+            .filter { rolle -> behandling.samvær.none { s -> s.rolle.ident == rolle.ident!!.verdi } }
+            .forEach { rolle ->
+                behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
+            }
 
         rollerSomSlettes.forEach { rolle ->
             behandling.samvær.removeIf { it.rolle.ident == rolle.ident?.verdi }
