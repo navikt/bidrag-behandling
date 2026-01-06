@@ -233,20 +233,7 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
         LocalDate.now().minusYears(11)
     }
     mockkObject(AppContext)
-    mockkStatic(PersonService::hentPerson)
 
-    every {
-        hentPerson(any())
-    }.answers {
-        val personId = firstArg<String>()
-        val personer =
-            listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1, testdataBarnBm)
-        personer.find { it.ident == personId }?.tilPersonDto() ?: PersonDto(
-            Personident(firstArg<String>()),
-            fødselsdato = LocalDate.parse("2015-05-01"),
-            aktørId = firstArg<String>(),
-        )
-    }
     every {
         AppContext.getBean(eq(BidragPersonConsumer::class.java))
     } returns personConsumerMock
