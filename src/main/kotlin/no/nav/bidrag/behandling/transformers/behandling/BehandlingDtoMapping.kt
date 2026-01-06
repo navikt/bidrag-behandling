@@ -134,6 +134,27 @@ fun oppdaterBehandlingEtterOppdatertRoller(
     rollerSomLeggesTil: List<OpprettRolleDto>,
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
+    slettNotatSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    slettGrunnlagSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    oppdatereSamværForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
+    oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTil, rollerSomSkalSlettes)
+    oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
+    oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTil)
+}
+
+private fun slettGrunnlagSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        behandling.grunnlag.removeIf { it.rolle.ident == rolle.ident!!.verdi || it.gjelder == rolle.ident!!.verdi }
+    }
+}
+
+private fun slettNotatSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
     rollerSomSkalSlettes.forEach { rolle ->
         val rolleBarn = behandling.roller.find { it.ident == rolle.ident!!.verdi }
         val notater = behandling.notater.filter { it.rolle.ident == rolle.ident!!.verdi }
@@ -152,10 +173,6 @@ fun oppdaterBehandlingEtterOppdatertRoller(
             behandling.notater.remove(notat)
         }
     }
-    oppdatereSamværForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
-    oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTil, rollerSomSkalSlettes)
-    oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
-    oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTil)
 }
 
 private fun oppdaterOpphørForRoller(
