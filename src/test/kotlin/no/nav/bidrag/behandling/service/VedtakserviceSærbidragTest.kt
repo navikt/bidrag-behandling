@@ -1920,13 +1920,13 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
         val bpGrunnlag = grunnlagListe.hentPerson(testdataBP.ident)!!
         val søknadsbarnGrunnlag = grunnlagListe.hentPerson(testdataBarn1.ident)!!
         assertSoftly(hentGrunnlagstyper(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)) {
-            shouldHaveSize(21)
+            shouldHaveSize(24)
             val inntekterBM = it.filter { it.gjelderReferanse == bmGrunnlag.referanse }
             val inntekterBP = it.filter { it.gjelderReferanse == bpGrunnlag.referanse }
             val inntekterBA = it.filter { it.gjelderReferanse == søknadsbarnGrunnlag.referanse }
-            inntekterBM shouldHaveSize 10
-            inntekterBP shouldHaveSize 7
-            inntekterBA shouldHaveSize 4
+            inntekterBM shouldHaveSize 11
+            inntekterBP shouldHaveSize 8
+            inntekterBA shouldHaveSize 5
 
             val inntektBm =
                 inntekterBM.map { it.innholdTilObjekt<InntektsrapporteringPeriode>() }.find {

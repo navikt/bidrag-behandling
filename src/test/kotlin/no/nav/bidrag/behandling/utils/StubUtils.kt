@@ -230,6 +230,11 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
         LocalDate.now().minusYears(11)
     }
     mockkObject(AppContext)
+    mockkStatic(AppContext::applicationContext)
+
+    every {
+        AppContext.applicationContext!!.getBean(eq(BidragPersonConsumer::class.java))
+    } returns personConsumerMock
     every {
         AppContext.getBean(eq(BidragPersonConsumer::class.java))
     } returns personConsumerMock
