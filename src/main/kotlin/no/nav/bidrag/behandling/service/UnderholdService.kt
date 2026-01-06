@@ -171,7 +171,12 @@ class UnderholdService(
             } else {
                 null
             }
-        val rolleBarn = if (gjelderBarn.personident != null) behandling.roller.find { it.ident == gjelderBarn.personident.verdi } else null
+        val rolleBarn =
+            if (gjelderBarn.personident != null) {
+                behandling.søknadsbarn.find { it.ident == gjelderBarn.personident.verdi }
+            } else {
+                null
+            }
 
         if (eksisterendeUnderholdskostnadUnderBM != null && rolleBarn != null) {
             eksisterendeUnderholdskostnadUnderBM.rolle = rolleBarn
