@@ -431,7 +431,17 @@ internal fun List<GrunnlagDto>.mapRoller(
     filter { grunnlagstyperRolle.contains(it.type) }
         .distinctBy { it.personIdent }
         .mapIndexed { i, rolle ->
-            val stønadsendring = vedtak.stønadsendringListe.find { it.kravhaver.verdi == rolle.personIdent }
+            val stønadsendring =
+                vedtak.stønadsendringListe.find {
+                    if (rolle.type == Grunnlagstype.PERSON_SØKNADSBARN) {
+                        it.kravhaver.verdi == rolle.personIdent
+                    } else if (rolle.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER) {
+                        it.mottaker.verdi == rolle.personIdent
+                    } else {
+                        // Ikke hent for BP da BP kan ha flere stønadsendringer i flere saker
+                        it.kravhaver.verdi == rolle.personIdent
+                    }
+                }
             val resultatFraVedtak =
                 stønadsendring?.let { finnResultatFraAnnenVedtak(stønadsendring.grunnlagReferanseListe) }?.let {
                     GrunnlagFraVedtak(

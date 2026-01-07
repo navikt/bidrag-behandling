@@ -546,7 +546,7 @@ class ForholdsmessigFordelingService(
             underholdService,
             virkningstidspunktService,
             rollerSomSkalLeggesTilDto,
-            rollerSomSkalSlettes,
+            emptyList(),
         )
         val rollerSomSkalSlettes =
             behandling.roller
