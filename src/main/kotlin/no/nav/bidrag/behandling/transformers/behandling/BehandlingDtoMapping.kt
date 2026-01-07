@@ -136,10 +136,35 @@ fun oppdaterBehandlingEtterOppdatertRoller(
 ) {
     slettNotatSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
     slettGrunnlagSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    slettPrivatAvtaleSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    slettInntekterSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
     oppdatereSamværForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
     oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTil, rollerSomSkalSlettes)
     oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
     oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTil)
+}
+
+private fun slettInntekterSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        behandling.inntekter
+            .filter { it.ident == rolle.ident!!.verdi }
+            .forEach {
+                it.inntektsposter.clear()
+                behandling.inntekter.remove(it)
+            }
+    }
+}
+
+private fun slettPrivatAvtaleSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        behandling.privatAvtale.removeIf { it.rolle != null && it.rolle!!.ident == rolle.ident!!.verdi }
+    }
 }
 
 private fun slettGrunnlagSomTilhørerRolleSomSlettes(

@@ -153,6 +153,9 @@ class UnderholdService(
                 )
             eksisterendeUnderholdskostnad.rolle = behandling.bidragsmottaker!!
             eksisterendeUnderholdskostnad.person = person
+            eksisterendeUnderholdskostnad.barnetilsyn.clear()
+            eksisterendeUnderholdskostnad.tilleggsstønad.clear()
+            eksisterendeUnderholdskostnad.harTilsynsordning = eksisterendeUnderholdskostnad.faktiskeTilsynsutgifter.isNotEmpty()
         }
     }
 
