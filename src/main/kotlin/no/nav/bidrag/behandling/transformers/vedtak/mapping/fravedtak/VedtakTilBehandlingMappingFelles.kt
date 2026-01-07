@@ -1280,7 +1280,12 @@ private fun GrunnlagDto.tilRolle(
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         forholdsmessigFordeling =
             if (grunnlagsliste.harOpprettetForholdsmessigFordeling()) {
-                val søknader = grunnlagsliste.hentSøknader(referanse)
+                val søknader =
+                    if (type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG) {
+                        grunnlagsliste.hentSøknader()
+                    } else {
+                        grunnlagsliste.hentSøknader(referanse)
+                    }
                 val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
                 val erRevurdering = søknader.all { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
                 val førsteSøknad = søknader.first()
