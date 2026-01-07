@@ -44,7 +44,6 @@ import no.nav.bidrag.behandling.transformers.boforhold.henteNyesteSivilstandGrun
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioderVoksne
 import no.nav.bidrag.behandling.transformers.boforhold.opprettDefaultPeriodeForOffentligHusstandsmedlem
-import no.nav.bidrag.behandling.transformers.boforhold.henteNyesteSivilstandGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveAndreVoksneIHusstandMedBearbeidaPerioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaBostatusperioder
 import no.nav.bidrag.behandling.transformers.boforhold.overskriveMedBearbeidaPerioder
