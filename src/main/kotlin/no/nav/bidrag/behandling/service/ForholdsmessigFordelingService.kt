@@ -1294,10 +1294,13 @@ class ForholdsmessigFordelingService(
                 .finnÅpneBidragsbehandlingerForBp(bidragspliktigFnr, behandling.id!!)
                 .filter {
                     it.søknadstype != null && !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.søknadstype)
+                }.filter {
+                    (it.vedtakstype == Vedtakstype.KLAGE && behandling.erKlageEllerOmgjøring) ||
+                        it.vedtakstype != Vedtakstype.KLAGE
                 }
         val åpneSøknader =
             hentÅpneSøknader(bidragspliktigFnr).filter {
-                it.behandlingstype == Behandlingstype.KLAGE && behandling.erKlageEllerOmgjøring ||
+                (it.behandlingstype == Behandlingstype.KLAGE && behandling.erKlageEllerOmgjøring) ||
                     it.behandlingstype != Behandlingstype.KLAGE
             }
 
@@ -1327,10 +1330,12 @@ class ForholdsmessigFordelingService(
         åpneSøknader
             .filter { søknad ->
                 søknad.behandlingsid == null ||
-                    sakKravhaverListe.none {
-                        it.åpneBehandlinger.any { it.id == søknad.behandlingsid || it.soknadsid == søknad.søknadsid }
-                    } &&
-                    !behandlingRepository.erIForholdsmessigFordeling(søknad.behandlingsid!!)
+                    (
+                        sakKravhaverListe.none {
+                            it.åpneBehandlinger.any { it.id == søknad.behandlingsid || it.soknadsid == søknad.søknadsid }
+                        } &&
+                            !behandlingRepository.erIForholdsmessigFordeling(søknad.behandlingsid!!)
+                    )
             }.forEach { åpenSøknad ->
                 åpenSøknad.partISøknadListe
                     .filter { it.rolletype == Rolletype.BARN }
