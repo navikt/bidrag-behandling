@@ -18,13 +18,13 @@ import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -46,6 +46,7 @@ class AdminController(
     private val inntektService: InntektService,
     private val privatAvtaleService: PrivatAvtaleService,
     private val forholsmessigFordelingService: ForholdsmessigFordelingService,
+    private val dtomapper: Dtomapper,
 ) {
     @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
     @Operation(
@@ -302,18 +303,36 @@ class AdminController(
         grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
     }
 
-    @DeleteMapping("/admin/behandling/{behandlingId}")
+    @PostMapping("/admin/feilfiks/virkningstidspunkt")
     @Operation(
         description =
-            "Slett behandling som inneholder ugyldig verdier",
+            "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @Transactional
-    fun slettBehandlingAdmin(
-        @PathVariable behandlingId: Long,
-    ) {
-        log.info { "Admin: Logisk sletter behandling $behandlingId" }
-        behandlingRepository.logiskSlett(behandlingId)
+    fun fiksVirkningstidspunktOgÅrsak(): List<Long> {
+        val behandlinger = behandlingRepository.hentBehandlingerHvorBarnVirkningIkkeErSatt()
+
+        log.info { "Fant ${behandlinger.size} hvor virkningstidspunkt ikke er satt for barnet" }
+        return behandlinger.map { behandling ->
+            behandling.søknadsbarn.forEach { søknadsbarn ->
+                log.info {
+                    "Oppdaterer virkningstidspunkt for barn ${søknadsbarn.ident} " +
+                        "i behandling ${behandling.id} hvor søknadsbarn virkning er " +
+                        "${søknadsbarn.virkningstidspunkt} - ${søknadsbarn.årsak} - ${søknadsbarn.avslag}" +
+                        " og i behandling ${behandling.virkningstidspunkt} - ${behandling.årsak} - ${behandling.avslag}"
+                }
+                if (søknadsbarn.virkningstidspunkt == null) {
+                    søknadsbarn.virkningstidspunkt = behandling.virkningstidspunkt
+                }
+                if (søknadsbarn.årsak == null && behandling.årsak != null) {
+                    søknadsbarn.årsak = behandling.årsak
+                } else if (søknadsbarn.avslag == null && behandling.avslag != null) {
+                    søknadsbarn.avslag = behandling.avslag
+                }
+            }
+            behandling.id!!
+        }
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years

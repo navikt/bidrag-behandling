@@ -189,4 +189,9 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     fun finnAlleRelaterteBehandlinger(
         @Param("behandlingId") behandlingId: Long,
     ): List<Behandling>
+
+
+    // For debugging
+    @Query("select b.* from behandling b inner join public.rolle r on b.id = r.behandling_id where r.rolletype = 'BARN' and virkningstidspunkt is null and b.stonadstype = 'BIDRAG' and b.deleted = false and b.vedtaksid is null", nativeQuery = true)
+    fun hentBehandlingerHvorBarnVirkningIkkeErSatt(): List<Behandling>
 }
