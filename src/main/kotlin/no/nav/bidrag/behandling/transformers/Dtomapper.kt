@@ -33,6 +33,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenGrunnlag
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV3
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
@@ -1286,6 +1287,23 @@ class Dtomapper(
                 .tilDtos()
         } else {
             behandling.underholdskostnader.tilDtos()
+        }
+
+    fun Behandling.mapGebyrV3() =
+        if (roller.any { it.harGebyrsøknad }) {
+            val gebyrSaker = roller.flatMap { it.gebyrSøknader }.map { it.saksnummer }.distinct()
+            val gebyrSøknaderSak =
+                roller.flatMap {
+                    it.gebyrSøknader
+                }
+            GebyrDtoV3(
+                saker = emptyList(),
+            )
+        } else {
+            GebyrDtoV2(
+                harFlereSøknader = false,
+                gebyrRoller = emptyList(),
+            )
         }
 
     fun Behandling.mapGebyrV2() =
