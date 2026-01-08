@@ -66,6 +66,7 @@ fun Rolle.fjernSøknad(søknadsid: Long) {
             .søknader
             .map {
                 if (it.søknadsid == søknadsid) {
+                    // Status feilregistrert betyr at barnet er feilregistrert fra saken
                     it.status = Behandlingstatus.FEILREGISTRERT
                 }
                 it

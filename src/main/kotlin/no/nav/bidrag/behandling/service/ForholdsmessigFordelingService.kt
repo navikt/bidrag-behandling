@@ -656,6 +656,13 @@ class ForholdsmessigFordelingService(
                     enhet = behandling.behandlerEnhet,
                 ),
             )
+            barn.årsak = VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+            virkningstidspunktService.oppdaterVirkningstidspunkt(
+                barn.id,
+                søktFomDato.withDayOfMonth(1),
+                behandling,
+                forrigeVirkningstidspunkt = behandling.eldsteVirkningstidspunkt,
+            )
         }
     }
 
