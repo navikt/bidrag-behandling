@@ -776,7 +776,7 @@ class ForholdsmessigFordelingService(
             skalBehandlesAvEnhet = behandlesAvEnhet,
             kanOppretteForholdsmessigFordeling =
                 (
-                    bpsBarnMedLøpendeBidragEllerPrivatAvtale.isNotEmpty() ||
+                    relevanteKravhavereIkkeSøknadsbarn.isNotEmpty() ||
                         finnesLøpendeBidragSomOverlapperMedEldsteVirkning
                 ),
             simulertGrunnlag = resultat.simulertGrunnlag,
