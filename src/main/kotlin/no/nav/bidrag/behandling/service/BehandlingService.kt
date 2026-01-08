@@ -205,7 +205,10 @@ class BehandlingService(
         }
         val søknadsid = opprettBehandling.søknadsid
 
-        if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+        if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled &&
+            opprettBehandling.behandlingstype != null &&
+            !behandlingstyperSomIkkeSkalInkluderesIFF.contains(opprettBehandling.behandlingstype)
+        ) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
             behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
                 val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
