@@ -27,10 +27,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdRequestV2
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereBoforholdResponse
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektBegrunnelseRequest
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektBegrunnelseRespons
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektResponse
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftRequest
@@ -62,6 +65,7 @@ import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRequest
 import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRespons
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -112,6 +116,35 @@ class BehandlingControllerV2(
             vedtakService.konverterVedtakTilBehandlingForLesemodus(vedtakId)
                 ?: throw RuntimeException("Fant ikke vedtak for vedtakid $vedtakId")
         return dtomapper.tilDto(resultat, true)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/inntekt/begrunnelse")
+    @Operation(
+        description = "Oppdatere inntekt for behandling. Returnerer inntekt som ble endret, opprettet, eller slettet.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun oppdatereInntektBegrunnelse(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdatereInntektBegrunnelseRequest,
+    ): OppdatereInntektBegrunnelseRespons {
+        log.info { "Oppdatere inntekter for behandling $behandlingsid" }
+
+        inntektService.oppdatereInntektBegrunnelse(behandlingsid, request)
+        val behandling =
+            behandlingService.hentBehandlingById(behandlingsid)
+        val begrunnelseRolle =
+            behandling.notater.find {
+                it.rolle.id == request.oppdatereBegrunnelse.rolleid &&
+                    it.type == NotatGrunnlag.NotatType.INNTEKT &&
+                    it.erDelAvBehandlingen
+            }
+        return OppdatereInntektBegrunnelseRespons(
+            oppdatertBegrunnelse =
+                OppdatereBegrunnelse(
+                    rolleid = begrunnelseRolle?.rolle?.id,
+                    nyBegrunnelse = begrunnelseRolle?.innhold ?: "",
+                ),
+        )
     }
 
     @PutMapping("/behandling/{behandlingsid}/inntekt")

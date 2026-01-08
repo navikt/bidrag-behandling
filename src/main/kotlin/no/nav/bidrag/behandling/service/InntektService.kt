@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.repository.InntektRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.tilInntektrapporteringYtelse
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
+import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektBegrunnelseRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
@@ -274,6 +275,40 @@ class InntektService(
             }
         }
         behandling.inntekter.removeAll(offentligeInntekterSomSkalSlettes)
+    }
+
+    @Transactional
+    fun oppdatereInntektBegrunnelse(
+        behandlingsid: Long,
+        oppdatereInntektRequest: OppdatereInntektBegrunnelseRequest,
+    ) {
+        secureLogger.debug { "Oppdaterer begrunnelse inntekt $oppdatereInntektRequest for behandling $behandlingsid" }
+        val behandling =
+            behandlingRepository
+                .findBehandlingById(behandlingsid)
+                .orElseThrow { behandlingNotFoundException(behandlingsid) }
+
+        oppdatereInntektRequest.oppdatereBegrunnelse?.let {
+            val rolle =
+                it.rolleid?.let { rolleid ->
+                    val rolle = behandling.roller.find { it.id == rolleid }
+                    if (rolle == null) {
+                        throw HttpClientErrorException(
+                            HttpStatus.NOT_FOUND,
+                            "Fant ikke rolle med id $rolle i behandling ${behandling.id}",
+                        )
+                    }
+                    rolle
+                } ?: behandling.bidragsmottaker!!
+
+            notatService.oppdatereNotat(
+                behandling = behandling,
+                notattype = Notattype.INNTEKT,
+                notattekst = it.nyBegrunnelse,
+                // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
+                rolle = rolle,
+            )
+        }
     }
 
     @Transactional

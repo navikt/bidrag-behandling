@@ -117,6 +117,16 @@ data class BeregnetInntekterDto(
     val inntekter: List<InntektPerBarn> = emptyList(),
 )
 
+data class OppdatereInntektBegrunnelseRespons(
+    @Schema(description = "Oppdatere begrunnelse for inntekt")
+    val oppdatertBegrunnelse: OppdatereBegrunnelse? = null,
+)
+
+data class OppdatereInntektBegrunnelseRequest(
+    @Schema(description = "Oppdatere begrunnelse for inntekt")
+    val oppdatereBegrunnelse: OppdatereBegrunnelse,
+)
+
 data class OppdatereInntektRequest(
     @Schema(description = "Angi periodeinformasjon for inntekt")
     val oppdatereInntektsperiode: OppdaterePeriodeInntekt? = null,
