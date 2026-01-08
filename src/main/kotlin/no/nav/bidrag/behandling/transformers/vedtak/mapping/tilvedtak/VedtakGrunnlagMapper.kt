@@ -76,6 +76,12 @@ fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
         null
     }
 
+fun Behandling.finnBeregningsperiode() =
+    ÅrMånedsperiode(
+        eldsteVirkningstidspunkt,
+        finnBeregnTilDato(),
+    )
+
 fun Behandling.finnBeregnTilDato() =
     if (erBidrag()) {
         søknadsbarn.maxOf { finnBeregnTilDatoBehandling(it) }

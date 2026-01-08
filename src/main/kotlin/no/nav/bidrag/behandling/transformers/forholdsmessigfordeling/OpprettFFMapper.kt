@@ -20,9 +20,7 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
-import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.service.SakKravhaver
-import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.tilType
@@ -30,7 +28,6 @@ import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
-import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -40,6 +37,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
@@ -55,6 +53,10 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
                 it.åpneSøknader.filter { it.søknadFomDato != null }.map { it.søknadFomDato!! }
         } + listOf(behandling.søktFomDato)
     ).min()
+
+fun SakKravhaver.`løperBidragEtterRevurdering`(søktFomRevurderingSøknad: YearMonth) =
+    (løperBidragFra != null && løperBidragTil == null) ||
+        (løperBidragTil != null && løperBidragTil > søktFomRevurderingSøknad)
 
 fun Collection<SakKravhaver>.finnSøktFomRevurderingSøknad(behandling: Behandling) =
     maxOf(finnEldsteSøktFomDato(behandling).withDayOfMonth(1), LocalDate.now().plusMonths(1).withDayOfMonth(1))
@@ -137,6 +139,7 @@ fun opprettRolle(
     ffDetaljer: ForholdsmessigFordelingRolle,
     innkrevesFraDato: YearMonth? = null,
     medInnkreving: Boolean? = null,
+    opphørsdato: YearMonth? = null,
 ): Rolle {
     behandling.roller.find { it.ident == fødselsnummer }?.let {
         if (harGebyrSøknad != null) {
@@ -184,7 +187,7 @@ fun opprettRolle(
                 } else {
                     null
                 },
-            opphørsdato = if (erBarn) behandling.globalOpphørsdato else null,
+            opphørsdato = if (erBarn) opphørsdato?.toLocalDate() ?: behandling.globalOpphørsdato else null,
             årsak =
                 if (erBarn && ffDetaljer.erRevurdering) {
                     VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER

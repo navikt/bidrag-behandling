@@ -264,6 +264,16 @@ open class Behandling(
         } else {
             listOf(saksnummer)
         }
+    val eldsteSøktFomDato get() =
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn.minOfOrNull {
+                it.forholdsmessigFordeling!!
+                    .eldsteSøknad.søknadFomDato!!
+                    .withDayOfMonth(1)
+            } ?: søktFomDato.withDayOfMonth(1)
+        } else {
+            søktFomDato.withDayOfMonth(1)
+        }
     val erIForholdsmessigFordeling get() = forholdsmessigFordeling != null
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
