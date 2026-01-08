@@ -335,13 +335,12 @@ class VedtakGrunnlagMapper(
     ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
-                val virkningstidspunkt =
+                val beregnFraDato =
                     if (erBidrag()) {
                         søknadsbarnRolle.virkningstidspunktBeregnet
                     } else {
-                        behandling.virkningstidspunkt
-                    }
-                val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+                        behandling.eldsteVirkningstidspunkt
+                    } ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling(søknadsbarnRolle)
                 val beregningsperiode =
                     ÅrMånedsperiode(

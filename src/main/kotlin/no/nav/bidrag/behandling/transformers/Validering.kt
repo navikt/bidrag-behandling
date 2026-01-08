@@ -104,7 +104,7 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
         }
     }
 
-    val virkningstidspunkt = rolle?.virkningstidspunkt ?: behandling.virkningstidspunkt
+    val virkningstidspunkt = rolle?.virkningstidspunktRolle
 
     if (opphørsdato == virkningstidspunkt) {
         feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
