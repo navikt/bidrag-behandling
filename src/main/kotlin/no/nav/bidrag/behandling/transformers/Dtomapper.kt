@@ -822,6 +822,7 @@ class Dtomapper(
                                     harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
                                     innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
                                     stønadstype = barn.stønadstype,
+                                    opphørsdato = barn.opphørsdato?.toYearMonth(),
                                     eldsteSøktFraDato =
                                         barn.forholdsmessigFordeling!!
                                             .søknaderUnderBehandling

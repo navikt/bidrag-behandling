@@ -500,13 +500,12 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
         stønadstype = stønadstype,
         eldsteSøktFraDato = åpneBehandlinger.filter { it.søktFraDato != null }.minOfOrNull { it.søktFraDato!! },
         innkrevesFraDato =
-            if (løperBidragFra != null &&
-                løperBidragFra > behandling.søktFomDato.toYearMonth()
-            ) {
+            if (løpendeBidrag) {
                 løperBidragFra
             } else {
                 null
             },
+        opphørsdato = if (løpendeBidrag) løperBidragTil else null,
         åpneBehandlinger = åpneBehandlinger,
         bidragsmottaker =
             RolleDto(
