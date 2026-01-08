@@ -656,14 +656,15 @@ class ForholdsmessigFordelingService(
                     enhet = behandling.behandlerEnhet,
                 ),
             )
-            barn.årsak = VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
-            virkningstidspunktService.oppdaterVirkningstidspunkt(
-                barn.id,
-                søktFomDato.withDayOfMonth(1),
-                behandling,
-                forrigeVirkningstidspunkt = behandling.eldsteVirkningstidspunkt,
-            )
         }
+        // Oppdater virkning og årsak slik at det matcher med revurderingsøknaden
+        barn.årsak = VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+        virkningstidspunktService.oppdaterVirkningstidspunkt(
+            barn.id,
+            søktFomDato.withDayOfMonth(1),
+            behandling,
+            forrigeVirkningstidspunkt = behandling.eldsteVirkningstidspunkt,
+        )
     }
 
     fun finnEnhetForBarnIBehandling(behandling: Behandling): String {
