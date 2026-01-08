@@ -116,7 +116,7 @@ class BoforholdService(
         notatService.oppdatereNotat(
             behandling = behandling,
             notattype = Notattype.BOFORHOLD,
-            notattekst = request.henteNyttNotat() ?: "",
+            notattekst = request.nyBegrunnelse,
             rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
         )
 

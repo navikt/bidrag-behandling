@@ -49,7 +49,7 @@ class UtgiftService(
             notatService.oppdatereNotat(
                 behandling,
                 NotatGrunnlag.NotatType.UTGIFTER,
-                it.henteNyttNotat() ?: "",
+                it.nyBegrunnelse,
                 behandling.bidragsmottaker!!,
             )
         }

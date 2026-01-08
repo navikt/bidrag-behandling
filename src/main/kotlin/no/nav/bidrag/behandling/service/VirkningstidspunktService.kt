@@ -213,7 +213,7 @@ class VirkningstidspunktService(
                         notatService.oppdatereNotat(
                             it,
                             NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                            n.henteNyttNotat() ?: "",
+                            n.nyBegrunnelse,
                             rolle,
                         )
                     }
@@ -226,7 +226,7 @@ class VirkningstidspunktService(
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        notat.henteNyttNotat() ?: "",
+                        notat.nyBegrunnelse,
                         gjelderBarnRolle,
                     )
                 } else {
@@ -234,14 +234,14 @@ class VirkningstidspunktService(
                         notatService.oppdatereNotat(
                             it,
                             NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                            notat.henteNyttNotat() ?: "",
+                            notat.nyBegrunnelse,
                             barn,
                         )
                     }
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        notat.henteNyttNotat() ?: "",
+                        notat.nyBegrunnelse,
                         it.bidragsmottaker!!,
                     )
                 }

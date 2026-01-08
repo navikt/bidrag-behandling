@@ -379,7 +379,7 @@ class InntektService(
             notatService.oppdatereNotat(
                 behandling = behandling,
                 notattype = Notattype.INNTEKT,
-                notattekst = it.henteNyttNotat() ?: "",
+                notattekst = it.nyBegrunnelse,
                 // TODO: Fjerne setting av rolle til bidragsmottaker når frontend angir rolle for inntektsnotat
                 rolle = rolle,
             )
