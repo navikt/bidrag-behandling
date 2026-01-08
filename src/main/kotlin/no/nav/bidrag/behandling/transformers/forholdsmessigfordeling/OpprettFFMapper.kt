@@ -53,7 +53,7 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
         } + listOf(behandling.søktFomDato)
     ).min()
 
-fun SakKravhaver.`løperBidragEtterDato`(fraDato: YearMonth) =
+fun SakKravhaver.løperBidragEtterDato(fraDato: YearMonth) =
     (løperBidragFra != null && løperBidragTil == null) ||
         (løperBidragTil != null && løperBidragTil > fraDato)
 

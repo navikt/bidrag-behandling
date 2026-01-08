@@ -763,7 +763,7 @@ class ForholdsmessigFordelingService(
                     lb.mapSakKravhaverTilForholdsmessigFordelingDto(
                         sak,
                         behandling,
-                        lb.`løperBidragEtterDato`(
+                        lb.løperBidragEtterDato(
                             (relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere)
                                 .finnSøktFomRevurderingSøknad(
                                     behandling,
