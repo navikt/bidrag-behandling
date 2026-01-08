@@ -38,7 +38,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.felles.toLocalDate
-import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -54,9 +53,9 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
         } + listOf(behandling.søktFomDato)
     ).min()
 
-fun SakKravhaver.`løperBidragEtterRevurdering`(søktFomRevurderingSøknad: YearMonth) =
+fun SakKravhaver.`løperBidragEtterDato`(fraDato: YearMonth) =
     (løperBidragFra != null && løperBidragTil == null) ||
-        (løperBidragTil != null && løperBidragTil > søktFomRevurderingSøknad)
+        (løperBidragTil != null && løperBidragTil > fraDato)
 
 fun Collection<SakKravhaver>.finnSøktFomRevurderingSøknad(behandling: Behandling) =
     maxOf(finnEldsteSøktFomDato(behandling).withDayOfMonth(1), LocalDate.now().plusMonths(1).withDayOfMonth(1))
@@ -228,6 +227,7 @@ fun Rolle.kopierRolle(
     hovedbehandling: Behandling,
     bmFnr: String?,
     periodeFra: YearMonth? = null,
+    periodeTil: YearMonth? = null,
     medInnkreving: Boolean? = null,
     åpneBehandlinger: List<Behandling> = emptyList(),
 ) = Rolle(
@@ -260,7 +260,9 @@ fun Rolle.kopierRolle(
             tilhørerSak = behandling.saksnummer,
             behandlerenhet = behandling.behandlerEnhet,
             bidragsmottaker = bmFnr,
+            harLøpendeBidrag = medInnkreving == true,
             løperBidragFra = periodeFra,
+            løperBidragTil = periodeTil,
             erRevurdering = false,
             søknader =
                 (

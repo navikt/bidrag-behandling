@@ -29,6 +29,7 @@ data class ForholdsmessigFordelingRolle(
     var erRevurdering: Boolean,
     val harLøpendeBidrag: Boolean = true,
     val løperBidragFra: YearMonth? = null,
+    val løperBidragTil: YearMonth? = null,
     var behandlingsid: Long? = null,
     var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),

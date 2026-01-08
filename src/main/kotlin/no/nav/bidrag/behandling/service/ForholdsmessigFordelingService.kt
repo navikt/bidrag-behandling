@@ -33,7 +33,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierOverI
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierSamvær
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierUnderholdskostnad
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.`løperBidragEtterRevurdering`
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.`løperBidragEtterDato`
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.mapSakKravhaverTilForholdsmessigFordelingDto
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.opprettRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
@@ -229,6 +229,8 @@ class ForholdsmessigFordelingService(
                     } else {
                         emptyList()
                     } + behandling.tilFFBarnDetaljer()
+
+                val løpendeBidrag = bidragssakerBpUtenÅpenBehandling.find { bs -> bs.kravhaver == barn.ident }
                 barn.forholdsmessigFordeling =
                     ForholdsmessigFordelingRolle(
                         delAvOpprinneligBehandling = true,
@@ -238,11 +240,9 @@ class ForholdsmessigFordelingService(
                         bidragsmottaker = originalBM,
                         erRevurdering = false,
                         søknader = søknadsdetaljer.toMutableSet(),
-                        harLøpendeBidrag =
-                            bidragssakerBpUtenÅpenBehandling.any { bs ->
-                                bs.kravhaver == barn.ident &&
-                                    barn.innkrevesFraDato != null
-                            },
+                        løperBidragFra = løpendeBidrag?.løperBidragFra,
+                        løperBidragTil = løpendeBidrag?.løperBidragTil,
+                        harLøpendeBidrag = løpendeBidrag?.`løperBidragEtterDato`(behandling.eldsteSøktFomDato.toYearMonth()) == true,
                     )
             }
         }
@@ -763,7 +763,7 @@ class ForholdsmessigFordelingService(
                     lb.mapSakKravhaverTilForholdsmessigFordelingDto(
                         sak,
                         behandling,
-                        lb.løperBidragEtterRevurdering(
+                        lb.`løperBidragEtterDato`(
                             (relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere)
                                 .finnSøktFomRevurderingSøknad(
                                     behandling,
@@ -1013,12 +1013,14 @@ class ForholdsmessigFordelingService(
                 if (eksisterendeRolle == null) {
                     val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
                     val innkrevesFra = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeFra else null
+                    val innkrevesTil = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeTil else null
                     val behandlingerRolle = åpneBehandlinger.filter { it.søknadsbarn.any { it.ident == rolle.ident } }
                     behandling.roller.add(
                         rolle.kopierRolle(
                             behandling,
                             bm,
                             innkrevesFra,
+                            innkrevesTil,
                             behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
                             behandlingerRolle,
                         ),
@@ -1106,7 +1108,7 @@ class ForholdsmessigFordelingService(
         val barnMedInnkrevingSenereEnnFomDato =
             barnUtenSøknader
                 .filter {
-                    !it.løperBidragEtterRevurdering(søktFomDato.toYearMonth())
+                    !it.`løperBidragEtterDato`(søktFomDato.toYearMonth())
                 }.groupBy { it.løperBidragFra }
                 .map { (_, barn) ->
                     val søknadsid =
@@ -1114,7 +1116,7 @@ class ForholdsmessigFordelingService(
                     Pair(søknadsid, barn.map { it.kravhaver })
                 }
 
-        val barnMedInnkreving = barnUtenSøknader.filter { it.`løperBidragEtterRevurdering`(søktFomDato.toYearMonth()) }
+        val barnMedInnkreving = barnUtenSøknader.filter { it.`løperBidragEtterDato`(søktFomDato.toYearMonth()) }
         val søknadsid =
             if (barnMedInnkreving.isNotEmpty()) {
                 opprettSøknad(barnMedInnkreving, saksnummer, behandling, behandlerEnhet, stønadstype, søktFomDato, true, bmFødselsnummer!!)
@@ -1159,7 +1161,7 @@ class ForholdsmessigFordelingService(
                         b.second.any { it == søknad.kravhaver }
                     }?.first
             val skalInnkreves =
-                barnUtenSøknader.find { it.kravhaver == søknad.kravhaver }?.løperBidragEtterRevurdering(søktFomDato.toYearMonth()) == true
+                barnUtenSøknader.find { it.kravhaver == søknad.kravhaver }?.`løperBidragEtterDato`(søktFomDato.toYearMonth()) == true
             val søknader =
                 setOfNotNull(
                     søknadMedInnkreving,
@@ -1183,6 +1185,7 @@ class ForholdsmessigFordelingService(
                     ffDetaljer =
                         ffDetaljer.copy(
                             løperBidragFra = søknad.løperBidragFra,
+                            løperBidragTil = søknad.løperBidragTil,
                             søknader = søknader.toMutableSet(),
                         ),
                 )
