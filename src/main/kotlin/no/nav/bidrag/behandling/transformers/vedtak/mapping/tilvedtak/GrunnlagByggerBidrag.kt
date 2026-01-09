@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -15,6 +16,7 @@ import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
@@ -22,6 +24,8 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebid
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
@@ -38,6 +42,8 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
+import java.time.LocalDate
+import kotlin.collections.plus
 
 // Lager PERSON_BARN_BIDRAGSMOTTAKER objekter for at beregningen skal kunne hente ut riktig antall barn til BM
 // Kan hende barn til BM er husstandsmedlem
@@ -301,6 +307,44 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
         grunnlagListe,
     )
 }
+
+fun PrivatAvtale.mapTilGrunnlag(
+    gjelderBarnReferanse: String,
+    bpReferanse: String,
+    virkningstidspunkt: LocalDate,
+): List<GrunnlagDto> =
+    perioderInnkreving.map {
+        GrunnlagDto(
+            type = Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
+            referanse = it.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse),
+            gjelderReferanse = bpReferanse,
+            gjelderBarnReferanse = gjelderBarnReferanse,
+            innhold =
+                POJONode(
+                    PrivatAvtalePeriodeGrunnlag(
+                        periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                        beløp = it.beløp,
+                        valutakode = it.valutakode,
+                        samværsklasse = it.samværsklasse,
+                    ),
+                ),
+        )
+    } +
+        GrunnlagDto(
+            referanse = tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse),
+            gjelderReferanse = bpReferanse,
+            gjelderBarnReferanse = gjelderBarnReferanse,
+            type = Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
+            innhold =
+                POJONode(
+                    PrivatAvtaleGrunnlag(
+                        avtaleInngåttDato = utledetAvtaledato ?: virkningstidspunkt!!,
+                        avtaleType = avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
+                        skalIndeksreguleres = skalIndeksreguleres,
+                        utlandsbidrag = utenlandsk,
+                    ),
+                ),
+        )
 
 /*
 Legg til vedtaksid hvis aldersjustering er utført basert på klagevedtaket i klageorkestreringen

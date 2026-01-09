@@ -15,6 +15,8 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.leggTilGebyr
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
@@ -52,6 +54,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -67,6 +70,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragPeriodeRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragPeriodeResponse
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadsBarnRequest
@@ -80,6 +84,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.vedtak.Periode
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toLocalDate
@@ -391,7 +396,7 @@ class ForholdsmessigFordelingService(
         if (behandling.forholdsmessigFordeling == null) return
         if (!behandling.forholdsmessigFordeling!!.erHovedbehandling) return
 
-        if (!kanBehandlingSlettes(behandling, slettBarn, søknadsidSomSlettes)) {
+        if (!kanBehandlingSlettes(behandling, slettBarn)) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke slette behandling fordi den inneholder flere søknader som ikke er revurdering",
@@ -457,19 +462,66 @@ class ForholdsmessigFordelingService(
     fun kanBehandlingSlettes(
         behandling: Behandling,
         slettBarn: List<Rolle>,
-        søknadsidSomSlettes: Long,
     ): Boolean {
         val barnIkkeRevurdering =
             behandling.søknadsbarn
                 .filter { slettBarn.isEmpty() || !slettBarn.mapNotNull { it.ident }.contains(it.ident) }
                 .filter { !it.forholdsmessigFordeling!!.erRevurdering }
-//                .flatMap {
-//                    it.forholdsmessigFordeling!!
-//                        .søknaderUnderBehandling
-//                        .map { it.søknadsid }
-//                }
         return barnIkkeRevurdering.isEmpty()
-        // || slettBarn.isNotEmpty() && barnIkkeRevurdering.size == 1 && barnIkkeRevurdering.contains(søknadsidSomSlettes)
+    }
+
+    @Transactional
+    fun oppdaterBarnEtterInnkrevingsvedtak(
+        behandling: Behandling,
+        barnIdent: Personident,
+    ) {
+        val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
+        val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
+
+        if (rolle.erRevurderingsbarn) {
+            val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
+            if (!søknad.innkreving) {
+                feilregistrerBarnFraFFSøknad(rolle)
+                opprettRollerOgRevurderingssøknadForSak(
+                    behandling,
+                    behandling.saksnummer,
+                    relevanteKravhavere.filter { it.kravhaver == rolle.ident },
+                    behandling.behandlerEnhet,
+                    rolle.stønadstype,
+                    søknad.søknadFomDato!!,
+                )
+            }
+        }
+    }
+
+    @Transactional
+    fun oppdaterBarnEtterOpphør(
+        behandling: Behandling,
+        barnIdent: Personident,
+        periode: Periode,
+    ) {
+        val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
+        val opphørsdato = periode.periode.fom.toLocalDate()
+        rolle.årsak = null
+        rolle.avslag = Resultatkode.fraKode(periode.resultatkode)
+        if (rolle.virkningstidspunkt != null && rolle.virkningstidspunkt!! > opphørsdato) {
+            val nyVirkning = if (opphørsdato > behandling.eldsteVirkningstidspunkt) behandling.eldsteVirkningstidspunkt else opphørsdato
+            virkningstidspunktService.oppdaterVirkningstidspunkt(
+                rolle.id,
+                nyVirkning,
+                behandling,
+                true,
+                rekalkulerOpplysningerVedEndring = false,
+            )
+        }
+        virkningstidspunktService.oppdaterOpphørsdato(
+            OppdaterOpphørsdatoRequestDto(
+                idRolle = rolle.id,
+                opphørsdato = periode.periode.fom.toLocalDate(),
+            ),
+            behandling,
+            tvingEndring = true,
+        )
     }
 
     @Transactional
@@ -594,7 +646,7 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         søknadsid: Long,
     ) {
-        if (kanBehandlingSlettes(behandling, slettBarn, søknadsid)) {
+        if (kanBehandlingSlettes(behandling, slettBarn)) {
             avsluttForholdsmessigFordeling(behandling, slettBarn, søknadsid)
             behandlingService.logiskSlettBehandling(behandling)
         } else {
@@ -1125,7 +1177,7 @@ class ForholdsmessigFordelingService(
         val barnMedInnkrevingSenereEnnFomDato =
             barnUtenSøknader
                 .filter {
-                    !it.`løperBidragEtterDato`(søktFomDato.toYearMonth())
+                    !it.løperBidragEtterDato(søktFomDato.toYearMonth())
                 }.groupBy { it.løperBidragFra }
                 .map { (_, barn) ->
                     val søknadsid =
@@ -1133,7 +1185,7 @@ class ForholdsmessigFordelingService(
                     Pair(søknadsid, barn.map { it.kravhaver })
                 }
 
-        val barnMedInnkreving = barnUtenSøknader.filter { it.`løperBidragEtterDato`(søktFomDato.toYearMonth()) }
+        val barnMedInnkreving = barnUtenSøknader.filter { it.løperBidragEtterDato(søktFomDato.toYearMonth()) }
         val søknadsid =
             if (barnMedInnkreving.isNotEmpty()) {
                 opprettSøknad(barnMedInnkreving, saksnummer, behandling, behandlerEnhet, stønadstype, søktFomDato, true, bmFødselsnummer!!)
@@ -1367,6 +1419,7 @@ class ForholdsmessigFordelingService(
                             åpneBehandlinger = mutableSetOf(behandling),
                             eierfogd = behandling.behandlerEnhet,
                             løperBidragFra = løpendeBidrag?.periodeFra,
+                            løperBidragTil = løpendeBidrag?.periodeTil,
                         ),
                     )
                 }
@@ -1397,6 +1450,7 @@ class ForholdsmessigFordelingService(
                                     kravhaver = barnFnr.personident!!,
                                     eierfogd = åpenSøknad.behandlerenhet,
                                     løperBidragFra = løpendeBidrag?.periodeFra,
+                                    løperBidragTil = løpendeBidrag?.periodeTil,
                                     åpneSøknader = mutableSetOf(åpenSøknad),
                                 ),
                             )

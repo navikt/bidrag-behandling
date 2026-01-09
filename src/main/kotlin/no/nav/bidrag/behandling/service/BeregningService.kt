@@ -224,11 +224,16 @@ class BeregningService(
                 beregnFraDato,
                 beregningTilDato,
             )
+        val grunnlagslisteSøknadsbarn = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList()
+        val grunnlagslisteSimulertPrivatAvtale =
+            mapper.run {
+                byggGrunnlagForSimulering(behandling, grunnlagslisteSøknadsbarn.toSet())
+            }
         val grunnlagBeregning =
             BidragsberegningOrkestratorRequestV2(
                 skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
                 beregningsperiode = beregningsperiode,
-                grunnlagsliste = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList(),
+                grunnlagsliste = (grunnlagslisteSøknadsbarn + grunnlagslisteSimulertPrivatAvtale).toSet().toList(),
                 erDirekteAvslag = behandling.erDirekteAvslag(),
                 beregningstype =
                     when {

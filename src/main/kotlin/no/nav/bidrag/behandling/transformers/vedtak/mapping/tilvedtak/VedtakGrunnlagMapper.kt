@@ -332,6 +332,16 @@ class VedtakGrunnlagMapper(
         }
     }
 
+    fun byggGrunnlagForSimulering(
+        behandling: Behandling,
+        grunnlagsliste: Set<GrunnlagDto>,
+    ): Set<GrunnlagDto> =
+        mapper.run {
+            behandling.run {
+                tilPrivatAvtaleGrunnlag(grunnlagsliste)
+            }
+        }
+
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
         søknadsbarnRolle: Rolle,

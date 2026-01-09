@@ -102,6 +102,9 @@ fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(
 fun Rolle.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
     opprettPersonBarnBPBMReferanse(type, fødselsdato, ident, navn)
 
+fun Person.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
+    opprettPersonBarnBPBMReferanse(type, fødselsdato, ident, navn)
+
 fun opprettPersonBarnBPBMReferanse(
     type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
     fødselsdato: LocalDate,
