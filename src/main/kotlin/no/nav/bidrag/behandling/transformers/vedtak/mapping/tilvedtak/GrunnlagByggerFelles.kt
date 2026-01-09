@@ -94,7 +94,7 @@ fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbar
         }
 
         TypeBehandling.BIDRAG -> {
-            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer())
+//            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer())
         }
 
         else -> {}

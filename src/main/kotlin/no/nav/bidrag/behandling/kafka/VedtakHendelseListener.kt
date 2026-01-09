@@ -83,7 +83,7 @@ class VedtakHendelseListener(
             vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
         )
 
-        vedtak.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving()
+//        vedtak.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving()
     }
 
     private fun VedtakHendelse.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving() {
