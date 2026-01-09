@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import no.nav.bidrag.behandling.service.OppgaveService
@@ -16,14 +18,13 @@ import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
-import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.erDelvedtak
 import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
 import no.nav.bidrag.transport.behandling.vedtak.saksnummer
-import no.nav.bidrag.transport.behandling.vedtak.søknadId
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
@@ -38,6 +39,8 @@ class VedtakHendelseListener(
     val behandlingService: BehandlingService,
     val notatOpplysningerService: NotatOpplysningerService,
     val oppgaveService: OppgaveService,
+    val behandlingRepository: BehandlingRepository,
+    val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
@@ -79,6 +82,46 @@ class VedtakHendelseListener(
             vedtaksid = vedtak.id,
             vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
         )
+
+        vedtak.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving()
+    }
+
+    private fun VedtakHendelse.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving() {
+        if (type != Vedtakstype.OPPHØR && type != Vedtakstype.INNKREVING) return
+        val stønadsendringerBidrag =
+            stønadsendringListe?.filter { it.type == Stønadstype.BIDRAG || it.type == Stønadstype.BIDRAG18AAR } ?: emptyList()
+        if (stønadsendringerBidrag.isEmpty()) return
+        stønadsendringerBidrag.forEach { stønadsendring ->
+
+            val bp = stønadsendring.skyldner
+            behandlingRepository.finnHovedbehandlingForBpVedFF(bp.verdi)?.let { behandling ->
+                if (type == Vedtakstype.OPPHØR) {
+                    val opphørsperiode =
+                        stønadsendring.periodeListe
+                            .filter { it.beløp == null }
+                            .maxByOrNull {
+                                it.periode.fom
+                            } ?: return@let
+                    forholdsmessigFordelingService
+                        .oppdaterBarnEtterOpphør(
+                            behandling,
+                            stønadsendring.kravhaver,
+                            opphørsperiode,
+                        )
+                } else if (type == Vedtakstype.INNKREVING) {
+                    if (behandling.søknadsbarn.none { it.ident == stønadsendring.kravhaver.verdi }) {
+                        // Henter og legger til barn som revurderingsbarn
+                        behandling.privatAvtale.removeIf { it.rolle == null && it.person?.ident == stønadsendring.kravhaver.verdi }
+                        forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!)
+                    } else {
+                        forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
+                            behandling,
+                            stønadsendring.kravhaver,
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun VedtakHendelse.erInnkrevingAvBidragOmgjøringsvedtak(behandling: Behandling): Boolean {

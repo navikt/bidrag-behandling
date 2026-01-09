@@ -175,7 +175,7 @@ open class Behandling(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "behandling",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REMOVE],
         orphanRemoval = true,
     )
     open var samvær: MutableSet<Samvær> = mutableSetOf(),
@@ -220,6 +220,23 @@ open class Behandling(
         }
     }
 
+    fun hentSøknad(finnSøknadsid: Long) =
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn.firstNotNullOfOrNull { it.forholdsmessigFordeling!!.søknaderUnderBehandling.find { it.søknadsid == finnSøknadsid } }
+        } else if (soknadsid == finnSøknadsid) {
+            ForholdsmessigFordelingSøknadBarn(
+                mottattDato = mottattdato,
+                søknadFomDato = søktFomDato,
+                søktAvType = soknadFra,
+                behandlingstema = behandlingstema,
+                behandlingstype = søknadstype,
+                søknadsid = soknadsid,
+                saksnummer = saksnummer,
+            )
+        } else {
+            null
+        }
+
     fun søknadForSak(saksnummer: String) =
         if (erIForholdsmessigFordeling) {
             søknadsbarn
@@ -246,6 +263,16 @@ open class Behandling(
                 .distinct()
         } else {
             listOf(saksnummer)
+        }
+    val eldsteSøktFomDato get() =
+        if (erIForholdsmessigFordeling) {
+            søknadsbarn.minOfOrNull {
+                it.forholdsmessigFordeling!!
+                    .eldsteSøknad.søknadFomDato!!
+                    .withDayOfMonth(1)
+            } ?: søktFomDato.withDayOfMonth(1)
+        } else {
+            søktFomDato.withDayOfMonth(1)
         }
     val erIForholdsmessigFordeling get() = forholdsmessigFordeling != null
     val grunnlagListe: List<Grunnlag> get() = grunnlag.toList()

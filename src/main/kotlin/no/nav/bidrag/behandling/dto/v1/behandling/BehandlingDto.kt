@@ -104,6 +104,7 @@ data class VirkningstidspunktBarnDtoV2(
     val løpendeBidragPeriode: ÅrMånedsperiode? = null,
     val harLøpendeBidrag: Boolean = false,
     val harLøpendeForskudd: Boolean = false,
+    val medInnkreving: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val opphørsdato: LocalDate? = null,
     val beregnTil: BeregnTil? = null,

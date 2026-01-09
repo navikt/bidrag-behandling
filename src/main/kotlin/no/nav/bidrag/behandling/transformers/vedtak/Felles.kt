@@ -62,12 +62,22 @@ fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
         .find { it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
 
 // TODO: Reel mottaker fra bidrag-sak?
-fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto) =
-    rolle.reellMottaker
-        ?.ident
-        ?.verdi
-        ?.let { Personident(it) }
-        ?: find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }!!.let { hentNyesteIdent(it.ident)!! }
+fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto): Personident {
+    val reelMottaker =
+        rolle.reellMottaker
+            ?.ident
+            ?.verdi
+            ?.let { Personident(it) }
+
+    if (reelMottaker != null) {
+        return reelMottaker
+    }
+
+    val barnRolle =
+        find { it.ident == rolle.fødselsnummer!!.verdi }
+            ?: return find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }!!.let { hentNyesteIdent(it.ident)!! }
+    return barnRolle.bidragsmottaker.let { hentNyesteIdent(it!!.ident)!! }
+}
 
 fun String?.nullIfEmpty() = if (this.isNullOrEmpty()) null else this
 
@@ -90,6 +100,9 @@ fun Inntekt?.ifTaMed(block: (Inntekt) -> Unit) {
 fun <T> Boolean?.ifFalse(block: (Boolean) -> T?): T? = if (this == false) block(this) else null
 
 fun Rolle.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
+    opprettPersonBarnBPBMReferanse(type, fødselsdato, ident, navn)
+
+fun Person.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
     opprettPersonBarnBPBMReferanse(type, fødselsdato, ident, navn)
 
 fun opprettPersonBarnBPBMReferanse(

@@ -59,6 +59,7 @@ open class PrivatAvtale(
     open var perioder: MutableSet<PrivatAvtalePeriode> = mutableSetOf(),
 ) {
     val personIdent get() = person?.ident ?: rolle!!.ident
+    val personFødselsdato get() = person?.fødselsdato ?: rolle!!.fødselsdato
     val utledetAvtaledato get() =
         if (valgtVedtakFraNav != null) {
             valgtVedtakFraNav!!.vedtakstidspunkt?.withDayOfMonth(1)?.toLocalDate()
@@ -73,7 +74,7 @@ open class PrivatAvtale(
         }
     val perioderInnkreving get() =
         when {
-            avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV ->
+            avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV -> {
                 valgtVedtakFraNav
                     ?.perioder
                     ?.mapIndexed { i, it ->
@@ -85,7 +86,11 @@ open class PrivatAvtale(
                             it.beløp ?: BigDecimal.ZERO,
                         )
                     }?.toSet() ?: emptySet()
-            else -> perioder
+            }
+
+            else -> {
+                perioder
+            }
         }
 
     override fun toString(): String =

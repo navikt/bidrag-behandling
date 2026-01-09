@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
 import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
-import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -33,15 +32,14 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.kafka.BehandlingOppdatertLytter
 import no.nav.bidrag.behandling.transformers.Dtomapper
+import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -207,7 +205,10 @@ class BehandlingService(
         }
         val søknadsid = opprettBehandling.søknadsid
 
-        if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+        if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled &&
+            opprettBehandling.behandlingstype != null &&
+            !behandlingstyperSomIkkeSkalInkluderesIFF.contains(opprettBehandling.behandlingstype)
+        ) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
             behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
                 val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
@@ -231,7 +232,8 @@ class BehandlingService(
                     bm?.ident?.verdi,
                     behandlerenhet = opprettBehandling.behandlerenhet,
                     erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
-                    søknadsdetaljer,
+                    medInnkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                    søknadsdetaljer = søknadsdetaljer,
                     søktFraDato = opprettBehandling.søktFomDato,
                 )
                 return OpprettBehandlingResponse(behandling.id!!)
@@ -591,22 +593,31 @@ class BehandlingService(
         request: OppdaterRollerRequest,
     ): OppdaterRollerResponse {
         val oppdaterRollerListe = request.roller
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        val behandling =
+            behandlingRepository.findBehandlingById(behandlingId).get().let {
+                if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+                    behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!)!!
+                } else {
+                    it
+                }
+            }
+
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
                 "Kan ikke oppdatere behandling hvor vedtak er fattet",
             )
         }
-
-        secureLogger.debug { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
-        val eksisterendeRoller = behandling.roller
         val oppdaterRollerNyesteIdent =
             oppdaterRollerListe.map { rolle ->
                 rolle.copy(
                     ident = oppdaterTilNyesteIdent(rolle.ident?.verdi, behandlingId)?.let { Personident(it) } ?: rolle.ident,
                 )
             }
+
+        secureLogger.debug { "Oppdater roller i behandling $behandlingId: $oppdaterRollerListe" }
+
+        val eksisterendeRoller = behandling.roller
 
         if (request.søknadsid != null) {
             behandling.oppdaterEksisterendeRoller(request.søknadsid, request.saksnummer ?: behandling.saksnummer, oppdaterRollerNyesteIdent)
@@ -616,8 +627,9 @@ class BehandlingService(
             oppdaterRollerNyesteIdent
                 .filter { !it.erSlettet }
                 .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
+                .distinct()
 
-        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }
+        val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }.distinct()
         identerSomSkalLeggesTil.isNotEmpty().ifTrue {
             secureLogger.debug {
                 "Legger til søknadsbarn ${
@@ -626,14 +638,21 @@ class BehandlingService(
             }
         }
 
-        val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }
-        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }.distinct()
+        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }.distinct()
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
         if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+            val revurderingsbarnSomLeggesTil =
+                oppdaterRollerListe
+                    .filter { r -> !r.erSlettet }
+                    .filter { oppdatertRolle ->
+                        val rolle = behandling.roller.find { it.ident == oppdatertRolle.ident?.verdi }
+                        rolle != null && rolle.erRevurderingsbarn
+                    }
             forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
-                rollerSomLeggesTil,
+                (rollerSomLeggesTil + revurderingsbarnSomLeggesTil).distinct(),
                 rollerSomSkalSlettes,
                 behandling,
                 request.søknadsid ?: behandling.soknadsid!!,
@@ -641,19 +660,22 @@ class BehandlingService(
             )
         } else {
             behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
+            oppdaterBehandlingEtterOppdatertRoller(
+                behandling,
+                underholdService,
+                virkningstidspunktService,
+                rollerSomLeggesTil,
+                rollerSomSkalSlettes,
+            )
             behandling.roller.removeIf { r ->
-                val skalSlettes = identerSomSkalSlettes.contains(r.ident)
-                skalSlettes.ifTrue {
+                if (identerSomSkalSlettes.contains(r.ident)) {
                     log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+                    true
+                } else {
+                    false
                 }
-                skalSlettes
             }
         }
-
-        oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
-        oppdatereSamværForRoller(behandling, rollerSomLeggesTil)
-
-        // TODO: Underholdskostnad versjon 3: Opprette underholdskostnad for nytt søknadsbarn
 
         lagreBehandling(behandling, forceSave = true)
 
@@ -699,30 +721,5 @@ class BehandlingService(
                     }
                 }
             }
-    }
-
-    private fun oppdatereSamværForRoller(
-        behandling: Behandling,
-        rollerSomLeggesTil: List<OpprettRolleDto>,
-    ) {
-        if (behandling.tilType() == TypeBehandling.BIDRAG) {
-            rollerSomLeggesTil.forEach { rolle ->
-                behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
-            }
-        }
-    }
-
-    private fun oppdatereHusstandsmedlemmerForRoller(
-        behandling: Behandling,
-        rollerSomLeggesTil: List<OpprettRolleDto>,
-    ) {
-        val nyeRollerSomIkkeHarHusstandsmedlemmer =
-            rollerSomLeggesTil.filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
-        behandling.husstandsmedlem.addAll(
-            nyeRollerSomIkkeHarHusstandsmedlemmer.map {
-                secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
-                it.toHusstandsmedlem(behandling)
-            },
-        )
     }
 }

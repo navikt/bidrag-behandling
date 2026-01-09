@@ -16,7 +16,7 @@ class BehandlingFeilhåndteringScheduler(
     private val forsendelseService: ForsendelseService,
     private val behandlingRepository: BehandlingRepository,
 ) {
-    @Scheduled(cron = "0 */5 * * * *")
+    @Scheduled(cron = "0 */5 * * 5 *")
     @SchedulerLock(name = "opprettOgDistribuerForsendelserAldersjustering", lockAtLeastFor = "10m")
     @Transactional
     fun opprettOgDistribuerForsendelserAldersjustering() {

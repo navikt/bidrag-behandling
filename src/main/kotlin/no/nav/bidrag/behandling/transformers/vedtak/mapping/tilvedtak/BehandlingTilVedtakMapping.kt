@@ -919,7 +919,7 @@ class BehandlingTilVedtakMapping(
                             kravhaver = personIdentNav,
                             mottaker = personIdentNav,
                             valutakode = if (ilagtGebyr) "NOK" else null,
-                            sak = Saksnummer(saksnummer),
+                            sak = Saksnummer(it.saksnummer),
                         )
                     }
                 }
@@ -952,7 +952,7 @@ class BehandlingTilVedtakMapping(
                         kravhaver = personIdentNav,
                         mottaker = personIdentNav,
                         valutakode = if (ilagtGebyr) "NOK" else null,
-                        sak = Saksnummer(saksnummer),
+                        sak = Saksnummer(it.saksnummer),
                     )
                 }
             } else {

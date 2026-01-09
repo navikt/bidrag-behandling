@@ -12,9 +12,9 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentNyesteGrunnlagForIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
-import no.nav.bidrag.behandling.database.datamodell.henteNyesteIkkeAktiveGrunnlag
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
@@ -36,6 +36,7 @@ import no.nav.bidrag.behandling.transformers.underhold.justerPerioderForOpphørs
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioder
 import no.nav.bidrag.behandling.transformers.underhold.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.underhold.validerBarn
 import no.nav.bidrag.behandling.transformers.underhold.validere
 import no.nav.bidrag.behandling.transformers.underhold.validerePerioderStønadTilBarnetilsyn
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -132,11 +133,59 @@ class UnderholdService(
     }
 
     @Transactional
+    fun endreUnderholdskostnadTilAndreBarn(
+        behandling: Behandling,
+        rolle: OpprettRolleDto,
+    ) {
+        val eksisterendeUnderholdskostnad =
+            behandling.underholdskostnader
+                .filter { !it.gjelderAndreBarn }
+                .find { it.personIdent == rolle.ident!!.verdi }
+        val rolleBarn = behandling.roller.find { it.ident == rolle.ident!!.verdi }
+
+        if (eksisterendeUnderholdskostnad != null && rolleBarn != null) {
+            val person =
+                personRepository.findFirstByIdent(rolle.ident!!.verdi) ?: Person(
+                    ident = rolle.ident.verdi,
+                    fødselsdato =
+                        hentPersonFødselsdato(rolle.ident.verdi)
+                            ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
+                )
+            eksisterendeUnderholdskostnad.rolle = behandling.bidragsmottaker!!
+            eksisterendeUnderholdskostnad.person = person
+            eksisterendeUnderholdskostnad.barnetilsyn.clear()
+            eksisterendeUnderholdskostnad.tilleggsstønad.clear()
+            eksisterendeUnderholdskostnad.harTilsynsordning = eksisterendeUnderholdskostnad.faktiskeTilsynsutgifter.isNotEmpty()
+        }
+    }
+
+    @Transactional
     fun oppretteUnderholdskostnad(
         behandling: Behandling,
         gjelderBarn: BarnDto,
         kilde: Kilde = Kilde.MANUELL,
     ): Underholdskostnad {
+        gjelderBarn.validerBarn()
+        val eksisterendeUnderholdskostnadUnderBM =
+            if (gjelderBarn.personident != null) {
+                behandling.underholdskostnader
+                    .filter { it.gjelderAndreBarn }
+                    .find { it.personIdent == gjelderBarn.personident.verdi }
+            } else {
+                null
+            }
+        val rolleBarn =
+            if (gjelderBarn.personident != null) {
+                behandling.søknadsbarn.find { it.ident == gjelderBarn.personident.verdi }
+            } else {
+                null
+            }
+
+        if (eksisterendeUnderholdskostnadUnderBM != null && rolleBarn != null) {
+            eksisterendeUnderholdskostnadUnderBM.rolle = rolleBarn
+            eksisterendeUnderholdskostnadUnderBM.person = null
+            return eksisterendeUnderholdskostnadUnderBM
+        }
         gjelderBarn.validere(behandling, personService)
 
         return gjelderBarn.personident?.let { personidentBarn ->
@@ -516,9 +565,8 @@ class UnderholdService(
         kilde: Kilde? = null,
     ): Underholdskostnad {
         val underholdskostnad = Underholdskostnad(behandling = behandling, person = person, rolle = rolle, kilde = kilde)
-        val lagreUnderholdskostnad = if (behandling.id != null) underholdskostnadRepository.save(underholdskostnad) else underholdskostnad
-        behandling.underholdskostnader.add(lagreUnderholdskostnad)
-        return lagreUnderholdskostnad
+        behandling.underholdskostnader.add(underholdskostnad)
+        return underholdskostnad
     }
 
     private fun oppdatereUnderholdsperioderEtterEndretVirkningsdato(

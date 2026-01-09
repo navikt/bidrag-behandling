@@ -153,6 +153,7 @@ data class BehandlingDtoV2(
     val boforhold: BoforholdDtoV2 = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
     val gebyr: GebyrDto? = null,
     val gebyrV2: GebyrDtoV2? = null,
+    val gebyrV3: GebyrDtoV3? = null,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata = AktiveGrunnlagsdata(),
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata = IkkeAktiveGrunnlagsdata(),
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
@@ -166,6 +167,10 @@ data class BehandlingDtoV2(
 ) {
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
 }
+
+data class GebyrDtoV3(
+    val saker: List<GebyrSakDto>,
+)
 
 data class GebyrDtoV2(
     val harFlereSøknader: Boolean,
@@ -188,6 +193,18 @@ data class SøknadDetaljerDto(
     val behandlingstema: Behandlingstema?,
 )
 
+data class GebyrSakDto(
+    val saksnummer: String,
+    val gebyrRoller: List<GebyrRolleV2Dto>,
+    val gebyr18År: List<GebyrRolleV2Dto>,
+)
+
+data class GebyrRolleV2Dto(
+    val rolle: RolleDto,
+    val gebyrDetaljer: GebyrDetaljerDto,
+    val valideringsfeil: GebyrValideringsfeilDto? = null,
+)
+
 data class GebyrRolleDto(
     val rolle: RolleDto,
     val gebyrDetaljer: List<GebyrDetaljerDto>,
@@ -195,6 +212,7 @@ data class GebyrRolleDto(
 )
 
 data class GebyrDetaljerDto(
+    @Schema(deprecated = true, description = "Skal fjernes")
     val søknad: SøknadDetaljerDto? = null,
     val inntekt: GebyrInntektDto,
     val beløpGebyrsats: BigDecimal,

@@ -20,12 +20,11 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfei
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
+import no.nav.bidrag.behandling.service.hentPerson
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.transport.felles.toLocalDate
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
@@ -36,6 +35,33 @@ fun OppdatereUnderholdRequest.validere() {
             HttpStatus.BAD_REQUEST,
             "Verken harTilsynsordning eller begrunnelse var satt.",
         )
+    }
+}
+
+fun BarnDto.validerBarn() {
+    if ((navn.isNullOrBlank() || fødselsdato == null) && (personident == null || personident.verdi.isEmpty())) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Personident eller navn og fødselsdato må oppgis for nytt barn i underholdskostnad.",
+        )
+    } else if (!navn.isNullOrBlank() && (personident != null && personident.verdi.isNotEmpty())) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Personident kan ikke oppgis sammen med med navn på barnet som skal legges til underholdskostnad.",
+        )
+    }
+
+    if (id != null && id > 0) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Databaseid til barn skal ikke oppgis ved opprettelse av underholdskostnad.",
+        )
+    }
+
+    this.personident?.let {
+        if (hentPerson(it.verdi) == null) {
+            throw HttpClientErrorException(HttpStatus.BAD_REQUEST, "Fant ikke barn med oppgitt personident.")
+        }
     }
 }
 

@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterBeregnTilDatoRequestDt
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterManuellVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunktBegrunnelseDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilType
@@ -191,6 +192,65 @@ class VirkningstidspunktService(
             }
 
     @Transactional
+    fun oppdatereVirkningstidspunktBegrunnelse(
+        behandlingsid: Long,
+        request: OppdatereVirkningstidspunktBegrunnelseDto,
+    ) = behandlingRepository
+        .findBehandlingById(behandlingsid)
+        .orElseThrow { behandlingNotFoundException(behandlingsid) }
+        .let {
+            secureLogger.info { "Oppdaterer begrunnelse for virkningstidspunkt for behandling $behandlingsid, forespørsel=$request" }
+            val gjelderBarnRolle =
+                request.rolleId?.let { rolleId ->
+                    it.søknadsbarn.find { it.id == rolleId }
+                }
+            request.valider(it)
+
+            val stønadstype = gjelderBarnRolle?.stønadstype ?: it.stonadstype
+            if (stønadstype == Stønadstype.BIDRAG18AAR) {
+                request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
+                    gjelderBarnRolle?.let { rolle ->
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                            n.nyBegrunnelse,
+                            rolle,
+                        )
+                    }
+                }
+            }
+
+            val notat = request.oppdatereBegrunnelse
+            if (notat != null) {
+                if (gjelderBarnRolle != null) {
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                        notat.nyBegrunnelse,
+                        gjelderBarnRolle,
+                    )
+                } else {
+                    it.søknadsbarn.forEach { barn ->
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                            notat.nyBegrunnelse,
+                            barn,
+                        )
+                    }
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                        notat.nyBegrunnelse,
+                        it.bidragsmottaker!!,
+                    )
+                }
+            }
+
+            it
+        }
+
+    @Transactional
     fun oppdatereVirkningstidspunkt(
         behandlingsid: Long,
         request: OppdatereVirkningstidspunkt,
@@ -213,7 +273,7 @@ class VirkningstidspunktService(
                         notatService.oppdatereNotat(
                             it,
                             NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
-                            n.henteNyttNotat() ?: "",
+                            n.nyBegrunnelse,
                             rolle,
                         )
                     }
@@ -226,7 +286,7 @@ class VirkningstidspunktService(
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        notat.henteNyttNotat() ?: "",
+                        notat.nyBegrunnelse,
                         gjelderBarnRolle,
                     )
                 } else {
@@ -234,14 +294,14 @@ class VirkningstidspunktService(
                         notatService.oppdatereNotat(
                             it,
                             NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                            notat.henteNyttNotat() ?: "",
+                            notat.nyBegrunnelse,
                             barn,
                         )
                     }
                     notatService.oppdatereNotat(
                         it,
                         NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        notat.henteNyttNotat() ?: "",
+                        notat.nyBegrunnelse,
                         it.bidragsmottaker!!,
                     )
                 }
@@ -369,9 +429,11 @@ class VirkningstidspunktService(
         behandling: Behandling,
         tvingEndring: Boolean = false,
         rekalkulerOpplysningerVedEndring: Boolean = true,
+        forrigeVirkningstidspunkt: LocalDate? = null,
     ) {
         val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
-        val forrigeVirkningstidspunkt = gjelderBarn?.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
+        // Forrige virkningstidspunkt settes fra input til metoden hvis det var en revurderingsbarn som får ny virkningstidspunkt etter ny søknad
+        val forrigeVirkningstidspunkt = forrigeVirkningstidspunkt ?: gjelderBarn?.virkningstidspunkt ?: behandling.eldsteVirkningstidspunkt
         val erVirkningstidspunktEndret = tvingEndring || nyVirkningstidspunkt != forrigeVirkningstidspunkt
 
         fun oppdatereUnderhold() {

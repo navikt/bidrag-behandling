@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandlingMedReelMottaker
+import no.nav.bidrag.behandling.utils.testdata.synkSøknadsbarnVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
@@ -77,6 +78,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true)
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
         behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
+        behandling.synkSøknadsbarnVirkningstidspunkt()
         behandling.inntekter = behandling.inntekter.filter { it.type != Inntektsrapportering.BARNETILLEGG }.toMutableSet()
         val søknadsbarn = behandling.søknadsbarn.first()
         søknadsbarn.fødselsdato = LocalDate.now().minusMonths(2).minusYears(18)

@@ -747,8 +747,7 @@ class GrunnlagService(
                     barnebidragGrunnlagInnhenting
                         .hentBeløpshistorikk(behandling, sb, stønadstype, fraOpprinneligVedtakstidspunkt)
                         ?.korrigerIndeksår(sb)
-                if (eksisterendeGrunnlag == null &&
-                    respons != null ||
+                if ((eksisterendeGrunnlag == null && respons != null) ||
                     respons != null &&
                     eksisterendeGrunnlag.konvertereData<StønadDto>() != respons
                 ) {

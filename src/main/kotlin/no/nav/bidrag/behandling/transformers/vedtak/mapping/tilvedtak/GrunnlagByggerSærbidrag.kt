@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BehandlingDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
@@ -99,6 +100,20 @@ fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
                 POJONode(
                     UtgiftDirekteBetaltGrunnlag(
                         beløpDirekteBetalt = utgift!!.beløpDirekteBetaltAvBp,
+                    ),
+                ),
+        ),
+    )
+
+fun Behandling.byggGrunnlagBehandlingDetaljer() =
+    setOf(
+        GrunnlagDto(
+            referanse = "behandling_detaljer",
+            type = Grunnlagstype.BEHANDLING_DETALJER,
+            innhold =
+                POJONode(
+                    BehandlingDetaljerGrunnlag(
+                        opprettetForholdsmessigFordeling = erIForholdsmessigFordeling,
                     ),
                 ),
         ),
