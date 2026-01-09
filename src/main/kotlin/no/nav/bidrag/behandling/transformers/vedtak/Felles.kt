@@ -1,12 +1,15 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
+import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Person
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -29,6 +32,7 @@ import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.sak.RolleDto
 import java.time.LocalDate
 import java.time.LocalDateTime
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Person as PersonGrunnlag
 
 val særbidragDirekteAvslagskoderSomKreverBeregning = listOf(Resultatkode.GODKJENT_BELØP_ER_LAVERE_ENN_FORSKUDDSSATS)
 val særbidragDirekteAvslagskoderSomInneholderUtgifter =
@@ -104,6 +108,26 @@ fun Rolle.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PER
 
 fun Person.opprettPersonBarnBPBMReferanse(type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER) =
     opprettPersonBarnBPBMReferanse(type, fødselsdato, ident, navn)
+
+fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto {
+    val referanse =
+        rolle?.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
+            ?: person!!.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
+    return GrunnlagDto(
+        referanse = referanse,
+        gjelderReferanse = referanse,
+        grunnlagsreferanseListe = emptyList(),
+        type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
+        innhold =
+            POJONode(
+                PersonGrunnlag(
+                    ident = personIdent!!.let { Personident(it) },
+                    navn = if (personIdent.isNullOrEmpty()) rolle!!.navn else null,
+                    fødselsdato = personFødselsdato,
+                ).valider(),
+            ),
+    )
+}
 
 fun opprettPersonBarnBPBMReferanse(
     type: Grunnlagstype = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
