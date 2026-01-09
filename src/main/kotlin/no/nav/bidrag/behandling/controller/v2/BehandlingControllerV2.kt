@@ -13,8 +13,11 @@ import no.nav.bidrag.behandling.database.datamodell.extensions.lasterGrunnlagAsy
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunktBegrunnelseDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunktBegrunnelseResponseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -45,6 +48,7 @@ import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GebyrService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.NotatService
+import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.UtgiftService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.VedtakService
@@ -62,10 +66,12 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRequest
 import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRespons
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -280,6 +286,46 @@ class BehandlingControllerV2(
 
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         return dtomapper.tilDto(behandling)
+    }
+
+    @PutMapping("/behandling/{behandlingsid}/virkningstidspunkt/begrunnelse")
+    @Operation(
+        description = "Oppdatere virkningstidspunkt begrunnelse for behandling.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun oppdatereVirkningstidspunktV2Begrunnelse(
+        @PathVariable behandlingsid: Long,
+        @Valid @RequestBody(required = true) request: OppdatereVirkningstidspunktBegrunnelseDto,
+    ): OppdatereVirkningstidspunktBegrunnelseResponseDto {
+        secureLogger.info { "Oppdaterer virkningstidspunkt begrunnelse for behandling $behandlingsid med forespørsel $request" }
+
+        virkningstidspunktService.oppdatereVirkningstidspunktBegrunnelse(behandlingsid, request)
+
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        val rolle = behandling.roller.find { it.id == request.rolleId }
+        val notat =
+            if (rolle != null) {
+                henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, rolle)
+            } else {
+                // Hvis rolle er lik null så betyr det at begrunnelsen er satt lik for alle
+                henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, behandling.søknadsbarn.first())
+            }
+        return OppdatereVirkningstidspunktBegrunnelseResponseDto(
+            erLikForAlle = behandling.erVirkningstidspunktLiktForAlle,
+            rolleId = request.rolleId,
+            oppdatertBegrunnelse =
+                if (notat.isEmpty()) {
+                    henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
+                } else {
+                    notat
+                },
+            oppdatertBegrunnelseVurderingAvSkolegang =
+                if (rolle != null && rolle.stønadstype == Stønadstype.BIDRAG18AAR) {
+                    henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle)
+                } else {
+                    null
+                },
+        )
     }
 
     @PutMapping("/behandling/{behandlingsid}/boforhold")

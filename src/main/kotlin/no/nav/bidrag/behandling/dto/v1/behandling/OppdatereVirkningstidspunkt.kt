@@ -9,6 +9,32 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
 
+data class OppdatereVirkningstidspunktBegrunnelseResponseDto(
+    val rolleId: Long? = null,
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    var oppdatertBegrunnelse: String? = null,
+    @Schema(
+        description =
+            "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
+                " Dette kan bare settes hvis det er 18 års bidrag",
+    )
+    var oppdatertBegrunnelseVurderingAvSkolegang: String? = null,
+    val erLikForAlle: Boolean = false,
+)
+
+data class OppdatereVirkningstidspunktBegrunnelseDto(
+    val rolleId: Long? = null,
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
+    @Schema(
+        description =
+            "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
+                " Dette kan bare settes hvis det er 18 års bidrag",
+    )
+    var oppdaterBegrunnelseVurderingAvSkolegang: OppdatereBegrunnelse? = null,
+    val settLikVerdierForAlleBarn: Boolean = false,
+)
+
 data class OppdatereVirkningstidspunkt(
     val rolleId: Long? = null,
     @Schema(

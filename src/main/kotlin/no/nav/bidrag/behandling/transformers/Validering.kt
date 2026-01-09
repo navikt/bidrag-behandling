@@ -17,6 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunktBegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.erSærbidrag
 import no.nav.bidrag.behandling.dto.v2.boforhold.OppdatereAndreVoksneIHusstanden
@@ -313,6 +314,26 @@ fun OppdatereUtgift.validerUtgiftspost(behandling: Behandling): List<String> {
     }
 
     return feilliste
+}
+
+fun OppdatereVirkningstidspunktBegrunnelseDto.valider(behandling: Behandling) {
+    val feilliste = mutableListOf<String>()
+    if (rolleId != null && behandling.roller.none { it.id == rolleId }) {
+        feilliste.add("Barn med id $rolleId finnes ikke i behandling ${behandling.id}")
+    }
+    if (oppdaterBegrunnelseVurderingAvSkolegang != null && !behandling.kanSkriveVurderingAvSkolegangAlle()) {
+        feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
+    }
+    if (rolleId == null && settLikVerdierForAlleBarn && !behandling.erVirkningstidspunktLiktForAlle) {
+        feilliste.add("Kan kun sette lik begrunnelse for alle barn hvis virkningstidspunkt lik for alle barn")
+    }
+
+    if (feilliste.isNotEmpty()) {
+        throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,
+            "Ugyldig data ved oppdatering av virkningstidspunkt: ${feilliste.joinToString(", ")}",
+        )
+    }
 }
 
 fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
