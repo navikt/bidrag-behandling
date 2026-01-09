@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.opprettPersonBarnBPBMReferanse
+import no.nav.bidrag.behandling.transformers.vedtak.tilPersonGrunnlag
 import no.nav.bidrag.beregn.barnebidrag.BeregnSamværsklasseApi
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -75,13 +76,13 @@ class BehandlingTilGrunnlagMappingV2(
                 søknadsbarn.map { it.tilGrunnlagPerson() }
             }
 
-//        val privatavtaleBarnSimulert = privatAvtale.filter { it.rolle == null }.map { it.person!!.tilRolle(this).tilGrunnlagPerson() }
+        val privatavtaleBarnSimulert = privatAvtale.filter { it.rolle == null }.map { it.tilPersonGrunnlag() }
         val bidragsmottakere = alleBidragsmottakere.map { it.tilGrunnlagPerson() }
         return (
             bidragsmottakere +
                 listOf(
                     bidragspliktig?.tilGrunnlagPerson(),
-                ) + søknadsbarnListe
+                ) + søknadsbarnListe + privatavtaleBarnSimulert
         ).filterNotNull().toMutableSet()
     }
 
@@ -204,26 +205,6 @@ class BehandlingTilGrunnlagMappingV2(
         gjelderBarnIdent: String? = null,
     ): Set<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
-
-        fun PrivatAvtale.tilPersonGrunnlag(): GrunnlagDto {
-            val referanse =
-                rolle?.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
-                    ?: person!!.opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG)
-            return GrunnlagDto(
-                referanse = referanse,
-                gjelderReferanse = referanse,
-                grunnlagsreferanseListe = emptyList(),
-                type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
-                innhold =
-                    POJONode(
-                        Person(
-                            ident = personIdent!!.let { Personident(it) },
-                            navn = if (personIdent.isNullOrEmpty()) rolle!!.navn else null,
-                            fødselsdato = personFødselsdato,
-                        ).valider(),
-                    ),
-            )
-        }
 
         fun PrivatAvtale.opprettPersonGrunnlag(): GrunnlagDto {
             val relatertPersonGrunnlag = tilPersonGrunnlag()
