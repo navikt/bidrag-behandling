@@ -81,6 +81,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.OpprettMidlertidligTilgangRequest
 import org.springframework.http.HttpStatus
@@ -485,6 +486,7 @@ class ForholdsmessigFordelingService(
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
+        val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
 
         val rollerSomSkalLeggesTil = mutableSetOf<Rolle>()
         rollerSomSkalLeggesTilDto
@@ -501,9 +503,16 @@ class ForholdsmessigFordelingService(
                         erRevurdering = erRevurdering,
                         søknader = mutableSetOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid)),
                     )
+                val løpendeBidragRolle = relevanteKravhavere.find { it.kravhaver == nyRolle.ident?.verdi }
                 if (eksisterendeRolle == null) {
                     val rolle = nyRolle.toRolle(behandling)
-                    rolle.forholdsmessigFordeling = ffRolleDetaljer
+                    val løperBidrag = løpendeBidragRolle?.løperBidragEtterDato(søknadsdetaljer!!.søknadFomDato!!.toYearMonth()) == true
+                    rolle.forholdsmessigFordeling =
+                        ffRolleDetaljer.copy(
+                            løperBidragFra = if (løperBidrag) løpendeBidragRolle.løperBidragFra else null,
+                            løperBidragTil = if (løperBidrag) løpendeBidragRolle.løperBidragTil else null,
+                        )
+                    rolle.opphørsdato = if (løperBidrag) løpendeBidragRolle.løperBidragTil?.toLocalDate() else null
                     rollerSomSkalLeggesTil.add(rolle)
                 } else {
                     if (eksisterendeRolle.forholdsmessigFordeling == null) {
@@ -777,7 +786,7 @@ class ForholdsmessigFordelingService(
             kanOppretteForholdsmessigFordeling =
                 (
                     relevanteKravhavereIkkeSøknadsbarn.isNotEmpty() ||
-                        finnesLøpendeBidragSomOverlapperMedEldsteVirkning
+                        (!behandling.erIForholdsmessigFordeling && finnesLøpendeBidragSomOverlapperMedEldsteVirkning)
                 ),
             simulertGrunnlag = resultat.simulertGrunnlag,
             måOppretteForholdsmessigFordeling = resultat.beregningManglerGrunnlag,
