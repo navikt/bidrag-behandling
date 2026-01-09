@@ -43,6 +43,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholds
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
@@ -243,7 +244,7 @@ class ForholdsmessigFordelingService(
                         søknader = søknadsdetaljer.toMutableSet(),
                         løperBidragFra = løpendeBidrag?.løperBidragFra,
                         løperBidragTil = løpendeBidrag?.løperBidragTil,
-                        harLøpendeBidrag = løpendeBidrag?.`løperBidragEtterDato`(behandling.eldsteSøktFomDato.toYearMonth()) == true,
+                        harLøpendeBidrag = løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) == true,
                     )
             }
         }
@@ -481,6 +482,7 @@ class ForholdsmessigFordelingService(
         bmIdent: String? = null,
         behandlerenhet: String = behandling.behandlerEnhet,
         erRevurdering: Boolean = false,
+        medInnkreving: Boolean = false,
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
         søktFraDato: LocalDate? = null,
     ) {
@@ -512,6 +514,7 @@ class ForholdsmessigFordelingService(
                             løperBidragFra = if (løperBidrag) løpendeBidragRolle.løperBidragFra else null,
                             løperBidragTil = if (løperBidrag) løpendeBidragRolle.løperBidragTil else null,
                         )
+                    rolle.innkrevingstype = if (medInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
                     rolle.opphørsdato = if (løperBidrag) løpendeBidragRolle.løperBidragTil?.toLocalDate() else null
                     rollerSomSkalLeggesTil.add(rolle)
                 } else {
@@ -528,6 +531,8 @@ class ForholdsmessigFordelingService(
                                             setOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid))
                                     ).toMutableSet(),
                             )
+                        eksisterendeRolle.innkrevingstype =
+                            if (medInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
                         if (varRevurderingsbarn && søktFraDato != null) {
                             eksisterendeRolle.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
                             virkningstidspunktService.oppdaterVirkningstidspunkt(
@@ -606,6 +611,7 @@ class ForholdsmessigFordelingService(
         barn.fjernSøknad(søknadsid)
         barn.fjernGebyr(søknadsid)
         if (barn.forholdsmessigFordeling!!.søknaderUnderBehandling.isNotEmpty()) {
+            barn.innkrevingstype = if (barn.harSøknadMedInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
             LOGGER.info {
                 "Barnet er koblet til flere søknader ${barn.forholdsmessigFordeling!!.søknader}" +
                     " etter den ble slettet fra søknad $søknadsid. Gjør ingen endring. Behandlingid = ${behandling.id}"
@@ -618,9 +624,14 @@ class ForholdsmessigFordelingService(
         val åpneSøknader = hentÅpneSøknader(bidragspliktigFnr)
         val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
 
+        val skalOppretteFFSøknadMedInnkreving =
+            barn.forholdsmessigFordeling!!.løperBidragEtterDato(
+                behandling.finnBeregnTilDato().toYearMonth(),
+            )
         val åpenFFBehandling =
             åpneSøknader.filter { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }.find {
-                it.saksnummer == barn.forholdsmessigFordeling?.tilhørerSak &&
+                it.innkreving && skalOppretteFFSøknadMedInnkreving &&
+                    it.saksnummer == barn.forholdsmessigFordeling?.tilhørerSak &&
                     it.søknadFomDato == søktFomDato && it.behandlingstema.tilStønadstype() == barn.stønadstype
             }
         if (åpenFFBehandling != null) {
@@ -656,7 +667,7 @@ class ForholdsmessigFordelingService(
                                 Behandlingstema.BIDRAG
                             },
                         søknadFomDato = søktFomDato,
-                        innkreving = barn.forholdsmessigFordeling!!.harLøpendeBidrag,
+                        innkreving = skalOppretteFFSøknadMedInnkreving,
                         barnListe = listOf(Barn(personident = barn.ident!!)),
                     ),
                 )
@@ -674,6 +685,7 @@ class ForholdsmessigFordelingService(
         }
         // Oppdater virkning og årsak slik at det matcher med revurderingsøknaden
         barn.årsak = VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+        barn.innkrevingstype = if (skalOppretteFFSøknadMedInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
         virkningstidspunktService.oppdaterVirkningstidspunkt(
             barn.id,
             søktFomDato.withDayOfMonth(1),
@@ -761,6 +773,7 @@ class ForholdsmessigFordelingService(
         val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
         val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
+        val alleRelevanteKravhavere = relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
             if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && `finnesLøpendeBidragSomOverlapperMedEldsteVirkning`) {
                 relevanteKravhavere
@@ -772,12 +785,7 @@ class ForholdsmessigFordelingService(
                     lb.mapSakKravhaverTilForholdsmessigFordelingDto(
                         sak,
                         behandling,
-                        lb.løperBidragEtterDato(
-                            (relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere)
-                                .finnSøktFomRevurderingSøknad(
-                                    behandling,
-                                ).toYearMonth(),
-                        ),
+                        lb.løperBidragEtterDato(alleRelevanteKravhavere.finnSøktFomRevurderingSøknad(behandling).toYearMonth()),
                     )
                 }
         val resultat = sjekkBeregningKreverForholdsmessigFordeling(behandling)

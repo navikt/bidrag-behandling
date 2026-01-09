@@ -232,7 +232,8 @@ class BehandlingService(
                     bm?.ident?.verdi,
                     behandlerenhet = opprettBehandling.behandlerenhet,
                     erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
-                    søknadsdetaljer,
+                    medInnkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                    søknadsdetaljer = søknadsdetaljer,
                     søktFraDato = opprettBehandling.søktFomDato,
                 )
                 return OpprettBehandlingResponse(behandling.id!!)

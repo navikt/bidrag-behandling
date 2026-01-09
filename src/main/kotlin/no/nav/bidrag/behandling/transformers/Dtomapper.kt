@@ -1109,6 +1109,7 @@ class Dtomapper(
                         løpendeBidragPeriode = finnPeriodeLøpendePeriodeInnenforSøktFomDato(it),
                         harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
                         harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
+                        medInnkreving = it.innkrevingstype == Innkrevingstype.MED_INNKREVING,
                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                         opphørsdato = it.opphørsdato,
                         globalOpphørsdato = globalOpphørsdato,
