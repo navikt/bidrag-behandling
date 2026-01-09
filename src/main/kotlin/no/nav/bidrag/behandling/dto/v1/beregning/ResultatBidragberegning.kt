@@ -423,6 +423,7 @@ data class ForholdsmessigFordelingBidragTilFordelingBarn(
     data class BeregnetBidragBarnDto(
         val saksnummer: Saksnummer,
         val løpendeBeløp: BigDecimal,
+        val indeksreguleringFaktor: BigDecimal? = null,
         val valutakode: String = "NOK",
         val samværsklasse: Samværsklasse,
         val samværsfradrag: BigDecimal,
