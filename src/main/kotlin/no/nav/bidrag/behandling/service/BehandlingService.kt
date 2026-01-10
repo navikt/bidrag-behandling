@@ -265,6 +265,8 @@ class BehandlingService(
                     if (opprettBehandling.vedtakstype == Vedtakstype.OPPHØR) {
                         if (opprettBehandling.stønadstype == Stønadstype.BIDRAG18AAR) {
                             Resultatkode.AVSLUTTET_SKOLEGANG
+                        } else if (opprettBehandling.stønadstype == Stønadstype.BIDRAG) {
+                            Resultatkode.IKKE_OMSORG_FOR_BARNET
                         } else {
                             Resultatkode.IKKE_OMSORG
                         }
