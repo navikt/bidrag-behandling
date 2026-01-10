@@ -1472,7 +1472,12 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         sumBidragTilFordelingIkkeSøknadsbarn =
             bidragTilFordelingAlle
                 .filter {
-                    !it.erSøknadsbarn && it.beregnetBidrag != null
+                    !it.erSøknadsbarn && it.beregnetBidrag != null && !it.privatAvtale
+                }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
+        sumBidragTilFordelingPrivatAvtale =
+            bidragTilFordelingAlle
+                .filter {
+                    !it.erSøknadsbarn && it.beregnetBidrag != null && it.privatAvtale
                 }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
     )
 }

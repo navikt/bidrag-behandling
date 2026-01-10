@@ -401,6 +401,7 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn: Boolean,
     val sumBidragTilFordelingSøknadsbarn: BigDecimal,
     val sumBidragTilFordelingIkkeSøknadsbarn: BigDecimal,
+    val sumBidragTilFordelingPrivatAvtale: BigDecimal,
     val sumPrioriterteBidragTilFordeling: BigDecimal,
     val bidragTilFordelingForBarnet: BigDecimal,
     val andelAvSumBidragTilFordelingFaktor: BigDecimal,
