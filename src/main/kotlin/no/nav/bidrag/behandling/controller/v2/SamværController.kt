@@ -81,7 +81,19 @@ class SamværController(
         @Valid
         @RequestBody(required = true)
         request: SletteSamværsperiodeElementDto,
-    ): OppdaterSamværResponsDto = samværService.slettPeriode(behandlingsid, request)
+    ): OppdaterSamværResponsDto {
+        val respons = samværService.slettPeriode(behandlingsid, request)
+        val behandling = behandlingService.hentBehandlingById(behandlingsid)
+        return OppdaterSamværResponsDto(
+            oppdatertSamvær = respons.oppdatertSamvær,
+            erSammeForAlle = behandling.sammeSamværForAlle,
+            samværBarn =
+                behandling.samvær
+                    .sortedWith(
+                        sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.navn }),
+                    ).map { it.tilDto() },
+        )
+    }
 
     @Suppress("unused")
     @PostMapping("/samvar/beregn")

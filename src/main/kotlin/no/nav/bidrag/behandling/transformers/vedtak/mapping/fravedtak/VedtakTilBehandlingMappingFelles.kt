@@ -68,6 +68,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BehandlingDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
@@ -85,6 +86,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -429,7 +431,17 @@ internal fun List<GrunnlagDto>.mapRoller(
     filter { grunnlagstyperRolle.contains(it.type) }
         .distinctBy { it.personIdent }
         .mapIndexed { i, rolle ->
-            val stønadsendring = vedtak.stønadsendringListe.find { it.kravhaver.verdi == rolle.personIdent }
+            val stønadsendring =
+                vedtak.stønadsendringListe.find {
+                    if (rolle.type == Grunnlagstype.PERSON_SØKNADSBARN) {
+                        it.kravhaver.verdi == rolle.personIdent
+                    } else if (rolle.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER) {
+                        it.mottaker.verdi == rolle.personIdent
+                    } else {
+                        // Ikke hent for BP da BP kan ha flere stønadsendringer i flere saker
+                        it.kravhaver.verdi == rolle.personIdent
+                    }
+                }
             val resultatFraVedtak =
                 stønadsendring?.let { finnResultatFraAnnenVedtak(stønadsendring.grunnlagReferanseListe) }?.let {
                     GrunnlagFraVedtak(
@@ -1059,6 +1071,9 @@ internal fun List<GrunnlagDto>.hentAldersjusteringDetaljerForBarn(gjelderBarnRef
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
         ?.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
 
+internal fun List<GrunnlagDto>.hentBehandlingDetaljer(): BehandlingDetaljerGrunnlag? =
+    filtrerOgKonverterBasertPåEgenReferanse<BehandlingDetaljerGrunnlag>(Grunnlagstype.BEHANDLING_DETALJER).firstOrNull()?.innhold
+
 internal fun List<GrunnlagDto>.hentSøknader(gjelderReferanse: String? = null): List<SøknadGrunnlag> =
     filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD)
         .filter {
@@ -1275,7 +1290,12 @@ private fun GrunnlagDto.tilRolle(
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         forholdsmessigFordeling =
             if (grunnlagsliste.harOpprettetForholdsmessigFordeling()) {
-                val søknader = grunnlagsliste.hentSøknader(referanse)
+                val søknader =
+                    if (type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG) {
+                        grunnlagsliste.hentSøknader()
+                    } else {
+                        grunnlagsliste.hentSøknader(referanse)
+                    }
                 val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
                 val erRevurdering = søknader.all { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
                 val førsteSøknad = søknader.first()

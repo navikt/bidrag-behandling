@@ -76,6 +76,12 @@ fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
         null
     }
 
+fun Behandling.finnBeregningsperiode() =
+    ÅrMånedsperiode(
+        eldsteVirkningstidspunkt,
+        finnBeregnTilDato(),
+    )
+
 fun Behandling.finnBeregnTilDato() =
     if (erBidrag()) {
         søknadsbarn.maxOf { finnBeregnTilDatoBehandling(it) }
@@ -326,6 +332,16 @@ class VedtakGrunnlagMapper(
         }
     }
 
+    fun byggGrunnlagForSimulering(
+        behandling: Behandling,
+        grunnlagsliste: Set<GrunnlagDto>,
+    ): Set<GrunnlagDto> =
+        mapper.run {
+            behandling.run {
+                tilPrivatAvtaleGrunnlag(grunnlagsliste)
+            }
+        }
+
     fun byggGrunnlagForBeregning(
         behandling: Behandling,
         søknadsbarnRolle: Rolle,
@@ -335,13 +351,12 @@ class VedtakGrunnlagMapper(
     ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
-                val virkningstidspunkt =
+                val beregnFraDato =
                     if (erBidrag()) {
                         søknadsbarnRolle.virkningstidspunktBeregnet
                     } else {
-                        behandling.virkningstidspunkt
-                    }
-                val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
+                        behandling.eldsteVirkningstidspunkt
+                    } ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
                 val beregningTilDato = finnBeregnTilDatoBehandling(søknadsbarnRolle)
                 val beregningsperiode =
                     ÅrMånedsperiode(

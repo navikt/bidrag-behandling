@@ -27,12 +27,16 @@ data class ForholdsmessigFordelingRolle(
     val behandlerenhet: String?,
     var delAvOpprinneligBehandling: Boolean,
     var erRevurdering: Boolean,
+    // Har bidrag som løper i løpet av beregningsperioden. Det vil si at løperBidragFra < eldste søkt fra dato
     val harLøpendeBidrag: Boolean = true,
     val løperBidragFra: YearMonth? = null,
+    val løperBidragTil: YearMonth? = null,
     var behandlingsid: Long? = null,
     var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
 ) {
+    fun løperBidragEtterDato(dato: YearMonth): Boolean = løperBidragTil?.isAfter(dato) ?: true
+
     @get:JsonIgnore
     val søknaderUnderBehandling get() = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING }
 

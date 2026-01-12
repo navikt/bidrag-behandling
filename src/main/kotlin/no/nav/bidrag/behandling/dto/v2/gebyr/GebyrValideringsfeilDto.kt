@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.gebyr
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
@@ -26,7 +27,9 @@ fun Behandling.validerGebyr() =
         }.filter { it.harFeil }
 
 data class GebyrValideringsfeilDto(
+    @Schema(deprecated = true, description = "Skal fjernes")
     val gjelder: RolleDto,
+    @Schema(deprecated = true, description = "Skal fjernes")
     val søknad: SøknadDetaljerDto,
     val manglerBegrunnelse: Boolean,
 ) {

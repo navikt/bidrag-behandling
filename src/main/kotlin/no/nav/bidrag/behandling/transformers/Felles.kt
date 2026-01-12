@@ -365,7 +365,7 @@ fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle)
             ?: return null
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
     val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
-    return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! > YearMonth.from(søktFomDato)) {
+    return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! > YearMonth.from(eldsteSøktFomDato)) {
         sistePeriode
     } else {
         null

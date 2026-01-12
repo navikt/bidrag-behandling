@@ -401,6 +401,7 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn: Boolean,
     val sumBidragTilFordelingSøknadsbarn: BigDecimal,
     val sumBidragTilFordelingIkkeSøknadsbarn: BigDecimal,
+    val sumBidragTilFordelingPrivatAvtale: BigDecimal,
     val sumPrioriterteBidragTilFordeling: BigDecimal,
     val bidragTilFordelingForBarnet: BigDecimal,
     val andelAvSumBidragTilFordelingFaktor: BigDecimal,
@@ -423,6 +424,7 @@ data class ForholdsmessigFordelingBidragTilFordelingBarn(
     data class BeregnetBidragBarnDto(
         val saksnummer: Saksnummer,
         val løpendeBeløp: BigDecimal,
+        val indeksreguleringFaktor: BigDecimal? = null,
         val valutakode: String = "NOK",
         val samværsklasse: Samværsklasse,
         val samværsfradrag: BigDecimal,

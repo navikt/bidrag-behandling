@@ -322,7 +322,11 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
                 type = Grunnlagstype.BEREGNET_INNTEKT,
                 gjelderReferanse = gjelder.referanse,
                 grunnlagsreferanseListe =
-                    summerteMånedsinntekter.flatMap { it.grunnlagsreferanseListe }.toSet().toList(),
+                    summerteMånedsinntekter
+                        .flatMap { it.grunnlagsreferanseListe }
+                        .map { korrigerPersonReferanser(it, personobjekter) }
+                        .toSet()
+                        .toList(),
                 innhold =
                     POJONode(
                         BeregnetInntekt(
@@ -346,6 +350,36 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
                     ),
             )
         }.toSet()
+
+/**
+ * Personreferanser var formatter på følgende måte person_<type>_<fødselsdato>_<rolleId>
+ * Dette kunne skape problemer ved FF mtp at person får ny rolleId. Dette korrigerer slik at riktig referanse brukes
+ */
+private fun korrigerPersonReferanser(
+    oldRef: String,
+    personobjekter: Set<GrunnlagDto>,
+): String {
+    // Extract the person reference part starting with "person_"
+    val personRefStart = oldRef.indexOf("person_")
+    if (personRefStart == -1) return oldRef
+    val personRef = oldRef.substring(personRefStart).substringBeforeLast('_') // Remove last _XXXX
+    // Check if it matches one of the specified Grunnlagstype values and ends with YYYYMMDD (8 digits)
+    val parts = personRef.split('_')
+    if (parts.size < 3) return oldRef
+    val type = parts[1] + "_" + parts[2] // e.g., PERSON_SØKNADSBARN
+    val validTypes =
+        Grunnlagstype.entries
+            .filter { it.name.startsWith("PERSON") }
+            .map { it.name }
+            .toSet()
+    if (type !in validTypes) return oldRef
+    val datePart = parts.last()
+    if (datePart.length != 8 || !datePart.all { it.isDigit() }) return oldRef
+    // Find the matching person in personobjekter by referanse prefix
+    val correctPerson = personobjekter.find { it.referanse.startsWith(personRef) }
+    // Return the correct referanse or fallback to oldRef if not found
+    return correctPerson?.referanse ?: oldRef
+}
 
 fun List<Grunnlag>.tilInnhentetGrunnlagUnderholdskostnad(personobjekter: Set<GrunnlagDto>): Set<GrunnlagDto> =
     mapBarnetilsyn(personobjekter) + mapTilleggsstønad(personobjekter)
@@ -419,24 +453,32 @@ private fun opprettGrunnlagsreferanserForInntekt2(
 ): List<Grunnlagsreferanse> {
     val referanse =
         when (inntekt.type) {
-            Inntektsrapportering.BARNETILLEGG ->
+            Inntektsrapportering.BARNETILLEGG -> {
                 opprettBarnetilleggGrunnlagsreferanse(gjelderReferanse)
+            }
 
-            Inntektsrapportering.SMÅBARNSTILLEGG ->
+            Inntektsrapportering.SMÅBARNSTILLEGG -> {
                 opprettSmåbarnstilleggGrunnlagsreferanse(gjelderReferanse)
+            }
 
-            Inntektsrapportering.UTVIDET_BARNETRYGD ->
+            Inntektsrapportering.UTVIDET_BARNETRYGD -> {
                 opprettUtvidetbarnetrygGrunnlagsreferanse(gjelderReferanse)
+            }
 
-            Inntektsrapportering.KONTANTSTØTTE ->
+            Inntektsrapportering.KONTANTSTØTTE -> {
                 opprettKontantstøtteGrunnlagsreferanse(gjelderReferanse)
+            }
 
-            Inntektsrapportering.KAPITALINNTEKT, Inntektsrapportering.LIGNINGSINNTEKT ->
+            Inntektsrapportering.KAPITALINNTEKT, Inntektsrapportering.LIGNINGSINNTEKT -> {
                 opprettSkattegrunnlagGrunnlagsreferanse(
                     gjelderReferanse,
                     inntekt.opprinneligFom?.year!!,
                 )
-            else -> opprettAinntektGrunnlagsreferanse(gjelderReferanse)
+            }
+
+            else -> {
+                opprettAinntektGrunnlagsreferanse(gjelderReferanse)
+            }
         }
 
     return listOfNotNull(referanse)

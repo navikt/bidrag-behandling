@@ -93,6 +93,10 @@ fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbar
             grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt() + byggGrunnlagSærbidragKategori())
         }
 
+        TypeBehandling.BIDRAG -> {
+//            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer())
+        }
+
         else -> {}
     }
     return grunnlagListe

@@ -62,7 +62,7 @@ open class Rolle(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
     open val navn: String? = null,
-    open val deleted: Boolean = false,
+    open var deleted: Boolean = false,
     open var harGebyrsøknad: Boolean = false,
     @Column(columnDefinition = "jsonb", name = "manuelt_overstyrt_gebyr")
     @ColumnTransformer(write = "?::jsonb")
@@ -126,6 +126,7 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    val harSøknadMedInnkreving get() = forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.innkreving } == true
     val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
     val barn get() =
         behandling.søknadsbarn.filter {
@@ -177,6 +178,22 @@ open class Rolle(
         return gebyr!!
     }
 
+    fun oppdaterGebyrV2(
+        saksnummer: String,
+        manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr,
+    ) {
+        if (!manueltOverstyrtGebyr.overstyrGebyr) {
+            manueltOverstyrtGebyr.begrunnelse = null
+        }
+        val gebyr = hentEllerOpprettGebyr()
+        val gebyrSøknad = gebyr.finnGebyrForSak(saksnummer)
+//        gebyrSøknad.manueltOverstyrtGebyr = manueltOverstyrtGebyr
+//        gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
+//        gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
+//        gebyr.begrunnelse = manueltOverstyrtGebyr.begrunnelse
+//        gebyr.ilagtGebyr = manueltOverstyrtGebyr.ilagtGebyr
+    }
+
     fun oppdaterGebyr(
         søknadsid: Long,
         manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr,
@@ -204,6 +221,8 @@ open class Rolle(
         }
     }
 
+    fun gebyrForSak(saksnummer: String) = hentEllerOpprettGebyr().finnGebyrForSak(saksnummer)
+
     fun gebyrForSøknad(søknadsid: Long): GebyrRolleSøknad =
         hentEllerOpprettGebyr().finnEllerOpprettGebyrForSøknad(søknadsid, sakForSøknad(søknadsid))
 
@@ -211,10 +230,10 @@ open class Rolle(
 
     val bidragsmottaker get() =
         behandling.alleBidragsmottakere.find {
-            forholdsmessigFordeling?.bidragsmottaker != null && it.ident == forholdsmessigFordeling?.bidragsmottaker ||
-                it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak ||
-                forholdsmessigFordeling == null && it.forholdsmessigFordeling == null ||
-                forholdsmessigFordeling?.tilhørerSak == behandling.saksnummer && it.forholdsmessigFordeling == null
+            (forholdsmessigFordeling?.bidragsmottaker != null && it.ident == forholdsmessigFordeling?.bidragsmottaker) ||
+                (it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak) ||
+                (forholdsmessigFordeling == null && it.forholdsmessigFordeling == null) ||
+                (forholdsmessigFordeling?.tilhørerSak == behandling.saksnummer && it.forholdsmessigFordeling == null)
         }
     val beregningGrunnlagFraVedtak get() = grunnlagFraVedtak ?: grunnlagFraVedtakForInnkreving?.vedtak
     val grunnlagFraVedtakForInnkreving get() = grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }
@@ -228,6 +247,14 @@ open class Rolle(
 
     override fun toString(): String =
         "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Rolle) return false
+        return ident == other.ident && rolletype == other.rolletype
+    }
+
+    override fun hashCode(): Int = (ident?.hashCode() ?: 0) * 31 + rolletype.hashCode()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -263,6 +290,15 @@ data class GebyrRolle(
         gebyrSøknader.add(gebyrSøknad)
     }
 
+    fun finnAlleGebyrForSak(saksnummer: String): List<GebyrRolleSøknad> = gebyrSøknader.filter { it.saksnummer == saksnummer }
+
+    fun finnGebyrForSak(saksnummer: String): List<GebyrRolleSøknad> {
+        val alleGebyrSøknader = finnGebyrForSak(saksnummer)
+        val gebyrIkke18År = alleGebyrSøknader.filter { !it.gjelder18ÅrSøknad }.minBy { it.søknadsid }
+        val gebyr18År = alleGebyrSøknader.filter { it.gjelder18ÅrSøknad }
+        return listOfNotNull(gebyrIkke18År) + gebyr18År
+    }
+
     fun finnGebyrForSøknad(søknadsid: Long): GebyrRolleSøknad? = gebyrSøknader.find { it.søknadsid == søknadsid }
 
     fun finnEllerOpprettGebyrForSøknad(
@@ -273,6 +309,7 @@ data class GebyrRolle(
             ?: GebyrRolleSøknad(
                 saksnummer = saksnummer,
                 søknadsid = søknadsid,
+                false,
                 null,
                 null,
                 RolleManueltOverstyrtGebyr(overstyrGebyr = false),
@@ -283,6 +320,9 @@ data class GebyrRolle(
 data class GebyrRolleSøknad(
     val saksnummer: String,
     val søknadsid: Long,
+    // Hvis det gjelder 18 års søknad så skal det ilegges gebyr til BP selv om det finnes andre gebyrsøknader
+    // Det vil si at BP kan både få gebyr på søknad under 18 år og søknad over 18 år (søkt av 18 åring) i samme vedtak
+    val gjelder18ÅrSøknad: Boolean = false,
     var referanse: String? = null,
     val behandlingid: Long? = null,
     var manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,

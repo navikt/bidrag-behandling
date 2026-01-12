@@ -104,6 +104,7 @@ class BarnebidragGrunnlagInnhenting(
                 behandling.createStønadHistoriskRequest(
                     stønadstype = stønadstype,
                     søknadsbarn = søknadsbarn,
+                    saksnummer = Saksnummer(søknadsbarn.saksnummer),
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
                     fraOpprinneligVedtakstidspunkt = fraOpprinneligVedtakstidspunkt,
                 )
@@ -133,13 +134,22 @@ class BarnebidragGrunnlagInnhenting(
             type = grunnlagstype,
             gjelderReferanse =
                 when {
-                    type == Stønadstype.BIDRAG -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
-                    type == Stønadstype.BIDRAG18AAR -> behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                    type == Stønadstype.BIDRAG -> {
+                        behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                    }
+
+                    type == Stønadstype.BIDRAG18AAR -> {
+                        behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                    }
+
                     this != null && this.mottaker.verdi != behandling.bidragsmottaker!!.ident -> {
                         // TODO: What to do here?
                         behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
                     }
-                    else -> behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
+
+                    else -> {
+                        behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
+                    }
                 },
             gjelderBarnReferanse = søknadsbarn.tilGrunnlagsreferanse(),
             innhold =
@@ -165,10 +175,11 @@ class BarnebidragGrunnlagInnhenting(
         stønadstype: Stønadstype,
         søknadsbarn: Rolle,
         skyldner: Personident?,
+        saksnummer: Saksnummer? = null,
         fraOpprinneligVedtakstidspunkt: Boolean,
     ) = HentStønadHistoriskRequest(
         type = stønadstype,
-        sak = Saksnummer(saksnummer),
+        sak = saksnummer ?: Saksnummer(this.saksnummer),
         skyldner = skyldner ?: Personident(bidragspliktig!!.ident!!),
         kravhaver = Personident(søknadsbarn.ident!!),
         gyldigTidspunkt =

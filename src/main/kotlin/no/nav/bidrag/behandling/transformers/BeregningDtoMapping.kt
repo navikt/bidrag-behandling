@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.dto.v1.beregning.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
@@ -40,8 +39,8 @@ import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligIn
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentBehandlingDetaljer
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøknader
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
@@ -58,6 +57,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -70,17 +70,14 @@ import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidra
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetBidragPerBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningAndelAvBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragJustertForBPBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordeling
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelDeltBosted
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEvne25ProsentAvInntekt
@@ -102,9 +99,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnholdMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.KopiDelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.KopiSamværsperiodeGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsklassePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
@@ -116,14 +113,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeri
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidragAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
-import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.byggSluttberegningBarnebidragDetaljer
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erBidragJustertNedTil25ProsentAvInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
@@ -137,18 +132,13 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentBeregnetBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentResultatBeløp
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentVirkningstidspunktGrunnlagForBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
 import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
-import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSøknadGrunnlag
@@ -159,7 +149,6 @@ import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
-import kotlin.collections.forEach
 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
 
@@ -1391,10 +1380,11 @@ internal fun List<GrunnlagDto>.hentSamvær(gjelderReferanse: String): List<Samv�
         }.map { it.innholdTilObjekt<SamværsperiodeGrunnlag>() }
 
 fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
-    // Opprettet FF
-    hentSøknader().any {
-        it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
-    } ||
+    hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true ||
+        // Opprettet FF
+        hentSøknader().any {
+            it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
+        } ||
         // Opprett FF når alle barna er i samme søknad. Tilfelle hvor det er valgt ulik virkningstidspunkt for barna
         filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT).any {
             if (it.gjelderBarnReferanse == null) return@any false
@@ -1459,7 +1449,8 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
                 bidragTilFordeling = it.innhold.bidragTilFordeling,
             )
         }
-    val bidragTilFordelingAndreBarn = finnBidragTilFordelingLøpendeBidrag(sumBidragTilBeregning.grunnlag)
+    val bidragTilFordelingAndreBarn =
+        finnBidragTilFordelingLøpendeBidrag(sumBidragTilBeregning.grunnlag, sumBidragTilBeregning.innhold.periode)
     val bidragTilFordelingAlle = bidragTilFordelingSøknadsbarn + bidragTilFordelingAndreBarn
     return ForholdsmessigFordelingBeregningsdetaljer(
         sumBidragTilFordeling = sumBidragTilBeregning.innhold.sumBidragTilFordeling,
@@ -1481,13 +1472,19 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         sumBidragTilFordelingIkkeSøknadsbarn =
             bidragTilFordelingAlle
                 .filter {
-                    !it.erSøknadsbarn && it.beregnetBidrag != null
+                    !it.erSøknadsbarn && it.beregnetBidrag != null && !it.privatAvtale
+                }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
+        sumBidragTilFordelingPrivatAvtale =
+            bidragTilFordelingAlle
+                .filter {
+                    !it.erSøknadsbarn && it.beregnetBidrag != null && it.privatAvtale
                 }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
     )
 }
 
 private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
     fraGrunnlag: BaseGrunnlag,
+    periode: ÅrMånedsperiode,
 ): List<ForholdsmessigFordelingBidragTilFordelingBarn> {
     val bidragTilFordelingLøpendeBidrag =
         finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragTilFordelingLøpendeBidrag>(
@@ -1495,39 +1492,82 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
             fraGrunnlag,
         )
 
-    return bidragTilFordelingLøpendeBidrag.mapNotNull {
-        val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
-        val grunnlagSamværsfradrag =
-            finnOgKonverterGrunnlagSomErReferertAv<DelberegningSamværsfradrag>(
-                Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG,
-                it.grunnlag,
-            ).firstOrNull()
-        val løpendeBidrag =
-            finnOgKonverterGrunnlagSomErReferertAv<LøpendeBidragPeriode>(
-                Grunnlagstype.LØPENDE_BIDRAG_PERIODE,
-                it.grunnlag,
-            ).firstOrNull()?.innhold ?: return@mapNotNull null
-        ForholdsmessigFordelingBidragTilFordelingBarn(
-            prioritertBidrag = false,
-            privatAvtale = false,
-            erSøknadsbarn = false,
-            bidragTilFordeling = it.innhold.bidragTilFordeling,
-            barn =
-                PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
-            beregnetBidrag =
-                ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
-                    saksnummer = løpendeBidrag.saksnummer,
-                    samværsklasse = løpendeBidrag.samværsklasse,
-                    løpendeBeløp = løpendeBidrag.løpendeBeløp,
-                    faktiskBeløp = løpendeBidrag.faktiskBeløp,
-                    beregnetBidrag = it.innhold.bidragTilFordeling,
-                    beregnetBeløp = løpendeBidrag.beregnetBeløp,
-                    valutakode = løpendeBidrag.valutakode,
-                    reduksjonUnderholdskostnad = it.innhold.reduksjonUnderholdskostnad,
-                    samværsfradrag = grunnlagSamværsfradrag?.innhold?.beløp ?: BigDecimal.ZERO,
-                ),
+    val løpendeBidrag =
+        bidragTilFordelingLøpendeBidrag.mapNotNull {
+            val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+            val grunnlagSamværsfradrag =
+                finnOgKonverterGrunnlagSomErReferertAv<DelberegningSamværsfradrag>(
+                    Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG,
+                    it.grunnlag,
+                ).firstOrNull()
+            val løpendeBidrag =
+                finnOgKonverterGrunnlagSomErReferertAv<LøpendeBidragPeriode>(
+                    Grunnlagstype.LØPENDE_BIDRAG_PERIODE,
+                    it.grunnlag,
+                ).firstOrNull()?.innhold ?: return@mapNotNull null
+            ForholdsmessigFordelingBidragTilFordelingBarn(
+                prioritertBidrag = false,
+                privatAvtale = false,
+                erSøknadsbarn = false,
+                bidragTilFordeling = it.innhold.bidragTilFordeling,
+                barn =
+                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                beregnetBidrag =
+                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                        saksnummer = løpendeBidrag.saksnummer,
+                        samværsklasse = løpendeBidrag.samværsklasse,
+                        løpendeBeløp = løpendeBidrag.løpendeBeløp,
+                        faktiskBeløp = løpendeBidrag.faktiskBeløp,
+                        beregnetBidrag = it.innhold.bidragTilFordeling,
+                        beregnetBeløp = løpendeBidrag.beregnetBeløp,
+                        valutakode = løpendeBidrag.valutakode,
+                        reduksjonUnderholdskostnad = it.innhold.reduksjonUnderholdskostnad,
+                        samværsfradrag = grunnlagSamværsfradrag?.innhold?.beløp ?: BigDecimal.ZERO,
+                    ),
+            )
+        }
+
+    val privatAvtalePeriode =
+        finnOgKonverterGrunnlagSomErReferertAv<DelberegningPrivatAvtale>(
+            Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
+            fraGrunnlag,
         )
-    }
+
+    val privatAVtaler =
+        privatAvtalePeriode.mapNotNull {
+            val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+            val privatAvtalePerioder =
+                finnOgKonverterGrunnlagSomErReferertAv<PrivatAvtalePeriodeGrunnlag>(
+                    Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
+                    fraGrunnlag,
+                )
+
+            val periodeSomOverlapper = privatAvtalePerioder.find { it.innhold.periode.overlapper(periode) }!!.innhold
+            val periodeBeregnet = it.innhold.perioder.find { it.periode.overlapper(periode) }!!
+
+            ForholdsmessigFordelingBidragTilFordelingBarn(
+                prioritertBidrag = false,
+                privatAvtale = true,
+                erSøknadsbarn = false,
+                bidragTilFordeling = periodeBeregnet.beløp,
+                barn =
+                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                beregnetBidrag =
+                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                        saksnummer = Saksnummer(""), // TODO,
+                        samværsklasse = periodeSomOverlapper.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
+                        løpendeBeløp = periodeSomOverlapper.beløp,
+                        indeksreguleringFaktor = periodeBeregnet.indeksreguleringFaktor,
+                        faktiskBeløp = periodeSomOverlapper.beløp,
+                        beregnetBidrag = periodeBeregnet.beløp,
+                        beregnetBeløp = periodeBeregnet.beløp,
+                        valutakode = periodeSomOverlapper.valutakode?.name ?: Valutakode.NOK.name,
+                        reduksjonUnderholdskostnad = BigDecimal.ZERO,
+                        samværsfradrag = BigDecimal.ZERO,
+                    ),
+            )
+        }
+    return privatAVtaler + løpendeBidrag
 }
 
 fun List<GrunnlagDto>.finnGrunnlag25ProsentAvInntekt(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =

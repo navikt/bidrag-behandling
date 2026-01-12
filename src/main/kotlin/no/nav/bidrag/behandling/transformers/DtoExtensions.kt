@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
@@ -10,7 +11,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -54,7 +57,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         opphørsdato = null,
         virkningstidspunkt =
             if (rolletype == Rolletype.BARN) {
-                maxOf(fødselsdatoPerson.withDayOfMonth(1), behandling.virkningstidspunktEllerSøktFomDato)
+                maxOf(fødselsdatoPerson.withDayOfMonth(1), behandling.eldsteVirkningstidspunkt)
             } else {
                 null
             },
@@ -91,12 +94,27 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
     )
 }
 
-fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem =
-    Husstandsmedlem(
-        behandling,
-        Kilde.OFFENTLIG,
-        ident = this.ident?.verdi,
-        fødselsdato =
-            this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
-                ?: rolleManglerFødselsdato(rolletype),
+fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem {
+    val husstandsmedlem =
+        Husstandsmedlem(
+            behandling,
+            Kilde.OFFENTLIG,
+            ident = this.ident?.verdi,
+            fødselsdato =
+                this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
+                    ?: rolleManglerFødselsdato(rolletype),
+        )
+
+    husstandsmedlem.oppdaterePerioder(
+        nyEllerOppdatertBostatusperiode =
+            Bostatusperiode(
+                husstandsmedlem = husstandsmedlem,
+                bostatus = Bostatuskode.IKKE_MED_FORELDER,
+                datoFom = behandling.eldsteVirkningstidspunkt,
+                datoTom = null,
+                kilde = Kilde.MANUELL,
+            ),
     )
+
+    return husstandsmedlem
+}

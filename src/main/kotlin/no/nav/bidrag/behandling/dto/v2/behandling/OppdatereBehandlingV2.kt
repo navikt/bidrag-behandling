@@ -32,9 +32,4 @@ data class OppdatereBegrunnelse(
     var nyBegrunnelse: String = "",
     @Schema(description = "Id til rollen begrunnelsen gjelder for")
     val rolleid: Long? = null,
-) {
-    @Schema(description = "Deprekert - Erstattes av nyBegrunnelse", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    val kunINotat: String? = null
-
-    fun henteNyttNotat() = if (nyBegrunnelse.isNotEmpty()) nyBegrunnelse else kunINotat
-}
+)

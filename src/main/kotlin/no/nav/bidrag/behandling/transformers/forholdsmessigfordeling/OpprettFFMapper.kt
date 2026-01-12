@@ -37,7 +37,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
-import no.nav.bidrag.transport.felles.toYearMonth
+import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -53,6 +53,10 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
         } + listOf(behandling.søktFomDato)
     ).min()
 
+fun SakKravhaver.løperBidragEtterDato(fraDato: YearMonth) =
+    (løperBidragFra != null && løperBidragTil == null) ||
+        (løperBidragTil != null && løperBidragTil > fraDato)
+
 fun Collection<SakKravhaver>.finnSøktFomRevurderingSøknad(behandling: Behandling) =
     maxOf(finnEldsteSøktFomDato(behandling).withDayOfMonth(1), LocalDate.now().plusMonths(1).withDayOfMonth(1))
 
@@ -63,6 +67,7 @@ fun Rolle.fjernSøknad(søknadsid: Long) {
             .søknader
             .map {
                 if (it.søknadsid == søknadsid) {
+                    // Status feilregistrert betyr at barnet er feilregistrert fra saken
                     it.status = Behandlingstatus.FEILREGISTRERT
                 }
                 it
@@ -133,6 +138,7 @@ fun opprettRolle(
     ffDetaljer: ForholdsmessigFordelingRolle,
     innkrevesFraDato: YearMonth? = null,
     medInnkreving: Boolean? = null,
+    opphørsdato: YearMonth? = null,
 ): Rolle {
     behandling.roller.find { it.ident == fødselsnummer }?.let {
         if (harGebyrSøknad != null) {
@@ -180,7 +186,7 @@ fun opprettRolle(
                 } else {
                     null
                 },
-            opphørsdato = if (erBarn) behandling.globalOpphørsdato else null,
+            opphørsdato = if (erBarn) opphørsdato?.toLocalDate() ?: behandling.globalOpphørsdato else null,
             årsak =
                 if (erBarn && ffDetaljer.erRevurdering) {
                     VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
@@ -221,6 +227,7 @@ fun Rolle.kopierRolle(
     hovedbehandling: Behandling,
     bmFnr: String?,
     periodeFra: YearMonth? = null,
+    periodeTil: YearMonth? = null,
     medInnkreving: Boolean? = null,
     åpneBehandlinger: List<Behandling> = emptyList(),
 ) = Rolle(
@@ -253,7 +260,9 @@ fun Rolle.kopierRolle(
             tilhørerSak = behandling.saksnummer,
             behandlerenhet = behandling.behandlerEnhet,
             bidragsmottaker = bmFnr,
+            harLøpendeBidrag = medInnkreving == true,
             løperBidragFra = periodeFra,
+            løperBidragTil = periodeTil,
             erRevurdering = false,
             søknader =
                 (
@@ -468,29 +477,6 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
     )
 }
 
-fun opprettSamværOgUnderholdForBarn(behandling: Behandling) {
-    behandling.søknadsbarn.forEach {
-        if (behandling.samvær.none { s -> s.rolle.ident == it.ident }) {
-            behandling.samvær.add(
-                Samvær(
-                    rolle = it,
-                    behandling = behandling,
-                ),
-            )
-        }
-    }
-    behandling.søknadsbarn.forEach {
-        if (behandling.underholdskostnader.none { s -> s.rolle?.ident == it.ident }) {
-            behandling.underholdskostnader.add(
-                Underholdskostnad(
-                    rolle = it,
-                    behandling = behandling,
-                ),
-            )
-        }
-    }
-}
-
 fun Set<SakKravhaver>.hentForKravhaver(kravhaverIdent: String) = find { it.kravhaver == kravhaverIdent }
 
 fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
@@ -516,13 +502,12 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
         stønadstype = stønadstype,
         eldsteSøktFraDato = åpneBehandlinger.filter { it.søktFraDato != null }.minOfOrNull { it.søktFraDato!! },
         innkrevesFraDato =
-            if (løperBidragFra != null &&
-                løperBidragFra > behandling.søktFomDato.toYearMonth()
-            ) {
+            if (løpendeBidrag) {
                 løperBidragFra
             } else {
                 null
             },
+        opphørsdato = if (løpendeBidrag) løperBidragTil else null,
         åpneBehandlinger = åpneBehandlinger,
         bidragsmottaker =
             RolleDto(

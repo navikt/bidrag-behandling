@@ -153,7 +153,7 @@ class SamværService(
                 notatService.oppdatereNotat(
                     oppdaterSamvær.behandling,
                     NotatType.SAMVÆR,
-                    it.henteNyttNotat() ?: "",
+                    it.nyBegrunnelse,
                     oppdaterSamvær.rolle,
                 )
             }

@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
@@ -16,6 +17,8 @@ import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -30,6 +33,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektBarn
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
+import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
@@ -37,6 +41,8 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilV2Dto
 import no.nav.bidrag.behandling.service.NotatService
+import no.nav.bidrag.behandling.service.UnderholdService
+import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentAlleSaker
 import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -48,6 +54,7 @@ import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspu
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
+import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
 import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
@@ -62,6 +69,7 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
+import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
@@ -70,7 +78,9 @@ import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -95,6 +105,7 @@ import no.nav.bidrag.transport.felles.toYearMonth
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.collections.forEach
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 private val log = KotlinLogging.logger {}
@@ -115,6 +126,158 @@ fun Behandling.toSimple() =
         forholdsmessigFordeling = forholdsmessigFordeling,
         roller = roller.map { RolleSimple(it.rolletype, it.ident!!, it.virkningstidspunktRolle) },
     )
+
+fun oppdaterBehandlingEtterOppdatertRoller(
+    behandling: Behandling,
+    underholdService: UnderholdService,
+    virkningstidspunktService: VirkningstidspunktService,
+    rollerSomLeggesTil: List<OpprettRolleDto>,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    slettNotatSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    slettGrunnlagSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    slettPrivatAvtaleSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    slettInntekterSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
+    oppdatereSamværForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
+    oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTil, rollerSomSkalSlettes)
+    oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
+    oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTil)
+}
+
+private fun slettInntekterSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        behandling.inntekter
+            .filter { it.ident == rolle.ident!!.verdi }
+            .forEach {
+                it.inntektsposter.clear()
+                behandling.inntekter.remove(it)
+            }
+    }
+}
+
+private fun slettPrivatAvtaleSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        behandling.privatAvtale.removeIf { it.rolle != null && it.rolle!!.ident == rolle.ident!!.verdi }
+    }
+}
+
+private fun slettGrunnlagSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        behandling.grunnlag.removeIf { it.rolle.ident == rolle.ident!!.verdi || it.gjelder == rolle.ident!!.verdi }
+    }
+}
+
+private fun slettNotatSomTilhørerRolleSomSlettes(
+    behandling: Behandling,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    rollerSomSkalSlettes.forEach { rolle ->
+        val rolleBarn = behandling.roller.find { it.ident == rolle.ident!!.verdi }
+        val notater = behandling.notater.filter { it.rolle.ident == rolle.ident!!.verdi }
+        notater.forEach { notat ->
+            if (notat.type == Notattype.UNDERHOLDSKOSTNAD) {
+                behandling.notater
+                    .find {
+                        it.type == Notattype.UNDERHOLDSKOSTNAD &&
+                            it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER &&
+                            notat.erDelAvBehandlingen == it.erDelAvBehandlingen
+                    }?.let {
+                        it.innhold += "<br> ${notat.innhold}"
+                    }
+            }
+            rolleBarn!!.notat.remove(notat)
+            behandling.notater.remove(notat)
+        }
+    }
+}
+
+private fun oppdaterOpphørForRoller(
+    behandling: Behandling,
+    virkningstidspunktService: VirkningstidspunktService,
+    rollerSomLeggesTil: List<OpprettRolleDto>,
+) {
+    if (behandling.tilType() == TypeBehandling.BIDRAG) {
+        rollerSomLeggesTil.forEach { r ->
+            val rolle = behandling.roller.find { it.ident == r.ident!!.verdi }!!
+            behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
+                val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
+                if (opphørsdato != null) {
+                    virkningstidspunktService.oppdaterOpphørsdato(
+                        behandling.id!!,
+                        OppdaterOpphørsdatoRequestDto(
+                            rolle.id!!,
+                            opphørsdato,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun oppdatereHusstandsmedlemmerForRoller(
+    behandling: Behandling,
+    rollerSomLeggesTil: List<OpprettRolleDto>,
+) {
+    val nyeRollerSomIkkeHarHusstandsmedlemmer =
+        rollerSomLeggesTil
+            .filter { it.rolletype == Rolletype.BARN }
+            .filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
+    behandling.husstandsmedlem.addAll(
+        nyeRollerSomIkkeHarHusstandsmedlemmer.map {
+            secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
+            it.toHusstandsmedlem(behandling)
+        },
+    )
+}
+
+fun oppdaterUnderholdskostnadForRoller(
+    behandling: Behandling,
+    underholdService: UnderholdService,
+    rollerSomLeggesTil: List<OpprettRolleDto>,
+    rollerSomSkalSlettes: List<OpprettRolleDto>,
+) {
+    if (behandling.tilType() == TypeBehandling.BIDRAG) {
+        rollerSomLeggesTil
+            .filter { it.rolletype == Rolletype.BARN }
+            .filter { rolle ->
+                behandling.underholdskostnader.none { u -> u.rolle?.ident == rolle.ident!!.verdi }
+            }.forEach { rolle ->
+                underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = rolle.ident), kilde = Kilde.OFFENTLIG)
+            }
+        rollerSomSkalSlettes.forEach { rolle ->
+            underholdService.endreUnderholdskostnadTilAndreBarn(behandling, rolle)
+        }
+    }
+}
+
+fun oppdatereSamværForRoller(
+    behandling: Behandling,
+    rollerSomLeggesTil: List<OpprettRolleDto>,
+    rollerSomSlettes: List<OpprettRolleDto>,
+) {
+    if (behandling.tilType() == TypeBehandling.BIDRAG) {
+        rollerSomLeggesTil
+            .filter { it.rolletype == Rolletype.BARN }
+            .filter { rolle -> behandling.samvær.none { s -> s.rolle.ident == rolle.ident!!.verdi } }
+            .forEach { rolle ->
+                behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
+            }
+
+        rollerSomSlettes.forEach { rolle ->
+            behandling.samvær.removeIf { it.rolle.ident == rolle.ident?.verdi }
+        }
+    }
+}
 
 fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
     if (!erBidrag() || listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(vedtakstype)) {
@@ -288,7 +451,7 @@ fun Map<Grunnlagsdatatype, GrunnlagFeilDto?>.tilGrunnlagsinnhentingsfeil(behandl
         .map { feil ->
             Grunnlagsinnhentingsfeil(
                 rolle =
-                    feil.value?.let { p -> behandling.roller.find { p.personId == it.ident }?.tilDto()!! }
+                    feil.value?.let { p -> behandling.roller.find { p.personId == it.ident }?.tilDto() }
                         ?: behandling.bidragsmottaker!!.tilDto(),
                 feilmelding = feil.value?.feilmelding ?: "Uspesifisert feil oppstod ved innhenting av grunnlag",
                 grunnlagsdatatype = feil.key,
