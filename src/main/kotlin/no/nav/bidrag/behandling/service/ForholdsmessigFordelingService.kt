@@ -502,13 +502,8 @@ class ForholdsmessigFordelingService(
     ) {
         val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
         val opphørsdato = periode.periode.fom.toLocalDate()
-        val avslagResultatKode = Resultatkode.fraKode(periode.resultatkode)
-
-        if (behandling.eldsteVirkningstidspunkt >= opphørsdato) {
-            // Sett til avslag hvis opphørsdato er før eldste virkningstidspunkt
-            rolle.årsak = null
-            rolle.avslag = avslagResultatKode
-        }
+        rolle.årsak = null
+        rolle.avslag = Resultatkode.fraKode(periode.resultatkode)
         if (rolle.virkningstidspunkt != null && rolle.virkningstidspunkt!! > opphørsdato) {
             val nyVirkning = if (opphørsdato > behandling.eldsteVirkningstidspunkt) behandling.eldsteVirkningstidspunkt else opphørsdato
             virkningstidspunktService.oppdaterVirkningstidspunkt(
@@ -519,17 +514,10 @@ class ForholdsmessigFordelingService(
                 rekalkulerOpplysningerVedEndring = false,
             )
         }
-
-        val oppdatertOpphørsdato =
-            if (rolle.avslag != null && behandling.eldsteVirkningstidspunkt >= opphørsdato) {
-                null
-            } else {
-                opphørsdato
-            }
         virkningstidspunktService.oppdaterOpphørsdato(
             OppdaterOpphørsdatoRequestDto(
                 idRolle = rolle.id,
-                opphørsdato = oppdatertOpphørsdato,
+                opphørsdato = periode.periode.fom.toLocalDate(),
             ),
             behandling,
             tvingEndring = true,
