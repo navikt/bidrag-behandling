@@ -204,6 +204,7 @@ open class Rolle(
                 it.manueltOverstyrtGebyr =
                     RolleManueltOverstyrtGebyr(
                         ilagtGebyr = false,
+                        overstyrGebyr = false,
                         beregnetIlagtGebyr = false,
                     )
             }

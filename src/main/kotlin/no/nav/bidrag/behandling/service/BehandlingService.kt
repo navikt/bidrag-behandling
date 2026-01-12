@@ -235,6 +235,7 @@ class BehandlingService(
                     medInnkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
                     søknadsdetaljer = søknadsdetaljer,
                     søktFraDato = opprettBehandling.søktFomDato,
+                    gebyrGjelder18År = opprettBehandling.gebyrGjelder18År,
                 )
                 return OpprettBehandlingResponse(behandling.id!!)
             }

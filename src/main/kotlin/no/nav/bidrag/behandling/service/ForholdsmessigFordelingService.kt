@@ -537,6 +537,7 @@ class ForholdsmessigFordelingService(
         medInnkreving: Boolean = false,
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
         søktFraDato: LocalDate? = null,
+        gebyrGjelder18År: Boolean = false,
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
@@ -600,6 +601,7 @@ class ForholdsmessigFordelingService(
                     if (nyRolle.harGebyrsøknad) {
                         gebyr.gebyrSøknader.add(
                             GebyrRolleSøknad(
+                                gjelder18ÅrSøknad = gebyrGjelder18År,
                                 saksnummer = saksnummer,
                                 søknadsid = søknadsid,
                                 referanse = nyRolle.referanseGebyr,
