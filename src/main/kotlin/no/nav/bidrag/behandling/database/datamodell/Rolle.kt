@@ -180,18 +180,33 @@ open class Rolle(
 
     fun oppdaterGebyrV2(
         saksnummer: String,
+        søknadsid: Long?,
         manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr,
     ) {
         if (!manueltOverstyrtGebyr.overstyrGebyr) {
             manueltOverstyrtGebyr.begrunnelse = null
         }
         val gebyr = hentEllerOpprettGebyr()
-        val gebyrSøknad = gebyr.finnGebyrForSak(saksnummer)
-//        gebyrSøknad.manueltOverstyrtGebyr = manueltOverstyrtGebyr
-//        gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
-//        gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
-//        gebyr.begrunnelse = manueltOverstyrtGebyr.begrunnelse
-//        gebyr.ilagtGebyr = manueltOverstyrtGebyr.ilagtGebyr
+
+        gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
+        gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
+        gebyr.begrunnelse = manueltOverstyrtGebyr.begrunnelse
+        gebyr.ilagtGebyr = manueltOverstyrtGebyr.ilagtGebyr
+        val gebyrSøknaderForSak = gebyr.finnGebyrForSak(saksnummer, søknadsid)
+        gebyrSøknaderForSak.forEach {
+            it.manueltOverstyrtGebyr = manueltOverstyrtGebyr
+        }
+        val søknadsiderIkke18År = gebyrSøknaderForSak.filter { !it.gjelder18ÅrSøknad }.map { it.søknadsid }
+        gebyrSøknader
+            .filter { søknadsiderIkke18År.contains(it.søknadsid) }
+            .forEach {
+                // Det skal illegges ett gebyr per sak så lenge det ikke er 18 års søknad. Da illegges det gebyr per søknad
+                it.manueltOverstyrtGebyr =
+                    RolleManueltOverstyrtGebyr(
+                        ilagtGebyr = false,
+                        beregnetIlagtGebyr = false,
+                    )
+            }
     }
 
     fun oppdaterGebyr(
@@ -279,9 +294,13 @@ data class GrunnlagFraVedtak(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class GebyrRolle(
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var overstyrGebyr: Boolean = true,
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var ilagtGebyr: Boolean? = false,
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var begrunnelse: String? = null,
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var beregnetIlagtGebyr: Boolean? = false,
     var gebyrSøknader: MutableSet<GebyrRolleSøknad> = mutableSetOf(),
 ) {
@@ -292,10 +311,17 @@ data class GebyrRolle(
 
     fun finnAlleGebyrForSak(saksnummer: String): List<GebyrRolleSøknad> = gebyrSøknader.filter { it.saksnummer == saksnummer }
 
-    fun finnGebyrForSak(saksnummer: String): List<GebyrRolleSøknad> {
-        val alleGebyrSøknader = finnGebyrForSak(saksnummer)
-        val gebyrIkke18År = alleGebyrSøknader.filter { !it.gjelder18ÅrSøknad }.minBy { it.søknadsid }
-        val gebyr18År = alleGebyrSøknader.filter { it.gjelder18ÅrSøknad }
+    fun finnGebyrForSak(
+        saksnummer: String,
+        søknadsid: Long? = null,
+    ): List<GebyrRolleSøknad> {
+        val alleGebyrSøknader = finnAlleGebyrForSak(saksnummer)
+        val gebyrIkke18År =
+            alleGebyrSøknader
+                .filter { søknadsid == null || it.søknadsid == søknadsid }
+                .filter { !it.gjelder18ÅrSøknad }
+                .minByOrNull { it.søknadsid }
+        val gebyr18År = alleGebyrSøknader.filter { søknadsid == null || it.søknadsid == søknadsid }.filter { it.gjelder18ÅrSøknad }
         return listOfNotNull(gebyrIkke18År) + gebyr18År
     }
 

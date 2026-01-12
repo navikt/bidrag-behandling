@@ -327,6 +327,11 @@ class VirkningstidspunktService(
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
         val erAvslagÅrsakEndret = tvingEndring || request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
 
+        if (request.avslag == null && request.årsak == null) {
+            log.warn { "Både avslag og årsak mangler i input for behandling ${behandling.id}. Minst ett av vediene må setttes" }
+            return
+        }
+
         val erBidragFlereBarn = behandling.erBidrag() && behandling.søknadsbarn.size > 1
         if (forRolle != null && forrigeAvslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && erBidragFlereBarn) {
             log.info {

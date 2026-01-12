@@ -35,6 +35,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV3
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleV2Dto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrSakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
@@ -49,6 +51,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstand
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
+import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
@@ -100,6 +103,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.tilRolle
+import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -870,6 +874,7 @@ class Dtomapper(
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
                 gebyrV2 = mapGebyrV2(),
+                gebyrV3 = mapGebyrV3(),
                 roller =
                     roller
                         .sortedWith(
@@ -1294,19 +1299,53 @@ class Dtomapper(
     fun Behandling.mapGebyrV3() =
         if (roller.any { it.harGebyrsøknad }) {
             val gebyrSaker = roller.flatMap { it.gebyrSøknader }.map { it.saksnummer }.distinct()
-            val gebyrSøknaderSak =
-                roller.flatMap {
-                    it.gebyrSøknader
+            val saker =
+                gebyrSaker.map { sak ->
+                    GebyrSakDto(
+                        saksnummer = sak,
+                        gebyr18År =
+                            mapGebyrForSak(sak, true),
+                        gebyrRoller = mapGebyrForSak(sak, false),
+                    )
                 }
+            GebyrDtoV3(
+                saker = saker,
+            )
+        } else {
             GebyrDtoV3(
                 saker = emptyList(),
             )
-        } else {
-            GebyrDtoV2(
-                harFlereSøknader = false,
-                gebyrRoller = emptyList(),
-            )
         }
+
+    private fun Behandling.mapGebyrForSak(
+        sak: String,
+        gjelder18ÅrSøknad: Boolean,
+    ): List<GebyrRolleV2Dto> =
+        roller
+            .filter { it.gebyr != null }
+            .flatMap { rolle ->
+                val gebyr = rolle.gebyr!!.finnGebyrForSak(sak).filter { it.gjelder18ÅrSøknad == gjelder18ÅrSøknad }
+                gebyr.map {
+                    GebyrRolleV2Dto(
+                        rolle = rolle.tilDto(),
+                        gebyrDetaljer =
+                            vedtakGrunnlagMapper
+                                .beregnGebyr(this, rolle)
+                                .tilDto(rolle, it.søknadsid),
+                        valideringsfeil =
+                            GebyrValideringsfeilDto(
+                                gjelder = rolle.tilDto(),
+                                søknad = rolle.tilSøknadsdetaljerDto(it.søknadsid),
+                                manglerBegrunnelse =
+                                    if (it.manueltOverstyrtGebyr?.overstyrGebyr == true) {
+                                        it.manueltOverstyrtGebyr?.begrunnelse.isNullOrEmpty()
+                                    } else {
+                                        false
+                                    },
+                            ),
+                    )
+                }
+            }
 
     fun Behandling.mapGebyrV2() =
         if (roller.any { it.harGebyrsøknad }) {

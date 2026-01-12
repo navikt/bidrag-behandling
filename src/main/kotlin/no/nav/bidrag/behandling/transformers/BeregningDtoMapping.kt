@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.SluttberegningBarnebidrag2
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDetaljerDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV3
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
