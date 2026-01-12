@@ -33,7 +33,10 @@ fun Behandling.tilForsendelseRolleDto(saksnummer: String) =
         )
     }
 
-fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
+fun OpprettRolleDto.toRolle(
+    behandling: Behandling,
+    stønadstype: Stønadstype? = null,
+): Rolle {
     val fødselsdatoPerson =
         fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
             ?: rolleManglerFødselsdato(rolletype)
@@ -44,7 +47,7 @@ fun OpprettRolleDto.toRolle(behandling: Behandling): Rolle {
         behandlingstatus = behandlingstatus,
         innkrevingstype = behandling.innkrevingstype,
         rolletype = rolletype,
-        stønadstype = behandling.stonadstype,
+        stønadstype = stønadstype ?: behandling.stonadstype,
         ident = ident?.verdi,
         fødselsdato = fødselsdatoPerson,
         navn = navn,

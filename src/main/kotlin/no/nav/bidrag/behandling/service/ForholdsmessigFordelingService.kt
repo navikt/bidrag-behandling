@@ -538,6 +538,7 @@ class ForholdsmessigFordelingService(
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
         søktFraDato: LocalDate? = null,
         gebyrGjelder18År: Boolean = false,
+        stønadstype: Stønadstype? = null,
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
@@ -560,7 +561,7 @@ class ForholdsmessigFordelingService(
                     )
                 val løpendeBidragRolle = relevanteKravhavere.find { it.kravhaver == nyRolle.ident?.verdi }
                 if (eksisterendeRolle == null) {
-                    val rolle = nyRolle.toRolle(behandling)
+                    val rolle = nyRolle.toRolle(behandling, stønadstype)
                     val løperBidrag = løpendeBidragRolle?.løperBidragEtterDato(søknadsdetaljer!!.søknadFomDato!!.toYearMonth()) == true
                     rolle.forholdsmessigFordeling =
                         ffRolleDetaljer.copy(
@@ -576,6 +577,7 @@ class ForholdsmessigFordelingService(
                     } else {
                         val varRevurderingsbarn = eksisterendeRolle.forholdsmessigFordeling!!.erRevurdering
                         val eksisterendeSøknadsliste = eksisterendeRolle.forholdsmessigFordeling!!.søknader
+                        eksisterendeRolle.stønadstype = stønadstype ?: eksisterendeRolle.stønadstype
                         eksisterendeRolle.forholdsmessigFordeling =
                             ffRolleDetaljer.copy(
                                 søknader =
