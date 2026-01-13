@@ -209,6 +209,14 @@ fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
         else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
     }
 
+fun Behandling.løperBidragEtterEldsteVirkning(rolle: Rolle): Boolean {
+    val fraPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
+    val tilPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).maxByOrNull { it.fom }?.til
+    if (fraPeriodeLøperBidrag == null) return false
+    if (tilPeriodeLøperBidrag == null) return true
+    return tilPeriodeLøperBidrag >= eldsteVirkningstidspunkt.toYearMonth()
+}
+
 fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
     val fraPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
     val tilPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).maxByOrNull { it.fom }?.til

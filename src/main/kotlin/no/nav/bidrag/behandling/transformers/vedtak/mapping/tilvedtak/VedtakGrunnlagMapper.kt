@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
+import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
@@ -364,6 +365,12 @@ class VedtakGrunnlagMapper(
                         beregningTilDato,
                     )
                 val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()
+                val opphørsdato =
+                    if (søknadsbarnRolle.erRevurderingsbarn && søknadsbarnRolle.opphørsdato == null) {
+                        finnEksisterendeVedtakMedOpphør(søknadsbarnRolle)?.opphørsdato
+                    } else {
+                        søknadsbarnRolle.opphørsdato
+                    }
                 val personobjekter = tilPersonobjekter(søknadsbarnRolle, inkluderAlleSøknadsbarn)
                 val grunnlagBeregning =
                     if (erDirekteAvslag() && erBidrag()) {
@@ -425,7 +432,7 @@ class VedtakGrunnlagMapper(
                         BeregnGrunnlag(
                             periode = beregningsperiode,
                             stønadstype = søknadsbarnRolle.stønadstype ?: stonadstype ?: Stønadstype.BIDRAG,
-                            opphørsdato = søknadsbarnRolle.opphørsdatoYearMonth,
+                            opphørsdato = opphørsdato?.toYearMonth(),
                             søknadsbarnReferanse = søknadsbarn.referanse,
                             grunnlagListe = grunnlagsliste.toSet().toList(),
                         )

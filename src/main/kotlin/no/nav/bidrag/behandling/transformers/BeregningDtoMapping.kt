@@ -2,6 +2,8 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
+import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
@@ -20,12 +22,13 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.SluttberegningBarnebidrag2
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
+import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDetaljerDto
-import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV3
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
@@ -36,14 +39,18 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentBehandlingDetaljer
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøknader
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -65,20 +72,31 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequestV2
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningResultatBarnV2
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtakV2
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BeregnetBidragPerBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningAndelAvBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragJustertForBPBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordeling
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndelDeltBosted
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEvne25ProsentAvInntekt
@@ -133,25 +151,97 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentBeregnetBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentResultatBeløp
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentVirkningstidspunktGrunnlagForBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
 import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSøknadGrunnlag
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toLocalDate
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
+import kotlin.collections.forEach
 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
+
+fun Rolle.mapTilResultatBarn() =
+    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), grunnlagFraVedtakListe)
+
+fun Rolle.tilPersonident() = ident?.let { Personident(it) }
+
+fun mapTilBeregningresultatBarn(
+    søknadsbarn: Rolle,
+    erAvvistRevurdering: Boolean,
+    resultatBarn: BidragsberegningResultatBarnV2,
+    grunnlagBarn: List<GrunnlagDto>,
+    grunnlagBeregning: BidragsberegningOrkestratorRequestV2,
+    behandling: Behandling,
+    endeligResultat: ResultatVedtakV2?,
+): ResultatBidragsberegningBarn =
+    ResultatBidragsberegningBarn(
+        barn = søknadsbarn.mapTilResultatBarn(),
+        erAvvistRevurdering = erAvvistRevurdering,
+        avslagskode = søknadsbarn.avslag,
+        resultatVedtak =
+            BidragsberegningOrkestratorResponse(
+                resultatVedtakListe =
+                    if (erAvvistRevurdering) {
+                        emptyList()
+                    } else {
+                        resultatBarn.resultatVedtakListe.map {
+                            ResultatVedtak(
+                                vedtakstype = it.vedtakstype,
+                                delvedtak = it.delvedtak,
+                                omgjøringsvedtak = it.omgjøringsvedtak,
+                                beregnet = it.beregnet,
+                                beregnetFraDato = it.beregnetFraDato,
+                                resultat =
+                                    BeregnetBarnebidragResultat(
+                                        beregnetBarnebidragPeriodeListe = it.periodeListe,
+                                        grunnlagListe =
+                                            if (it.omgjøringsvedtak) {
+                                                grunnlagBarn + grunnlagBeregning.grunnlagsliste
+                                            } else if (it.delvedtak) {
+                                                it.grunnlagslisteDelvedtak
+                                            } else {
+                                                grunnlagBarn
+                                            },
+                                    ),
+                            )
+                        }
+                    },
+            ),
+        omgjøringsdetaljer = behandling.omgjøringsdetaljer,
+        beregnTilDato =
+            behandling
+                .finnBeregnTilDatoBehandling(`søknadsbarn`)
+                ?.toYearMonth(),
+        innkrevesFraDato = behandling.finnInnkrevesFraDato(`søknadsbarn`),
+        opphørsdato = `søknadsbarn`.opphørsdato?.toYearMonth(),
+        resultat =
+            if (endeligResultat != null && !erAvvistRevurdering) {
+                BeregnetBarnebidragResultat(
+                    beregnetBarnebidragPeriodeListe = endeligResultat.periodeListe,
+                    grunnlagListe = grunnlagBarn + grunnlagBeregning.grunnlagsliste,
+                )
+            } else {
+                BeregnetBarnebidragResultat()
+            },
+    )
 
 fun BeregnGebyrResultat.tilDto(
     rolle: Rolle,
@@ -1544,7 +1634,10 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                 )
 
             val periodeSomOverlapper = privatAvtalePerioder.find { it.innhold.periode.overlapper(periode) }!!.innhold
-            val periodeBeregnet = it.innhold.perioder.find { it.periode.overlapper(periode) }!!
+            val periodeBeregnet =
+                it.innhold.perioder
+                    .filter { it.periode.inneholder(periode) }
+                    .maxBy { it.periode.fom }
 
             ForholdsmessigFordelingBidragTilFordelingBarn(
                 prioritertBidrag = false,
