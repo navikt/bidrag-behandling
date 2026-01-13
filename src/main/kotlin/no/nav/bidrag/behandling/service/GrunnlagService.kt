@@ -2036,6 +2036,8 @@ class GrunnlagService(
             ikkeAktiveGrunnlag
                 .hentGrunnlagForType(type, rolleInhentetFor.ident!!)
                 .oppdaterStatusTilAktiv(LocalDateTime.now())
+
+            inntektService.justerOffentligePerioderEtterSisteGrunnlag(behandling)
         }
     }
 

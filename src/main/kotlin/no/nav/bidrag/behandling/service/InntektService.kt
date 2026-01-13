@@ -81,8 +81,8 @@ class InntektService(
                                         it.opprinneligTom == inntekt.periode.til?.atEndOfMonth()
                                 }
                             if (!finnesMatchendeInntekt) {
-                                secureLogger.info {
-                                    "Avvikshåndtering!!!: Fant inntekter som ikke matcher med siste innhentet offentlige opplysninger for type=$type rolle=${rolle.ident}, inntekt=${inntekt.periode}. Justerer periodene"
+                                secureLogger.warn {
+                                    "Avvikshåndtering!: Fant inntekter som ikke matcher med siste innhentet offentlige opplysninger for type=$type rolle=${rolle.ident}, inntekt=${inntekt.periode}. Justerer periodene"
                                 }
                             }
                             return@any !finnesMatchendeInntekt
