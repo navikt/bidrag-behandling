@@ -164,8 +164,8 @@ class AdminController(
                 .filter { it.type == Rolletype.BARN }
                 .firstOrNull {
                     barnIdent == null &&
-                        listOf(6, 11, 15).contains(getAge(hentPersonFødselsdato(it.fødselsnummer!!.verdi)!!)) ||
-                        barnIdent == it.fødselsnummer!!.verdi
+                            listOf(6, 11, 15).contains(getAge(hentPersonFødselsdato(it.fødselsnummer!!.verdi)!!)) ||
+                            barnIdent == it.fødselsnummer!!.verdi
                 }
                 ?: return null
         val request =
@@ -293,7 +293,7 @@ class AdminController(
                 } else {
                     log.info {
                         "Retter sivilstand med id=${sivilstand.id} " +
-                            "ved å sette datoTom=null (var ${sivilstand.datoTom}) for behandlingId=$behandlingId"
+                                "ved å sette datoTom=null (var ${sivilstand.datoTom}) for behandlingId=$behandlingId"
                     }
                     sivilstand.datoTom = null
                 }
@@ -301,6 +301,18 @@ class AdminController(
         }
         behandling.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag()
         grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
+    }
+
+    @PostMapping("/admin/feilfiks/underhold/rolle/{behandlingId}")
+    @Operation(
+        description =
+            "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @Transactional
+    fun fiksUnderholdskostnadSomPekerTilFeilRolle(@PathVariable behandlingId: Long) {
+        log.info { "Setter rolle til behandling $behandlingId til null hvis det ikke tilhører samme behandling" }
+        behandlingRepository.settUnderholdskostnadRolleTilNull(behandlingId)
     }
 
     @PostMapping("/admin/feilfiks/virkningstidspunkt")
@@ -318,9 +330,9 @@ class AdminController(
             behandling.søknadsbarn.forEach { søknadsbarn ->
                 log.info {
                     "Oppdaterer virkningstidspunkt for barn ${søknadsbarn.ident} " +
-                        "i behandling ${behandling.id} hvor søknadsbarn virkning er " +
-                        "${søknadsbarn.virkningstidspunkt} - ${søknadsbarn.årsak} - ${søknadsbarn.avslag}" +
-                        " og i behandling ${behandling.virkningstidspunkt} - ${behandling.årsak} - ${behandling.avslag}"
+                            "i behandling ${behandling.id} hvor søknadsbarn virkning er " +
+                            "${søknadsbarn.virkningstidspunkt} - ${søknadsbarn.årsak} - ${søknadsbarn.avslag}" +
+                            " og i behandling ${behandling.virkningstidspunkt} - ${behandling.årsak} - ${behandling.avslag}"
                 }
                 if (søknadsbarn.virkningstidspunkt == null) {
                     søknadsbarn.virkningstidspunkt = behandling.virkningstidspunkt
