@@ -42,8 +42,6 @@ spec:
       {{/each}}
           - application: logging
             namespace: nais-system
-  secureLogs:
-    enabled: true
   image: {{ image }}
   replicas:
       min: {{min_replicas}}
