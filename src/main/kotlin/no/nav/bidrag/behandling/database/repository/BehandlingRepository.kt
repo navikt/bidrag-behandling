@@ -195,6 +195,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     @Query("select b.* from behandling b inner join public.rolle r on b.id = r.behandling_id where r.rolletype = 'BARN' and virkningstidspunkt is null and b.stonadstype = 'BIDRAG' and b.deleted = false and b.vedtaksid is null", nativeQuery = true)
     fun hentBehandlingerHvorBarnVirkningIkkeErSatt(): List<Behandling>
 
+    @Modifying
     @Query("update underholdskostnad u set rolle_id = null where u.rolle_id is not null and exists (select 1 from rolle r where r.id = u.rolle_id and r.behandling_id != u.behandling_id) and u.behandling_id = :behandling_id", nativeQuery = true)
     fun settUnderholdskostnadRolleTilNull(behandling_id: Long)
 }
