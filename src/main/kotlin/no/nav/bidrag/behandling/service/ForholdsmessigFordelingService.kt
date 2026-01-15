@@ -23,6 +23,8 @@ import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessi
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
+import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphørForRolle
+import no.nav.bidrag.behandling.transformers.finnLøperBidragFra
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnEldsteSøktFomDato
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnSøktFomRevurderingSøknad
@@ -44,7 +46,9 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetalj
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
+import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -502,8 +506,7 @@ class ForholdsmessigFordelingService(
     ) {
         val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
         val opphørsdato = periode.periode.fom.toLocalDate()
-        rolle.årsak = null
-        rolle.avslag = Resultatkode.fraKode(periode.resultatkode)
+
         if (rolle.virkningstidspunkt != null && rolle.virkningstidspunkt!! > opphørsdato) {
             val nyVirkning = if (opphørsdato > behandling.eldsteVirkningstidspunkt) behandling.eldsteVirkningstidspunkt else opphørsdato
             virkningstidspunktService.oppdaterVirkningstidspunkt(
@@ -522,6 +525,19 @@ class ForholdsmessigFordelingService(
             behandling,
             tvingEndring = true,
         )
+
+        if (!rolle.løperBidragFørOpphør()) {
+            // Hvis det løper bidrag før opphørsdatoen i FF behandling så må saksbehandler ta stilling til evt endring før opphørsdatoen
+            // Når det er valgt avslag så fungerer virkningstidspunkt som en opphørsdato og perioder før endres ikke. Derfor må det velges en årsak med virkning og opphørsdato hvis det løper bidrag før opphørsdatoen
+            virkningstidspunktService.oppdaterAvslagÅrsak(
+                behandling,
+                OppdatereVirkningstidspunkt(
+                    årsak = null,
+                    avslag = Resultatkode.fraKode(periode.resultatkode),
+                ),
+                tvingEndring = true,
+            )
+        }
     }
 
     @Transactional
@@ -1254,7 +1270,7 @@ class ForholdsmessigFordelingService(
                     stønadstype = stønadstype ?: Stønadstype.BIDRAG,
                     innkrevesFraDato = if (skalInnkreves) søknad.løperBidragFra else null,
                     medInnkreving = skalInnkreves,
-                    opphørsdato = if (skalInnkreves) søknad.løperBidragTil else null,
+                    opphørsdato = søknad.løperBidragTil,
                     ffDetaljer =
                         ffDetaljer.copy(
                             løperBidragFra = søknad.løperBidragFra,

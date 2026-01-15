@@ -400,10 +400,11 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                             )
                         } else {
                             resultat.resultat.beregnetBarnebidragPeriodeListe.map {
+                                val avslagskode = if (it.resultat.beløp == null) resultat.avslagskode else null
                                 grunnlagsListe.byggResultatBidragsberegning(
                                     it.periode,
                                     it.resultat.beløp,
-                                    resultat.avslagskode,
+                                    avslagskode,
                                     it.grunnlagsreferanseListe,
                                     resultat.ugyldigBeregning,
                                     grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
@@ -505,11 +506,12 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 ),
                         )
                     } else {
+                        val avslagskode = if (p.resultat.beløp == null) resultat.avslagskode else null
                         grunnlagslisteRV
                             .byggResultatBidragsberegning(
                                 p.periode,
                                 p.resultat.beløp,
-                                resultat.avslagskode,
+                                avslagskode,
                                 p.grunnlagsreferanseListe,
                                 resultat.ugyldigBeregning,
                                 grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse, p.grunnlagsreferanseListe),
@@ -517,7 +519,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 resultat.barn.ident!!,
                                 erEndeligVedtak = erEndeligVedtak,
                             ).copy(
-                                erDirekteAvslag = resultat.avslagskode?.erDirekteAvslag() == true,
+                                erDirekteAvslag = avslagskode?.erDirekteAvslag() == true,
                                 resultatFraVedtak = resultatFraVedtak,
                                 klageOmgjøringDetaljer =
                                     KlageOmgjøringDetaljer(

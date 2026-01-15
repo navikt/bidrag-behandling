@@ -179,10 +179,12 @@ fun opprettRolle(
             behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
             virkningstidspunkt =
                 if (erBarn) {
-                    maxOf(
-                        hentPersonFødselsdato(fødselsnummer)!!.plusMonths(1).withDayOfMonth(1),
-                        ffDetaljer.eldsteSøknad.søknadFomDato ?: behandling.eldsteVirkningstidspunkt,
-                    )
+                    val virkningstidspunkt =
+                        maxOf(
+                            hentPersonFødselsdato(fødselsnummer)!!.plusMonths(1).withDayOfMonth(1),
+                            ffDetaljer.eldsteSøknad.søknadFomDato ?: behandling.eldsteVirkningstidspunkt,
+                        )
+                    if (opphørsdato != null) minOf(opphørsdato.toLocalDate(), virkningstidspunkt) else virkningstidspunkt
                 } else {
                     null
                 },

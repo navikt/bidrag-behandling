@@ -380,6 +380,15 @@ fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle)
     }
 }
 
+fun Rolle.løperBidragFørOpphør() =
+    opphørsdato != null && finnLøperBidragFra() != null &&
+        opphørsdato!! > behandling.eldsteVirkningstidspunkt &&
+        opphørsdato!!.toYearMonth() > finnLøperBidragFra()!!
+
+fun Rolle.finnLøperBidragFra() = behandling.finnPeriodeLøperBidrag(this)?.fom
+
+fun Rolle.finnEksisterendeVedtakMedOpphørForRolle(): EksisterendeOpphørsvedtakDto? = behandling.finnEksisterendeVedtakMedOpphør(this)
+
 fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
     val opphørPeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle)?.takeIf { it.periode.til != null } ?: return null
     return EksisterendeOpphørsvedtakDto(

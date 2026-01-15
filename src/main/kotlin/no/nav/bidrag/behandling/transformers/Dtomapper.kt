@@ -268,7 +268,7 @@ class Dtomapper(
 
     fun Set<Underholdskostnad>.tilDtos() =
         this
-            .filter { it.rolle == null || it.gjelderAndreBarn || it.rolle?.avslag == null }
+            .filter { it.rolle == null || it.gjelderAndreBarn || it.rolle?.kreverGrunnlagForBeregning == true }
             .map { it.tilDto() }
             .sortedWith(
                 compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
@@ -445,7 +445,7 @@ class Dtomapper(
     fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
             samvær
-                .filter { it.rolle.avslag == null }
+                .filter { it.rolle.kreverGrunnlagForBeregning }
                 .sortedWith(
                     sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.navn }),
                 ).map { it.tilDto() }
@@ -931,7 +931,7 @@ class Dtomapper(
                     grunnlag.hentSisteAktiv(),
                 ),
             inntekterV2 =
-                roller.sorterForInntektsbildet().filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
+                roller.sorterForInntektsbildet().filter { it.rolletype != Rolletype.BARN || it.kreverGrunnlagForBeregning }.map {
                     InntekterDtoRolle(
                         gjelder = it.tilDto(),
                         inntekter =
@@ -1125,6 +1125,20 @@ class Dtomapper(
                         mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
                         søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
                         søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
+                        // Betyr at revurderingsbarn bidrag opphører i løpet av beregningsperioden. Da skal det ikke være mulig å endre virkningstidspunkt eller opphør
+                        // Systemet (VedtakHendelseLytteren) skal oppdatere opphør når det fattes ny opphørsvedtak
+                        kanEndreVirkningstidspunkt =
+                            !it.erRevurderingsbarn ||
+                                !(
+                                    finnEksisterendeVedtakMedOpphør(it) != null &&
+                                        it.virkningstidspunkt == it.opphørsdato
+                                ),
+                        kanEndreVirkningstidspunktOpphør =
+                            !it.erRevurderingsbarn ||
+                                !(
+                                    finnEksisterendeVedtakMedOpphør(it) != null &&
+                                        it.virkningstidspunkt == it.opphørsdato
+                                ),
                         begrunnelseFraOpprinneligVedtak =
                             if (erKlageEllerOmgjøring) {
                                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)

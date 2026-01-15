@@ -15,12 +15,9 @@ import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.opprettBegrunnelse
 import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
-import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
 import no.nav.bidrag.behandling.transformers.finnDelberegningerPrivatAvtale
-import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
-import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -78,9 +75,7 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebid
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregningGrunnlagV2
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequestV2
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
-import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningResultatBarnV2
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
-import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtakV2
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
@@ -223,7 +218,7 @@ class BeregningService(
         simulerBeregning: Boolean = false,
     ): ResultatBidragsberegning {
         val grunnlagslisteBarn =
-            behandling.søknadsbarn.filter { it.avslag == null }.map { søknasdbarn ->
+            behandling.søknadsbarn.filter { !it.erAvvisning || it.kreverGrunnlagForBeregning }.map { søknasdbarn ->
                 mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
             }
         val beregnFraDato = behandling.eldsteVirkningstidspunkt
@@ -237,44 +232,7 @@ class BeregningService(
                 beregnFraDato,
                 beregningTilDato,
             )
-        val grunnlagslisteAvvisning =
-            behandling.søknadsbarn
-                .filter { behandling.løperBidragEtterEldsteVirkning(it) }
-                .filter { it.avslag?.erAvvisning() == true }
-                .map {
-                    val eksisterendeOpphør = behandling.finnEksisterendeVedtakMedOpphør(it)
-                    BeregningGrunnlagV2(
-                        søknadsbarnreferanse = it.tilGrunnlagsreferanse(),
-                        periode =
-                            ÅrMånedsperiode(
-                                it.finnBeregnFra(),
-                                eksisterendeOpphør?.opphørsdato?.toYearMonth(),
-                            ),
-                        beregningsperiode = beregningsperiode,
-                        virkningstidspunkt = it.finnBeregnFra(),
-                        opphørsdato = eksisterendeOpphør?.opphørsdato?.toYearMonth(),
-                        stønadstype = it.stønadstype!!,
-                    )
-                }
 
-        val grunnlagslisteAvslag =
-            behandling.søknadsbarn
-                .filter { behandling.løperBidragEtterEldsteVirkning(it) }
-                .filter { it.avslag?.erAvslag() == true && it.avslag?.erAvvisning() == false }
-                .map {
-                    BeregningGrunnlagV2(
-                        søknadsbarnreferanse = it.tilGrunnlagsreferanse(),
-                        periode =
-                            ÅrMånedsperiode(
-                                it.finnBeregnFra(),
-                                it.virkningstidspunktRolle.toYearMonth(),
-                            ),
-                        opphørsdato = it.virkningstidspunktRolle.toYearMonth(),
-                        beregningsperiode = beregningsperiode,
-                        virkningstidspunkt = it.virkningstidspunktRolle.toYearMonth(),
-                        stønadstype = it.stønadstype!!,
-                    )
-                }
         val grunnlagslisteSøknadsbarn = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList()
         val grunnlagslisteSimulertPrivatAvtale =
             mapper.run {
@@ -326,12 +284,11 @@ class BeregningService(
                             stønadstype = it.beregnGrunnlag.stønadstype,
                             omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
                         )
-                    } + grunnlagslisteAvslag + grunnlagslisteAvvisning,
+                    },
             )
-        val resultatAvvisning =
+        val resultatAvvisningUtenGrunnlag =
             behandling.søknadsbarn
-                .filter { !behandling.løperBidragEtterEldsteVirkning(it) }
-                .filter { it.avslag?.erAvvisning() == true }
+                .filter { it.erAvvisning && !it.kreverGrunnlagForBeregning }
                 .map { søknasdbarn ->
                     ResultatBidragsberegningBarn(
                         ugyldigBeregning = behandling.tilBeregningFeilmelding(),
@@ -341,16 +298,8 @@ class BeregningService(
                         opphørsdato = null,
                     )
                 }
-        val resultatAvslag =
-            behandling.søknadsbarn
-                .filter { !behandling.løperBidragEtterEldsteVirkning(it) }
-                .filter { it.avslag?.erAvslag() == true && it.avslag?.erAvvisning() == false }
-                .map { søknasdbarn ->
-                    mapTilBeregningsresultatAvslag(behandling, søknasdbarn, endeligBeregning)
-                }
 
         val grunnlagslisteAlle = mutableListOf<GrunnlagDto>()
-        grunnlagslisteAlle.addAll(resultatAvslag.flatMap { it.resultat.grunnlagListe })
         return if (grunnlagBeregning.beregningBarn.isNotEmpty()) {
             try {
                 val resultatBeregning = utførBeregningFF(grunnlagBeregning)
@@ -391,8 +340,7 @@ class BeregningService(
                             resultatBarn.resultatVedtakListe.find {
                                 (behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak) || !behandling.erKlageEllerOmgjøring
                             }
-                        val grunnlagslisteAvvisningSøknadsbarn = grunnlagslisteAvvisning.map { it.søknadsbarnreferanse }
-                        if (grunnlagslisteAvvisningSøknadsbarn.any { it == resultatBarn.søknadsbarnreferanse }) {
+                        if (søknadsbarn.erAvvisning) {
                             ResultatBidragsberegningBarn(
                                 ugyldigBeregning = behandling.tilBeregningFeilmelding(),
                                 barn = søknadsbarn.mapTilResultatBarn(),
@@ -416,9 +364,9 @@ class BeregningService(
                 grunnlagslisteAlle.addAll(resultat.grunnlagListe)
                 ResultatBidragsberegning(
                     perioderSlåttUtTilFF = perioderSlåttUtTilFF,
-                    grunnlagsliste = grunnlagslisteAlle.toSet(),
+                    grunnlagsliste = resultat.grunnlagListe.toSet(),
                     ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
-                    resultatBarn = resultatBarn + resultatAvvisning + resultatAvslag,
+                    resultatBarn = resultatBarn + resultatAvvisningUtenGrunnlag,
                     vedtakstype = behandling.vedtakstype,
                 )
             } catch (e: Exception) {
@@ -427,9 +375,9 @@ class BeregningService(
             }
         } else {
             ResultatBidragsberegning(
-                grunnlagsliste = grunnlagslisteAlle.toSet(),
+                grunnlagsliste = emptySet(),
                 ugyldigBeregning = behandling.tilBeregningFeilmelding(),
-                resultatBarn = resultatAvvisning + resultatAvslag,
+                resultatBarn = resultatAvvisningUtenGrunnlag,
                 vedtakstype = behandling.vedtakstype,
             )
         }
