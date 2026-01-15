@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.finnLøperBidragFra
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -39,6 +40,7 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toLocalDate
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.SQLDelete
@@ -132,7 +134,10 @@ open class Rolle(
     val erDirekteAvslag get() = avslag != null
     val erAvvisning get() = avslag != null && avslag!!.erAvvisning()
     val erDirekteAvslagIkkeAvvisning get() = avslag != null && avslag!!.erDirekteAvslag() && !avslag!!.erAvvisning()
-    val kreverGrunnlagForBeregning get() = avslag == null || behandling.løperBidragEtterEldsteVirkning(this)
+    val kreverGrunnlagForBeregning get() =
+        avslag == null || (
+            behandling.løperBidragEtterEldsteVirkning(this)
+        )
     val harSøknadMedInnkreving get() = forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.innkreving } == true
     val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
     val barn get() =

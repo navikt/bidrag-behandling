@@ -494,7 +494,7 @@ fun Behandling.tilInntektDtoV3(
     rolle: Rolle,
 ) = InntekterDtoV3(
     barnetillegg =
-        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map { barn ->
+        rolle.barn.filter { it.kreverGrunnlagForBeregning }.map { barn ->
             InntektBarn(
                 gjelderBarn = barn.tilDto(),
                 inntekter =
@@ -516,7 +516,7 @@ fun Behandling.tilInntektDtoV3(
             .tilInntektDtoV2()
             .toSet(),
     kontantstøtte =
-        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map { barn ->
+        rolle.barn.filter { it.kreverGrunnlagForBeregning }.map { barn ->
             InntektBarn(
                 gjelderBarn = barn.tilDto(),
                 inntekter =

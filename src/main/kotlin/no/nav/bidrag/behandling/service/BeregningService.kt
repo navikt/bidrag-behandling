@@ -218,7 +218,7 @@ class BeregningService(
         simulerBeregning: Boolean = false,
     ): ResultatBidragsberegning {
         val grunnlagslisteBarn =
-            behandling.søknadsbarn.filter { !it.erAvvisning || it.kreverGrunnlagForBeregning }.map { søknasdbarn ->
+            behandling.søknadsbarn.filter { it.kreverGrunnlagForBeregning }.map { søknasdbarn ->
                 mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
             }
         val beregnFraDato = behandling.eldsteVirkningstidspunkt
@@ -374,7 +374,7 @@ class BeregningService(
                     perioderSlåttUtTilFF = perioderSlåttUtTilFF,
                     grunnlagsliste = resultat.grunnlagListe.toSet(),
                     ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
-                    resultatBarn = resultatBarn + resultatAvvisningUtenGrunnlag,
+                    resultatBarn = resultatBarn + resultatAvvisningUtenGrunnlag + resultatAvslagUtenGrunnlag,
                     vedtakstype = behandling.vedtakstype,
                 )
             } catch (e: Exception) {
@@ -385,7 +385,7 @@ class BeregningService(
             ResultatBidragsberegning(
                 grunnlagsliste = emptySet(),
                 ugyldigBeregning = behandling.tilBeregningFeilmelding(),
-                resultatBarn = resultatAvvisningUtenGrunnlag,
+                resultatBarn = resultatAvvisningUtenGrunnlag + resultatAvslagUtenGrunnlag,
                 vedtakstype = behandling.vedtakstype,
             )
         }

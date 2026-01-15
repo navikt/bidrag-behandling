@@ -51,6 +51,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGeby
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.opprettPeriodeOpphør
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -175,6 +176,9 @@ import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
 import kotlin.collections.forEach
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBB
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBidrag
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBB
 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
 
@@ -233,7 +237,22 @@ fun mapTilBeregningresultatBarn(
         innkrevesFraDato = behandling.finnInnkrevesFraDato(`søknadsbarn`),
         opphørsdato = `søknadsbarn`.opphørsdato?.toYearMonth(),
         resultat =
-            if (endeligResultat != null && !erAvvistRevurdering) {
+            if (endeligResultat != null && søknadsbarn.erDirekteAvslag) {
+                BeregnetBarnebidragResultat(
+                    beregnetBarnebidragPeriodeListe =
+                        endeligResultat.periodeListe +
+                            ResultatPeriodeBB(
+                                periode =
+                                    ÅrMånedsperiode(
+                                        søknadsbarn.virkningstidspunktRolle,
+                                        null,
+                                    ),
+                                ResultatBeregningBB(null),
+                                emptyList(),
+                            ),
+                    grunnlagListe = grunnlagBarn + grunnlagBeregning.grunnlagsliste,
+                )
+            } else if (endeligResultat != null && !erAvvistRevurdering) {
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe = endeligResultat.periodeListe,
                     grunnlagListe = grunnlagBarn + grunnlagBeregning.grunnlagsliste,

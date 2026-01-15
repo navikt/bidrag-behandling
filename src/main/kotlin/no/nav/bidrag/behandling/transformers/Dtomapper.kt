@@ -930,17 +930,7 @@ class Dtomapper(
                 tilInntektDtoV2(
                     grunnlag.hentSisteAktiv(),
                 ),
-            inntekterV2 =
-                roller.sorterForInntektsbildet().filter { it.rolletype != Rolletype.BARN || it.kreverGrunnlagForBeregning }.map {
-                    InntekterDtoRolle(
-                        gjelder = it.tilDto(),
-                        inntekter =
-                            tilInntektDtoV3(
-                                grunnlag.hentSisteAktiv(),
-                                it,
-                            ),
-                    )
-                },
+            inntekterV2 = mapInntekterV2(),
             underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
@@ -968,6 +958,22 @@ class Dtomapper(
                 },
         )
     }
+
+    fun Behandling.mapInntekterV2() =
+        roller
+            .sorterForInntektsbildet()
+            .filter {
+                it.kreverGrunnlagForBeregning
+            }.map {
+                InntekterDtoRolle(
+                    gjelder = it.tilDto(),
+                    inntekter =
+                        tilInntektDtoV3(
+                            grunnlag.hentSisteAktiv(),
+                            it,
+                        ),
+                )
+            }
 
     fun Behandling.tilPrivatAvtaleDtoV3(): PrivatAvtaleDtoV3 {
         val søknadsbarnPA =
@@ -1318,12 +1324,12 @@ class Dtomapper(
                     GebyrSakDto(
                         saksnummer = sak,
                         gebyr18År =
-                            mapGebyrForSak(sak, true),
-                        gebyrRoller = mapGebyrForSak(sak, false),
+                            mapGebyrForSak(sak, true).sortedByDescending { it.rolle.rolletype },
+                        gebyrRoller = mapGebyrForSak(sak, false).sortedByDescending { it.rolle.rolletype },
                     )
                 }
             GebyrDtoV3(
-                saker = saker,
+                saker = saker.sortedBy { it.saksnummer },
             )
         } else {
             GebyrDtoV3(
