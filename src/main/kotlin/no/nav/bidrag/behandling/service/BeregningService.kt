@@ -272,7 +272,8 @@ class BeregningService(
                             )
                         val virkningstidspunktBeregning =
                             minOfNullable(
-                                søknadsbarn.virkningstidspunkt?.toYearMonth() ?: it.beregnGrunnlag.periode.fom,
+                                søknadsbarn.virkningstidspunkt?.toYearMonth(),
+                                it.beregnGrunnlag.periode.fom,
                                 it.beregnGrunnlag.opphørsdato,
                             )!!
                         BeregningGrunnlagV2(

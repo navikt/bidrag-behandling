@@ -238,13 +238,16 @@ fun mapTilBeregningresultatBarn(
         opphørsdato = `søknadsbarn`.opphørsdato?.toYearMonth(),
         resultat =
             if (endeligResultat != null && søknadsbarn.erDirekteAvslag) {
+                val sistePeriode = endeligResultat.periodeListe.maxByOrNull { it.periode.fom }
+                val periodeOpphør =
+                    sistePeriode?.periode?.til ?: sistePeriode?.periode?.fom ?: søknadsbarn.virkningstidspunktRolle.toYearMonth()
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =
                         endeligResultat.periodeListe +
                             ResultatPeriodeBB(
                                 periode =
                                     ÅrMånedsperiode(
-                                        søknadsbarn.virkningstidspunktRolle,
+                                        periodeOpphør,
                                         null,
                                     ),
                                 ResultatBeregningBB(null),

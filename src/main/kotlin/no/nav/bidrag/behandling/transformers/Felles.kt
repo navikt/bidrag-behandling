@@ -153,19 +153,10 @@ fun <T : Comparable<T>> maxOfNullable(
         maxOf(a, b)
     }
 
-fun <T : Comparable<T>> minOfNullable(
-    a: T?,
-    b: T?,
-): T? =
-    if (a == null && b == null) {
-        null
-    } else if (a == null) {
-        b
-    } else if (b == null) {
-        a
-    } else {
-        minOf(a, b)
-    }
+fun <T : Comparable<T>> minOfNullable(vararg values: T?): T? {
+    val nonNull = values.filterNotNull()
+    return nonNull.minOrNull()
+}
 
 fun finnCutoffDatoFom(
     virkningstidspunkt: LocalDate,
