@@ -963,7 +963,10 @@ class Dtomapper(
         roller
             .sorterForInntektsbildet()
             .filter {
-                it.kreverGrunnlagForBeregning
+                // Skal alltid vise inntekter for BM/BP (ikke barn).
+                // Men hvis barn ikke krever grunnlag pga avslag og ikke løpende bidrag så skal det ikke vises i innteksbilde
+                it.rolletype != Rolletype.BARN ||
+                    it.kreverGrunnlagForBeregning
             }.map {
                 InntekterDtoRolle(
                     gjelder = it.tilDto(),
