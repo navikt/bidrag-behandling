@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.hentBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
+import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
@@ -65,6 +66,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.sluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import no.nav.bidrag.transport.sak.RolleDto
@@ -194,7 +196,7 @@ private fun utledBeregnTilDato(
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
         // Hvis saksbehandler velger direkte avslag så skal beregn til være virkningstidspunkt fordi etter virkningstidspunkt så opphører bidraget
         // Men hvis det finnes opphør før virkningstidspunktet så skal det ikke være nødvendig å beregne etter det
-        minOfNullable(eksisterendeOpphør?.opphørsdato, virkningstidspunkt)!!
+        maxOfNullable(eksisterendeOpphør?.opphørsdato, søknadsbarnRolle.finnBeregnFra().toLocalDate())!!
     } else if (avslagskode != null && avslagskode.erAvvisning()) {
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
         eksisterendeOpphør?.opphørsdato ?: opphørsdato?.atDay(1)!!
@@ -380,7 +382,7 @@ class VedtakGrunnlagMapper(
             behandling.run {
                 val beregnFraDato =
                     if (erBidrag()) {
-                        søknadsbarnRolle.virkningstidspunktBeregnet
+                        søknadsbarnRolle.finnBeregnFra().toLocalDate()
                     } else {
                         behandling.eldsteVirkningstidspunkt
                     } ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")

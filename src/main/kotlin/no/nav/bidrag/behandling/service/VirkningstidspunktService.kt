@@ -269,12 +269,20 @@ class VirkningstidspunktService(
             val stønadstype = gjelderBarnRolle?.stønadstype ?: it.stonadstype
             if (stønadstype == Stønadstype.BIDRAG18AAR) {
                 request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
-                    gjelderBarnRolle?.let { rolle ->
+                    if (gjelderBarnRolle == null) {
+                        // Det valideres at det finnes bare ett barn i behandlingen hvis rolleId i requesten er null
                         notatService.oppdatereNotat(
                             it,
                             NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
                             n.nyBegrunnelse,
-                            rolle,
+                            it.søknadsbarn.first(),
+                        )
+                    } else {
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                            n.nyBegrunnelse,
+                            gjelderBarnRolle,
                         )
                     }
                 }

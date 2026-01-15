@@ -299,7 +299,15 @@ class BeregningService(
                     )
                 }
 
+        val resultatAvslagUtenGrunnlag =
+            behandling.søknadsbarn
+                .filter { it.erDirekteAvslag && !it.kreverGrunnlagForBeregning }
+                .map { søknasdbarn ->
+                    mapTilBeregningsresultatAvslag(behandling, søknasdbarn, endeligBeregning)
+                }
+
         val grunnlagslisteAlle = mutableListOf<GrunnlagDto>()
+        grunnlagslisteAlle.addAll(resultatAvslagUtenGrunnlag.flatMap { it.resultat.grunnlagListe })
         return if (grunnlagBeregning.beregningBarn.isNotEmpty()) {
             try {
                 val resultatBeregning = utførBeregningFF(grunnlagBeregning)

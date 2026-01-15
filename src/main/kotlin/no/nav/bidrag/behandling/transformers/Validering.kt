@@ -344,6 +344,13 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     if (oppdaterBegrunnelseVurderingAvSkolegang != null && !behandling.kanSkriveVurderingAvSkolegangAlle()) {
         feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
     }
+    if (oppdaterBegrunnelseVurderingAvSkolegang != null && behandling.kanSkriveVurderingAvSkolegangAlle() &&
+        (rolleId == null && behandling.søknadsbarn.size > 1)
+    ) {
+        feilliste.add(
+            "Oppdatering av begrunnelse for vurdering av skolegang må oppdateres for et enkelt barn når det er flere barn i saken",
+        )
+    }
     val gjelderBarn = behandling.søknadsbarn.find { it.id == rolleId }
     if (gjelderBarn != null) {
         if (gjelderBarn.opphørsdato != null && virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
