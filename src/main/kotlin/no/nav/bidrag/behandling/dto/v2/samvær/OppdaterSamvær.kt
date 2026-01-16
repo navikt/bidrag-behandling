@@ -12,6 +12,7 @@ import java.math.BigDecimal
 data class OppdaterSamværDto(
     val sammeForAlle: Boolean = false,
     val gjelderBarn: String,
+    val barnId: Long? = null,
     @field:Valid
     val periode: OppdaterSamværsperiodeDto? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
@@ -42,6 +43,7 @@ data class OppdaterSamværskalkulatorBeregningDto(
 
 data class SletteSamværsperiodeElementDto(
     val gjelderBarn: String,
+    val gjelderBarnId: Long,
     val samværsperiodeId: Long,
 )
 
@@ -53,6 +55,7 @@ data class SamværDtoV2(
 data class SamværBarnDto(
     val id: Long,
     val gjelderBarn: String,
+    val gjelderBarnId: Long,
     val begrunnelse: BegrunnelseDto?,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val valideringsfeil: SamværValideringsfeilDto?,

@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
@@ -44,6 +45,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetalj
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
+import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
@@ -70,7 +72,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragPeriodeRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragPeriodeResponse
-import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadsBarnRequest
@@ -136,7 +137,9 @@ data class SakKravhaver(
     val åpneSøknader: MutableSet<ÅpenSøknadDto> = mutableSetOf(),
     val åpneBehandlinger: MutableSet<Behandling> = mutableSetOf(),
     val privatAvtale: PrivatAvtale? = null,
-)
+) {
+    val distinctKey get() = "${kravhaver}_$stønadstype"
+}
 
 data class LøpendeBidragSakPeriode(
     val sak: Saksnummer,
@@ -195,6 +198,8 @@ class ForholdsmessigFordelingService(
 
         bidragssakerBpUtenÅpenBehandling
             .filter { !it.saksnummer.isNullOrEmpty() }
+            // 18 års bidrag først
+            .sortedByDescending { it.stønadstype }
             .groupBy {
                 Pair(it.saksnummer!!, it.stønadstype)
             }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->
@@ -260,7 +265,7 @@ class ForholdsmessigFordelingService(
             underholdService,
             virkningstidspunktService,
             behandling.søknadsbarn.map {
-                OpprettRolleDto(Rolletype.BARN, it.personident!!, it.navn, it.fødselsdato)
+                OpprettRolleDto(Rolletype.BARN, it.personident!!, it.navn, it.fødselsdato, behandlingstema = it.behandlingstema)
             },
             emptyList(),
         )
@@ -502,8 +507,7 @@ class ForholdsmessigFordelingService(
     ) {
         val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
         val opphørsdato = periode.periode.fom.toLocalDate()
-        rolle.årsak = null
-        rolle.avslag = Resultatkode.fraKode(periode.resultatkode)
+
         if (rolle.virkningstidspunkt != null && rolle.virkningstidspunkt!! > opphørsdato) {
             val nyVirkning = if (opphørsdato > behandling.eldsteVirkningstidspunkt) behandling.eldsteVirkningstidspunkt else opphørsdato
             virkningstidspunktService.oppdaterVirkningstidspunkt(
@@ -522,6 +526,19 @@ class ForholdsmessigFordelingService(
             behandling,
             tvingEndring = true,
         )
+
+        if (!rolle.løperBidragFørOpphør()) {
+            // Hvis det løper bidrag før opphørsdatoen i FF behandling så må saksbehandler ta stilling til evt endring før opphørsdatoen
+            // Når det er valgt avslag så fungerer virkningstidspunkt som en opphørsdato og perioder før endres ikke. Derfor må det velges en årsak med virkning og opphørsdato hvis det løper bidrag før opphørsdatoen
+            virkningstidspunktService.oppdaterAvslagÅrsak(
+                behandling,
+                OppdatereVirkningstidspunkt(
+                    årsak = null,
+                    avslag = Resultatkode.fraKode(periode.resultatkode),
+                ),
+                tvingEndring = true,
+            )
+        }
     }
 
     @Transactional
@@ -537,16 +554,23 @@ class ForholdsmessigFordelingService(
         medInnkreving: Boolean = false,
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
         søktFraDato: LocalDate? = null,
+        gebyrGjelder18År: Boolean = false,
+        stønadstype: Stønadstype? = null,
     ) {
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
+        val stønadstypeBeregnet =
+            stønadstype ?: bbmConsumer
+                .hentSøknad(søknadsid)
+                .søknad.behandlingstema
+                .tilStønadstype()
 
         val rollerSomSkalLeggesTil = mutableSetOf<Rolle>()
         rollerSomSkalLeggesTilDto
             .forEach { nyRolle ->
                 val søknadsdetaljerBarn = søknadsdetaljer ?: behandling.tilFFBarnDetaljer()
-                val eksisterendeRolle = behandling.roller.find { it.ident == nyRolle.ident!!.verdi }
+                val eksisterendeRolle = behandling.finnRolle(nyRolle.ident!!.verdi, stønadstypeBeregnet)
                 val ffRolleDetaljer =
                     ForholdsmessigFordelingRolle(
                         tilhørerSak = saksnummer,
@@ -557,9 +581,13 @@ class ForholdsmessigFordelingService(
                         erRevurdering = erRevurdering,
                         søknader = mutableSetOf(søknadsdetaljerBarn.copy(søknadsid = søknadsid)),
                     )
-                val løpendeBidragRolle = relevanteKravhavere.find { it.kravhaver == nyRolle.ident?.verdi }
+                val løpendeBidragRolle =
+                    relevanteKravhavere.find {
+                        it.kravhaver == nyRolle.ident.verdi &&
+                            it.stønadstype == stønadstypeBeregnet
+                    }
                 if (eksisterendeRolle == null) {
-                    val rolle = nyRolle.toRolle(behandling)
+                    val rolle = nyRolle.toRolle(behandling, stønadstypeBeregnet)
                     val løperBidrag = løpendeBidragRolle?.løperBidragEtterDato(søknadsdetaljer!!.søknadFomDato!!.toYearMonth()) == true
                     rolle.forholdsmessigFordeling =
                         ffRolleDetaljer.copy(
@@ -575,6 +603,7 @@ class ForholdsmessigFordelingService(
                     } else {
                         val varRevurderingsbarn = eksisterendeRolle.forholdsmessigFordeling!!.erRevurdering
                         val eksisterendeSøknadsliste = eksisterendeRolle.forholdsmessigFordeling!!.søknader
+                        eksisterendeRolle.stønadstype = stønadstypeBeregnet ?: eksisterendeRolle.stønadstype
                         eksisterendeRolle.forholdsmessigFordeling =
                             ffRolleDetaljer.copy(
                                 søknader =
@@ -600,6 +629,7 @@ class ForholdsmessigFordelingService(
                     if (nyRolle.harGebyrsøknad) {
                         gebyr.gebyrSøknader.add(
                             GebyrRolleSøknad(
+                                gjelder18ÅrSøknad = gebyrGjelder18År,
                                 saksnummer = saksnummer,
                                 søknadsid = søknadsid,
                                 referanse = nyRolle.referanseGebyr,
@@ -622,7 +652,7 @@ class ForholdsmessigFordelingService(
         )
         val rollerSomSkalSlettes =
             behandling.roller
-                .filter { identerSomSkalSlettes.contains(it.ident) }
+                .filter { identerSomSkalSlettes.contains(it.ident) && it.stønadstype == stønadstypeBeregnet }
                 .map { it }
         slettBarnEllerBehandling(rollerSomSkalSlettes, behandling, søknadsid)
     }
@@ -868,13 +898,13 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         sakerMedLøpendeBidrag: Set<SakKravhaver>? = null,
     ): List<SakKravhaver> {
-        val sakerMedLøpendeBidrag = sakerMedLøpendeBidrag ?: hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
-        val søktFomDatoRevurdering = sakerMedLøpendeBidrag.finnSøktFomRevurderingSøknad(behandling)
+        val kravhavereSomHarÅpenBehandling = sakerMedLøpendeBidrag ?: hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
+        val søktFomDatoRevurdering = `kravhavereSomHarÅpenBehandling`.finnSøktFomRevurderingSøknad(behandling)
 
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
-        val søknadsbarnIdenter =
-            sakerMedLøpendeBidrag.map { it.kravhaver } +
-                behandling.søknadsbarn.mapNotNull { it.ident }
+        val søknadsbarnIdentStønadstypeMap =
+            kravhavereSomHarÅpenBehandling.map { it.kravhaver to it.stønadstype } +
+                behandling.søknadsbarn.filter { it.ident != null }.map { it.ident!! to null }
 
         val sakerBp = hentSakerBp(bidragspliktigFnr)
         val barneSomHarBidragssak = sakerBp.flatMap { it.barn.map { it.fødselsnummer!!.verdi } }
@@ -902,23 +932,52 @@ class ForholdsmessigFordelingService(
                     val barn =
                         sak.roller
                             .filter { it.type == Rolletype.BARN }
-                            .filter { it.fødselsnummer != null && !søknadsbarnIdenter.contains(it.fødselsnummer!!.verdi) }
-                    barn.map {
-                        val løpendeBidrag = sakerMedLøpendeBidrag.find { lb -> lb.kravhaver == it.fødselsnummer!!.verdi }
-                        val barnFødselsdato = hentPersonFødselsdato(it.fødselsnummer!!.verdi)
+                            .filter { it.fødselsnummer != null }
+                    barn.mapNotNull { b ->
+                        val stønaderMedÅpenBehandling =
+                            søknadsbarnIdentStønadstypeMap
+                                .filter {
+                                    it.first == b.fødselsnummer!!.verdi
+                                }.map { it.second }
+                                .distinct()
+                        val løpendeBidrag =
+                            kravhavereSomHarÅpenBehandling.find { lb ->
+                                lb.kravhaver == b.fødselsnummer!!.verdi &&
+                                    !stønaderMedÅpenBehandling.contains(lb.stønadstype)
+                            }
+                        val barnFødselsdato = hentPersonFødselsdato(b.fødselsnummer!!.verdi)
                         val dato18ÅrsBidrag = barnFødselsdato!!.plusYears(18).plusMonths(1).withDayOfMonth(1)
-                        val er18EtterrSøktFom = søktFomDatoRevurdering > dato18ÅrsBidrag
+                        val er18EtterSøktFom = søktFomDatoRevurdering > dato18ÅrsBidrag
                         val privatAvtale =
                             behandling.privatAvtale.find { pa ->
                                 pa.rolle == null &&
-                                    pa.personIdent == it.fødselsnummer?.verdi
+                                    pa.personIdent == b.fødselsnummer?.verdi
                             }
+                        val privatAvtalePerioder = privatAvtale?.perioder ?: emptySet()
+                        val førstePeriodePrivatAvtale = privatAvtalePerioder.minByOrNull { it.fom }
+
+                        // Hvis privat avtalen er før 18 års dagen så antas det at det er en ordniær bidrag ellers 18 års bidrag
+                        val stønadstypeBeregnet =
+                            when {
+                                førstePeriodePrivatAvtale != null && førstePeriodePrivatAvtale.fom < dato18ÅrsBidrag -> Stønadstype.BIDRAG
+
+                                førstePeriodePrivatAvtale != null &&
+                                    førstePeriodePrivatAvtale.fom >= dato18ÅrsBidrag -> Stønadstype.BIDRAG18AAR
+
+                                er18EtterSøktFom -> Stønadstype.BIDRAG18AAR
+
+                                else -> Stønadstype.BIDRAG
+                            }
+
+                        // Hvis barnet har åpen søknad med samme stønadstype fra før så unngå å lage en ny FF søknad
+                        if (stønaderMedÅpenBehandling.contains(stønadstypeBeregnet)) return@mapNotNull null
+
                         SakKravhaver(
-                            kravhaver = it.fødselsnummer!!.verdi,
+                            kravhaver = b.fødselsnummer!!.verdi,
                             saksnummer = sak.saksnummer.verdi,
                             løperBidragFra = løpendeBidrag?.løperBidragFra,
                             løperBidragTil = løpendeBidrag?.løperBidragTil,
-                            stønadstype = if (er18EtterrSøktFom) Stønadstype.BIDRAG18AAR else Stønadstype.BIDRAG,
+                            stønadstype = stønadstypeBeregnet,
                             eierfogd = sak.eierfogd.verdi,
                             bidragsmottaker = sak.bidragsmottaker?.fødselsnummer?.verdi,
                             privatAvtale = privatAvtale,
@@ -1169,7 +1228,13 @@ class ForholdsmessigFordelingService(
     ) {
         val sak = sakConsumer.hentSak(saksnummer)
 
-        val barnUtenSøknader = løpendeBidragssak.filter { ls -> behandling.søknadsbarn.none { it.ident == ls.kravhaver } }
+        val barnUtenSøknader =
+            løpendeBidragssak.filter { ls ->
+                behandling.søknadsbarn.none {
+                    it.ident == ls.kravhaver &&
+                        it.stønadstype == ls.stønadstype
+                }
+            }
         if (barnUtenSøknader.isEmpty()) return
 
         val bmFødselsnummer = hentNyesteIdent(sak.bidragsmottaker?.fødselsnummer?.verdi)?.verdi
@@ -1250,7 +1315,7 @@ class ForholdsmessigFordelingService(
                     stønadstype = stønadstype ?: Stønadstype.BIDRAG,
                     innkrevesFraDato = if (skalInnkreves) søknad.løperBidragFra else null,
                     medInnkreving = skalInnkreves,
-                    opphørsdato = if (skalInnkreves) søknad.løperBidragTil else null,
+                    opphørsdato = søknad.løperBidragTil,
                     ffDetaljer =
                         ffDetaljer.copy(
                             løperBidragFra = søknad.løperBidragFra,
@@ -1369,7 +1434,7 @@ class ForholdsmessigFordelingService(
         beløpshistorikkConsumer
             .hentAlleLøpendeStønaderIPeriode(
                 LøpendeBidragPeriodeRequest(skyldner = bpIdent, periode = periode),
-            ).filtrerForPeriode(periode)
+            ).filtrerForPeriode(periode.copy(til = null))
             .map { sak ->
                 LøpendeBidragSakPeriode(
                     sak = sak.sak,
@@ -1406,7 +1471,8 @@ class ForholdsmessigFordelingService(
 
         åpneBehandlinger.forEach { behandling ->
             behandling.søknadsbarn.forEach { barn ->
-                val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barn.ident }
+                val stønadstype = barn.stønadstype ?: behandling.stonadstype
+                val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barn.ident && it.type == stønadstype }
                 val eksisterende = sakKravhaverListe.hentForKravhaver(barn.ident!!)
                 if (eksisterende != null) {
                     eksisterende.åpneBehandlinger.add(behandling)
@@ -1415,7 +1481,7 @@ class ForholdsmessigFordelingService(
                         SakKravhaver(
                             saksnummer = behandling.saksnummer,
                             kravhaver = barn.ident!!,
-                            stønadstype = barn.stønadstype ?: behandling.stonadstype,
+                            stønadstype = stønadstype,
                             åpneBehandlinger = mutableSetOf(behandling),
                             eierfogd = behandling.behandlerEnhet,
                             løperBidragFra = løpendeBidrag?.periodeFra,
@@ -1439,7 +1505,11 @@ class ForholdsmessigFordelingService(
                 åpenSøknad.partISøknadListe
                     .filter { it.rolletype == Rolletype.BARN }
                     .forEach { barnFnr ->
-                        val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barnFnr.personident }
+                        val stønadstype = åpenSøknad.behandlingstema.tilStønadstype()
+                        val løpendeBidrag =
+                            løpendeBidraggsakerBP.find {
+                                it.kravhaver.verdi == barnFnr.personident && it.type == stønadstype
+                            }
                         val eksisterende = sakKravhaverListe.hentForKravhaver(barnFnr.personident!!)
                         if (eksisterende != null) {
                             eksisterende.åpneSøknader.add(åpenSøknad)
@@ -1451,6 +1521,7 @@ class ForholdsmessigFordelingService(
                                     eierfogd = åpenSøknad.behandlerenhet,
                                     løperBidragFra = løpendeBidrag?.periodeFra,
                                     løperBidragTil = løpendeBidrag?.periodeTil,
+                                    stønadstype = stønadstype,
                                     åpneSøknader = mutableSetOf(åpenSøknad),
                                 ),
                             )
@@ -1458,11 +1529,11 @@ class ForholdsmessigFordelingService(
                     }
             }
 
-        val krahaverFraÅpneSaker = sakKravhaverListe.map { it.kravhaver }
+        val krahaverFraÅpneSaker = sakKravhaverListe.map { it.kravhaver to it.stønadstype }
 
         val løpendeBidragsaker =
             løpendeBidraggsakerBP
-                .filter { !krahaverFraÅpneSaker.contains(it.kravhaver.verdi) }
+                .filter { lb -> krahaverFraÅpneSaker.none { it.first == lb.kravhaver.verdi && it.second == lb.type } }
                 .map {
                     SakKravhaver(
                         saksnummer = it.sak.verdi,
@@ -1471,7 +1542,7 @@ class ForholdsmessigFordelingService(
                         løperBidragFra = it.periodeFra,
                         løperBidragTil = it.periodeTil,
                     )
-                }.distinctBy { it.kravhaver }
+                }.distinctBy { it.distinctKey }
         val bidragsaker = løpendeBidragsaker + sakKravhaverListe
         return bidragsaker
             .sortedWith { a, b ->
@@ -1482,7 +1553,7 @@ class ForholdsmessigFordelingService(
                     !aHasOpen && bHasOpen -> 1
                     else -> 0
                 }
-            }.distinctBy { it.saksnummer to it.kravhaver }
+            }.distinctBy { it.saksnummer to it.distinctKey }
             .toSet()
     }
 }

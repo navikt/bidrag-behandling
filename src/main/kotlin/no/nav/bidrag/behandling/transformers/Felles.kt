@@ -153,19 +153,10 @@ fun <T : Comparable<T>> maxOfNullable(
         maxOf(a, b)
     }
 
-fun <T : Comparable<T>> minOfNullable(
-    a: T?,
-    b: T?,
-): T? =
-    if (a == null && b == null) {
-        null
-    } else if (a == null) {
-        b
-    } else if (b == null) {
-        a
-    } else {
-        minOf(a, b)
-    }
+fun <T : Comparable<T>> minOfNullable(vararg values: T?): T? {
+    val nonNull = values.filterNotNull()
+    return nonNull.minOrNull()
+}
 
 fun finnCutoffDatoFom(
     virkningstidspunkt: LocalDate,
@@ -208,6 +199,14 @@ fun Stønadstype.tilGrunnlagstypeBeløpshistorikk() =
         Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
         else -> throw IllegalArgumentException("Ukjent stønadstype: $this")
     }
+
+fun Behandling.løperBidragEtterEldsteVirkning(rolle: Rolle): Boolean {
+    val fraPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
+    val tilPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).maxByOrNull { it.fom }?.til
+    if (fraPeriodeLøperBidrag == null) return false
+    if (tilPeriodeLøperBidrag == null) return true
+    return tilPeriodeLøperBidrag >= eldsteVirkningstidspunkt.toYearMonth()
+}
 
 fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
     val fraPeriodeLøperBidrag = finnPerioderHvorDetLøperBidrag(rolle).minByOrNull { it.fom }?.fom
@@ -371,6 +370,15 @@ fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle)
         null
     }
 }
+
+fun Rolle.løperBidragFørOpphør() =
+    opphørsdato != null && finnLøperBidragFra() != null &&
+        opphørsdato!! > behandling.eldsteVirkningstidspunkt &&
+        opphørsdato!!.toYearMonth() > finnLøperBidragFra()!!
+
+fun Rolle.finnLøperBidragFra() = behandling.finnPeriodeLøperBidrag(this)?.fom
+
+fun Rolle.finnEksisterendeVedtakMedOpphørForRolle(): EksisterendeOpphørsvedtakDto? = behandling.finnEksisterendeVedtakMedOpphør(this)
 
 fun Behandling.finnEksisterendeVedtakMedOpphør(rolle: Rolle): EksisterendeOpphørsvedtakDto? {
     val opphørPeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle)?.takeIf { it.periode.til != null } ?: return null

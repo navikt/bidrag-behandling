@@ -14,6 +14,8 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleV2Dto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrSakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
@@ -106,7 +108,9 @@ import no.nav.bidrag.transport.dokumentmaler.notat.NotatBoforholdTilBMMedSøknad
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrDetaljerDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrDetaljerDto.NotatGebyrInntektDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrRolleV2Dto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrSakDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrV2Dto
+import no.nav.bidrag.transport.dokumentmaler.notat.NotatGebyrV3Dto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntektDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntekterDto
 import no.nav.bidrag.transport.dokumentmaler.notat.NotatInntektspostDto
@@ -371,6 +375,23 @@ class NotatOpplysningerService(
                             )
                         },
                 ),
+            gebyrV3 =
+                NotatGebyrV3Dto(
+                    saker =
+                        mapper.run { behandling.mapGebyrV3() }.saker.map { sak ->
+                            NotatGebyrSakDto(
+                                saksnummer = sak.saksnummer,
+                                gebyrRoller =
+                                    sak.gebyrRoller.map {
+                                        it.mapTilNotatGebyrRolleV2Dto()
+                                    },
+                                gebyr18År =
+                                    sak.gebyr18År.map {
+                                        it.mapTilNotatGebyrRolleV2Dto()
+                                    },
+                            )
+                        },
+                ),
             gebyrV2 =
                 NotatGebyrV2Dto(
                     gebyrRoller =
@@ -544,6 +565,32 @@ class NotatOpplysningerService(
                 },
         )
     }
+
+    private fun GebyrRolleV2Dto.mapTilNotatGebyrRolleV2Dto(): NotatGebyrDetaljerDto =
+        NotatGebyrDetaljerDto(
+            inntekt =
+                NotatGebyrInntektDto(
+                    skattepliktigInntekt = gebyrDetaljer.inntekt.skattepliktigInntekt,
+                    maksBarnetillegg = gebyrDetaljer.inntekt.maksBarnetillegg,
+                ),
+            beregnetIlagtGebyr = gebyrDetaljer.beregnetIlagtGebyr,
+            beløpGebyrsats = gebyrDetaljer.beløpGebyrsats,
+            endeligIlagtGebyr = gebyrDetaljer.endeligIlagtGebyr,
+            begrunnelse = gebyrDetaljer.begrunnelse,
+            rolle = rolle.tilNotatRolle(),
+            søknad =
+                gebyrDetaljer.søknad?.let {
+                    NotatGebyrDetaljerDto.NotatGebyrSøknadDetaljerDto(
+                        søknadsid = it.søknadsid,
+                        mottattDato = it.mottattDato,
+                        saksnummer = it.saksnummer,
+                        søktAvType = it.søktAvType,
+                        søknadFomDato = it.søktFomDato,
+                        behandlingstype = it.behandlingstype,
+                        behandlingstema = it.behandlingstema,
+                    )
+                },
+        )
 
     private fun Behandling.tilUnderholdOpplysningV2(): NotatOffentligeOpplysningerUnderhold {
         val opplysningerAndreBarnTilBM =
@@ -775,6 +822,7 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                 erForholdsmessigFordelt = it.erForholdsmessigFordelt,
                                 sumBidragTilFordelingSøknadsbarn = it.sumBidragTilFordelingSøknadsbarn,
                                 sumBidragTilFordelingIkkeSøknadsbarn = it.sumBidragTilFordelingIkkeSøknadsbarn,
+                                sumBidragTilFordelingPrivatAvtale = it.sumBidragTilFordelingPrivatAvtale,
                                 sumBidragTilFordelingSPrioritertBidrag = BigDecimal.ZERO,
                                 finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = it.finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn,
                                 bidragTilFordelingAlle =

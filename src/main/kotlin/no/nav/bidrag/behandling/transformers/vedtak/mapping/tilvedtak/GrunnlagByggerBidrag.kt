@@ -18,6 +18,7 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.sak.Sakskategori
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
@@ -25,6 +26,7 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlagV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
@@ -337,11 +339,11 @@ fun PrivatAvtale.mapTilGrunnlag(
             type = Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
             innhold =
                 POJONode(
-                    PrivatAvtaleGrunnlag(
+                    PrivatAvtaleGrunnlagV2(
                         avtaleInngåttDato = utledetAvtaledato ?: virkningstidspunkt!!,
                         avtaleType = avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                         skalIndeksreguleres = skalIndeksreguleres,
-                        utlandsbidrag = utenlandsk,
+                        sakskategori = if (utenlandsk) Sakskategori.U else Sakskategori.N,
                     ),
                 ),
         )

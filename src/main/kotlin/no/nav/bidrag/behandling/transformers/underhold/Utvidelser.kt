@@ -82,7 +82,7 @@ fun BarnDto.annetBarnMedSammeNavnOgFødselsdatoEksistererFraFør(behandling: Beh
 
 fun BarnDto.annetBarnMedSammePersonidentEksistererFraFør(behandling: Behandling) =
     behandling.underholdskostnader
-        .filter { it.personIdent != null }
+        .filter { it.personIdent != null && (it.rolle == null || stønadstype == null || it.rolle!!.stønadstype == stønadstype) }
         .find { it.personIdent == this.personident?.verdi } != null
 
 fun Set<BarnetilsynGrunnlagDto>.tilBarnetilsyn(u: Underholdskostnad) =

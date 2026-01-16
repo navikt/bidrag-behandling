@@ -64,6 +64,7 @@ import no.nav.bidrag.behandling.transformers.behandling.toSimple
 import no.nav.bidrag.behandling.transformers.sorterForInntektsbildet
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -192,19 +193,10 @@ class BehandlingControllerV2(
                     behandling.grunnlag.hentSisteAktiv(),
                     inkluderHistoriskeInntekter = true,
                 ),
-            inntekterV2 =
-                behandling.roller.sorterForInntektsbildet().map {
-                    InntekterDtoRolle(
-                        gjelder = it.tilDto(),
-                        inntekter =
-                            behandling.tilInntektDtoV3(
-                                behandling.grunnlag.hentSisteAktiv(),
-                                it,
-                            ),
-                    )
-                },
+            inntekterV2 = dtomapper.run { behandling.mapInntekterV2() },
             gebyr = dtomapper.run { behandling.mapGebyr() },
             gebyrV2 = dtomapper.run { behandling.mapGebyrV2() },
+            gebyrV3 = dtomapper.run { behandling.mapGebyrV3() },
             beregnetGebyrErEndret = beregnetGebyrErEndret,
             beregnetInntekter =
                 behandling.roller

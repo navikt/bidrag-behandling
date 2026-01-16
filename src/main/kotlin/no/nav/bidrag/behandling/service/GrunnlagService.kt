@@ -2374,7 +2374,7 @@ class GrunnlagService(
             sistInnhentedeGrunnlagAvType != null && innhentetGrunnlag != sistInnhentedeGrunnlagAvType
 
         if (erFørstegangsinnhentingAvInntekter ||
-            erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null && !tekniskFeilVedInnhenting
+            (erGrunnlagEndretSidenSistInnhentet && nyesteGrunnlag?.aktiv != null && !tekniskFeilVedInnhenting)
         ) {
             opprett(
                 behandling = behandling,

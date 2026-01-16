@@ -269,12 +269,20 @@ class VirkningstidspunktService(
             val stønadstype = gjelderBarnRolle?.stønadstype ?: it.stonadstype
             if (stønadstype == Stønadstype.BIDRAG18AAR) {
                 request.oppdaterBegrunnelseVurderingAvSkolegang?.let { n ->
-                    gjelderBarnRolle?.let { rolle ->
+                    if (gjelderBarnRolle == null) {
+                        // Det valideres at det finnes bare ett barn i behandlingen hvis rolleId i requesten er null
                         notatService.oppdatereNotat(
                             it,
                             NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
                             n.nyBegrunnelse,
-                            rolle,
+                            it.søknadsbarn.first(),
+                        )
+                    } else {
+                        notatService.oppdatereNotat(
+                            it,
+                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                            n.nyBegrunnelse,
+                            gjelderBarnRolle,
                         )
                     }
                 }
@@ -326,6 +334,11 @@ class VirkningstidspunktService(
         val forrigeÅrsak = forRolle?.årsak ?: behandling.årsak
         val forrigeAvslag = forRolle?.avslag ?: behandling.avslag
         val erAvslagÅrsakEndret = tvingEndring || request.årsak != forrigeÅrsak || request.avslag != forrigeAvslag
+
+        if (request.avslag == null && request.årsak == null) {
+            log.warn { "Både avslag og årsak mangler i input for behandling ${behandling.id}. Minst ett av vediene må setttes" }
+            return
+        }
 
         val erBidragFlereBarn = behandling.erBidrag() && behandling.søknadsbarn.size > 1
         if (forRolle != null && forrigeAvslag == Resultatkode.BIDRAGSPLIKTIG_ER_DØD && erBidragFlereBarn) {
