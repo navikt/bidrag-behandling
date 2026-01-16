@@ -367,6 +367,7 @@ class SamværMockTest : TestContainerRunner() {
             samværService.slettPeriode(
                 behandling.id!!,
                 SletteSamværsperiodeElementDto(
+                    gjelderBarnId = søknadsbarn.id!!,
                     gjelderBarn = søknadsbarn.ident!!,
                     samværsperiodeId = samvær.perioder.toList()[1].id!!,
                 ),
@@ -411,6 +412,7 @@ class SamværMockTest : TestContainerRunner() {
                 samværService.slettPeriode(
                     behandling.id!!,
                     SletteSamværsperiodeElementDto(
+                        gjelderBarnId = samvær.rolle.id!!,
                         gjelderBarn = "123123",
                         samværsperiodeId = samvær.perioder.toList()[1].id!!,
                     ),
@@ -450,6 +452,7 @@ class SamværMockTest : TestContainerRunner() {
                 samværService.slettPeriode(
                     behandling.id!!,
                     SletteSamværsperiodeElementDto(
+                        gjelderBarnId = søknadsbarn.id!!,
                         gjelderBarn = søknadsbarn.ident!!,
                         samværsperiodeId = 213,
                     ),

@@ -353,7 +353,7 @@ class Dtomapper(
                                 } else {
                                     Datoperiode(it.periode.fom, it.periode.til)
                                 },
-                            beløp = it.beløp,
+                            beløp = it.indeksregulertBeløp,
                             indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
                         )
                     }
@@ -1077,6 +1077,7 @@ class Dtomapper(
                 ).map {
                     val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
                     val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
+                    val bidragetHarOpphørt = finnEksisterendeVedtakMedOpphør(it) != null && it.virkningstidspunkt == it.opphørsdato
                     VirkningstidspunktBarnDtoV2(
                         rolle = it.tilDto(),
                         beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
@@ -1136,18 +1137,12 @@ class Dtomapper(
                         søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
                         // Betyr at revurderingsbarn bidrag opphører i løpet av beregningsperioden. Da skal det ikke være mulig å endre virkningstidspunkt eller opphør
                         // Systemet (VedtakHendelseLytteren) skal oppdatere opphør når det fattes ny opphørsvedtak
+                        // Gjelder bare for revurderingsbarn
                         kanEndreVirkningstidspunkt =
-                            !it.erRevurderingsbarn ||
-                                !(
-                                    finnEksisterendeVedtakMedOpphør(it) != null &&
-                                        it.virkningstidspunkt == it.opphørsdato
-                                ),
+                            !it.erRevurderingsbarn || !bidragetHarOpphørt,
                         kanEndreVirkningstidspunktOpphør =
-                            !it.erRevurderingsbarn ||
-                                !(
-                                    finnEksisterendeVedtakMedOpphør(it) != null &&
-                                        it.virkningstidspunkt == it.opphørsdato
-                                ),
+                            !it.erRevurderingsbarn || !bidragetHarOpphørt,
+                        kanVelgeOpphør = !erIForholdsmessigFordeling || !it.løperBidragEtterEldsteVirkning,
                         begrunnelseFraOpprinneligVedtak =
                             if (erKlageEllerOmgjøring) {
                                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)

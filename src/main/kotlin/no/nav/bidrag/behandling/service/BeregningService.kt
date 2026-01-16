@@ -17,7 +17,8 @@ import no.nav.bidrag.behandling.dto.v1.beregning.tilBeregningFeilmelding
 import no.nav.bidrag.behandling.transformers.beregning.validerForSærbidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.finnDelberegningBPsBeregnedeTotalbidrag
-import no.nav.bidrag.behandling.transformers.finnDelberegningerPrivatAvtale
+import no.nav.bidrag.behandling.transformers.finnDelberegningerPrivatAvtalePerioder
+import no.nav.bidrag.behandling.transformers.finnDelberegningerPrivatAvtaleReferanser
 import no.nav.bidrag.behandling.transformers.grunnlag.opprettAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -217,76 +218,12 @@ class BeregningService(
         endeligBeregning: Boolean = true,
         simulerBeregning: Boolean = false,
     ): ResultatBidragsberegning {
-        val grunnlagslisteBarn =
-            behandling.søknadsbarn.filter { it.kreverGrunnlagForBeregning }.map { søknasdbarn ->
-                mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
-            }
-        val beregnFraDato = behandling.eldsteVirkningstidspunkt
-        val beregningTilDato = behandling.finnBeregnTilDato()
         // Hvis saksbehandler har valgt avslag for alle barn så utføres det ingen beregning mtp at det blir opphør for alle
         if (behandling.søknadsbarn.all { it.avslag != null }) {
             return beregneBarnebidragAlleAvslag(behandling, endeligBeregning)
         }
-        val beregningsperiode =
-            ÅrMånedsperiode(
-                beregnFraDato,
-                beregningTilDato,
-            )
 
-        val grunnlagslisteSøknadsbarn = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList()
-        val grunnlagslisteSimulertPrivatAvtale =
-            mapper.run {
-                byggGrunnlagForSimulering(behandling, grunnlagslisteSøknadsbarn.toSet())
-            }
-        val grunnlagBeregning =
-            BidragsberegningOrkestratorRequestV2(
-                skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
-                beregningsperiode = beregningsperiode,
-                grunnlagsliste = (grunnlagslisteSøknadsbarn + grunnlagslisteSimulertPrivatAvtale).toSet().toList(),
-                erDirekteAvslag = behandling.erDirekteAvslag(),
-                beregningstype =
-                    when {
-                        behandling.erKlageEllerOmgjøring -> {
-                            if (endeligBeregning) {
-                                Beregningstype.OMGJØRING_ENDELIG
-                            } else {
-                                Beregningstype.OMGJØRING
-                            }
-                        }
-
-                        else -> {
-                            Beregningstype.BIDRAG
-                        }
-                    },
-                beregningBarn =
-                    grunnlagslisteBarn.sortedBy { it.beregnGrunnlag.stønadstype }.map {
-                        val søknadsbarn =
-                            behandling.søknadsbarn.find { sb ->
-                                sb.tilGrunnlagsreferanse() ==
-                                    it.beregnGrunnlag.søknadsbarnReferanse
-                            }
-                        val beregningsperiode =
-                            ÅrMånedsperiode(
-                                søknadsbarn!!.finnBeregnFra(),
-                                behandling.finnBeregnTilDatoBehandling(søknadsbarn, beregningTilDato).toYearMonth(),
-                            )
-                        val virkningstidspunktBeregning =
-                            minOfNullable(
-                                søknadsbarn.virkningstidspunkt?.toYearMonth(),
-                                it.beregnGrunnlag.periode.fom,
-                                it.beregnGrunnlag.opphørsdato,
-                            )!!
-                        BeregningGrunnlagV2(
-                            søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
-                            periode = it.beregnGrunnlag.periode,
-                            beregningsperiode = beregningsperiode,
-                            virkningstidspunkt = virkningstidspunktBeregning,
-                            opphørsdato = it.beregnGrunnlag.opphørsdato,
-                            stønadstype = it.beregnGrunnlag.stønadstype,
-                            omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
-                        )
-                    },
-            )
+        val grunnlagBeregning = opprettGrunnlagBeregningBidragV2(behandling, endeligBeregning, simulerBeregning)
         val resultatAvvisningUtenGrunnlag =
             behandling.søknadsbarn
                 .filter { it.erAvvisning && !it.kreverGrunnlagForBeregning }
@@ -390,6 +327,79 @@ class BeregningService(
                 vedtakstype = behandling.vedtakstype,
             )
         }
+    }
+
+    fun opprettGrunnlagBeregningBidragV2(
+        behandling: Behandling,
+        endeligBeregning: Boolean = true,
+        simulerBeregning: Boolean = false,
+    ): BidragsberegningOrkestratorRequestV2 {
+        val grunnlagslisteBarn =
+            behandling.søknadsbarn.filter { it.kreverGrunnlagForBeregning }.map { søknasdbarn ->
+                mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
+            }
+        val beregnFraDato = behandling.eldsteVirkningstidspunkt
+        val beregningTilDato = behandling.finnBeregnTilDato()
+
+        val beregningsperiode =
+            ÅrMånedsperiode(
+                beregnFraDato,
+                beregningTilDato,
+            )
+
+        val grunnlagslisteSøknadsbarn = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList()
+        val grunnlagslisteSimulertPrivatAvtale =
+            mapper.run {
+                byggGrunnlagForSimulering(behandling, grunnlagslisteSøknadsbarn.toSet())
+            }
+        return BidragsberegningOrkestratorRequestV2(
+            skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
+            beregningsperiode = beregningsperiode,
+            grunnlagsliste = (grunnlagslisteSøknadsbarn + grunnlagslisteSimulertPrivatAvtale).toSet().toList(),
+            erDirekteAvslag = behandling.erDirekteAvslag(),
+            beregningstype =
+                when {
+                    behandling.erKlageEllerOmgjøring -> {
+                        if (endeligBeregning) {
+                            Beregningstype.OMGJØRING_ENDELIG
+                        } else {
+                            Beregningstype.OMGJØRING
+                        }
+                    }
+
+                    else -> {
+                        Beregningstype.BIDRAG
+                    }
+                },
+            beregningBarn =
+                grunnlagslisteBarn.sortedBy { it.beregnGrunnlag.stønadstype }.map {
+                    val søknadsbarn =
+                        behandling.søknadsbarn.find { sb ->
+                            sb.tilGrunnlagsreferanse() ==
+                                it.beregnGrunnlag.søknadsbarnReferanse
+                        }
+                    val beregningsperiode =
+                        ÅrMånedsperiode(
+                            søknadsbarn!!.finnBeregnFra(),
+                            behandling.finnBeregnTilDatoBehandling(søknadsbarn, beregningTilDato).toYearMonth(),
+                        )
+                    val virkningstidspunktBeregning =
+                        minOfNullable(
+                            søknadsbarn.virkningstidspunkt?.toYearMonth(),
+                            it.beregnGrunnlag.periode.fom,
+                            it.beregnGrunnlag.opphørsdato,
+                        )!!
+                    BeregningGrunnlagV2(
+                        søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
+                        periode = it.beregnGrunnlag.periode,
+                        beregningsperiode = beregningsperiode,
+                        virkningstidspunkt = virkningstidspunktBeregning,
+                        opphørsdato = it.beregnGrunnlag.opphørsdato,
+                        stønadstype = it.beregnGrunnlag.stønadstype,
+                        omgjøringOrkestratorGrunnlag = it.omgjøringOrkestratorGrunnlag,
+                    )
+                },
+        )
     }
 
     private fun mapTilBeregningsresultatAvslag(
@@ -743,7 +753,7 @@ class BeregningService(
                         val gjelderReferanse =
                             beregning.bidragspliktig!!.referanse
                         val gjelderBarnReferanse = beregning.hentAllePersoner().find { it.personIdent == pa.rolle!!.ident }!!.referanse
-                        val delberegningPrivatAvtale = beregning.finnDelberegningerPrivatAvtale(gjelderBarnReferanse)
+                        val delberegningPrivatAvtalePerioder = beregning.finnDelberegningerPrivatAvtalePerioder(gjelderBarnReferanse)
                         val vedtak = pa.valgtVedtakFraNav
                         val grunnlagFraVedtak =
                             if (pa.avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && vedtak != null) {
@@ -768,12 +778,9 @@ class BeregningService(
                                 emptyList()
                             }
                         val perioderBeregnet =
-                            delberegningPrivatAvtale
-                                ?.innhold
-                                ?.perioder
-                                ?.sortedBy {
-                                    it.periode.fom
-                                }
+                            delberegningPrivatAvtalePerioder.sortedBy {
+                                it.periode.fom
+                            }
                         val perioder =
                             perioderBeregnet?.mapIndexed { i, it ->
                                 val sistePeriodeTil =
@@ -784,9 +791,10 @@ class BeregningService(
                                     }
                                 ResultatPeriodeBB(
                                     periode = ÅrMånedsperiode(it.periode.fom, sistePeriodeTil),
-                                    resultat = ResultatBeregningBB(it.beløp),
+                                    resultat = ResultatBeregningBB(it.indeksregulertBeløp),
                                     grunnlagsreferanseListe =
-                                        listOf(delberegningPrivatAvtale.referanse) + grunnlagFraVedtak.map { it.referanse },
+                                        beregning.finnDelberegningerPrivatAvtaleReferanser(gjelderBarnReferanse) +
+                                            grunnlagFraVedtak.map { it.referanse },
                                 )
                             } ?: emptyList()
                         perioder to (beregning + grunnlagFraVedtak + behandling.byggGrunnlagSøknad())

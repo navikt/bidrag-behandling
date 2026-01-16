@@ -80,6 +80,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -252,7 +253,11 @@ fun oppdaterUnderholdskostnadForRoller(
             .filter { rolle ->
                 behandling.underholdskostnader.none { u -> u.rolle?.ident == rolle.ident!!.verdi }
             }.forEach { rolle ->
-                underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = rolle.ident), kilde = Kilde.OFFENTLIG)
+                underholdService.oppretteUnderholdskostnad(
+                    behandling,
+                    BarnDto(personident = rolle.ident, stønadstype = rolle.behandlingstema?.tilStønadstype()),
+                    kilde = Kilde.OFFENTLIG,
+                )
             }
         rollerSomSkalSlettes.forEach { rolle ->
             underholdService.endreUnderholdskostnadTilAndreBarn(behandling, rolle)

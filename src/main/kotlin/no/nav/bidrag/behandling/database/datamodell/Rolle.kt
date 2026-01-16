@@ -134,10 +134,9 @@ open class Rolle(
     val erDirekteAvslag get() = avslag != null
     val erAvvisning get() = avslag != null && avslag!!.erAvvisning()
     val erDirekteAvslagIkkeAvvisning get() = avslag != null && avslag!!.erDirekteAvslag() && !avslag!!.erAvvisning()
+    val løperBidragEtterEldsteVirkning get() = behandling.løperBidragEtterEldsteVirkning(this)
     val kreverGrunnlagForBeregning get() =
-        avslag == null || (
-            behandling.løperBidragEtterEldsteVirkning(this)
-        )
+        avslag == null || løperBidragEtterEldsteVirkning
     val harSøknadMedInnkreving get() = forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.innkreving } == true
     val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
     val barn get() =
@@ -278,10 +277,10 @@ open class Rolle(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Rolle) return false
-        return ident == other.ident && rolletype == other.rolletype
+        return ident == other.ident && rolletype == other.rolletype && stønadstype == other.stønadstype
     }
 
-    override fun hashCode(): Int = (ident?.hashCode() ?: 0) * 31 + rolletype.hashCode()
+    override fun hashCode(): Int = (ident?.hashCode() ?: 0) * 31 + rolletype.hashCode() + stønadstype.hashCode()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
