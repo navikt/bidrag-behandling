@@ -167,7 +167,7 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
 
 fun Rolle.mapTilResultatBarn() =
-    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), grunnlagFraVedtakListe)
+    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), stønadstype, grunnlagFraVedtakListe)
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 

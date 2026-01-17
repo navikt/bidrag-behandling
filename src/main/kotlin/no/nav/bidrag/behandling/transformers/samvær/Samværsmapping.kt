@@ -28,7 +28,7 @@ fun Samvær.tilDto() =
     SamværBarnDto(
         id = id!!,
         gjelderBarn = rolle.ident!!,
-        gjelderBarnId = rolle.id!!,
+        barn = rolle.tilDto(),
         begrunnelse = tilBegrunnelse(),
         begrunnelseFraOpprinneligVedtak =
             if (behandling.erKlageEllerOmgjøring) {

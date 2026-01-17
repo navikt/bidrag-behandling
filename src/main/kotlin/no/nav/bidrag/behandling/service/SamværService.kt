@@ -216,7 +216,7 @@ class SamværService(
     private fun MutableSet<Samvær>.finnSamværForBarn(
         barnId: Long? = null,
         gjelderBarn: String,
-    ) = find { (barnId == null && it.rolle.ident == gjelderBarn) || it.id == barnId }
+    ) = find { (barnId == null && it.rolle.ident == gjelderBarn) || it.rolle.id == barnId }
         ?: ugyldigForespørsel("Fant ikke samvær for barn $gjelderBarn i behandling med id ${firstOrNull()?.behandling?.id}")
 
     private fun Samvær.hentPeriode(id: Long) =

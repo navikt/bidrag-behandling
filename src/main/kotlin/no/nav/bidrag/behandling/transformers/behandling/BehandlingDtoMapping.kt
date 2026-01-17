@@ -229,10 +229,25 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     behandling: Behandling,
     rollerSomLeggesTil: List<OpprettRolleDto>,
 ) {
+    rollerSomLeggesTil
+        .filter { it.rolletype == Rolletype.BARN }
+        .filter { nyRolle -> behandling.husstandsmedlem.any { it.ident == nyRolle.ident?.verdi } }
+        .forEach { nyRolle ->
+            val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.behandlingstema!!.tilStønadstype())
+            // Oppdater rolle slik at husstandsmedlemmen blir låst til rollen i behandlingen
+            val husstandsmedlem = behandling.husstandsmedlem.find { it.ident == nyRolle.ident.verdi }!!
+            husstandsmedlem.rolle = rolle
+            husstandsmedlem.kilde = Kilde.OFFENTLIG
+        }
+
     val nyeRollerSomIkkeHarHusstandsmedlemmer =
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
-            .filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
+            .filter { nyRolle ->
+                val stønadstype = nyRolle.behandlingstema!!.tilStønadstype()
+                val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, stønadstype)
+                behandling.husstandsmedlem.none { it.rolle?.ident == rolle!!.ident && it.rolle?.stønadstype == stønadstype }
+            }
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map {
             secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
@@ -251,7 +266,10 @@ fun oppdaterUnderholdskostnadForRoller(
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
             .filter { rolle ->
-                behandling.underholdskostnader.none { u -> u.rolle?.ident == rolle.ident!!.verdi }
+                behandling.underholdskostnader.none { u ->
+                    u.rolle?.ident == rolle.ident!!.verdi &&
+                        u.rolle!!.stønadstype == rolle.behandlingstema!!.tilStønadstype()
+                }
             }.forEach { rolle ->
                 underholdService.oppretteUnderholdskostnad(
                     behandling,

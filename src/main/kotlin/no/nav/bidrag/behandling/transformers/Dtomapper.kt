@@ -296,7 +296,7 @@ class Dtomapper(
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
-            gjelderBarn = this.person?.tilPersoninfoDto(rolleSøknadsbarn, kilde) ?: rolle?.tilPersoninfoDto()!!,
+            gjelderBarn = rolleSøknadsbarn?.tilPersoninfoDto() ?: this.person?.tilPersoninfoDto(rolleSøknadsbarn, kilde)!!,
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
             tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
@@ -401,6 +401,7 @@ class Dtomapper(
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
             kilde = kilde,
             medIBehandlingen = ident != null,
+            stønadstype = stønadstype,
         )
     }
 
@@ -1647,6 +1648,7 @@ class Dtomapper(
                     .tilBostatusperiode(),
             ident = tilgangskontrollertPersoninfo.ident?.verdi,
             navn = tilgangskontrollertPersoninfo.navn,
+            stønadstype = rolle?.stønadstype,
             fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
         )
     }

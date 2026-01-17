@@ -11,7 +11,9 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.rolleManglerFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -103,6 +105,7 @@ fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem {
             behandling,
             Kilde.OFFENTLIG,
             ident = this.ident?.verdi,
+            rolle = behandling.finnRolle(ident?.verdi!!, behandlingstema!!.tilStønadstype()),
             fødselsdato =
                 this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
                     ?: rolleManglerFødselsdato(rolletype),

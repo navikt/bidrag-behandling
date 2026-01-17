@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetArbeidsforhold
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetGrunnlagInntekt
@@ -47,6 +48,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
@@ -134,8 +136,6 @@ class BehandlingTilGrunnlagMappingV2(
             innhentetUnderholdskostnad + innhentetAndreBarnTilBM
     }
 
-    fun Rolle.tilGrunnlagsreferanse() = rolletype.tilGrunnlagstype().tilPersonreferanse(fødselsdato.toCompactString(), id!!.toInt())
-
     fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
         val grunnlagstype = rolletype.tilGrunnlagstype()
         return GrunnlagDto(
@@ -184,7 +184,7 @@ class BehandlingTilGrunnlagMappingV2(
                 .flatMap {
                     val gjelder =
                         if (it.rolle != null) {
-                            personobjekter.hentPersonNyesteIdent(it.rolle!!.ident) ?: it.opprettPersonGrunnlag()
+                            personobjekter.hentPersonMedReferanse(it.rolle!!.tilGrunnlagsreferanse()) ?: it.opprettPersonGrunnlag()
                         } else {
                             personobjekter.hentPersonNyesteIdent(it.ident) ?: it.opprettPersonGrunnlag()
                         }

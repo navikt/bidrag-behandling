@@ -239,6 +239,7 @@ data class PersoninfoDto(
     val fødselsdato: LocalDate? = null,
     val kilde: Kilde? = null,
     val medIBehandlingen: Boolean? = null,
+    val stønadstype: Stønadstype? = null,
 )
 
 data class SærbidragUtgifterDto(

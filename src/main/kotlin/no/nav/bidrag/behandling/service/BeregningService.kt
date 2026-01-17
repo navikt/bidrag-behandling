@@ -109,7 +109,7 @@ private val LOGGER = KotlinLogging.logger {}
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
 private fun Rolle.mapTilResultatBarn() =
-    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), grunnlagFraVedtakListe)
+    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), stønadstype, grunnlagFraVedtakListe)
 
 @Service
 class BeregningService(

@@ -176,7 +176,10 @@ class UnderholdService(
             }
         val rolleBarn =
             if (gjelderBarn.personident != null) {
-                behandling.søknadsbarn.find { it.ident == gjelderBarn.personident.verdi }
+                behandling.søknadsbarn.find {
+                    it.ident == gjelderBarn.personident.verdi &&
+                        (gjelderBarn.stønadstype == null || it.stønadstype == gjelderBarn.stønadstype)
+                }
             } else {
                 null
             }
@@ -189,7 +192,11 @@ class UnderholdService(
         gjelderBarn.validere(behandling, personService)
 
         return gjelderBarn.personident?.let { personidentBarn ->
-            val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }
+            val rolleSøknadsbarn =
+                behandling.søknadsbarn.find {
+                    it.ident == personidentBarn.verdi &&
+                        (gjelderBarn.stønadstype == null || it.stønadstype == gjelderBarn.stønadstype)
+                }
             if (rolleSøknadsbarn != null) {
                 lagreUnderholdskostnad(behandling, null, rolleSøknadsbarn, null)
             } else {
