@@ -135,20 +135,27 @@ class UnderholdService(
     @Transactional
     fun endreUnderholdskostnadTilAndreBarn(
         behandling: Behandling,
-        rolle: OpprettRolleDto,
+        gjelderRolle: OpprettRolleDto,
     ) {
         val eksisterendeUnderholdskostnad =
             behandling.underholdskostnader
                 .filter { !it.gjelderAndreBarn }
-                .find { it.personIdent == rolle.ident!!.verdi }
-        val rolleBarn = behandling.roller.find { it.ident == rolle.ident!!.verdi }
+                .find {
+                    it.personIdent == gjelderRolle.ident!!.verdi &&
+                        (gjelderRolle.stønadstype == null || it.rolle!!.stønadstype == gjelderRolle.stønadstype)
+                }
+        val rolleBarn =
+            behandling.roller.find {
+                it.ident == gjelderRolle.ident!!.verdi &&
+                    (gjelderRolle.stønadstype == null || it.stønadstype == gjelderRolle.stønadstype)
+            }
 
         if (eksisterendeUnderholdskostnad != null && rolleBarn != null) {
             val person =
-                personRepository.findFirstByIdent(rolle.ident!!.verdi) ?: Person(
-                    ident = rolle.ident.verdi,
+                personRepository.findFirstByIdent(gjelderRolle.ident!!.verdi) ?: Person(
+                    ident = gjelderRolle.ident.verdi,
                     fødselsdato =
-                        hentPersonFødselsdato(rolle.ident.verdi)
+                        hentPersonFødselsdato(gjelderRolle.ident.verdi)
                             ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
                 )
             eksisterendeUnderholdskostnad.rolle = behandling.bidragsmottaker!!
