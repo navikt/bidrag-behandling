@@ -73,7 +73,6 @@ data class OppdatereVirkningstidspunkt(
     var oppdaterBegrunnelseVurderingAvSkolegang: OppdatereBegrunnelse? = null,
     @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
     val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse,
-    val settLikVerdierForAlleBarn: Boolean = false,
 ) {
     fun henteOppdatereNotat() = oppdatereBegrunnelse ?: notat
 }
