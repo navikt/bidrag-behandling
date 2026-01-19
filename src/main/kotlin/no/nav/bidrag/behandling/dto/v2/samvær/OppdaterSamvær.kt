@@ -44,7 +44,7 @@ data class OppdaterSamværskalkulatorBeregningDto(
 
 data class SletteSamværsperiodeElementDto(
     val gjelderBarn: String,
-    val gjelderBarnId: Long,
+    val gjelderBarnId: Long? = null,
     val samværsperiodeId: Long,
 )
 

@@ -192,6 +192,9 @@ private fun utledBeregnTilDato(
     søknadsbarnRolle: Rolle? = null,
 ): LocalDate {
     val avslagskode = søknadsbarnRolle?.avslag
+    val beregnTilUtenAvslag =
+        opprinneligVedtakstidspunkt
+            ?: maxOf(senesteBeregnTil ?: YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
     return if (avslagskode != null && !avslagskode.erAvvisning() && avslagskode.erDirekteAvslag()) {
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
         // Hvis saksbehandler velger direkte avslag så skal beregn til være virkningstidspunkt fordi etter virkningstidspunkt så opphører bidraget
@@ -199,10 +202,10 @@ private fun utledBeregnTilDato(
         maxOfNullable(eksisterendeOpphør?.opphørsdato, maxOf(søknadsbarnRolle.finnBeregnFra().toLocalDate(), virkningstidspunkt))!!
     } else if (avslagskode != null && avslagskode.erAvvisning()) {
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
-        eksisterendeOpphør?.opphørsdato ?: opphørsdato?.atDay(1)!!
+        // Default til beregnTilUtenAvslag mtp at hvis avvisning ble valgt før endringer at opphørsdato ikke ble satt automatisk
+        eksisterendeOpphør?.opphørsdato ?: opphørsdato?.atDay(1) ?: beregnTilUtenAvslag
     } else if (opphørsdato == null || opphørsdato.isAfter(YearMonth.now().plusMonths(1))) {
-        opprinneligVedtakstidspunkt
-            ?: maxOf(senesteBeregnTil ?: YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))
+        beregnTilUtenAvslag
     } else if (opprinneligVedtakstidspunkt != null) {
         minOf(opprinneligVedtakstidspunkt, opphørsdato.atDay(1))
     } else {
