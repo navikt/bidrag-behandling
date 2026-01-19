@@ -441,7 +441,7 @@ class GrunnlagMappingTest {
                         .filtrerBasertPåFremmedReferanse(
                             Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
                             referanse = søknadsbarnGrunnlag2.referanse,
-                        ).shouldBeEmpty()
+                        ).shouldNotBeEmpty()
                     it.grunnlagListe
                         .filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
                         .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn == søknadsbarnGrunnlag2.referanse }
@@ -465,7 +465,7 @@ class GrunnlagMappingTest {
                         .filtrerBasertPåFremmedReferanse(
                             Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE,
                             referanse = søknadsbarnGrunnlag1.referanse,
-                        ).shouldBeEmpty()
+                        ).shouldNotBeEmpty()
                     it.grunnlagListe
                         .filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
                         .filter { it.innholdTilObjekt<InntektsrapporteringPeriode>().gjelderBarn == søknadsbarnGrunnlag1.referanse }
