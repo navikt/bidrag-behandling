@@ -73,7 +73,7 @@ class GebyrService(
                 )
             }
 
-        val gebyrSaker = rolle.gebyrSøknader.map { it.saksnummer }
+        val gebyrSaker = rolle.gebyrSøknader.map { it.saksnummer }.distinct()
         gebyrSaker.forEach {
             rolle.oppdaterGebyrV2(
                 it,
@@ -123,7 +123,11 @@ class GebyrService(
         val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
         val søknadsid = request.søknadsid ?: behandling.soknadsid!!
         behandling.validerOppdatering(request)
-        rolle.oppdaterGebyr(
+        val sakForSøknad =
+            rolle.gebyr!!.finnGebyrForSøknad(søknadsid) ?: ugyldigForespørsel("Fant ikke gebyr $søknadsid for rolle ${request.rolleId}")
+
+        rolle.oppdaterGebyrV2(
+            sakForSøknad.saksnummer,
             søknadsid,
             RolleManueltOverstyrtGebyr(
                 overstyrGebyr = request.overstyrGebyr,

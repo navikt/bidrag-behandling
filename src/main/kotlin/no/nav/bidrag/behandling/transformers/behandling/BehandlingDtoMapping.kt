@@ -164,7 +164,10 @@ private fun slettPrivatAvtaleSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        behandling.privatAvtale.removeIf { it.rolle != null && it.rolle!!.ident == rolle.ident!!.verdi }
+        behandling.privatAvtale.removeIf {
+            it.rolle != null && it.rolle!!.ident == rolle.ident!!.verdi &&
+                it.rolle!!.stønadstype == rolle.stønadstype
+        }
     }
 }
 
@@ -173,7 +176,10 @@ private fun slettGrunnlagSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        behandling.grunnlag.removeIf { it.rolle.ident == rolle.ident!!.verdi || it.gjelder == rolle.ident!!.verdi }
+        behandling.grunnlag.removeIf {
+            (it.rolle.ident == rolle.ident!!.verdi && it.rolle.stønadstype == rolle.stønadstype) ||
+                it.gjelder == rolle.ident!!.verdi
+        }
     }
 }
 
@@ -208,7 +214,7 @@ private fun oppdaterOpphørForRoller(
 ) {
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
         rollerSomLeggesTil.forEach { r ->
-            val rolle = behandling.roller.find { it.ident == r.ident!!.verdi }!!
+            val rolle = behandling.roller.find { it.ident == r.ident!!.verdi && it.stønadstype == r.stønadstype }!!
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
                 if (opphørsdato != null) {
@@ -268,12 +274,12 @@ fun oppdaterUnderholdskostnadForRoller(
             .filter { rolle ->
                 behandling.underholdskostnader.none { u ->
                     u.rolle?.ident == rolle.ident!!.verdi &&
-                        u.rolle!!.stønadstype == rolle.behandlingstema!!.tilStønadstype()
+                        u.rolle!!.stønadstype == rolle.stønadstype
                 }
             }.forEach { rolle ->
                 underholdService.oppretteUnderholdskostnad(
                     behandling,
-                    BarnDto(personident = rolle.ident, stønadstype = rolle.behandlingstema?.tilStønadstype()),
+                    BarnDto(personident = rolle.ident, stønadstype = rolle.stønadstype),
                     kilde = Kilde.OFFENTLIG,
                 )
             }
@@ -291,13 +297,29 @@ fun oppdatereSamværForRoller(
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
-            .filter { rolle -> behandling.samvær.none { s -> s.rolle.ident == rolle.ident!!.verdi } }
-            .forEach { rolle ->
-                behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
+            .filter { rolle ->
+                behandling.samvær.none { s ->
+                    s.rolle.ident == rolle.ident!!.verdi &&
+                        s.rolle.stønadstype == rolle.`stønadstype`
+                }
+            }.forEach { rolle ->
+                behandling.samvær.add(
+                    Samvær(
+                        behandling,
+                        rolle =
+                            behandling.roller.find {
+                                it.ident == rolle.ident?.verdi &&
+                                    it.stønadstype == rolle.`stønadstype`
+                            }!!,
+                    ),
+                )
             }
 
         rollerSomSlettes.forEach { rolle ->
-            behandling.samvær.removeIf { it.rolle.ident == rolle.ident?.verdi }
+            behandling.samvær.removeIf { s ->
+                s.rolle.ident == rolle.ident!!.verdi &&
+                    s.rolle.stønadstype == rolle.`stønadstype`
+            }
         }
     }
 }

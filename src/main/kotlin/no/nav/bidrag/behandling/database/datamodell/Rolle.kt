@@ -22,7 +22,6 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
-import no.nav.bidrag.behandling.transformers.finnLøperBidragFra
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -40,7 +39,6 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
-import no.nav.bidrag.transport.felles.toLocalDate
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.SQLDelete
@@ -207,15 +205,18 @@ open class Rolle(
         gebyrSøknaderForSak.forEach {
             it.manueltOverstyrtGebyr = manueltOverstyrtGebyr
         }
-        val søknadsiderIkke18År = gebyrSøknaderForSak.filter { !it.gjelder18ÅrSøknad }.map { it.søknadsid }
-        gebyrSøknader
-            .filter { søknadsiderIkke18År.contains(it.søknadsid) }
+        // Det skal vurderes gebyr bare en gang per sak så lenge det ikke er 18 års søknad. Det skal vurderes gebyr for alle 18 års søknader
+        // Fjern derfor vurdering av gebyr for andre søknader tilhørende samme sak
+        val søknadsiderSomBleOppdatert = gebyrSøknaderForSak.map { it.søknadsid }
+        gebyr
+            .finnAlleGebyrForSak(saksnummer)
+            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) }
             .forEach {
-                // Det skal illegges ett gebyr per sak så lenge det ikke er 18 års søknad. Da illegges det gebyr per søknad
                 it.manueltOverstyrtGebyr =
                     RolleManueltOverstyrtGebyr(
                         ilagtGebyr = false,
-                        overstyrGebyr = false,
+                        overstyrGebyr = true,
+                        begrunnelse = "Gebyr ilegges bare en gang per sak",
                         beregnetIlagtGebyr = false,
                     )
             }
@@ -333,6 +334,7 @@ data class GebyrRolle(
                 .filter { !it.gjelder18ÅrSøknad }
                 .minByOrNull { it.søknadsid }
         val gebyr18År = alleGebyrSøknader.filter { søknadsid == null || it.søknadsid == søknadsid }.filter { it.gjelder18ÅrSøknad }
+        // Det skal vurderes gebyr bare en gang per sak så lenge det ikke er 18 års søknad. Det skal vurderes gebyr for alle 18 års søknader
         return listOfNotNull(gebyrIkke18År) + gebyr18År
     }
 
@@ -370,12 +372,12 @@ data class GebyrRolleSøknad(
         other as GebyrRolleSøknad
         return saksnummer == other.saksnummer && søknadsid == other.søknadsid &&
             behandlingid == other.behandlingid && referanse == other.referanse &&
-            manueltOverstyrtGebyr == other.manueltOverstyrtGebyr
+            manueltOverstyrtGebyr == other.manueltOverstyrtGebyr && gjelder18ÅrSøknad == other.gjelder18ÅrSøknad
     }
 
     override fun hashCode(): Int =
         saksnummer.hashCode() * 31 + søknadsid.hashCode() + (behandlingid?.hashCode() ?: 0) + (referanse?.hashCode() ?: 0) +
-            (manueltOverstyrtGebyr?.hashCode() ?: 0)
+            (manueltOverstyrtGebyr?.hashCode() ?: 0) + gjelder18ÅrSøknad.hashCode()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
