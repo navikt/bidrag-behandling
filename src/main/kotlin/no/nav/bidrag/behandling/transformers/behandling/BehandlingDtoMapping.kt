@@ -80,6 +80,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -163,7 +164,10 @@ private fun slettPrivatAvtaleSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        behandling.privatAvtale.removeIf { it.rolle != null && it.rolle!!.ident == rolle.ident!!.verdi }
+        behandling.privatAvtale.removeIf {
+            it.rolle != null && it.rolle!!.ident == rolle.ident!!.verdi &&
+                it.rolle!!.stønadstype == rolle.stønadstype
+        }
     }
 }
 
@@ -172,7 +176,10 @@ private fun slettGrunnlagSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        behandling.grunnlag.removeIf { it.rolle.ident == rolle.ident!!.verdi || it.gjelder == rolle.ident!!.verdi }
+        behandling.grunnlag.removeIf {
+            (it.rolle.ident == rolle.ident!!.verdi && it.rolle.stønadstype == rolle.stønadstype) ||
+                it.gjelder == rolle.ident!!.verdi
+        }
     }
 }
 
@@ -207,7 +214,7 @@ private fun oppdaterOpphørForRoller(
 ) {
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
         rollerSomLeggesTil.forEach { r ->
-            val rolle = behandling.roller.find { it.ident == r.ident!!.verdi }!!
+            val rolle = behandling.roller.find { it.ident == r.ident!!.verdi && it.stønadstype == r.stønadstype }!!
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
                 if (opphørsdato != null) {
@@ -228,10 +235,25 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     behandling: Behandling,
     rollerSomLeggesTil: List<OpprettRolleDto>,
 ) {
+    rollerSomLeggesTil
+        .filter { it.rolletype == Rolletype.BARN }
+        .filter { nyRolle -> behandling.husstandsmedlem.any { it.ident == nyRolle.ident?.verdi } }
+        .forEach { nyRolle ->
+            val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.stønadstype ?: behandling.stonadstype)
+            // Oppdater rolle slik at husstandsmedlemmen blir låst til rollen i behandlingen
+            val husstandsmedlem = behandling.husstandsmedlem.find { it.ident == nyRolle.ident.verdi }!!
+            husstandsmedlem.rolle = rolle
+            husstandsmedlem.kilde = Kilde.OFFENTLIG
+        }
+
     val nyeRollerSomIkkeHarHusstandsmedlemmer =
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
-            .filter { nyRolle -> behandling.husstandsmedlem.none { it.ident == nyRolle.ident?.verdi } }
+            .filter { nyRolle ->
+                val stønadstype = nyRolle.stønadstype ?: behandling.stonadstype
+                val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, stønadstype)
+                behandling.husstandsmedlem.none { it.rolle?.ident == rolle!!.ident && it.rolle?.stønadstype == stønadstype }
+            }
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map {
             secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
@@ -250,9 +272,16 @@ fun oppdaterUnderholdskostnadForRoller(
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
             .filter { rolle ->
-                behandling.underholdskostnader.none { u -> u.rolle?.ident == rolle.ident!!.verdi }
+                behandling.underholdskostnader.none { u ->
+                    u.rolle?.ident == rolle.ident!!.verdi &&
+                        u.rolle!!.stønadstype == rolle.stønadstype
+                }
             }.forEach { rolle ->
-                underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = rolle.ident), kilde = Kilde.OFFENTLIG)
+                underholdService.oppretteUnderholdskostnad(
+                    behandling,
+                    BarnDto(personident = rolle.ident, stønadstype = rolle.stønadstype),
+                    kilde = Kilde.OFFENTLIG,
+                )
             }
         rollerSomSkalSlettes.forEach { rolle ->
             underholdService.endreUnderholdskostnadTilAndreBarn(behandling, rolle)
@@ -268,13 +297,29 @@ fun oppdatereSamværForRoller(
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
-            .filter { rolle -> behandling.samvær.none { s -> s.rolle.ident == rolle.ident!!.verdi } }
-            .forEach { rolle ->
-                behandling.samvær.add(Samvær(behandling, rolle = behandling.roller.find { it.ident == rolle.ident?.verdi }!!))
+            .filter { rolle ->
+                behandling.samvær.none { s ->
+                    s.rolle.ident == rolle.ident!!.verdi &&
+                        s.rolle.stønadstype == rolle.`stønadstype`
+                }
+            }.forEach { rolle ->
+                behandling.samvær.add(
+                    Samvær(
+                        behandling,
+                        rolle =
+                            behandling.roller.find {
+                                it.ident == rolle.ident?.verdi &&
+                                    it.stønadstype == rolle.`stønadstype`
+                            }!!,
+                    ),
+                )
             }
 
         rollerSomSlettes.forEach { rolle ->
-            behandling.samvær.removeIf { it.rolle.ident == rolle.ident?.verdi }
+            behandling.samvær.removeIf { s ->
+                s.rolle.ident == rolle.ident!!.verdi &&
+                    s.rolle.stønadstype == rolle.`stønadstype`
+            }
         }
     }
 }
@@ -494,7 +539,7 @@ fun Behandling.tilInntektDtoV3(
     rolle: Rolle,
 ) = InntekterDtoV3(
     barnetillegg =
-        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map { barn ->
+        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.kreverGrunnlagForBeregning }.map { barn ->
             InntektBarn(
                 gjelderBarn = barn.tilDto(),
                 inntekter =
@@ -516,7 +561,7 @@ fun Behandling.tilInntektDtoV3(
             .tilInntektDtoV2()
             .toSet(),
     kontantstøtte =
-        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map { barn ->
+        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.kreverGrunnlagForBeregning }.map { barn ->
             InntektBarn(
                 gjelderBarn = barn.tilDto(),
                 inntekter =

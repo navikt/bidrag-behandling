@@ -72,6 +72,44 @@ class GebyrService(
                             }.toMutableSet(),
                 )
             }
+
+        val gebyrSaker = rolle.gebyrSøknader.map { it.saksnummer }.distinct()
+        gebyrSaker.forEach {
+            rolle.oppdaterGebyrV2(
+                it,
+                null,
+                RolleManueltOverstyrtGebyr(
+                    overstyrGebyr = false,
+                    ilagtGebyr = beregning.ilagtGebyr,
+                    beregnetIlagtGebyr = beregning.ilagtGebyr,
+                    begrunnelse = null,
+                ),
+            )
+        }
+    }
+
+    @Transactional
+    fun oppdaterManueltOverstyrtGebyrV2(
+        behandling: Behandling,
+        request: OppdaterGebyrDto,
+    ) {
+        val rolle =
+            behandling.roller.find { it.id == request.rolleId }
+                ?: ugyldigForespørsel("Fant ikke rolle ${request.rolleId} i behandling ${behandling.id}")
+        val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
+        val søknadsid = request.søknadsid ?: behandling.soknadsid!!
+        behandling.validerOppdatering(request)
+        val sakForSøknad = rolle.gebyr!!.finnGebyrForSøknad(søknadsid)!!
+        rolle.oppdaterGebyrV2(
+            sakForSøknad.saksnummer,
+            søknadsid,
+            RolleManueltOverstyrtGebyr(
+                overstyrGebyr = request.overstyrGebyr,
+                ilagtGebyr = request.overstyrGebyr != beregning.ilagtGebyr,
+                beregnetIlagtGebyr = beregning.ilagtGebyr,
+                begrunnelse = request.begrunnelse,
+            ),
+        )
     }
 
     @Transactional
@@ -85,7 +123,11 @@ class GebyrService(
         val beregning = vedtakGrunnlagMapper.beregnGebyr(behandling, rolle)
         val søknadsid = request.søknadsid ?: behandling.soknadsid!!
         behandling.validerOppdatering(request)
-        rolle.oppdaterGebyr(
+        val sakForSøknad =
+            rolle.gebyr?.finnGebyrForSøknad(søknadsid)?.saksnummer ?: behandling.saksnummer
+
+        rolle.oppdaterGebyrV2(
+            sakForSøknad,
             søknadsid,
             RolleManueltOverstyrtGebyr(
                 overstyrGebyr = request.overstyrGebyr,

@@ -11,11 +11,13 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.service.BehandlingService
+import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
+import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -24,7 +26,10 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequestV2
+import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -46,8 +51,53 @@ class AdminController(
     private val inntektService: InntektService,
     private val privatAvtaleService: PrivatAvtaleService,
     private val forholsmessigFordelingService: ForholdsmessigFordelingService,
-    private val dtomapper: Dtomapper,
+    private val beregningService: BeregningService,
+    private val vedtakService: VedtakService,
 ) {
+    @GetMapping("/admin/beregning/input/{behandlingId}")
+    @Operation(
+        description =
+            "Opprett aldersjustering behandling for sak",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun opprettInputBeregning(
+        @PathVariable behandlingId: Long,
+    ): BidragsberegningOrkestratorRequestV2 {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        return beregningService.opprettGrunnlagBeregningBidragV2(behandling, true, false)
+    }
+
+    @GetMapping("/admin/vedtak/input/{behandlingId}")
+    @Operation(
+        description =
+            "Opprett aldersjustering behandling for sak",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Forespørsel oppdatert uten feil",
+            ),
+        ],
+    )
+    @Transactional
+    fun opprettFatteVedtakRequest(
+        @PathVariable behandlingId: Long,
+    ): List<OpprettVedtakRequestDto> {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        return vedtakService.opprettFatteVedtakRequestForBidrag(behandling, null)
+    }
+
     @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
     @Operation(
         description =
@@ -164,8 +214,8 @@ class AdminController(
                 .filter { it.type == Rolletype.BARN }
                 .firstOrNull {
                     barnIdent == null &&
-                            listOf(6, 11, 15).contains(getAge(hentPersonFødselsdato(it.fødselsnummer!!.verdi)!!)) ||
-                            barnIdent == it.fødselsnummer!!.verdi
+                        listOf(6, 11, 15).contains(getAge(hentPersonFødselsdato(it.fødselsnummer!!.verdi)!!)) ||
+                        barnIdent == it.fødselsnummer!!.verdi
                 }
                 ?: return null
         val request =
@@ -293,7 +343,7 @@ class AdminController(
                 } else {
                     log.info {
                         "Retter sivilstand med id=${sivilstand.id} " +
-                                "ved å sette datoTom=null (var ${sivilstand.datoTom}) for behandlingId=$behandlingId"
+                            "ved å sette datoTom=null (var ${sivilstand.datoTom}) for behandlingId=$behandlingId"
                     }
                     sivilstand.datoTom = null
                 }
@@ -310,7 +360,9 @@ class AdminController(
         security = [SecurityRequirement(name = "bearer-key")],
     )
     @Transactional
-    fun fiksUnderholdskostnadSomPekerTilFeilRolle(@PathVariable behandlingId: Long) {
+    fun fiksUnderholdskostnadSomPekerTilFeilRolle(
+        @PathVariable behandlingId: Long,
+    ) {
         log.info { "Setter rolle til behandling $behandlingId til null hvis det ikke tilhører samme behandling" }
         behandlingRepository.settUnderholdskostnadRolleTilNull(behandlingId)
     }
@@ -330,9 +382,9 @@ class AdminController(
             behandling.søknadsbarn.forEach { søknadsbarn ->
                 log.info {
                     "Oppdaterer virkningstidspunkt for barn ${søknadsbarn.ident} " +
-                            "i behandling ${behandling.id} hvor søknadsbarn virkning er " +
-                            "${søknadsbarn.virkningstidspunkt} - ${søknadsbarn.årsak} - ${søknadsbarn.avslag}" +
-                            " og i behandling ${behandling.virkningstidspunkt} - ${behandling.årsak} - ${behandling.avslag}"
+                        "i behandling ${behandling.id} hvor søknadsbarn virkning er " +
+                        "${søknadsbarn.virkningstidspunkt} - ${søknadsbarn.årsak} - ${søknadsbarn.avslag}" +
+                        " og i behandling ${behandling.virkningstidspunkt} - ${behandling.årsak} - ${behandling.avslag}"
                 }
                 if (søknadsbarn.virkningstidspunkt == null) {
                     søknadsbarn.virkningstidspunkt = behandling.virkningstidspunkt

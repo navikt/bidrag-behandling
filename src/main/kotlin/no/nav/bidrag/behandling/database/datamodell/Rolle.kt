@@ -22,10 +22,13 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -126,6 +129,12 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    val erDirekteAvslag get() = avslag != null
+    val erAvvisning get() = avslag != null && avslag!!.erAvvisning()
+    val erDirekteAvslagIkkeAvvisning get() = avslag != null && avslag!!.erDirekteAvslag() && !avslag!!.erAvvisning()
+    val løperBidragEtterEldsteVirkning get() = behandling.løperBidragEtterEldsteVirkning(this)
+    val kreverGrunnlagForBeregning get() =
+        avslag == null || løperBidragEtterEldsteVirkning
     val harSøknadMedInnkreving get() = forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.innkreving } == true
     val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
     val barn get() =
@@ -180,18 +189,37 @@ open class Rolle(
 
     fun oppdaterGebyrV2(
         saksnummer: String,
+        søknadsid: Long?,
         manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr,
     ) {
         if (!manueltOverstyrtGebyr.overstyrGebyr) {
             manueltOverstyrtGebyr.begrunnelse = null
         }
         val gebyr = hentEllerOpprettGebyr()
-        val gebyrSøknad = gebyr.finnGebyrForSak(saksnummer)
-//        gebyrSøknad.manueltOverstyrtGebyr = manueltOverstyrtGebyr
-//        gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
-//        gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
-//        gebyr.begrunnelse = manueltOverstyrtGebyr.begrunnelse
-//        gebyr.ilagtGebyr = manueltOverstyrtGebyr.ilagtGebyr
+
+        gebyr.overstyrGebyr = manueltOverstyrtGebyr.overstyrGebyr
+        gebyr.beregnetIlagtGebyr = manueltOverstyrtGebyr.beregnetIlagtGebyr
+        gebyr.begrunnelse = manueltOverstyrtGebyr.begrunnelse
+        gebyr.ilagtGebyr = manueltOverstyrtGebyr.ilagtGebyr
+        val gebyrSøknaderForSak = gebyr.finnGebyrForSak(saksnummer, søknadsid)
+        gebyrSøknaderForSak.forEach {
+            it.manueltOverstyrtGebyr = manueltOverstyrtGebyr
+        }
+        // Det skal vurderes gebyr bare en gang per sak så lenge det ikke er 18 års søknad. Det skal vurderes gebyr for alle 18 års søknader
+        // Fjern derfor vurdering av gebyr for andre søknader tilhørende samme sak
+        val søknadsiderSomBleOppdatert = gebyrSøknaderForSak.map { it.søknadsid }
+        gebyr
+            .finnAlleGebyrForSak(saksnummer)
+            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) }
+            .forEach {
+                it.manueltOverstyrtGebyr =
+                    RolleManueltOverstyrtGebyr(
+                        ilagtGebyr = false,
+                        overstyrGebyr = true,
+                        begrunnelse = "Gebyr ilegges bare en gang per sak",
+                        beregnetIlagtGebyr = false,
+                    )
+            }
     }
 
     fun oppdaterGebyr(
@@ -239,7 +267,6 @@ open class Rolle(
     val grunnlagFraVedtakForInnkreving get() = grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
 
-    val erDirekteAvslag get() = avslag != null
     val opphørsdatoYearMonth get() = opphørsdato?.let { YearMonth.from(it) }
     val opphørTilDato get() = justerPeriodeTomOpphørsdato(opphørsdato)
     val henteFødselsdato get() = person?.fødselsdato ?: this.fødselsdato
@@ -251,10 +278,10 @@ open class Rolle(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Rolle) return false
-        return ident == other.ident && rolletype == other.rolletype
+        return ident == other.ident && rolletype == other.rolletype && stønadstype == other.stønadstype
     }
 
-    override fun hashCode(): Int = (ident?.hashCode() ?: 0) * 31 + rolletype.hashCode()
+    override fun hashCode(): Int = (ident?.hashCode() ?: 0) * 31 + rolletype.hashCode() + stønadstype.hashCode()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -279,9 +306,13 @@ data class GrunnlagFraVedtak(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class GebyrRolle(
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var overstyrGebyr: Boolean = true,
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var ilagtGebyr: Boolean? = false,
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var begrunnelse: String? = null,
+    @Deprecated("Bruk gebyrSøknader i stedet")
     var beregnetIlagtGebyr: Boolean? = false,
     var gebyrSøknader: MutableSet<GebyrRolleSøknad> = mutableSetOf(),
 ) {
@@ -292,10 +323,18 @@ data class GebyrRolle(
 
     fun finnAlleGebyrForSak(saksnummer: String): List<GebyrRolleSøknad> = gebyrSøknader.filter { it.saksnummer == saksnummer }
 
-    fun finnGebyrForSak(saksnummer: String): List<GebyrRolleSøknad> {
-        val alleGebyrSøknader = finnGebyrForSak(saksnummer)
-        val gebyrIkke18År = alleGebyrSøknader.filter { !it.gjelder18ÅrSøknad }.minBy { it.søknadsid }
-        val gebyr18År = alleGebyrSøknader.filter { it.gjelder18ÅrSøknad }
+    fun finnGebyrForSak(
+        saksnummer: String,
+        søknadsid: Long? = null,
+    ): List<GebyrRolleSøknad> {
+        val alleGebyrSøknader = finnAlleGebyrForSak(saksnummer)
+        val gebyrIkke18År =
+            alleGebyrSøknader
+                .filter { søknadsid == null || it.søknadsid == søknadsid }
+                .filter { !it.gjelder18ÅrSøknad }
+                .minByOrNull { it.søknadsid }
+        val gebyr18År = alleGebyrSøknader.filter { søknadsid == null || it.søknadsid == søknadsid }.filter { it.gjelder18ÅrSøknad }
+        // Det skal vurderes gebyr bare en gang per sak så lenge det ikke er 18 års søknad. Det skal vurderes gebyr for alle 18 års søknader
         return listOfNotNull(gebyrIkke18År) + gebyr18År
     }
 
@@ -333,12 +372,12 @@ data class GebyrRolleSøknad(
         other as GebyrRolleSøknad
         return saksnummer == other.saksnummer && søknadsid == other.søknadsid &&
             behandlingid == other.behandlingid && referanse == other.referanse &&
-            manueltOverstyrtGebyr == other.manueltOverstyrtGebyr
+            manueltOverstyrtGebyr == other.manueltOverstyrtGebyr && gjelder18ÅrSøknad == other.gjelder18ÅrSøknad
     }
 
     override fun hashCode(): Int =
         saksnummer.hashCode() * 31 + søknadsid.hashCode() + (behandlingid?.hashCode() ?: 0) + (referanse?.hashCode() ?: 0) +
-            (manueltOverstyrtGebyr?.hashCode() ?: 0)
+            (manueltOverstyrtGebyr?.hashCode() ?: 0) + gjelder18ÅrSøknad.hashCode()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.samvær
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
@@ -12,6 +13,7 @@ import java.math.BigDecimal
 data class OppdaterSamværDto(
     val sammeForAlle: Boolean = false,
     val gjelderBarn: String,
+    val barnId: Long? = null,
     @field:Valid
     val periode: OppdaterSamværsperiodeDto? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
@@ -42,6 +44,7 @@ data class OppdaterSamværskalkulatorBeregningDto(
 
 data class SletteSamværsperiodeElementDto(
     val gjelderBarn: String,
+    val gjelderBarnId: Long? = null,
     val samværsperiodeId: Long,
 )
 
@@ -53,6 +56,7 @@ data class SamværDtoV2(
 data class SamværBarnDto(
     val id: Long,
     val gjelderBarn: String,
+    val barn: RolleDto,
     val begrunnelse: BegrunnelseDto?,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val valideringsfeil: SamværValideringsfeilDto?,

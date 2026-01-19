@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -43,6 +44,7 @@ class VedtakHendelseListener(
     val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
     @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
+    @Transactional
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
         if (!vedtak.erFattetGjennomBidragBehandling()) {
@@ -83,7 +85,7 @@ class VedtakHendelseListener(
             vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
         )
 
-//        vedtak.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving()
+        vedtak.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving()
     }
 
     private fun VedtakHendelse.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving() {
@@ -108,7 +110,7 @@ class VedtakHendelseListener(
                             stønadsendring.kravhaver,
                             opphørsperiode,
                         )
-                } else if (type == Vedtakstype.INNKREVING) {
+                } else {
                     if (behandling.søknadsbarn.none { it.ident == stønadsendring.kravhaver.verdi }) {
                         // Henter og legger til barn som revurderingsbarn
                         behandling.privatAvtale.removeIf { it.rolle == null && it.person?.ident == stønadsendring.kravhaver.verdi }

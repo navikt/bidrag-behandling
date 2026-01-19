@@ -43,7 +43,7 @@ open class Husstandsmedlem(
         orphanRemoval = true,
     )
     @JoinColumn(name = "rolle_id", nullable = true)
-    open val rolle: Rolle? = null,
+    open var rolle: Rolle? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "husstandsmedlem",

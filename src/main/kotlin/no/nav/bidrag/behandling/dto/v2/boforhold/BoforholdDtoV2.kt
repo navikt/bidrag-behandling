@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.person.Bostatuskode
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBoforhold
 import java.time.LocalDate
 
@@ -56,6 +57,7 @@ data class HusstandsmedlemDtoV2(
     val perioder: Set<BostatusperiodeDto>,
     val ident: String? = null,
     val navn: String? = null,
+    val stønadstype: Stønadstype? = null,
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val fødselsdato: LocalDate?,

@@ -64,6 +64,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
@@ -143,6 +144,7 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
                     barn.ident,
                     barn.navn ?: hentPersonVisningsnavn(barn.ident?.verdi)!!,
                     barn.fødselsdato,
+                    stønadstype = stønadsendring.type,
                     referanse = barnGrunnlag.referanse,
                 ),
             perioder =
@@ -182,6 +184,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                             hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
                             barn?.fødselsdato ?: LocalDate.now(),
                             hentDirekteOppgjørBeløp(barnIdent.verdi),
+                            stønadstype = stønadsendring.type,
                             referanse = barnGrunnlag?.referanse ?: "",
                         ),
                     erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),

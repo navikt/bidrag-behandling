@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentNavn
 import no.nav.bidrag.behandling.dto.v1.beregning.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
@@ -20,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.SluttberegningBarnebidrag2
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto
@@ -35,6 +37,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.transformers.utgift.tilDto
@@ -43,6 +46,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentBehand
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøknader
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -64,6 +68,12 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequestV2
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorResponse
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningResultatBarnV2
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtakV2
 import no.nav.bidrag.transport.behandling.beregning.felles.BeregnValgteInntekterGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektsgrunnlagPeriode
 import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
@@ -76,15 +86,16 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusst
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordeling
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingLøpendeBidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingPrivatAvtale
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesAndel
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEvne25ProsentAvInntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningIndeksreguleringPrivatAvtale
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoTilsynsutgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningPrivatAvtale
-import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningPrivatAvtalePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsfradrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumBidragTilFordeling
@@ -144,13 +155,99 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVe
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSøknadGrunnlag
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toLocalDate
+import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBB
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBB
 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
+
+fun Rolle.mapTilResultatBarn() =
+    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), stønadstype, grunnlagFraVedtakListe)
+
+fun Rolle.tilPersonident() = ident?.let { Personident(it) }
+
+fun mapTilBeregningresultatBarn(
+    søknadsbarn: Rolle,
+    erAvvistRevurdering: Boolean,
+    resultatBarn: BidragsberegningResultatBarnV2,
+    grunnlagBarn: List<GrunnlagDto>,
+    grunnlagBeregning: BidragsberegningOrkestratorRequestV2,
+    behandling: Behandling,
+    endeligResultat: ResultatVedtakV2?,
+): ResultatBidragsberegningBarn =
+    ResultatBidragsberegningBarn(
+        barn = søknadsbarn.mapTilResultatBarn(),
+        erAvvistRevurdering = erAvvistRevurdering,
+        avslagskode = søknadsbarn.avslag,
+        resultatVedtak =
+            BidragsberegningOrkestratorResponse(
+                resultatVedtakListe =
+                    if (erAvvistRevurdering) {
+                        emptyList()
+                    } else {
+                        resultatBarn.resultatVedtakListe.map {
+                            ResultatVedtak(
+                                vedtakstype = it.vedtakstype,
+                                delvedtak = it.delvedtak,
+                                omgjøringsvedtak = it.omgjøringsvedtak,
+                                beregnet = it.beregnet,
+                                beregnetFraDato = it.beregnetFraDato,
+                                resultat =
+                                    BeregnetBarnebidragResultat(
+                                        beregnetBarnebidragPeriodeListe = it.periodeListe,
+                                        grunnlagListe =
+                                            if (it.omgjøringsvedtak) {
+                                                grunnlagBarn + grunnlagBeregning.grunnlagsliste
+                                            } else if (it.delvedtak) {
+                                                it.grunnlagslisteDelvedtak
+                                            } else {
+                                                grunnlagBarn
+                                            },
+                                    ),
+                            )
+                        }
+                    },
+            ),
+        omgjøringsdetaljer = behandling.omgjøringsdetaljer,
+        beregnTilDato =
+            behandling
+                .finnBeregnTilDatoBehandling(`søknadsbarn`)
+                ?.toYearMonth(),
+        innkrevesFraDato = behandling.finnInnkrevesFraDato(`søknadsbarn`),
+        opphørsdato = `søknadsbarn`.opphørsdato?.toYearMonth(),
+        resultat =
+            if (endeligResultat != null && søknadsbarn.erDirekteAvslag) {
+                val sistePeriode = endeligResultat.periodeListe.maxByOrNull { it.periode.fom }
+                val periodeOpphør =
+                    sistePeriode?.periode?.til ?: sistePeriode?.periode?.fom ?: søknadsbarn.virkningstidspunktRolle.toYearMonth()
+                BeregnetBarnebidragResultat(
+                    beregnetBarnebidragPeriodeListe =
+                        endeligResultat.periodeListe +
+                            ResultatPeriodeBB(
+                                periode =
+                                    ÅrMånedsperiode(
+                                        periodeOpphør,
+                                        null,
+                                    ),
+                                ResultatBeregningBB(null),
+                                emptyList(),
+                            ),
+                    grunnlagListe = grunnlagBarn + grunnlagBeregning.grunnlagsliste,
+                )
+            } else if (endeligResultat != null && !erAvvistRevurdering) {
+                BeregnetBarnebidragResultat(
+                    beregnetBarnebidragPeriodeListe = endeligResultat.periodeListe,
+                    grunnlagListe = grunnlagBarn + grunnlagBeregning.grunnlagsliste,
+                )
+            } else {
+                BeregnetBarnebidragResultat()
+            },
+    )
 
 fun BeregnGebyrResultat.tilDto(
     rolle: Rolle,
@@ -309,10 +406,11 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                             )
                         } else {
                             resultat.resultat.beregnetBarnebidragPeriodeListe.map {
+                                val avslagskode = if (it.resultat.beløp == null) resultat.avslagskode else null
                                 grunnlagsListe.byggResultatBidragsberegning(
                                     it.periode,
                                     it.resultat.beløp,
-                                    resultat.avslagskode,
+                                    avslagskode,
                                     it.grunnlagsreferanseListe,
                                     resultat.ugyldigBeregning,
                                     grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
@@ -414,11 +512,12 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 ),
                         )
                     } else {
+                        val avslagskode = if (p.resultat.beløp == null) resultat.avslagskode else null
                         grunnlagslisteRV
                             .byggResultatBidragsberegning(
                                 p.periode,
                                 p.resultat.beløp,
-                                resultat.avslagskode,
+                                avslagskode,
                                 p.grunnlagsreferanseListe,
                                 resultat.ugyldigBeregning,
                                 grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse, p.grunnlagsreferanseListe),
@@ -426,7 +525,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                 resultat.barn.ident!!,
                                 erEndeligVedtak = erEndeligVedtak,
                             ).copy(
-                                erDirekteAvslag = resultat.avslagskode?.erDirekteAvslag() == true,
+                                erDirekteAvslag = avslagskode?.erDirekteAvslag() == true,
                                 resultatFraVedtak = resultatFraVedtak,
                                 klageOmgjøringDetaljer =
                                     KlageOmgjøringDetaljer(
@@ -513,13 +612,25 @@ fun kanOpprette35C(
     periode.fom >= beregnTilDato && (opphørsdato == null || opphørsdato != periode.fom || (opphørsdato == periode.fom && !erOpphør))
 
 fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int? {
-    val delberegningPrivatAvtale =
+    val delberegningPrivatAvtaleLegacy =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningPrivatAvtale>(
             Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
             grunnlagsreferanseListe,
         ).firstOrNull()
+    if (delberegningPrivatAvtaleLegacy != null) {
+        return delberegningPrivatAvtaleLegacy.innhold.nesteIndeksreguleringsår?.toInt()
+    }
+    val delberegningPrivatAvtale =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningIndeksreguleringPrivatAvtale>(
+            Grunnlagstype.DELBEREGNING_INDEKSREGULERING_PRIVAT_AVTALE,
+            grunnlagsreferanseListe,
+        )
 
-    return delberegningPrivatAvtale?.innhold?.nesteIndeksreguleringsår?.toInt()
+    return delberegningPrivatAvtale
+        .map { it.innhold }
+        .maxByOrNull { it.periode.fom }
+        ?.nesteIndeksreguleringsår
+        ?.toInt()
 }
 
 fun List<GrunnlagDto>.finnIndeksår(
@@ -1283,20 +1394,51 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
     )
 }
 
-fun List<GrunnlagDto>.finnDelberegningerPrivatAvtale(gjelderBarnReferanse: String): InnholdMedReferanse<DelberegningPrivatAvtale>? =
+fun List<GrunnlagDto>.finnDelberegningerPrivatAvtalePerioder(gjelderBarnReferanse: String): List<DelberegningIndeksreguleringPrivatAvtale> {
+    val delberegningLegacy =
+        this
+            .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtale>(
+                Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
+            ).firstOrNull { it.gjelderBarnReferanse == gjelderBarnReferanse }
+    if (delberegningLegacy != null) {
+        return delberegningLegacy.innhold.perioder.map {
+            DelberegningIndeksreguleringPrivatAvtale(
+                periode = it.periode,
+                nesteIndeksreguleringsår = delberegningLegacy.innhold.nesteIndeksreguleringsår,
+                indeksreguleringFaktor = it.indeksreguleringFaktor,
+                indeksregulertBeløp = it.beløp,
+            )
+        }
+    }
+    val perioder =
+        this
+            .filtrerOgKonverterBasertPåEgenReferanse<DelberegningIndeksreguleringPrivatAvtale>(
+                Grunnlagstype.DELBEREGNING_INDEKSREGULERING_PRIVAT_AVTALE,
+            ).filter { it.gjelderBarnReferanse == gjelderBarnReferanse }
+            .map { it.innhold }
+    return perioder
+}
+
+fun List<GrunnlagDto>.finnDelberegningerPrivatAvtaleReferanser(gjelderBarnReferanse: String): List<String> =
     this
         .filtrerOgKonverterBasertPåEgenReferanse<DelberegningPrivatAvtale>(
             Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
         ).firstOrNull { it.gjelderBarnReferanse == gjelderBarnReferanse }
+        ?.let { listOf(it.referanse) }
+        ?: this
+            .filtrerOgKonverterBasertPåEgenReferanse<DelberegningIndeksreguleringPrivatAvtale>(
+                Grunnlagstype.DELBEREGNING_INDEKSREGULERING_PRIVAT_AVTALE,
+            ).filter { it.gjelderBarnReferanse == gjelderBarnReferanse }
+            .map { it.referanse }
 
-fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(gjelderBarnReferanse: String): List<DelberegningPrivatAvtalePeriode> =
+fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(
+    gjelderBarnReferanse: String,
+): List<DelberegningIndeksreguleringPrivatAvtale> =
     this
-        .finnDelberegningerPrivatAvtale(gjelderBarnReferanse)
-        ?.innhold
-        ?.perioder
-        ?.sortedBy {
+        .finnDelberegningerPrivatAvtalePerioder(gjelderBarnReferanse)
+        .sortedBy {
             it.periode.fom
-        } ?: emptyList()
+        }
 
 fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(rolle: Rolle): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
     this
@@ -1527,14 +1669,59 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
             )
         }
 
-    val privatAvtalePeriode =
+    val privatAvtaleBeregnetPerioder =
+        finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragTilFordelingPrivatAvtale>(
+            Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING_PRIVAT_AVTALE,
+            fraGrunnlag,
+        )
+
+    val privatAvtaler =
+        privatAvtaleBeregnetPerioder.map {
+            val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+            val privatAvtalePerioder =
+                finnOgKonverterGrunnlagSomErReferertAv<PrivatAvtalePeriodeGrunnlag>(
+                    Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
+                    it.grunnlag,
+                )
+
+            val periodeSomOverlapper = privatAvtalePerioder.find { it.innhold.periode.inneholder(periode) }!!.innhold
+
+            val indeksregulertGrunnalg =
+                finnOgKonverterGrunnlagSomErReferertAv<DelberegningIndeksreguleringPrivatAvtale>(
+                    Grunnlagstype.DELBEREGNING_INDEKSREGULERING_PRIVAT_AVTALE,
+                    it.grunnlag,
+                ).firstOrNull()
+            ForholdsmessigFordelingBidragTilFordelingBarn(
+                prioritertBidrag = false,
+                privatAvtale = true,
+                erSøknadsbarn = false,
+                bidragTilFordeling = it.innhold.bidragTilFordeling,
+                barn =
+                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                beregnetBidrag =
+                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                        saksnummer = Saksnummer(""), // TODO,
+                        samværsklasse = periodeSomOverlapper.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
+                        løpendeBeløp = periodeSomOverlapper.beløp,
+                        indeksreguleringFaktor = indeksregulertGrunnalg?.innhold?.indeksreguleringFaktor,
+                        faktiskBeløp = periodeSomOverlapper.beløp,
+                        beregnetBidrag = it.innhold.bidragTilFordeling,
+                        beregnetBeløp = it.innhold.indeksregulertBeløp,
+                        valutakode = periodeSomOverlapper.valutakode?.name ?: Valutakode.NOK.name,
+                        reduksjonUnderholdskostnad = BigDecimal.ZERO,
+                        samværsfradrag = it.innhold.samværsfradrag,
+                    ),
+            )
+        }
+
+    val privatAvtalePeriodeLegacy =
         finnOgKonverterGrunnlagSomErReferertAv<DelberegningPrivatAvtale>(
             Grunnlagstype.DELBEREGNING_PRIVAT_AVTALE,
             fraGrunnlag,
         )
 
-    val privatAVtaler =
-        privatAvtalePeriode.mapNotNull {
+    val privatAvtalerLegacy =
+        privatAvtalePeriodeLegacy.map {
             val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
             val privatAvtalePerioder =
                 finnOgKonverterGrunnlagSomErReferertAv<PrivatAvtalePeriodeGrunnlag>(
@@ -1543,7 +1730,10 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                 )
 
             val periodeSomOverlapper = privatAvtalePerioder.find { it.innhold.periode.overlapper(periode) }!!.innhold
-            val periodeBeregnet = it.innhold.perioder.find { it.periode.overlapper(periode) }!!
+            val periodeBeregnet =
+                it.innhold.perioder
+                    .filter { it.periode.inneholder(periode) }
+                    .maxBy { it.periode.fom }
 
             ForholdsmessigFordelingBidragTilFordelingBarn(
                 prioritertBidrag = false,
@@ -1567,7 +1757,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     ),
             )
         }
-    return privatAVtaler + løpendeBidrag
+    return privatAvtaler + løpendeBidrag + privatAvtalerLegacy
 }
 
 fun List<GrunnlagDto>.finnGrunnlag25ProsentAvInntekt(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =

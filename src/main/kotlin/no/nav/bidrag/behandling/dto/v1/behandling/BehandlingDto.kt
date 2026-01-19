@@ -130,6 +130,9 @@ data class VirkningstidspunktBarnDtoV2(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val klageMottattdato: LocalDate? = null,
     val søktAv: SøktAvType,
+    val kanEndreVirkningstidspunkt: Boolean = true,
+    val kanEndreVirkningstidspunktOpphør: Boolean = true,
+    val kanVelgeOpphør: Boolean = true,
 ) {
     @Deprecated("Bruk begrunnelse")
     @Schema(description = "Bruk begrunnelse", deprecated = true)

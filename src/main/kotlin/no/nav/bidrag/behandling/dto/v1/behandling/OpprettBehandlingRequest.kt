@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.transformers.bestemTypeBehandling
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -45,7 +46,9 @@ data class OpprettBehandlingRequest(
     val søknadsreferanseid: Long? = null,
     val kategori: OpprettKategoriRequestDto? = null,
     val innkrevingstype: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
-)
+) {
+    val gebyrGjelder18År get() = roller.any { it.harGebyrsøknad && it.rolletype == Rolletype.BARN }
+}
 
 fun OpprettBehandlingRequest.tilKanBehandlesINyLøsningRequest(): KanBehandlesINyLøsningRequest =
     KanBehandlesINyLøsningRequest(

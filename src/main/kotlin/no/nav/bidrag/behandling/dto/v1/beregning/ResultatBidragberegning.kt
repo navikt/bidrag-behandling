@@ -368,10 +368,10 @@ data class ResultatBarnebidragsberegningPeriodeDto(
                 "Indeksregulering"
             }
 
-            resultatKode?.erDirekteAvslag() == true ||
+            erDirekteAvslag ||
                 resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
                 resultatKode == Resultatkode.INNVILGET_VEDTAK -> {
-                resultatKode.visningsnavnIntern(vedtakstype)
+                resultatKode!!.visningsnavnIntern(vedtakstype)
             }
 
             ugyldigBeregning != null -> {

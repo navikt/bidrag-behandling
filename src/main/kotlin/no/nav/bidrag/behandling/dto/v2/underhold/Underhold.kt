@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -45,6 +46,7 @@ data class BarnDto(
     val navn: String? = null,
     @Parameter(description = "Fødselsdato til barnet som skal legges til underholdskostnad. Påkrevd dersom barnet oppgis uten personident.")
     val fødselsdato: LocalDate? = null,
+    val stønadstype: Stønadstype? = null,
 )
 
 data class UnderholdDto(

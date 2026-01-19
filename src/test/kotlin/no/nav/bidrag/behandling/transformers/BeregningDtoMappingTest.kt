@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -72,6 +73,7 @@ class BeregningDtoMappingTest {
                         Personident(testdataBarn1.ident),
                         testdataBarn1.navn,
                         testdataBarn1.fødselsdato,
+                        stønadstype = Stønadstype.FORSKUDD,
                         referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
                     ),
                     BeregnetForskuddResultat(

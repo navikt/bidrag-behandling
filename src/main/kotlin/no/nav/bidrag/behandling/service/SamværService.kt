@@ -56,7 +56,7 @@ class SamværService(
                 "Ugyldig data ved oppdatering av samvær: Kan ikke oppdatere til samme for alle når det ikke valgt til å være samme",
             )
         }
-        val samværBarn = behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+        val samværBarn = behandling.samvær.finnSamværForBarn(request.barnId, request.gjelderBarn)
         oppdaterSamvær(request, samværBarn)
 
         if (request.sammeForAlle) {
@@ -79,7 +79,7 @@ class SamværService(
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
         val yngsteBarn = behandling.søknadsbarn.minBy { it.fødselsdato }
 
-        val samværYngsteBarn = behandling.samvær.finnSamværForBarn(yngsteBarn.ident!!)
+        val samværYngsteBarn = behandling.samvær.finnSamværForBarn(yngsteBarn.id, yngsteBarn.ident!!)
         var nyNotat = yngsteBarn.notat.find { it.type == NotatGrunnlag.NotatType.SAMVÆR }?.innhold ?: ""
         behandling.søknadsbarn.forEach {
             if (it.id != yngsteBarn.id) {
@@ -95,7 +95,7 @@ class SamværService(
             }
         }
         behandling.søknadsbarn.forEach {
-            val samværBarn = behandling.samvær.finnSamværForBarn(it.ident!!)
+            val samværBarn = behandling.samvær.finnSamværForBarn(it.id, it.ident!!)
             val perioderKopiert =
                 samværYngsteBarn.perioder.map {
                     Samværsperiode(fom = it.fom, tom = it.tom, samvær = samværBarn, samværsklasse = it.samværsklasse)
@@ -199,7 +199,7 @@ class SamværService(
     ): OppdaterSamværResponsDto {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
         val oppdaterSamvær =
-            behandling.samvær.finnSamværForBarn(request.gjelderBarn)
+            behandling.samvær.finnSamværForBarn(request.gjelderBarnId, request.gjelderBarn)
         val slettPeriode =
             oppdaterSamvær.hentPeriode(request.samværsperiodeId)
 
@@ -213,9 +213,11 @@ class SamværService(
 
     private fun SamværskalkulatorDetaljer?.tilJsonString() = this?.let { commonObjectmapper.writeValueAsString(it) }
 
-    private fun MutableSet<Samvær>.finnSamværForBarn(gjelderBarn: String) =
-        find { it.rolle.ident == gjelderBarn }
-            ?: ugyldigForespørsel("Fant ikke samvær for barn $gjelderBarn i behandling med id ${firstOrNull()?.behandling?.id}")
+    private fun MutableSet<Samvær>.finnSamværForBarn(
+        barnId: Long? = null,
+        gjelderBarn: String,
+    ) = find { (barnId == null && it.rolle.ident == gjelderBarn) || it.rolle.id == barnId }
+        ?: ugyldigForespørsel("Fant ikke samvær for barn $gjelderBarn i behandling med id ${firstOrNull()?.behandling?.id}")
 
     private fun Samvær.hentPeriode(id: Long) =
         perioder.find { it.id == id }

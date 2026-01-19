@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV3
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
@@ -149,6 +150,7 @@ data class OppdatereInntektResponse(
     @Schema(deprecated = true)
     val gebyr: GebyrDto? = null,
     val gebyrV2: GebyrDtoV2? = null,
+    val gebyrV3: GebyrDtoV3? = null,
     val beregnetGebyrErEndret: Boolean = false,
     @Schema(description = "Periodiserte inntekter")
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),

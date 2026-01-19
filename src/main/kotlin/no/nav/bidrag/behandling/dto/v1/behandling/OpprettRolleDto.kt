@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import java.math.BigDecimal
@@ -35,4 +36,6 @@ data class OpprettRolleDto(
     val referanseGebyr: String? = null,
     val behandlingstatus: Behandlingstatus? = null,
     val behandlingstema: Behandlingstema? = null,
-)
+) {
+    val stønadstype get() = behandlingstema?.tilStønadstype()
+}

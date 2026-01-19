@@ -35,6 +35,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV3
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleV2Dto
+import no.nav.bidrag.behandling.dto.v2.behandling.GebyrSakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
@@ -49,6 +51,7 @@ import no.nav.bidrag.behandling.dto.v2.boforhold.egetBarnErEnesteVoksenIHusstand
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdmessigFordelingDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
+import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
@@ -100,6 +103,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.tilRolle
+import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
@@ -264,7 +268,7 @@ class Dtomapper(
 
     fun Set<Underholdskostnad>.tilDtos() =
         this
-            .filter { it.rolle == null || it.gjelderAndreBarn || it.rolle?.avslag == null }
+            .filter { it.rolle == null || it.gjelderAndreBarn || it.rolle?.kreverGrunnlagForBeregning == true }
             .map { it.tilDto() }
             .sortedWith(
                 compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
@@ -292,7 +296,7 @@ class Dtomapper(
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
-            gjelderBarn = this.person?.tilPersoninfoDto(rolleSøknadsbarn, kilde) ?: rolle?.tilPersoninfoDto()!!,
+            gjelderBarn = rolleSøknadsbarn?.tilPersoninfoDto() ?: this.person?.tilPersoninfoDto(rolleSøknadsbarn, kilde)!!,
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
             tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
@@ -349,7 +353,7 @@ class Dtomapper(
                                 } else {
                                     Datoperiode(it.periode.fom, it.periode.til)
                                 },
-                            beløp = it.beløp,
+                            beløp = it.indeksregulertBeløp,
                             indeksprosent = it.indeksreguleringFaktor ?: BigDecimal.ZERO,
                         )
                     }
@@ -397,6 +401,7 @@ class Dtomapper(
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
             kilde = kilde,
             medIBehandlingen = ident != null,
+            stønadstype = stønadstype,
         )
     }
 
@@ -441,7 +446,7 @@ class Dtomapper(
     fun Behandling.tilSamværDto() =
         if (tilType() == TypeBehandling.BIDRAG) {
             samvær
-                .filter { it.rolle.avslag == null }
+                .filter { it.rolle.kreverGrunnlagForBeregning }
                 .sortedWith(
                     sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.navn }),
                 ).map { it.tilDto() }
@@ -870,6 +875,7 @@ class Dtomapper(
                 behandlerenhet = behandlerEnhet,
                 gebyr = mapGebyr(),
                 gebyrV2 = mapGebyrV2(),
+                gebyrV3 = mapGebyrV3(),
                 roller =
                     roller
                         .sortedWith(
@@ -925,17 +931,7 @@ class Dtomapper(
                 tilInntektDtoV2(
                     grunnlag.hentSisteAktiv(),
                 ),
-            inntekterV2 =
-                roller.sorterForInntektsbildet().filter { it.rolletype != Rolletype.BARN || it.avslag == null }.map {
-                    InntekterDtoRolle(
-                        gjelder = it.tilDto(),
-                        inntekter =
-                            tilInntektDtoV3(
-                                grunnlag.hentSisteAktiv(),
-                                it,
-                            ),
-                    )
-                },
+            inntekterV2 = mapInntekterV2(),
             underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus),
             aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
             utgift = tilUtgiftDto(),
@@ -963,6 +959,25 @@ class Dtomapper(
                 },
         )
     }
+
+    fun Behandling.mapInntekterV2() =
+        roller
+            .sorterForInntektsbildet()
+            .filter {
+                // Skal alltid vise inntekter for BM/BP (ikke barn).
+                // Men hvis barn ikke krever grunnlag pga avslag og ikke løpende bidrag så skal det ikke vises i innteksbilde
+                it.rolletype != Rolletype.BARN ||
+                    it.kreverGrunnlagForBeregning
+            }.map {
+                InntekterDtoRolle(
+                    gjelder = it.tilDto(),
+                    inntekter =
+                        tilInntektDtoV3(
+                            grunnlag.hentSisteAktiv(),
+                            it,
+                        ),
+                )
+            }
 
     fun Behandling.tilPrivatAvtaleDtoV3(): PrivatAvtaleDtoV3 {
         val søknadsbarnPA =
@@ -1063,6 +1078,7 @@ class Dtomapper(
                 ).map {
                     val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
                     val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
+                    val bidragetHarOpphørt = finnEksisterendeVedtakMedOpphør(it) != null && it.virkningstidspunkt == it.opphørsdato
                     VirkningstidspunktBarnDtoV2(
                         rolle = it.tilDto(),
                         beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
@@ -1120,6 +1136,14 @@ class Dtomapper(
                         mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
                         søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
                         søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
+                        // Betyr at revurderingsbarn bidrag opphører i løpet av beregningsperioden. Da skal det ikke være mulig å endre virkningstidspunkt eller opphør
+                        // Systemet (VedtakHendelseLytteren) skal oppdatere opphør når det fattes ny opphørsvedtak
+                        // Gjelder bare for revurderingsbarn
+                        kanEndreVirkningstidspunkt =
+                            !it.erRevurderingsbarn || !bidragetHarOpphørt,
+                        kanEndreVirkningstidspunktOpphør =
+                            !it.erRevurderingsbarn || !bidragetHarOpphørt,
+                        kanVelgeOpphør = !erIForholdsmessigFordeling || !it.løperBidragEtterEldsteVirkning,
                         begrunnelseFraOpprinneligVedtak =
                             if (erKlageEllerOmgjøring) {
                                 henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
@@ -1294,19 +1318,53 @@ class Dtomapper(
     fun Behandling.mapGebyrV3() =
         if (roller.any { it.harGebyrsøknad }) {
             val gebyrSaker = roller.flatMap { it.gebyrSøknader }.map { it.saksnummer }.distinct()
-            val gebyrSøknaderSak =
-                roller.flatMap {
-                    it.gebyrSøknader
+            val saker =
+                gebyrSaker.map { sak ->
+                    GebyrSakDto(
+                        saksnummer = sak,
+                        gebyr18År =
+                            mapGebyrForSak(sak, true).sortedByDescending { it.rolle.rolletype },
+                        gebyrRoller = mapGebyrForSak(sak, false).sortedByDescending { it.rolle.rolletype },
+                    )
                 }
+            GebyrDtoV3(
+                saker = saker.sortedBy { it.saksnummer },
+            )
+        } else {
             GebyrDtoV3(
                 saker = emptyList(),
             )
-        } else {
-            GebyrDtoV2(
-                harFlereSøknader = false,
-                gebyrRoller = emptyList(),
-            )
         }
+
+    private fun Behandling.mapGebyrForSak(
+        sak: String,
+        gjelder18ÅrSøknad: Boolean,
+    ): List<GebyrRolleV2Dto> =
+        roller
+            .filter { it.gebyr != null }
+            .flatMap { rolle ->
+                val gebyr = rolle.gebyr!!.finnGebyrForSak(sak).filter { it.gjelder18ÅrSøknad == gjelder18ÅrSøknad }
+                gebyr.map {
+                    GebyrRolleV2Dto(
+                        rolle = rolle.tilDto(),
+                        gebyrDetaljer =
+                            vedtakGrunnlagMapper
+                                .beregnGebyr(this, rolle)
+                                .tilDto(rolle, it.søknadsid),
+                        valideringsfeil =
+                            GebyrValideringsfeilDto(
+                                gjelder = rolle.tilDto(),
+                                søknad = rolle.tilSøknadsdetaljerDto(it.søknadsid),
+                                manglerBegrunnelse =
+                                    if (it.manueltOverstyrtGebyr?.overstyrGebyr == true) {
+                                        it.manueltOverstyrtGebyr?.begrunnelse.isNullOrEmpty()
+                                    } else {
+                                        false
+                                    },
+                            ),
+                    )
+                }
+            }
 
     fun Behandling.mapGebyrV2() =
         if (roller.any { it.harGebyrsøknad }) {
@@ -1590,6 +1648,7 @@ class Dtomapper(
                     .tilBostatusperiode(),
             ident = tilgangskontrollertPersoninfo.ident?.verdi,
             navn = tilgangskontrollertPersoninfo.navn,
+            stønadstype = rolle?.stønadstype,
             fødselsdato = tilgangskontrollertPersoninfo.fødselsdato,
         )
     }
