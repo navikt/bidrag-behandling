@@ -631,29 +631,8 @@ class VedtakService(
             ugyldigForespørsel("Kan ikke fatte vedtak for behandling ${behandling.id}")
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
-        validering.run { behandling.validerForBeregningBidrag() }
 
-        val vedtakRequester =
-            behandlingTilVedtakMapping
-                .run {
-                    if (behandling.erAvslagForAlle) {
-                        listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet))
-                    } else {
-                        behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
-                    }
-                }.map {
-                    val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }
-                    it.copy(
-                        innkrevingUtsattTilDato =
-                            if (behandling.skalInnkrevingKunneUtsettes() && !erAvvisning) {
-                                request?.innkrevingUtsattAntallDager?.let {
-                                    LocalDate.now().plusDays(it)
-                                }
-                            } else {
-                                null
-                            },
-                    )
-                }
+        val vedtakRequester = opprettFatteVedtakRequestForBidrag(behandling, request)
 
         val vedtakResponser =
             vedtakRequester.associate { vedtakRequest ->
@@ -713,6 +692,34 @@ class VedtakService(
         )
 
         return vedtaksid
+    }
+
+    fun opprettFatteVedtakRequestForBidrag(
+        behandling: Behandling,
+        request: FatteVedtakRequestDto?,
+    ): List<OpprettVedtakRequestDto> {
+        validering.run { behandling.validerForBeregningBidrag() }
+
+        return behandlingTilVedtakMapping
+            .run {
+                if (behandling.erAvslagForAlle) {
+                    listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet))
+                } else {
+                    behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
+                }
+            }.map {
+                val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }
+                it.copy(
+                    innkrevingUtsattTilDato =
+                        if (behandling.skalInnkrevingKunneUtsettes() && !erAvvisning) {
+                            request?.innkrevingUtsattAntallDager?.let {
+                                LocalDate.now().plusDays(it)
+                            }
+                        } else {
+                            null
+                        },
+                )
+            }
     }
 
     fun behandlingTilVedtakDto(behandlingId: Long): VedtakDto {
