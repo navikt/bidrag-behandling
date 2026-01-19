@@ -32,7 +32,6 @@ data class OppdatereVirkningstidspunktBegrunnelseDto(
                 " Dette kan bare settes hvis det er 18 års bidrag",
     )
     var oppdaterBegrunnelseVurderingAvSkolegang: OppdatereBegrunnelse? = null,
-    val settLikVerdierForAlleBarn: Boolean = false,
 )
 
 data class OppdatereVirkningstidspunkt(
