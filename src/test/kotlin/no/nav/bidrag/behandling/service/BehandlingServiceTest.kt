@@ -1550,7 +1550,7 @@ class BehandlingServiceTest : TestContainerRunner() {
             behandlingEtter.søknadsbarn.find { it.ident == "1111234" }!!.innbetaltBeløp shouldBe BigDecimal("100.254")
             behandlingEtter.husstandsmedlem shouldHaveSize 3
             behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
-            behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.MANUELL
+            behandlingEtter.husstandsmedlem.find { it.ident == identOriginaltIkkeMedISaken }!!.kilde shouldBe Kilde.OFFENTLIG
             behandlingEtter.husstandsmedlem.find { it.ident == "1111234" }!!.kilde shouldBe Kilde.OFFENTLIG
         }
 

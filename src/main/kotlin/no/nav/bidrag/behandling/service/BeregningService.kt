@@ -239,7 +239,7 @@ class BeregningService(
 
         val resultatAvslagUtenGrunnlag =
             behandling.søknadsbarn
-                .filter { it.erDirekteAvslag && !it.kreverGrunnlagForBeregning }
+                .filter { it.erDirekteAvslagIkkeAvvisning && !it.kreverGrunnlagForBeregning }
                 .map { søknasdbarn ->
                     mapTilBeregningsresultatAvslag(behandling, søknasdbarn, endeligBeregning)
                 }

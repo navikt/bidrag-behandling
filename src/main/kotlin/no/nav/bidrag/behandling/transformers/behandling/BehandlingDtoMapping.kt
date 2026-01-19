@@ -239,7 +239,7 @@ private fun oppdatereHusstandsmedlemmerForRoller(
         .filter { it.rolletype == Rolletype.BARN }
         .filter { nyRolle -> behandling.husstandsmedlem.any { it.ident == nyRolle.ident?.verdi } }
         .forEach { nyRolle ->
-            val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.behandlingstema!!.tilStønadstype())
+            val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.stønadstype ?: behandling.stonadstype)
             // Oppdater rolle slik at husstandsmedlemmen blir låst til rollen i behandlingen
             val husstandsmedlem = behandling.husstandsmedlem.find { it.ident == nyRolle.ident.verdi }!!
             husstandsmedlem.rolle = rolle
@@ -250,7 +250,7 @@ private fun oppdatereHusstandsmedlemmerForRoller(
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
             .filter { nyRolle ->
-                val stønadstype = nyRolle.behandlingstema!!.tilStønadstype()
+                val stønadstype = nyRolle.stønadstype ?: behandling.stonadstype
                 val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, stønadstype)
                 behandling.husstandsmedlem.none { it.rolle?.ident == rolle!!.ident && it.rolle?.stønadstype == stønadstype }
             }

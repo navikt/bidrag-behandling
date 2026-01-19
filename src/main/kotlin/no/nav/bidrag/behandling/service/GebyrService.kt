@@ -124,10 +124,10 @@ class GebyrService(
         val søknadsid = request.søknadsid ?: behandling.soknadsid!!
         behandling.validerOppdatering(request)
         val sakForSøknad =
-            rolle.gebyr!!.finnGebyrForSøknad(søknadsid) ?: ugyldigForespørsel("Fant ikke gebyr $søknadsid for rolle ${request.rolleId}")
+            rolle.gebyr?.finnGebyrForSøknad(søknadsid)?.saksnummer ?: behandling.saksnummer
 
         rolle.oppdaterGebyrV2(
-            sakForSøknad.saksnummer,
+            sakForSøknad,
             søknadsid,
             RolleManueltOverstyrtGebyr(
                 overstyrGebyr = request.overstyrGebyr,

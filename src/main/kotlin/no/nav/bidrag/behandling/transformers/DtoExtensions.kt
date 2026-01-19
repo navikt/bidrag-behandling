@@ -105,7 +105,7 @@ fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem {
             behandling,
             Kilde.OFFENTLIG,
             ident = this.ident?.verdi,
-            rolle = behandling.finnRolle(ident?.verdi!!, behandlingstema!!.tilStønadstype()),
+            rolle = behandling.finnRolle(ident?.verdi!!, stønadstype ?: behandling.stonadstype),
             fødselsdato =
                 this.fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
                     ?: rolleManglerFødselsdato(rolletype),
