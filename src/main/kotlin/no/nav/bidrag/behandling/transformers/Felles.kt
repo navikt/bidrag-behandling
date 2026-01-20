@@ -334,16 +334,17 @@ fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle
 
 fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): ÅrMånedsperiode? {
     val eksisterendeVedtak =
-        // TODO sjekke opphør fra opprinnelig eller nåværende historikk?
-        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
-            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
-            ?: return null
+        if (rolle.stønadstype == Stønadstype.BIDRAG18AAR) {
+            grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
+        } else if (rolle.stønadstype == Stønadstype.BIDRAG) {
+            grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
+        } else {
+            // I tilfelle hvor stønadstype er null
+            grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
+                ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
+                ?: return null
+        }
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
-//    val perioder =
-//        stønad.periodeListe
-//            .filter {
-//                it.periode.til == null || it.periode.til!! > YearMonth.from(søktFomDato)
-//            }
     if (stønad.periodeListe.isEmpty()) {
         return null
     }
@@ -358,10 +359,16 @@ fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): År
 
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
-        // TODO sjekke opphør fra opprinnelig eller nåværende historikk?
-        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
-            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
-            ?: return null
+        if (rolle.stønadstype == Stønadstype.BIDRAG18AAR) {
+            grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
+        } else if (rolle.stønadstype == Stønadstype.BIDRAG) {
+            grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
+        } else {
+            // I tilfelle hvor stønadstype er null
+            grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
+                ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
+                ?: return null
+        }
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
     val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
     return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! > YearMonth.from(eldsteSøktFomDato)) {

@@ -20,11 +20,8 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
-import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
-import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.erBestilt
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
-import no.nav.bidrag.behandling.database.datamodell.extensions.lasterGrunnlagAsync
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
@@ -149,10 +146,8 @@ import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
-import org.springframework.core.task.TaskExecutor
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
@@ -657,7 +652,10 @@ class GrunnlagService(
 
         feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG, behandling, false))
 
-        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
+        val skalHenteBeløpshistorikk18År =
+            behandling.stonadstype == Stønadstype.BIDRAG18AAR || behandling.søknadsbarn.any { it.stønadstype == Stønadstype.BIDRAG18AAR }
+
+        if (skalHenteBeløpshistorikk18År) {
             feilrapporteringer.putAll(hentOgLagreBeløpshistorikk(Stønadstype.BIDRAG18AAR, behandling, false))
         }
         if (behandling.søknadstype == Behandlingstype.BEGRENSET_REVURDERING) {
@@ -732,7 +730,7 @@ class GrunnlagService(
                 Stønadstype.BIDRAG18AAR -> Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR
                 else -> return emptyMap()
             }
-        behandling.søknadsbarn.forEach { sb ->
+        behandling.søknadsbarn.filter { it.stønadstype == null || it.stønadstype == stønadstype }.forEach { sb ->
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type, fraOpprinneligVedtakstidspunkt)
