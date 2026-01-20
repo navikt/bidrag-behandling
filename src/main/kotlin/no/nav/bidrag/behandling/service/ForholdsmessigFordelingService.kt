@@ -265,7 +265,14 @@ class ForholdsmessigFordelingService(
             underholdService,
             virkningstidspunktService,
             behandling.søknadsbarn.map {
-                OpprettRolleDto(Rolletype.BARN, it.personident!!, it.navn, it.fødselsdato, behandlingstema = it.behandlingstema)
+                OpprettRolleDto(
+                    Rolletype.BARN,
+                    it.personident!!,
+                    it.navn,
+                    it.fødselsdato,
+                    behandlingstema =
+                        it.behandlingstema ?: behandling.stonadstype?.tilBehandlingstema(),
+                )
             },
             emptyList(),
         )

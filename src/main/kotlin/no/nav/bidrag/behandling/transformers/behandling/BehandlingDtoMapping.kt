@@ -300,7 +300,7 @@ fun oppdatereSamværForRoller(
             .filter { rolle ->
                 behandling.samvær.none { s ->
                     s.rolle.ident == rolle.ident!!.verdi &&
-                        s.rolle.stønadstype == rolle.`stønadstype`
+                        s.rolle.stønadstype == rolle.stønadstype
                 }
             }.forEach { rolle ->
                 behandling.samvær.add(
@@ -309,7 +309,7 @@ fun oppdatereSamværForRoller(
                         rolle =
                             behandling.roller.find {
                                 it.ident == rolle.ident?.verdi &&
-                                    it.stønadstype == rolle.`stønadstype`
+                                    it.stønadstype == rolle.stønadstype
                             }!!,
                     ),
                 )
@@ -318,7 +318,7 @@ fun oppdatereSamværForRoller(
         rollerSomSlettes.forEach { rolle ->
             behandling.samvær.removeIf { s ->
                 s.rolle.ident == rolle.ident!!.verdi &&
-                    s.rolle.stønadstype == rolle.`stønadstype`
+                    s.rolle.stønadstype == rolle.stønadstype
             }
         }
     }
