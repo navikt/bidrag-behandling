@@ -129,6 +129,9 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    // Brukes ved blant annet sortering og filtrering for å finne unik rolle.
+    // Det kan hende samme rolle er i samme behandling flere ganger (18 år og ordinær bidrag samtidig ved FF)
+    val identifikator get() = "${ident}_${navn}_$stønadstype"
     val erDirekteAvslag get() = avslag != null
     val erAvvisning get() = avslag != null && avslag!!.erAvvisning()
     val erDirekteAvslagIkkeAvvisning get() = avslag != null && avslag!!.erDirekteAvslag() && !avslag!!.erAvvisning()

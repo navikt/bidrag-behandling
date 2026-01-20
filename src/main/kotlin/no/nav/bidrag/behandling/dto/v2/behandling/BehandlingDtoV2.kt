@@ -240,7 +240,9 @@ data class PersoninfoDto(
     val kilde: Kilde? = null,
     val medIBehandlingen: Boolean? = null,
     val stønadstype: Stønadstype? = null,
-)
+) {
+    val sortKey get() = "${ident}_${navn}_$stønadstype"
+}
 
 data class SærbidragUtgifterDto(
     val avslag: Resultatkode? = null,
