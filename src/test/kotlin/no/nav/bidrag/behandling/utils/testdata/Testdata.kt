@@ -394,7 +394,7 @@ fun oppretteHusstandsmedlem(
             behandling = behandling,
             fødselsdato = data.fødselsdato,
         )
-    husstandsmedlem.perioder =
+    husstandsmedlem.perioder.addAll(
         mutableSetOf(
             Bostatusperiode(
                 datoFom = LocalDate.parse("2022-01-01"),
@@ -417,7 +417,8 @@ fun oppretteHusstandsmedlem(
                 kilde = Kilde.OFFENTLIG,
                 husstandsmedlem = husstandsmedlem,
             ),
-        )
+        ),
+    )
     return husstandsmedlem
 }
 

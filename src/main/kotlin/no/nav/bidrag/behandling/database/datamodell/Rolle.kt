@@ -89,13 +89,6 @@ open class Rolle(
         orphanRemoval = true,
     )
     open var notat: MutableSet<Notat> = mutableSetOf(),
-    @OneToOne(
-        fetch = FetchType.LAZY,
-        mappedBy = "rolle",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
-    )
-    open val husstandsmedlem: Husstandsmedlem? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
         name = "person_id",
