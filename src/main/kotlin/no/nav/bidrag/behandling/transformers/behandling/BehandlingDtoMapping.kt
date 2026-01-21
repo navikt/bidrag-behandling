@@ -80,7 +80,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -135,14 +135,32 @@ fun oppdaterBehandlingEtterOppdatertRoller(
     rollerSomLeggesTil: List<OpprettRolleDto>,
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
-    slettNotatSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    slettGrunnlagSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    slettPrivatAvtaleSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    slettInntekterSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    oppdatereSamværForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
-    oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTil, rollerSomSkalSlettes)
-    oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
-    oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTil)
+    // Behandlingstema brukes for å hente om hvilken stønadstype barnet tilhører
+    // Noen eldre behandlinger har ikke satt behandlingstema som kan føre til nullverdier. Antar
+    val rollerSomLeggesTilJustert =
+        rollerSomLeggesTil.map {
+            if (it.behandlingstema == null) {
+                it.copy(behandlingstema = behandling.stonadstype?.tilBehandlingstema())
+            } else {
+                it
+            }
+        }
+    val rollerSomSkalSlettesJustert =
+        rollerSomSkalSlettes.map {
+            if (it.behandlingstema == null) {
+                it.copy(behandlingstema = behandling.stonadstype?.tilBehandlingstema())
+            } else {
+                it
+            }
+        }
+    slettNotatSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    slettGrunnlagSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    slettPrivatAvtaleSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    slettInntekterSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    oppdatereSamværForRoller(behandling, rollerSomLeggesTilJustert, rollerSomSkalSlettesJustert)
+    oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTilJustert, rollerSomSkalSlettesJustert)
+    oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTilJustert)
+    oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTilJustert)
 }
 
 private fun slettInntekterSomTilhørerRolleSomSlettes(
@@ -177,8 +195,8 @@ private fun slettGrunnlagSomTilhørerRolleSomSlettes(
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
         behandling.grunnlag.removeIf {
-            (it.rolle.ident == rolle.ident!!.verdi && it.rolle.stønadstype == rolle.stønadstype) ||
-                it.gjelder == rolle.ident!!.verdi
+            it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
+                it.gjelder == rolle.ident.verdi
         }
     }
 }
@@ -188,8 +206,8 @@ private fun slettNotatSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        val rolleBarn = behandling.roller.find { it.ident == rolle.ident!!.verdi }
-        val notater = behandling.notater.filter { it.rolle.ident == rolle.ident!!.verdi }
+        val rolleBarn = behandling.roller.find { it.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) }
+        val notater = behandling.notater.filter { it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) }
         notater.forEach { notat ->
             if (notat.type == Notattype.UNDERHOLDSKOSTNAD) {
                 behandling.notater
@@ -214,7 +232,7 @@ private fun oppdaterOpphørForRoller(
 ) {
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
         rollerSomLeggesTil.forEach { r ->
-            val rolle = behandling.roller.find { it.ident == r.ident!!.verdi && it.stønadstype == r.stønadstype }!!
+            val rolle = behandling.roller.find { it.erSammeRolle(r.ident!!.verdi, r.stønadstype) }!!
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
                 if (opphørsdato != null) {
@@ -237,11 +255,12 @@ private fun oppdatereHusstandsmedlemmerForRoller(
 ) {
     rollerSomLeggesTil
         .filter { it.rolletype == Rolletype.BARN }
-        .filter { nyRolle -> behandling.husstandsmedlem.any { it.ident == nyRolle.ident?.verdi } }
+        .filter { nyRolle -> behandling.husstandsmedlem.any { it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype) } }
         .forEach { nyRolle ->
             val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.stønadstype ?: behandling.stonadstype)
             // Oppdater rolle slik at husstandsmedlemmen blir låst til rollen i behandlingen
-            val husstandsmedlem = behandling.husstandsmedlem.find { it.ident == nyRolle.ident.verdi }!!
+            val husstandsmedlem =
+                behandling.husstandsmedlem.find { it.erSammePerson(nyRolle.ident.verdi, nyRolle.stønadstype) } ?: return@forEach
             husstandsmedlem.rolle = rolle
             husstandsmedlem.kilde = Kilde.OFFENTLIG
         }
@@ -251,8 +270,7 @@ private fun oppdatereHusstandsmedlemmerForRoller(
             .filter { it.rolletype == Rolletype.BARN }
             .filter { nyRolle ->
                 val stønadstype = nyRolle.stønadstype ?: behandling.stonadstype
-                val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, stønadstype)
-                behandling.husstandsmedlem.none { it.rolle?.ident == rolle!!.ident && it.rolle?.stønadstype == stønadstype }
+                behandling.husstandsmedlem.none { it.erSammePerson(nyRolle.ident!!.verdi, stønadstype) }
             }
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map {
@@ -273,8 +291,7 @@ fun oppdaterUnderholdskostnadForRoller(
             .filter { it.rolletype == Rolletype.BARN }
             .filter { rolle ->
                 behandling.underholdskostnader.none { u ->
-                    u.rolle?.ident == rolle.ident!!.verdi &&
-                        u.rolle!!.stønadstype == rolle.stønadstype
+                    u.tilhørerPerson(rolle.ident!!.verdi, rolle.stønadstype)
                 }
             }.forEach { rolle ->
                 underholdService.oppretteUnderholdskostnad(
@@ -299,8 +316,7 @@ fun oppdatereSamværForRoller(
             .filter { it.rolletype == Rolletype.BARN }
             .filter { rolle ->
                 behandling.samvær.none { s ->
-                    s.rolle.ident == rolle.ident!!.verdi &&
-                        s.rolle.stønadstype == rolle.stønadstype
+                    s.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype)
                 }
             }.forEach { rolle ->
                 behandling.samvær.add(
@@ -308,8 +324,7 @@ fun oppdatereSamværForRoller(
                         behandling,
                         rolle =
                             behandling.roller.find {
-                                it.ident == rolle.ident?.verdi &&
-                                    it.stønadstype == rolle.stønadstype
+                                it.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype)
                             }!!,
                     ),
                 )
@@ -317,8 +332,7 @@ fun oppdatereSamværForRoller(
 
         rollerSomSlettes.forEach { rolle ->
             behandling.samvær.removeIf { s ->
-                s.rolle.ident == rolle.ident!!.verdi &&
-                    s.rolle.stønadstype == rolle.stønadstype
+                s.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype)
             }
         }
     }

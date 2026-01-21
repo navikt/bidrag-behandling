@@ -129,6 +129,18 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    fun erSammeRolle(annenRolle: Rolle) =
+        if (rolletype == Rolletype.BARN) {
+            erSammeRolle(annenRolle.ident!!, annenRolle.stønadstype)
+        } else {
+            erSammeRolle(annenRolle.ident!!, null)
+        }
+
+    fun erSammeRolle(
+        ident: String,
+        stønadstype: Stønadstype?,
+    ) = this.ident == ident && (this.stønadstype == null || stønadstype == null || this.stønadstype == stønadstype)
+
     // Brukes ved blant annet sortering og filtrering for å finne unik rolle.
     // Det kan hende samme rolle er i samme behandling flere ganger (18 år og ordinær bidrag samtidig ved FF)
     val identifikator get() = "${ident}_${navn}_$stønadstype"
@@ -145,6 +157,7 @@ open class Rolle(
             rolletype == Rolletype.BIDRAGSPLIKTIG ||
                 (rolletype == Rolletype.BIDRAGSMOTTAKER && it.bidragsmottaker?.ident == this.ident)
         }
+    val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
     val virkningstidspunktBeregnet get() =
         if (behandling.erIForholdsmessigFordeling) {
@@ -276,7 +289,7 @@ open class Rolle(
     val opphørSistePeriode get() = opphørTilDato != null
 
     override fun toString(): String =
-        "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

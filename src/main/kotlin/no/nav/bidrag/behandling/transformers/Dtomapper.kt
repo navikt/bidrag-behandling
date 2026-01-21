@@ -985,7 +985,7 @@ class Dtomapper(
                 .sortedWith(
                     sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
                 ).map { barn ->
-                    val privatAvtale = privatAvtale.find { it.rolle?.ident == barn.ident }
+                    val privatAvtale = privatAvtale.find { it.rolle?.erSammeRolle(barn) == true }
                     PrivatAvtaleBarnInfoDto(
                         gjelderBarn = barn.tilPersoninfoDto(Kilde.OFFENTLIG),
                         privatAvtale = privatAvtale?.tilDtoV2(),
@@ -1107,7 +1107,7 @@ class Dtomapper(
                                 BegrunnelseDto(notat)
                             },
                         begrunnelseVurderingAvSkolegang =
-                            if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                            if (it.stønadstypeBarnEllerBehandling == Stønadstype.BIDRAG18AAR) {
                                 BegrunnelseDto(
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it),
                                 )
@@ -1115,7 +1115,7 @@ class Dtomapper(
                                 null
                             },
                         begrunnelseVurderingAvSkolegangFraOpprinneligVedtak =
-                            if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                            if (it.stønadstypeBarnEllerBehandling == Stønadstype.BIDRAG18AAR) {
                                 BegrunnelseDto(
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, false),
                                 )

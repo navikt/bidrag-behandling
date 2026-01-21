@@ -21,10 +21,9 @@ import no.nav.bidrag.behandling.transformers.grunnlag.manglerRolleIGrunnlag
 import no.nav.bidrag.behandling.transformers.grunnlag.mapAinntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
-import no.nav.bidrag.behandling.transformers.hentBeløpshistorikk
+import no.nav.bidrag.behandling.transformers.hentGrunnlagBeløpshistorikkForRolle
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.maxOfNullable
-import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -77,7 +76,7 @@ import java.time.YearMonth
 
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
     if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-        val beløpshistorikk = hentBeløpshistorikk(søknadsbarnRolle, false).konvertereData<StønadDto>()
+        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konvertereData<StønadDto>()
         beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom }
     } else {
         null
@@ -326,11 +325,10 @@ class VedtakGrunnlagMapper(
                     gjelderBarn,
                 )
 
-            (
-                BeregnIndeksreguleringPrivatAvtaleApi().beregnIndeksreguleringPrivatAvtale(
-                    grunnlag,
-                ) + grunnlag.grunnlagListe
-            ).toSet().toList()
+            val beregningResutlat =
+                BeregnIndeksreguleringPrivatAvtaleApi()
+                    .beregnIndeksreguleringPrivatAvtale(grunnlag)
+            (beregningResutlat + grunnlag.grunnlagListe).toSet().toList()
         } else {
             behandling.grunnlagslisteFraVedtak!!
         }
@@ -342,8 +340,8 @@ class VedtakGrunnlagMapper(
     ): BeregnGrunnlag {
         mapper.run {
             behandling.run {
-                val personobjekter = tilPersonobjekter()
-                val privatavtaleGrunnlag = tilPrivatAvtaleGrunnlag(personobjekter, person.ident!!)
+                val personobjekter = tilPersonobjekter(person)
+                val privatavtaleGrunnlag = tilPrivatAvtaleGrunnlag(personobjekter, person)
 
                 val personObjekt = personobjekter.hentPerson(person.ident)!!
                 val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
@@ -454,7 +452,7 @@ class VedtakGrunnlagMapper(
                             }
 
                             TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
-                                grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste, søknadsbarnRolle.ident!!))
+                                grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste, søknadsbarnRolle))
                                 grunnlagsliste.addAll(
                                     opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()),
                                 )
