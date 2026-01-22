@@ -232,11 +232,11 @@ data class OppdatereManuellInntekt(
         description = "Ident til personen inntekten gjenlder for.",
         type = "String",
         example = "12345678910",
-        required = true,
+        required = false,
         deprecated = true,
     )
     @Deprecated("Bruk gjelderId")
-    val ident: Personident,
+    val ident: Personident?,
     @Schema(
         description = "Id til rollen til personen inntekten gjenlder for.",
         type = "String",

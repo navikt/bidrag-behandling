@@ -268,14 +268,15 @@ fun InntektPost.toInntektpost() =
     )
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
+    val rolle = behandling.roller.find { it.id == this.gjelderId }
     val inntekt =
         Inntekt(
             type = this.type,
             belop = this.beløp.nærmesteHeltall,
             datoFom = this.datoFom,
             datoTom = this.datoTom,
-            ident = this.ident.verdi,
-            rolle = behandling.roller.find { it.id == this.gjelderId },
+            ident = this.ident?.verdi ?: rolle?.ident,
+            rolle = rolle,
             gjelderBarnRolle = behandling.roller.find { it.id == this.gjelderBarnId },
             gjelderBarn = this.gjelderBarn?.verdi,
             kilde = Kilde.MANUELL,

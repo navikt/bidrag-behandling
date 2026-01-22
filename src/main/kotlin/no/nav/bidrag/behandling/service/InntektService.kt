@@ -451,7 +451,7 @@ class InntektService(
                 manuellInntekt.inntektstype == null ||
                     it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
             }.filter {
-                it.tilhørerSammePerson(manuellInntekt.ident.verdi, manuellInntekt.gjelderId) &&
+                it.tilhørerSammePerson(manuellInntekt.ident?.verdi, manuellInntekt.gjelderId) &&
                     it.tilhørerSammeBarn(manuellInntekt.gjelderBarn?.verdi, manuellInntekt.gjelderBarnId)
             }.sortedBy { it.datoFom }
             .lastOrNull()
