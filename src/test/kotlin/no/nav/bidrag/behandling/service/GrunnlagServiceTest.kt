@@ -2358,7 +2358,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragspliktig!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragspliktig!!) }
                         .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
@@ -2608,7 +2608,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragspliktig!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragspliktig!!) }
                         .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
@@ -2731,7 +2731,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragspliktig!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragspliktig!!) }
                         .size shouldBe 1
                 }
             }
@@ -3634,7 +3634,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
@@ -3718,7 +3718,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                 }
             }
@@ -3785,7 +3785,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                     behandling.inntekter
                         .filter { Inntektsrapportering.KONTANTSTØTTE == it.type }
@@ -3856,7 +3856,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                 }
             }
@@ -3922,7 +3922,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                 }
             }

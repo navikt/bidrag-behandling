@@ -33,7 +33,7 @@ open class Inntekt(
     open var datoFom: LocalDate?,
     open var datoTom: LocalDate?,
     @Deprecated("Bruk heller rolle")
-    open var ident: String,
+    open var ident: String? = null,
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde,
     open var taMed: Boolean,
@@ -69,7 +69,7 @@ open class Inntekt(
     @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
     open val gjelderBarnRolle: Rolle? = null,
 ) {
-    val gjelderIdent get() = rolle?.ident ?: ident
+    val gjelderIdent get() = (rolle?.ident ?: ident)!!
     val gjelderBarnIdent get() = gjelderBarnRolle?.ident ?: gjelderBarn
 
     // TODO: Bytt dette til å bruke rolle etter migrering
@@ -85,7 +85,7 @@ open class Inntekt(
         if (gjelderBarnRolle != null) {
             gjelderBarnRolle
         } else {
-            behandling?.søknadsbarn?.find { it.ident == gjelderBarn }
+            behandling?.søknadsbarn?.find { it.ident == gjelderBarnIdent }
         }
 
     fun tilhørerSammePerson(
@@ -94,19 +94,19 @@ open class Inntekt(
     ) = if (rolleId != null && rolle != null) {
         rolle!!.id == rolleId
     } else {
-        this.ident.nullIfEmpty() == ident.nullIfEmpty()
+        this.gjelderIdent.nullIfEmpty() == ident.nullIfEmpty()
     }
 
     fun tilhørerSammePerson(annenInntekt: Inntekt) =
         if (annenInntekt.rolle == null || this.rolle == null) {
-            this.ident.nullIfEmpty() == annenInntekt.ident.nullIfEmpty()
+            this.gjelderIdent.nullIfEmpty() == annenInntekt.gjelderIdent.nullIfEmpty()
         } else {
             erSammeRolle(annenInntekt.rolle!!)
         }
 
     fun tilhørerSammeBarn(annenInntekt: Inntekt) =
         if (annenInntekt.gjelderBarnRolle == null || this.gjelderBarnRolle == null) {
-            this.gjelderBarn.nullIfEmpty() == annenInntekt.gjelderBarn.nullIfEmpty()
+            this.gjelderBarnIdent.nullIfEmpty() == annenInntekt.gjelderBarnIdent.nullIfEmpty()
         } else {
             inntektGjelderBarn(annenInntekt.rolle!!)
         }
@@ -120,7 +120,7 @@ open class Inntekt(
         this.gjelderBarn.nullIfEmpty() == ident.nullIfEmpty()
     }
 
-    fun erSammeRolle(rolle: Rolle) = if (this.rolle != null) this.rolle!!.erSammeRolle(rolle) else this.ident == rolle.ident
+    fun erSammeRolle(rolle: Rolle) = if (this.rolle != null) this.rolle!!.erSammeRolle(rolle) else this.gjelderIdent == rolle.ident
 
     fun erSammeRolle(
         ident: String,
@@ -128,14 +128,14 @@ open class Inntekt(
     ) = if (this.rolle != null) {
         this.rolle!!.erSammeRolle(ident, stønadstype)
     } else {
-        this.ident == ident
+        this.gjelderIdent == ident
     }
 
     fun inntektGjelderBarn(rolle: Rolle) =
         if (gjelderBarnRolle != null) {
             gjelderBarnRolle!!.erSammeRolle(rolle)
         } else {
-            gjelderBarn == rolle.ident
+            gjelderBarnIdent == rolle.ident
         }
 
     val opphørsdato get() = if (gjelderSøknadsbarn != null) gjelderSøknadsbarn!!.opphørsdato else behandling?.globalOpphørsdato

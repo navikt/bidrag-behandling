@@ -311,8 +311,8 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                             },
                         beløp = it.belop,
                         inntektsrapportering = it.type,
-                        inntektGjelderBarnIdent = it.gjelderBarn.takeIfNotNullOrEmpty { Personident(it) },
-                        inntektEiesAvIdent = Personident(it.ident),
+                        inntektGjelderBarnIdent = it.gjelderBarnIdent.takeIfNotNullOrEmpty { Personident(it) },
+                        inntektEiesAvIdent = Personident(it.gjelderIdent!!),
                     )
                 },
     )

@@ -396,8 +396,8 @@ class InntektServiceTest : TestContainerRunner() {
                         datoTom = tom,
                         opprinneligFom = fom,
                         opprinneligTom = tom,
-                        ident = testdataBM.ident,
-                        gjelderBarn = testdataBarn1.ident,
+                        rolle = testdataBM.tilRolle(behandling),
+                        gjelderBarnRolle = testdataBarn1.tilRolle(behandling),
                         kilde = Kilde.OFFENTLIG,
                         taMed = true,
                     )
@@ -882,8 +882,8 @@ class InntektServiceTest : TestContainerRunner() {
                             .minusYears(1)
                             .withMonth(12)
                             .atDay(31),
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
+                    rolle = testdataBM.tilRolle(behandling),
+                    gjelderBarnRolle = testdataBarn1.tilRolle(behandling),
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
@@ -950,8 +950,8 @@ class InntektServiceTest : TestContainerRunner() {
                             .minusYears(1)
                             .withMonth(12)
                             .atDay(31),
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
+                    rolle = testdataBM.tilRolle(behandling),
+                    gjelderBarnRolle = testdataBarn1.tilRolle(behandling),
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
@@ -1011,7 +1011,7 @@ class InntektServiceTest : TestContainerRunner() {
                             .minusYears(1)
                             .withMonth(12)
                             .atDay(31),
-                    ident = testdataBM.ident,
+                    rolle = testdataBM.tilRolle(behandling),
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
                 )
@@ -1128,7 +1128,7 @@ class InntektServiceTest : TestContainerRunner() {
                             .minusYears(1)
                             .withMonth(12)
                             .atDay(31),
-                    ident = testdataBM.ident,
+                    rolle = testdataBM.tilRolle(behandling),
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
@@ -1213,8 +1213,8 @@ class InntektServiceTest : TestContainerRunner() {
                             .minusYears(1)
                             .withMonth(12)
                             .atDay(31),
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
+                    rolle = testdataBM.tilRolle(behandling),
+                    gjelderBarnRolle = testdataBarn1.tilRolle(behandling),
                     kilde = Kilde.MANUELL,
                     taMed = true,
                 )
@@ -1262,8 +1262,8 @@ class InntektServiceTest : TestContainerRunner() {
                     opprinneligTom = YearMonth.parse("2024-05").atEndOfMonth(),
                     datoTom = null,
                     datoFom = null,
-                    ident = testdataBM.ident,
-                    gjelderBarn = testdataBarn1.ident,
+                    rolle = testdataBM.tilRolle(behandling),
+                    gjelderBarnRolle = testdataBarn1.tilRolle(behandling),
                     kilde = Kilde.OFFENTLIG,
                     taMed = false,
                 )
@@ -1377,7 +1377,7 @@ class InntektServiceTest : TestContainerRunner() {
                             .minusYears(1)
                             .withMonth(12)
                             .atDay(31),
-                    ident = testdataBM.ident,
+                    rolle = testdataBM.tilRolle(behandling),
                     kilde = Kilde.OFFENTLIG,
                     taMed = true,
                 )

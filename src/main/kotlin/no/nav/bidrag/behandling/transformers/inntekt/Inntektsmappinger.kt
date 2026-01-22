@@ -152,9 +152,9 @@ fun Inntekt.tilInntektDtoV2() =
         // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         datoFom = this.datoFom,
         datoTom = this.datoTom,
-        ident = Personident(this.ident),
+        ident = Personident(this.gjelderIdent),
         gjelderRolleId = this.gjelderRolle?.id,
-        gjelderBarn = this.gjelderBarn?.let { it1 -> Personident(it1) },
+        gjelderBarn = this.gjelderBarnIdent?.let { it1 -> Personident(it1) },
         gjelderBarnId = this.gjelderSøknadsbarn?.id,
         kilde = this.kilde,
         inntektsposter = this.inntektsposter.tilInntektspostDtoV2().toSet(),
@@ -199,8 +199,8 @@ fun Inntekt.tilIkkeAktivInntektDto(
         ),
     // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
     periode = this.opprinneligPeriode!!,
-    ident = Personident(this.ident),
-    gjelderBarn = gjelderBarn?.let { Personident(it) },
+    ident = Personident(this.gjelderIdent),
+    gjelderBarn = gjelderBarnIdent?.let { Personident(it) },
     endringstype = endringstype,
     innhentetTidspunkt = innhentetTidspunkt,
     originalId = id,

@@ -818,8 +818,8 @@ class GrunnlagService(
             it.person!!.ident = oppdaterTilNyesteIdent(it.person!!.ident, behandling.id!!, it.toString()) ?: it.person!!.ident
         }
         behandling.inntekter.forEach {
-            it.ident = oppdaterTilNyesteIdent(it.ident, behandling.id!!, it.toString()) ?: it.ident
-            it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarn, behandling.id!!, "gjelderBarn i $it") ?: it.gjelderBarn
+            it.ident = oppdaterTilNyesteIdent(it.gjelderIdent, behandling.id!!, it.toString()) ?: it.gjelderIdent
+            it.gjelderBarn = oppdaterTilNyesteIdent(it.gjelderBarnIdent, behandling.id!!, "gjelderBarn i $it") ?: it.gjelderBarnIdent
         }
         behandling.grunnlagsinnhentingFeilet =
             objectmapper.writeValueAsString(
