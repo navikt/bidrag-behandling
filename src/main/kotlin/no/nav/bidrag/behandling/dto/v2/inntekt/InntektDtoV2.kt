@@ -18,6 +18,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektPerBarn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -130,7 +131,13 @@ data class InntekterDtoV2(
 data class BeregnetInntekterDto(
     val ident: Personident,
     val rolle: Rolletype,
-    val inntekter: List<InntektPerBarn> = emptyList(),
+    val inntekter: List<InntektPerBarnDto> = emptyList(),
+)
+
+data class InntektPerBarnDto(
+    @Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarnIdent: Personident? = null,
+    @Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarn: Rolle? = null,
+    @Schema(description = "Liste over summerte inntektsperioder") var summertInntektListe: List<DelberegningSumInntekt> = emptyList(),
 )
 
 data class OppdatereInntektBegrunnelseRespons(

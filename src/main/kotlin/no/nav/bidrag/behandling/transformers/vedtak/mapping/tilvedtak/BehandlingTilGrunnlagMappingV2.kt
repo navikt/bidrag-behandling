@@ -212,7 +212,7 @@ class BehandlingTilGrunnlagMappingV2(
             return relatertPersonGrunnlag
         }
 
-        return if (gjelderRolle == null) {
+        return if (gjelderRolle == null || gjelderRolle.id == null) {
             privatAvtale
                 .filter { it.rolle == null }
                 .flatMap { pa ->

@@ -77,7 +77,7 @@ class SorteringTest {
         val filtrertInntekter = inntekter.filtrerUtHistoriskeInntekter()
 
         filtrertInntekter shouldHaveSize 5
-        val filtrertInntekterBm = filtrertInntekter.filter { it.ident == testdataBM.ident }
+        val filtrertInntekterBm = filtrertInntekter.filter { it.gjelderIdent == testdataBM.ident }
         assertSoftly(filtrertInntekterBm.filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT }) {
             this shouldHaveSize 2
             this[0].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
@@ -96,7 +96,7 @@ class SorteringTest {
             this[0].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
             this[0].opprinneligTom shouldBe LocalDate.parse("2022-12-31")
         }
-        assertSoftly(filtrertInntekter.filter { it.ident == testdataBarn1.ident }) {
+        assertSoftly(filtrertInntekter.filter { it.gjelderIdent == testdataBarn1.ident }) {
             shouldHaveSize(1)
             this[0].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
             this[0].opprinneligTom shouldBe LocalDate.parse("2022-12-31")

@@ -102,10 +102,9 @@ fun Inntekt.erYtelseHistorisk(): Boolean {
 
 fun Inntekt.erLigningsinntektHistorisk(inntekter: Collection<Inntekt>): Boolean {
     if (!ligningsinntekter.contains(type) || opprinneligFom == null) return false
-    val gjelderIdent = ident
     val sisteLigningsår =
         inntekter
-            .filter { gjelderIdent == it.ident }
+            .filter { this.tilhørerSammePerson(it) }
             .sortedBy { it.opprinneligFom }
             .lastOrNull { it.type == type }
             ?.opprinneligFom

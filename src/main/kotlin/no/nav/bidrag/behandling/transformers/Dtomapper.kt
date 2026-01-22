@@ -1313,23 +1313,6 @@ class Dtomapper(
             )
         }
 
-    fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
-        BeregnApi()
-            .beregnInntekt(tilInntektberegningDto(rolle))
-            .inntektPerBarnListe
-            .filter { it.inntektGjelderBarnIdent != null }
-            .flatMap { beregningBarn ->
-                beregningBarn.summertInntektListe.map {
-                    GrunnlagDto(
-                        referanse = "${Grunnlagstype.DELBEREGNING_SUM_INNTEKT}_${rolle.tilGrunnlagsreferanse()}",
-                        type = Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
-                        innhold = POJONode(it),
-                        gjelderReferanse = rolle.tilGrunnlagsreferanse(),
-                        gjelderBarnReferanse = beregningBarn.inntektGjelderBarnIdent!!.verdi,
-                    )
-                }
-            }
-
     private fun Behandling.bpsBarnUtenLøpendeBidrag(): Set<BpsBarnUtenLøpendeBidragDto> =
         grunnlag
             .hentSisteGrunnlagBpsBarnUtenBidragsak()

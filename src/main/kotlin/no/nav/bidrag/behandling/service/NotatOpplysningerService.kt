@@ -15,7 +15,6 @@ import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragspliktigesBeregnedeTotalbidragDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleV2Dto
-import no.nav.bidrag.behandling.dto.v2.behandling.GebyrSakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SærbidragKategoriDto
@@ -25,7 +24,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
-import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.transformers.Dtomapper
@@ -34,7 +32,6 @@ import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandGrunnla
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentAlleBearbeidaBoforholdTilBMSøknadsbarn
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
-import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtakBegrunnelse
 import no.nav.bidrag.behandling.transformers.behandling.notatTittel
 import no.nav.bidrag.behandling.transformers.behandling.tilReferanseId
@@ -46,7 +43,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegang
-import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
@@ -1198,7 +1194,7 @@ private fun Inntekt.tilNotatInntektDto() =
                 }.sortedByDescending { it.beløp },
     )
 
-private fun List<Inntekt>.inntekterForIdent(ident: String) = filter { it.ident == ident }
+private fun List<Inntekt>.inntekterForRolle(rolle: Rolle) = filter { it.erSammeRolle(rolle) }
 
 private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
     filter { !filtrerBareOffentlige || it.kilde == Kilde.OFFENTLIG }
@@ -1250,7 +1246,7 @@ private fun Behandling.hentInntekterForIdent(
     årsinntekter =
         inntekter
             .årsinntekterSortert(!filtrerBareOffentlige, true)
-            .inntekterForIdent(ident)
+            .inntekterForRolle(rolle)
             .ekskluderYtelserFørVirkningstidspunkt()
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
@@ -1260,7 +1256,7 @@ private fun Behandling.hentInntekterForIdent(
     barnetillegg =
         inntekter
             .filter { it.type == Inntektsrapportering.BARNETILLEGG }
-            .inntekterForIdent(ident)
+            .inntekterForRolle(rolle)
             .filtrerKilde(filtrerBareOffentlige)
             .ekskluderYtelserFørVirkningstidspunkt()
             .sorterEtterDatoOgBarn()
@@ -1272,7 +1268,7 @@ private fun Behandling.hentInntekterForIdent(
         inntekter
             .sortedBy { it.datoFom }
             .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-            .inntekterForIdent(ident)
+            .inntekterForRolle(rolle)
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
             .ekskluderYtelserFørVirkningstidspunkt()
@@ -1283,7 +1279,7 @@ private fun Behandling.hentInntekterForIdent(
     kontantstøtte =
         inntekter
             .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-            .inntekterForIdent(ident)
+            .inntekterForRolle(rolle)
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
             .ekskluderYtelserFørVirkningstidspunkt()
@@ -1294,7 +1290,7 @@ private fun Behandling.hentInntekterForIdent(
     utvidetBarnetrygd =
         inntekter
             .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-            .inntekterForIdent(ident)
+            .inntekterForRolle(rolle)
             .filtrerKilde(filtrerBareOffentlige)
             .filter { !bareMedIBeregning || it.taMed }
             .ekskluderYtelserFørVirkningstidspunkt()

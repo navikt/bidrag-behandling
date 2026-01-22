@@ -295,7 +295,7 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
         gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =
             inntekter
-                .filter { it.ident == rolle.ident }
+                .filter { it.erSammeRolle(rolle) }
                 .filter { it.taMed }
                 .filter { !it.inntektsposter.mapNotNull { it.inntektstype }.any { ikkeBeregnForBarnetillegg.contains(it) } }
                 .map {
@@ -1709,7 +1709,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                         beregnetBeløp = it.innhold.indeksregulertBeløp,
                         valutakode = periodeSomOverlapper.valutakode?.name ?: Valutakode.NOK.name,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
-                        samværsfradrag = it.innhold.samværsfradrag,
+                        samværsfradrag = it.innhold.samværsfradrag ?: BigDecimal.ZERO,
                     ),
             )
         }

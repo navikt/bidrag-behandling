@@ -810,7 +810,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 }
 
                 val alleInntekterBm =
-                    oppdatertBehandling.get().inntekter.filter { behandling.bidragsmottaker!!.ident == it.ident }
+                    oppdatertBehandling.get().inntekter.filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
 
                 assertSoftly {
                     alleInntekterBm.size shouldBe 8

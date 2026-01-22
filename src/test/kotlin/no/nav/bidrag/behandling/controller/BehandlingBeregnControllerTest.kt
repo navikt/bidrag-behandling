@@ -133,7 +133,7 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
                             belop = BigDecimal(6000000),
                             datoFom = behandling.virkningstidspunkt,
                             datoTom = null,
-                            ident = behandling.bidragspliktig!!.ident!!,
+                            rolle = behandling.bidragspliktig!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,

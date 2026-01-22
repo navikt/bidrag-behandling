@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektBarn
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektPerBarnDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
@@ -435,7 +436,7 @@ fun Person.tilRolle(behandling: Behandling) =
         ident,
         fødselsdato,
         LocalDateTime.now(),
-        -1,
+        null,
         navn ?: hentPersonVisningsnavn(ident),
     )
 
@@ -1008,7 +1009,7 @@ fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekterV2(
     val inntekterSomSkalSjekkes = filter { !eksplisitteYtelser.contains(it.type) }.filter { it.taMed }
     val rollerSomKreverMinstEnInntekt = bestemRollerSomMåHaMinstEnInntekt(behandlingType)
     val opphørsdato = rolle.behandling.globalOpphørsdato
-    val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
+    val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.erSammeRolle(rolle) }
 
     return if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
         InntektValideringsfeil(
@@ -1059,7 +1060,7 @@ fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekter(
         .filter { bestemRollerSomKanHaInntekter(behandlingType).contains(it.rolletype) }
         .map { rolle ->
             val opphørsdato = rolle.behandling.globalOpphørsdato
-            val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
+            val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.erSammeRolle(rolle) }
 
             if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
                 InntektValideringsfeil(
@@ -1149,7 +1150,8 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
         .sortedBy {
             it.inntektGjelderBarnIdent?.verdi
         }.map {
-            it.copy(
+            InntektPerBarnDto(
+                inntektGjelderBarnIdent = it.inntektGjelderBarnIdent,
                 summertInntektListe =
                     it.summertInntektListe.map { delberegning ->
                         delberegning.copy(

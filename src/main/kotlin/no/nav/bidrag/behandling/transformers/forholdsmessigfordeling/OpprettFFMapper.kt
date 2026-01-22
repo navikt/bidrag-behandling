@@ -327,7 +327,7 @@ fun kopierInntekt(
             )
         }
 
-    val rolleInntekt = hovedbehandling.roller.find { it.ident == inntektOverført.ident }!!
+    val rolleInntekt = hovedbehandling.roller.find { it.erSammeRolle(inntekt.rolle!!) }!!
 
     hovedbehandling.inntekter.add(inntekt)
 
