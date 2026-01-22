@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjekt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjektInnhold
@@ -262,7 +263,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                     fødselsdato = it.fødselsdato,
                     gjelderPersonId = it.ident,
                     partPersonId = personobjektInnhentesForRolle.personIdent,
-                    navn = it.navn,
+                    navn = it.navn ?: hentPersonVisningsnavn(it.ident),
                     relasjon = Familierelasjon.BARN,
                     borISammeHusstandDtoListe = emptyList(),
                 ).tilGrunnlagsobjekt(
