@@ -89,7 +89,7 @@ fun List<InntektPost>.tilInntektspost(inntekt: Inntekt) =
 
 fun SummertÅrsinntekt.tilInntekt(
     behandling: Behandling,
-    person: Personident,
+    rolle: Rolle,
 ): Inntekt {
     val beløp = this.sumInntekt.nærmesteHeltall
     val inntekt =
@@ -97,10 +97,11 @@ fun SummertÅrsinntekt.tilInntekt(
             type = this.inntektRapportering,
             belop = beløp,
             behandling = behandling,
-            ident = person.verdi,
+            ident = rolle.ident!!,
             gjelderBarn = this.gjelderBarnPersonId,
             datoFom = null,
             datoTom = null,
+            rolle = rolle,
             opprinneligFom = this.periode.fom.atDay(1),
             opprinneligTom = this.periode.til?.atEndOfMonth(),
             kilde = Kilde.OFFENTLIG,
@@ -130,10 +131,10 @@ fun SummertÅrsinntekt.tilInntekt(
 
 fun List<SummertÅrsinntekt>.tilInntekt(
     behandling: Behandling,
-    person: Personident,
+    rolle: Rolle,
 ) = this
     .map {
-        it.tilInntekt(behandling, person)
+        it.tilInntekt(behandling, rolle)
     }.toMutableSet()
 
 fun Inntektsrapportering.tilGrunnlagsdataType() =

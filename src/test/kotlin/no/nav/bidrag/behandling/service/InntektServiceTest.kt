@@ -131,7 +131,7 @@ class InntektServiceTest : TestContainerRunner() {
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
                 behandling,
-                personident = Personident(behandling.bidragsmottaker?.ident!!),
+                rolle = behandling.bidragsmottaker!!,
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
             entityManager.merge(behandling)
@@ -268,7 +268,7 @@ class InntektServiceTest : TestContainerRunner() {
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
                 behandling,
-                personident = Personident(behandling.bidragsmottaker?.ident!!),
+                rolle = behandling.bidragsmottaker!!,
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
 
@@ -317,7 +317,7 @@ class InntektServiceTest : TestContainerRunner() {
             // hvis
             inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
                 behandling,
-                personident = Personident(behandling.bidragsmottaker?.ident!!),
+                rolle = behandling.bidragsmottaker!!,
                 summerteÅrsinntekter = summerteInntekter.inntekter,
             )
 

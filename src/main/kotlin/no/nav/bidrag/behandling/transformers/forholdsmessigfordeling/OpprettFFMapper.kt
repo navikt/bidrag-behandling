@@ -289,7 +289,7 @@ fun kopierInntekt(
     val eksisterndeInntekt =
         hovedbehandling.inntekter
             .filter {
-                it.taMed && it.ident == inntektOverført.ident &&
+                it.taMed && it.tilhørerSammePerson(inntektOverført) &&
                     it.type == inntektOverført.type
             }.find {
                 val periodeOverført = ÅrMånedsperiode(inntektOverført.datoFom!!, inntektOverført.datoTom)
@@ -302,11 +302,13 @@ fun kopierInntekt(
     val inntekt =
         Inntekt(
             behandling = hovedbehandling,
-            ident = inntektOverført.ident,
+            ident = inntektOverført.gjelderIdent,
+            rolle = inntektOverført.rolle,
             kilde = inntektOverført.kilde,
             taMed = inntektOverført.taMed,
             type = inntektOverført.type,
-            gjelderBarn = inntektOverført.gjelderBarn,
+            gjelderBarn = inntektOverført.gjelderBarnIdent,
+            gjelderBarnRolle = inntektOverført.gjelderBarnRolle,
             opprinneligFom = inntektOverført.opprinneligFom,
             opprinneligTom = inntektOverført.opprinneligTom,
             belop = inntektOverført.belop,
@@ -333,24 +335,24 @@ fun kopierInntekt(
 }
 
 fun kopierOverInntekterForRolleFraBehandling(
-    gjelderPerson: String,
+    gjelderPerson: Rolle,
     behandling: Behandling,
     behandlingOverført: Behandling,
 ) {
     behandlingOverført.inntekter
-        .filter { gjelderPerson == it.ident }
+        .filter { it.erSammeRolle(gjelderPerson) }
         .filter { it.taMed && it.type.kanLeggesInnManuelt }
         .forEach { inntektOverført ->
             kopierInntekt(behandling, inntektOverført)
         }
 
     behandlingOverført.inntekter
-        .filter { gjelderPerson == it.ident }
+        .filter { it.erSammeRolle(gjelderPerson) }
         .filter { it.taMed && !it.type.kanLeggesInnManuelt }
         .forEach { inntektOverført ->
             val tilsvarendeInntekt =
                 behandling.inntekter
-                    .filter { gjelderPerson == it.ident }
+                    .filter { it.erSammeRolle(gjelderPerson) }
                     .find {
                         it.type == inntektOverført.type && it.opprinneligFom == inntektOverført.opprinneligFom &&
                             it.opprinneligTom == inntektOverført.opprinneligTom

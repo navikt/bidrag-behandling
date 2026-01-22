@@ -112,13 +112,14 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
             )
         }.sortedByDescending { it.beløp }
 
-fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
+fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: Rolle) =
     InntektDtoV2(
         id = -1,
         taMed = false,
         rapporteringstype = Inntektsrapportering.AINNTEKT,
         beløp = sumInntekt,
-        ident = Personident(gjelder),
+        ident = Personident(gjelder.ident!!),
+        gjelderRolleId = gjelder.id ?: -1,
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
             inntektPostListe
@@ -137,6 +138,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         opprinneligFom = gjelderÅrMåned.atDay(1),
         opprinneligTom = gjelderÅrMåned.atEndOfMonth(),
         gjelderBarn = null,
+        gjelderBarnId = null,
     )
 
 fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2() }
@@ -151,7 +153,9 @@ fun Inntekt.tilInntektDtoV2() =
         datoFom = this.datoFom,
         datoTom = this.datoTom,
         ident = Personident(this.ident),
+        gjelderRolleId = this.gjelderRolle?.id,
         gjelderBarn = this.gjelderBarn?.let { it1 -> Personident(it1) },
+        gjelderBarnId = this.gjelderSøknadsbarn?.id,
         kilde = this.kilde,
         inntektsposter = this.inntektsposter.tilInntektspostDtoV2().toSet(),
         inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
@@ -271,6 +275,8 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
             datoFom = this.datoFom,
             datoTom = this.datoTom,
             ident = this.ident.verdi,
+            rolle = behandling.roller.find { it.id == this.gjelderId },
+            gjelderBarnRolle = behandling.roller.find { it.id == this.gjelderBarnId },
             gjelderBarn = this.gjelderBarn?.verdi,
             kilde = Kilde.MANUELL,
             taMed = this.taMed,

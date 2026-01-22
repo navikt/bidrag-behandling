@@ -1192,7 +1192,7 @@ class ForholdsmessigFordelingService(
 
             // Overfør alle inntektene til BM/Barn som ikke finnes i opprinnelig behandling
             behandlingOverført.inntekter
-                .filter { !eksisterendeRoller.contains(it.ident) }
+                .filter { !eksisterendeRoller.contains(it.gjelderIdent) }
                 .forEach { inntektOverført ->
                     kopierInntekt(behandling, inntektOverført)
                 }
@@ -1201,7 +1201,7 @@ class ForholdsmessigFordelingService(
             behandlingOverført.roller
                 .filter { eksisterendeRoller.contains(it.ident) }
                 .forEach {
-                    kopierOverInntekterForRolleFraBehandling(it.ident!!, behandling, behandlingOverført)
+                    kopierOverInntekterForRolleFraBehandling(it, behandling, behandlingOverført)
                 }
 
             behandlingOverført.roller.forEach {

@@ -1445,7 +1445,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     behandling = behandling,
                 ),
                 opprettInntekt(
@@ -1454,7 +1454,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     behandling = behandling,
                 ),
             )
@@ -1577,7 +1577,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     behandling = behandling,
                 ),
                 opprettInntekt(
@@ -1586,7 +1586,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     behandling = behandling,
                 ),
             )

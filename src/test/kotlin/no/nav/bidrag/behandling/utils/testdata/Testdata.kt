@@ -1183,13 +1183,14 @@ fun opprettInntekt(
     type: Inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
     inntektstyper: List<Pair<Inntektstype, BigDecimal>> = emptyList(),
     inntektstyperKode: List<Pair<String, BigDecimal>> = emptyList(),
-    ident: String = "",
     gjelderBarn: String? = null,
     taMed: Boolean = true,
     kilde: Kilde = Kilde.OFFENTLIG,
     beløp: BigDecimal = BigDecimal.ONE,
     behandling: Behandling = oppretteBehandling(),
     medId: Boolean = true,
+    gjelderRolle: Rolle = behandling.bidragsmottaker!!,
+    gjelderBarnRolle: Rolle? = null,
 ): Inntekt {
     val inntekt =
         Inntekt(
@@ -1199,7 +1200,9 @@ fun opprettInntekt(
             opprinneligFom = opprinneligFom?.atDay(1),
             opprinneligTom = opprinneligTom?.atEndOfMonth(),
             belop = beløp,
-            ident = ident,
+            ident = "",
+            rolle = gjelderRolle,
+            gjelderBarnRolle = gjelderBarnRolle,
             gjelderBarn = gjelderBarn,
             id = if (medId) Random.nextLong(1000) else null,
             kilde = kilde,
@@ -1365,7 +1368,7 @@ fun oppretteTestbehandling(
             )
 
             val inntekt =
-                bearbeidaGrunnlag.inntekter.tilInntekt(behandling, Personident(behandling.bidragsmottaker!!.ident!!))
+                bearbeidaGrunnlag.inntekter.tilInntekt(behandling, behandling.bidragsmottaker!!)
             val ytelser =
                 setOf(
                     Inntektsrapportering.KONTANTSTØTTE,

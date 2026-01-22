@@ -1227,7 +1227,7 @@ class GrunnlagService(
     ) {
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
 
-        val summerteInntekter = ikkeAktiveGrunnlag.henteBearbeidaInntekterForType(grunnlagstype, rolle.ident!!)
+        val summerteInntekter = ikkeAktiveGrunnlag.henteBearbeidaInntekterForType(grunnlagstype, rolle)
 
         inntektService.oppdatereAutomatiskInnhentaOffentligeInntekter(
             behandling,
@@ -1427,28 +1427,7 @@ class GrunnlagService(
     private fun foretaNyGrunnlagsinnhenting(
         behandling: Behandling,
         antallMinutter: Long,
-    ): Boolean =
-        when {
-            behandling.erVedtakFattet -> {
-                false
-            }
-
-            behandling.grunnlagSistInnhentet == null -> {
-                true
-            }
-
-            // Ikke hent på nytt i testmiljøene da det vil alltid feile i Q1 feks
-            !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled &&
-                behandling.grunnlagsinnhentingFeilet != null &&
-                antallMinutter > 10 -> {
-                LocalDateTime.now().minusMinutes(10) >
-                    behandling.grunnlagSistInnhentet
-            }
-
-            else -> {
-                LocalDateTime.now().minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
-            }
-        }
+    ): Boolean = false
 
     private fun lagreGrunnlag(
         behandling: Behandling,
@@ -2408,7 +2387,7 @@ class GrunnlagService(
                 @Suppress("UNCHECKED_CAST")
                 inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
                     behandling,
-                    Personident(rolle.ident!!),
+                    rolle,
                     (innhentetGrunnlag as SummerteInntekter<SummertÅrsinntekt>).inntekter,
                 )
             }

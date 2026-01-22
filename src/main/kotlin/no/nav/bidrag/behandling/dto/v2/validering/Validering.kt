@@ -141,6 +141,7 @@ data class InntektValideringsfeil(
     val ugyldigSluttPeriode: Boolean = false,
     @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = null,
+    val gjelderBarnRolle: RolleDto? = null,
     @JsonIgnore
     val erYtelse: Boolean = false,
     @Deprecated("Skal fjernes")

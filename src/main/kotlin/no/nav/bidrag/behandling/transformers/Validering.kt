@@ -954,7 +954,7 @@ fun OppdatereSivilstand.validere(behandling: Behandling) {
 }
 
 fun OppdatereManuellInntekt.validerHarGjelderBarn(feilliste: MutableList<String>) {
-    if (gjelderBarn == null || gjelderBarn.verdi.isEmpty()) {
+    if (((gjelderBarnId == null && gjelderBarn == null) || (gjelderBarn != null && gjelderBarn.verdi.isEmpty()))) {
         feilliste.add("$type må ha gyldig ident for gjelder barn")
     }
 }

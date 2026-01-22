@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import no.nav.bidrag.domene.enums.rolle.Rolle
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
@@ -41,10 +42,15 @@ data class InntektDtoV2(
     @Schema(type = "string", format = "date", example = "2024-12-31")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligTom: LocalDate?,
+    @Schema(required = false, deprecated = true)
+    @Deprecated("Bruk gjelderRolleId")
+    val ident: Personident?,
     @Schema(required = true)
-    val ident: Personident,
-    @Schema(required = false)
+    val gjelderRolleId: Long?,
+    @Schema(required = false, deprecated = true)
+    @Deprecated("Bruk gjelderBarnId")
     val gjelderBarn: Personident?,
+    val gjelderBarnId: Long?,
     @Schema(required = true)
     val kilde: Kilde = Kilde.MANUELL,
     @Schema(required = true)
@@ -53,6 +59,15 @@ data class InntektDtoV2(
     val inntektstyper: Set<Inntektstype> = emptySet(),
     val historisk: Boolean? = false,
 ) {
+    fun gjelderRolle(rolle: no.nav.bidrag.behandling.database.datamodell.Rolle) =
+        if (gjelderRolleId !=
+            null
+        ) {
+            rolle.id == gjelderRolleId
+        } else {
+            ident?.verdi == rolle.ident
+        }
+
     @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
     val månedsbeløp: BigDecimal?
         get() =
@@ -211,8 +226,18 @@ data class OppdatereManuellInntekt(
         type = "String",
         example = "12345678910",
         required = true,
+        deprecated = true,
     )
+    @Deprecated("Bruk gjelderId")
     val ident: Personident,
+    @Schema(
+        description = "Id til rollen til personen inntekten gjenlder for.",
+        type = "String",
+        example = "12345678910",
+        required = true,
+        deprecated = true,
+    )
+    val gjelderId: Long? = null,
     @Schema(
         description =
             "Ident til barnet en ytelse gjelder for. " +
@@ -220,8 +245,20 @@ data class OppdatereManuellInntekt(
         type = "String",
         example = "12345678910",
         required = false,
+        deprecated = true,
     )
+    @Deprecated("Bruk gjelderBarnId")
     val gjelderBarn: Personident? = null,
+    @Schema(
+        description =
+            "Id til rollen til barnet en ytelse gjelder for. " +
+                "sBenyttes kun for ytelser som er koblet til ett spesifikt barn, f.eks kontantstøtte",
+        type = "String",
+        example = "12345678910",
+        required = false,
+        deprecated = true,
+    )
+    val gjelderBarnId: Long? = null,
     @Schema(description = "Spesifisere inntektstype for detaljpost")
     val inntektstype: Inntektstype? = null,
 )

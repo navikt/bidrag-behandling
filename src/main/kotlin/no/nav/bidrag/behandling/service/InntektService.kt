@@ -65,13 +65,13 @@ class InntektService(
         behandling.roller.forEach { rolle ->
             val inntekterRolle =
                 behandling.inntekter.filter {
-                    it.ident == rolle.ident && eksplisitteYtelser.contains(it.type) &&
+                    it.erSammeRolle(rolle) && eksplisitteYtelser.contains(it.type) &&
                         it.kilde == Kilde.OFFENTLIG
                 }
             eksplisitteYtelser.forEach { type ->
                 val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
 
-                val summerteInntekter = ikkeAktiveGrunnlag.henteBearbeidaInntekterForType(type.tilGrunnlagsdataType(), rolle.ident!!)
+                val summerteInntekter = ikkeAktiveGrunnlag.henteBearbeidaInntekterForType(type.tilGrunnlagsdataType(), rolle)
                 if (summerteInntekter != null) {
                     val finnesMinstEnPeriodeMedAvvik =
                         summerteInntekter.inntekter.any { inntekt ->
@@ -163,7 +163,7 @@ class InntektService(
             behandling.inntekter
                 .filter { eksplisitteYtelser.contains(it.type) }
                 .filter { it.taMed && it.kilde == Kilde.MANUELL }
-                .groupBy { Triple(it.type, it.ident, it.gjelderBarn) }
+                .groupBy { Triple(it.type, it.gjelderIdent, it.gjelderBarnIdent) }
                 .forEach { (triple, inntekter) ->
                     if (triple.first == Inntektsrapportering.BARNETILLEGG) {
                         inntekter
@@ -182,7 +182,7 @@ class InntektService(
         if (opphørSlettet || behandling.minstEnRolleHarBegrensetBeregnTilDato) {
             behandling.inntekter
                 .filter { !eksplisitteYtelser.contains(it.type) }
-                .groupBy { Pair(it.type, it.ident) }
+                .groupBy { Pair(it.type, it.gjelderIdent) }
                 .forEach { (_, inntekter) ->
                     inntekter.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato)
                 }
@@ -211,12 +211,12 @@ class InntektService(
     @Transactional
     fun lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
         behandling: Behandling,
-        personident: Personident,
+        rolle: Rolle,
         summerteÅrsinntekter: List<SummertÅrsinntekt>,
     ) {
         val inntekterSomSkalSlettes: MutableSet<Inntekt> = mutableSetOf()
         val inntektstyper = summerteÅrsinntekter.map { it.inntektRapportering }
-        behandling.inntekter.filter { it.ident == personident.verdi && inntektstyper.contains(it.type) }.forEach {
+        behandling.inntekter.filter { it.erSammeRolle(rolle) && inntektstyper.contains(it.type) }.forEach {
             if (Kilde.OFFENTLIG == it.kilde) {
                 it.inntektsposter.removeAll(it.inntektsposter)
                 inntekterSomSkalSlettes.add(it)
@@ -226,7 +226,7 @@ class InntektService(
 
         val lagraInntekter =
             inntektRepository.saveAll(
-                summerteÅrsinntekter.tilInntekt(behandling, personident).map {
+                summerteÅrsinntekter.tilInntekt(behandling, rolle).map {
                     it.automatiskTaMedYtelserFraNav()
                     it
                 },
@@ -261,11 +261,15 @@ class InntektService(
             behandling.inntekter
                 .filter { Kilde.OFFENTLIG == it.kilde }
                 .filter {
-                    ytelsetypeSomOppdateres != null &&
-                        it.type == ytelsetypeSomOppdateres ||
-                        ytelsetypeSomOppdateres == null &&
-                        !inntektsrapporteringerForYtelser.contains(it.type)
-                }.filter { rolle.ident == it.ident }
+                    (
+                        ytelsetypeSomOppdateres != null &&
+                            it.type == ytelsetypeSomOppdateres
+                    ) ||
+                        (
+                            ytelsetypeSomOppdateres == null &&
+                                !inntektsrapporteringerForYtelser.contains(it.type)
+                        )
+                }.filter { it.erSammeRolle(rolle) }
                 .filter { !idTilInntekterSomBleOppdatert.contains(it.id) }
 
         offentligeInntekterSomSkalSlettes.forEach {
@@ -433,7 +437,7 @@ class InntektService(
                 offentligInntekt.inntektsposter.isEmpty() ||
                     it.inntektsposter.any { offentligInntekt.inntektsposter.any { oit -> oit.inntektstype == it.inntektstype } }
             }.filter {
-                offentligInntekt.ident == it.ident && offentligInntekt.gjelderBarn.nullIfEmpty() == it.gjelderBarn.nullIfEmpty()
+                offentligInntekt.tilhørerSammePerson(it) && offentligInntekt.tilhørerSammeBarn(it)
             }.sortedBy { it.datoFom }
             .lastOrNull()
 
@@ -447,7 +451,8 @@ class InntektService(
                 manuellInntekt.inntektstype == null ||
                     it.inntektsposter.any { it.inntektstype == manuellInntekt.inntektstype }
             }.filter {
-                manuellInntekt.ident.verdi == it.ident && manuellInntekt.gjelderBarn?.verdi.nullIfEmpty() == it.gjelderBarn.nullIfEmpty()
+                it.tilhørerSammePerson(manuellInntekt.ident.verdi, manuellInntekt.gjelderId) &&
+                    it.tilhørerSammeBarn(manuellInntekt.gjelderBarn?.verdi, manuellInntekt.gjelderBarnId)
             }.sortedBy { it.datoFom }
             .lastOrNull()
 
@@ -484,7 +489,7 @@ class InntektService(
                 .filter { i -> Kilde.OFFENTLIG == i.kilde }
                 .filter { i -> type == i.type }
                 .filter { i -> i.opprinneligFom != null }
-                .filter { i -> rolle.ident == i.ident }
+                .filter { i -> i.erSammeRolle(rolle) }
                 .toList()
                 .filter { i ->
                     inntekterSomKunIdentifiseresPåType.contains(i.type) ||
@@ -522,7 +527,7 @@ class InntektService(
                 inntektRepository.save(
                     nyInntekt.tilInntekt(
                         behandling,
-                        Personident(rolle.ident!!),
+                        rolle,
                     ),
                 )
 

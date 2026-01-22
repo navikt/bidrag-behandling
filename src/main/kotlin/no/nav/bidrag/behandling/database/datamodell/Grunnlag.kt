@@ -173,9 +173,9 @@ fun List<Grunnlag>.hentGrunnlagForType(
 
 fun List<Grunnlag>.henteBearbeidaInntekterForType(
     type: Grunnlagsdatatype,
-    ident: String,
+    rolle: Rolle,
 ) = find {
-    it.type == type && it.erBearbeidet && it.rolle.ident == ident
+    it.type == type && it.erBearbeidet && it.rolle.erSammeRolle(rolle)
 }.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
 
 fun Behandling.hentNyesteGrunnlagForIkkeAktiv(
