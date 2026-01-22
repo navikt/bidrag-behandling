@@ -587,7 +587,7 @@ class GrunnlagMockService {
             behandling.bidragspliktig!!.ident shouldBe nyIdentBp
             behandling.søknadsbarn.find { it.id == søknadsbarnId!!.id }?.ident shouldBe nyIdentBarn1
 
-            behandling.inntekter.filter { it.ident == nyIdentBm } shouldHaveSize 3
+            behandling.inntekter.filter { it.gjelderIdent == nyIdentBm } shouldHaveSize 3
             behandling.underholdskostnader.find { it.personIdent == nyIdentBarn1 }.shouldNotBeNull()
             behandling.grunnlag.find { it.gjelder == nyIdentBarn1 }.shouldNotBeNull()
             behandling.husstandsmedlem.find { it.ident == nyIdentBarn1 }.shouldNotBeNull()

@@ -1849,7 +1849,7 @@ fun Behandling.taMedInntekt(
     rolle: Rolle,
     type: Inntektsrapportering,
 ) {
-    val inntekt = inntekter.find { it.ident == rolle.ident && type == it.type }!!
+    val inntekt = inntekter.find { it.erSammeRolle(rolle) && type == it.type }!!
     inntekt.taMed = true
     inntekt.datoFom = virkningstidspunkt
 }

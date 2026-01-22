@@ -493,9 +493,9 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             val barnetillegg = filter { it.type == Inntektsrapportering.BARNETILLEGG }
             assertSoftly(barnetillegg) {
                 shouldHaveSize(1)
-                it[0].ident shouldBe testdataBM.ident
+                it[0].gjelderIdent shouldBe testdataBM.ident
                 it[0].belop shouldBe BigDecimal(5000)
-                it[0].gjelderBarn shouldBe testdataBarn2.ident
+                it[0].gjelderBarnIdent shouldBe testdataBarn2.ident
                 it[0].taMed shouldBe false
                 it[0].datoFom shouldBe null
                 it[0].datoTom shouldBe null

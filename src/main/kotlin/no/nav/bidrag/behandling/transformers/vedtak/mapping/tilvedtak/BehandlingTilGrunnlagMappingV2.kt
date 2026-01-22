@@ -274,7 +274,7 @@ class BehandlingTilGrunnlagMappingV2(
                     ),
             )
 
-        val inntekterBPIkkeYtelse = inntekter.filter { it.ident == bidragspliktig?.ident && !eksplisitteYtelser.contains(it.type) }
+        val inntekterBPIkkeYtelse = inntekter.filter { it.erSammeRolle(bidragspliktig!!) && !eksplisitteYtelser.contains(it.type) }
 
         val grunnlagBp =
             if (inntekterBPIkkeYtelse.none { it.taMed }) {
@@ -300,7 +300,7 @@ class BehandlingTilGrunnlagMappingV2(
                 null
             }
 
-        val inntekterBMIkkeYtelse = inntekter.filter { it.ident == bidragsmottaker?.ident && !eksplisitteYtelser.contains(it.type) }
+        val inntekterBMIkkeYtelse = inntekter.filter { it.erSammeRolle(bidragsmottaker!!) && !eksplisitteYtelser.contains(it.type) }
 
         val grunnlagBm =
             if (inntekterBMIkkeYtelse.none { it.taMed }) {
@@ -334,16 +334,16 @@ class BehandlingTilGrunnlagMappingV2(
         val alleSøknadsbarnIdenter = this.søknadsbarn.mapNotNull { it.ident }
         return inntekter
             .asSequence()
-            .filter { personobjekter.hentPersonNyesteIdent(it.ident) != null && (inkluderAlle || it.taMed) }
-            .groupBy { it.ident }
-            .flatMap { (ident, innhold) ->
-                val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
+            .filter { personobjekter.hentPersonNyesteIdent(it.gjelderIdent) != null && (inkluderAlle || it.taMed) }
+            .groupBy { it.rolle }
+            .flatMap { (rolle, innhold) ->
+                val gjelder = personobjekter.hentPersonMedReferanse(rolle!!.tilGrunnlagsreferanse())!! as GrunnlagDto
                 innhold
                     .filter {
                         if (søknadsbarn == null) {
-                            it.gjelderBarn.isNullOrEmpty() ||
+                            it.gjelderBarnIdent.isNullOrEmpty() ||
                                 // Ikke ta med inntekter som ikke gjelder noen av søknadsbarna. Kan feks skje hvis en søknadsbarn er fjernet fra behandling
-                                alleSøknadsbarnIdenter.contains(it.gjelderBarn)
+                                alleSøknadsbarnIdenter.contains(it.gjelderBarnIdent)
                         } else {
                             val inntektTilhørerBarn =
                                 if (gjelder.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER) {
@@ -351,9 +351,9 @@ class BehandlingTilGrunnlagMappingV2(
                                 } else {
                                     true
                                 }
-                            inntektTilhørerBarn && (it.gjelderBarn == søknadsbarn.personIdent || it.gjelderBarn.isNullOrEmpty())
+                            inntektTilhørerBarn && (it.gjelderBarnIdent == søknadsbarn.personIdent || it.gjelderBarnIdent.isNullOrEmpty())
                         }
-                    }.groupBy { it.gjelderBarn }
+                    }.groupBy { it.gjelderBarnIdent }
                     .map { (gjelderBarn, innhold) ->
                         val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)
                         innhold.map {

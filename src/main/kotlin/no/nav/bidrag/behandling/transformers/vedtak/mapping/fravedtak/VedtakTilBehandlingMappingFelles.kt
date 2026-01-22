@@ -621,7 +621,7 @@ internal fun List<GrunnlagDto>.mapInntekter(
     val erForskuddOmgjøring =
         behandling.soknadFra == SøktAvType.NAV_BIDRAG && behandling.vedtakstype == Vedtakstype.ENDRING
     if (!lesemodus && !erForskuddOmgjøring) {
-        inntekter.groupBy { it.ident }.forEach { (_, inntekterRolle) ->
+        inntekter.groupBy { it.gjelderIdent }.forEach { (_, inntekterRolle) ->
             inntekterRolle
                 .find {
                     it.type ==
@@ -654,7 +654,7 @@ internal fun List<GrunnlagDto>.mapInntekter(
         inntekter
             .filter { ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
             .sortedByDescending { it.taMed }
-            .distinctBy { listOfNotNull(it.opprinneligFom, it.opprinneligTom, it.type, it.gjelderBarn, it.ident) }
+            .distinctBy { listOfNotNull(it.opprinneligFom, it.opprinneligTom, it.type, it.gjelderBarnIdent, it.gjelderIdent) }
     val andreInntekter = inntekter.filter { !ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
     return (andreInntekter + inntekterBeregnet).toMutableSet()
 }
