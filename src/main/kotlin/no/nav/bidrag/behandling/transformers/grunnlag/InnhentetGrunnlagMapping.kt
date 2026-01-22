@@ -254,7 +254,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
         husstandsmedlem
             .filter { it.rolle == null }
             .filter { sb ->
-                innhentetHusstandsmedlemGrunnlagsliste.none {
+                (søknadsbarnSomManglerInnhentetGrunnlag + innhentetHusstandsmedlemGrunnlagsliste).none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
                     personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
                 }
