@@ -202,7 +202,7 @@ class BehandlingTilGrunnlagMappingV2(
 
     fun Behandling.tilPrivatAvtaleGrunnlag(
         personobjekter: Set<GrunnlagDto>,
-        gjelderBarnIdent: String? = null,
+        gjelderRolle: Rolle? = null,
     ): Set<GrunnlagDto> {
         val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
 
@@ -212,7 +212,7 @@ class BehandlingTilGrunnlagMappingV2(
             return relatertPersonGrunnlag
         }
 
-        return if (gjelderBarnIdent == null) {
+        return if (gjelderRolle == null) {
             privatAvtale
                 .filter { it.rolle == null }
                 .flatMap { pa ->
@@ -223,7 +223,7 @@ class BehandlingTilGrunnlagMappingV2(
                 }.toSet()
         } else {
             privatAvtale
-                .find { it.perioderInnkreving.isNotEmpty() && it.personIdent == gjelderBarnIdent }
+                .find { it.perioderInnkreving.isNotEmpty() && it.rolle != null && it.rolle!!.erSammeRolle(gjelderRolle) }
                 ?.let { pa ->
                     val privatAvtaleRolle = pa.rolle
                     val gjelderBarn =

@@ -324,9 +324,6 @@ fun OppdatereVirkningstidspunktBegrunnelseDto.valider(behandling: Behandling) {
     if (oppdaterBegrunnelseVurderingAvSkolegang != null && !behandling.kanSkriveVurderingAvSkolegangAlle()) {
         feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
     }
-    if (rolleId == null && settLikVerdierForAlleBarn && !behandling.erVirkningstidspunktLiktForAlle) {
-        feilliste.add("Kan kun sette lik begrunnelse for alle barn hvis virkningstidspunkt lik for alle barn")
-    }
 
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(

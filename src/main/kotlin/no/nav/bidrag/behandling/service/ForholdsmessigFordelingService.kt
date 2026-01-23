@@ -22,17 +22,22 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
+import no.nav.bidrag.behandling.transformers.behandling.finnes
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erLik
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnEldsteSøktFomDato
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnSøktFomRevurderingSøknad
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.fjernSøknad
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentBidragSakForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.hentForKravhaver
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierGrunnlag
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierInntekt
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierOverBegrunnelseForBehandling
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierOverInntekterForRolleFraBehandling
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierPrivatAvtale
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierSamvær
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.kopierUnderholdskostnad
@@ -265,7 +270,14 @@ class ForholdsmessigFordelingService(
             underholdService,
             virkningstidspunktService,
             behandling.søknadsbarn.map {
-                OpprettRolleDto(Rolletype.BARN, it.personident!!, it.navn, it.fødselsdato, behandlingstema = it.behandlingstema)
+                OpprettRolleDto(
+                    Rolletype.BARN,
+                    it.personident!!,
+                    it.navn,
+                    it.fødselsdato,
+                    behandlingstema =
+                        it.behandlingstema ?: it.stønadstype?.tilBehandlingstema() ?: behandling.stonadstype?.tilBehandlingstema(),
+                )
             },
             emptyList(),
         )
@@ -583,8 +595,7 @@ class ForholdsmessigFordelingService(
                     )
                 val løpendeBidragRolle =
                     relevanteKravhavere.find {
-                        it.kravhaver == nyRolle.ident.verdi &&
-                            it.stønadstype == stønadstypeBeregnet
+                        it.erLik(nyRolle.ident.verdi, stønadstypeBeregnet)
                     }
                 if (eksisterendeRolle == null) {
                     val rolle = nyRolle.toRolle(behandling, stønadstypeBeregnet)
@@ -1111,7 +1122,6 @@ class ForholdsmessigFordelingService(
         relevanteKravhavere: Set<SakKravhaver>,
     ): List<Long> {
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
-        val eksisterendeBMIdenter = behandling.alleBidragsmottakere.map { it.ident }
         val eksisterendeRoller = behandling.roller.map { it.ident }
         val åpneBehandlinger = relevanteKravhavere.flatMap { it.åpneBehandlinger }
         val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr), behandling.finnBeregningsperiode())
@@ -1125,9 +1135,9 @@ class ForholdsmessigFordelingService(
                     behandlesAvBehandling = behandling.id,
                 )
             behandlingOverført.bidragsmottaker?.let { rolle ->
-                val eksisterendeRolle = behandling.roller.find { barn -> barn.ident == rolle.ident }
+                val eksisterendeRolle = behandling.roller.find { barn -> barn.erSammeRolle(rolle) }
                 if (eksisterendeRolle == null) {
-                    val behandlingerRolle = åpneBehandlinger.filter { it.søknadsbarn.any { it.ident == rolle.ident } }
+                    val behandlingerRolle = åpneBehandlinger.filter { it.søknadsbarn.any { it.erSammeRolle(rolle) } }
                     behandling.roller.add(
                         rolle.kopierRolle(behandling, null, åpneBehandlinger = behandlingerRolle),
                     )
@@ -1137,12 +1147,20 @@ class ForholdsmessigFordelingService(
             }
             val bm = behandlingOverført.bidragsmottaker?.ident
             behandlingOverført.søknadsbarn.forEach { rolle ->
-                val eksisterendeRolle = behandling.søknadsbarn.find { barn -> barn.ident == rolle.ident }
+                val eksisterendeRolle = behandling.søknadsbarn.find { barn -> barn.erSammeRolle(rolle.ident!!, rolle.stønadstype) }
                 if (eksisterendeRolle == null) {
                     val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
                     val innkrevesFra = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeFra else null
                     val innkrevesTil = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeTil else null
-                    val behandlingerRolle = åpneBehandlinger.filter { it.søknadsbarn.any { it.ident == rolle.ident } }
+                    val behandlingerRolle =
+                        åpneBehandlinger.filter {
+                            it.søknadsbarn.any {
+                                it.erSammeRolle(
+                                    rolle.ident!!,
+                                    rolle.stønadstype,
+                                )
+                            }
+                        }
                     behandling.roller.add(
                         rolle.kopierRolle(
                             behandling,
@@ -1157,21 +1175,15 @@ class ForholdsmessigFordelingService(
                     eksisterendeRolle.leggTilGebyr(rolle)
                 }
             }
+
             behandlingOverført.samvær.forEach { samværOverført ->
-                if (behandling.samvær.none { s -> s.rolle.ident == samværOverført.rolle.ident }) {
+                if (behandling.samvær.none { s -> s.rolle.erSammeRolle(samværOverført.rolle) }) {
                     kopierSamvær(behandling, samværOverført)
                 }
             }
             behandlingOverført.underholdskostnader.forEach { underholdskostnadOverført ->
                 if (behandling.underholdskostnader.none { u ->
-                        (
-                            !underholdskostnadOverført.gjelderAndreBarn && u.rolle != null &&
-                                u.rolle!!.ident == underholdskostnadOverført.rolle!!.ident
-                        ) ||
-                            (
-                                underholdskostnadOverført.person != null && u.person != null &&
-                                    u.person!!.ident == underholdskostnadOverført.person!!.ident
-                            )
+                        u.tilhørerPerson(underholdskostnadOverført.personIdent!!, underholdskostnadOverført.rolle?.stønadstype)
                     }
                 ) {
                     underholdskostnadOverført.kopierUnderholdskostnad(behandling)
@@ -1194,20 +1206,57 @@ class ForholdsmessigFordelingService(
 
             behandlingOverført.roller.forEach {
                 kopierOverBegrunnelseForBehandling(
-                    it.ident!!,
+                    it,
+                    behandlingOverført,
+                    behandling,
+                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                )
+                kopierOverBegrunnelseForBehandling(
+                    it,
+                    behandlingOverført,
+                    behandling,
+                    NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                )
+                kopierOverBegrunnelseForBehandling(
+                    it,
                     behandlingOverført,
                     behandling,
                     NotatGrunnlag.NotatType.INNTEKT,
                 )
+                if (it.rolletype == Rolletype.BARN) {
+                    kopierOverBegrunnelseForBehandling(
+                        it,
+                        behandlingOverført,
+                        behandling,
+                        NotatGrunnlag.NotatType.PRIVAT_AVTALE,
+                    )
+                }
             }
 
             behandlingOverført.grunnlag
-                .filter { it.rolle.ident != bidragspliktigFnr && behandling.roller.any { r -> r.ident == it.rolle.ident } }
-                .forEach {
+                .filter {
+                    it.rolle.ident != bidragspliktigFnr &&
+                        behandling.roller.any { r -> r.erSammeRolle(it.rolle) }
+                }.forEach {
                     behandling.grunnlag.add(
                         it.kopierGrunnlag(behandling),
                     )
                 }
+            behandlingOverført.privatAvtale.filter { it.rolle != null }.forEach { privatAvtaleOverfort ->
+                kopierPrivatAvtale(behandling, privatAvtaleOverfort)
+            }
+            behandlingOverført.husstandsmedlem.forEach { husstandsmedlemOverfort ->
+                // Hvis rollen har en rolle i behandlingen eller tilhører en rolle i behandlingen så skal det overføres
+                if (husstandsmedlemOverfort.rolle != null || behandling.roller.any { it.ident == husstandsmedlemOverfort.ident }) {
+                    kopierHusstandsmedlem(behandling, husstandsmedlemOverfort)
+                }
+            }
+            kopierOverBegrunnelseForBehandling(
+                behandling.bidragspliktig!!,
+                behandlingOverført,
+                behandling,
+                NotatGrunnlag.NotatType.BOFORHOLD,
+            )
 
             bbmConsumer.lagreBehandlingsid(
                 OppdaterBehandlingsidRequest(behandlingOverført.soknadsid!!, behandlingOverført.id, behandling.id!!),
@@ -1231,8 +1280,7 @@ class ForholdsmessigFordelingService(
         val barnUtenSøknader =
             løpendeBidragssak.filter { ls ->
                 behandling.søknadsbarn.none {
-                    it.ident == ls.kravhaver &&
-                        it.stønadstype == ls.stønadstype
+                    it.erSammeRolle(ls.kravhaver, ls.stønadstype)
                 }
             }
         if (barnUtenSøknader.isEmpty()) return
@@ -1295,7 +1343,11 @@ class ForholdsmessigFordelingService(
                         b.second.any { it == søknad.kravhaver }
                     }?.first
             val skalInnkreves =
-                barnUtenSøknader.find { it.kravhaver == søknad.kravhaver }?.`løperBidragEtterDato`(søktFomDato.toYearMonth()) == true
+                barnUtenSøknader
+                    .hentForKravhaver(
+                        søknad.kravhaver,
+                        søknad.stønadstype,
+                    )?.`løperBidragEtterDato`(søktFomDato.toYearMonth()) == true
             val søknader =
                 setOfNotNull(
                     søknadMedInnkreving,
@@ -1473,7 +1525,7 @@ class ForholdsmessigFordelingService(
             behandling.søknadsbarn.forEach { barn ->
                 val stønadstype = barn.stønadstype ?: behandling.stonadstype
                 val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barn.ident && it.type == stønadstype }
-                val eksisterende = sakKravhaverListe.hentForKravhaver(barn.ident!!)
+                val eksisterende = sakKravhaverListe.hentForKravhaver(barn.ident!!, barn.stønadstype)
                 if (eksisterende != null) {
                     eksisterende.åpneBehandlinger.add(behandling)
                 } else {
@@ -1507,10 +1559,12 @@ class ForholdsmessigFordelingService(
                     .forEach { barnFnr ->
                         val stønadstype = åpenSøknad.behandlingstema.tilStønadstype()
                         val løpendeBidrag =
-                            løpendeBidraggsakerBP.find {
-                                it.kravhaver.verdi == barnFnr.personident && it.type == stønadstype
-                            }
-                        val eksisterende = sakKravhaverListe.hentForKravhaver(barnFnr.personident!!)
+                            løpendeBidraggsakerBP.hentBidragSakForKravhaver(barnFnr.personident!!, stønadstype)
+                        val eksisterende =
+                            sakKravhaverListe.hentForKravhaver(
+                                barnFnr.personident!!,
+                                stønadstype,
+                            )
                         if (eksisterende != null) {
                             eksisterende.åpneSøknader.add(åpenSøknad)
                         } else {
@@ -1533,7 +1587,7 @@ class ForholdsmessigFordelingService(
 
         val løpendeBidragsaker =
             løpendeBidraggsakerBP
-                .filter { lb -> krahaverFraÅpneSaker.none { it.first == lb.kravhaver.verdi && it.second == lb.type } }
+                .filter { lb -> !krahaverFraÅpneSaker.finnes(lb.kravhaver.verdi, lb.type) }
                 .map {
                     SakKravhaver(
                         saksnummer = it.sak.verdi,
