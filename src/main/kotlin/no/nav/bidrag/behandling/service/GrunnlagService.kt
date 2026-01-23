@@ -1427,7 +1427,28 @@ class GrunnlagService(
     private fun foretaNyGrunnlagsinnhenting(
         behandling: Behandling,
         antallMinutter: Long,
-    ): Boolean = false
+    ): Boolean =
+        when {
+            behandling.erVedtakFattet -> {
+                false
+            }
+
+            behandling.grunnlagSistInnhentet == null -> {
+                true
+            }
+
+            // Ikke hent på nytt i testmiljøene da det vil alltid feile i Q1 feks
+            !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled &&
+                behandling.grunnlagsinnhentingFeilet != null &&
+                antallMinutter > 10 -> {
+                LocalDateTime.now().minusMinutes(10) >
+                    behandling.grunnlagSistInnhentet
+            }
+
+            else -> {
+                LocalDateTime.now().minusMinutes(antallMinutter) > behandling.grunnlagSistInnhentet
+            }
+        }
 
     private fun lagreGrunnlag(
         behandling: Behandling,
@@ -1536,8 +1557,10 @@ class GrunnlagService(
                 }
             val innhentingBmBoforholdUtenFeil =
                 bmBoforholdFeil == null || nyesteGrunnlagBM == null ||
-                    HentGrunnlagFeiltype.FUNKSJONELL_FEIL == bmBoforholdFeil.feiltype &&
-                    !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
+                    (
+                        HentGrunnlagFeiltype.FUNKSJONELL_FEIL == bmBoforholdFeil.feiltype &&
+                            !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
+                    )
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBmBoforholdUtenFeil &&
                 grunnlagBoforholdTilBMInnhentesForRolle?.ident == gjelder.verdi
             ) {

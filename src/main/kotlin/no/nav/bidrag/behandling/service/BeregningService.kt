@@ -188,7 +188,8 @@ class BeregningService(
         }
 
         val skalBeregneForFFV2 =
-            UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
+            (!behandling.erKlageEllerOmgjøring || UnleashFeatures.BIDRAG_BEREGNING_V2_KLAGE.isEnabled) &&
+                UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
                 (behandling.søknadsbarn.size > 1 || UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled)
 
         return if (behandling.erInnkreving) {

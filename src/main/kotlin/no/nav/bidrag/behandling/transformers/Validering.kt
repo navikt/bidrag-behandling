@@ -365,12 +365,12 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
             }
         }
     } else {
-        if (behandling.omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
-            avslag == null &&
-            virkningstidspunkt?.isAfter(behandling.omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
-        ) {
-            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
-        }
+//        if (behandling.omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
+//            avslag == null &&
+//            virkningstidspunkt?.isAfter(behandling.omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
+//        ) {
+//            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+//        }
 
         if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
             feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")

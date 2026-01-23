@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -1224,6 +1225,8 @@ private fun BaseGrunnlag.tilInntekt(
                     null
                 },
             ident = gjelder.personIdent!!,
+            rolle = behandling.finnRolle(gjelder.personIdent!!),
+            gjelderBarnRolle = gjelderBarn?.let { behandling.finnRolle(it.personIdent!!) },
             kilde = if (inntektPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
             behandling = behandling,
         )
