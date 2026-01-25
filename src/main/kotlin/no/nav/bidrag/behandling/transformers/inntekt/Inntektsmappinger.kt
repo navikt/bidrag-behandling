@@ -77,9 +77,9 @@ fun Inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør(): Boolea
     opprinneligFom?.let { fom ->
         if (beregnTilDato != null && fom > beregnTilDato) return@let false
         (opprinneligTom ?: LocalDate.MAX).let { tom ->
-            behandling?.virkningstidspunktEllerSøktFomDato?.let { virkningstidspunkt ->
+            behandling?.eldsteVirkningstidspunkt?.let { virkningstidspunkt ->
                 val virkningstidspunktEllerStartenAvNesteMåned =
-                    maxOf(YearMonth.now().plusMonths(1).atDay(1), virkningstidspunkt)
+                    maxOf(YearMonth.now().atDay(1), virkningstidspunkt)
                 if (fom.isAfter(virkningstidspunktEllerStartenAvNesteMåned) &&
                     tom.isAfter(virkningstidspunktEllerStartenAvNesteMåned)
                 ) {
