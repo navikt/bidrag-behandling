@@ -1324,6 +1324,8 @@ class BehandlingTilVedtakMapping(
                     (skyldner == null || it.skyldner == skyldner)
             }!!
         engangsbeløp.referanse
+    } else if (type == Engangsbeløptype.DIREKTE_OPPGJØR) {
+        opprettUnikReferanse(type.name + kravhaver.let { "_${it.verdi}" } + (skyldner?.let { "_${it.verdi}" } ?: ""))
     } else {
         opprettUnikReferanse(type.name + (skyldner?.let { "_${it.verdi}" } ?: ""))
     }

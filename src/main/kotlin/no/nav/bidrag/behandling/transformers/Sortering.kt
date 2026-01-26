@@ -111,7 +111,7 @@ fun Inntekt.erLigningsinntektHistorisk(inntekter: Collection<Inntekt>): Boolean 
             ?.year
             ?: return false
     val erHistorisk = ligningsinntekter.contains(type) && opprinneligFom?.year != sisteLigningsår
-    return erHistorisk || datoFom != null && datoFom!! < behandling!!.virkningstidspunktEllerSøktFomDato
+    return erHistorisk || (datoFom != null && datoFom!! < behandling!!.virkningstidspunktEllerSøktFomDato)
 }
 
 fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
@@ -121,11 +121,8 @@ fun Collection<Inntekt>.filtrerUtHistoriskeInntekter() =
 
 fun List<Inntekt>.ekskluderYtelserFørVirkningstidspunkt(eksluderYtelserFørVirkningstidspunkt: Boolean = true) =
     filter {
-        if (eksluderYtelserFørVirkningstidspunkt &&
-            årsinntekterYtelser.contains(it.type) ||
-            eksplisitteYtelser.contains(
-                it.type,
-            )
+        if (eksluderYtelserFørVirkningstidspunkt && !it.taMed &&
+            (årsinntekterYtelser.contains(it.type) || eksplisitteYtelser.contains(it.type))
         ) {
 //            val periode = it.opprinneligPeriode ?: return@filter true
 //            val virkningstidspunkt =
