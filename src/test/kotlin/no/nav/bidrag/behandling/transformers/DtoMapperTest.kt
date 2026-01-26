@@ -197,7 +197,7 @@ class DtoMapperTest : TestContainerRunner() {
                         testdataBarn1.ident == it.ident
                     }?.perioder
                     ?.maxBy { it.datoFom!! }!!
-                    .datoFom shouldBe behandling.virkningstidspunktEllerSøktFomDato
+                    .datoFom shouldBe behandling.eldsteVirkningstidspunkt
                 resultat.husstandsmedlem
                     .find {
                         testdataBarn1.ident == it.ident
