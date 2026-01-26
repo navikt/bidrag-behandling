@@ -50,6 +50,7 @@ import no.nav.bidrag.beregn.core.bo.SjablonPeriode
 import no.nav.bidrag.beregn.core.dto.SjablonPeriodeCore
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
+import no.nav.bidrag.beregn.core.exception.BidragsberegningFeiletTekniskException
 import no.nav.bidrag.beregn.core.exception.IkkeFullBidragsevneOgUfullstendigeGrunnlagException
 import no.nav.bidrag.beregn.core.service.mapper.CoreMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
@@ -512,6 +513,12 @@ class BeregningService(
                 feiltype = UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF,
                 resultat = e.data,
             )
+        } catch (e: BidragsberegningFeiletTekniskException) {
+            ResultatUtførBidragsberegning(
+                feilmelding = e.melding,
+                feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK,
+                resultat = e.data,
+            )
         }
 
     fun beregneBarnebidragV1(
@@ -693,6 +700,7 @@ class BeregningService(
                         UgyldigBeregningDto(
                             tittel = "Ugyldig perioder",
                             vedtaksliste = feil.vedtak,
+                            feiltype = UgyldigBeregningDto.UgyldigBeregningType.`OMGJØRING_ETTERFØLGENDE_VEDTAK`,
                             begrunnelse =
                                 "En eller flere etterfølgende vedtak har virkningstidpunkt " +
                                     "som starter før beregningsperioden ${søknadsbarn.virkningstidspunkt.tilVisningsnavn()} - ${beregnTilDato.tilVisningsnavn()}",
@@ -729,6 +737,7 @@ class BeregningService(
                         UgyldigBeregningDto(
                             tittel = "Ugyldig beregning",
                             begrunnelse = feil.message ?: "Ukjent feil",
+                            feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK,
                         ),
                     barn = søknadsbarn.mapTilResultatBarn(),
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,

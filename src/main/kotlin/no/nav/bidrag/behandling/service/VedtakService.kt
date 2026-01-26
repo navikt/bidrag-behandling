@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetVedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.OpprettParagraf35C
+import no.nav.bidrag.behandling.dto.internal.vedtak.BeregningVedtakResultat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
@@ -331,15 +332,16 @@ class VedtakService(
     fun fatteVedtak(
         behandlingId: Long,
         request: FatteVedtakRequestDto? = null,
-    ): Int {
+        simuler: Boolean = false,
+    ): BeregningVedtakResultat {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
         behandling.validerKanFatteVedtak()
         return when (behandling.tilType()) {
-            TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling, request)
+            TypeBehandling.FORSKUDD -> fatteVedtakForskudd(behandling, request, simuler)
 
-            TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling, request)
+            TypeBehandling.SÆRBIDRAG -> fatteVedtakSærbidrag(behandling, request, simuler)
 
-            TypeBehandling.BIDRAG -> fatteVedtakBidrag(behandling, request)
+            TypeBehandling.BIDRAG -> fatteVedtakBidrag(behandling, request, simuler)
 
             else -> throw HttpClientErrorException(
                 HttpStatus.BAD_REQUEST,
@@ -351,7 +353,8 @@ class VedtakService(
     fun fatteVedtakSærbidrag(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): Int {
+        simuler: Boolean = false,
+    ): BeregningVedtakResultat {
         val behandlingId = behandling.id!!
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run {
@@ -370,24 +373,28 @@ class VedtakService(
                 }
             }
         vedtakRequest.validerGrunnlagsreferanser()
-        secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $vedtakRequest" }
-        val response = fatteVedtak(vedtakRequest)
-        behandlingService.oppdaterVedtakFattetStatus(
-            behandlingId,
-            vedtaksid = response.vedtaksid,
-            request?.enhet ?: behandling.behandlerEnhet,
-        )
-        opprettNotat(behandling)
-        LOGGER.info {
-            "Fattet vedtak for særbidrag behandling $behandlingId med vedtaksid ${response.vedtaksid}"
+        secureLogger.info { "Fatter vedtak for særbidrag behandling $behandlingId med forespørsel $vedtakRequest, simuler=$simuler" }
+        val response = fatteVedtak(vedtakRequest, simuler)
+        if (!simuler) {
+            behandlingService.oppdaterVedtakFattetStatus(
+                behandlingId,
+                vedtaksid = response.vedtaksid,
+                request?.enhet ?: behandling.behandlerEnhet,
+            )
+            opprettNotat(behandling)
+            LOGGER.info {
+                "Fattet vedtak for særbidrag behandling $behandlingId med vedtaksid ${response.vedtaksid}"
+            }
         }
-        return response.vedtaksid
+
+        return BeregningVedtakResultat(mutableListOf(response.vedtaksid to vedtakRequest), response.vedtaksid)
     }
 
     fun fatteVedtakForskudd(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): Int {
+        simuler: Boolean = false,
+    ): BeregningVedtakResultat {
         validering.run { behandling.validerForBeregningForskudd() }
 
         val fatteVedtakRequest =
@@ -400,27 +407,31 @@ class VedtakService(
             }
 
         fatteVedtakRequest.validerGrunnlagsreferanser()
-        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $fatteVedtakRequest" }
-        val response = fatteVedtak(fatteVedtakRequest)
-        behandlingService.oppdaterVedtakFattetStatus(
-            behandling.id!!,
-            vedtaksid = response.vedtaksid,
-            request?.enhet ?: behandling.behandlerEnhet,
-        )
-        opprettNotat(behandling)
-        LOGGER.info {
-            "Fattet vedtak for behandling ${behandling.id} med ${
-                behandling.årsak?.let { "årsakstype $it" }
-                    ?: "avslagstype ${behandling.avslag}"
-            } med vedtaksid ${response.vedtaksid}"
+        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $fatteVedtakRequest, simulering=$simuler" }
+        val response = fatteVedtak(fatteVedtakRequest, simuler)
+        if (!simuler) {
+            behandlingService.oppdaterVedtakFattetStatus(
+                behandling.id!!,
+                vedtaksid = response.vedtaksid,
+                request?.enhet ?: behandling.behandlerEnhet,
+            )
+            opprettNotat(behandling)
+            LOGGER.info {
+                "Fattet vedtak for behandling ${behandling.id} med ${
+                    behandling.årsak?.let { "årsakstype $it" }
+                        ?: "avslagstype ${behandling.avslag}"
+                } med vedtaksid ${response.vedtaksid}"
+            }
         }
-        return response.vedtaksid
+
+        return BeregningVedtakResultat(mutableListOf(response.vedtaksid to fatteVedtakRequest), response.vedtaksid)
     }
 
     fun fatteVedtakBidragOmgjøring(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): Int {
+        simuler: Boolean = false,
+    ): BeregningVedtakResultat {
         if (!UnleashFeatures.FATTE_VEDTAK.isEnabled) {
             ugyldigForespørsel("Kan ikke fatte vedtak for klage")
         }
@@ -430,25 +441,28 @@ class VedtakService(
         val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling)
         beregning.validerManuelAldersjustering(behandling)
 
+        val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
+
         val requestDelvedtak =
             beregning.copy(
                 delvedtak =
-                    behandlingTilVedtakMapping.opprettVedtakRequestDelvedtak(
+                    behandlingTilVedtakMapping.opprettVedtakRequestDelvedtakV2(
                         behandling,
                         beregning.sak,
                         request?.enhet,
-                        beregning.beregning.first(),
+                        beregning.beregning,
                         beregning.klagevedtakErEnesteVedtak,
                     ),
             )
 
-        val response =
+        val endeligVedtakOrkestrering =
             if (beregning.klagevedtakErEnesteVedtak) {
                 val klagevedtak = requestDelvedtak.delvedtak.find { it.omgjøringsvedtak }!!
                 secureLogger.info {
                     "Klagevedtak er eneste vedtak i orkestrering. Fatter bare vedtak for klagevedtak ${klagevedtak.request}"
                 }
-                val response = fatteVedtak(klagevedtak.request!!)
+                val response = fatteVedtak(klagevedtak.request!!, simuler)
+                vedtakRequestDtos.add(response.vedtaksid to klagevedtak.request)
                 response to klagevedtak.request
             } else {
                 var klagevedtakId: Int? = null
@@ -466,17 +480,21 @@ class VedtakService(
 
                         delvedtak.request.validerGrunnlagsreferanser()
                         secureLogger.info { "Fatter vedtak for delvedtak ${opprettRequest.type} med forespørsel ${delvedtak.request}" }
-                        val response = fatteVedtak(opprettRequest)
-                        behandlingService.oppdaterDelvedtakFattetStatus(
-                            behandlingsid = behandling.id!!,
-                            fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-                            resultat =
-                                FattetVedtak(
-                                    vedtaksid = response.vedtaksid,
-                                    vedtakstype = delvedtak.request.type,
-                                    referanse = delvedtak.request.unikReferanse ?: "ukjent",
-                                ),
-                        )
+                        val response = fatteVedtak(opprettRequest, simuler)
+                        vedtakRequestDtos.add(response.vedtaksid to opprettRequest)
+                        if (!simuler) {
+                            behandlingService.oppdaterDelvedtakFattetStatus(
+                                behandlingsid = behandling.id!!,
+                                fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                                resultat =
+                                    FattetVedtak(
+                                        vedtaksid = response.vedtaksid,
+                                        vedtakstype = delvedtak.request.type,
+                                        referanse = delvedtak.request.unikReferanse ?: "ukjent",
+                                    ),
+                            )
+                        }
+
                         if (delvedtak.omgjøringsvedtak) {
                             klagevedtakId = response.vedtaksid
                         }
@@ -493,35 +511,50 @@ class VedtakService(
                     )
 
                 requestEndeligVedtak.validerGrunnlagsreferanser()
-                val response = fatteVedtak(requestEndeligVedtak)
+                val response = fatteVedtak(requestEndeligVedtak, simuler)
                 secureLogger.info { "Fattet endelig vedtak med forespørsel $requestEndeligVedtak og vedtaksid ${response.vedtaksid}" }
+                vedtakRequestDtos.add(response.vedtaksid to requestEndeligVedtak)
                 response to requestEndeligVedtak
             }
 
         if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-            fatteInnkrevingsgrunnlagOmgjøring(behandling, request?.enhet, response.first.vedtaksid, response.second)
+            fatteInnkrevingsgrunnlagOmgjøring(
+                behandling,
+                request?.enhet,
+                endeligVedtakOrkestrering.first.vedtaksid,
+                endeligVedtakOrkestrering.second,
+                vedtakRequestDtos,
+                simuler,
+            )
         }
-        behandlingService.oppdaterVedtakFattetStatus(
-            behandling.id!!,
-            vedtaksid = response.first.vedtaksid,
-            request?.enhet ?: behandling.behandlerEnhet,
+        if (!simuler) {
+            behandlingService.oppdaterVedtakFattetStatus(
+                behandling.id!!,
+                vedtaksid = endeligVedtakOrkestrering.first.vedtaksid,
+                request?.enhet ?: behandling.behandlerEnhet,
+            )
+
+            opprettNotat(behandling)
+
+            LOGGER.info {
+                "Fattet vedtak for behandling ${behandling.id} med ${
+                    behandling.årsak?.let { "årsakstype $it" }
+                        ?: "avslagstype ${behandling.avslag}"
+                } med vedtaksid ${endeligVedtakOrkestrering.first.vedtaksid}"
+            }
+        }
+
+        return BeregningVedtakResultat(
+            requests = vedtakRequestDtos,
+            vedtaksidHovedVedtak = endeligVedtakOrkestrering.first.vedtaksid,
         )
-
-        opprettNotat(behandling)
-
-        LOGGER.info {
-            "Fattet vedtak for behandling ${behandling.id} med ${
-                behandling.årsak?.let { "årsakstype $it" }
-                    ?: "avslagstype ${behandling.avslag}"
-            } med vedtaksid ${response.first.vedtaksid}"
-        }
-        return response.first.vedtaksid
     }
 
     private fun fatteInnkreving(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): Int {
+        simuler: Boolean = false,
+    ): BeregningVedtakResultat {
         if (!UnleashFeatures.FATTE_VEDTAK.isEnabled) {
             ugyldigForespørsel("Kan ikke fatte vedtak for innkreving")
         }
@@ -535,24 +568,31 @@ class VedtakService(
             )
 
         innkrevingRequest.validerGrunnlagsreferanser()
-        val responseInnkreving = fatteVedtak(innkrevingRequest)
-        secureLogger.info {
-            "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
+        val responseInnkreving = fatteVedtak(innkrevingRequest, simuler)
+
+        if (!simuler) {
+            secureLogger.info {
+                "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
+            }
+            behandlingService.oppdaterVedtakFattetStatus(
+                behandlingsid = behandling.id!!,
+                vedtaksid = responseInnkreving.vedtaksid,
+                fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                unikreferanse = innkrevingRequest.unikReferanse,
+            )
+            opprettNotat(behandling)
+            LOGGER.info {
+                "Fattet vedtak for behandling ${behandling.id} med ${
+                    behandling.årsak?.let { "årsakstype $it" }
+                        ?: "avslagstype ${behandling.avslag}"
+                } med vedtaksid ${responseInnkreving.vedtaksid}"
+            }
         }
-        behandlingService.oppdaterVedtakFattetStatus(
-            behandlingsid = behandling.id!!,
-            vedtaksid = responseInnkreving.vedtaksid,
-            fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-            unikreferanse = innkrevingRequest.unikReferanse,
+
+        return BeregningVedtakResultat(
+            requests = mutableListOf(responseInnkreving.vedtaksid to innkrevingRequest),
+            vedtaksidHovedVedtak = responseInnkreving.vedtaksid,
         )
-        opprettNotat(behandling)
-        LOGGER.info {
-            "Fattet vedtak for behandling ${behandling.id} med ${
-                behandling.årsak?.let { "årsakstype $it" }
-                    ?: "avslagstype ${behandling.avslag}"
-            } med vedtaksid ${responseInnkreving.vedtaksid}"
-        }
-        return responseInnkreving.vedtaksid
     }
 
     private fun fatteInnkrevingsgrunnlagOmgjøring(
@@ -560,6 +600,8 @@ class VedtakService(
         enhet: String?,
         vedtaksidOrkestrering: Int,
         vedtak: OpprettVedtakRequestDto,
+        vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>>,
+        simuler: Boolean = false,
     ) {
         val erUtenInnkreving = behandling.søknadsbarn.all { behandling.finnInnkrevesFraDato(it) == null }
         if (erUtenInnkreving) {
@@ -575,20 +617,23 @@ class VedtakService(
                 vedtak,
             )
         innkrevingRequest.validerGrunnlagsreferanser()
-        val responseInnkreving = fatteVedtak(innkrevingRequest)
-        secureLogger.info {
-            "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
+        val responseInnkreving = fatteVedtak(innkrevingRequest, simuler)
+        vedtakRequestDtos.add(responseInnkreving.vedtaksid to innkrevingRequest)
+        if (!simuler) {
+            secureLogger.info {
+                "Fattet innkrevingsgrunnlag for vedtak med forespørsel $innkrevingRequest og vedtaksid ${responseInnkreving.vedtaksid}"
+            }
+            behandlingService.oppdaterDelvedtakFattetStatus(
+                behandlingsid = behandling.id!!,
+                fattetAvEnhet = enhet ?: behandling.behandlerEnhet,
+                resultat =
+                    FattetVedtak(
+                        vedtaksid = responseInnkreving.vedtaksid,
+                        vedtakstype = innkrevingRequest.type,
+                        referanse = innkrevingRequest.unikReferanse ?: "ukjent",
+                    ),
+            )
         }
-        behandlingService.oppdaterDelvedtakFattetStatus(
-            behandlingsid = behandling.id!!,
-            fattetAvEnhet = enhet ?: behandling.behandlerEnhet,
-            resultat =
-                FattetVedtak(
-                    vedtaksid = responseInnkreving.vedtaksid,
-                    vedtakstype = innkrevingRequest.type,
-                    referanse = innkrevingRequest.unikReferanse ?: "ukjent",
-                ),
-        )
     }
 
     fun ResultatadBeregningOrkestrering.validerManuelAldersjustering(behandling: Behandling) {
@@ -624,15 +669,17 @@ class VedtakService(
     fun fatteVedtakBidrag(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): Int {
-        if (behandling.erKlageEllerOmgjøring) return fatteVedtakBidragOmgjøring(behandling, request)
-        if (behandling.erInnkreving) return fatteInnkreving(behandling, request)
+        simuler: Boolean = false,
+    ): BeregningVedtakResultat {
+        if (behandling.erKlageEllerOmgjøring) return fatteVedtakBidragOmgjøring(behandling, request, simuler)
+        if (behandling.erInnkreving) return fatteInnkreving(behandling, request, simuler)
         if (!behandling.kanFatteVedtak()) {
             ugyldigForespørsel("Kan ikke fatte vedtak for behandling ${behandling.id}")
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
 
         val vedtakRequester = opprettFatteVedtakRequestForBidrag(behandling, request)
+        val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
 
         val vedtakResponser =
             vedtakRequester.associate { vedtakRequest ->
@@ -643,27 +690,30 @@ class VedtakService(
                         .filter {
                             it.kilde == BehandlingsrefKilde.BISYS_SØKNAD
                         }.map { it.referanse.toLong() }
-                val response = fatteVedtak(vedtakRequest)
-                behandlingService.oppdaterDelvedtakFattetStatus(
-                    behandlingsid = behandling.id!!,
-                    fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-                    resultat =
-                        FattetVedtak(
-                            vedtaksid = response.vedtaksid,
-                            vedtakstype = vedtakRequest.type,
-                            referanse = vedtakRequest.unikReferanse ?: "ukjent",
-                        ),
-                )
-                val aldersjusteringBeregnet =
-                    vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
-                        vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
-                if (aldersjusteringBeregnet) {
-                    forsendelseService.opprettForsendelseForAldersjustering(behandling)
-                } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
-                    opprettNotat(behandling)
+                val response = fatteVedtak(vedtakRequest, simuler)
+                vedtakRequestDtos.add(response.vedtaksid to vedtakRequest)
+                if (!simuler) {
+                    behandlingService.oppdaterDelvedtakFattetStatus(
+                        behandlingsid = behandling.id!!,
+                        fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                        resultat =
+                            FattetVedtak(
+                                vedtaksid = response.vedtaksid,
+                                vedtakstype = vedtakRequest.type,
+                                referanse = vedtakRequest.unikReferanse ?: "ukjent",
+                            ),
+                    )
+                    val aldersjusteringBeregnet =
+                        vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
+                            vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
+                    if (aldersjusteringBeregnet) {
+                        forsendelseService.opprettForsendelseForAldersjustering(behandling)
+                    } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
+                        opprettNotat(behandling)
+                    }
                 }
 
-                if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING) {
+                if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING && !simuler) {
                     try {
                         // Venter i 2 sekunder for å sikre at vedtaksbro har lest inn vedtaket og har oppdatert saksloggen
                         Thread.sleep(2000)
@@ -685,13 +735,15 @@ class VedtakService(
         // Hent hoved vedtaksiden, dette skal fjernes etterhvert når det migreres over til ny struktur
         val vedtaksid =
             vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.firstOrNull() ?: vedtakResponser.values.first()
-        behandlingService.oppdaterVedtakFattetStatus(
-            behandling.id!!,
-            vedtaksid = vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.first(),
-            request?.enhet ?: behandling.behandlerEnhet,
-        )
+        if (!simuler) {
+            behandlingService.oppdaterVedtakFattetStatus(
+                behandling.id!!,
+                vedtaksid = vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.first(),
+                request?.enhet ?: behandling.behandlerEnhet,
+            )
+        }
 
-        return vedtaksid
+        return BeregningVedtakResultat(vedtakRequestDtos, vedtaksid)
     }
 
     fun opprettFatteVedtakRequestForBidrag(
@@ -766,7 +818,16 @@ class VedtakService(
             "Vedtak er allerede fattet for behandling $id med vedtakId $vedtaksid",
         )
 
-    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakConsumer.fatteVedtak(request)
+    private fun fatteVedtak(
+        request: OpprettVedtakRequestDto,
+        simuler: Boolean = false,
+    ): OpprettVedtakResponseDto =
+        if (simuler) {
+            OpprettVedtakResponseDto(opprettSimulerVedtaksid(), emptyList())
+        } else {
+            vedtakConsumer!!.fatteVedtak(request)
+//            vedtakLocalConsumer!!.fatteVedtak(request)
+        }
 
-//    private fun fatteVedtak(request: OpprettVedtakRequestDto): OpprettVedtakResponseDto = vedtakLocalConsumer!!.fatteVedtak(request)
+    private fun opprettSimulerVedtaksid() = Math.random().times(100000).toInt()
 }
