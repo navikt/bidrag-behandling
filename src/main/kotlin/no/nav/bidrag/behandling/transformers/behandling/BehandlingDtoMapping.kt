@@ -346,7 +346,14 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
                 it.saksnummer.verdi != saksnummer &&
                     it.bidragspliktig?.fødselsnummer?.verdi == bidragspliktig!!.ident
             }
-        if (sakerBp.isNotEmpty()) {
+        val søknadsbarnIdenter = søknadsbarn.map { it.ident }
+        // SJekk at andre saker ikke er opprettet med samme barn som i søknaden. Tilfeller hvor sak ble opprettet med feil BM feks
+        val andreBarnISaker =
+            sakerBp
+                .flatMap { it.barn.mapNotNull { it.fødselsnummer?.verdi } }
+                .filter { !søknadsbarnIdenter.contains(it) }
+                .distinct()
+        if (sakerBp.isNotEmpty() && andreBarnISaker.isNotEmpty()) {
             return "Kan ikke fatte vedtak når BP har flere saker"
         }
         val gjeldendeSak = hentSak(saksnummer) ?: return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
