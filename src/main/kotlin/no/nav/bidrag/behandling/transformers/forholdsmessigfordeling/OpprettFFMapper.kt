@@ -145,7 +145,7 @@ fun opprettRolle(
     medInnkreving: Boolean? = null,
     opphørsdato: YearMonth? = null,
 ): Rolle {
-    behandling.roller.find { it.ident == fødselsnummer && it.stønadstype == stønadstype }?.let {
+    behandling.roller.find { it.erSammeRolle(fødselsnummer, stønadstype) }?.let {
         if (harGebyrSøknad != null) {
             val gebyr = it.hentEllerOpprettGebyr()
             it.harGebyrsøknad = true
