@@ -329,6 +329,7 @@ class GrunnlagService(
                 }
                 aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
                 aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+                aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
                 aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
                 behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
                 behandling.roller.forEach { rolle ->
@@ -1816,7 +1817,7 @@ class GrunnlagService(
     fun aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling: Behandling) {
         if (!behandling.skalInnhentesForBehandling(Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN)) return
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
-        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentSisteAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
 
         val endringerSomMåBekreftes = mapper.endringerIAndreVoksneIBpsHusstand(ikkeAktiveGrunnlag, aktiveGrunnlag)
@@ -1841,7 +1842,7 @@ class GrunnlagService(
     fun aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling: Behandling) {
         val rolleInhentetFor = Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN.innhentesForRolle(behandling) ?: return
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
-        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentSisteAktiv()
 
         if (ikkeAktiveGrunnlag.isEmpty()) return
         val endringerSomMåBekreftes =
@@ -1900,7 +1901,7 @@ class GrunnlagService(
 
         val rolleInhentetFor = behandling.bidragsmottaker!!
         val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleIkkeAktiv()
-        val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+        val aktiveGrunnlag = behandling.grunnlag.hentSisteAktiv()
         if (ikkeAktiveGrunnlag.isEmpty()) return
         val endringerSomMåBekreftes =
             ikkeAktiveGrunnlag.hentEndringerSivilstand(aktiveGrunnlag, behandling.eldsteVirkningstidspunkt)
