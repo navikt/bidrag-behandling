@@ -56,6 +56,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -1257,6 +1258,13 @@ private fun GrunnlagDto.tilRolle(
 ): Rolle {
     val virkningstidspunktGrunnlag = grunnlagsliste.hentVirkningstidspunkt(referanse)
 
+    val søknader =
+        if (type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG) {
+            grunnlagsliste.hentSøknader()
+        } else {
+            grunnlagsliste.hentSøknader(referanse).ifEmpty { grunnlagsliste.hentSøknader() }
+        }
+    val søknadGrunnlag = søknader.filter { it.søknadsid != null }.maxByOrNull { it.søknadsid!! }
     val aldersjustering = grunnlagsliste.hentAldersjusteringDetaljerForBarn(referanse)
     return Rolle(
         behandling,
@@ -1292,7 +1300,9 @@ private fun GrunnlagDto.tilRolle(
         avslag = virkningstidspunktGrunnlag?.avslag,
         opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
         fødselsdato = personObjekt.fødselsdato,
-        behandlingstema = behandling.behandlingstema,
+        innkrevingstype = stønadsendring?.innkreving ?: behandling.innkrevingstype,
+        stønadstype = stønadsendring?.type ?: søknadGrunnlag?.behandlingstema?.tilStønadstype() ?: behandling.stonadstype,
+        behandlingstema = søknadGrunnlag?.behandlingstema ?: stønadsendring?.type?.tilBehandlingstema() ?: behandling.behandlingstema,
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         forholdsmessigFordeling =
             if (grunnlagsliste.harOpprettetForholdsmessigFordeling()) {

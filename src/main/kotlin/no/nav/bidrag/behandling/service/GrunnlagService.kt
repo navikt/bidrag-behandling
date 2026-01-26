@@ -679,7 +679,12 @@ class GrunnlagService(
                     vedtakService!!
                         .hentAlleVedtakForStønad(
                             behandling.tilStønadsid(sb),
-                            sb.opprinneligVirkningstidspunkt!!.toYearMonth(),
+                            if (sb.erRevurderingsbarn) {
+                                sb.virkningstidspunktRolle.toYearMonth()
+                            } else {
+                                sb.opprinneligVirkningstidspunkt!!
+                                    .toYearMonth()
+                            },
                             behandling.omgjøringsdetaljer?.opprinneligVedtakId,
                         ).filter {
                             opprinneligVedtakstidspunkt == null ||

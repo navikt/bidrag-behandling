@@ -1545,6 +1545,7 @@ class ForholdsmessigFordelingService(
         }
 
         åpneSøknader
+            .filter { it.behandlingsid != behandling.id }
             .filter { søknad ->
                 søknad.behandlingsid == null ||
                     (
