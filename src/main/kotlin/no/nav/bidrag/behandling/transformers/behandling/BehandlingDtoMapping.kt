@@ -73,6 +73,8 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -475,6 +477,12 @@ fun Rolle.tilDto() =
         stønadstype = if (rolletype == Rolletype.BARN) stønadstype ?: behandling.stonadstype else null,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
         beregnFraDato = if (rolletype == Rolletype.BARN) finnBeregnFra() else null,
+        beregnTilDato =
+            if (rolletype == Rolletype.BARN) {
+                behandling.finnBeregnTilDatoBehandling(this).toYearMonth()
+            } else {
+                behandling.finnBeregnTilDato().toYearMonth()
+            },
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
