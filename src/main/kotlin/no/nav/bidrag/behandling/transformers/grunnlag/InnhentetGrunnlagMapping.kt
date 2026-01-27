@@ -378,7 +378,11 @@ private fun korrigerPersonReferanser(
     val datePart = parts.last()
     if (existingPerson != null && (datePart.length != 8 || !datePart.all { it.isDigit() })) return oldRef
     // Find the matching person in personobjekter by referanse prefix
-    val correctPerson = personobjekter.find { it.referanse.startsWith(personRef) }
+    val correctPerson =
+        personobjekter.find {
+            it.referanse.startsWith(personRef) ||
+                (type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG.name && it.type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG)
+        }
     // Return the correct referanse or fallback to oldRef if not found
     return correctPerson?.referanse ?: oldRef
 }
