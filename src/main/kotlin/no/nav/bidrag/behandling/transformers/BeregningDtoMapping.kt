@@ -358,7 +358,14 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                 val delvedtakListe = opprettDelvedtak(resultat)
                 val endeligVedtak = delvedtakListe.find { it.endeligVedtak }
                 val grunnlagslisteDelvedtak =
-                    resultat.resultatVedtak?.resultatVedtakListe?.flatMap { it.resultat.grunnlagListe } ?: emptyList()
+                    resultat.resultatVedtak
+                        ?.resultatVedtakListe
+                        ?.flatMap {
+                            it.resultat.grunnlagListe
+                                .toSet()
+                                .toList()
+                        }?.toSet()
+                        ?.toList() ?: emptyList()
                 val grunnlagsListe =
                     (resultat.resultat.grunnlagListe.toSet() + grunnlagslisteDelvedtak).toList()
                 val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag()
@@ -426,8 +433,11 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
 private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<DelvedtakDto> =
     resultat.resultatVedtak?.resultatVedtakListe?.map { rv ->
         val erEndeligVedtak = !rv.delvedtak && !rv.omgjøringsvedtak
-        val grunnlagslisteRV = rv.resultat.grunnlagListe
-        val aldersjusteringDetaljer = rv.resultat.grunnlagListe.finnAldersjusteringDetaljerGrunnlag()
+        val grunnlagslisteRV =
+            rv.resultat.grunnlagListe
+                .toSet()
+                .toList()
+        val aldersjusteringDetaljer = grunnlagslisteRV.finnAldersjusteringDetaljerGrunnlag()
         val resultatFraVedtak =
             if (rv.delvedtak) {
                 grunnlagslisteRV.finnResultatFraAnnenVedtak(
