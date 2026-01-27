@@ -332,6 +332,10 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return "Kan ikke fatte vedtak for bidrag med flere barn"
     }
 
+    if (søknadsbarn.size > 1 && erKlageEllerOmgjøring && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_OMGJØRING.isEnabled) {
+        return "Kan ikke fatte omgjøring/klagevedtak for bidrag med flere barn"
+    }
+
     val stønaderBp =
         hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
             ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
