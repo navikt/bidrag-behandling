@@ -17,5 +17,6 @@ data class RolleDto(
     val stønadstype: Stønadstype?,
     val saksnummer: String,
     val beregnFraDato: YearMonth? = null,
+    val beregnTilDato: YearMonth? = null,
     val bidragsmottaker: String? = null,
 )
