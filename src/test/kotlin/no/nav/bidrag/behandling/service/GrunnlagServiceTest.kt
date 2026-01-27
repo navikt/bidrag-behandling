@@ -2311,13 +2311,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal aktivere grunnlag av type inntekt for bp i behandling av bidrag`() {
                 // gitt
-                val behandling =
+                var behandling =
                     oppretteTestbehandling(
                         false,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
-                testdataManager.lagreBehandlingNewTransaction(behandling)
+                behandling = testdataManager.lagreBehandling(behandling)
 
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
                 stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
@@ -2346,7 +2346,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         Personident(behandling.bidragspliktig?.ident!!),
                         Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                     )
-
                 // hvis
                 grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
 

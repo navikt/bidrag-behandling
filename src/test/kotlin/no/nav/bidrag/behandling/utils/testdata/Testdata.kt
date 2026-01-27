@@ -301,6 +301,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        rolle = data.tilRolle(behandling),
         id = if (medId) 1 else null,
     ),
     Inntekt(
@@ -312,6 +313,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        rolle = data.tilRolle(behandling),
         id = if (medId) 2 else null,
     ),
     Inntekt(
@@ -323,6 +325,7 @@ fun opprettInntekter(
         Kilde.MANUELL,
         true,
         behandling = behandling,
+        rolle = data.tilRolle(behandling),
         id = if (medId) 3 else null,
     ),
 )
