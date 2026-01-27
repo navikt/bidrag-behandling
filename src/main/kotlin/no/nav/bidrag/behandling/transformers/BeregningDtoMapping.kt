@@ -356,7 +356,6 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
         perioderSlåttUtTilFF = grunnlagslisteList.perioderSlåttUtTilFF(),
         resultatBarn =
             resultatBarn
-                .sortedBy { it.barn.fødselsdato }
                 .parallelStream()
                 .map { resultat ->
                     val delvedtakListe = opprettDelvedtak(resultat)
@@ -433,7 +432,8 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                     }.toList()
                             },
                     )
-                }.toList(),
+                }.toList()
+                .sortedBy { it.barn.fødselsdato },
     )
 
 private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<DelvedtakDto> =
