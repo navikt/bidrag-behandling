@@ -472,7 +472,7 @@ fun Rolle.tilDto() =
         harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
         delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == true,
         erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
-        stønadstype = stønadstype ?: behandling.stonadstype,
+        stønadstype = if (rolletype == Rolletype.BARN) stønadstype ?: behandling.stonadstype else null,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
         beregnFraDato = if (rolletype == Rolletype.BARN) finnBeregnFra() else null,
         bidragsmottaker =

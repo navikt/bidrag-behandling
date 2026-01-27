@@ -132,7 +132,9 @@ open class Rolle(
     fun erSammeRolle(
         ident: String,
         stønadstype: Stønadstype?,
-    ) = this.ident == ident && (this.stønadstype == null || stønadstype == null || this.stønadstype == stønadstype)
+    ) = this.ident == ident &&
+        // Bare sjekk for stønadstype hvis det er barn. Skal ikke sjekkes for BM/BP
+        (this.rolletype != Rolletype.BARN || this.stønadstype == null || stønadstype == null || this.stønadstype == stønadstype)
 
     // Brukes ved blant annet sortering og filtrering for å finne unik rolle.
     // Det kan hende samme rolle er i samme behandling flere ganger (18 år og ordinær bidrag samtidig ved FF)
