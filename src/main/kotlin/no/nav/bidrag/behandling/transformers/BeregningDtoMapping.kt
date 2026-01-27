@@ -430,6 +430,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                             resultat.barn.ident!!,
                                         )
                                     }.toList()
+                                    .sortedBy { it.periode.fom }
                             },
                     )
                 }.toList()
@@ -580,6 +581,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                     )
                             }
                         }.toList()
+                        .sortedBy { it.periode.fom }
                 }
 
             val sistePeriode =
