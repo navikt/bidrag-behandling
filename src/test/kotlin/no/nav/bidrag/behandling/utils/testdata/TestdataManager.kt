@@ -36,7 +36,7 @@ class TestdataManager(
     @Transactional
     fun lagreBehandling(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
-    @Transactional
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
         val inntekter = mutableSetOf<Inntekt>()
         behandling.inntekter.forEach { inntekter.add(it) }
