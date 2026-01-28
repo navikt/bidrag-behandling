@@ -225,7 +225,8 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
 
     private fun lagreBehandlingMedRoller(): Behandling {
         val behandling = oppretteBehandling()
-        behandling.roller = oppretteBehandlingRoller(behandling)
+        behandling.roller.clear()
+        behandling.roller.addAll(oppretteBehandlingRoller(behandling))
         return behandlingRepository.save(behandling)
     }
 }

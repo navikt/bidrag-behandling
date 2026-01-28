@@ -209,8 +209,8 @@ data class TestDataPerson(
 ) {
     fun tilRolle(
         behandling: Behandling = oppretteBehandling(),
-        id: Long = 1,
-    ) = Rolle(
+        id: Long? = null,
+    ) = behandling.roller.find { it.ident == ident } ?: Rolle(
         id = behandling.roller.find { it.ident == ident }?.id ?: id,
         ident = ident,
         navn = navn,

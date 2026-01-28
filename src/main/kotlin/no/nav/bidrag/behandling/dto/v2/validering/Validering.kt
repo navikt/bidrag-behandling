@@ -139,13 +139,13 @@ data class InntektValideringsfeil(
     @Schema(description = "Hvis det er inntekter som har periode som starter før virkningstidspunkt")
     val perioderFørVirkningstidspunkt: Boolean = false,
     val ugyldigSluttPeriode: Boolean = false,
-    @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
-    val gjelderBarn: String? = null,
     val gjelderBarnRolle: RolleDto? = null,
+    @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
+    val gjelderBarn: String? = gjelderBarnRolle?.ident,
     @JsonIgnore
     val erYtelse: Boolean = false,
-    @Deprecated("Skal fjernes")
     val rolle: RolleDto? = null,
+    @Deprecated("Skal fjernes")
     val ident: String? = rolle?.ident,
     @Schema(
         description =

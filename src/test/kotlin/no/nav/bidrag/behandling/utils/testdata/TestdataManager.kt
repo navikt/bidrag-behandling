@@ -36,7 +36,7 @@ class TestdataManager(
     @Transactional
     fun lagreBehandling(behandling: Behandling): Behandling = behandlingRepository.save(behandling)
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Transactional
     fun lagreBehandlingNewTransaction(behandling: Behandling): Behandling {
         val inntekter = mutableSetOf<Inntekt>()
         behandling.inntekter.forEach { inntekter.add(it) }
@@ -160,7 +160,7 @@ class TestdataManager(
         gjelderIdent: String,
         søktFomDato: LocalDate,
     ) = when (grunnlagsdatatype) {
-        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
+        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
             tilJson(
                 SkattepliktigeInntekter(
                     listOf(
@@ -180,8 +180,11 @@ class TestdataManager(
                     ),
                 ),
             )
+        }
 
-        else -> ""
+        else -> {
+            ""
+        }
     }
 
     fun hentBehandling(id: Long): Behandling? =

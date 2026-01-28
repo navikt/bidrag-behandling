@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
+import no.nav.bidrag.behandling.utils.mockAppContext
 import no.nav.bidrag.behandling.utils.stubBehandlingrepository
 import no.nav.bidrag.behandling.utils.stubHentPersonNyIdent
 import no.nav.bidrag.behandling.utils.stubHusstandrepository
@@ -180,6 +181,8 @@ class GrunnlagMockService {
         stubHusstandrepository(husstandsmedlemRepository)
         stubSivilstandrepository(sivilstandRepository)
         stubVedtakConsumer(vedtakConsumer)
+        mockAppContext(vedtakConsumer, personConsumer)
+        every { inntektService.justerOffentligePerioderEtterSisteGrunnlag(any()) } returns Unit
         every {
             runBlocking {
                 grunnlagConsumer.henteGrunnlag(
@@ -364,7 +367,7 @@ class GrunnlagMockService {
             opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = grunnlagBarnBM),
             opprettHentGrunnlagDto().copy(husstandsmedlemmerOgEgneBarnListe = grunnlagBarnBP),
         )
-
+        stubPersonConsumer()
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
         grunnlag shouldHaveSize 9
@@ -818,7 +821,7 @@ class GrunnlagMockService {
             shouldNotBeNull()
             konvertereData<StønadDto>().shouldNotBeNull()
             gjelder shouldBe søknadsbarn.ident
-            rolle shouldBe behandling.bidragspliktig!!
+            rolle shouldBe behandling.søknadsbarn.first()!!
             erBearbeidet shouldBe false
             aktiv.shouldNotBeNull()
         }
@@ -894,7 +897,7 @@ class GrunnlagMockService {
             shouldNotBeNull()
             konvertereData<StønadDto>().shouldNotBeNull()
             gjelder shouldBe søknadsbarn.ident
-            rolle shouldBe behandling.bidragspliktig!!
+            rolle shouldBe behandling.søknadsbarn.first()!!
             erBearbeidet shouldBe false
             aktiv.shouldNotBeNull()
         }
@@ -902,7 +905,7 @@ class GrunnlagMockService {
             shouldNotBeNull()
             konvertereData<StønadDto>().shouldNotBeNull()
             gjelder shouldBe søknadsbarn.ident
-            rolle shouldBe behandling.bidragspliktig!!
+            rolle shouldBe behandling.søknadsbarn.first()!!
             erBearbeidet shouldBe false
             aktiv.shouldNotBeNull()
         }
@@ -1018,7 +1021,7 @@ class GrunnlagMockService {
             shouldNotBeNull()
             konvertereData<StønadDto>().shouldNotBeNull()
             gjelder shouldBe søknadsbarn.ident
-            rolle shouldBe behandling.bidragspliktig!!
+            rolle shouldBe behandling.søknadsbarn.first()!!
             erBearbeidet shouldBe false
             aktiv.shouldNotBeNull()
         }
@@ -1026,7 +1029,7 @@ class GrunnlagMockService {
             shouldNotBeNull()
             konvertereData<StønadDto>().shouldNotBeNull()
             gjelder shouldBe søknadsbarn.ident
-            rolle shouldBe behandling.bidragsmottaker!!
+            rolle shouldBe behandling.søknadsbarn.first()!!
             erBearbeidet shouldBe false
             aktiv.shouldNotBeNull()
         }

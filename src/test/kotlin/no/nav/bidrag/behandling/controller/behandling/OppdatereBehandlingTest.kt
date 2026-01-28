@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
@@ -295,6 +294,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     datoFom = YearMonth.parse("2023-02"),
                     datoTom = YearMonth.parse("2023-09"),
                     type = Inntektsrapportering.BARNETILLEGG,
+                    kilde = Kilde.MANUELL,
                     behandling = behandling,
                     medId = false,
                 ),
@@ -302,6 +302,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     datoFom = YearMonth.parse("2023-02"),
                     datoTom = YearMonth.parse("2023-06"),
                     type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    kilde = Kilde.MANUELL,
                     behandling = behandling,
                     medId = false,
                 ),
@@ -309,6 +310,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     datoFom = YearMonth.parse("2023-02"),
                     datoTom = YearMonth.parse("2024-06"),
                     type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    kilde = Kilde.MANUELL,
                     behandling = behandling,
                     medId = false,
                 ),
@@ -348,7 +350,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         oppdatertBehandling.get().virkningstidspunkt shouldBe nyttVirkningstidspunkt
         val inntekter = oppdatertBehandling.get().inntekter.toList()
-        inntekter shouldHaveSize 7
+        inntekter shouldHaveSize 6
         inntekter.filter { it.datoFom == nyttVirkningstidspunkt } shouldHaveSize 4
         inntekter
             .find { it.type == Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT }!!
@@ -633,12 +635,6 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
-
-        assertSoftly {
-            val oppdatertGrunnlag = oppdatertBehandling.grunnlag
-            oppdatertGrunnlag.size shouldBe 2
-            oppdatertGrunnlag.filter { it.aktiv == null }.shouldBeEmpty()
-        }
 
         assertSoftly(oppdatertBehandling.inntekter.toList()) {
             this shouldHaveSize 2

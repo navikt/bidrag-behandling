@@ -15,3 +15,5 @@ FROM rolle r WHERE i.gjelder_barn_rolle_id IS NULL
   AND i.gjelder_barn IS NOT NULL
   AND r.behandling_id = i.behandling_id
   AND r.ident = i.gjelder_barn;
+
+alter table inntekt alter column ident drop not null;

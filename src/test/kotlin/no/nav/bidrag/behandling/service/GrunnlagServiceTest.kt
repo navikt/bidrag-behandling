@@ -2065,7 +2065,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Nested
         open inner class Særbidrag {
             @Test
-            fun `skal lagre innhentede inntekter selv om innhenting feiler for enkelte år i en periode`() {
+            @Transactional
+            open fun `skal lagre innhentede inntekter selv om innhenting feiler for enkelte år i en periode`() {
                 // gitt
                 val behandling =
                     testdataManager.oppretteBehandling(true, false, false, true, TypeBehandling.SÆRBIDRAG)

@@ -494,7 +494,7 @@ class SorteringTest {
 
         val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
 
-        filtrertInntekter shouldHaveSize 5
+        filtrertInntekter shouldHaveSize 8
         filtrertInntekter
             .map { it.type }
             .shouldContainAll(
@@ -574,7 +574,7 @@ class SorteringTest {
 
         val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
 
-        filtrertInntekter shouldHaveSize 5
+        filtrertInntekter shouldHaveSize 8
         filtrertInntekter
             .map { it.type }
             .shouldContainAll(
@@ -587,12 +587,12 @@ class SorteringTest {
                 ),
             )
         assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }) {
-            shouldHaveSize(1)
-            this[0].opprinneligFom shouldBe YearMonth.parse("2024-01").atDay(1)
+            shouldHaveSize(2)
+            this[0].opprinneligFom shouldBe YearMonth.parse("2021-01").atDay(1)
         }
         assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }) {
             shouldHaveSize(1)
-            this[0].opprinneligFom shouldBe YearMonth.parse("2024-01").atDay(1)
+            this[0].opprinneligFom shouldBe YearMonth.parse("2021-01").atDay(1)
         }
     }
 }

@@ -859,6 +859,7 @@ class InntektServiceTest : TestContainerRunner() {
 
     @Nested
     @DisplayName("Teste manuell oppdatering av inntekter")
+    @Transactional
     open inner class OppdatereInntekterManuelt {
         @Test
         open fun `skal oppdatere eksisterende inntekt`() {
@@ -1105,6 +1106,7 @@ class InntektServiceTest : TestContainerRunner() {
 
     @Nested
     @DisplayName("Teste maunuell oppdatering av inntekt")
+    @Transactional
     open inner class OppdatereInntektManuelt {
         @Test
         open fun `skal oppdatere eksisterende manuell inntekt`() {
@@ -1134,6 +1136,8 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             val lagretManuellInntekt = inntektRepository.save(manuellInntekt)
+            behandling.inntekter.add(lagretManuellInntekt)
+
             val lagretBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             lagretBehandling.isPresent shouldBe true
@@ -1220,6 +1224,7 @@ class InntektServiceTest : TestContainerRunner() {
                 )
 
             val lagretKontantstøtte = inntektRepository.save(kontantstøtte)
+            behandling.inntekter.add(lagretKontantstøtte)
             val lagretBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             lagretBehandling.isPresent shouldBe true
@@ -1252,6 +1257,7 @@ class InntektServiceTest : TestContainerRunner() {
         open fun `skal ta med offentlig inntekt som er ekplisitt ytelse og sette datoFom og datoTom automatisk`() {
             // gitt
             val behandling = oppretteTestbehandling(false, false, false)
+            behandlingRepository.save(behandling)
             behandling.virkningstidspunkt = LocalDate.parse("2023-05-01")
             val utvidetBarnetrygd =
                 Inntekt(
@@ -1268,22 +1274,20 @@ class InntektServiceTest : TestContainerRunner() {
                     taMed = false,
                 )
 
+            inntektRepository.save(utvidetBarnetrygd)
             behandling.inntekter.add(utvidetBarnetrygd)
-            testdataManager.lagreBehandlingNewTransaction(behandling)
-            val lagraInntekter = inntektRepository.findAll()
 
             val oppdatereInntektRequest =
                 OppdatereInntektRequest(
                     oppdatereInntektsperiode =
                         OppdaterePeriodeInntekt(
                             taMedIBeregning = true,
-                            id = lagraInntekter.find { Inntektsrapportering.UTVIDET_BARNETRYGD == it.type }!!.id!!,
+                            id = utvidetBarnetrygd!!.id!!,
                         ),
                 )
 
             // hvis
             inntektService.oppdatereInntektManuelt(behandling.id!!, oppdatereInntektRequest)
-
             val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!)
 
             assertSoftly(oppdatertBehandling.get()) {
@@ -1337,7 +1341,8 @@ class InntektServiceTest : TestContainerRunner() {
         }
 
         @Test
-        fun `skal oppdatere periode på offentlige inntekter`() {
+        @Transactional
+        open fun `skal oppdatere periode på offentlige inntekter`() {
             // gitt
             val behandling = testdataManager.oppretteBehandling(false, false, false)
 
@@ -1392,6 +1397,7 @@ class InntektServiceTest : TestContainerRunner() {
             ainntekt.inntektsposter = mutableSetOf(postAinntekt)
 
             val lagretInntekt = inntektRepository.save(ainntekt)
+            behandling.inntekter.add(lagretInntekt)
 
             val oppdatereInntektRequest =
                 OppdatereInntektRequest(
