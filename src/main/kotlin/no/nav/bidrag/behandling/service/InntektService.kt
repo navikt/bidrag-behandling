@@ -224,14 +224,12 @@ class InntektService(
         }
         behandling.inntekter.removeAll(inntekterSomSkalSlettes)
 
-        val lagraInntekter =
-            inntektRepository.saveAll(
-                summerteÅrsinntekter.tilInntekt(behandling, rolle).map {
-                    it.automatiskTaMedYtelserFraNav()
-                    it
-                },
-            )
-        behandling.inntekter.addAll(lagraInntekter)
+        behandling.inntekter.addAll(
+            summerteÅrsinntekter.tilInntekt(behandling, rolle).map {
+                it.automatiskTaMedYtelserFraNav()
+                it
+            },
+        )
     }
 
     @Transactional
