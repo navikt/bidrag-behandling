@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
+import kotlin.text.compareTo
 
 private val log = KotlinLogging.logger {}
 
@@ -204,6 +205,12 @@ class SamværService(
             oppdaterSamvær.hentPeriode(request.samværsperiodeId)
 
         oppdaterSamvær.perioder.remove(slettPeriode)
+        // Find the previous period and set tom to null if it exists and is not null
+        oppdaterSamvær.perioder
+            .filter { it.fom < slettPeriode.fom }
+            .maxByOrNull { it.fom }
+            ?.takeIf { it.tom != null }
+            ?.let { it.tom = null }
         secureLogger.debug { "Slettet samværsperiode ${slettPeriode.id} fra samvær ${oppdaterSamvær.id} i behandling $behandlingsid" }
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
