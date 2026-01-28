@@ -206,11 +206,11 @@ class SamværService(
 
         oppdaterSamvær.perioder.remove(slettPeriode)
         // Find the previous period and set tom to null if it exists and is not null
-        oppdaterSamvær.perioder
-            .filter { it.fom < slettPeriode.fom }
-            .maxByOrNull { it.fom }
-            ?.takeIf { it.tom != null }
-            ?.let { it.tom = null }
+//        oppdaterSamvær.perioder
+//            .filter { it.fom < slettPeriode.fom }
+//            .maxByOrNull { it.fom }
+//            ?.takeIf { it.tom != null }
+//            ?.let { it.tom = null }
         secureLogger.debug { "Slettet samværsperiode ${slettPeriode.id} fra samvær ${oppdaterSamvær.id} i behandling $behandlingsid" }
         return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
     }
