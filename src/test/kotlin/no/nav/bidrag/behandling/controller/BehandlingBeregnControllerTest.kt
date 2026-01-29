@@ -58,8 +58,13 @@ class BehandlingBeregnControllerTest : KontrollerTestRunner() {
 
     @BeforeEach
     fun oppsett() {
-        samværRepository.deleteAll()
-        behandlingRepository.deleteAll()
+        try {
+            samværRepository.deleteAll()
+            behandlingRepository.deleteAll()
+        } catch (e: Exception) {
+            // Ignorer feil ved sletting
+        }
+
         every { forskuddBeregning.beregn(any()) } returns BeregnetForskuddResultat()
         stubSjablonProvider()
         stubKodeverkProvider()
