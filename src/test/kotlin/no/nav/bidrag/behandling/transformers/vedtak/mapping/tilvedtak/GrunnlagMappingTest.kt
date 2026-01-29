@@ -1091,6 +1091,10 @@ class GrunnlagMappingTest {
                             opprettInntekterBearbeidetGrunnlag(
                                 behandling,
                                 testdataBarn1,
+                            ) +
+                            opprettInntekterBearbeidetGrunnlag(
+                                behandling,
+                                testdataBarn2,
                             )
                     ).toMutableSet()
 
@@ -1107,13 +1111,13 @@ class GrunnlagMappingTest {
 
                     ).toSet(),
                 )
-                val personobjektersøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1)
+                val personobjektersøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
                 assertSoftly(
                     behandling
                         .tilGrunnlagInntekt(personobjektersøknadsbarn, søknadsbarnGrunnlag1)
                         .toList(),
                 ) {
-                    it shouldHaveSize 11
+                    it shouldHaveSize 14
                     val bpInntekter =
                         it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse)
                     bpInntekter.shouldHaveSize(3)
@@ -1128,7 +1132,7 @@ class GrunnlagMappingTest {
 
                     val barn2Inntekter =
                         it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag2.referanse)
-                    barn2Inntekter.shouldHaveSize(0)
+                    barn2Inntekter.shouldHaveSize(3)
                 }
             }
 
@@ -1348,6 +1352,7 @@ class GrunnlagMappingTest {
                 Kilde.MANUELL,
                 true,
                 behandling = behandling,
+                rolle = gjelder.tilRolle(behandling),
             ),
             barn?.let {
                 Inntekt(
@@ -1358,6 +1363,7 @@ class GrunnlagMappingTest {
                     gjelder.ident,
                     Kilde.OFFENTLIG,
                     true,
+                    rolle = gjelder.tilRolle(behandling),
                     opprinneligFom = LocalDate.parse("2023-01-01"),
                     opprinneligTom = LocalDate.parse("2024-01-01"),
                     gjelderBarnRolle = barn.tilRolle(behandling),

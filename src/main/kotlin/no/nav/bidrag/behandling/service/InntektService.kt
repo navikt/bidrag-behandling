@@ -44,6 +44,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toCompactString
+import no.nav.bidrag.transport.felles.toLocalDate
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -125,21 +126,21 @@ class InntektService(
 
         val inntekterTattMed = behandling.inntekter.filter { it.taMed && it.datoFom != null }
         inntekterTattMed
-            .filter { it.datoFom!! < behandling.virkningstidspunkt }
+            .filter { it.datoFom!! < it.virkningstidspunktGjelderEllerBarn.toLocalDate() }
             .forEach {
-                if (it.datoTom != null && behandling.virkningstidspunkt!! >= it.datoTom) {
+                if (it.datoTom != null && it.virkningstidspunktGjelderEllerBarn.toLocalDate() >= it.datoTom) {
                     it.taMed = false
                     it.datoFom = null
                     it.datoTom = null
                 } else {
-                    it.datoFom = behandling.virkningstidspunkt
+                    it.datoFom = it.virkningstidspunktGjelderEllerBarn.toLocalDate()
                 }
             }
         behandling.inntekter
             .filter { it.taMed && it.datoFom != null }
             .filter { it.datoFom!! == forrigeVirkningstidspunkt }
-            .forEach { periode ->
-                periode.datoFom = behandling.virkningstidspunkt
+            .forEach { inntekt ->
+                inntekt.datoFom = inntekt.virkningstidspunktGjelderEllerBarn.toLocalDate()
             }
         behandling.inntekter
             .filter { it.taMed }

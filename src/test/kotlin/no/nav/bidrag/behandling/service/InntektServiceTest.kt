@@ -891,6 +891,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             val lagretKontantstøtte = inntektRepository.save(kontantstøtte)
 
+            behandling.inntekter.add(lagretKontantstøtte)
             val behandlingEtterOppdatering =
                 behandlingRepository.findBehandlingById(behandling.id!!)
 
@@ -959,6 +960,7 @@ class InntektServiceTest : TestContainerRunner() {
 
             val lagretKontantstøtte = inntektRepository.save(kontantstøtte)
 
+            behandling.inntekter.add(kontantstøtte)
             val forespørselOmOppdateringAvInntekter =
                 OppdatereInntektRequest(sletteInntekt = lagretKontantstøtte.id!!)
 

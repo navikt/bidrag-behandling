@@ -428,7 +428,7 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
         inntekter?.find {
             it.periode == periode &&
                 inntekt.type == it.inntektRapportering &&
-                (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId.trimToNull())
+                (inntekt.gjelderBarnIdent.isNullOrEmpty() || inntekt.gjelderBarnIdent == it.gjelderBarnPersonId.trimToNull())
         }
     return if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled && inntekterGjelderGrunnlag != null) {
         opprettGrunnlagsreferanserForInntekt2(inntekt, inntekterGjelderGrunnlag!!.rolle.tilGrunnlagsreferanse())

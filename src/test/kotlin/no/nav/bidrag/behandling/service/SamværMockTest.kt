@@ -377,7 +377,7 @@ class SamværMockTest : TestContainerRunner() {
             perioder.shouldHaveSize(1)
             assertSoftly(perioder[0]) {
                 periode.fom shouldBe behandling.virkningstidspunkt
-                periode.tom shouldBe null
+                periode.tom shouldBe behandling.virkningstidspunkt!!.plusMonths(2).minusDays(1)
                 samværsklasse shouldBe Samværsklasse.SAMVÆRSKLASSE_0
             }
         }

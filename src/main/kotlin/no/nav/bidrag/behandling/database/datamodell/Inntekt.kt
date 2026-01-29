@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -71,6 +72,15 @@ open class Inntekt(
 ) {
     val gjelderIdent get() = (rolle?.ident ?: ident)!!
     val gjelderBarnIdent get() = gjelderBarnRolle?.ident ?: gjelderBarn
+
+    val virkningstidspunktGjelderEllerBarn get() =
+        if (gjelderSøknadsbarn != null) {
+            gjelderSøknadsbarn!!.finnBeregnFra()
+        } else if (gjelderRolle != null) {
+            gjelderRolle!!.finnBeregnFra()
+        } else {
+            behandling!!.eldsteVirkningstidspunkt.toYearMonth()
+        }
 
     // TODO: Bytt dette til å bruke rolle etter migrering
     val gjelderRolle get() =

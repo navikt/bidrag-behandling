@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -154,12 +155,6 @@ open class Rolle(
         }
     val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
-    val virkningstidspunktBeregnet get() =
-        if (behandling.erIForholdsmessigFordeling) {
-            behandling.eldsteVirkningstidspunkt
-        } else {
-            virkningstidspunktRolle
-        }
 
     fun sakForSøknad(søknadsid: Long) =
         forholdsmessigFordeling

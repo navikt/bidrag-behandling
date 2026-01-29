@@ -257,6 +257,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     }
 
     @Test
+    @Transactional
     fun `skal oppdatere virkningstidspunkt og oppdatere fra og med dato på inntekter`() {
         // gitt
         val behandling = oppretteTestbehandling(true)
@@ -302,7 +303,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     datoFom = YearMonth.parse("2023-02"),
                     datoTom = YearMonth.parse("2023-06"),
                     type = Inntektsrapportering.UTVIDET_BARNETRYGD,
-                    kilde = Kilde.MANUELL,
+                    kilde = Kilde.OFFENTLIG,
                     behandling = behandling,
                     medId = false,
                 ),
@@ -323,8 +324,6 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 ),
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
-
-        val b = behandlingRepository.findBehandlingById(behandling.id!!)
 
         val nyttVirkningstidspunkt = LocalDate.parse("2023-07-01")
         // hvis
