@@ -68,6 +68,7 @@ class UnderholdService(
     private val notatService: NotatService,
     private val personService: PersonService,
 ) {
+    @Transactional
     fun oppdatereBegrunnelse(
         behandling: Behandling,
         request: OppdatereBegrunnelseRequest,
