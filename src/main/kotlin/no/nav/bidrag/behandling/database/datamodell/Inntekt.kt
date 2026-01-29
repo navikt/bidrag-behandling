@@ -68,7 +68,7 @@ open class Inntekt(
         orphanRemoval = true,
     )
     @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
-    open val gjelderBarnRolle: Rolle? = null,
+    open var gjelderBarnRolle: Rolle? = null,
 ) {
     val gjelderIdent get() = (rolle?.ident ?: ident)!!
     val gjelderBarnIdent get() = gjelderBarnRolle?.ident ?: gjelderBarn
