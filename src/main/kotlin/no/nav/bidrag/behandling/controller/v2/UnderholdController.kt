@@ -208,6 +208,8 @@ class UnderholdController(
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         underholdService.oppdatereBegrunnelse(behandling, request)
+
+        return dtomapper.run { tilUnderholdskostnadDto(behandling, emptyList(), false) }
     }
 
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")
