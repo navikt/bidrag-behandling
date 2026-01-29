@@ -890,7 +890,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 datoFom shouldBe behandling.virkningstidspunkt
                 datoTom shouldBe null
             }
-            val nyVirkningstidspunkt = LocalDate.now().plusMonths(2)
+            val nyVirkningstidspunkt = LocalDate.now().plusMonths(2).withDayOfMonth(1)
 
             virkningstidspunktService.oppdatereVirkningstidspunkt(1, OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt))
             assertSoftly(inntektBP1) {

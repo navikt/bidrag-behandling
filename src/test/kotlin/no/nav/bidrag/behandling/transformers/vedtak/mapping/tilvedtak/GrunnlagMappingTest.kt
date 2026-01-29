@@ -1064,7 +1064,7 @@ class GrunnlagMappingTest {
                 behandling.inntekter = opprettInntekter(behandling, testdataBM, testdataBarn1)
                 behandling.inntekter.forEach {
                     if (it.type == Inntektsrapportering.BARNETILLEGG) {
-                        it.gjelderBarn = null
+                        it.gjelderBarnRolle = null
                     }
                 }
                 val exception =
