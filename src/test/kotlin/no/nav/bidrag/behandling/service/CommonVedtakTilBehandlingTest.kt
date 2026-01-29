@@ -35,6 +35,7 @@ import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrch
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.HentLøpendeBidragService
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestratorV2
 import no.nav.bidrag.beregn.vedtak.Vedtaksfiltrering
 import no.nav.bidrag.commons.util.IdentUtils
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -80,6 +81,9 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var klageOrkestrator: OmgjøringOrkestrator
 
     @MockK
+    lateinit var klageOrkestratorV2: OmgjøringOrkestratorV2
+
+    @MockK
     lateinit var bestillAsyncJobService: BestillAsyncJobService
 
     open lateinit var bidragsberegningOrkestrator: BidragsberegningOrkestrator
@@ -91,7 +95,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         stubUnderholdskostnadRepository(underholdskostnadRepository)
         stubBehandlingrepository(behandlingRepository)
         hentLøpendeBidragService = HentLøpendeBidragService(vedtakServiceBeregning)
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, hentLøpendeBidragService, personConsumer)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, personConsumer)
 
         validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()

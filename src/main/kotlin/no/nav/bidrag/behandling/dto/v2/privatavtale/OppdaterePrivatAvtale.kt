@@ -19,6 +19,7 @@ import java.time.LocalDate
 data class OppdaterePrivatAvtaleBegrunnelseRequest(
     val privatavtaleid: Long? = null,
     val barnIdent: String? = null,
+    val barnId: Long? = null,
     val begrunnelse: String? = null,
 )
 

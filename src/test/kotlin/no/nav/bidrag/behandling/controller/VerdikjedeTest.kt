@@ -142,7 +142,7 @@ class VerdikjedeTest : KontrollerTestRunner() {
         gjelder: TestDataPerson,
         løpende: Boolean = false,
     ) {
-        val inntekt = inntekter.find { it.type == type && it.ident == gjelder.ident }!!
+        val inntekt = inntekter.find { it.type == type && it.gjelderIdent == gjelder.ident }!!
         inntekt.taMed = true
         inntekt.datoFom = inntekt.opprinneligFom
         if (løpende) {

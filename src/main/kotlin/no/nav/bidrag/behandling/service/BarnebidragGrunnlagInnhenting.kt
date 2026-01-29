@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderRolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -44,7 +45,7 @@ class BarnebidragGrunnlagInnhenting(
         if (søknadstyperSomKreverBeløpshistorikkForskudd.contains(behandling.søknadstype)) {
             val grunnlag =
                 behandling.grunnlag
-                    .hentSisteGrunnlagSomGjelderBarn(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
+                    .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
                     .konvertereData<StønadDto>()
                     .tilGrunnlag(
                         kravhaver = søknadsbarn.ident!!,
@@ -56,10 +57,10 @@ class BarnebidragGrunnlagInnhenting(
             grunnlagsliste.add(grunnlag)
         }
 
-        if (behandling.stonadstype == Stønadstype.BIDRAG18AAR) {
+        if (søknadsbarn.stønadstypeBarnEllerBehandling == Stønadstype.BIDRAG18AAR) {
             val grunnlag =
                 behandling.grunnlag
-                    .hentSisteGrunnlagSomGjelderBarn(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+                    .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
                     .konvertereData<StønadDto>()
                     .tilGrunnlag(
                         kravhaver = søknadsbarn.ident!!,
@@ -73,7 +74,7 @@ class BarnebidragGrunnlagInnhenting(
 
         val grunnlag =
             behandling.grunnlag
-                .hentSisteGrunnlagSomGjelderBarn(søknadsbarn.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+                .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
                 .konvertereData<StønadDto>()
                 .tilGrunnlag(
                     kravhaver = søknadsbarn.ident!!,

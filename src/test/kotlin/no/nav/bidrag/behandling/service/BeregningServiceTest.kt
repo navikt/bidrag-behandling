@@ -42,6 +42,7 @@ import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrch
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.HentLøpendeBidragService
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestratorV2
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
 import no.nav.bidrag.beregn.særbidrag.BeregnSærbidragApi
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
@@ -98,6 +99,9 @@ class BeregningServiceTest {
     lateinit var klageOrkestrator: OmgjøringOrkestrator
 
     @MockkBean
+    lateinit var klageOrkestratorV2: OmgjøringOrkestratorV2
+
+    @MockkBean
     lateinit var evnevurderingService: BeregningEvnevurderingService
 
     lateinit var barnebidragGrunnlagInnhenting: BarnebidragGrunnlagInnhenting
@@ -117,7 +121,7 @@ class BeregningServiceTest {
         stubPersonConsumer()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, hentLøpendeBidragService, personConsumer)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, personConsumer)
         barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
         every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         every { evnevurderingService.hentLøpendeBidragForBehandling(any()) } returns

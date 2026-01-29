@@ -67,7 +67,7 @@ class PrivatAvtaleService(
     ) {
         log.info { "Oppdaterer privatavtale begrunnelse ${request.privatavtaleid} i behandling $behandlingsid" }
         request.begrunnelse?.let {
-            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request.privatavtaleid, request.barnIdent, it)
+            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, request.privatavtaleid, request.barnIdent, request.barnId, it)
         }
     }
 
@@ -96,7 +96,7 @@ class PrivatAvtaleService(
         }
 
         request.begrunnelse?.let {
-            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, privatavtaleId, null, it)
+            oppdaterPrivatAvtaleBegrunnelse(behandlingsid, privatavtaleId, null, null, it)
         }
     }
 
@@ -117,10 +117,11 @@ class PrivatAvtaleService(
         behandlingsid: Long,
         privatavtaleId: Long?,
         barnIdent: String?,
+        barnId: Long?,
         nyBegrunnelse: String,
     ) {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        val rolle = behandling.roller.find { it.ident == barnIdent }
+        val rolle = behandling.roller.find { it.ident == barnIdent || it.id == barnId }
         val privatAvtale =
             if (privatavtaleId != null) {
                 behandling.privatAvtale.find { it.id == privatavtaleId }

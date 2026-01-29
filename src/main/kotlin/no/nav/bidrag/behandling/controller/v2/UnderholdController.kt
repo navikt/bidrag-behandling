@@ -17,7 +17,9 @@ import no.nav.bidrag.behandling.dto.v2.underhold.OppdatereUnderholdResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.OpprettUnderholdskostnadBarnResponse
 import no.nav.bidrag.behandling.dto.v2.underhold.SletteUnderholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
+import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.underhold.henteOgValidereUnderholdskostnad
@@ -201,13 +203,15 @@ class UnderholdController(
     fun oppdatereBegrunnelse(
         @PathVariable behandlingsid: Long,
         @RequestBody(required = true) request: OppdatereBegrunnelseRequest,
-    ) {
+    ): Set<UnderholdDto> {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
                 .orElseThrow { behandlingNotFoundException(behandlingsid) }
 
         underholdService.oppdatereBegrunnelse(behandling, request)
+
+        return dtomapper.run { tilUnderholdskostnadDto(behandling, emptyList(), false) }
     }
 
     @PutMapping("/behandling/{behandlingsid}/underhold/{underholdsid}/tilsynsordning")

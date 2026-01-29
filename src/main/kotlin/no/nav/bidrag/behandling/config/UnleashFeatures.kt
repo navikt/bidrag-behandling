@@ -23,6 +23,7 @@ enum class UnleashFeatures(
     TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG("behandling.behandle_innkrevingsgrunnlag", false),
     TILGANG_BEHANDLE_BIDRAG_FLERE_BARN("behandling.behandle_bidrag_flere_barn", false),
     BIDRAG_BEREGNING_V2("behandling.bidrag_beregning_v2", false),
+    BIDRAG_BEREGNING_V2_KLAGE("behandling.bidrag_beregning_v2_klage", false),
     BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG("behandling.bidrag_beregning_v2_lopende_bidrag", false),
     TILGANG_OPPRETTE_FF("behandling.opprette_ff", false),
     SEND_BEHANDLING_HENDELSE("bisys.send_behandling_hendelse", false),

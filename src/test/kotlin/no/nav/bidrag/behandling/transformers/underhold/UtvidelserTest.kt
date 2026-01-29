@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.underhold
 
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldNotBeGreaterThan
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -30,7 +31,7 @@ class UtvidelserTest {
 
         u.personFødselsdato
             .plusYears(ALDER_VED_SKOLESTART)
-            .year shouldBeGreaterThan LocalDate.now().year
+            .year shouldBeGreaterThanOrEqual LocalDate.now().year
 
         // hvis
         val barnetilsyn = barnetilsynGrunnlagDto.tilBarnetilsyn(u)

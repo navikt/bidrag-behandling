@@ -384,7 +384,7 @@ class InntektServiceMockTest {
         // hvis
         inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
             behandling,
-            personident = Personident(behandling.bidragsmottaker?.ident!!),
+            behandling.bidragsmottaker!!,
             summerteÅrsinntekter = summerteInntekter.inntekter,
         )
 
@@ -472,7 +472,7 @@ class InntektServiceMockTest {
         // hvis
         inntektService.lagreFørstegangsinnhentingAvSummerteÅrsinntekter(
             behandling,
-            personident = Personident(behandling.bidragsmottaker?.ident!!),
+            behandling.bidragsmottaker!!,
             summerteÅrsinntekter = summerteInntekter.inntekter,
         )
 
@@ -597,7 +597,7 @@ class InntektServiceMockTest {
             mutableSetOf(
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-01"),
                     datoTom = YearMonth.parse("2024-02"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -605,7 +605,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-03"),
                     datoTom = YearMonth.parse("2024-04"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -613,7 +613,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-05"),
                     datoTom = YearMonth.parse("2024-06"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -621,7 +621,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-07"),
                     datoTom = null,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -629,7 +629,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     datoFom = YearMonth.parse("2024-05"),
                     datoTom = YearMonth.parse("2024-07"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -637,7 +637,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     datoFom = YearMonth.parse("2024-08"),
                     datoTom = YearMonth.parse("2024-09"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -666,7 +666,7 @@ class InntektServiceMockTest {
                     forespørselOmOppdateringAvInntekter,
                 )
             response.inntekter.årsinntekter.shouldHaveSize(7)
-            val inntekterBM = response.inntekter.årsinntekter.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }
+            val inntekterBM = response.inntekter.årsinntekter.filter { it.gjelderRolle(behandling.bidragsmottaker!!) }
             inntekterBM.shouldHaveSize(5)
 
             val siste = inntekterBM.sortedBy { it.datoFom }.last()
@@ -702,7 +702,7 @@ class InntektServiceMockTest {
                     forespørselOmOppdateringAvInntekter,
                 )
             response.inntekter.årsinntekter.shouldHaveSize(8)
-            val inntekterBP = response.inntekter.årsinntekter.filter { it.ident.verdi == behandling.bidragspliktig!!.ident!! }
+            val inntekterBP = response.inntekter.årsinntekter.filter { it.gjelderRolle(behandling.bidragspliktig!!) }
             inntekterBP.shouldHaveSize(3)
 
             val siste = inntekterBP.sortedBy { it.datoFom }.last()
@@ -728,7 +728,7 @@ class InntektServiceMockTest {
             mutableSetOf(
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-01"),
                     datoTom = YearMonth.parse("2024-02"),
                     gjelderBarn = behandling.søknadsbarn.first().ident!!,
@@ -738,7 +738,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-03"),
                     datoTom = YearMonth.parse("2024-04"),
                     gjelderBarn = behandling.søknadsbarn.first().ident!!,
@@ -748,7 +748,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-05"),
                     datoTom = YearMonth.parse("2024-06"),
                     type = Inntektsrapportering.BARNETILLEGG,
@@ -758,7 +758,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-07"),
                     datoTom = null,
                     type = Inntektsrapportering.BARNETILLEGG,
@@ -768,7 +768,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-05"),
                     datoTom = YearMonth.parse("2024-07"),
                     type = Inntektsrapportering.BARNETILLEGG,
@@ -778,7 +778,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-08"),
                     datoTom = YearMonth.parse("2024-09"),
                     type = Inntektsrapportering.BARNETILLEGG,
@@ -810,7 +810,7 @@ class InntektServiceMockTest {
                     forespørselOmOppdateringAvInntekter,
                 )
             response.inntekter.barnetillegg.shouldHaveSize(7)
-            val inntekterBM = response.inntekter.barnetillegg.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }
+            val inntekterBM = response.inntekter.barnetillegg.filter { it.gjelderRolle(behandling.bidragsmottaker!!) }
             inntekterBM.shouldHaveSize(7)
 
             val siste = inntekterBM.sortedBy { it.datoFom }.filter { it.inntektstyper.contains(Inntektstype.BARNETILLEGG_AAP) }.last()
@@ -840,7 +840,7 @@ class InntektServiceMockTest {
             mutableSetOf(
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-01"),
                     datoTom = YearMonth.parse("2024-02"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -848,7 +848,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-03"),
                     datoTom = YearMonth.parse("2024-04"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -856,7 +856,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-05"),
                     datoTom = YearMonth.parse("2024-06"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -864,7 +864,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     datoFom = YearMonth.parse("2024-07"),
                     datoTom = null,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -872,7 +872,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     datoFom = YearMonth.parse("2024-05"),
                     datoTom = YearMonth.parse("2024-07"),
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -880,7 +880,7 @@ class InntektServiceMockTest {
                 ),
                 opprettInntekt(
                     behandling = behandling,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     datoFom = YearMonth.parse("2024-08"),
                     datoTom = null,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
@@ -909,7 +909,7 @@ class InntektServiceMockTest {
 
         assertSoftly {
             response.inntekter.årsinntekter.shouldHaveSize(7)
-            val inntekterBM = response.inntekter.årsinntekter.filter { it.ident.verdi == behandling.bidragsmottaker!!.ident!! }
+            val inntekterBM = response.inntekter.årsinntekter.filter { it.gjelderRolle(behandling.bidragsmottaker!!) }
             inntekterBM.shouldHaveSize(5)
 
             val siste = inntekterBM.sortedBy { it.datoFom }.last()

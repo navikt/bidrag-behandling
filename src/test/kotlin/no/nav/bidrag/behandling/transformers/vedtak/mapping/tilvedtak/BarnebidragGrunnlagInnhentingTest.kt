@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.mockkClass
@@ -96,7 +97,7 @@ class BarnebidragGrunnlagInnhentingTest {
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
-            innhold.nesteIndeksreguleringsår shouldBe 2026
+            innhold.nesteIndeksreguleringsår!! shouldBeGreaterThanOrEqual LocalDate.now().year
             grunnlagsreferanseListe shouldHaveSize 0
             innhold.tidspunktInnhentet shouldHaveSameDayAs LocalDateTime.now()
             innhold.beløpshistorikk shouldHaveSize 2

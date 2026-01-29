@@ -18,10 +18,17 @@ import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 
 fun Rolle.tilGrunnlagsreferanse() =
-    rolletype.tilGrunnlagstype().tilPersonreferanse(
-        "${fødselsdato.toCompactString()}_$stønadstype",
-        ident.hashCode(),
-    )
+    if (rolletype == Rolletype.BARN) {
+        rolletype.tilGrunnlagstype().tilPersonreferanse(
+            "${fødselsdato.toCompactString()}_$stønadstype",
+            ident.hashCode(),
+        )
+    } else {
+        rolletype.tilGrunnlagstype().tilPersonreferanse(
+            fødselsdato.toCompactString(),
+            ident.hashCode(),
+        )
+    }
 
 fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
     val grunnlagstype = rolletype.tilGrunnlagstype()

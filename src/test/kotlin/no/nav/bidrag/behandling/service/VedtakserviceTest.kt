@@ -61,6 +61,7 @@ import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.AldersjusteringOrch
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.HentLøpendeBidragService
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestrator
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.OmgjøringOrkestratorV2
 import no.nav.bidrag.commons.web.mock.stubKodeverkProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonProvider
 import no.nav.bidrag.commons.web.mock.stubSjablonService
@@ -178,6 +179,9 @@ class VedtakserviceTest : TestContainerRunner() {
     lateinit var klageOrkestrator: OmgjøringOrkestrator
 
     @MockkBean
+    lateinit var klageOrkestratorV2: OmgjøringOrkestratorV2
+
+    @MockkBean
     lateinit var virkningstidspunktService: VirkningstidspunktService
     val notatService = NotatService()
 
@@ -189,7 +193,7 @@ class VedtakserviceTest : TestContainerRunner() {
         enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
         disableUnleashFeature(UnleashFeatures.VEDTAKSSPERRE)
         bidragPersonConsumer = stubPersonConsumer()
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, hentLøpendeBidragService, bidragPersonConsumer)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, bidragPersonConsumer)
         every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)

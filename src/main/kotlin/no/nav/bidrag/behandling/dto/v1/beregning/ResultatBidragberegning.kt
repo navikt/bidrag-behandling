@@ -59,6 +59,7 @@ fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
                 begrunnelse =
                     "Det skjedde en feil ved innhenting av beløpshistorikk for forskudd og bidrag. ",
                 resultatPeriode = emptyList(),
+                feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK,
             )
         }
     }
@@ -69,6 +70,7 @@ fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
                 begrunnelse =
                     "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
                 resultatPeriode = emptyList(),
+                feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK,
             )
         }
     }
@@ -78,6 +80,7 @@ fun Behandling.tilBeregningFeilmelding(): UgyldigBeregningDto? {
             begrunnelse =
                 "Det skjedde en feil ved innhenting av beløpshistorikk for bidrag. ",
             resultatPeriode = emptyList(),
+            feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK,
         )
     }
 
@@ -115,6 +118,7 @@ fun BegrensetRevurderingLøpendeForskuddManglerException.opprettBegrunnelse(): U
                 "Periode ${perioderUtenForskudd.first().periodeString} har ingen løpende forskudd"
             },
         perioder = perioderUtenForskudd,
+        feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
     )
 }
 
@@ -141,6 +145,7 @@ fun BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException.opprettBegrunne
         tittel = "Begrenset revurdering",
         perioder = this.periodeListe,
         resultatPeriode = resultatPerioderUnderLøpendeBidrag,
+        feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
         begrunnelse =
             if (this.periodeListe.size > 1) {
                 "Flere perioder er lik eller lavere enn løpende bidrag"
@@ -167,8 +172,19 @@ data class ResultatUtførBidragsberegning(
                 UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF -> {
                     UgyldigBeregningDto(
                         tittel = "Forholdsmessig fordeling",
+                        feiltype = feiltype,
                         begrunnelse = @Suppress("ktlint:standard:max-line-length")
                         "Bidraget må forholdsmessig fordeles på grunn av manglende evne i minst en av periodene. Opprett forholdsmessig fordeling fra dialogen i sidemenyen",
+                        resultatPeriode = emptyList(),
+                    )
+                }
+
+                UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK -> {
+                    UgyldigBeregningDto(
+                        tittel = "Feil under beregning",
+                        feiltype = feiltype,
+                        begrunnelse = @Suppress("ktlint:standard:max-line-length")
+                        "Det skjedde en ukjent feil ved beregning. Prøv igjen senere.",
                         resultatPeriode = emptyList(),
                     )
                 }
@@ -208,6 +224,7 @@ data class ResultatBidragsberegningBarn(
 data class UgyldigBeregningDto(
     val tittel: String,
     val begrunnelse: String,
+    val feiltype: UgyldigBeregningType,
     val vedtaksliste: List<EtterfølgendeVedtakSomOverlapper> = emptyList(),
     val resultatPeriode: List<UgyldigResultatPeriode> = emptyList(),
     val perioder: List<ÅrMånedsperiode> = emptyList(),
@@ -221,6 +238,8 @@ data class UgyldigBeregningDto(
         BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
         BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD,
         UFULSTENDING_GRUNNLAG_FF,
+        BEREGNING_FEILET_TEKNISK,
+        OMGJØRING_ETTERFØLGENDE_VEDTAK,
     }
 }
 
@@ -377,11 +396,26 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             ugyldigBeregning != null -> {
                 when (ugyldigBeregning.type) {
                     UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_LIK_ELLER_LAVERE_ENN_LØPENDE_BIDRAG,
-                    -> "Lavere enn løpende bidrag"
+                    -> {
+                        "Lavere enn løpende bidrag"
+                    }
 
-                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD -> "Ingen løpende forskudd"
+                    UgyldigBeregningDto.UgyldigBeregningType.BEGRENSET_REVURDERING_UTEN_LØPENDE_FORSKUDD -> {
+                        "Ingen løpende forskudd"
+                    }
 
-                    UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF -> "Mangler bidragsevne"
+                    UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF -> {
+                        "Mangler bidragsevne"
+                    }
+
+                    UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK -> {
+                        "Teknisk feil ved beregning"
+                    }
+
+                    UgyldigBeregningDto.UgyldigBeregningType.OMGJØRING_ETTERFØLGENDE_VEDTAK -> {
+                        "En eller flere etterfølgende vedtak har virkningstidpunkt " +
+                            "som starter før beregningsperioden"
+                    }
                 }
             }
 

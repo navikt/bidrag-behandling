@@ -142,13 +142,11 @@ class UnderholdService(
             behandling.underholdskostnader
                 .filter { !it.gjelderAndreBarn }
                 .find {
-                    it.personIdent == gjelderRolle.ident!!.verdi &&
-                        (gjelderRolle.stønadstype == null || it.rolle!!.stønadstype == gjelderRolle.stønadstype)
+                    it.tilhørerPerson(gjelderRolle.ident!!.verdi, gjelderRolle.stønadstype)
                 }
         val rolleBarn =
             behandling.roller.find {
-                it.ident == gjelderRolle.ident!!.verdi &&
-                    (gjelderRolle.stønadstype == null || it.stønadstype == gjelderRolle.stønadstype)
+                it.erSammeRolle(gjelderRolle.ident!!.verdi, gjelderRolle.stønadstype)
             }
 
         if (eksisterendeUnderholdskostnad != null && rolleBarn != null) {
@@ -185,8 +183,7 @@ class UnderholdService(
         val rolleBarn =
             if (gjelderBarn.personident != null) {
                 behandling.søknadsbarn.find {
-                    it.ident == gjelderBarn.personident.verdi &&
-                        (gjelderBarn.stønadstype == null || it.stønadstype == gjelderBarn.stønadstype)
+                    it.erSammeRolle(gjelderBarn.personident.verdi, gjelderBarn.stønadstype)
                 }
             } else {
                 null
@@ -202,8 +199,7 @@ class UnderholdService(
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn =
                 behandling.søknadsbarn.find {
-                    it.ident == personidentBarn.verdi &&
-                        (gjelderBarn.stønadstype == null || it.stønadstype == gjelderBarn.stønadstype)
+                    it.erSammeRolle(gjelderBarn.personident.verdi, gjelderBarn.stønadstype)
                 }
             if (rolleSøknadsbarn != null) {
                 lagreUnderholdskostnad(behandling, null, rolleSøknadsbarn, null)

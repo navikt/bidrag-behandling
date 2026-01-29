@@ -1445,7 +1445,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     behandling = behandling,
                 ),
                 opprettInntekt(
@@ -1454,7 +1454,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     behandling = behandling,
                 ),
             )
@@ -1577,7 +1577,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     behandling = behandling,
                 ),
                 opprettInntekt(
@@ -1586,7 +1586,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                     beløp = BigDecimal(10000),
                     kilde = Kilde.MANUELL,
                     type = Inntektsrapportering.LØNN_MANUELT_BEREGNET,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     behandling = behandling,
                 ),
             )
@@ -2532,7 +2532,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 belop = BigDecimal(2000),
                 datoFom = behandling.virkningstidspunkt,
                 datoTom = null,
-                ident = behandling.bidragsmottaker!!.ident!!,
+                rolle = behandling.bidragsmottaker!!,
                 taMed = true,
                 gjelderBarn = behandling.søknadsbarn.first().ident,
                 kilde = Kilde.MANUELL,
@@ -2546,7 +2546,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 belop = BigDecimal(90000),
                 datoFom = null,
                 datoTom = null,
-                ident = behandling.bidragspliktig!!.ident!!,
+                rolle = behandling.bidragspliktig!!,
                 taMed = false,
                 opprinneligFom = LocalDate.parse("2023-02-01"),
                 opprinneligTom = LocalDate.parse("2024-01-31"),
