@@ -1433,6 +1433,7 @@ class Dtomapper(
                 (rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG).ifTrue {
                     tilBostatusperiode()
                 },
+            begrunnelse = henteNotatinnhold(this.behandling, NotatType.BOFORHOLD),
             egetBarnErEnesteVoksenIHusstanden = behandling.egetBarnErEnesteVoksenIHusstanden,
             valideringsfeil =
                 BoforholdValideringsfeil(
