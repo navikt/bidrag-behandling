@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektBarn
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektPerBarnDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
@@ -82,7 +83,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
@@ -137,14 +138,32 @@ fun oppdaterBehandlingEtterOppdatertRoller(
     rollerSomLeggesTil: List<OpprettRolleDto>,
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
-    slettNotatSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    slettGrunnlagSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    slettPrivatAvtaleSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    slettInntekterSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettes)
-    oppdatereSamværForRoller(behandling, rollerSomLeggesTil, rollerSomSkalSlettes)
-    oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTil, rollerSomSkalSlettes)
-    oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTil)
-    oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTil)
+    // Behandlingstema brukes for å hente om hvilken stønadstype barnet tilhører
+    // Noen eldre behandlinger har ikke satt behandlingstema som kan føre til nullverdier. Antar
+    val rollerSomLeggesTilJustert =
+        rollerSomLeggesTil.map {
+            if (it.behandlingstema == null) {
+                it.copy(behandlingstema = behandling.stonadstype?.tilBehandlingstema())
+            } else {
+                it
+            }
+        }
+    val rollerSomSkalSlettesJustert =
+        rollerSomSkalSlettes.map {
+            if (it.behandlingstema == null) {
+                it.copy(behandlingstema = behandling.stonadstype?.tilBehandlingstema())
+            } else {
+                it
+            }
+        }
+    slettNotatSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    slettGrunnlagSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    slettPrivatAvtaleSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    slettInntekterSomTilhørerRolleSomSlettes(behandling, rollerSomSkalSlettesJustert)
+    oppdatereSamværForRoller(behandling, rollerSomLeggesTilJustert, rollerSomSkalSlettesJustert)
+    oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTilJustert, rollerSomSkalSlettesJustert)
+    oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTilJustert)
+    oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTilJustert)
 }
 
 private fun slettInntekterSomTilhørerRolleSomSlettes(
@@ -153,7 +172,7 @@ private fun slettInntekterSomTilhørerRolleSomSlettes(
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
         behandling.inntekter
-            .filter { it.ident == rolle.ident!!.verdi }
+            .filter { it.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) }
             .forEach {
                 it.inntektsposter.clear()
                 behandling.inntekter.remove(it)
@@ -167,8 +186,8 @@ private fun slettPrivatAvtaleSomTilhørerRolleSomSlettes(
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
         behandling.privatAvtale.removeIf {
-            it.rolle != null && it.rolle!!.ident == rolle.ident!!.verdi &&
-                it.rolle!!.stønadstype == rolle.stønadstype
+            it.rolle != null &&
+                it.rolle!!.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype)
         }
     }
 }
@@ -179,8 +198,8 @@ private fun slettGrunnlagSomTilhørerRolleSomSlettes(
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
         behandling.grunnlag.removeIf {
-            (it.rolle.ident == rolle.ident!!.verdi && it.rolle.stønadstype == rolle.stønadstype) ||
-                it.gjelder == rolle.ident!!.verdi
+            it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
+                it.gjelder == rolle.ident.verdi
         }
     }
 }
@@ -190,8 +209,8 @@ private fun slettNotatSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        val rolleBarn = behandling.roller.find { it.ident == rolle.ident!!.verdi }
-        val notater = behandling.notater.filter { it.rolle.ident == rolle.ident!!.verdi }
+        val rolleBarn = behandling.roller.find { it.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) }
+        val notater = behandling.notater.filter { it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) }
         notater.forEach { notat ->
             if (notat.type == Notattype.UNDERHOLDSKOSTNAD) {
                 behandling.notater
@@ -216,7 +235,7 @@ private fun oppdaterOpphørForRoller(
 ) {
     if (behandling.tilType() == TypeBehandling.BIDRAG) {
         rollerSomLeggesTil.forEach { r ->
-            val rolle = behandling.roller.find { it.ident == r.ident!!.verdi && it.stønadstype == r.stønadstype }!!
+            val rolle = behandling.roller.find { it.erSammeRolle(r.ident!!.verdi, r.stønadstype) }!!
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
                 if (opphørsdato != null) {
@@ -239,11 +258,12 @@ private fun oppdatereHusstandsmedlemmerForRoller(
 ) {
     rollerSomLeggesTil
         .filter { it.rolletype == Rolletype.BARN }
-        .filter { nyRolle -> behandling.husstandsmedlem.any { it.ident == nyRolle.ident?.verdi } }
+        .filter { nyRolle -> behandling.husstandsmedlem.any { it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype) } }
         .forEach { nyRolle ->
             val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.stønadstype ?: behandling.stonadstype)
             // Oppdater rolle slik at husstandsmedlemmen blir låst til rollen i behandlingen
-            val husstandsmedlem = behandling.husstandsmedlem.find { it.ident == nyRolle.ident.verdi }!!
+            val husstandsmedlem =
+                behandling.husstandsmedlem.find { it.erSammePerson(nyRolle.ident.verdi, nyRolle.stønadstype) } ?: return@forEach
             husstandsmedlem.rolle = rolle
             husstandsmedlem.kilde = Kilde.OFFENTLIG
         }
@@ -253,8 +273,7 @@ private fun oppdatereHusstandsmedlemmerForRoller(
             .filter { it.rolletype == Rolletype.BARN }
             .filter { nyRolle ->
                 val stønadstype = nyRolle.stønadstype ?: behandling.stonadstype
-                val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, stønadstype)
-                behandling.husstandsmedlem.none { it.rolle?.ident == rolle!!.ident && it.rolle?.stønadstype == stønadstype }
+                behandling.husstandsmedlem.none { it.erSammePerson(nyRolle.ident!!.verdi, stønadstype) }
             }
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map {
@@ -275,8 +294,7 @@ fun oppdaterUnderholdskostnadForRoller(
             .filter { it.rolletype == Rolletype.BARN }
             .filter { rolle ->
                 behandling.underholdskostnader.none { u ->
-                    u.rolle?.ident == rolle.ident!!.verdi &&
-                        u.rolle!!.stønadstype == rolle.stønadstype
+                    u.tilhørerPerson(rolle.ident!!.verdi, rolle.stønadstype)
                 }
             }.forEach { rolle ->
                 underholdService.oppretteUnderholdskostnad(
@@ -301,8 +319,7 @@ fun oppdatereSamværForRoller(
             .filter { it.rolletype == Rolletype.BARN }
             .filter { rolle ->
                 behandling.samvær.none { s ->
-                    s.rolle.ident == rolle.ident!!.verdi &&
-                        s.rolle.stønadstype == rolle.`stønadstype`
+                    s.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype)
                 }
             }.forEach { rolle ->
                 behandling.samvær.add(
@@ -310,8 +327,7 @@ fun oppdatereSamværForRoller(
                         behandling,
                         rolle =
                             behandling.roller.find {
-                                it.ident == rolle.ident?.verdi &&
-                                    it.stønadstype == rolle.`stønadstype`
+                                it.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype)
                             }!!,
                     ),
                 )
@@ -319,8 +335,7 @@ fun oppdatereSamværForRoller(
 
         rollerSomSlettes.forEach { rolle ->
             behandling.samvær.removeIf { s ->
-                s.rolle.ident == rolle.ident!!.verdi &&
-                    s.rolle.stønadstype == rolle.`stønadstype`
+                s.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype)
             }
         }
     }
@@ -330,6 +345,7 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
     if (!erBidrag() || listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(vedtakstype)) {
         return null
     }
+
     if (søknadsbarn.size > 1 && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
         return "Kan ikke fatte vedtak for bidrag med flere barn"
     }
@@ -434,7 +450,7 @@ fun Person.tilRolle(behandling: Behandling) =
         ident,
         fødselsdato,
         LocalDateTime.now(),
-        -1,
+        null,
         navn ?: hentPersonVisningsnavn(ident),
     )
 
@@ -558,13 +574,13 @@ fun Behandling.tilInntektDtoV3(
     rolle: Rolle,
 ) = InntekterDtoV3(
     barnetillegg =
-        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.kreverGrunnlagForBeregning }.map { barn ->
+        rolle.barn.filter { it.kreverGrunnlagForBeregning }.map { barn ->
             InntektBarn(
                 gjelderBarn = barn.tilDto(),
                 inntekter =
                     inntekter
                         .filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                        .filter { it.gjelderBarn == barn.ident && it.ident == rolle.ident }
+                        .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
                         .sorterEtterDatoOgBarn()
                         .ekskluderYtelserFørVirkningstidspunkt()
                         .tilInntektDtoV2()
@@ -574,19 +590,19 @@ fun Behandling.tilInntektDtoV3(
     utvidetBarnetrygd =
         inntekter
             .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-            .filter { it.ident == rolle.ident }
+            .filter { it.erSammeRolle(rolle) }
             .sorterEtterDato()
             .ekskluderYtelserFørVirkningstidspunkt()
             .tilInntektDtoV2()
             .toSet(),
     kontantstøtte =
-        rolle.barn.filter { it.rolletype != Rolletype.BARN || it.kreverGrunnlagForBeregning }.map { barn ->
+        rolle.barn.filter { it.kreverGrunnlagForBeregning }.map { barn ->
             InntektBarn(
                 gjelderBarn = barn.tilDto(),
                 inntekter =
                     inntekter
                         .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                        .filter { it.gjelderBarn == barn.ident && it.ident == rolle.ident }
+                        .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
                         .sorterEtterDatoOgBarn()
                         .ekskluderYtelserFørVirkningstidspunkt()
                         .tilInntektDtoV2()
@@ -596,7 +612,7 @@ fun Behandling.tilInntektDtoV3(
     småbarnstillegg =
         inntekter
             .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-            .filter { it.ident == rolle.ident }
+            .filter { it.erSammeRolle(rolle) }
             .sorterEtterDato()
             .ekskluderYtelserFørVirkningstidspunkt()
             .tilInntektDtoV2()
@@ -607,14 +623,14 @@ fun Behandling.tilInntektDtoV3(
             .flatMap { grunnlag ->
                 grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
                     it.tilInntektDtoV2(
-                        grunnlag.rolle.ident!!,
+                        grunnlag.rolle,
                     )
                 } ?: emptyList()
-            }.filter { it.ident.verdi == rolle.ident }
+            }.filter { it.gjelderRolle(rolle) }
             .toSet(),
     årsinntekter =
         inntekter
-            .filter { it.ident == rolle.ident }
+            .filter { it.erSammeRolle(rolle) }
             .toSet()
             .årsinntekterSortert(inkluderHistoriskeInntekter = true)
             .tilInntektDtoV2()
@@ -643,7 +659,7 @@ fun Behandling.tilInntektDtoV3(
 )
 
 fun List<Inntekt>.filtrerInntektGjelderBarn(rolle: Rolle?) =
-    filter { rolle == null || it.ident == rolle.ident }
+    filter { rolle == null || it.erSammeRolle(rolle) }
         .filter {
             if (rolle == null || rolle.rolletype != Rolletype.BIDRAGSMOTTAKER) {
                 true
@@ -690,7 +706,7 @@ fun Behandling.tilInntektDtoV2(
             .flatMap { grunnlag ->
                 grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
                     it.tilInntektDtoV2(
-                        grunnlag.rolle.ident!!,
+                        grunnlag.rolle,
                     )
                 } ?: emptyList()
             }.toSet(),
@@ -893,7 +909,7 @@ fun Behandling.hentInntekterValideringsfeilV2(rolle: Rolle): InntektValideringsf
     InntektValideringsfeilV2Dto(
         årsinntekter =
             inntekter
-                .filter { it.ident == rolle.ident }
+                .filter { it.erSammeRolle(rolle) }
                 .mapValideringsfeilForÅrsinntekterV2(
                     eldsteVirkningstidspunkt,
                     rolle,
@@ -910,20 +926,18 @@ fun Behandling.hentInntekterValideringsfeilV2(rolle: Rolle): InntektValideringsf
                 ).takeIf { it.isNotEmpty() },
         småbarnstillegg =
             inntekter
-                .filter { it.ident == rolle.ident }
+                .filter { it.erSammeRolle(rolle) }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.SMÅBARNSTILLEGG,
                     eldsteVirkningstidspunkt,
-                    roller,
                 ).firstOrNull(),
         // Det er bare bidragsmottaker småbarnstillegg og utvidetbarnetrygd er relevant for. Antar derfor det alltid gjelder BM og velger derfor den første i listen
         utvidetBarnetrygd =
             inntekter
-                .filter { it.ident == rolle.ident }
+                .filter { it.erSammeRolle(rolle) }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.UTVIDET_BARNETRYGD,
                     eldsteVirkningstidspunkt,
-                    roller,
                 ).firstOrNull(),
         kontantstøtte =
             inntekter
@@ -940,7 +954,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
     InntektValideringsfeilDto(
         årsinntekter =
             inntekter
-                .filter { rolle == null || it.ident == rolle.ident }
+                .filter { rolle == null || it.erSammeRolle(rolle) }
                 .mapValideringsfeilForÅrsinntekter(
                     eldsteVirkningstidspunkt,
                     roller,
@@ -951,7 +965,7 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
                 rolle.barn
                     .mapNotNull { barn ->
                         inntekter
-                            .filter { it.gjelderBarn == barn.ident }
+                            .filter { it.inntektGjelderBarn(barn) }
                             .mapValideringsfeilForYtelseSomGjelderBarn(
                                 Inntektsrapportering.BARNETILLEGG,
                                 eldsteVirkningstidspunkt,
@@ -970,27 +984,25 @@ fun Behandling.hentInntekterValideringsfeil(rolle: Rolle? = null): InntektValide
             },
         småbarnstillegg =
             inntekter
-                .filter { rolle == null || it.ident == rolle.ident }
+                .filter { rolle == null || it.erSammeRolle(rolle) }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.SMÅBARNSTILLEGG,
                     eldsteVirkningstidspunkt,
-                    roller,
                 ).firstOrNull(),
         // Det er bare bidragsmottaker småbarnstillegg og utvidetbarnetrygd er relevant for. Antar derfor det alltid gjelder BM og velger derfor den første i listen
         utvidetBarnetrygd =
             inntekter
-                .filter { rolle == null || it.ident == rolle.ident }
+                .filter { rolle == null || it.erSammeRolle(rolle) }
                 .mapValideringsfeilForYtelse(
                     Inntektsrapportering.UTVIDET_BARNETRYGD,
                     eldsteVirkningstidspunkt,
-                    roller,
                 ).firstOrNull(),
         kontantstøtte =
             if (rolle != null) {
                 rolle.barn
                     .mapNotNull { barn ->
                         inntekter
-                            .filter { it.gjelderBarn == barn.ident }
+                            .filter { it.inntektGjelderBarn(barn) }
                             .mapValideringsfeilForYtelseSomGjelderBarn(
                                 Inntektsrapportering.KONTANTSTØTTE,
                                 eldsteVirkningstidspunkt,
@@ -1017,7 +1029,7 @@ fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekterV2(
     val inntekterSomSkalSjekkes = filter { !eksplisitteYtelser.contains(it.type) }.filter { it.taMed }
     val rollerSomKreverMinstEnInntekt = bestemRollerSomMåHaMinstEnInntekt(behandlingType)
     val opphørsdato = rolle.behandling.globalOpphørsdato
-    val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
+    val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.erSammeRolle(rolle) }
 
     return if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
         InntektValideringsfeil(
@@ -1068,7 +1080,7 @@ fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekter(
         .filter { bestemRollerSomKanHaInntekter(behandlingType).contains(it.rolletype) }
         .map { rolle ->
             val opphørsdato = rolle.behandling.globalOpphørsdato
-            val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.ident == rolle.ident }
+            val inntekterTaMed = inntekterSomSkalSjekkes.filter { it.erSammeRolle(rolle) }
 
             if (inntekterTaMed.isEmpty() && (rollerSomKreverMinstEnInntekt.contains(rolle.rolletype))) {
                 InntektValideringsfeil(
@@ -1113,22 +1125,20 @@ fun Collection<Inntekt>.mapValideringsfeilForÅrsinntekter(
 fun List<Inntekt>.mapValideringsfeilForYtelse(
     type: Inntektsrapportering,
     virkningstidspunkt: LocalDate,
-    roller: Set<Rolle>,
-    gjelderBarn: String? = null,
+    gjelderBarn: Rolle? = null,
 ) = filter { it.taMed }
     .filter { it.type == type }
-    .groupBy { it.ident }
-    .map { (inntektGjelderIdent, inntekterTaMed) ->
-        val gjelderRolle = roller.find { it.ident == inntektGjelderIdent }
-        val gjelderIdent = gjelderRolle?.ident ?: inntektGjelderIdent
+    .groupBy { it.gjelderRolle }
+    .map { (gjelderRolle, inntekterTaMed) ->
         InntektValideringsfeil(
             overlappendePerioder = inntekterTaMed.finnOverlappendePerioderInntekt(),
             fremtidigPeriode =
                 inntekterTaMed.inneholderFremtidigPeriode(virkningstidspunkt),
             ugyldigSluttPeriode = inntekterTaMed.harUgyldigSluttperiode(inntekterTaMed.firstOrNull()?.opphørsdato),
-            ident = gjelderIdent,
+            ident = gjelderRolle?.ident,
             rolle = gjelderRolle?.tilDto(),
-            gjelderBarn = gjelderBarn,
+            gjelderBarn = gjelderBarn?.ident,
+            gjelderBarnRolle = gjelderRolle?.tilDto(),
             erYtelse = true,
         ).takeIf { it.harFeil }
     }
@@ -1138,12 +1148,11 @@ fun Collection<Inntekt>.mapValideringsfeilForYtelseSomGjelderBarn(
     virkningstidspunkt: LocalDate,
     roller: Set<Rolle>,
 ) = filter { inntekstrapporteringerSomKreverGjelderBarn.contains(type) }
-    .groupBy { it.gjelderBarn }
+    .groupBy { it.gjelderSøknadsbarn }
     .flatMap { (gjelderBarn, inntekter) ->
         inntekter.mapValideringsfeilForYtelse(
             type,
             virkningstidspunkt,
-            roller,
             gjelderBarn,
         )
     }.filterNotNull()
@@ -1161,7 +1170,8 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
         .sortedBy {
             it.inntektGjelderBarnIdent?.verdi
         }.map {
-            it.copy(
+            InntektPerBarnDto(
+                inntektGjelderBarnIdent = it.inntektGjelderBarnIdent,
                 summertInntektListe =
                     it.summertInntektListe.map { delberegning ->
                         delberegning.copy(

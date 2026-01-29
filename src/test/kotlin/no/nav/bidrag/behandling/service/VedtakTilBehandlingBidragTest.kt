@@ -431,9 +431,9 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             filter { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET } shouldHaveSize 4
             filter { it.type == Inntektsrapportering.KAPITALINNTEKT } shouldHaveSize 0
             filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT } shouldHaveSize 0
-            find { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET && it.ident == testdataBP.ident } shouldNotBe null
-            find { it.type == Inntektsrapportering.FORELDREPENGER && it.ident == testdataBM.ident } shouldNotBe null
-            find { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET && it.ident == testdataBarn1.ident } shouldNotBe null
+            find { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET && it.gjelderIdent == testdataBP.ident } shouldNotBe null
+            find { it.type == Inntektsrapportering.FORELDREPENGER && it.gjelderIdent == testdataBM.ident } shouldNotBe null
+            find { it.type == Inntektsrapportering.LØNN_MANUELT_BEREGNET && it.gjelderIdent == testdataBarn1.ident } shouldNotBe null
         }
     }
 

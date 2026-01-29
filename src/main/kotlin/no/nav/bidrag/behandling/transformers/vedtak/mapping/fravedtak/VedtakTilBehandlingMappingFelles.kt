@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -55,6 +56,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -621,7 +623,7 @@ internal fun List<GrunnlagDto>.mapInntekter(
     val erForskuddOmgjøring =
         behandling.soknadFra == SøktAvType.NAV_BIDRAG && behandling.vedtakstype == Vedtakstype.ENDRING
     if (!lesemodus && !erForskuddOmgjøring) {
-        inntekter.groupBy { it.ident }.forEach { (_, inntekterRolle) ->
+        inntekter.groupBy { it.gjelderIdent }.forEach { (_, inntekterRolle) ->
             inntekterRolle
                 .find {
                     it.type ==
@@ -654,7 +656,7 @@ internal fun List<GrunnlagDto>.mapInntekter(
         inntekter
             .filter { ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
             .sortedByDescending { it.taMed }
-            .distinctBy { listOfNotNull(it.opprinneligFom, it.opprinneligTom, it.type, it.gjelderBarn, it.ident) }
+            .distinctBy { listOfNotNull(it.opprinneligFom, it.opprinneligTom, it.type, it.gjelderBarnIdent, it.gjelderIdent) }
     val andreInntekter = inntekter.filter { !ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt.contains(it.type) }
     return (andreInntekter + inntekterBeregnet).toMutableSet()
 }
@@ -1224,6 +1226,8 @@ private fun BaseGrunnlag.tilInntekt(
                     null
                 },
             ident = gjelder.personIdent!!,
+            rolle = behandling.finnRolle(gjelder.personIdent!!),
+            gjelderBarnRolle = gjelderBarn?.let { behandling.finnRolle(it.personIdent!!) },
             kilde = if (inntektPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
             behandling = behandling,
         )
@@ -1254,6 +1258,13 @@ private fun GrunnlagDto.tilRolle(
 ): Rolle {
     val virkningstidspunktGrunnlag = grunnlagsliste.hentVirkningstidspunkt(referanse)
 
+    val søknader =
+        if (type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG) {
+            grunnlagsliste.hentSøknader()
+        } else {
+            grunnlagsliste.hentSøknader(referanse).ifEmpty { grunnlagsliste.hentSøknader() }
+        }
+    val søknadGrunnlag = søknader.filter { it.søknadsid != null }.maxByOrNull { it.søknadsid!! }
     val aldersjustering = grunnlagsliste.hentAldersjusteringDetaljerForBarn(referanse)
     return Rolle(
         behandling,
@@ -1289,7 +1300,9 @@ private fun GrunnlagDto.tilRolle(
         avslag = virkningstidspunktGrunnlag?.avslag,
         opphørsdato = virkningstidspunktGrunnlag?.opphørsdato,
         fødselsdato = personObjekt.fødselsdato,
-        behandlingstema = behandling.behandlingstema,
+        innkrevingstype = stønadsendring?.innkreving ?: behandling.innkrevingstype,
+        stønadstype = stønadsendring?.type ?: søknadGrunnlag?.behandlingstema?.tilStønadstype() ?: behandling.stonadstype,
+        behandlingstema = søknadGrunnlag?.behandlingstema ?: stønadsendring?.type?.tilBehandlingstema() ?: behandling.behandlingstema,
         behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
         forholdsmessigFordeling =
             if (grunnlagsliste.harOpprettetForholdsmessigFordeling()) {

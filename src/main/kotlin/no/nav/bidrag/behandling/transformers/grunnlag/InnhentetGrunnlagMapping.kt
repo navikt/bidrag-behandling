@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjekt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjektInnhold
@@ -253,7 +254,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
         husstandsmedlem
             .filter { it.rolle == null }
             .filter { sb ->
-                innhentetHusstandsmedlemGrunnlagsliste.none {
+                (søknadsbarnSomManglerInnhentetGrunnlag + innhentetHusstandsmedlemGrunnlagsliste).none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
                     personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
                 }
@@ -262,7 +263,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                     fødselsdato = it.fødselsdato,
                     gjelderPersonId = it.ident,
                     partPersonId = personobjektInnhentesForRolle.personIdent,
-                    navn = it.navn,
+                    navn = it.navn ?: hentPersonVisningsnavn(it.ident),
                     relasjon = Familierelasjon.BARN,
                     borISammeHusstandDtoListe = emptyList(),
                 ).tilGrunnlagsobjekt(
@@ -373,10 +374,15 @@ private fun korrigerPersonReferanser(
             .map { it.name }
             .toSet()
     if (type !in validTypes) return oldRef
+    val existingPerson = personobjekter.find { it.referanse == personRef }
     val datePart = parts.last()
-    if (datePart.length != 8 || !datePart.all { it.isDigit() }) return oldRef
+    if (existingPerson != null && (datePart.length != 8 || !datePart.all { it.isDigit() })) return oldRef
     // Find the matching person in personobjekter by referanse prefix
-    val correctPerson = personobjekter.find { it.referanse.startsWith(personRef) }
+    val correctPerson =
+        personobjekter.find {
+            it.referanse.startsWith(personRef) ||
+                (type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG.name && it.type == Grunnlagstype.PERSON_BIDRAGSPLIKTIG)
+        }
     // Return the correct referanse or fallback to oldRef if not found
     return correctPerson?.referanse ?: oldRef
 }
@@ -422,7 +428,7 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
         inntekter?.find {
             it.periode == periode &&
                 inntekt.type == it.inntektRapportering &&
-                (inntekt.gjelderBarn.isNullOrEmpty() || inntekt.gjelderBarn == it.gjelderBarnPersonId.trimToNull())
+                (inntekt.gjelderBarnIdent.isNullOrEmpty() || inntekt.gjelderBarnIdent == it.gjelderBarnPersonId.trimToNull())
         }
     return if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled && inntekterGjelderGrunnlag != null) {
         opprettGrunnlagsreferanserForInntekt2(inntekt, inntekterGjelderGrunnlag!!.rolle.tilGrunnlagsreferanse())

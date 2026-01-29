@@ -507,7 +507,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     datoTom = null,
                     opprinneligFom = YearMonth.parse("2023-02"),
                     opprinneligTom = YearMonth.parse("2024-01"),
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     taMed = true,
                     kilde = Kilde.OFFENTLIG,
                     behandling = behandling,
@@ -519,7 +519,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.from(behandling.virkningstidspunkt),
                     datoTom = YearMonth.parse("2024-09"),
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -530,7 +530,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.parse("2024-10"),
                     datoTom = YearMonth.parse("2024-12"),
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -544,7 +544,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     opprinneligFom = YearMonth.parse("2024-05"),
                     opprinneligTom = YearMonth.parse("2024-12"),
                     taMed = true,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     kilde = Kilde.OFFENTLIG,
                     gjelderBarn = søknadsbarn.ident,
                     behandling = behandling,
@@ -558,7 +558,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     opprinneligFom = YearMonth.parse("2024-01"),
                     opprinneligTom = YearMonth.parse("2024-06"),
                     taMed = true,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     kilde = Kilde.OFFENTLIG,
                     gjelderBarn = søknadsbarn.ident,
                     behandling = behandling,
@@ -572,7 +572,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     opprinneligFom = YearMonth.parse("2023-05"),
                     opprinneligTom = YearMonth.parse("2024-02"),
                     taMed = true,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     kilde = Kilde.OFFENTLIG,
                     gjelderBarn = søknadsbarn2.ident,
                     behandling = behandling,
@@ -586,7 +586,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     opprinneligFom = YearMonth.parse("2024-02"),
                     opprinneligTom = YearMonth.parse("2024-06"),
                     taMed = true,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     kilde = Kilde.OFFENTLIG,
                     gjelderBarn = søknadsbarn2.ident,
                     behandling = behandling,
@@ -657,7 +657,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     datoTom = null,
                     opprinneligFom = YearMonth.parse("2023-02"),
                     opprinneligTom = YearMonth.parse("2024-01"),
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     taMed = true,
                     kilde = Kilde.OFFENTLIG,
                     behandling = behandling,
@@ -668,7 +668,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.from(behandling.virkningstidspunkt),
                     datoTom = YearMonth.parse("2024-09"),
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -679,7 +679,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.parse("2024-10"),
                     datoTom = null,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -693,7 +693,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     opprinneligFom = YearMonth.parse("2024-05"),
                     opprinneligTom = YearMonth.parse("2024-12"),
                     taMed = true,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     kilde = Kilde.OFFENTLIG,
                     gjelderBarn = søknadsbarn.ident,
                     behandling = behandling,
@@ -707,7 +707,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     opprinneligFom = YearMonth.parse("2024-01"),
                     opprinneligTom = YearMonth.parse("2024-06"),
                     taMed = true,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     kilde = Kilde.OFFENTLIG,
                     gjelderBarn = søknadsbarn.ident,
                     behandling = behandling,
@@ -769,7 +769,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                     datoTom = YearMonth.parse("2024-01"),
                     opprinneligFom = YearMonth.parse("2023-02"),
                     opprinneligTom = YearMonth.parse("2024-01"),
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -780,7 +780,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.parse("2024-02"),
                     datoTom = YearMonth.parse("2024-04"),
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -791,7 +791,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.from(behandling.virkningstidspunkt),
                     datoTom = YearMonth.parse("2024-09"),
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -802,7 +802,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.parse("2024-10"),
                     datoTom = null,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -858,7 +858,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.from(behandling.virkningstidspunkt),
                     datoTom = null,
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    gjelderRolle = behandling.bidragsmottaker!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -869,7 +869,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 opprettInntekt(
                     datoFom = YearMonth.from(behandling.virkningstidspunkt),
                     datoTom = null,
-                    ident = behandling.bidragspliktig!!.ident!!,
+                    gjelderRolle = behandling.bidragspliktig!!,
                     taMed = true,
                     kilde = Kilde.MANUELL,
                     behandling = behandling,
@@ -890,7 +890,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 datoFom shouldBe behandling.virkningstidspunkt
                 datoTom shouldBe null
             }
-            val nyVirkningstidspunkt = LocalDate.now().plusMonths(2)
+            val nyVirkningstidspunkt = LocalDate.now().plusMonths(2).withDayOfMonth(1)
 
             virkningstidspunktService.oppdatereVirkningstidspunkt(1, OppdatereVirkningstidspunkt(virkningstidspunkt = nyVirkningstidspunkt))
             assertSoftly(inntektBP1) {

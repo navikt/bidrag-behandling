@@ -14,8 +14,8 @@ import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.felles.toLocalDate
-import org.hibernate.annotations.JoinFormula
 import java.time.LocalDate
 
 @Entity
@@ -61,6 +61,15 @@ open class Underholdskostnad(
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde? = null,
 ) {
+    fun tilhørerPerson(
+        ident: String,
+        støndastype: Stønadstype?,
+    ) = if (rolle == null) {
+        personIdent == ident
+    } else {
+        rolle!!.erSammeRolle(ident, støndastype)
+    }
+
     val gjelderAndreBarn get() = rolle == null || rolle!!.rolletype == Rolletype.BIDRAGSMOTTAKER
     val beregnFraDato get() = rolle?.finnBeregnFra()?.toLocalDate() ?: behandling.virkningstidspunktEllerSøktFomDato
     val personNavn: String? get() = person?.navn ?: rolle?.navn

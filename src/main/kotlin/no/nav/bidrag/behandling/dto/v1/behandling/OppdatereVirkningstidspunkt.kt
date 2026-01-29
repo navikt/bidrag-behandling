@@ -32,7 +32,6 @@ data class OppdatereVirkningstidspunktBegrunnelseDto(
                 " Dette kan bare settes hvis det er 18 års bidrag",
     )
     var oppdaterBegrunnelseVurderingAvSkolegang: OppdatereBegrunnelse? = null,
-    val settLikVerdierForAlleBarn: Boolean = false,
 )
 
 data class OppdatereVirkningstidspunkt(
@@ -74,7 +73,6 @@ data class OppdatereVirkningstidspunkt(
     var oppdaterBegrunnelseVurderingAvSkolegang: OppdatereBegrunnelse? = null,
     @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
     val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse,
-    val settLikVerdierForAlleBarn: Boolean = false,
 ) {
     fun henteOppdatereNotat() = oppdatereBegrunnelse ?: notat
 }
