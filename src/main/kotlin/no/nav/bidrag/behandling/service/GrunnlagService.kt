@@ -20,13 +20,9 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
-import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
-import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagAsyncStatus
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.erBestilt
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
-import no.nav.bidrag.behandling.database.datamodell.extensions.lasterGrunnlagAsync
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
-import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
@@ -149,10 +145,8 @@ import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.commons.lang3.Validate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
-import org.springframework.core.task.TaskExecutor
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
@@ -323,21 +317,16 @@ class GrunnlagService(
             }
         }
         if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
-            if (UnleashFeatures.AKTIVERE_GRUNNLAG_HVIS_INGEN_ENDRINGER.isEnabled) {
-                secureLogger.info {
-                    "Forsøker å aktivere boforhold og sivilstand grunnlag hvis de ikke er aktivert i behandling ${behandling.id} og saksnummer ${behandling.saksnummer}"
-                }
-                aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
-                aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
-                aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
-                aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
-                behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
-                behandling.roller.forEach { rolle ->
-                    inntekterOgYtelser.forEach {
-                        aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
-                    }
-                }
+            secureLogger.info {
+                "Aktiverer grunnlag automatisk hvis det ikke er noe endringer siden forrige grunnlagsinnhenting for behandling ${behandling.id} og saksnummer ${behandling.saksnummer}"
             }
+            aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
+            aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+            aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
+            aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+            behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
+            aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteresForAlleRoller(behandling)
+            oppdaterVirkningstidspunktOgÅrsakForBarn(behandling)
         }
 
         behandling.metadata?.avsluttLastGrunnlagAsync()
@@ -2014,6 +2003,41 @@ class GrunnlagService(
         }
     }
 
+    private fun oppdaterVirkningstidspunktOgÅrsakForBarn(behandling: Behandling) {
+        behandling.søknadsbarn.forEach { søknadsbarn ->
+            log.info {
+                "Oppdaterer virkningstidspunkt for barn ${søknadsbarn.ident} " +
+                    "i behandling ${behandling.id} hvor søknadsbarn virkning er " +
+                    "${søknadsbarn.virkningstidspunkt} - ${søknadsbarn.årsak} - ${søknadsbarn.avslag}" +
+                    " og i behandling ${behandling.eldsteVirkningstidspunkt} - ${behandling.årsak} - ${behandling.avslag}"
+            }
+            if (søknadsbarn.virkningstidspunkt == null) {
+                søknadsbarn.virkningstidspunkt = behandling.eldsteVirkningstidspunkt
+            }
+            if (søknadsbarn.årsak == null && søknadsbarn.avslag == null) {
+                if (behandling.årsak != null) {
+                    søknadsbarn.årsak = behandling.årsak
+                } else if (behandling.avslag != null) {
+                    søknadsbarn.avslag = behandling.avslag
+                }
+            }
+        }
+    }
+
+    /*
+    Funksjon som oppdaterer inntekter slik at de matcher med offentlige inntekstdata. Det er noen ganger det kan være mismatch pga bug eller eldre behandling som ikke er tilpasset ny struktur
+    Denne funksjonen skal oppdatere alle inntekter slik at perioder i inntektstabellen blir riktig
+     */
+    private fun aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteresForAlleRoller(behandling: Behandling) {
+        behandling.roller.forEach { rolle ->
+            inntekterOgYtelser.forEach {
+                aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(behandling, it, rolle)
+            }
+        }
+        // Rekalkuler offentlige inntektperioder slik at fom/tom matcher etter justering på offentlige perioder
+        inntektService.rekalkulerOffentligeInntektPerioder(behandling)
+    }
+
     private fun aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteres(
         behandling: Behandling,
         type: Grunnlagsdatatype,
@@ -2038,7 +2062,7 @@ class GrunnlagService(
                 .hentGrunnlagForType(type, rolleInhentetFor.ident!!)
                 .oppdaterStatusTilAktiv(LocalDateTime.now())
 
-            inntektService.justerOffentligePerioderEtterSisteGrunnlag(behandling)
+            inntektService.justerInntektOffentligePerioderEtterSisteGrunnlag(behandling)
         }
     }
 
