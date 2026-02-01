@@ -350,13 +350,17 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return "Kan ikke fatte vedtak for bidrag med flere barn"
     }
 
+    if (søknadsbarn.size > 1 && erKlageEllerOmgjøring && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_OMGJØRING.isEnabled) {
+        return "Kan ikke fatte omgjøring/klagevedtak for bidrag med flere barn"
+    }
+
     val stønaderBp =
         hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
             ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     if (UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
         !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
     ) {
-        if (roller.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
+        if (søknadsbarn.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
             return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
         }
         val sakerBp =

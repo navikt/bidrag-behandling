@@ -62,7 +62,7 @@ class InntektService(
     private val notatService: NotatService,
 ) {
     @Transactional
-    fun justerOffentligePerioderEtterSisteGrunnlag(behandling: Behandling) {
+    fun justerInntektOffentligePerioderEtterSisteGrunnlag(behandling: Behandling) {
         behandling.roller.forEach { rolle ->
             val inntekterRolle =
                 behandling.inntekter.filter {
@@ -70,9 +70,9 @@ class InntektService(
                         it.kilde == Kilde.OFFENTLIG
                 }
             eksplisitteYtelser.forEach { type ->
-                val ikkeAktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
+                val aktiveGrunnlag = behandling.grunnlag.hentAlleAktiv()
 
-                val summerteInntekter = ikkeAktiveGrunnlag.henteBearbeidaInntekterForType(type.tilGrunnlagsdataType(), rolle)
+                val summerteInntekter = aktiveGrunnlag.henteBearbeidaInntekterForType(type.tilGrunnlagsdataType(), rolle)
                 if (summerteInntekter != null) {
                     val finnesMinstEnPeriodeMedAvvik =
                         summerteInntekter.inntekter.any { inntekt ->
@@ -142,14 +142,8 @@ class InntektService(
             .forEach { inntekt ->
                 inntekt.datoFom = inntekt.virkningstidspunktGjelderEllerBarn.toLocalDate()
             }
-        behandling.inntekter
-            .filter { it.taMed }
-            .filter { eksplisitteYtelser.contains(it.type) && it.kilde == Kilde.OFFENTLIG && it.opprinneligFom != null }
-            .forEach {
-                it.taMed = it.skalAutomatiskSettePeriode()
-                it.datoFom = it.bestemDatoFomForOffentligInntekt()
-                it.datoTom = it.bestemDatoTomForOffentligInntekt()
-            }
+
+        rekalkulerOffentligeInntektPerioder(behandling)
 
         if (behandling.minstEnRolleHarBegrensetBeregnTilDato) {
             behandling.inntekter
@@ -191,6 +185,20 @@ class InntektService(
 
         val manuelleInntekterSomErFjernet = behandling.inntekter.filter { !it.taMed && it.kilde == Kilde.MANUELL }
         behandling.inntekter.removeAll(manuelleInntekterSomErFjernet)
+    }
+
+    fun rekalkulerOffentligeInntektPerioder(behandling: Behandling) {
+        secureLogger.info {
+            "Oppdaterer status på offentlige inntekter (taMed, datoFom og datoTom) slik at de er i sync med offentlige perioder for behanlding ${behandling.id}"
+        }
+        behandling.inntekter
+            .filter { it.taMed }
+            .filter { eksplisitteYtelser.contains(it.type) && it.kilde == Kilde.OFFENTLIG && it.opprinneligFom != null }
+            .forEach {
+                it.taMed = it.skalAutomatiskSettePeriode()
+                it.datoFom = it.bestemDatoFomForOffentligInntekt()
+                it.datoTom = it.bestemDatoTomForOffentligInntekt()
+            }
     }
 
     private fun List<Inntekt>.justerSistePeriodeForOpphørsdato(forrigeOpphørsdato: LocalDate?) {

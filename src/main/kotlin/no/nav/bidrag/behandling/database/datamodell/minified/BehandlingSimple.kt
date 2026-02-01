@@ -57,6 +57,7 @@ data class BehandlingSimple(
 
     val søknadsbarn get() = roller.filter { it.rolletype == Rolletype.BARN }
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+    val erKlageEllerOmgjøring get() = vedtakstype == Vedtakstype.KLAGE || omgjøringsdetaljer?.opprinneligVedtakId != null
 }
 
 data class RolleSimple(

@@ -18,9 +18,7 @@ import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
 import no.nav.bidrag.behandling.service.VedtakService
-import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
-import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
@@ -48,7 +46,6 @@ class AdminController(
     private val behandlingRepository: BehandlingRepository,
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
-    private val inntektService: InntektService,
     private val privatAvtaleService: PrivatAvtaleService,
     private val forholsmessigFordelingService: ForholdsmessigFordelingService,
     private val beregningService: BeregningService,
@@ -286,21 +283,6 @@ class AdminController(
         }
     }
 
-    @PostMapping("/admin/grunnlag/inntekt/oppdater/{behandlingId}")
-    @Operation(
-        description =
-            "Oppdater offentlige ytelser basert på nyeste grunnlag ",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @Transactional
-    fun oppdaterOffentligeInntekter(
-        @PathVariable behandlingId: Long,
-    ) {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: return
-
-        inntektService.justerOffentligePerioderEtterSisteGrunnlag(behandling)
-    }
-
     @PostMapping("/admin/grunnlag/oppdater/boforhold/{behandlingId}")
     @Operation(
         description =
@@ -362,38 +344,6 @@ class AdminController(
     ) {
         log.info { "Setter rolle til behandling $behandlingId til null hvis det ikke tilhører samme behandling" }
         behandlingRepository.settUnderholdskostnadRolleTilNull(behandlingId)
-    }
-
-    @PostMapping("/admin/feilfiks/virkningstidspunkt")
-    @Operation(
-        description =
-            "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @Transactional
-    fun fiksVirkningstidspunktOgÅrsak(): List<Long> {
-        val behandlinger = behandlingRepository.hentBehandlingerHvorBarnVirkningIkkeErSatt()
-
-        log.info { "Fant ${behandlinger.size} hvor virkningstidspunkt ikke er satt for barnet" }
-        return behandlinger.map { behandling ->
-            behandling.søknadsbarn.forEach { søknadsbarn ->
-                log.info {
-                    "Oppdaterer virkningstidspunkt for barn ${søknadsbarn.ident} " +
-                        "i behandling ${behandling.id} hvor søknadsbarn virkning er " +
-                        "${søknadsbarn.virkningstidspunkt} - ${søknadsbarn.årsak} - ${søknadsbarn.avslag}" +
-                        " og i behandling ${behandling.virkningstidspunkt} - ${behandling.årsak} - ${behandling.avslag}"
-                }
-                if (søknadsbarn.virkningstidspunkt == null) {
-                    søknadsbarn.virkningstidspunkt = behandling.virkningstidspunkt
-                }
-                if (søknadsbarn.årsak == null && behandling.årsak != null) {
-                    søknadsbarn.årsak = behandling.årsak
-                } else if (søknadsbarn.avslag == null && behandling.avslag != null) {
-                    søknadsbarn.avslag = behandling.avslag
-                }
-            }
-            behandling.id!!
-        }
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years

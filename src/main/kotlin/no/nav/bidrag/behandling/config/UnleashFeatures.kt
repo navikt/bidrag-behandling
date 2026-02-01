@@ -14,6 +14,7 @@ enum class UnleashFeatures(
     GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK("behandling.grunnlag_behandle_funksjonell_feil_som_teknisk", false),
     FATTE_VEDTAK("behandling.fattevedtak_klage", false),
     FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN("behandling.fattevedtak_flere_barn", false),
+    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_OMGJØRING("behandling.fattevedtak_flere_barn_omgjoring", false),
     FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG("behandling.fattevedtak_flere_barn_lopende_bidrag", false),
     BIDRAG_KLAGE("behandling.bidrag_klage", false),
     BEGRENSET_REVURDERING("behandling.begrenset_revurdering", false),
