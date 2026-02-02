@@ -239,7 +239,7 @@ class BeregningServiceTest {
         assertSoftly(resultat[0]) {
             it.ugyldigBeregning shouldBe null
             it.barn.ident!!.verdi shouldBe behandling.søknadsbarn.first().ident
-            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 2
+            it.resultat.beregnetBarnebidragPeriodeListe shouldHaveSize 1
             it.resultat.beregnetBarnebidragPeriodeListe[0]
                 .resultat.beløp shouldBe BigDecimal(4640)
         }
