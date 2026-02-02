@@ -72,7 +72,11 @@ data class InntektDtoV2(
     @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
     val månedsbeløp: BigDecimal?
         get() =
-            if (Inntektsrapportering.BARNETILLEGG == rapporteringstype) {
+            if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
+                inntektsposter.firstOrNull()?.beløpstype == InntektBeløpType.MÅNEDSBELØP
+            ) {
+                inntektsposter.first().beløp
+            } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype && inntektsposter.firstOrNull()?.beløpstype == null) {
                 beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
             } else {
                 null
