@@ -204,7 +204,7 @@ data class OppdatereTilleggsstønadRequest(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val dagsats: BigDecimal? = null,
-    val måndesbeløp: BigDecimal? = null,
+    val månedsbeløp: BigDecimal? = null,
 )
 
 data class TilleggsstønadDto(

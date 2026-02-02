@@ -313,7 +313,7 @@ class NotatOpplysningerService(
                                         NotatTilleggsstønadDto(
                                             periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
                                             dagsats = it.dagsats,
-                                            månedsbeløp = it.månedsbeløp,
+                                            måndesbeløp = it.månedsbeløp,
                                             total = it.total,
                                         )
                                     },

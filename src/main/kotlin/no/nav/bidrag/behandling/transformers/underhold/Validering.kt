@@ -1,5 +1,7 @@
 package no.nav.bidrag.behandling.transformers.underhold
 
+import no.nav.bidrag.behandling.Ressurstype
+import no.nav.bidrag.behandling.bådeDagsatsOgMånedsbeløpAngittException
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
@@ -17,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeilTabell
+import no.nav.bidrag.behandling.hverkenDagsatsEllerMånedsbeløpAngittException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
@@ -300,6 +303,16 @@ fun OppdatereTilleggsstønadRequest.validere(underholdskostnad: Underholdskostna
     }
     if (periode.fom < underholdskostnad.personFødselsdato.withDayOfMonth(1)) {
         ugyldigForespørsel("Kan ikke legge til periode før barnets fødselsdato")
+    }
+
+    this.id?.let {
+        if (this.dagsats == null && this.månedsbeløp == null) {
+            hverkenDagsatsEllerMånedsbeløpAngittException(this.id, Ressurstype.TILLEGGSSTØNAD)
+        } else {
+            if (this.dagsats != null && this.månedsbeløp != null) {
+                bådeDagsatsOgMånedsbeløpAngittException(this.id, Ressurstype.TILLEGGSSTØNAD)
+            }
+        }
     }
 }
 
