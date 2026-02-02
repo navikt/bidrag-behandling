@@ -12,6 +12,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import java.math.BigDecimal
 
 @Entity(name = "inntektspost")
@@ -25,7 +26,8 @@ open class Inntektspost(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inntekt_id", nullable = false)
     open var inntekt: Inntekt? = null,
-    // TODO: Endre til ikke nullbar
     @Enumerated(EnumType.STRING)
     open val inntektstype: Inntektstype?,
+    @Enumerated(EnumType.STRING)
+    open val beløpstype: InntektBeløpType? = InntektBeløpType.ÅRSBELØP,
 )
