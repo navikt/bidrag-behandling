@@ -61,7 +61,7 @@ data class InntektDtoV2(
                 inntektsposter.firstOrNull()?.beløpstype == InntektBeløpType.MÅNEDSBELØP
             ) {
                 inntektsposter.first().beløp
-            } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype) {
+            } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype && inntektsposter.firstOrNull()?.beløpstype == null) {
                 beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
             } else {
                 null
